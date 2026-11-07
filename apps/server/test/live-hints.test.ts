@@ -3,7 +3,8 @@
 import { randomUUID } from 'node:crypto';
 import type { AddressInfo } from 'node:net';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { emitHint } from '../src/live/emit.js';
+import { user } from '../src/db/auth-schema.js';
+import { emitHint, parseHint } from '../src/live/emit.js';
 import { createHub } from '../src/live/hub.js';
 import { makeSyntheticDive } from './fixtures/synthetic-dive.js';
 import {
@@ -59,6 +60,35 @@ async function until(stream: Stream, predicate: (event: Record<string, unknown>)
 }
 
 const settle = (ms = 350) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/** A wildcard audience is shared data (a Dive site), so it must not name every User in the payload. */
+describe('a shared-audience hint', () => {
+  it('reaches every open stream and keeps the audience off the wire', () => {
+    const hub = createHub({ perUser: 2, heartbeatMs: 1_000 });
+    const written: Record<string, string[]> = { 'user-a': [], 'user-b': [] };
+    const socketFor = (userId: string) => ({
+      write: (text: string) => { written[userId]!.push(text); return true; },
+      end: () => undefined,
+    } as never);
+    expect(hub.add('user-a', socketFor('user-a'))).toBe(true);
+    expect(hub.add('user-b', socketFor('user-b'))).toBe(true);
+
+    hub.publish(JSON.stringify({ v: 1, kind: 'site', id: 'site-1', audience: '*' }));
+
+    const expected = `event: hint\ndata: ${JSON.stringify({ v: 1, kind: 'site', id: 'site-1' })}\n\n`;
+    expect(written['user-a']).toEqual([expected]);
+    expect(written['user-b']).toEqual([expected]);
+    hub.stop();
+    hub.closeAll();
+  });
+
+  it('is only for shared data, so a Diver hint still names its audience', () => {
+    expect(parseHint(JSON.stringify({ v: 1, kind: 'site', id: 'site-1', audience: '*' })))
+      .toEqual({ kind: 'site', id: 'site-1', audience: '*' });
+    expect(parseHint(JSON.stringify({ v: 1, kind: 'dive', id: 'dive-1', audience: '*' }))).toBeNull();
+    expect(parseHint(JSON.stringify({ v: 1, kind: 'site', id: 'site-1' }))).toBeNull();
+  });
+});
 
 describe.skipIf(!(await databaseReachable()))('live hints', () => {
   let t: TestDatabase;
@@ -142,6 +172,53 @@ describe.skipIf(!(await databaseReachable()))('live hints', () => {
     expect(response.statusCode).toBe(200);
     const hint = await until(stream, (event) => event.kind === 'dive');
     expect(hint).toEqual({ v: 1, kind: 'dive', id: diveId });
+  });
+
+  it('turns a site edit into a site hint for every open page', async () => {
+    const timStream = await openStream(base, tim);
+    const otherStream = await openStream(base, other);
+    streams.push(timStream, otherStream);
+    await settle(300);
+
+    const created = await ctx.app.inject({
+      method: 'POST', url: '/api/dive-sites', headers: { cookie: tim, origin: BASE_URL }, payload: { name: 'Hint Reef' },
+    });
+    expect(created.statusCode).toBe(201);
+    const site = created.json() as { id: string; version: number };
+
+    const edited = await ctx.app.inject({
+      method: 'PATCH', url: `/api/dive-sites/${site.id}`, headers: { cookie: tim, origin: BASE_URL },
+      payload: { version: site.version, name: 'Hint Reef Edited' },
+    });
+    expect(edited.statusCode).toBe(200);
+    for (const stream of [timStream, otherStream]) {
+      expect(await until(stream, (event) => event.kind === 'site' && event.id === site.id))
+        .toEqual({ v: 1, kind: 'site', id: site.id });
+    }
+  });
+
+  it('keeps a site write working when the instance has hundreds of Users', async () => {
+    // Naming every User would put ~250 ids, about 40 bytes each, into a NOTIFY payload that PostgreSQL caps at 8000
+    // bytes, so the site edit would roll back with a notification-size error.
+    await t.db.insert(user).values(Array.from({ length: 250 }, (_, i) => ({
+      name: `hint-user-${i}`, email: `hint-user-${i}@example.com`,
+    })));
+    const stream = await openStream(base, other);
+    streams.push(stream);
+    await settle(300);
+
+    const created = await ctx.app.inject({
+      method: 'POST', url: '/api/dive-sites', headers: { cookie: tim, origin: BASE_URL }, payload: { name: 'Crowded Reef' },
+    });
+    expect(created.statusCode).toBe(201);
+    const site = created.json() as { id: string; version: number };
+    const edited = await ctx.app.inject({
+      method: 'PATCH', url: `/api/dive-sites/${site.id}`, headers: { cookie: tim, origin: BASE_URL },
+      payload: { version: site.version, name: 'Crowded Reef Edited' },
+    });
+    expect(edited.statusCode).toBe(200);
+    expect(await until(stream, (event) => event.kind === 'site' && event.id === site.id))
+      .toEqual({ v: 1, kind: 'site', id: site.id });
   });
 
   it('closes every stream when the LISTEN connection goes away, forcing a resync', async () => {
