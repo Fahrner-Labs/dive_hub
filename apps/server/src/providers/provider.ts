@@ -5,6 +5,7 @@
 // push-service.ts, lease-service.ts, routes.ts).
 import type { CylinderMaterial, ParticipantRole, ProviderImportPlan } from '../db/schema.js';
 import type { DiveMode, Position, SiteWaterType } from '../vocabulary.js';
+import type { RemoteCertification } from '../certifications/certification-providers.js';
 import type { SiteSource } from '../sites/sources.js';
 import { wallClockMs } from '../dives/time-zone.js';
 
@@ -320,28 +321,6 @@ export interface RemoteBuddy {
   lastName?: string | null;
   email?: string | null;
   leaderNumber?: string | null;
-}
-
-/** One certification card in the account (ADR 0050): the agency's own record, as typed values. */
-export interface RemoteCertification {
-  /** The Provider's ID of the card (SSI: `ccard_uid`); the key of a re-import. */
-  remoteId: string;
-  agency: string;
-  /** The course or level as the Provider names it. */
-  level: string;
-  courseId: string | null;
-  category: string | null;
-  issuedOn: string | null;
-  expiresOn: string | null;
-  divesAtIssue: number | null;
-  instructorName: string | null;
-  instructorNumber: string | null;
-  centreName: string | null;
-  centreNumber: string | null;
-  centreCity: string | null;
-  centreCountry: string | null;
-  /** Where the card's picture is (public, no sign-in); null when the Provider has none. Only an adapter makes it. */
-  imageUrl: string | null;
 }
 
 /** What Dive Hub sends to find a dive again when an answer is lost: `divehub-<Dive id>`. */
