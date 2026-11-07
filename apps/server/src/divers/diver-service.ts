@@ -14,7 +14,7 @@ import { userActor, writeRevision } from '../revisions/revisions.js';
 import { DiverError } from './diver-error.js';
 import { mergeExternalDiver } from './merge.js';
 import { tidyName } from './diver-name.js';
-import type { DiverSource } from '../providers/provider.js';
+import type { DiverSource } from '../vocabulary.js';
 
 /** What an account at each service looks like (ADR 0024): SSI's user master ID; PADI's isn't known yet. */
 const ACCOUNT_PATTERN: Record<DiverSource, RegExp> = { ssi: /^[1-9]\d{0,9}$/, padi: /^[A-Za-z0-9-]{1,40}$/ };

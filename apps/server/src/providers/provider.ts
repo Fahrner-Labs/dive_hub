@@ -9,7 +9,8 @@ import type { RemoteCertification } from '../certifications/certification-provid
 import type { SiteSource } from '../sites/sources.js';
 import { wallClockMs } from '../dives/time-zone.js';
 
-export type DiverSource = 'ssi' | 'padi';
+import type { DiverSource } from '../vocabulary.js';
+export type { DiverSource };
 
 /** A Provider's id, e.g. `ssi`. The registry knows which exist; a test-only adapter registers its own in tests. */
 export type ProviderId = string;
