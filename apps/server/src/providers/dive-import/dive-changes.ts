@@ -23,7 +23,7 @@ import { currentRemote, fingerprintNow } from '../remote-state.js';
 import { comparableOf, SYNCED_FIELDS, threeWay, VALUE_FIELDS, type Comparable, type SyncedField } from './three-way.js';
 import { cylindersOf, mergeProviderCylinder, providerCylinderOf } from '../../dives/cylinders.js';
 import { leadOf, leadTotalKg, mergeProviderLead } from '../../dives/weighting.js';
-import { renumber } from '../../dives/dive-numbers.js';
+import { renumber } from '../../divers/dive-numbers.js';
 
 /** Who and what one exchange with a Provider is about (an import and its preview, a send, a comparison), the same in the preview and in the worker. */
 export interface ProviderContext {

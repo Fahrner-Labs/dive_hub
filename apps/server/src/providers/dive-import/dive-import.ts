@@ -36,7 +36,7 @@ import { realClock, type Clock } from '../lease-service.js';
 import { queueNow } from '../waiting-push/waiting-push-queue.js';
 import { withRemembered } from '../list-entries.js';
 import { named, ProviderServiceError, type ProviderRegistry } from '../registry.js';
-import { renumber } from '../../dives/dive-numbers.js';
+import { renumber } from '../../divers/dive-numbers.js';
 
 /** A dive computer found at the Provider, and how its dives are used. */
 export interface ComputerView {

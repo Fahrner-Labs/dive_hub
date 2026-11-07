@@ -13,7 +13,7 @@ import { setLead, setSuit, setWeightingFeedback, type LeadInput, type SuitInput,
 import { userActor, writeRevision, type Actor, type Changes, type RevisionCause } from '../revisions/revisions.js';
 import { liveSite, siteRef } from '../sites/dive-site-link.js';
 import { keepApart, keepRestored } from './checks/logbook-check-answers.js';
-import { renumber } from './dive-numbers.js';
+import { renumber } from '../divers/dive-numbers.js';
 import { isUnit } from './recording-units.js';
 import { managesDiveDiver } from '../divers/management.js';
 

@@ -22,7 +22,7 @@ const MODULE_IMPORTS = {
   sites: ['dives', 'live', 'revisions'],
   // Live hints (ADR 0066) read Dive and site Revisions only through revisions/revisions.ts's type.
   live: ['revisions:type'],
-  users: ['dives'],
+  users: ['divers'],
 };
 const target = (names) => `${SERVER}(${names.join('|')})/`;
 const moduleRules = Object.entries(MODULE_IMPORTS).flatMap(([from, allowed]) => {

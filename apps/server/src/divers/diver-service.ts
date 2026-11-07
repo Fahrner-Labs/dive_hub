@@ -9,7 +9,7 @@ import {
   connection, device, dive, diver, diverBodyWeight, diverExternalId, diverManagement, participant, recording,
 } from '../db/schema.js';
 import { managedDiverIds, managementOf } from './management.js';
-import { renumber } from '../dives/dive-numbers.js';
+import { renumber } from './dive-numbers.js';
 import { userActor, writeRevision } from '../revisions/revisions.js';
 import { DiverError } from './diver-error.js';
 import { mergeExternalDiver } from './merge.js';
