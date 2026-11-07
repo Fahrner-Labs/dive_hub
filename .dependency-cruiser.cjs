@@ -10,7 +10,7 @@ const SERVER = '^apps/server/src/';
 const MODULE_IMPORTS = {
   revisions: [],
   assessment: ['divers', 'imports'],
-  centres: ['divers:type', 'dives', 'revisions', 'sites'],
+  centres: ['divers', 'dives', 'revisions', 'sites'],
   certifications: ['divers', 'dives', 'live', 'providers', 'revisions'],
   divers: ['centres', 'certifications', 'dives', 'providers', 'revisions'],
   dives: ['assessment:type', 'centres', 'divers', 'imports', 'providers:type', 'revisions', 'sites'],

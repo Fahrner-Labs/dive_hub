@@ -2,7 +2,7 @@
 // external Divers (no managing User), shared like Dive sites; a Diver's accounts at services set by hand; and what a
 // Diver's SSI buddy code says about them, with the codes built from it and a scanned code finding its Diver (ADR 0043).
 import { and, eq, ilike, inArray, isNull, ne, sql } from 'drizzle-orm';
-import { personCodes, readVerificationCode, type VerificationCode } from '../centres/verification-code.js';
+import { personCodes, readVerificationCode, type VerificationCode } from './verification-code.js';
 import type { Db, Queryable, Tx } from '../db/client.js';
 import type { Caller } from '../http/caller.js';
 import {
