@@ -139,6 +139,7 @@ export async function createTestApp(t: TestDatabase, options: {
       ...extraProviders,
     ],
     clock,
+    live: { connectionString: t.pool.options.connectionString! },
   });
   const app = await buildApp({ ...services, baseUrl: BASE_URL, maxUploadBytes: 1 << 26, webDir });
   return { ...services, app, fakeSsi, ssiClock, clock, pauses: clock.slept };

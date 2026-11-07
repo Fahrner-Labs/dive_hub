@@ -1,35 +1,40 @@
 // The live layer of one process (ADR 0066): the hub of SSE streams and the one LISTEN connection that feeds it.
-import type pg from 'pg';
-import type { Db } from '../db/client.js';
+// Without an explicit connection string there is no listener, so the route is not mounted and clients keep polling.
 import { createHub, type LiveHub } from './hub.js';
 import { createListener, type LiveListener, type LiveLog } from './listener.js';
 
 export interface Live {
+  /** Whether this process can hear hints, so the live route may be mounted. */
+  enabled: boolean;
   hub: LiveHub;
+  /** Whether the LISTEN connection is up now; configuring one is not enough for clients to suspend polling. */
+  ready(): boolean;
   start(): void;
   stop(): Promise<void>;
 }
 
-export function createLive({ db, log }: { db: Db; log?: LiveLog }): Live {
+export function createLive({ connectionString, log }: { connectionString?: string; log?: LiveLog }): Live {
   const hub = createHub();
   const logger: LiveLog = log ?? {
     info: (detail, message) => console.info(message, detail),
     warn: (detail, message) => console.warn(message, detail),
   };
-  // A database built without a client (the OpenAPI script) never starts a listener.
-  const client = (db as { $client?: pg.Pool }).$client;
-  const connectionString = client?.options?.connectionString;
-  const listener: LiveListener = connectionString
+  const listener: LiveListener | null = connectionString
     ? createListener({ connectionString, hub, log: logger })
-    : { start: () => undefined, stop: async () => undefined };
+    : null;
   return {
+    enabled: listener !== null,
     hub,
+    ready: () => listener?.ready() ?? false,
     start() {
-      hub.startHeartbeat();
+      if (!listener) {
+        logger.warn({}, 'the live channel is off: no LISTEN connection string was given, so clients keep polling');
+        return;
+      }
       listener.start();
     },
     async stop() {
-      await listener.stop();
+      await listener?.stop();
       hub.stop();
       hub.closeAll();
     },

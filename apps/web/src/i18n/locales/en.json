@@ -556,7 +556,8 @@
     "weighting_feedback_invalid": "Weighting that felt right has no amount. Leave “By how much” empty.",
     "suit_invalid": "The suit’s values don’t fit: a thickness is for a wetsuit or a semidry suit, an undergarment for a drysuit.",
     "gas_not_breathable": "A mix with under 16 % oxygen can’t be breathed at the surface.",
-    "too_many_live_streams": "Too many live connections are open for this account; close another tab or wait a moment."
+    "too_many_live_streams": "Too many live connections are open for this account; close another tab or wait a moment.",
+    "live_unavailable": "Live updates are unavailable; the page keeps checking for changes."
   },
   "vocabulary": {
     "waterType": {

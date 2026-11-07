@@ -5,7 +5,12 @@ import type { Auth } from '../auth/auth.js';
 import { problem } from '../http/problems.js';
 import type { LiveHub } from './hub.js';
 
-export async function liveRoutes(app: FastifyInstance, { auth, hub }: { auth: Auth; hub: LiveHub }) {
+export async function liveRoutes(app: FastifyInstance, { auth, hub, ready }: {
+  auth: Auth;
+  hub: LiveHub;
+  /** Whether the LISTEN connection is up; without it no hint can arrive. */
+  ready: () => boolean;
+}) {
   app.get('/api/live', {
     onRequest: requireUser(auth),
     // The stream is not JSON and is read by the browser's EventSource, not by the generated client (docs/spec/clients.md).
@@ -13,6 +18,8 @@ export async function liveRoutes(app: FastifyInstance, { auth, hub }: { auth: Au
   }, async (request, reply) => {
     const user = userOf(request);
     const socket = reply.raw;
+    // Refuse the stream while LISTEN is down: a healthy stream would suspend the client's polling for hints that cannot come.
+    if (!ready()) return reply.code(503).send(problem('live_unavailable'));
     if (!hub.add(user.id, socket)) return reply.code(429).send(problem('too_many_live_streams'));
 
     reply.hijack();

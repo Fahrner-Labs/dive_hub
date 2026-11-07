@@ -86,6 +86,9 @@ describe.skipIf(!(await databaseReachable()))('live hints', () => {
     ctx.live.start();
     await ctx.app.listen({ host: '127.0.0.1', port: 0 });
     base = `http://127.0.0.1:${(ctx.app.server.address() as AddressInfo).port}`;
+    // Streams are refused until LISTEN is up (FAH-45); wait for it rather than racing the first test.
+    for (let i = 0; i < 200 && !ctx.live.ready(); i += 1) await settle(10);
+    expect(ctx.live.ready()).toBe(true);
   });
 
   afterAll(async () => {
@@ -147,6 +150,10 @@ describe.skipIf(!(await databaseReachable()))('live hints', () => {
     await settle(300);
     await ctx.live.stop();
     await expect(stream.closed).resolves.toBeUndefined();
+    // No LISTEN connection: a new stream is refused, so the client's polling fallback stays on.
+    const refused = await fetch(`${base}/api/live`, { headers: { cookie: tim, origin: BASE_URL } });
+    expect(refused.status).toBe(503);
+    expect(await refused.json()).toMatchObject({ code: 'live_unavailable' });
   });
 
   it('caps a user\'s streams and heartbeats the open ones', async () => {

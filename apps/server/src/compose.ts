@@ -57,14 +57,16 @@ export interface ServiceParts {
   clock?: Clock;
   /** Where the provider layer's own faults go (the app's logger). */
   log?: ProviderLog;
+  /** Where the live layer's LISTEN connection comes from (ADR 0066); without it, the live route is not mounted. */
+  live?: { connectionString: string };
 }
 
-export function createServices({ db, blobs, auth, secrets, adapters, siteSources, clock, log }: ServiceParts) {
+export function createServices({ db, blobs, auth, secrets, adapters, siteSources, clock, log, live: liveSettings }: ServiceParts) {
   const assessments = createAssessmentService(db);
   const providers = createProviderLayer({ db, blobs, secrets, adapters, ...(clock && { clock }), ...(log && { log }) });
   // Dive and site Revisions also tell open pages (ADR 0066), through the same listener seam as the Waiting pushes.
   listenToChanges(withRevisionHints(providers.noteChanges));
-  const live = createLive({ db, ...(log && { log }) });
+  const live = createLive({ ...(liveSettings && { connectionString: liveSettings.connectionString }), ...(log && { log }) });
   // Imports of a Provider's dives run in the worker like uploads (ADR 0030).
   const imports = createImportService({ db, blobs, providerImports: providers.diveImports, afterImport: (userId) => assessments.refreshUser(userId) });
   const { pushes, waitingPushes } = providers;

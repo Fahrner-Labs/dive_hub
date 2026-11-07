@@ -12,6 +12,8 @@ export interface LiveLog {
 export interface LiveListener {
   start(): void;
   stop(): Promise<void>;
+  /** Whether LISTEN is up now: until it is, no hint can arrive, so a stream must not open. */
+  ready(): boolean;
 }
 
 const RETRY_MS = [500, 1_000, 2_000, 5_000, 10_000, 30_000];
@@ -25,6 +27,7 @@ export function createListener({ connectionString, hub, log }: {
   let retry: ReturnType<typeof setTimeout> | undefined;
   let attempt = 0;
   let stopped = false;
+  let listening = false;
 
   const schedule = () => {
     if (stopped) return;
@@ -52,6 +55,7 @@ export function createListener({ connectionString, hub, log }: {
     try {
       await next.connect();
       await next.query(`LISTEN ${HINT_CHANNEL}`);
+      listening = true;
       attempt = 0;
       hub.startHeartbeat();
       log.info?.({ channel: HINT_CHANNEL }, 'listening for live hints');
@@ -64,6 +68,7 @@ export function createListener({ connectionString, hub, log }: {
   function lost(which: pg.Client) {
     if (client !== which) return;
     client = null;
+    listening = false;
     void which.end().catch(() => undefined);
     // A server-side gap is invisible to clients; closing their streams sends them through the reconnect refetch.
     hub.closeAll();
@@ -78,11 +83,13 @@ export function createListener({ connectionString, hub, log }: {
     },
     async stop() {
       stopped = true;
+      listening = false;
       if (retry) clearTimeout(retry);
       retry = undefined;
       const ending = client;
       client = null;
       if (ending) await ending.end().catch(() => undefined);
     },
+    ready: () => listening,
   };
 }
