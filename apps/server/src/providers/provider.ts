@@ -3,9 +3,11 @@
 // and does only what is its own; the registry refuses an adapter without the method for something it declares. Connections,
 // credentials, Pushes, leases, pacing, problem codes and the routes are the generic layer's (connection-service.ts,
 // push-service.ts, lease-service.ts, routes.ts).
-import type { CylinderMaterial, ParticipantRole, ProviderImportPlan } from '../db/schema.js';
+import type { ParticipantRole, ProviderImportPlan } from '../db/schema.js';
 import type { DiveMode, Position, SiteWaterType } from '../vocabulary.js';
 import type { RemoteCertification } from '../certifications/certification-providers.js';
+import type { ProviderCylinder } from '../dives/cylinders.js';
+export type { ProviderCylinder };
 import type { SiteSource } from '../sites/sources.js';
 import { wallClockMs } from '../dives/time-zone.js';
 
@@ -380,18 +382,6 @@ export function localStartOf(d: ImportedDive): number {
   const ms = wallClockMs(d.localStart);
   if (ms === null) throw new Error(`Provider dive ${d.remoteId} has an unreadable local start: ${d.localStart}`);
   return ms;
-}
-
-/** A Provider's single tank: what it keeps of a Cylinder. A value it doesn't have is null. */
-export interface ProviderCylinder {
-  volumeL: number | null;
-  material: CylinderMaterial | null;
-  startPressureBar: number | null;
-  endPressureBar: number | null;
-  /** Not compared; used only for `tank_vol_cuft`. */
-  workingPressureBar?: number | null;
-  /** In percent. */
-  gas: { o2: number; he: number } | null;
 }
 
 /** How a Provider's dive record came about, to find why its times differ from a computer's. Never used in matching. */

@@ -1,8 +1,6 @@
 // Appending later Dives with their copies at Providers deleted first where asked (ADR 0063, as merge-service.ts does
 // for a merge, ADR 0038).
-import type { PushService, Removal } from '../../providers/push/push-service.js';
-import type { ProviderServiceError } from '../../providers/registry.js';
-import type { WaitingPushService } from '../../providers/waiting-push/waiting-push-service.js';
+import type { DiveProviderRefusal, DivePushes, DiveRemoval, DiveWaitingPushes } from '../provider-port.js';
 import { DiveError } from '../dive-service.js';
 import type { LogbookService } from '../logbook-service.js';
 import type { ContinuationService } from './continuation-service.js';
@@ -10,14 +8,14 @@ import type { ContinuationService } from './continuation-service.js';
 export interface AppendDeps {
   continuation: Pick<ContinuationService, 'append'>;
   logbook: Pick<LogbookService, 'findManagedDive'>;
-  pushes: Pick<PushService, 'currentOf' | 'removeAt'>;
-  waitingPushes: Pick<WaitingPushService, 'deletingItself'>;
+  pushes: Pick<DivePushes, 'currentOf' | 'removeAt'>;
+  waitingPushes: Pick<DiveWaitingPushes, 'deletingItself'>;
 }
 
 /** What an append did: the kept Dive, or the refusal at a Provider that appended nothing, with which copies are gone already. */
 export type AppendOutcome =
   | { kept: string; failure: null }
-  | { kept: null; failure: ProviderServiceError; providers: Removal['copies'] };
+  | { kept: null; failure: DiveProviderRefusal; providers: DiveRemoval['copies'] };
 
 interface Side { id: string; version: number }
 

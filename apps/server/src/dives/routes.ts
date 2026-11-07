@@ -35,12 +35,10 @@ import { waterMismatch } from './calc/water.js';
 import { recordingPosition } from '../sites/dive-site-link.js';
 import type { CentreService } from '../centres/centre-service.js';
 import type { DiverService } from '../divers/diver-service.js';
-import type { PushService } from '../providers/push/push-service.js';
-import type { WaitingPushService } from '../providers/waiting-push/waiting-push-service.js';
 import type { AssessmentService } from '../assessment/assessment-service.js';
 import { refreshAssessmentsAfterChange } from './assessment-refresh.js';
 import { WaitingPushView } from './waiting-push-view.js';
-import type { ProviderAnswers } from '../providers/route-parts.js';
+import type { DiveProviderAnswers, DivePushes, DiveWaitingPushes } from './provider-port.js';
 import { Change, Changes, DateTime, historyRoute, IdParams, Made, Nullable, refTo } from '../http/schemas.js';
 
 export interface DiveRouteDeps {
@@ -53,8 +51,8 @@ export interface DiveRouteDeps {
   merging: MergingService;
   /** What in a logbook can't be right as it stands (ADR 0038). */
   checks: LogbookCheckService;
-  pushes: PushService;
-  waitingPushes: Pick<WaitingPushService, 'deletingItself'>;
+  pushes: Pick<DivePushes, 'currentOf'>;
+  waitingPushes: Pick<DiveWaitingPushes, 'deletingItself'>;
   /** Deleting a Dive asks every Provider it is at (ADR 0026, 0027). */
   deletion: DeletionService;
   /** Merging two Dives deletes the one not kept at the Providers asked first (ADR 0038). */
@@ -64,7 +62,7 @@ export interface DiveRouteDeps {
   append: AppendService;
   assessments: AssessmentService;
   /** How a refusal about a Provider is answered (providers/route-parts.ts). */
-  providerAnswers: ProviderAnswers;
+  providerAnswers: DiveProviderAnswers;
 }
 
 

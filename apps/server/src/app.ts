@@ -37,6 +37,8 @@ import { siteRoutes } from './sites/routes.js';
 import { centreRoutes } from './centres/routes.js';
 import { siteImportRoutes } from './sites/import/site-import-routes.js';
 import { providerAnswers, ProviderProblemSchema } from './providers/route-parts.js';
+import type { ProviderServiceError } from './providers/registry.js';
+import type { DiveProviderAnswers } from './dives/provider-port.js';
 import { providerRoutes } from './providers/routes.js';
 import { assessmentRoutes } from './assessment/routes.js';
 import { aiAccessRoutes } from './mcp/access-routes.js';
@@ -104,9 +106,15 @@ export async function buildApp(deps: AppDeps, app: Server = createServer()) {
   await app.register(adminRoutes, { prefix: '/api', auth, passwordResets, userAdmin: deps.userAdmin, invitations: deps.invitations, baseUrl });
   await app.register(importRoutes, { prefix: '/api', auth, imports: deps.imports, waitingPushes, maxUploadBytes: deps.maxUploadBytes });
   await app.register(logbookRoutes, { prefix: '/api', auth, logbook, pushes, waitingPushes });
+  // dives owns the shapes it needs (dives/provider-port.ts); this is where the real Provider answerer is wired in.
+  // The only failures it answers come from the Push service, so they are ProviderServiceErrors.
+  const diveAnswers: DiveProviderAnswers = {
+    reply: (failure, reply, extra) => providerAnswers.reply(failure as ProviderServiceError, reply, extra),
+    answer: providerAnswers.answer,
+  };
   await app.register(diveRoutes, {
     prefix: '/api', auth, logbook, divers, centres, dives, merging, checks, pushes, waitingPushes,
-    deletion: deps.deletion, merge: deps.merge, continuation: deps.continuation, append: deps.append, assessments, providerAnswers,
+    deletion: deps.deletion, merge: deps.merge, continuation: deps.continuation, append: deps.append, assessments, providerAnswers: diveAnswers,
   });
   await app.register(candidateRoutes, { prefix: '/api', auth, candidates: deps.candidates, assessments });
   await app.register(assessmentRoutes, { prefix: '/api', auth, assessments });

@@ -3,8 +3,19 @@
 import { and, asc, eq, inArray, isNull, sql } from 'drizzle-orm';
 import type { Queryable, Tx } from '../db/client.js';
 import { cylinder, dive, recording, revision, sampleSeries, type CylinderMaterial } from '../db/schema.js';
-import type { ProviderCylinder } from '../providers/provider.js';
 import { writeRevision, type Actor, type Changes, type RevisionCause } from '../revisions/revisions.js';
+
+/** A Provider's single tank: what it keeps of a Cylinder. A value it doesn't have is null. */
+export interface ProviderCylinder {
+  volumeL: number | null;
+  material: CylinderMaterial | null;
+  startPressureBar: number | null;
+  endPressureBar: number | null;
+  /** Not compared; used only for `tank_vol_cuft`. */
+  workingPressureBar?: number | null;
+  /** In percent. */
+  gas: { o2: number; he: number } | null;
+}
 
 export class CylinderError extends Error {
   constructor(readonly code: 'cylinder_invalid' | 'cylinder_series_not_found') {

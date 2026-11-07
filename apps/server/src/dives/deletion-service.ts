@@ -1,6 +1,5 @@
 // Deleting a Dive with its copies at Providers, and the list of deleted Dives with where they still are (ADR 0026, 0027).
-import type { PushService, Removal } from '../providers/push/push-service.js';
-import type { WaitingPushService } from '../providers/waiting-push/waiting-push-service.js';
+import type { DivePushes, DiveRemoval, DiveWaitingPushes } from './provider-port.js';
 import { DiveError, type DiveService } from './dive-service.js';
 import { diveSummaryOf, providersOf } from './dive-summary-view.js';
 import type { LogbookService } from './logbook-service.js';
@@ -8,14 +7,14 @@ import type { LogbookService } from './logbook-service.js';
 export interface DeletionDeps {
   dives: Pick<DiveService, 'remove'>;
   logbook: Pick<LogbookService, 'findManagedDive' | 'deletedDives'>;
-  pushes: Pick<PushService, 'currentOf' | 'removeAt'>;
-  waitingPushes: Pick<WaitingPushService, 'deletingItself' | 'waitingOf'>;
+  pushes: Pick<DivePushes, 'currentOf' | 'removeAt'>;
+  waitingPushes: Pick<DiveWaitingPushes, 'deletingItself' | 'waitingOf'>;
 }
 
 /** What a delete did: each Provider the Dive was at, its copy deleted or kept, and the refusal that kept the Dive here. */
 export interface Deletion {
-  providers: Removal['copies'];
-  failure: Removal['failure'];
+  providers: DiveRemoval['copies'];
+  failure: DiveRemoval['failure'];
 }
 
 export function createDeletionService({ dives, logbook, pushes, waitingPushes }: DeletionDeps) {
