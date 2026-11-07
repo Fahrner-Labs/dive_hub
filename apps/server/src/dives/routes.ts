@@ -35,8 +35,7 @@ import { waterMismatch } from './calc/water.js';
 import { recordingPosition } from '../sites/dive-site-link.js';
 import type { CentreService } from '../centres/centre-service.js';
 import type { DiverService } from '../divers/diver-service.js';
-import type { AssessmentService } from '../assessment/assessment-service.js';
-import { refreshAssessmentsAfterChange } from './assessment-refresh.js';
+import { refreshAssessmentsAfterChange, type AssessmentRefresh } from './assessment-refresh.js';
 import { WaitingPushView } from './waiting-push-view.js';
 import type { DiveProviderAnswers, DivePushes, DiveWaitingPushes } from './provider-port.js';
 import { Change, Changes, DateTime, historyRoute, IdParams, Made, Nullable, refTo } from '../http/schemas.js';
@@ -60,7 +59,7 @@ export interface DiveRouteDeps {
   /** Appending later Dives to the earlier one (ADR 0063), deleting their copies at the Providers asked first. */
   continuation: Pick<ContinuationService, 'previousCandidate' | 'restorePreview'>;
   append: AppendService;
-  assessments: AssessmentService;
+  assessments: AssessmentRefresh;
   /** How a refusal about a Provider is answered (providers/route-parts.ts). */
   providerAnswers: DiveProviderAnswers;
 }
