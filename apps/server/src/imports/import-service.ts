@@ -9,7 +9,7 @@ import type { BlobStore } from '../storage/blob-store.js';
 import { DEFAULT_LIMITS, eachFile, looksLikeZip, type ArchiveEntry } from './archive.js';
 import { emitHint } from '../live/emit.js';
 import { createFileFormats, formatOf, type FileFormat } from './formats.js';
-import { DAY_MS } from './matching.js';
+import { DAY_MS } from '../dives/matching.js';
 import type { ParsedRecording } from './parsed-recording.js';
 import { placeRecording } from './placement.js';
 

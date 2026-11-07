@@ -19,7 +19,7 @@ import { createFileFormats, formatOf, type FileFormat } from '../../imports/form
 import type { ParsedRecording } from '../../imports/parsed-recording.js';
 import { PROCESS_IMPORT_TASK, kindOfMode } from '../../imports/import-service.js';
 import { deviceDiver, placeRecording } from '../../imports/placement.js';
-import { DAY_MS, MAX_OFFSET_MS, entryMatches } from '../../imports/matching.js';
+import { DAY_MS, MAX_OFFSET_MS, entryMatches } from '../../dives/matching.js';
 import { recordFindings } from './gone-dives.js';
 import { probablyNoDive } from '../../dives/checks/logbook-check-rules.js';
 import { siteRef } from '../../dives/dive-summary-view.js';

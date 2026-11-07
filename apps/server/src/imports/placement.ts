@@ -15,7 +15,7 @@ import { probablyNoDive } from '../dives/checks/logbook-check-rules.js';
 import { writeRevision, type Actor } from '../revisions/revisions.js';
 import { recordingKeySource, type ParsedRecording } from './parsed-recording.js';
 import { linkNearbySite, positionColumns } from '../sites/dive-site-link.js';
-import { DAY_MS, MAX_OFFSET_MS, alignedForMatching, decideMatch, overlapWindow } from './matching.js';
+import { DAY_MS, MAX_OFFSET_MS, alignedForMatching, decideMatch, overlapWindow } from '../dives/matching.js';
 
 export interface Placement {
   userId: string;

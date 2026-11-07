@@ -7,7 +7,7 @@ import type { Auth } from '../../auth/auth.js';
 import { requireUser, userOf } from '../../auth/fastify.js';
 import { UTC_OFFSET_SOURCES } from '../../db/schema.js';
 import { answerErrors, answers, Problem } from '../../http/problems.js';
-import type { DuplicateReason } from '../../imports/matching.js';
+import type { DuplicateReason } from '../matching.js';
 import { CandidateError, type CandidateService } from './candidate-service.js';
 import { DateTime, IdParams, Nullable } from '../../http/schemas.js';
 
