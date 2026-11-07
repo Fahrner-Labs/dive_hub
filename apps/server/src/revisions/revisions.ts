@@ -33,8 +33,8 @@ export type Changes = Record<string, { from: unknown; to: unknown }>;
 
 /**
  * Who hears, inside the change's transaction, that a Dive or a dive site changed: the Waiting push queue (ADR 0056),
- * wrapped by compose.ts to also hint open pages (ADR 0066). dives/ owns this interface and providers/ implements it,
- * so writing a Revision doesn't call the providers' queue (ADR 0053's seam for dives and providers).
+ * wrapped by compose.ts to also hint open pages (ADR 0066). revisions/ owns this interface and providers/ implements
+ * it, so writing a Revision doesn't call the providers' queue (ADR 0053's seam for revisions and providers).
  * createProviderLayer sets it; every process that writes Revisions builds one.
  */
 export interface ChangeListener {
