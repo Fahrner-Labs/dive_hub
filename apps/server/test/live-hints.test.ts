@@ -4,11 +4,13 @@ import { randomUUID } from 'node:crypto';
 import type { AddressInfo } from 'node:net';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { user } from '../src/db/auth-schema.js';
+import { diveSiteExternalId } from '../src/db/schema.js';
 import { emitHint, parseHint } from '../src/live/emit.js';
 import { createHub } from '../src/live/hub.js';
+import type { ImportedValues, SiteSourceAdapter, SourceSite } from '../src/sites/import/site-source.js';
 import { makeSyntheticDive } from './fixtures/synthetic-dive.js';
 import {
-  BASE_URL, createTestApp, createTestDatabase, createUser, databaseReachable, multipartFile, signIn, type TestDatabase,
+  BASE_URL, createTestApp, createTestDatabase, createUser, databaseReachable, multipartFile, signIn, unreachable, type TestDatabase,
 } from './support.js';
 
 type Stream = { events: Record<string, unknown>[]; close: () => void; closed: Promise<void> };
@@ -90,24 +92,33 @@ describe('a shared-audience hint', () => {
   });
 });
 
+type Method = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+const call = (app: Awaited<ReturnType<typeof createTestApp>>['app'], method: Method, url: string, cookie: string, payload?: object) =>
+  app.inject({ method, url, headers: { cookie, origin: BASE_URL }, ...(payload !== undefined && { payload }) });
+
 describe.skipIf(!(await databaseReachable()))('live hints', () => {
   let t: TestDatabase;
   let ctx: Awaited<ReturnType<typeof createTestApp>>;
   let base: string;
   let tim: string;
   let other: string;
+  let admin: string;
   let timId: string;
   let diveId: string;
+  let wikidataAnswer: SourceSite[] = [];
+  const wikidata: SiteSourceAdapter = { source: 'wikidata', fetch: async () => wikidataAnswer };
   const streams: Stream[] = [];
 
   beforeAll(async () => {
     t = await createTestDatabase();
-    ctx = await createTestApp(t);
+    ctx = await createTestApp(t, { siteSources: { osm: unreachable('osm'), wikidata, ssi: unreachable('ssi') } });
     const timUser = await createUser(ctx.auth, 'tim@example.com');
     timId = timUser.id;
     await createUser(ctx.auth, 'other@example.com');
+    await createUser(ctx.auth, 'admin@example.com', 'admin');
     tim = await signIn(ctx.app, 'tim@example.com');
     other = await signIn(ctx.app, 'other@example.com');
+    admin = await signIn(ctx.app, 'admin@example.com');
     const { payload, headers } = multipartFile('main.fit', makeSyntheticDive({ serialNumber: 111 }));
     const uploaded = await ctx.app.inject({ method: 'POST', url: '/api/imports', payload, headers: { ...headers, cookie: tim } });
     await ctx.imports.processImport(uploaded.json().id);
@@ -174,6 +185,27 @@ describe.skipIf(!(await databaseReachable()))('live hints', () => {
     expect(hint).toEqual({ v: 1, kind: 'dive', id: diveId });
   });
 
+  /** Creates a site as `cookie` and returns what the API answered. */
+  async function createSite(cookie: string, body: object) {
+    const response = await call(ctx.app, 'POST', '/api/dive-sites', cookie, body);
+    expect(response.statusCode).toBe(201);
+    return response.json() as { id: string; version: number };
+  }
+
+  it('turns a site created by one User into a site hint for every open page', async () => {
+    const timStream = await openStream(base, tim);
+    const otherStream = await openStream(base, other);
+    streams.push(timStream, otherStream);
+    await settle(300);
+
+    const site = await createSite(tim, { name: 'Hint Reef' });
+    // Sites are shared: both Users may read it, so both hear about it.
+    for (const stream of [timStream, otherStream]) {
+      expect(await until(stream, (event) => event.kind === 'site' && event.id === site.id))
+        .toEqual({ v: 1, kind: 'site', id: site.id });
+    }
+  });
+
   it('turns a site edit into a site hint for every open page', async () => {
     const timStream = await openStream(base, tim);
     const otherStream = await openStream(base, other);
@@ -217,6 +249,77 @@ describe.skipIf(!(await databaseReachable()))('live hints', () => {
       payload: { version: site.version, name: 'Crowded Reef Edited' },
     });
     expect(edited.statusCode).toBe(200);
+    expect(await until(stream, (event) => event.kind === 'site' && event.id === site.id))
+      .toEqual({ v: 1, kind: 'site', id: site.id });
+  });
+
+  it('turns a deleted site into a site hint for every open page', async () => {
+    const site = await createSite(tim, { name: 'Doomed Reef' });
+    const stream = await openStream(base, other);
+    streams.push(stream);
+    await settle(300);
+    expect((await call(ctx.app, 'DELETE', `/api/dive-sites/${site.id}`, tim)).statusCode).toBe(204);
+    expect(await until(stream, (event) => event.kind === 'site' && event.id === site.id))
+      .toEqual({ v: 1, kind: 'site', id: site.id });
+  });
+
+  it('turns a site taking up a Source offer into a site hint for every open page', async () => {
+    const site = await createSite(tim, { name: 'Offered Reef' });
+    await t.db.insert(diveSiteExternalId).values({
+      siteId: site.id, source: 'wikidata', externalId: 'Q-OFFER',
+      imported: { name: 'Offered Reef', position: null, country: 'EG', waterBody: null, description: null, maxDepthM: null, waterType: null } satisfies ImportedValues,
+    });
+    const stream = await openStream(base, other);
+    streams.push(stream);
+    await settle(300);
+    expect((await call(ctx.app, 'POST', `/api/dive-sites/${site.id}/adopt`, tim, { source: 'wikidata', version: site.version })).statusCode).toBe(200);
+    expect(await until(stream, (event) => event.kind === 'site' && event.id === site.id))
+      .toEqual({ v: 1, kind: 'site', id: site.id });
+  });
+
+  it('turns a merge into hints for both sites and for each moved Dive, even when the kept site fills nothing', async () => {
+    // The kept site already has every field a merge could fill; the merge only moves the Dive and removes the duplicate.
+    const kept = await createSite(tim, { name: 'Kept Reef', country: 'EG' });
+    const duplicate = await createSite(tim, { name: 'Duplicate Reef' });
+    const view = await call(ctx.app, 'GET', `/api/dives/${diveId}`, tim);
+    const attached = await call(ctx.app, 'PATCH', `/api/dives/${diveId}`, tim, { version: view.json().version, siteId: duplicate.id });
+    expect(attached.statusCode).toBe(200);
+
+    const otherStream = await openStream(base, other);
+    const timStream = await openStream(base, tim);
+    streams.push(otherStream, timStream);
+    await settle(300);
+    const merged = await call(ctx.app, 'POST', `/api/dive-sites/${duplicate.id}/merge`, tim, {
+      intoId: kept.id, version: duplicate.version, intoVersion: kept.version,
+    });
+    expect(merged.statusCode).toBe(200);
+    expect(await until(otherStream, (event) => event.kind === 'site' && event.id === kept.id))
+      .toEqual({ v: 1, kind: 'site', id: kept.id });
+    // The merged site leaves open lists too, so its own id must arrive.
+    expect(await until(otherStream, (event) => event.kind === 'site' && event.id === duplicate.id))
+      .toEqual({ v: 1, kind: 'site', id: duplicate.id });
+    // A moved Dive gets its own hint through writeRevision (ADR 0066), for the User who keeps it.
+    expect(await until(timStream, (event) => event.kind === 'dive' && event.id === diveId))
+      .toEqual({ v: 1, kind: 'dive', id: diveId });
+  });
+
+  it('turns a Site import\'s sites into site hints for every open page', async () => {
+    wikidataAnswer = [{
+      source: 'wikidata',
+      externalId: 'Q-HINT-REEF',
+      values: { name: 'Imported Hint Reef', position: null, country: 'EG', waterBody: null, description: null, maxDepthM: null, waterType: null },
+      sameAs: {},
+    }];
+    const stream = await openStream(base, other);
+    streams.push(stream);
+    await settle(300);
+    const started = await call(ctx.app, 'POST', '/api/admin/site-imports', admin, {
+      sources: ['wikidata'], area: { kind: 'world' }, language: 'en',
+    });
+    expect(started.statusCode).toBe(202);
+    await ctx.siteImports.run(started.json().id);
+    const page = await call(ctx.app, 'GET', '/api/dive-sites?q=Imported%20Hint%20Reef', tim);
+    const site = (page.json() as { sites: { id: string }[] }).sites[0]!;
     expect(await until(stream, (event) => event.kind === 'site' && event.id === site.id))
       .toEqual({ v: 1, kind: 'site', id: site.id });
   });
