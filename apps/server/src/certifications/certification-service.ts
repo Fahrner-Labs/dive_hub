@@ -7,6 +7,7 @@ import type { Db, Queryable } from '../db/client.js';
 import { certification, original } from '../db/schema.js';
 import type { CertificationImageState, CertificationVerification } from '../db/schema.js';
 import { managementOf } from '../divers/management.js';
+import type { CertificationSummary } from '../divers/certification-port.js';
 import { audienceOfDiver, emitHint } from '../live/emit.js';
 import { writeRevision } from '../revisions/revisions.js';
 import type { ConnectionService } from '../providers/connection-service.js';
@@ -33,16 +34,6 @@ export function expiryOf(expiresOn: string | null, today = isoDay(new Date())): 
   const limit = isoDay(new Date(new Date(`${today}T00:00:00Z`).getTime() + EXPIRING_SOON_DAYS * 86_400_000));
   return expiresOn <= limit ? 'soon' : 'valid';
 }
-
-/** What the Divers list shows of a Diver's cards. `newest` is the first card of the list: an expired card only when all are. */
-export interface CertificationSummary {
-  count: number;
-  newest: { agency: string; level: string } | null;
-  expired: number;
-  expiringSoon: number;
-}
-
-export const NO_CERTIFICATIONS: CertificationSummary = { count: 0, newest: null, expired: 0, expiringSoon: 0 };
 
 export class CertificationError extends Error {
   constructor(

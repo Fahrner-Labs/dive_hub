@@ -6,7 +6,7 @@ import type { Auth } from '../auth/auth.js';
 import { requireAdmin, requireUser, userOf } from '../auth/fastify.js';
 import { callerOf } from '../http/caller.js';
 import { answerErrors, Problem } from '../http/problems.js';
-import { NO_CERTIFICATIONS, type CertificationService } from '../certifications/certification-service.js';
+import { NO_CERTIFICATIONS, type DiverCertifications } from './certification-port.js';
 import { replyDiverError } from './diver-answers.js';
 import type { DiverService } from './diver-service.js';
 import { DiverDetailsView, DiverSource, DiverView, ExternalDiverView } from './diver-view.js';
@@ -15,8 +15,8 @@ import { DateTime, IdParams, Nullable } from '../http/schemas.js';
 export interface DiverRouteDeps {
   auth: Auth;
   divers: DiverService;
-  /** Releases the card pictures of a deleted Diver (ADR 0050). */
-  certifications: CertificationService;
+  /** The summaries on the list, and the pictures of a deleted Diver (ADR 0050). */
+  certifications: DiverCertifications;
 }
 
 const Name = Type.String({ minLength: 1, maxLength: 100, pattern: '\\S' });
