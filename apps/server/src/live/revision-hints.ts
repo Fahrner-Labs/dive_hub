@@ -2,7 +2,7 @@
 // hints are any-origin by construction: a web edit, a worker import, MCP, or another tab all arrive here.
 import type { ChangeListener } from '../dives/revisions.js';
 import type { Tx } from '../db/client.js';
-import { audienceOfDive, audienceOfEveryone, emitHint } from './emit.js';
+import { audienceOfDive, emitHint } from './emit.js';
 
 /** Wraps the process's existing listener (the Waiting push queue) so every Revision also notifies open pages. */
 export function withRevisionHints(inner: ChangeListener): ChangeListener {
@@ -13,7 +13,8 @@ export function withRevisionHints(inner: ChangeListener): ChangeListener {
     },
     async siteChanged(tx: Tx, siteId, at) {
       await inner.siteChanged(tx, siteId, at);
-      await emitHint(tx, { kind: 'site', id: siteId, audience: await audienceOfEveryone(tx) });
+      // Dive sites are shared and any User may read them (ADR 0020): the wildcard keeps the payload constant-sized.
+      await emitHint(tx, { kind: 'site', id: siteId, audience: '*' });
     },
   };
 }
