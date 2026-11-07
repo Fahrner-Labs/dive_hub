@@ -10,7 +10,7 @@ import {
 import { nextVersion, participantsOf } from '../../dives/dive-service.js';
 import { managedDiverIds } from '../../divers/management.js';
 import { columnsOf } from '../../dives/dive-values.js';
-import { writeRevision, type Actor, type Changes } from '../../dives/revisions.js';
+import { writeRevision, type Actor, type Changes } from '../../revisions/revisions.js';
 import { placeLocalTime, type PlacedTime } from '../../dives/time-zone.js';
 import { siteRef } from '../../sites/dive-site-link.js';
 import { siteDataAllowed, siteForProvider, type ProviderSite } from '../../sites/provider-sites.js';

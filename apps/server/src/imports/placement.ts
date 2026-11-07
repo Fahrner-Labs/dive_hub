@@ -12,7 +12,7 @@ import { attachRecording, createDiveFromRecording, refreshFromPrimary } from '..
 import { managedDiverIds } from '../divers/management.js';
 import { reviseDive, untieLostSeries } from '../dives/cylinders.js';
 import { probablyNoDive } from '../dives/checks/logbook-check-rules.js';
-import { writeRevision, type Actor } from '../dives/revisions.js';
+import { writeRevision, type Actor } from '../revisions/revisions.js';
 import { recordingKeySource, type ParsedRecording } from './parsed-recording.js';
 import { linkNearbySite, positionColumns } from '../sites/dive-site-link.js';
 import { DAY_MS, MAX_OFFSET_MS, alignedForMatching, decideMatch, overlapWindow } from './matching.js';

@@ -4,7 +4,7 @@
 import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { attachRecording, refreshFromPrimary } from '../src/dives/dive-service.js';
-import type { Actor } from '../src/dives/revisions.js';
+import type { Actor } from '../src/revisions/revisions.js';
 import { makeSyntheticDive } from './fixtures/synthetic-dive.js';
 import {
   BASE_URL, createTestApp, createTestDatabase, createUser, databaseReachable, multipartFile, signIn, type TestDatabase,

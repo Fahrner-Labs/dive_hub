@@ -20,7 +20,7 @@ import { createScheduledFetch } from './dive-import/scheduled-fetch.js';
 import { createSitePickService } from './site-pick.js';
 import { createWaitingPushService, type ProviderLog } from './waiting-push/waiting-push-service.js';
 import { consoleLog, noteDiveChange, noteSiteChange } from './waiting-push/waiting-push-queue.js';
-import { listenToChanges } from '../dives/revisions.js';
+import { listenToChanges } from '../revisions/revisions.js';
 
 export function createProviderLayer(deps: {
   db: Db; secrets: SecretBox; blobs: BlobStore; adapters: ProviderAdapter[]; clock?: Clock;

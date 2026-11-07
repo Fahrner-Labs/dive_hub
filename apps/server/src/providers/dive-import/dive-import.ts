@@ -12,7 +12,7 @@ import {
   connection, dive, diveSite, device, importJob, importOriginal, original, providerSiteData, push, user,
   recording, type ComputerChoice, type DiveImportMode, type DiveKind, type ImportOutcome, type ProviderImportPlan, type UtcOffsetSource,
 } from '../../db/schema.js';
-import { writeRevision, type Actor } from '../../dives/revisions.js';
+import { writeRevision, type Actor } from '../../revisions/revisions.js';
 import type { PlacedTime } from '../../dives/time-zone.js';
 import { errorMessage } from '../../errors.js';
 import { createFileFormats, formatOf, type FileFormat } from '../../imports/formats.js';

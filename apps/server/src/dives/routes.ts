@@ -29,7 +29,7 @@ import type { ContinuationService } from './continuation/continuation-service.js
 import { LOGBOOK_CHECK_RULES } from './checks/logbook-check-rules.js';
 import type { LogbookCheckService } from './checks/logbook-check-service.js';
 import { valuesFromRecording, type DiveValues } from './dive-values.js';
-import { REVISION_CAUSES } from './revisions.js';
+import { REVISION_CAUSES } from '../revisions/revisions.js';
 import { sacOfDive } from './calc/sac.js';
 import { waterMismatch } from './calc/water.js';
 import { recordingPosition } from '../sites/dive-site-link.js';

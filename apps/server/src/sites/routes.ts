@@ -5,7 +5,7 @@ import type { Auth } from '../auth/auth.js';
 import { requireUser } from '../auth/fastify.js';
 import { callerOf } from '../http/caller.js';
 import { answerErrors, answers, Problem, problem } from '../http/problems.js';
-import { REVISION_CAUSES } from '../dives/revisions.js';
+import { REVISION_CAUSES } from '../revisions/revisions.js';
 import { SITE_WATER_TYPES } from '../vocabulary.js';
 import { NEARBY_M, SITE_SORTS, SiteError, type SiteService } from './site-service.js';
 import { SiteView, toSiteView } from './site-view.js';

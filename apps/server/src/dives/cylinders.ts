@@ -4,7 +4,7 @@ import { and, asc, eq, inArray, isNull, sql } from 'drizzle-orm';
 import type { Queryable, Tx } from '../db/client.js';
 import { cylinder, dive, recording, revision, sampleSeries, type CylinderMaterial } from '../db/schema.js';
 import type { ProviderCylinder } from '../providers/provider.js';
-import { writeRevision, type Actor, type Changes, type RevisionCause } from './revisions.js';
+import { writeRevision, type Actor, type Changes, type RevisionCause } from '../revisions/revisions.js';
 
 export class CylinderError extends Error {
   constructor(readonly code: 'cylinder_invalid' | 'cylinder_series_not_found') {

@@ -8,7 +8,7 @@ import { certification, original } from '../db/schema.js';
 import type { CertificationImageState, CertificationVerification } from '../db/schema.js';
 import { managementOf } from '../divers/management.js';
 import { audienceOfDiver, emitHint } from '../live/emit.js';
-import { writeRevision } from '../dives/revisions.js';
+import { writeRevision } from '../revisions/revisions.js';
 import type { ConnectionService } from '../providers/connection-service.js';
 import { ProviderError, type RemoteCertification } from '../providers/provider.js';
 import { named, ProviderServiceError, type ProviderRegistry } from '../providers/registry.js';

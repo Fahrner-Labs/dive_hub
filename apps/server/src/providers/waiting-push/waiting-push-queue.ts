@@ -2,7 +2,7 @@
 // (several Users managing one Diver have Connections to the same account, and two entries would send twice), and the
 // Graphile Worker job of the Connection that runs at the earliest due time. Written where a Dive changes (a Revision,
 // a site's name or position) and by the User's decisions; the worker step that sends is elsewhere.
-// It imports only the database layer. Merging asks it `deletingItself` through the ProviderLinks app.ts passes in. Revisions and site changes reach it through the ChangeListener of `dives/revisions.ts` (set in layer.ts).
+// It imports only the database layer. Merging asks it `deletingItself` through the ProviderLinks app.ts passes in. Revisions and site changes reach it through the ChangeListener of `revisions/revisions.ts` (set in layer.ts).
 import { and, asc, desc, eq, inArray, min, ne, or, sql } from 'drizzle-orm';
 import type { Queryable, Tx } from '../../db/client.js';
 import { currentRemote, type PushRow } from '../current-remote.js';
@@ -85,7 +85,7 @@ async function importedFrom(q: Queryable, cause: string, actor?: { type: string;
 }
 
 /**
- * A Dive changed (`cause` is the Revision's, a plain string because `RevisionCause` lives in `dives/revisions.ts`).
+ * A Dive changed (`cause` is the Revision's, a plain string because `RevisionCause` lives in `revisions/revisions.ts`).
  * For each Provider where the Dive has a remote dive, the Dive's Connection (the one its Push was made through, still
  * the Diver's) decides: send on change queues it, delete at the Provider queues a delete, a restore cancels one. Where
  * the Dive has none, the Diver's oldest Connection with "send new dives" queues it, unless an import made the change.

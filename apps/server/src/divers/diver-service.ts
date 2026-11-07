@@ -10,7 +10,7 @@ import {
 } from '../db/schema.js';
 import { managedDiverIds, managementOf } from './management.js';
 import { renumber } from '../dives/dive-numbers.js';
-import { userActor, writeRevision } from '../dives/revisions.js';
+import { userActor, writeRevision } from '../revisions/revisions.js';
 import { DiverError } from './diver-error.js';
 import { mergeExternalDiver } from './merge.js';
 import { tidyName } from './diver-name.js';

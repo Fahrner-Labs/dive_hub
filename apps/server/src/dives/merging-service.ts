@@ -18,7 +18,7 @@ import { valuesOfDive, type DiveValues } from './dive-values.js';
 import type { LogbookCheckService } from './checks/logbook-check-service.js';
 import { takeCylinders } from './cylinders.js';
 import { takeWeighting } from './weighting.js';
-import { changeListener, userActor, writeRevision, type Actor, type Changes } from './revisions.js';
+import { changeListener, userActor, writeRevision, type Actor, type Changes } from '../revisions/revisions.js';
 import { renumber } from './dive-numbers.js';
 
 type DiveRow = typeof dive.$inferSelect;

@@ -4,7 +4,7 @@ import { and, desc, eq, sql } from 'drizzle-orm';
 import { runOnce } from 'graphile-worker';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { connection, dive, diveSiteExternalId, importJob, providerConflict, push, revision, waitingPush } from '../src/db/schema.js';
-import { writeRevision } from '../src/dives/revisions.js';
+import { writeRevision } from '../src/revisions/revisions.js';
 import { record } from '../src/providers/conflicts/conflict-service.js';
 import { clearIfUnchanged, QUIET_MS, stampOf, WAITING_PUSHES_TASK, waitingPushesKey } from '../src/providers/waiting-push/waiting-push-queue.js';
 import { ProviderError } from '../src/providers/provider.js';

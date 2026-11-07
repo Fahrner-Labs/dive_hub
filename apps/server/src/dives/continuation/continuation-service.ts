@@ -17,7 +17,7 @@ import {
 import {
   addedParticipants, deleteLeftBehind, fillValues, mergeNotes, moveLinks, type ProviderLinks,
 } from '../merging-service.js';
-import { changeListener, userActor, writeRevision, type Actor, type Changes } from '../revisions.js';
+import { changeListener, userActor, writeRevision, type Actor, type Changes } from '../../revisions/revisions.js';
 import { takeWeighting } from '../weighting.js';
 import { isJoined } from '../recording-units.js';
 import { buildJoined, partsOfJoined, rebuildJoined } from './joined-recording.js';

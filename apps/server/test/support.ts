@@ -11,7 +11,7 @@ import { buildApp } from '../src/app.js';
 import { createServices } from '../src/compose.js';
 import { createDb, type Db } from '../src/db/client.js';
 import { migrateDatabase } from '../src/db/migrate.js';
-import { listenToChanges } from '../src/dives/revisions.js';
+import { listenToChanges } from '../src/revisions/revisions.js';
 import type { SiteSourceAdapter } from '../src/sites/import/site-source.js';
 import type { ImportSource } from '../src/sites/sources.js';
 import { createSecretBox } from '../src/secrets/secret-box.js';
