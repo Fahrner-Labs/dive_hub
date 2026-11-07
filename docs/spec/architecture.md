@@ -635,7 +635,7 @@ Implemented:
   dive's position, else its site's at the Provider (summer time through `Intl`), else the offset of the Diver's closest
   Dive within 7 days, else `unknown` (kept as if UTC). `dive.utc_offset_source` and `recording.utc_offset_source`
   (`device`, `position`, `nearby`, `unknown`); the Dive's follows its Primary recording. Placement and logbook matching
-  compare local times where an offset is unknown (`alignedForMatching`, `entryMatches` in `src/imports/matching.ts`).
+  compare local times where an offset is unknown (`alignedForMatching`, `entryMatches` in `src/dives/matching.ts`).
 - **The adapter** declares `dives.import` `list` and offers `dives.list(context, { recent })`, `dives.parse(record,
   context)` and `dives.parser`; SSI's are in `src/providers/ssi/ssi-import.ts` (evidence, local start, values, profile,
   Device, site ID and position, buddies as SSI accounts, notes). `ImportedDive`, `ImportContext` and `REFERENCE_PREFIX`
@@ -896,7 +896,7 @@ its [amendment](../decisions/0035-mcp-connector.md#amendment-2026-10-06-as-built
 - Not yet: rules beyond overlaps (a number twice, a dive inside a no-fly time), telling by e-mail, the checks over MCP.
 
 **Slice 22b (2026-10-09): dive numbers** ([ADR 0048](../decisions/0048-dive-numbers.md)).
-- `dive.number` is kept by `renumber(tx, diverIds)` in `apps/server/src/dives/dive-numbers.ts`: one `UPDATE … FROM (row_number() …)` per
+- `dive.number` is kept by `renumber(tx, diverIds)` in `apps/server/src/divers/dive-numbers.ts`: one `UPDATE … FROM (row_number() …)` per
   Diver, after a row lock on the Diver rows (ordered by id) so two concurrent changes do not interleave. It changes no `version` and
   writes no Revision. Called wherever a Diver's counted Dives change: `createDiveFromRecording`, `applyToDive` (start time or Primary
   recording), `remove`, `restore`, merge and move (both Divers), the provider dive import (create, and an update that moves the start),
