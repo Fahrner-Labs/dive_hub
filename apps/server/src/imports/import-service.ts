@@ -4,12 +4,12 @@ import type { Db } from '../db/client.js';
 import { DIVE_KINDS, duplicateCandidate, importJob, importOriginal, original, recording, type DiveKind, type ImportErrorCode, type ImportFound, type ImportOutcome } from '../db/schema.js';
 import { errorMessage } from '../errors.js';
 import type { DiveMode } from '../vocabulary.js';
-import type { Actor } from '../dives/revisions.js';
+import type { Actor } from '../revisions/revisions.js';
 import type { BlobStore } from '../storage/blob-store.js';
 import { DEFAULT_LIMITS, eachFile, looksLikeZip, type ArchiveEntry } from './archive.js';
 import { emitHint } from '../live/emit.js';
 import { createFileFormats, formatOf, type FileFormat } from './formats.js';
-import { DAY_MS } from './matching.js';
+import { DAY_MS } from '../dives/matching.js';
 import type { ParsedRecording } from './parsed-recording.js';
 import { placeRecording } from './placement.js';
 

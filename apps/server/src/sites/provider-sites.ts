@@ -6,7 +6,7 @@
 import { and, eq, isNull } from 'drizzle-orm';
 import type { Queryable, Tx } from '../db/client.js';
 import { diveSite, providerSiteData } from '../db/schema.js';
-import { writeRevision, type Actor, type Changes } from '../dives/revisions.js';
+import { writeRevision, type Actor, type Changes } from '../revisions/revisions.js';
 import { matchingSite, MATCH_WITHIN_M } from './import/import-plan.js';
 import type { ImportedValues } from './import/site-source.js';
 import { holderOf, idsOf, storeId } from './site-ids.js';

@@ -1,6 +1,6 @@
 // Dive and site Revisions become hints (ADR 0066). The change listener runs inside the writing transaction, so these
 // hints are any-origin by construction: a web edit, a worker import, MCP, or another tab all arrive here.
-import type { ChangeListener } from '../dives/revisions.js';
+import type { ChangeListener } from '../revisions/revisions.js';
 import type { Tx } from '../db/client.js';
 import { audienceOfDive, emitHint } from './emit.js';
 

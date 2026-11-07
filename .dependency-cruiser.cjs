@@ -8,20 +8,21 @@ const SERVER = '^apps/server/src/';
 // imports only. A new import between modules adds its entry here, in the same
 // commit, with the reason in the commit message; no new ADR needed. Removing an entry is always welcome.
 const MODULE_IMPORTS = {
+  revisions: [],
   assessment: ['divers', 'imports'],
-  centres: ['divers:type', 'dives', 'sites'],
-  certifications: ['divers', 'dives', 'live', 'providers'],
-  divers: ['centres', 'certifications', 'dives', 'providers'],
-  dives: ['assessment:type', 'centres', 'divers', 'imports', 'providers:type', 'sites'],
-  imports: ['divers', 'dives', 'live', 'sites'],
+  centres: ['divers', 'revisions', 'sites'],
+  certifications: ['divers', 'dives', 'live', 'revisions'],
+  divers: ['revisions'],
+  dives: ['centres', 'divers', 'revisions', 'sites'],
+  imports: ['divers', 'dives', 'live', 'revisions', 'sites'],
   lead: ['divers', 'dives'],
   mcp: ['assessment', 'divers', 'dives', 'planning', 'sites'],
   planning: ['divers', 'dives'],
-  providers: ['certifications', 'divers', 'dives', 'imports', 'live', 'sites'],
-  sites: ['dives', 'live'],
-  // Live hints (ADR 0066) read Dive and site Revisions only through dives/revisions.ts's type.
-  live: ['dives:type'],
-  users: ['dives'],
+  providers: ['certifications', 'divers', 'dives', 'imports', 'live', 'revisions', 'sites'],
+  sites: ['live', 'revisions'],
+  // Live hints (ADR 0066) read Dive and site Revisions only through revisions/revisions.ts's type.
+  live: ['revisions:type'],
+  users: ['divers'],
 };
 const target = (names) => `${SERVER}(${names.join('|')})/`;
 const moduleRules = Object.entries(MODULE_IMPORTS).flatMap(([from, allowed]) => {

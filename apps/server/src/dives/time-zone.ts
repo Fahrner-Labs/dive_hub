@@ -6,7 +6,7 @@ import { and, eq, isNotNull, isNull, sql } from 'drizzle-orm';
 import { find } from 'geo-tz';
 import type { Queryable } from '../db/client.js';
 import { dive, type UtcOffsetSource } from '../db/schema.js';
-import { DAY_MS, MAX_OFFSET_MS } from '../imports/matching.js';
+import { DAY_MS, MAX_OFFSET_MS } from './matching.js';
 
 export interface Position {
   latitude: number;

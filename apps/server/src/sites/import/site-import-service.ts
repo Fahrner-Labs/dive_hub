@@ -5,7 +5,7 @@ import { and, desc, eq, inArray, sql } from 'drizzle-orm';
 import type { Db, Tx } from '../../db/client.js';
 import { diveSite, siteImport, type SiteImportFinding, type SiteImportProgress } from '../../db/schema.js';
 import { emitHint } from '../../live/emit.js';
-import { changeListener, writeRevision, type Actor, type Changes } from '../../dives/revisions.js';
+import { changeListener, writeRevision, type Actor, type Changes } from '../../revisions/revisions.js';
 import { errorMessage } from '../../errors.js';
 import type { ProblemCode } from '../../http/problems.js';
 import { isUniqueViolation } from '../site-error.js';

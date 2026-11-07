@@ -4,7 +4,7 @@ import type { Db, Tx } from '../db/client.js';
 import { certification, original, session, user } from '../db/schema.js';
 import type { BlobStore } from '../storage/blob-store.js';
 import { PROBLEMS } from '../http/problems.js';
-import { renumber } from '../dives/dive-numbers.js';
+import { renumber } from '../divers/dive-numbers.js';
 import type { Role } from './invitation-service.js';
 
 export class UserAdminError extends Error {

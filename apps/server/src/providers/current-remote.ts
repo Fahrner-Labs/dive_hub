@@ -1,5 +1,5 @@
 // The remote dive a Dive has at a Provider now (ADR 0024). A file of its own that imports only the database layer, so the
-// Waiting push queue (which `dives/revisions.ts` calls) and `remote-state.ts` (which reaches `dives/`) share one rule.
+// Waiting push queue (which `revisions/revisions.ts` calls) and `remote-state.ts` (which reaches `dives/`) share one rule.
 import type { push } from '../db/schema.js';
 
 export type PushRow = typeof push.$inferSelect;

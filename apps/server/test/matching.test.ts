@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { alignedForMatching, decideMatch, entryMatches } from '../src/imports/matching.js';
+import { alignedForMatching, decideMatch, entryMatches } from '../src/dives/matching.js';
 
 const t0 = new Date('2026-01-15T09:00:00Z');
 const plus = (minutes: number) => new Date(t0.getTime() + minutes * 60_000);

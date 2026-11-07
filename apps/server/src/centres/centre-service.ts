@@ -5,9 +5,9 @@ import { and, eq, ilike, inArray, isNull, ne, sql } from 'drizzle-orm';
 import type { Db, Queryable, Tx } from '../db/client.js';
 import type { Caller } from '../http/caller.js';
 import { dive, diveCentre, diveCentreExternalId, diveCentreSite, diveSite } from '../db/schema.js';
-import { writeRevision, type Changes } from '../dives/revisions.js';
+import { writeRevision, type Changes } from '../revisions/revisions.js';
 import { isUniqueViolation } from '../sites/site-service.js';
-import { centreCodeText, readVerificationCode, typedCentreNumber } from './verification-code.js';
+import { centreCodeText, readVerificationCode, typedCentreNumber } from '../divers/verification-code.js';
 
 export const CENTRE_SOURCES = ['ssi'] as const;
 export type CentreSource = (typeof CENTRE_SOURCES)[number];

@@ -18,7 +18,7 @@ import { createMergeService } from './dives/merge-service.js';
 import { createMergingService } from './dives/merging-service.js';
 import { createDiverService } from './divers/diver-service.js';
 import { createImportService } from './imports/import-service.js';
-import { listenToChanges } from './dives/revisions.js';
+import { listenToChanges } from './revisions/revisions.js';
 import { createLive } from './live/service.js';
 import { withRevisionHints } from './live/revision-hints.js';
 import { createAttemptLimit, TOKEN_ATTEMPTS } from './http/attempt-limit.js';

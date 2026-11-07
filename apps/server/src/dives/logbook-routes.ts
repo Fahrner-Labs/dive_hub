@@ -7,8 +7,7 @@ import { requireUser, userOf } from '../auth/fastify.js';
 import { PARTICIPANT_ROLES, UTC_OFFSET_SOURCES, dive } from '../db/schema.js';
 import { Problem, problem } from '../http/problems.js';
 import { DateTime, IdParams, Nullable } from '../http/schemas.js';
-import type { PushService } from '../providers/push/push-service.js';
-import type { WaitingPushService } from '../providers/waiting-push/waiting-push-service.js';
+import type { DivePushes, DiveWaitingPushes } from './provider-port.js';
 import { WaitingPushView } from './waiting-push-view.js';
 import { diveSummaryOf } from './dive-summary-view.js';
 import { downsampleMinMax } from './calc/downsample.js';
@@ -19,8 +18,8 @@ export interface LogbookRouteDeps {
   auth: Auth;
   logbook: LogbookService;
   /** For the logbook's "changed since sent" filter, which needs the adapters' fingerprints. */
-  pushes: PushService;
-  waitingPushes: Pick<WaitingPushService, 'waitingOf'>;
+  pushes: Pick<DivePushes, 'changedSinceSent'>;
+  waitingPushes: Pick<DiveWaitingPushes, 'waitingOf'>;
 }
 
 /** The logbook list (ADR 0017, 0040): a page of Dives, sorted, searched, narrowed by "show only" filters, with the total. */

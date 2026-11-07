@@ -6,21 +6,22 @@ import { createDiverService } from '../divers/diver-service.js';
 import type { SecretBox } from '../secrets/secret-box.js';
 import type { BlobStore } from '../storage/blob-store.js';
 import { createCertificationService } from '../certifications/certification-service.js';
+import type { CertificationProviders } from '../certifications/certification-providers.js';
 import { createBuddyService } from './buddies/buddy-service.js';
 import { createConflictService } from './conflicts/conflict-service.js';
 import { createConnectionService } from './connection-service.js';
 import { createDiveImportService } from './dive-import/dive-import.js';
 import { createGoneDiveService } from './dive-import/gone-dives.js';
 import { createLeaseService, type Clock } from './lease-service.js';
-import type { ProviderAdapter } from './provider.js';
+import { ProviderError, type ProviderAdapter } from './provider.js';
 import { createPushRunService } from './push/push-run-service.js';
 import { createPushService } from './push/push-service.js';
-import { createProviderRegistry } from './registry.js';
+import { createProviderRegistry, named, ProviderServiceError } from './registry.js';
 import { createScheduledFetch } from './dive-import/scheduled-fetch.js';
 import { createSitePickService } from './site-pick.js';
 import { createWaitingPushService, type ProviderLog } from './waiting-push/waiting-push-service.js';
 import { consoleLog, noteDiveChange, noteSiteChange } from './waiting-push/waiting-push-queue.js';
-import { listenToChanges } from '../dives/revisions.js';
+import { listenToChanges } from '../revisions/revisions.js';
 
 export function createProviderLayer(deps: {
   db: Db; secrets: SecretBox; blobs: BlobStore; adapters: ProviderAdapter[]; clock?: Clock;
@@ -46,7 +47,28 @@ export function createProviderLayer(deps: {
   const diveImports = createDiveImportService({ db: deps.db, blobs: deps.blobs, registry: providers, connections, ...clock });
   const scheduledFetch = createScheduledFetch({ db: deps.db, registry: providers, diveImports, ...clock, log });
   const goneDives = createGoneDiveService({ db: deps.db, registry: providers, connections, leases });
-  const certifications = createCertificationService({ db: deps.db, blobs: deps.blobs, registry: providers, connections });
+  // certifications owns the port it needs (ADR 0053's seam for certifications and providers); this layer wires the
+  // real registry and Connections to it.
+  const certificationProviders: CertificationProviders = {
+    async onConnection(userId, connectionId) {
+      const connection = await connections.own(userId, connectionId);
+      const adapter = providers.get(connection.provider);
+      if (!adapter.certifications) throw new ProviderServiceError('provider_unsupported', named(adapter));
+      return {
+        provider: connection.provider,
+        diverId: connection.diverId,
+        cards: () => connections.withAccess(connection, (context) => adapter.certifications!.find(context)),
+      };
+    },
+    supports: (provider) => !!providers.get(provider).certifications,
+    image(provider, url) {
+      const adapter = providers.get(provider);
+      if (!adapter.certifications) throw new ProviderServiceError('provider_unsupported', named(adapter));
+      return adapter.certifications.image(url);
+    },
+    isProviderRefusal: (error) => error instanceof ProviderError || error instanceof ProviderServiceError,
+  };
+  const certifications = createCertificationService({ db: deps.db, blobs: deps.blobs, providers: certificationProviders });
   return {
     providers, connections, pushes, pushRuns, waitingPushes, buddies, sitePicks, diveImports, scheduledFetch, goneDives, conflicts, certifications,
     // What the layer does when a Revision or a site changes; compose.ts wraps it with the live hints (ADR 0066).
