@@ -27,8 +27,10 @@ export function createProviderLayer(deps: {
   /** Where the worker's own faults go (the app's logger); without one, the console (consoleLog). */
   log?: ProviderLog;
 }) {
-  // Changes to Dives and sites reach the Waiting push queue (ADR 0056) through the listener dives/ owns.
-  listenToChanges({ diveChanged: noteDiveChange, siteChanged: noteSiteChange });
+  // Changes to Dives and sites reach the Waiting push queue (ADR 0056) through the listener dives/ owns. Every site
+  // Revision also announces itself to open pages (ADR 0066), which compose.ts adds; the queue has no duty there.
+  const noSiteRevisionDuty = async () => {};
+  listenToChanges({ diveChanged: noteDiveChange, siteRevisionWritten: noSiteRevisionDuty, siteChanged: noteSiteChange });
   const providers = createProviderRegistry(deps.adapters);
   const clock = deps.clock && { clock: deps.clock };
   // One fallback for the whole layer: every service that logs is handed the same logger.
@@ -48,7 +50,7 @@ export function createProviderLayer(deps: {
   return {
     providers, connections, pushes, pushRuns, waitingPushes, buddies, sitePicks, diveImports, scheduledFetch, goneDives, conflicts, certifications,
     // What the layer does when a Revision or a site changes; compose.ts wraps it with the live hints (ADR 0066).
-    noteChanges: { diveChanged: noteDiveChange, siteChanged: noteSiteChange },
+    noteChanges: { diveChanged: noteDiveChange, siteRevisionWritten: noSiteRevisionDuty, siteChanged: noteSiteChange },
   };
 }
 

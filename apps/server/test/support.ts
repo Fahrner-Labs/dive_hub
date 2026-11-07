@@ -148,7 +148,7 @@ export async function createTestApp(t: TestDatabase, options: {
  * For a test that builds services without createTestApp: its Revisions are written, and no Provider queue hears them.
  * Without it the test passes only when an earlier file in the shared pool built a provider layer.
  */
-export const listenToNoChanges = () => listenToChanges({ diveChanged: async () => {}, siteChanged: async () => {} });
+export const listenToNoChanges = () => listenToChanges({ diveChanged: async () => {}, siteRevisionWritten: async () => {}, siteChanged: async () => {} });
 
 /** Creates a User the way an admin would (Better Auth's admin API, server-side). */
 export async function createUser(auth: Auth, email: string, role: 'user' | 'admin' = 'user') {

@@ -11,9 +11,14 @@ export function withRevisionHints(inner: ChangeListener): ChangeListener {
       await inner.diveChanged(tx, diveId, cause, at, actor);
       await emitHint(tx, { kind: 'dive', id: diveId, audience: await audienceOfDive(tx, diveId) });
     },
+    async siteRevisionWritten(tx: Tx, siteId, cause, at) {
+      await inner.siteRevisionWritten(tx, siteId, cause, at);
+      await emitHint(tx, { kind: 'site', id: siteId, audience: await audienceOfEveryone(tx) });
+    },
+    // The Waiting push queue still hears name/position changes (ADR 0056); the site hint itself comes from the Revision
+    // hook above, so every site write announces itself and a caller cannot forget it.
     async siteChanged(tx: Tx, siteId, at) {
       await inner.siteChanged(tx, siteId, at);
-      await emitHint(tx, { kind: 'site', id: siteId, audience: await audienceOfEveryone(tx) });
     },
   };
 }
