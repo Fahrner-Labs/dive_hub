@@ -1,6 +1,6 @@
 ---
 title: "ADR 0053: Module boundaries"
-summary: The server in three layers (routes → services → db, every query in a service, vocabulary.ts below db); the imports between its domain modules as an enforced allow-list in .dependency-cruiser.cjs, changed there without a new ADR; the web client's shared components import no page; lib/ may import api.ts (types, and queries inside hooks) and api.ts takes from lib/ only what describes a query's inputs (amendment 2026-10-29); no import cycles. Checked by dependency-cruiser against an empty baseline (0 violations). Fixes done - the web cycle api.ts ↔ lib/logbook.ts (the LogbookParams type moved to lib/), the runtime cycle diver-service ↔ merge through DiverError, db/schema.ts importing from sites/, the three server type cycles, and the queries out of all six route files.
+summary: The server in three layers (routes → services → db, every query in a service, vocabulary.ts below db); the imports between its domain modules as an enforced allow-list in .dependency-cruiser.cjs, changed there without a new ADR; the domain modules in seven tiers that import only downward (amendment 2026-11-07); the web client's shared components import no page; lib/ may import api.ts (types, and queries inside hooks) and api.ts takes from lib/ only what describes a query's inputs (amendment 2026-10-29); no import cycles. Checked by dependency-cruiser against an empty baseline (0 violations). Fixes done - the web cycle api.ts ↔ lib/logbook.ts (the LogbookParams type moved to lib/), the runtime cycle diver-service ↔ merge through DiverError, db/schema.ts importing from sites/, the three server type cycles, and the queries out of all six route files.
 status: accepted
 date: 2026-10-22
 ---
@@ -44,7 +44,7 @@ logic and the queries. `db/` (schema, client, migrations) is the bottom layer.
   is a layer below `db/`: `db/` may import it, and it imports nothing of the server.
 - `http/` (problem answers, shared route helpers), `auth/`, `storage/`, `secrets/` and `vocabulary.ts` are shared
   infrastructure that any module may import.
-- `app.ts`, `main.ts`, `worker.ts` and `scripts/` assemble the modules and may import any of them.
+- `app.ts`, `compose.ts`, `start.ts`, `main.ts`, `worker.ts`, `site-sources.ts` and `scripts/` assemble the modules and may import any of them.
 
 ### Imports between domain modules
 An enforced allow-list: `MODULE_IMPORTS` in `.dependency-cruiser.cjs` names, for each domain module (a folder of
@@ -57,10 +57,10 @@ there in the same commit, with the reason in the commit message: an ordinary, re
 ADR**. Changing the rules themselves (the layers, the shared infrastructure, no cycles) still does. Removing an
 entry once an import is gone is always welcome.
 
-Several pairs import each other at directory level (dives ↔ divers, dives ↔ providers, dives ↔ sites,
-divers ↔ providers, imports ↔ dives, fit ↔ imports). They are not file cycles, but each is a candidate for a seam:
-one side should depend on an interface the other owns. Which ones to untangle first is left to the slices that
-touch them.
+Several pairs imported each other at directory level (dives ↔ divers, dives ↔ providers, dives ↔ sites,
+divers ↔ providers, imports ↔ dives). They were not file cycles, but each was a candidate for a seam: one side
+should depend on an interface the other owns. The amendment of 2026-11-07 resolved every pair by the tier rule
+below, moving four files and declaring consumer-owned ports.
 
 ### Web client
 - `ui/` (shared components) imports no page (a component file at the top of `apps/web/src`).
@@ -130,3 +130,58 @@ the API's view types and call its queries. Moving those hooks out of `lib/` woul
 - **No import cycles**, as before: dependency-cruiser's `no-cycles` rule checks it, so a `lib/` file that
   `api.ts` imports can't import `api.ts`.
 The rest of this decision stands.
+
+## Amendment (2026-11-07): the domain modules form seven tiers
+
+Owner-approved with the technical plan on [FAHAAA-10](/FAH/issues/FAHAAA-10) (plan revision
+`925e4168-97ac-4e57-aeb7-facd20025bfd`). It resolves the "candidates for a seam" this ADR left open and repeats
+the pattern of the [2026-10-30 desloppify cleanup](../research/2026-10-30-desloppify-cleanup.md#server-modules-and-composition)
+(85e528e).
+
+```
+T7  interfaces/integrations   providers · mcp · lead · users      (nothing imports these)
+T6  analysis & credentials    certifications · assessment · planning
+T5  intake                    imports
+T4  logbook core              dives
+T3  verification              centres
+T2  registry                  divers · sites
+T1  foundation                revisions · live
+────────────────────────────────────────────────────────────────
+T0  shared infra (unchanged)  db · http · auth · storage · secrets · vocabulary · errors · config
+    assembly (unchanged)      app.ts · compose.ts · start.ts · main.ts · worker.ts · site-sources.ts
+```
+
+- **Rule:** an import points to a lower tier; `:type` imports count as imports. No pair of modules imports each
+  other in both directions. The tiers are how the allow-list reads; `MODULE_IMPORTS` stays the enforcement, so an
+  import the table omits still fails the check. The one edge inside a tier is `live → revisions:type`: `live` sits
+  above `revisions` at the top of the foundation tier and reads only their `Revision` types (ADR 0066).
+- **Why this order:** `revisions` is the change journal every domain writes through — the true bottom. `divers`
+  and `sites` are the who/where registries. `dives` is the logbook core that references them. `imports` brings
+  recordings into the logbook. `certifications`, `assessment` and `planning` analyse it. `providers` is the
+  integration hub and consumes everything; `mcp`, `lead` and `users` are pure consumers.
+
+Moves (behaviour unchanged, `pnpm check` per commit):
+
+- `dives/revisions.ts` → `revisions/revisions.ts`, the new bottom module; its `ChangeListener` port moves with it.
+- `imports/matching.ts` → `dives/matching.ts`: matching places a Recording among Dives.
+- `dives/dive-numbers.ts` → `divers/dive-numbers.ts`: numbering is per Diver. `users` imports `divers`, not `dives`.
+- `centres/verification-code.ts` → `divers/verification-code.ts`: person codes are built from Diver fields, and
+  `centres` imports the codec downward. `centres/verification-code-view.ts` stays in `centres`.
+
+Ports (consumer-owned shapes wired at the composition root, the 85e528e pattern):
+
+- **divers → certifications:** `divers/certification-port.ts` declares `DiverCertifications` (the list summaries and
+  a deleted Diver's picture keys); `certifications` implements it and `app.ts` passes the real service in.
+- **certifications → providers:** `certifications/certification-providers.ts` declares `CertificationProviders`
+  (the User's Connection and its card reader, a card's picture, and whether an error is the Provider refusing);
+  `providers/layer.ts` implements it over the real registry and Connections.
+- **divers → providers (type):** the shared pure-data `DiverSource` moved to `vocabulary.ts`; `providers` re-exports
+  it for its own callers.
+- **dives → providers (type):** `dives/provider-port.ts` owns `DivePushRow`, `CurrentRemote`, `DiveProviderRefusal`,
+  `DiveRemoval`, `DivePushes`, `DiveWaitingPushes` and `DiveProviderAnswers`; `providers` implements them and
+  `app.ts`/`compose.ts` pass the real services in.
+- **dives → assessment (type):** `dives/assessment-refresh.ts` owns `AssessmentRefresh`; `app.ts` passes the
+  assessment service in.
+
+The stale prose above is refreshed with this amendment: `compose.ts` and `start.ts` are assemblers beside `app.ts`,
+`main.ts`, `worker.ts` and `site-sources.ts`, and the removed `fit` module no longer appears.
