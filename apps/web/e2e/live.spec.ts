@@ -73,7 +73,7 @@ test('a Dive changed elsewhere while its edit form is dirty keeps the edits and 
 
   await editElsewhere(request, id, 'changed elsewhere while the form was open');
 
-  await expect(page.getByText('This dive changed elsewhere. Your edits are still here.')).toBeVisible({ timeout: 4_000 });
+  await expect(page.getByText('This dive changed elsewhere. Your edits are still here.', { exact: true })).toBeVisible({ timeout: 4_000 });
   await expect(page.getByRole('textbox', { name: 'Notes' })).toHaveValue('typed here and not saved yet');
   await expect(page.getByRole('button', { name: 'Load the new version' })).toBeVisible();
 });
