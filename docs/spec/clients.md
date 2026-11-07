@@ -146,7 +146,9 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   query keys); a client may batch hints that arrive within ~250 ms into one refetch. **On every reconnect after
   the first**, refetch what is on screen (`invalidateQueries` with `refetchType: 'active'` in TanStack Query):
   hints are not replayed, so a gap is covered only that way. Polling remains fully valid: a client that ignores
-  the stream, or sits behind a proxy that strips it, loses nothing but freshness. Close the stream when signed
+  the stream, or sits behind a proxy that strips it, loses nothing but freshness. A server process without a
+  configured LISTEN connection does not serve the route (404); while its LISTEN connection is not up it answers
+  503 `live_unavailable`. A failed open is unhealthy, so keep polling. Close the stream when signed
   out. The server sends `:hb` every 15 s; treat a stream that dies as a reconnect and refetch again.
 - **Background work is polled** until it is `done` or `failed`:
   - Imports (`GET /api/imports`), every second while one runs;

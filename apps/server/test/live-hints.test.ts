@@ -3,8 +3,9 @@
 import { randomUUID } from 'node:crypto';
 import type { AddressInfo } from 'node:net';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { user } from '../src/db/auth-schema.js';
 import { diveSiteExternalId } from '../src/db/schema.js';
-import { emitHint } from '../src/live/emit.js';
+import { emitHint, parseHint } from '../src/live/emit.js';
 import { createHub } from '../src/live/hub.js';
 import type { ImportedValues, SiteSourceAdapter, SourceSite } from '../src/sites/import/site-source.js';
 import { makeSyntheticDive } from './fixtures/synthetic-dive.js';
@@ -62,6 +63,35 @@ async function until(stream: Stream, predicate: (event: Record<string, unknown>)
 
 const settle = (ms = 350) => new Promise((resolve) => setTimeout(resolve, ms));
 
+/** A wildcard audience is shared data (a Dive site), so it must not name every User in the payload. */
+describe('a shared-audience hint', () => {
+  it('reaches every open stream and keeps the audience off the wire', () => {
+    const hub = createHub({ perUser: 2, heartbeatMs: 1_000 });
+    const written: Record<string, string[]> = { 'user-a': [], 'user-b': [] };
+    const socketFor = (userId: string) => ({
+      write: (text: string) => { written[userId]!.push(text); return true; },
+      end: () => undefined,
+    } as never);
+    expect(hub.add('user-a', socketFor('user-a'))).toBe(true);
+    expect(hub.add('user-b', socketFor('user-b'))).toBe(true);
+
+    hub.publish(JSON.stringify({ v: 1, kind: 'site', id: 'site-1', audience: '*' }));
+
+    const expected = `event: hint\ndata: ${JSON.stringify({ v: 1, kind: 'site', id: 'site-1' })}\n\n`;
+    expect(written['user-a']).toEqual([expected]);
+    expect(written['user-b']).toEqual([expected]);
+    hub.stop();
+    hub.closeAll();
+  });
+
+  it('is only for shared data, so a Diver hint still names its audience', () => {
+    expect(parseHint(JSON.stringify({ v: 1, kind: 'site', id: 'site-1', audience: '*' })))
+      .toEqual({ kind: 'site', id: 'site-1', audience: '*' });
+    expect(parseHint(JSON.stringify({ v: 1, kind: 'dive', id: 'dive-1', audience: '*' }))).toBeNull();
+    expect(parseHint(JSON.stringify({ v: 1, kind: 'site', id: 'site-1' }))).toBeNull();
+  });
+});
+
 type Method = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 const call = (app: Awaited<ReturnType<typeof createTestApp>>['app'], method: Method, url: string, cookie: string, payload?: object) =>
   app.inject({ method, url, headers: { cookie, origin: BASE_URL }, ...(payload !== undefined && { payload }) });
@@ -97,6 +127,9 @@ describe.skipIf(!(await databaseReachable()))('live hints', () => {
     ctx.live.start();
     await ctx.app.listen({ host: '127.0.0.1', port: 0 });
     base = `http://127.0.0.1:${(ctx.app.server.address() as AddressInfo).port}`;
+    // Streams are refused until LISTEN is up (FAH-45); wait for it rather than racing the first test.
+    for (let i = 0; i < 200 && !ctx.live.ready(); i += 1) await settle(10);
+    expect(ctx.live.ready()).toBe(true);
   });
 
   afterAll(async () => {
@@ -164,12 +197,60 @@ describe.skipIf(!(await databaseReachable()))('live hints', () => {
     const otherStream = await openStream(base, other);
     streams.push(timStream, otherStream);
     await settle(300);
+
     const site = await createSite(tim, { name: 'Hint Reef' });
     // Sites are shared: both Users may read it, so both hear about it.
     for (const stream of [timStream, otherStream]) {
       expect(await until(stream, (event) => event.kind === 'site' && event.id === site.id))
         .toEqual({ v: 1, kind: 'site', id: site.id });
     }
+  });
+
+  it('turns a site edit into a site hint for every open page', async () => {
+    const timStream = await openStream(base, tim);
+    const otherStream = await openStream(base, other);
+    streams.push(timStream, otherStream);
+    await settle(300);
+
+    const created = await ctx.app.inject({
+      method: 'POST', url: '/api/dive-sites', headers: { cookie: tim, origin: BASE_URL }, payload: { name: 'Hint Reef' },
+    });
+    expect(created.statusCode).toBe(201);
+    const site = created.json() as { id: string; version: number };
+
+    const edited = await ctx.app.inject({
+      method: 'PATCH', url: `/api/dive-sites/${site.id}`, headers: { cookie: tim, origin: BASE_URL },
+      payload: { version: site.version, name: 'Hint Reef Edited' },
+    });
+    expect(edited.statusCode).toBe(200);
+    for (const stream of [timStream, otherStream]) {
+      expect(await until(stream, (event) => event.kind === 'site' && event.id === site.id))
+        .toEqual({ v: 1, kind: 'site', id: site.id });
+    }
+  });
+
+  it('keeps a site write working when the instance has hundreds of Users', async () => {
+    // Naming every User would put ~250 ids, about 40 bytes each, into a NOTIFY payload that PostgreSQL caps at 8000
+    // bytes, so the site edit would roll back with a notification-size error.
+    await t.db.insert(user).values(Array.from({ length: 250 }, (_, i) => ({
+      name: `hint-user-${i}`, email: `hint-user-${i}@example.com`,
+    })));
+    const stream = await openStream(base, other);
+    streams.push(stream);
+    await settle(300);
+
+    const created = await ctx.app.inject({
+      method: 'POST', url: '/api/dive-sites', headers: { cookie: tim, origin: BASE_URL }, payload: { name: 'Crowded Reef' },
+    });
+    expect(created.statusCode).toBe(201);
+    const site = created.json() as { id: string; version: number };
+    const edited = await ctx.app.inject({
+      method: 'PATCH', url: `/api/dive-sites/${site.id}`, headers: { cookie: tim, origin: BASE_URL },
+      payload: { version: site.version, name: 'Crowded Reef Edited' },
+    });
+    expect(edited.statusCode).toBe(200);
+    expect(await until(stream, (event) => event.kind === 'site' && event.id === site.id))
+      .toEqual({ v: 1, kind: 'site', id: site.id });
   });
 
   it('turns a deleted site into a site hint for every open page', async () => {
@@ -249,6 +330,10 @@ describe.skipIf(!(await databaseReachable()))('live hints', () => {
     await settle(300);
     await ctx.live.stop();
     await expect(stream.closed).resolves.toBeUndefined();
+    // No LISTEN connection: a new stream is refused, so the client's polling fallback stays on.
+    const refused = await fetch(`${base}/api/live`, { headers: { cookie: tim, origin: BASE_URL } });
+    expect(refused.status).toBe(503);
+    expect(await refused.json()).toMatchObject({ code: 'live_unavailable' });
   });
 
   it('caps a user\'s streams and heartbeats the open ones', async () => {

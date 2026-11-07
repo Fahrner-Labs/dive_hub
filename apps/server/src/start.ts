@@ -39,6 +39,8 @@ export async function start(config: Config) {
       createGarminAdapter({ client: createGarminClient({ url: config.garminUrl ?? DEFAULT_GARMIN_URL }) })],
     // The worker's own faults, with the entry they hit, for the operator.
     log: app.log,
+    // The live layer listens on its own connection to the same database (ADR 0066).
+    live: { connectionString: config.databaseUrl },
   });
   await buildApp({ ...services, baseUrl: config.baseUrl, maxUploadBytes: config.maxUploadBytes, webDir: config.webDir }, app);
 

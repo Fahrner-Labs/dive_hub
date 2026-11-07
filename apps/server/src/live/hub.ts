@@ -1,5 +1,5 @@
 // The connections of one app process (ADR 0066): each signed-in User may hold a few SSE streams, and a hint goes to the
-// streams of the users in its audience. The audience never leaves the server.
+// streams of the users in its audience (every stream for the shared-site wildcard). The audience never leaves the server.
 import type { ServerResponse } from 'node:http';
 import { parseHint } from './emit.js';
 
@@ -42,6 +42,10 @@ export function createHub(options: { heartbeatMs?: number; perUser?: number } = 
     }
   };
 
+  const deliver = (userId: string, data: string) => {
+    for (const socket of streams.get(userId) ?? []) if (!write(socket, data)) remove(userId, socket);
+  };
+
   return {
     add(userId, socket) {
       const set = streams.get(userId) ?? new Set<ServerResponse>();
@@ -55,8 +59,10 @@ export function createHub(options: { heartbeatMs?: number; perUser?: number } = 
       const hint = parseHint(payload);
       if (!hint) return;
       const data = `event: hint\ndata: ${JSON.stringify({ v: 1, kind: hint.kind, id: hint.id })}\n\n`;
-      for (const userId of new Set(hint.audience)) {
-        for (const socket of streams.get(userId) ?? []) if (!write(socket, data)) remove(userId, socket);
+      if (hint.audience === '*') {
+        for (const userId of [...streams.keys()]) deliver(userId, data);
+      } else {
+        for (const userId of new Set(hint.audience)) deliver(userId, data);
       }
     },
     closeAll() {
