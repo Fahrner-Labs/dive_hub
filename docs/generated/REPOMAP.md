@@ -4,7 +4,7 @@
 > `pnpm check` fails when this map is stale. Symbols are ranked by how widely the code references them;
 > each module shows its most-referenced ones (exported symbols rank higher). Search here before walking the tree.
 
-Files: 345 · symbols: 3052 · shown: 234
+Files: 344 · symbols: 3054 · shown: 234
 
 ### server/(root)
 apps/server/src/vocabulary.ts:13 type SiteWaterType
@@ -62,7 +62,7 @@ apps/server/src/db/schema.ts:947 const push
 apps/server/src/db/auth-schema.ts:20 const user
 apps/server/src/db/import-types.ts:12 iface ImportedValues
 apps/server/src/db/import-types.ts:6 type ImportArea
-… 132 more symbols in this module
+… 133 more symbols in this module
 
 ### server/divers
 apps/server/src/divers/management.ts:8 fn managedDiverIds
@@ -166,12 +166,12 @@ apps/server/src/planning/gas-plan-service.ts:13 const PLAN_RULES
 apps/server/src/providers/registry.ts:70 class ProviderServiceError
 apps/server/src/providers/provider.ts:395 iface ProviderAdapter
 apps/server/src/providers/registry.ts:5 iface ProviderRegistry
+apps/server/src/providers/waiting-push/waiting-push-queue.ts:12 iface ProviderLog
 apps/server/src/providers/lease-service.ts:12 iface Clock
 apps/server/src/providers/provider.ts:127 class ProviderError
 apps/server/src/providers/current-remote.ts:11 fn currentRemote
 apps/server/src/providers/lease-service.ts:17 const realClock
 apps/server/src/providers/provider.ts:244 iface ActionContext
-apps/server/src/providers/waiting-push/waiting-push-queue.ts:12 iface ProviderLog
 apps/server/src/providers/connection-view.ts:66 const ConnectionView
 apps/server/src/providers/provider.ts:361 iface ImportedDive
 apps/server/src/providers/connection-service.ts:334 type ConnectionService
@@ -186,7 +186,7 @@ apps/server/src/providers/dive-import/three-way.ts:10 const SYNCED_FIELDS
 apps/server/src/providers/provider.ts:85 iface Capabilities
 apps/server/src/providers/dive-import/dive-changes.ts:29 iface ProviderContext
 apps/server/src/providers/dive-import/three-way.ts:61 fn sameAtProvider
-apps/server/src/providers/lease-service.ts:27 class LeaseBusy
+apps/server/src/providers/push/push-service.ts:649 type PushService
 … 476 more symbols in this module
 
 ### server/revisions
@@ -226,7 +226,7 @@ apps/server/src/sites/sources.ts:33 const SOURCE_INFO
 apps/server/src/sites/site-error.ts:13 fn isUniqueViolation
 apps/server/src/sites/sources.ts:14 const IMPORT_SOURCES
 apps/server/src/sites/site-ids.ts:26 fn accountOf
-… 162 more symbols in this module
+… 163 more symbols in this module
 
 ### server/storage
 apps/server/src/storage/blob-store.ts:25 iface BlobStore

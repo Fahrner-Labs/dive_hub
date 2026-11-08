@@ -43,6 +43,9 @@ test.afterAll(async ({ request }) => {
 test('a background import brings a new Dive into an untouched logbook, tinted as it arrives', { tag: ['@live', '@dives'] }, async ({ page, request }) => {
   await page.goto('/');
   await expect(page.getByRole('heading', { name: 'Logbook', level: 1 })).toBeVisible();
+  // Wait for the loaded first page: it is the snapshot an arrival is compared with. An Import that lands while the
+  // logbook is still loading is part of that first page (the list mounts with it), so it never "arrives".
+  await expect(page.locator('[data-dive-id]').first()).toBeVisible();
   const before = await page.locator('[data-dive-id]').count();
 
   const started = Date.now();
