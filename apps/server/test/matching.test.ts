@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { alignedForMatching, decideMatch, entryMatches } from '../src/imports/matching.js';
+import { alignedForMatching, decideMatch, entryMatches } from '../src/dives/matching.js';
 
 const t0 = new Date('2026-01-15T09:00:00Z');
 const plus = (minutes: number) => new Date(t0.getTime() + minutes * 60_000);
@@ -37,6 +37,11 @@ describe('decideMatch', () => {
     expect(decideMatch(span(0, 40, 30), [{ id: 'a', ...span(0, 40, 12) }])).toMatchObject({
       kind: 'duplicate-candidate', diveIds: ['a'],
     });
+  });
+
+  it('makes a Dive of a Recording from the same Source under another key, whatever time and depth say', () => {
+    // A Source's own keys name its dives: two of them are two dives, not one recorded twice (a logbook's back-to-back).
+    expect(decideMatch(span(10, 4, 6.2), [{ id: 'a', ...span(0, 30, 6.2), sameSource: true }])).toEqual({ kind: 'create' });
   });
 
   describe('a probable non-dive (ADR 0030, amended)', () => {

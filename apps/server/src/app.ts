@@ -6,6 +6,7 @@ import swagger from '@fastify/swagger';
 import type { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import { sql } from 'drizzle-orm';
 import { authHandler } from './auth/fastify.js';
+import { liveRoutes } from './live/routes.js';
 import type { Services } from './compose.js';
 import { withAuthEndpoints } from './auth/openapi.js';
 import { problem, ProblemSchema, useProblemErrors } from './http/problems.js';
@@ -36,6 +37,8 @@ import { siteRoutes } from './sites/routes.js';
 import { centreRoutes } from './centres/routes.js';
 import { siteImportRoutes } from './sites/import/site-import-routes.js';
 import { providerAnswers, ProviderProblemSchema } from './providers/route-parts.js';
+import type { ProviderServiceError } from './providers/registry.js';
+import type { DiveProviderAnswers } from './dives/provider-port.js';
 import { providerRoutes } from './providers/routes.js';
 import { assessmentRoutes } from './assessment/routes.js';
 import { aiAccessRoutes } from './mcp/access-routes.js';
@@ -94,6 +97,8 @@ export async function buildApp(deps: AppDeps, app: Server = createServer()) {
   app.get('/api/openapi.json', { schema: { hide: true } }, async () => withAuthEndpoints(app.swagger(), deps.auth));
 
   await app.register(authHandler, { auth: deps.auth });
+  // A process without a LISTEN connection serves no hints: no route means the client keeps polling (ADR 0066).
+  if (deps.live.enabled) await app.register(liveRoutes, { auth: deps.auth, hub: deps.live.hub, ready: deps.live.ready });
   const { db, auth, assessments, baseUrl, passwordResets, tokenAttempts, logbook, divers, centres, dives, merging, checks } = deps;
   const { pushes, waitingPushes, certifications } = deps.providers;
   await app.register(userRoutes, { prefix: '/api', auth, profiles: deps.profiles, setup: deps.setup, invitations: deps.invitations, tokenAttempts });
@@ -101,9 +106,15 @@ export async function buildApp(deps: AppDeps, app: Server = createServer()) {
   await app.register(adminRoutes, { prefix: '/api', auth, passwordResets, userAdmin: deps.userAdmin, invitations: deps.invitations, baseUrl });
   await app.register(importRoutes, { prefix: '/api', auth, imports: deps.imports, waitingPushes, maxUploadBytes: deps.maxUploadBytes });
   await app.register(logbookRoutes, { prefix: '/api', auth, logbook, pushes, waitingPushes });
+  // dives owns the shapes it needs (dives/provider-port.ts); this is where the real Provider answerer is wired in.
+  // The only failures it answers come from the Push service, so they are ProviderServiceErrors.
+  const diveAnswers: DiveProviderAnswers = {
+    reply: (failure, reply, extra) => providerAnswers.reply(failure as ProviderServiceError, reply, extra),
+    answer: providerAnswers.answer,
+  };
   await app.register(diveRoutes, {
     prefix: '/api', auth, logbook, divers, centres, dives, merging, checks, pushes, waitingPushes,
-    deletion: deps.deletion, merge: deps.merge, continuation: deps.continuation, append: deps.append, assessments, providerAnswers,
+    deletion: deps.deletion, merge: deps.merge, continuation: deps.continuation, append: deps.append, assessments, providerAnswers: diveAnswers,
   });
   await app.register(candidateRoutes, { prefix: '/api', auth, candidates: deps.candidates, assessments });
   await app.register(assessmentRoutes, { prefix: '/api', auth, assessments });

@@ -4,11 +4,12 @@ import type { Db } from '../db/client.js';
 import { DIVE_KINDS, duplicateCandidate, importJob, importOriginal, original, recording, type DiveKind, type ImportErrorCode, type ImportFound, type ImportOutcome } from '../db/schema.js';
 import { errorMessage } from '../errors.js';
 import type { DiveMode } from '../vocabulary.js';
-import type { Actor } from '../dives/revisions.js';
+import type { Actor } from '../revisions/revisions.js';
 import type { BlobStore } from '../storage/blob-store.js';
 import { DEFAULT_LIMITS, eachFile, looksLikeZip, type ArchiveEntry } from './archive.js';
+import { emitHint } from '../live/emit.js';
 import { createFileFormats, formatOf, type FileFormat } from './formats.js';
-import { DAY_MS } from './matching.js';
+import { DAY_MS } from '../dives/matching.js';
 import type { ParsedRecording } from './parsed-recording.js';
 import { placeRecording } from './placement.js';
 
@@ -28,7 +29,7 @@ interface FileToPlace { name: string; data: Buffer }
 
 /** The upload is neither a dive file in a format we read nor a zip archive: the Import's error code `unsupported_file`. */
 export class UnsupportedFileError extends Error {
-  constructor() { super('Unsupported file: expected a dive file (FIT, Suunto JSON) or a zip archive'); }
+  constructor() { super('Unsupported file: expected a dive file (FIT, Suunto JSON, UDDF) or a zip archive'); }
 }
 
 /** The error code and detail a failed Import keeps: only an unsupported upload has a code of its own. */
@@ -64,6 +65,7 @@ export function createImportService({ db, blobs, formats = createFileFormats(), 
         await tx.execute(
           sql`select graphile_worker.add_job(${PROCESS_IMPORT_TASK}, json_build_object('importId', ${created!.id}::text))`,
         );
+        await emitHint(tx, { kind: 'import', id: created!.id, audience: [userId] });
         return created!;
       });
     } catch (error) {
@@ -81,6 +83,7 @@ export function createImportService({ db, blobs, formats = createFileFormats(), 
     const [job] = await db.select().from(importJob).where(eq(importJob.id, importId));
     if (!job || job.status === 'done' || job.status === 'awaiting_choice' || job.status === 'cancelled') return [];
     await db.update(importJob).set({ status: 'processing' }).where(eq(importJob.id, importId));
+    await emitHint(db, { kind: 'import', id: importId, audience: [job.userId] });
     const actor: Actor = { type: 'import', id: importId };
 
     if (job.provider) {
@@ -88,10 +91,12 @@ export function createImportService({ db, blobs, formats = createFileFormats(), 
         if (!providerImports) throw new Error('This server runs no imports from Providers');
         const outcome = await providerImports.process(job);
         await db.update(importJob).set({ status: 'done', outcome, finishedAt: new Date() }).where(eq(importJob.id, importId));
+        await emitHint(db, { kind: 'import', id: importId, audience: [job.userId] });
         await afterImport?.(job.userId);
         return outcome;
       } catch (error) {
         await db.update(importJob).set({ status: 'failed', ...failureOf(error), finishedAt: new Date() }).where(eq(importJob.id, importId));
+        await emitHint(db, { kind: 'import', id: importId, audience: [job.userId] });
         throw error;
       }
     }
@@ -120,6 +125,7 @@ export function createImportService({ db, blobs, formats = createFileFormats(), 
       // Several kinds and nobody asked yet: the User chooses; until then nothing but the upload is here.
       if (!job.kinds && DIVE_KINDS.filter((k) => found[k] > 0).length > 1) {
         await db.update(importJob).set({ status: 'awaiting_choice', found }).where(eq(importJob.id, importId));
+        await emitHint(db, { kind: 'import', id: importId, audience: [job.userId] });
         return [];
       }
 
@@ -142,6 +148,7 @@ export function createImportService({ db, blobs, formats = createFileFormats(), 
         .update(importJob)
         .set({ status: 'done', outcome, found, finishedAt: new Date(), uploadStorageKey: null })
         .where(eq(importJob.id, importId));
+      await emitHint(db, { kind: 'import', id: importId, audience: [job.userId] });
       await blobs.delete(job.uploadStorageKey!);
       await afterImport?.(job.userId);
       return outcome;
@@ -150,6 +157,7 @@ export function createImportService({ db, blobs, formats = createFileFormats(), 
         .update(importJob)
         .set({ status: 'failed', ...failureOf(error), finishedAt: new Date() })
         .where(eq(importJob.id, importId));
+      await emitHint(db, { kind: 'import', id: importId, audience: [job.userId] });
       throw error;
     }
   }
@@ -178,6 +186,7 @@ export function createImportService({ db, blobs, formats = createFileFormats(), 
       if (!waiting || wanted.length === 0) return null;
       const [started] = await tx.update(importJob).set({ status: 'pending', kinds: wanted }).where(eq(importJob.id, importId)).returning();
       await tx.execute(sql`select graphile_worker.add_job(${PROCESS_IMPORT_TASK}, json_build_object('importId', ${importId}::text))`);
+      await emitHint(tx, { kind: 'import', id: importId, audience: [userId] });
       return started!;
     });
   }
@@ -228,6 +237,7 @@ export function createImportService({ db, blobs, formats = createFileFormats(), 
         .where(and(eq(importJob.id, w.id), eq(importJob.status, 'awaiting_choice'))).returning();
       if (!row) continue;
       if (w.key) await blobs.delete(w.key);
+      await emitHint(db, { kind: 'import', id: row.id, audience: [row.userId] });
       ended.push(row);
     }
     return ended;

@@ -1,7 +1,7 @@
 // SSI's verification codes as text (ADR 0043): a Dive centre's is built from number and name; a pasted text is read
 // as a centre's, a buddy's or a professional's. Placeholders only, never a real code.
 import { describe, expect, it } from 'vitest';
-import { centreCodeText, personCodes, readVerificationCode } from '../src/centres/verification-code.js';
+import { centreCodeText, personCodes, readVerificationCode } from '../src/divers/verification-code.js';
 import { ssiCentreDisplayName } from '../src/providers/ssi/ssi-centre.js';
 
 describe('a Dive centre\'s SSI verification code', () => {

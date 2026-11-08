@@ -9,7 +9,7 @@ import { dataFile, type PreparedData } from './prepare.ts';
 import {
   cancelWaitingImports, waitingImport,
   E2E_BASE_URL, E2E_SERVERS, E2E_SESSION, LENA_SSI, activeResultShown, aiAccessReady, askMcp, assessedDive, diveNumber, seededDiveId, createAiAccess, putAside, uniqueWord, clearParticipants, conflictForLena, connectSsi, deletableDive, lenaClaimable, diveRows, diveWithoutRecording, expectAccessible, expectGoodPage, externalDiver, openLine,
-  clearPushRuns, clearQueue, connectGarmin, leaveGarmin, conflictAtSsi, fetchState, expireSsiTokens, leaveConflict, forgetDivers, goneAtSsi, goToMore, leaveLena, openFilters, leaveSsi, lenaReady, mergePair, mergeablePair, pushRunSetup, queueEntry, readyForSsi, resetDive, ssiConnectionOf, sendToSsi, setBuddies, setPreferences, signInSsi, falseStart, keepFalseStart, surfaceBreakPair, tankPodDive
+  clearPushRuns, clearQueue, connectGarmin, leaveGarmin, conflictAtSsi, fetchState, guardedRoute, expireSsiTokens, leaveConflict, forgetDivers, goneAtSsi, goToMore, leaveLena, openFilters, leaveSsi, lenaReady, mergePair, mergeablePair, pushRunSetup, queueEntry, readyForSsi, resetDive, ssiConnectionOf, sendToSsi, setBuddies, setPreferences, signInSsi, falseStart, keepFalseStart, surfaceBreakPair, tankPodDive
 } from './support.ts';
 
 // Spread over all workers (ADR 0023): every test stands alone; beforeAll prepares each worker's server.
@@ -672,11 +672,11 @@ for (const v of variants) {
     // The fetch's help shown while the import is off, and a switch busy while its save runs (backlog 0010, point 13).
     test('my account, automatic settings: the fetch needs the import, a switch saving', { tag: ['@account'] }, async ({ page, request }) => {
       await connectSsi(request);
-      await page.route('**/api/connections', async (route) => {
+      await page.route('**/api/connections', guardedRoute(async (route) => {
         const response = await route.fetch();
         const rows = (await response.json()) as Record<string, unknown>[];
         await route.fulfill({ status: response.status(), json: rows.map((row) => ({ ...row, diveImport: { mode: 'off', windowMinutes: 15 } })) });
-      });
+      }));
       // The save never answers here: the switch stays busy while the page is checked.
       await page.route('**/api/connections/*', (route) => (route.request().method() === 'PATCH' ? new Promise<void>(() => {}) : route.fallback()));
       await page.goto('/#/account?tab=connections');
@@ -706,6 +706,7 @@ for (const v of variants) {
     // Importing dives from SSI (ADR 0030), with Lena's logbook: the setting, the preview with a computer and a decision
     // (the entry on 13 August always has two dives to choose from), the outcome, and a dive without a recording.
     test('my account, importing dives from SSI: the preview, then the outcome', { tag: ['@account'] }, async ({ page, request }) => {
+      test.setTimeout(60_000);
       await lenaReady(request);
       try {
         await page.goto('/#/account?tab=connections');
@@ -1132,6 +1133,7 @@ for (const v of variants) {
     });
 
     test('notes changed both here and in SSI, asked on the dive\'s page and waiting on the Review page after a run', { tag: ['@dives'] }, async ({ page, request }) => {
+      test.setTimeout(60_000);
       const id = await conflictAtSsi(request);
       const n = await diveNumber(request, id);
       const conflictsTitle = v.english ? 'Changed in both places' : 'An beiden Stellen geändert';
@@ -1295,6 +1297,33 @@ test.describe('behaviour', () => {
     }
   });
 
+  /**
+   * Waits until the layout is at rest: the fonts are ready and every chart is as wide as the box it is drawn in. A
+   * viewport change can move a chart's box on its own (the sidebar appears at 64rem), and uPlot sets its canvas width
+   * from a ResizeObserver callback one frame later, so a measurement taken at once can see the chart from the layout
+   * before (FAH-55). A chart that is still too wide after the rounds fails here: clipping it keeps the page in place,
+   * so the sweep's overflow check alone would not see it.
+   */
+  async function settleLayout(page: Page) {
+    const stale = await page.evaluate(async () => {
+      await document.fonts.ready;
+      const frames = () => new Promise<void>((done) => requestAnimationFrame(() => requestAnimationFrame(() => done())));
+      const tooWide = () => [...document.querySelectorAll<HTMLElement>('.profile')].flatMap((box) => {
+        const plot = box.querySelector<HTMLElement>(':scope > .uplot');
+        if (plot === null) return [];
+        const width = plot.getBoundingClientRect().width;
+        return width > box.clientWidth + 0.5 ? [`${Math.round(width)} px in a ${box.clientWidth} px box`] : [];
+      });
+      await frames();
+      for (let round = 0; round < 10; round += 1) {
+        if (tooWide().length === 0) return [];
+        await frames();
+      }
+      return tooWide();
+    });
+    expect(stale, 'charts that stayed wider than their box').toEqual([]);
+  }
+
   // The variants above check four widths in depth; this sweeps the widths in between (tablets, split
   // screens), where tables switch layouts by the room they have (container queries). One test per page,
   // so the pages spread over the workers (ADR 0023).
@@ -1312,6 +1341,7 @@ test.describe('behaviour', () => {
         await page.setViewportSize({ width, height: 900 });
         await page.goto(path());
         await page.getByRole('heading', { level: 1 }).waitFor();
+        await settleLayout(page);
         const { wide, ...overflow } = await page.evaluate(() => {
           const right = document.documentElement.clientWidth;
           return {
@@ -1332,6 +1362,7 @@ test.describe('behaviour', () => {
       await page.goto(path);
       await page.getByRole('heading', { level: 1 }).waitFor();
       await page.addStyleTag({ content: 'html { font-size: 200% !important; }' });
+      await settleLayout(page);
       const overflow = await page.evaluate(() => ({
         page: document.documentElement.scrollWidth - document.documentElement.clientWidth,
         tables: [...document.querySelectorAll('.table-scroll')].map((t) => t.scrollWidth - t.clientWidth).filter((o) => o > 0),

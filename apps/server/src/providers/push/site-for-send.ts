@@ -6,7 +6,7 @@
 import { eq } from 'drizzle-orm';
 import type { Db } from '../../db/client.js';
 import { diveSite } from '../../db/schema.js';
-import type { Actor } from '../../dives/revisions.js';
+import type { Actor } from '../../revisions/revisions.js';
 import { accountOf, heldIds, idsOf, nearbyMatch, pickId, settleVisibility, storeId } from '../../sites/site-ids.js';
 import { SiteError } from '../../sites/site-error.js';
 import type { SiteSource } from '../../sites/sources.js';

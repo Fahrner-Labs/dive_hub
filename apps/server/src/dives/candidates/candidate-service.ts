@@ -6,7 +6,7 @@ import { device, dive, diverManagement, duplicateCandidate, original, recording 
 import { attachRecording, createDiveFromRecording } from '../dive-service.js';
 import { managedDiverIds, managesDiveDiver } from '../../divers/management.js';
 import { keepApart } from '../checks/logbook-check-answers.js';
-import type { Actor } from '../revisions.js';
+import type { Actor } from '../../revisions/revisions.js';
 
 export class CandidateError extends Error {
   constructor(readonly code: 'candidate_not_found' | 'candidate_resolved' | 'not_a_candidate' | 'dive_not_found') {

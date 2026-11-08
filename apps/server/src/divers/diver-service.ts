@@ -2,19 +2,19 @@
 // external Divers (no managing User), shared like Dive sites; a Diver's accounts at services set by hand; and what a
 // Diver's SSI buddy code says about them, with the codes built from it and a scanned code finding its Diver (ADR 0043).
 import { and, eq, ilike, inArray, isNull, ne, sql } from 'drizzle-orm';
-import { personCodes, readVerificationCode, type VerificationCode } from '../centres/verification-code.js';
+import { personCodes, readVerificationCode, type VerificationCode } from './verification-code.js';
 import type { Db, Queryable, Tx } from '../db/client.js';
 import type { Caller } from '../http/caller.js';
 import {
   connection, device, dive, diver, diverBodyWeight, diverExternalId, diverManagement, participant, recording,
 } from '../db/schema.js';
 import { managedDiverIds, managementOf } from './management.js';
-import { renumber } from '../dives/dive-numbers.js';
-import { userActor, writeRevision } from '../dives/revisions.js';
+import { renumber } from './dive-numbers.js';
+import { userActor, writeRevision } from '../revisions/revisions.js';
 import { DiverError } from './diver-error.js';
 import { mergeExternalDiver } from './merge.js';
 import { tidyName } from './diver-name.js';
-import type { DiverSource } from '../providers/provider.js';
+import type { DiverSource } from '../vocabulary.js';
 
 /** What an account at each service looks like (ADR 0024): SSI's user master ID; PADI's isn't known yet. */
 const ACCOUNT_PATTERN: Record<DiverSource, RegExp> = { ssi: /^[1-9]\d{0,9}$/, padi: /^[A-Za-z0-9-]{1,40}$/ };

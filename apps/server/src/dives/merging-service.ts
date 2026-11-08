@@ -6,9 +6,8 @@ import { and, desc, eq, gte, inArray, isNull, lte, ne } from 'drizzle-orm';
 import type { Db, Queryable, Tx } from '../db/client.js';
 import { isUnit, unitsOf } from './recording-units.js';
 import { OVERRIDABLE_FIELDS, dive, diveSite, participant, push, recording, type OverridableField } from '../db/schema.js';
-import { DAY_MS, MAX_OFFSET_MS, OVERLAP_TOLERANCE_SECONDS, localDay } from '../imports/matching.js';
-import type { currentRemote as CurrentRemote, PushRow } from '../providers/remote-state.js';
-import type { WaitingPushService } from '../providers/waiting-push/waiting-push-service.js';
+import { DAY_MS, MAX_OFFSET_MS, OVERLAP_TOLERANCE_SECONDS, localDay } from './matching.js';
+import type { CurrentRemote, DivePushRow, DiveWaitingPushes } from './provider-port.js';
 import { liveSite } from '../sites/dive-site-link.js';
 import {
   DiveError, applyToDive, attachRecording, lockManagedDive, nextVersion, participantsOf,
@@ -18,8 +17,8 @@ import { valuesOfDive, type DiveValues } from './dive-values.js';
 import type { LogbookCheckService } from './checks/logbook-check-service.js';
 import { takeCylinders } from './cylinders.js';
 import { takeWeighting } from './weighting.js';
-import { changeListener, userActor, writeRevision, type Actor, type Changes } from './revisions.js';
-import { renumber } from './dive-numbers.js';
+import { changeListener, userActor, writeRevision, type Actor, type Changes } from '../revisions/revisions.js';
+import { renumber } from '../divers/dive-numbers.js';
 
 type DiveRow = typeof dive.$inferSelect;
 
@@ -27,14 +26,14 @@ type DiveRow = typeof dive.$inferSelect;
  * The Provider rules merging and moving read (passed in from app.ts, so dives/ imports only types from providers/, ADR
  * 0053): the remote dive a Dive has at a Provider now, and where a Dive is deleted through the Waiting push queue.
  */
-export type ProviderLinks = Pick<WaitingPushService, 'deletingItself'> & { currentRemote: typeof CurrentRemote };
+export type ProviderLinks = Pick<DiveWaitingPushes, 'deletingItself'> & { currentRemote: CurrentRemote };
 
 /** Values a Dive may lack; the start and the duration it always has. */
 const FILLABLE = ['maxDepthM', 'avgDepthM', 'waterTemperatureC'] as const satisfies readonly OverridableField[];
 
 /** The Dive's Pushes, newest first, by Provider. */
-function byProvider(pushes: PushRow[], diveId: string): Map<string, PushRow[]> {
-  const found = new Map<string, PushRow[]>();
+function byProvider(pushes: DivePushRow[], diveId: string): Map<string, DivePushRow[]> {
+  const found = new Map<string, DivePushRow[]>();
   for (const p of pushes) {
     if (p.diveId !== diveId) continue;
     found.set(p.provider, [...(found.get(p.provider) ?? []), p]);
@@ -247,7 +246,7 @@ export function createMergingService(db: Db, checks: LogbookCheckService, { curr
  * and the kept Dive has none, the other's Pushes there become the kept Dive's, so what Dive Hub sent and saw stays
  * with the link. Where both have one, the other's stays behind on the Dive that is deleted.
  */
-export async function moveLinks(tx: Tx, currentRemote: typeof CurrentRemote, userId: string, keptId: string, otherId: string) {
+export async function moveLinks(tx: Tx, currentRemote: CurrentRemote, userId: string, keptId: string, otherId: string) {
   const pushes = await pushesOf(tx, [keptId, otherId]);
   const mine = byProvider(pushes, keptId);
   const moved: { provider: string; remoteId: string; remoteNumber: number | null }[] = [];

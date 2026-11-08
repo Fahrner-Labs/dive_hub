@@ -25,6 +25,7 @@ import { createFakeGarmin } from './fake-garmin.js';
 import { computerDive, createFakeSsi, fakeCard, handTypedDive, type FakeSsiSite } from './fake-ssi.js';
 import { makeSyntheticDive } from './fixtures/synthetic-dive.js';
 import { resettableClock } from './support.js';
+import { resolveTestDatabaseUrl } from './test-database-url.js';
 import { createMergingService } from '../src/dives/merging-service.js';
 import { createLogbookCheckService } from '../src/dives/checks/logbook-check-service.js';
 import { currentRemote } from '../src/providers/remote-state.js';
@@ -37,7 +38,7 @@ import { startWorker } from '../src/worker.js';
 export const E2E_USER = { email: 'erika@example.com', name: 'Erika', password: 'correct horse battery staple' };
 
 const port = Number(process.env.E2E_PORT ?? 3300);
-const baseDbUrl = process.env.TEST_DATABASE_URL ?? process.env.DATABASE_URL ?? 'postgres://divehub:divehub-dev@127.0.0.1:5432/divehub';
+const baseDbUrl = resolveTestDatabaseUrl();
 // One database per e2e server: the browser tests run one server per worker (ADR 0023).
 const dbName = process.env.E2E_DB ?? 'divehub_e2e';
 if (!/^[a-z0-9_]+$/.test(dbName)) throw new Error(`E2E_DB must be a plain name: ${dbName}`);
@@ -130,9 +131,13 @@ const services = createServices({
     createGarminAdapter({ client: createGarminClient({ url: fakeGarmin.url }), pauseMs: 0 })],
   // The fake needs no pause between actions; the browser tests would only wait, so the pauses are skipped.
   clock: resettableClock(),
+  // Open pages hear about background work in the browser tests too (ADR 0066).
+  live: { connectionString: url.toString() },
 });
 const { imports } = services;
 const app = await buildApp({ ...services, baseUrl: `http://localhost:${port}`, maxUploadBytes: 1 << 26, webDir: here('../../web/dist') });
+// Open pages hear about background work in the browser tests too (ADR 0066).
+services.live.start();
 
 // Seed: one User, one Dive from a main computer and a backup that auto-attaches to it.
 const { user } = await auth.api.createUser({ body: { ...E2E_USER, role: 'admin' } });

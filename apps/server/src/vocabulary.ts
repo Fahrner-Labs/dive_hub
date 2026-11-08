@@ -49,3 +49,7 @@ export interface Position {
 /** Sources a Site import fetches from, in the order a run asks them (ADR 0021). */
 export const IMPORT_SOURCES = ['osm', 'wikidata', 'ssi'] as const;
 export type ImportSource = (typeof IMPORT_SOURCES)[number];
+
+/** A service a person has an account at, as an external Diver's accounts record it (ADR 0028). */
+export const DIVER_SOURCES = ['ssi', 'padi'] as const;
+export type DiverSource = (typeof DIVER_SOURCES)[number];

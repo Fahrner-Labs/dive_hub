@@ -5,7 +5,7 @@
 import { and, eq, inArray, isNotNull, isNull, or, sql } from 'drizzle-orm';
 import type { Queryable, Tx } from '../db/client.js';
 import { diveSite, diveSiteExternalId, diverExternalId, diverManagement } from '../db/schema.js';
-import { writeRevision, type Actor } from '../dives/revisions.js';
+import { writeRevision, type Actor } from '../revisions/revisions.js';
 import type { Position } from '../vocabulary.js';
 import { distanceM, MATCH_WITHIN_M, namesMatch } from './import/import-plan.js';
 import type { ImportedValues } from './import/site-source.js';

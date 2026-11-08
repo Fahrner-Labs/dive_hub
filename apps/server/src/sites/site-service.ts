@@ -5,7 +5,7 @@ import { and, asc, desc, eq, ilike, isNotNull, isNull, or, sql, type SQL, type S
 import type { Db, Tx } from '../db/client.js';
 import type { Caller } from '../http/caller.js';
 import { dive, diveCentreSite, diveSite, revision, siteImport } from '../db/schema.js';
-import { changeListener, writeRevision, type Changes } from '../dives/revisions.js';
+import { changeListener, writeRevision, type Changes } from '../revisions/revisions.js';
 import type { Position, SiteWaterType } from '../vocabulary.js';
 import { IMPORTED_FIELDS, type ImportedValues } from './import/site-source.js';
 import { isUniqueViolation, SiteError } from './site-error.js';

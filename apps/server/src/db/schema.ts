@@ -540,7 +540,7 @@ export const dive = pgTable(
     diverId: uuid('diver_id').notNull().references(() => diver.id),
     /**
      * The Dive's place in its Diver's logbook (ADR 0048): computed, never typed. Written only by `renumber`
-     * (src/dives/dive-numbers.ts); null for a Dive that doesn't count (deleted, or apnea the Diver doesn't count).
+     * (src/divers/dive-numbers.ts); null for a Dive that doesn't count (deleted, or apnea the Diver doesn't count).
      */
     number: integer('number'),
     startsAt: timestamp('starts_at', { withTimezone: true }).notNull(),

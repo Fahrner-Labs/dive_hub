@@ -171,9 +171,9 @@
   },
   "import": {
     "title": "Import",
-    "drop": "Tauchgangsdateien von Garmin oder Suunto oder ZIP-Archive hier ablegen",
+    "drop": "Tauchgangsdateien von Garmin, Suunto oder Oceanic+ oder ZIP-Archive hier ablegen",
     "choose": "Dateien auswählen",
-    "hint": "Garmin: „Export Original“-ZIPs aus Garmin Connect oder direkt von der Uhr kopierte FIT-Dateien. Suunto: der JSON-Export eines Tauchgangs aus der Suunto-App; der FIT-Export geht auch, enthält aber viel weniger.",
+    "hint": "Garmin: „Export Original“-ZIPs aus Garmin Connect oder direkt von der Uhr kopierte FIT-Dateien. Suunto: der JSON-Export eines Tauchgangs aus der Suunto-App; der FIT-Export geht auch, enthält aber viel weniger. Oceanic+: der UDDF-Export des Logbuchs oder das ZIP, das die App verschickt, so wie es ist.",
     "status": {
       "pending": "wartet",
       "processing": "wird verarbeitet",
@@ -235,11 +235,11 @@
       "kind_not_chosen": "eine Art von Tauchgang, die diese Verbindung nicht abruft; die Arten stehen in ihren Einstellungen"
     },
     "errorCode": {
-      "unsupported_file": "Das ist weder eine Tauchgangsdatei (FIT, Suunto-JSON) noch ein ZIP-Archiv.",
+      "unsupported_file": "Das ist weder eine Tauchgangsdatei (FIT, Suunto-JSON, UDDF) noch ein ZIP-Archiv.",
       "processing_failed": "Die Verarbeitung ist fehlgeschlagen.",
       "choice_expired": "Innerhalb von 7 Tagen hat niemand ausgewählt, was importiert werden soll. Der Upload wurde deshalb entfernt. Lade die Datei noch einmal hoch."
     },
-    "skipped": "Übersprungen: {{names}}. Nur FIT-Dateien, Suunto-JSON-Dateien und ZIP-Archive lassen sich importieren.",
+    "skipped": "Übersprungen: {{names}}. Nur FIT-Dateien, Suunto-JSON-Dateien, UDDF-Dateien und ZIP-Archive lassen sich importieren.",
     "decision": {
       "attached": "zu einem Tauchgang hinzugefügt",
       "new_dive": "als eigener Tauchgang angelegt",
@@ -258,6 +258,7 @@
     "findConnect": "Garmin-Connect-Website: Tauchgang öffnen, im Zahnrad-Menü „Export Original“ wählen und das ZIP so importieren, wie es ist.",
     "findWatch": "Garmin-Uhr: per USB anschließen und die Dateien aus dem Ordner GARMIN/Activity kopieren.",
     "findSuunto": "Suunto-App: Tauchgang öffnen, oben rechts auf die drei Punkte tippen und „Download JSON file“ wählen.",
+    "findOceanic": "Oceanic+-App: der UDDF-Export des Logbuchs, vermutlich unter Logbuch → Teilen/Exportieren. Die App verschickt ein ZIP per E-Mail; einfach so hochladen.",
     "grouped": "{{what}}: {{count}}",
     "fromProvider": "Tauchgänge aus {{name}}"
   },
@@ -314,7 +315,11 @@
     "fromProvider": "aus {{name}}",
     "surfaceInterval": "{{time}} nach dem Tauchgang davor",
     "with": "mit {{people}}",
-    "morePeople": "+{{count}}"
+    "morePeople": "+{{count}}",
+    "newDives_one": "{{count}} neuer Tauchgang",
+    "newDives_other": "{{count}} neue Tauchgänge",
+    "showNewDives_one": "{{count}} neuen Tauchgang zeigen",
+    "showNewDives_other": "{{count}} neue Tauchgänge zeigen"
   },
   "dive": {
     "numberOnComputer": "Nummer auf dem Computer",
@@ -425,7 +430,14 @@
     },
     "noRecording": "Dieser Tauchgang hat keine Aufzeichnung.",
     "noRecordingFrom": "Noch keine Aufzeichnung: dieser Tauchgang kommt aus deinem {{name}}-Logbuch, von Hand eingetragen.",
-    "noRecordingNext": "Wenn du die Datei des Tauchcomputers importierst, kommt ihre Aufzeichnung dazu, und ihre Werte ersetzen diese."
+    "noRecordingNext": "Wenn du die Datei des Tauchcomputers importierst, kommt ihre Aufzeichnung dazu, und ihre Werte ersetzen diese.",
+    "changedElsewhere": "Dieser Tauchgang wurde anderswo geändert. Deine Eingaben sind noch da.",
+    "loadNewVersion": "Neue Version laden",
+    "loadNewVersionTitle": "Neue Version laden?",
+    "loadNewVersionLost": "Deine Änderungen an diesem Tauchgang gehen verloren. Die Version von anderswo ersetzt sie.",
+    "loadNewVersionConfirm": "Neue Version laden",
+    "newVersionLoaded": "Neue Version geladen.",
+    "deletedElsewhere": "Dieser Tauchgang wurde anderswo gelöscht. Deine Eingaben sind noch da, können aber nicht gespeichert werden."
   },
   "errors": {
     "unknown": "Etwas ist schiefgegangen. Versuch es noch einmal.",
@@ -543,7 +555,9 @@
     "cylinder_series_not_found": "Dieser Tauchgang hat keinen solchen Flaschensender. Lade ihn neu und versuch es noch einmal.",
     "weighting_feedback_invalid": "Zu passendem Blei gehört keine Angabe, um wie viel. Lass „Um wie viel“ leer.",
     "suit_invalid": "Die Angaben zum Anzug passen nicht: Eine Dicke gehört zu einem Nass- oder Halbtrockenanzug, ein Unterzieher zu einem Trockenanzug.",
-    "gas_not_breathable": "Ein Gemisch mit unter 16 % Sauerstoff ist an der Oberfläche nicht atembar."
+    "gas_not_breathable": "Ein Gemisch mit unter 16 % Sauerstoff ist an der Oberfläche nicht atembar.",
+    "too_many_live_streams": "Für dieses Konto sind zu viele Live-Verbindungen offen; schließe einen anderen Tab oder warte einen Moment.",
+    "live_unavailable": "Live-Aktualisierungen sind nicht verfügbar; die Seite prüft weiterhin auf Änderungen."
   },
   "vocabulary": {
     "waterType": {

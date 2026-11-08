@@ -1,0 +1,90 @@
+# The code-navigation artefacts (ADR 0067): Graphify's symbol/call graph and dependency-cruiser's module graph.
+# Built on every merge to main and committed to docs/generated (marked generated in .gitattributes, so the review
+# diff leaves it out). The canned queries fail loudly if the graph stops navigating the code.
+name: code graph
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# Pull requests run the build and the queries with a read-only token; only the main-only publish job may write.
+permissions:
+  contents: read
+
+concurrency:
+  group: code-graph-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  graph:
+    # The artefact commit skips CI: the source commit passed its pull-request check, and the graph needs no check.
+    if: ${{ github.event_name != 'push' || !contains(github.event.head_commit.message, '[skip ci]') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # The meta sidecar names the source commit, and Graphify reads it with git.
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - uses: astral-sh/setup-uv@v6
+
+      # Pinned to the version the spike measured (16 s incremental, 8.2 MB artefact; ADR 0067).
+      - name: Install Graphify
+        run: uv tool install 'graphifyy==0.9.103'
+      - name: Put Graphify on PATH
+        run: echo "$(uv tool dir --bin)" >> "$GITHUB_PATH"
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build the graph, report and boundary JSON
+        run: node scripts/code-graph.mjs build
+
+      - name: Canned queries
+        run: node scripts/code-graph.mjs verify --expect-sha "$GITHUB_SHA"
+
+      - uses: actions/upload-artifact@v4
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        with:
+          name: docs-generated
+          path: docs/generated/
+          retention-days: 7
+
+  publish:
+    needs: graph
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/download-artifact@v4
+        with:
+          name: docs-generated
+          path: docs/generated
+
+      - name: Commit the artefacts
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add docs/generated
+          if [ -z "$(git status --porcelain docs/generated)" ]; then
+            echo "code-graph: the artefacts did not change"
+            exit 0
+          fi
+          git commit -m "chore(code-graph): rebuild from ${GITHUB_SHA} [skip ci]"
+          git push

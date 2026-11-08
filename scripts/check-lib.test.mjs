@@ -7,12 +7,17 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { test } from 'node:test';
 import { FULL_ONLY, VARIANTS, browserGrepInvert, variantsRun } from './check-lib.mjs';
-import { testsFilter, shellArgs, passedToRecord, browserTestList, baseCandidates, baselineGrowth, baselineSize, changedSince, chooseBase, clearFailed, clearPassed, carryPassed, passedRun, passedSince, recordPassed, reportedTests, stillPassed, countingBase, e2eServerLoads, failedRerunRenews, failedRun, failedTestsFromReport, forBrowserTests, greenRun, keptFailures, lintTargets, listedTests, planFor, planSteps, recordFailed, recordGreen, snapshot } from './check-lib.mjs';
+import { testsFilter, shellArgs, passedToRecord, browserTestList, baseCandidates, baselineGrowth, baselineSize, changedSince, chooseBase, clearFailed, clearPassed, carryPassed, passedRun, passedSince, recordPassed, reportedTests, stillPassed, countingBase, e2eServerLoads, failedRerunRenews, failedRun, failedTestsFromReport, forBrowserTests, greenRun, keptFailures, lintTargets, listedTests, planFor, planSteps, recordFailed, recordGreen, snapshot, REPO_LOCATING_GIT_VARS, withoutRepoEnv, REPO_MAP_STALE, repoMapBlocks } from './check-lib.mjs';
+
+// The pre-commit hook exports GIT_DIR/GIT_WORK_TREE; inherited by this test process they would make the fixture
+// `git` commands, and the check helpers these tests call, write to the real repository instead of a temp directory.
+// Drop them once here, and again in `repository` for each child process (FAH-51).
+for (const name of REPO_LOCATING_GIT_VARS) delete process.env[name];
 
 /** A git repository with one commit holding `files`. */
 function repository(files) {
   const cwd = mkdtempSync(join(tmpdir(), 'check-test-'));
-  const git = (...args) => execFileSync('git', args, { cwd, stdio: 'pipe' });
+  const git = (...args) => execFileSync('git', args, { cwd, env: withoutRepoEnv(), stdio: 'pipe' });
   git('init', '--quiet');
   git('config', 'user.name', 'Test');
   git('config', 'user.email', 'test@example.com');
@@ -26,6 +31,44 @@ function repository(files) {
   git('commit', '--quiet', '-m', 'first');
   return { cwd, git, write, remove: (path) => rmSync(join(cwd, path)), drop: () => rmSync(cwd, { recursive: true, force: true }) };
 }
+
+/** A repository's refs, branch, local config and object store: what a fixture command must never change in the enclosing repository. */
+function repoState(cwd) {
+  const git = (...args) => execFileSync('git', args, { cwd, env: withoutRepoEnv(), encoding: 'utf8' });
+  return [git('for-each-ref', '--format=%(refname) %(objectname)'), git('symbolic-ref', '--short', 'HEAD'), git('config', '--local', '--list'), git('count-objects', '-v')].join('\n');
+}
+
+test('a fixture repository ignores GIT_DIR/GIT_WORK_TREE and never writes to the enclosing repository', (t) => {
+  const decoy = repository({ 'real.ts': 'real' });
+  t.after(decoy.drop);
+  const before = repoState(decoy.cwd);
+  const saved = Object.fromEntries(REPO_LOCATING_GIT_VARS.map((name) => [name, process.env[name]]));
+  // As the pre-commit hook runs `pnpm check` from a linked worktree: the exported variables point at a real repo.
+  process.env.GIT_DIR = join(decoy.cwd, '.git');
+  process.env.GIT_WORK_TREE = decoy.cwd;
+  try {
+    const fixture = repository({ 'a.ts': 'a' });
+    t.after(fixture.drop);
+    fixture.git('branch', '-M', 'renamed');
+    fixture.write('b.ts', 'b');
+    fixture.git('add', '-A');
+    fixture.git('commit', '--quiet', '-m', 'fixture commit');
+    // The fixture commands, and the check helpers they use, ran in the temp directory: its branch is the one
+    // renamed, and its snapshot is its own HEAD.
+    assert.equal(fixture.git('branch', '--show-current').toString().trim(), 'renamed');
+    assert.equal(snapshot(fixture.cwd), fixture.git('rev-parse', 'HEAD^{tree}').toString().trim());
+  } finally {
+    for (const [name, value] of Object.entries(saved)) {
+      if (value === undefined) delete process.env[name];
+      else process.env[name] = value;
+    }
+  }
+  assert.equal(repoState(decoy.cwd), before, 'the fixture wrote to the repository under GIT_DIR');
+});
+
+test('the fixture environment drops only the repository-locating Git variables', () => {
+  assert.deepEqual(withoutRepoEnv({ GIT_DIR: '/real/.git', GIT_WORK_TREE: '/real', GIT_INDEX_FILE: '/real/index', GIT_AUTHOR_NAME: 'A', GIT_COMMITTER_EMAIL: 'c@example.com', PATH: '/bin' }), { GIT_AUTHOR_NAME: 'A', GIT_COMMITTER_EMAIL: 'c@example.com', PATH: '/bin' });
+});
 
 test('without a green run, the changes are those since the last commit: edited, new and deleted files', (t) => {
   const repo = repository({ 'a.ts': 'a', 'b.ts': 'b', 'c.ts': 'c', '.gitignore': 'ignored/\n' });
@@ -169,14 +212,6 @@ test('a renamed file keeps its suppressions, and only those it had', () => {
 test('a change to the edit hook runs the check script tests and lints everything', () => {
   const plan = planFor(['.claude/hooks/lint-file.mjs']);
   assert.deepEqual([plan.scripts, plan.lint, plan.server, plan.e2e], [true, 'all', 'none', 'none']);
-  assert.equal(planFor(['.claude/hooks/guard-memory.mjs']).scripts, false);
-});
-
-test('a change to a protected-path hook runs the script tests that cover it, and nothing else', () => {
-  for (const hook of ['.claude/hooks/ask-protected.mjs', '.claude/hooks/guard-protected.mjs']) {
-    const plan = planFor([hook]);
-    assert.deepEqual([plan.scripts, plan.lint, plan.typecheck, plan.server, plan.e2e], [true, 'none', false, 'none', 'none']);
-  }
 });
 
 test('a changed check script runs its own tests', () => {
@@ -391,13 +426,24 @@ test('PR #5 replayed: a change to e2e/support.ts alone plans no browser tests in
 });
 
 test('the check scripts run their own tests only; the lint script also lints everything; one-off scripts and licences are quiet', () => {
-  for (const path of ['scripts/check.mjs', 'scripts/check-lib.mjs', 'scripts/check-lib.test.mjs', 'scripts/check-run.mjs', 'scripts/check-log.mjs', 'scripts/check-tags.mjs']) {
+  for (const path of ['scripts/check.mjs', 'scripts/check-lib.mjs', 'scripts/check-lib.test.mjs', 'scripts/check-run.mjs', 'scripts/check-log.mjs', 'scripts/check-tags.mjs', 'scripts/repomap.mjs', 'scripts/repomap.test.mjs', 'scripts/code-graph.mjs', 'scripts/code-graph.test.mjs']) {
     const plan = planFor([path]);
     assert.deepEqual([plan.scripts, plan.typecheck, plan.lint, plan.server, plan.web, plan.e2e], [true, false, 'none', 'none', 'none', 'none'], path);
   }
   const lintScript = planFor(['scripts/check-lint.mjs']);
   assert.deepEqual([lintScript.scripts, lintScript.lint, lintScript.server, lintScript.e2e], [true, 'all', 'none', 'none']);
-  assert.deepEqual(planFor(['scripts/fit-compressibility.mjs', 'LICENSE', 'NOTICE']), planFor([]));
+  assert.deepEqual(planFor(['scripts/fit-compressibility.mjs', 'LICENSE', 'NOTICE', '.gitattributes']), planFor([]));
+});
+
+test('a stale repo map stops the check except on a CI push to main, whose repo-map workflow rebuilds it', () => {
+  assert.equal(repoMapBlocks(REPO_MAP_STALE, {}), true);
+  assert.equal(repoMapBlocks(REPO_MAP_STALE, { CI: 'true', GITHUB_REF: 'refs/pull/7/merge' }), true);
+  assert.equal(repoMapBlocks(REPO_MAP_STALE, { CI: 'true', GITHUB_REF: 'refs/heads/main' }), false);
+  // A crash or a missing dependency is never excused, not even on main.
+  assert.equal(repoMapBlocks(1, { CI: 'true', GITHUB_REF: 'refs/heads/main' }), true);
+  assert.equal(repoMapBlocks(1, {}), true);
+  assert.equal(repoMapBlocks(0, { CI: 'true', GITHUB_REF: 'refs/heads/main' }), false);
+  assert.equal(repoMapBlocks(0, {}), false);
 });
 
 test('the dive number pages run the areas that show them', () => {

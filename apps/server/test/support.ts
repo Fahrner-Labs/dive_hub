@@ -11,7 +11,7 @@ import { buildApp } from '../src/app.js';
 import { createServices } from '../src/compose.js';
 import { createDb, type Db } from '../src/db/client.js';
 import { migrateDatabase } from '../src/db/migrate.js';
-import { listenToChanges } from '../src/dives/revisions.js';
+import { listenToChanges } from '../src/revisions/revisions.js';
 import type { SiteSourceAdapter } from '../src/sites/import/site-source.js';
 import type { ImportSource } from '../src/sites/sources.js';
 import { createSecretBox } from '../src/secrets/secret-box.js';
@@ -20,8 +20,9 @@ import { createSsiAdapter } from '../src/providers/ssi/ssi-adapter.js';
 import { createSsiClient } from '../src/providers/ssi/ssi-client.js';
 import { createLocalBlobStore } from '../src/storage/blob-store.js';
 import { createFakeSsi, type FakeSsi } from './fake-ssi.js';
+import { resolveTestDatabaseUrl } from './test-database-url.js';
 
-const baseDbUrl = process.env.TEST_DATABASE_URL ?? process.env.DATABASE_URL ?? 'postgres://divehub:divehub-dev@127.0.0.1:5432/divehub';
+const baseDbUrl = resolveTestDatabaseUrl();
 export const BASE_URL = 'http://localhost:3000';
 /** A password that satisfies the length rule (ADR 0011). */
 export const PASSWORD = 'correct horse battery staple';
@@ -30,7 +31,7 @@ let skipWarned = false;
 
 /**
  * Whether the database tests can run. Without PostgreSQL they are skipped with a warning; with REQUIRE_DATABASE=1
- * (CI) an unreachable database fails the file instead, so a broken DATABASE_URL never passes as skipped tests.
+ * (CI) an unreachable database fails the file instead, so a broken test database URL never passes as skipped tests.
  */
 export async function databaseReachable(): Promise<boolean> {
   const client = new pg.Client({ connectionString: baseDbUrl, connectionTimeoutMillis: 2000 });
@@ -139,6 +140,7 @@ export async function createTestApp(t: TestDatabase, options: {
       ...extraProviders,
     ],
     clock,
+    live: { connectionString: t.pool.options.connectionString! },
   });
   const app = await buildApp({ ...services, baseUrl: BASE_URL, maxUploadBytes: 1 << 26, webDir });
   return { ...services, app, fakeSsi, ssiClock, clock, pauses: clock.slept };
@@ -148,7 +150,7 @@ export async function createTestApp(t: TestDatabase, options: {
  * For a test that builds services without createTestApp: its Revisions are written, and no Provider queue hears them.
  * Without it the test passes only when an earlier file in the shared pool built a provider layer.
  */
-export const listenToNoChanges = () => listenToChanges({ diveChanged: async () => {}, siteChanged: async () => {} });
+export const listenToNoChanges = () => listenToChanges({ diveChanged: async () => {}, siteRevisionWritten: async () => {}, siteChanged: async () => {} });
 
 /** Creates a User the way an admin would (Better Auth's admin API, server-side). */
 export async function createUser(auth: Auth, email: string, role: 'user' | 'admin' = 'user') {
