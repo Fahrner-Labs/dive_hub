@@ -4,7 +4,7 @@
 > `pnpm check` fails when this map is stale. Symbols are ranked by how widely the code references them;
 > each module shows its most-referenced ones (exported symbols rank higher). Search here before walking the tree.
 
-Files: 344 · symbols: 3054 · shown: 234
+Files: 344 · symbols: 3068 · shown: 235
 
 ### server/(root)
 apps/server/src/vocabulary.ts:13 type SiteWaterType
@@ -13,7 +13,7 @@ apps/server/src/vocabulary.ts:51 type ImportSource
 apps/server/src/errors.ts:2 const errorMessage
 apps/server/src/compose.ts:64 fn createServices
 apps/server/src/app.ts:64 fn buildApp
-… 34 more symbols in this module
+… 40 more symbols in this module
 
 ### server/assessment
 apps/server/src/assessment/rules.ts:42 const RULES
@@ -53,16 +53,17 @@ apps/server/src/certifications/certification-service.ts:119 fn createCertificati
 
 ### server/db
 apps/server/src/db/client.ts:5 type Db
-apps/server/src/db/schema.ts:536 const dive
+apps/server/src/db/schema.ts:652 const dive
 apps/server/src/db/client.ts:6 type Tx
 apps/server/src/db/client.ts:8 type Queryable
-apps/server/src/db/schema.ts:338 const diveSite
-apps/server/src/db/schema.ts:641 const recording
-apps/server/src/db/schema.ts:947 const push
+apps/server/src/db/schema.ts:454 const diveSite
+apps/server/src/db/schema.ts:757 const recording
+apps/server/src/db/schema.ts:1066 const push
 apps/server/src/db/auth-schema.ts:20 const user
 apps/server/src/db/import-types.ts:12 iface ImportedValues
 apps/server/src/db/import-types.ts:6 type ImportArea
-… 133 more symbols in this module
+apps/server/src/db/auth-schema.ts:39 const session
+… 140 more symbols in this module
 
 ### server/divers
 apps/server/src/divers/management.ts:8 fn managedDiverIds

@@ -53,3 +53,17 @@ export type ImportSource = (typeof IMPORT_SOURCES)[number];
 /** A service a person has an account at, as an external Diver's accounts record it (ADR 0028). */
 export const DIVER_SOURCES = ['ssi', 'padi'] as const;
 export type DiverSource = (typeof DIVER_SOURCES)[number];
+
+/** What kind of gear an Equipment item is (ADR 0034); an open list the User may extend with `other`. */
+export const EQUIPMENT_CATEGORIES = [
+  'regulator', 'bcd', 'wing', 'backplate', 'cylinder', 'drysuit', 'wetsuit', 'dive_computer', 'transmitter', 'light', 'camera', 'other',
+] as const;
+export type EquipmentCategory = (typeof EQUIPMENT_CATEGORIES)[number];
+
+/** Whether an Equipment item is still in use; a used item is retired, lost or sold, never deleted (ADR 0034). */
+export const EQUIPMENT_STATUSES = ['in_use', 'retired', 'lost', 'sold'] as const;
+export type EquipmentStatus = (typeof EQUIPMENT_STATUSES)[number];
+
+/** How an exception to an item's mode is recorded on a Dive (ADR 0034): put on it, or taken off it. */
+export const EQUIPMENT_USES = ['put_on', 'taken_off'] as const;
+export type EquipmentUse = (typeof EQUIPMENT_USES)[number];
