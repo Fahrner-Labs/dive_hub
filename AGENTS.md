@@ -22,6 +22,7 @@ Start at [docs/index.md](docs/index.md).
 | `docs/decisions/` | ADRs (`NNNN-title.md`, copy `template.md`) |
 | `docs/references/` | One file per external project/source |
 | `docs/research/` | Dated research notes (`YYYY-MM-DD-topic.md`), sources linked |
+| `docs/generated/REPOMAP.md` | Generated, ranked symbol map of the app sources; search it before grep-walking the tree |
 
 ## Conventions
 

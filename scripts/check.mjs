@@ -20,7 +20,7 @@
 import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { relative, resolve } from 'node:path';
-import { QUIET, STEPS, browserGrepInvert, browserTestList, listedTests, changedSince, variantsRun, clearFailed, countingBase, e2eServerLoads, failedRerunRenews, failedRun, forBrowserTests, keptFailures, failedTestsFromReport, REPORT, carryPassed, clearPassed, passedSince, passedToRecord, recordPassed, shellArgs, testsFilter, fullPlan, lintTargets, planSteps, recordFailed, recordGreen, snapshot } from './check-lib.mjs';
+import { QUIET, STEPS, browserGrepInvert, browserTestList, listedTests, changedSince, variantsRun, clearFailed, countingBase, e2eServerLoads, failedRerunRenews, failedRun, forBrowserTests, keptFailures, failedTestsFromReport, REPORT, carryPassed, clearPassed, passedSince, passedToRecord, recordPassed, shellArgs, testsFilter, fullPlan, lintTargets, planSteps, recordFailed, recordGreen, snapshot, repoMapBlocks } from './check-lib.mjs';
 import { appendRun, browserStats, logPath } from './check-log.mjs';
 import { runLanes, takeLock } from './check-run.mjs';
 
@@ -188,6 +188,16 @@ if (args.includes('--failed')) {
 }
 const full = args.includes('--full');
 const dry = args.includes('--dry');
+// The committed repo map must match the source (ADR 0067); stale whenever source moved without regenerating it.
+// A push to main is the exception: its repo-map workflow rebuilds and commits the map after this check runs.
+if (!dry) {
+  const map = spawnSync(process.execPath, ['scripts/repomap.mjs', '--check'], { encoding: 'utf8' });
+  if (map.status !== 0) {
+    console.error(`check: ${(map.stderr || map.stdout).trim()}`);
+    if (repoMapBlocks(map.status)) process.exit(1);
+    console.error('check: the repo-map workflow rebuilds it on main');
+  }
+}
 const givenBase = args.includes('--base') ? args[args.indexOf('--base') + 1] : null;
 // --files a,b: pretend these changed (to see what a change would run, with --dry).
 const given = args.includes('--files') ? args[args.indexOf('--files') + 1].split(',') : null;
@@ -250,7 +260,7 @@ function otherSteps() {
     const file = dry ? resolve(CACHE, 'lint-files.txt') : listFile('lint-files.txt', lintFiles);
     lane.push({ name: `lint and module boundaries (${count} changed file(s))`, command: `node scripts/check-lint.mjs --files-from "${file}"`, step: 'lint' });
   }
-  if (plan.scripts) lane.push({ name: 'check script tests', command: 'node --test scripts/check-lib.test.mjs scripts/check-run.test.mjs scripts/check-log.test.mjs', step: 'scripts' });
+  if (plan.scripts) lane.push({ name: 'check script tests', command: 'node --test scripts/check-lib.test.mjs scripts/check-run.test.mjs scripts/check-log.test.mjs scripts/repomap.test.mjs', step: 'scripts' });
   if (plan.server !== 'none') lane.push({ name: `server tests (${plan.server})`, command: unitTests('server', plan.server), step: 'server' });
   if (plan.web !== 'none') lane.push({ name: `web unit tests (${plan.web})`, command: unitTests('web', plan.web), step: 'web' });
   return lane;
