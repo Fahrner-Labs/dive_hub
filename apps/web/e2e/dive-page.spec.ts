@@ -122,7 +122,8 @@ test('refuses to overwrite a change made elsewhere meanwhile', { tag: ['@dives']
   await editElsewhere(request, diveId, 'Written on the phone');
   await page.getByRole('textbox', { name: 'Notes' }).fill('Written on the laptop');
   await page.getByRole('button', { name: 'Save' }).click();
-  await expect(page.getByText('This dive changed elsewhere. Your edits are still here.')).toBeVisible();
+  // The notice is also read into the always-present live region, so match the visible paragraph only.
+  await expect(page.locator('p', { hasText: 'This dive changed elsewhere. Your edits are still here.' })).toBeVisible();
   await page.getByRole('button', { name: 'Load the new version' }).click();
   await page.getByRole('dialog').getByRole('button', { name: 'Load new version' }).click();
   await expect(page.getByRole('textbox', { name: 'Notes' })).toHaveValue('Written on the phone');
