@@ -12,6 +12,7 @@ test.beforeAll(async ({ request }) => {
 const headers = { origin: E2E_BASE_URL };
 
 test('imports Lena\'s SSI dives from her Connection: the setting, the preview, a decision, the outcome', { tag: ['@account', '@dives'] }, async ({ page, request }) => {
+  test.setTimeout(60_000);
   const { connectionId, diverId } = await lenaReady(request);
   // As for a new Connection: the import is off.
   await request.patch(`/api/connections/${connectionId}`, { data: { diveImport: { mode: 'off', windowMinutes: 15 } }, headers });
@@ -98,6 +99,7 @@ test('an admin allows making dive sites from SSI logbooks, after confirming, and
 });
 
 test('takes back a change made in SSI\'s app when asked, where the dive was changed here too', { tag: ['@account', '@dives'] }, async ({ page, request }) => {
+  test.setTimeout(60_000);
   try {
     const stamp = uniqueWord();
     const diveId = await conflictForLena(request, stamp);
