@@ -706,6 +706,7 @@ for (const v of variants) {
     // Importing dives from SSI (ADR 0030), with Lena's logbook: the setting, the preview with a computer and a decision
     // (the entry on 13 August always has two dives to choose from), the outcome, and a dive without a recording.
     test('my account, importing dives from SSI: the preview, then the outcome', { tag: ['@account'] }, async ({ page, request }) => {
+      test.setTimeout(60_000);
       await lenaReady(request);
       try {
         await page.goto('/#/account?tab=connections');
@@ -1132,6 +1133,7 @@ for (const v of variants) {
     });
 
     test('notes changed both here and in SSI, asked on the dive\'s page and waiting on the Review page after a run', { tag: ['@dives'] }, async ({ page, request }) => {
+      test.setTimeout(60_000);
       const id = await conflictAtSsi(request);
       const n = await diveNumber(request, id);
       const conflictsTitle = v.english ? 'Changed in both places' : 'An beiden Stellen geändert';

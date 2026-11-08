@@ -240,7 +240,7 @@ export async function importLena(api: APIRequestContext) {
   const started = await api.post(`/api/connections/${ready.connectionId}/dive-import`, { data: { computers: [], decisions: [] }, headers });
   if (!started.ok()) throw new Error(`importing Lena's dives failed: ${started.status()} ${await started.text()}`);
   const { id } = await started.json() as { id: string };
-  await expect.poll(async () => (await (await api.get(`/api/imports/${id}`)).json() as { status: string }).status, { timeout: 30_000 }).toBe('done');
+  await expect.poll(async () => (await (await api.get(`/api/imports/${id}`)).json() as { status: string }).status, { timeout: 20_000 }).toBe('done');
   return ready;
 }
 
