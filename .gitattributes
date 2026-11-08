@@ -4,3 +4,6 @@
 *.zip binary
 *.png binary
 *.jpg binary
+
+# CI-built navigation artefacts (ADR 0067): generated, collapsed in review, never edited by hand
+docs/generated/** linguist-generated=true -diff

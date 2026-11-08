@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import AxeBuilder from '@axe-core/playwright';
-import { expect, type APIRequestContext, type Locator, type Page } from '@playwright/test';
+import { expect, type APIRequestContext, type Locator, type Page, type Route } from '@playwright/test';
 
 /**
  * Browser tests run in parallel (ADR 0023): one e2e server with its own database per worker, on ports
@@ -86,6 +86,24 @@ export async function openLine(page: Page, name: string) {
 export async function editElsewhere(api: APIRequestContext, diveId: string, notes: string) {
   const dive = await (await api.get(`/api/dives/${diveId}`)).json() as Dive;
   await api.patch(`/api/dives/${diveId}`, { data: { version: dive.version, notes }, headers });
+}
+
+/**
+ * Guards a route handler that reads the real answer with `route.fetch()`.
+ *
+ * A handler can outlive its test: when a refetch is still in flight as the test ends, Playwright disposes the fetched
+ * response and `response.json()` throws `Response has been disposed`, which it reports as the test's failure. Abort
+ * the route then; the page is going away. Other errors still fail the test.
+ */
+export function guardedRoute(handler: (route: Route) => Promise<unknown>): (route: Route) => Promise<void> {
+  return async (route) => {
+    try {
+      await handler(route);
+    } catch (error) {
+      if (!/Response has been disposed/.test(error instanceof Error ? error.message : '')) throw error;
+      await route.abort().catch(() => {});
+    }
+  };
 }
 
 export async function setPreferences(api: APIRequestContext, preferences: { language?: string | null; units?: string | null }) {
@@ -240,7 +258,7 @@ export async function importLena(api: APIRequestContext) {
   const started = await api.post(`/api/connections/${ready.connectionId}/dive-import`, { data: { computers: [], decisions: [] }, headers });
   if (!started.ok()) throw new Error(`importing Lena's dives failed: ${started.status()} ${await started.text()}`);
   const { id } = await started.json() as { id: string };
-  await expect.poll(async () => (await (await api.get(`/api/imports/${id}`)).json() as { status: string }).status, { timeout: 30_000 }).toBe('done');
+  await expect.poll(async () => (await (await api.get(`/api/imports/${id}`)).json() as { status: string }).status, { timeout: 20_000 }).toBe('done');
   return ready;
 }
 

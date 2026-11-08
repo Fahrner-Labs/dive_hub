@@ -1,8 +1,12 @@
 import type { FastifyInstance } from 'fastify';
-import type { AssessmentService } from '../assessment/assessment-service.js';
 
-/** What a route plugin that changes Dives needs of the assessment; providers/ takes it from here, not from assessment/. */
-export type AssessmentRefresh = Pick<AssessmentService, 'refreshUser'>;
+/**
+ * What a route plugin that changes Dives needs of the assessment (ADR 0053's seam for dives and assessment): the
+ * User's findings refreshed. The assessment service implements it; app.ts passes the real one in.
+ */
+export interface AssessmentRefresh {
+  refreshUser(userId: string): Promise<void>;
+}
 
 /**
  * Whatever changed a Dive may change its findings and those of the dives around it (ADR 0036): after a successful

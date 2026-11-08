@@ -17,3 +17,6 @@ apps/web/review-output/
 # desloppify: local scan state
 .desloppify/
 scorecard.png
+
+# Graphify's build directory (CI copies the artefacts into docs/generated/, ADR 0067)
+graphify-out/

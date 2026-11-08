@@ -11,7 +11,7 @@ import { buildApp } from '../src/app.js';
 import { createServices } from '../src/compose.js';
 import { createDb, type Db } from '../src/db/client.js';
 import { migrateDatabase } from '../src/db/migrate.js';
-import { listenToChanges } from '../src/dives/revisions.js';
+import { listenToChanges } from '../src/revisions/revisions.js';
 import type { SiteSourceAdapter } from '../src/sites/import/site-source.js';
 import type { ImportSource } from '../src/sites/sources.js';
 import { createSecretBox } from '../src/secrets/secret-box.js';
@@ -140,6 +140,7 @@ export async function createTestApp(t: TestDatabase, options: {
       ...extraProviders,
     ],
     clock,
+    live: { connectionString: t.pool.options.connectionString! },
   });
   const app = await buildApp({ ...services, baseUrl: BASE_URL, maxUploadBytes: 1 << 26, webDir });
   return { ...services, app, fakeSsi, ssiClock, clock, pauses: clock.slept };
@@ -149,7 +150,7 @@ export async function createTestApp(t: TestDatabase, options: {
  * For a test that builds services without createTestApp: its Revisions are written, and no Provider queue hears them.
  * Without it the test passes only when an earlier file in the shared pool built a provider layer.
  */
-export const listenToNoChanges = () => listenToChanges({ diveChanged: async () => {}, siteChanged: async () => {} });
+export const listenToNoChanges = () => listenToChanges({ diveChanged: async () => {}, siteRevisionWritten: async () => {}, siteChanged: async () => {} });
 
 /** Creates a User the way an admin would (Better Auth's admin API, server-side). */
 export async function createUser(auth: Auth, email: string, role: 'user' | 'admin' = 'user') {

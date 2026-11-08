@@ -10,14 +10,14 @@ import { managesDiveDiver } from '../../divers/management.js';
 import { liveSite } from '../../sites/dive-site-link.js';
 import { keepApart } from '../checks/logbook-check-answers.js';
 import { cylindersOf, takeCylinders } from '../cylinders.js';
-import { renumber } from '../dive-numbers.js';
+import { renumber } from '../../divers/dive-numbers.js';
 import {
   DiveError, applyToDive, followPrimary, lockManagedDive, nextVersion, participantsOf, undelete,
 } from '../dive-service.js';
 import {
   addedParticipants, deleteLeftBehind, fillValues, mergeNotes, moveLinks, type ProviderLinks,
 } from '../merging-service.js';
-import { changeListener, userActor, writeRevision, type Actor, type Changes } from '../revisions.js';
+import { changeListener, userActor, writeRevision, type Actor, type Changes } from '../../revisions/revisions.js';
 import { takeWeighting } from '../weighting.js';
 import { isJoined } from '../recording-units.js';
 import { buildJoined, partsOfJoined, rebuildJoined } from './joined-recording.js';

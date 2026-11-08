@@ -2,7 +2,7 @@
 // away), editing it, going back to the recording's values, switching the Primary recording, the history, other
 // languages and units.
 import { expect, test, type Page } from '@playwright/test';
-import { editElsewhere, openLine, resetDive, setPreferences } from './support.ts';
+import { editElsewhere, guardedRoute, openLine, resetDive, setPreferences } from './support.ts';
 
 let diveId: string;
 
@@ -114,14 +114,19 @@ test('switches the Primary recording; values without Override follow it', { tag:
 });
 
 test('refuses to overwrite a change made elsewhere meanwhile', { tag: ['@dives'] }, async ({ page, request }) => {
+  // This is the save conflict: keep the live channel out of it, so the notice can only come from the 409 (its own
+  // dirty-form path is covered in live.spec.ts).
+  await page.route('**/api/live', (route) => route.abort());
   await page.goto(`/#/dives/${diveId}`);
   await page.getByRole('button', { name: 'Edit dive' }).click();
   await editElsewhere(request, diveId, 'Written on the phone');
   await page.getByRole('textbox', { name: 'Notes' }).fill('Written on the laptop');
   await page.getByRole('button', { name: 'Save' }).click();
-  await expect(page.getByText('This dive was changed meanwhile.')).toBeVisible();
-  await page.getByRole('button', { name: 'Reload' }).click();
-  await expect(page.getByText('Written on the phone')).toBeVisible();
+  // The notice is also read into the always-present live region, so match the visible paragraph only.
+  await expect(page.locator('p', { hasText: 'This dive changed elsewhere. Your edits are still here.' })).toBeVisible();
+  await page.getByRole('button', { name: 'Load the new version' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Load new version' }).click();
+  await expect(page.getByRole('textbox', { name: 'Notes' })).toHaveValue('Written on the phone');
 });
 
 test('speaks German and works in feet, including typing a decimal comma', { tag: ['@dives'] }, async ({ page, request }) => {
@@ -165,7 +170,7 @@ test('the dive number is not typed: the form has no field for it; the Diver\'s s
 // A dive as the server sends it, with nothing in the details (no site, buddies, cylinders, suit, lead or notes) and the
 // given Recordings, so the test doesn't depend on what other specs added to the shared dive.
 async function stubDive(page: Page, id: string, recordings: (all: unknown[]) => unknown[]) {
-  await page.route(`**/api/dives/${id}`, async (route) => {
+  await page.route(`**/api/dives/${id}`, guardedRoute(async (route) => {
     if (route.request().method() !== 'GET') return route.fallback();
     const body = await (await route.fetch()).json();
     const shown = recordings(body.recordings);
@@ -175,15 +180,15 @@ async function stubDive(page: Page, id: string, recordings: (all: unknown[]) => 
         recordings: shown, primaryRecordingId: (shown[0] as { id: string }).id,
       },
     });
-  });
+  }));
 }
 
 test('a dive with only how its weighting felt shows that fact and no "Add suit and lead" chip', { tag: ['@dives'] }, async ({ page }) => {
-  await page.route(`**/api/dives/${diveId}`, async (route) => {
+  await page.route(`**/api/dives/${diveId}`, guardedRoute(async (route) => {
     if (route.request().method() !== 'GET') return route.fallback();
     const body = await (await route.fetch()).json();
     return route.fulfill({ json: { ...body, site: null, participants: [], suit: null, lead: [], weightingFeedback: { felt: 'too_heavy', amountKg: null } } });
-  });
+  }));
   await page.goto(`/#/dives/${diveId}`);
   await expect(page.locator('.dive-details')).toBeVisible();
   await expect(page.locator('.dive-details').getByText('Too heavy')).toBeVisible();

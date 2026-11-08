@@ -2,7 +2,7 @@
 import { and, eq, isNull, sql } from 'drizzle-orm';
 import type { Tx } from '../db/client.js';
 import { dive, diveSite, recording } from '../db/schema.js';
-import { writeRevision, type Actor } from '../dives/revisions.js';
+import { writeRevision, type Actor } from '../revisions/revisions.js';
 import { nearSql, distanceSql, type Position } from './site-service.js';
 
 /** An Import links a new Dive to a site only if it is the one site within this distance. */

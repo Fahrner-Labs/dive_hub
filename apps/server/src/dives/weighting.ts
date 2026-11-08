@@ -3,7 +3,7 @@
 import { and, asc, eq, sql } from 'drizzle-orm';
 import type { Queryable, Tx } from '../db/client.js';
 import { dive, lead, revision, type LeadPlacement, type SuitType, type SuitUndergarment, type WeightingFelt } from '../db/schema.js';
-import type { Changes } from './revisions.js';
+import type { Changes } from '../revisions/revisions.js';
 
 export interface LeadEntry {
   amountKg: number;

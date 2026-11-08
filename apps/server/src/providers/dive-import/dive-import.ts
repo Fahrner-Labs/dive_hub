@@ -12,14 +12,14 @@ import {
   connection, dive, diveSite, device, importJob, importOriginal, original, providerSiteData, push, user,
   recording, type ComputerChoice, type DiveImportMode, type DiveKind, type ImportOutcome, type ProviderImportPlan, type UtcOffsetSource,
 } from '../../db/schema.js';
-import { writeRevision, type Actor } from '../../dives/revisions.js';
+import { writeRevision, type Actor } from '../../revisions/revisions.js';
 import type { PlacedTime } from '../../dives/time-zone.js';
 import { errorMessage } from '../../errors.js';
 import { createFileFormats, formatOf, type FileFormat } from '../../imports/formats.js';
 import type { ParsedRecording } from '../../imports/parsed-recording.js';
 import { PROCESS_IMPORT_TASK, kindOfMode } from '../../imports/import-service.js';
 import { deviceDiver, placeRecording } from '../../imports/placement.js';
-import { DAY_MS, MAX_OFFSET_MS, entryMatches } from '../../imports/matching.js';
+import { DAY_MS, MAX_OFFSET_MS, entryMatches } from '../../dives/matching.js';
 import { recordFindings } from './gone-dives.js';
 import { probablyNoDive } from '../../dives/checks/logbook-check-rules.js';
 import { siteRef } from '../../dives/dive-summary-view.js';
@@ -36,7 +36,7 @@ import { realClock, type Clock } from '../lease-service.js';
 import { queueNow } from '../waiting-push/waiting-push-queue.js';
 import { withRemembered } from '../list-entries.js';
 import { named, ProviderServiceError, type ProviderRegistry } from '../registry.js';
-import { renumber } from '../../dives/dive-numbers.js';
+import { renumber } from '../../divers/dive-numbers.js';
 
 /** A dive computer found at the Provider, and how its dives are used. */
 export interface ComputerView {

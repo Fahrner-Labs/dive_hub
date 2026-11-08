@@ -131,9 +131,13 @@ const services = createServices({
     createGarminAdapter({ client: createGarminClient({ url: fakeGarmin.url }), pauseMs: 0 })],
   // The fake needs no pause between actions; the browser tests would only wait, so the pauses are skipped.
   clock: resettableClock(),
+  // Open pages hear about background work in the browser tests too (ADR 0066).
+  live: { connectionString: url.toString() },
 });
 const { imports } = services;
 const app = await buildApp({ ...services, baseUrl: `http://localhost:${port}`, maxUploadBytes: 1 << 26, webDir: here('../../web/dist') });
+// Open pages hear about background work in the browser tests too (ADR 0066).
+services.live.start();
 
 // Seed: one User, one Dive from a main computer and a backup that auto-attaches to it.
 const { user } = await auth.api.createUser({ body: { ...E2E_USER, role: 'admin' } });

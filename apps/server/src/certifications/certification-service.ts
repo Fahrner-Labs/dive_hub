@@ -7,10 +7,10 @@ import type { Db, Queryable } from '../db/client.js';
 import { certification, original } from '../db/schema.js';
 import type { CertificationImageState, CertificationVerification } from '../db/schema.js';
 import { managementOf } from '../divers/management.js';
-import { writeRevision } from '../dives/revisions.js';
-import type { ConnectionService } from '../providers/connection-service.js';
-import { ProviderError, type RemoteCertification } from '../providers/provider.js';
-import { named, ProviderServiceError, type ProviderRegistry } from '../providers/registry.js';
+import type { CertificationSummary } from '../divers/certification-port.js';
+import { audienceOfDiver, emitHint } from '../live/emit.js';
+import { writeRevision } from '../revisions/revisions.js';
+import type { CertificationProviders, RemoteCertification } from './certification-providers.js';
 import type { BlobStore } from '../storage/blob-store.js';
 
 /** The worker task that fetches one card's picture (payload `{ certificationId }`). */
@@ -32,16 +32,6 @@ export function expiryOf(expiresOn: string | null, today = isoDay(new Date())): 
   const limit = isoDay(new Date(new Date(`${today}T00:00:00Z`).getTime() + EXPIRING_SOON_DAYS * 86_400_000));
   return expiresOn <= limit ? 'soon' : 'valid';
 }
-
-/** What the Divers list shows of a Diver's cards. `newest` is the first card of the list: an expired card only when all are. */
-export interface CertificationSummary {
-  count: number;
-  newest: { agency: string; level: string } | null;
-  expired: number;
-  expiringSoon: number;
-}
-
-export const NO_CERTIFICATIONS: CertificationSummary = { count: 0, newest: null, expired: 0, expiringSoon: 0 };
 
 export class CertificationError extends Error {
   constructor(
@@ -126,8 +116,8 @@ const LIMIT: Record<string, number> = { agency: 100, level: 200, notes: 2000 };
 /** What a card is called in a Revision: never the instructor or the numbers. */
 const label = (r: { agency: string; level: string }) => `${r.agency} ${r.level}`;
 
-export function createCertificationService(deps: { db: Db; blobs: BlobStore; registry: ProviderRegistry; connections: ConnectionService }) {
-  const { db, blobs, registry, connections } = deps;
+export function createCertificationService(deps: { db: Db; blobs: BlobStore; providers: CertificationProviders }) {
+  const { db, blobs, providers } = deps;
 
   async function requireManagedDiver(userId: string, diverId: string) {
     if (!(await managementOf(db, userId, diverId))) throw new CertificationError('diver_not_found');
@@ -243,6 +233,7 @@ export function createCertificationService(deps: { db: Db; blobs: BlobStore; reg
           diverId, ...values, verification: input.cardSeen ? 'card_seen' : 'self_declared',
         }).returning();
         await writeRevision(tx, 'diver', diverId, { type: 'user', id: userId }, 'create', { certification: { from: null, to: label(row!) } });
+        await emitHint(tx, { kind: 'certification', id: row!.id, audience: await audienceOfDiver(tx, diverId) });
         return view(row!);
       });
     },
@@ -277,6 +268,7 @@ export function createCertificationService(deps: { db: Db; blobs: BlobStore; reg
           .returning();
         if (!row) throw new CertificationError('certification_changed');
         await writeRevision(tx, 'diver', diverId, { type: 'user', id: userId }, 'edit', { certification: { from: label(current), to: label(row) } });
+        await emitHint(tx, { kind: 'certification', id: row.id, audience: await audienceOfDiver(tx, diverId) });
         return view(row);
       });
     },
@@ -291,7 +283,10 @@ export function createCertificationService(deps: { db: Db; blobs: BlobStore; reg
           deletedAt: new Date(), updatedAt: new Date(), version: sql`${certification.version} + 1`,
           imageKey: null, imageSha256: null, imageBytes: null, imageState: 'none',
         }).where(and(eq(certification.id, id), isNull(certification.deletedAt))).returning({ id: certification.id });
-        if (row) await writeRevision(tx, 'diver', diverId, { type: 'user', id: userId }, 'delete', { certification: { from: label(current), to: null } });
+        if (row) {
+          await writeRevision(tx, 'diver', diverId, { type: 'user', id: userId }, 'delete', { certification: { from: label(current), to: null } });
+          await emitHint(tx, { kind: 'certification', id, audience: await audienceOfDiver(tx, diverId) });
+        }
         return !!row;
       });
       if (!deleted) throw new CertificationError('certification_not_found');
@@ -335,13 +330,11 @@ export function createCertificationService(deps: { db: Db; blobs: BlobStore; reg
      * card the User deleted stays deleted, a card the Provider no longer lists stays and is reported.
      */
     async importFrom(userId: string, connectionId: string): Promise<ImportReport> {
-      const conn = await connections.own(userId, connectionId);
-      const adapter = registry.get(conn.provider);
-      if (!adapter.certifications) throw new ProviderServiceError('provider_unsupported', named(adapter));
-      await requireManagedDiver(userId, conn.diverId);
-      const remote = await connections.withAccess(conn, (ctx) => adapter.certifications!.find(ctx));
+      const account = await providers.onConnection(userId, connectionId);
+      await requireManagedDiver(userId, account.diverId);
+      const remote = await account.cards();
       const existing = await db.select().from(certification)
-        .where(and(eq(certification.diverId, conn.diverId), eq(certification.source, conn.provider)));
+        .where(and(eq(certification.diverId, account.diverId), eq(certification.source, account.provider)));
       const byCard = new Map(existing.map((r) => [r.externalId, r]));
       const report: ImportReport = { created: 0, updated: 0, unchanged: 0, items: [] };
       const actor = { type: 'user' as const, id: userId };
@@ -355,10 +348,10 @@ export function createCertificationService(deps: { db: Db; blobs: BlobStore; reg
           const row = byCard.get(card.remoteId);
           if (!row) {
             const [created] = await tx.insert(certification).values({
-              diverId: conn.diverId, ...values, source: conn.provider, externalId: card.remoteId, verification: 'verified_with_agency',
+              diverId: account.diverId, ...values, source: account.provider, externalId: card.remoteId, verification: 'verified_with_agency',
               imageState: card.imageUrl ? 'pending' : 'none', importedAt: new Date(),
             }).returning();
-            await writeRevision(tx, 'diver', conn.diverId, actor, 'create', { certification: { from: null, to: label(created!) } });
+            await writeRevision(tx, 'diver', account.diverId, actor, 'create', { certification: { from: null, to: label(created!) } });
             if (card.imageUrl) await queueImage(tx, created!.id);
             report.created += 1;
             report.items.push({ result: 'created', level: card.level, certificationId: created!.id });
@@ -378,7 +371,7 @@ export function createCertificationService(deps: { db: Db; blobs: BlobStore; reg
             if (needsImage) await queueImage(tx, row.id);
           }
           if (changed) {
-            await writeRevision(tx, 'diver', conn.diverId, actor, 'edit', { certification: { from: label(row), to: label(values) } });
+            await writeRevision(tx, 'diver', account.diverId, actor, 'edit', { certification: { from: label(row), to: label(values) } });
             report.updated += 1;
             report.items.push({ result: 'updated', level: card.level, certificationId: row.id });
           } else {
@@ -402,9 +395,8 @@ export function createCertificationService(deps: { db: Db; blobs: BlobStore; reg
       const [row] = await db.select().from(certification).where(and(eq(certification.id, id), isNull(certification.deletedAt)));
       if (!row || !row.imageUrl || !row.source || row.imageState === 'stored') return 'skipped';
       try {
-        const adapter = registry.get(row.source);
-        if (!adapter.certifications) return 'skipped';
-        const { bytes } = await adapter.certifications.image(row.imageUrl);
+        if (!providers.supports(row.source)) return 'skipped';
+        const { bytes } = await providers.image(row.source, row.imageUrl);
         const stored = await blobs.putOriginal(bytes);
         const old = row.imageKey;
         await db.update(certification).set({
@@ -414,12 +406,14 @@ export function createCertificationService(deps: { db: Db; blobs: BlobStore; reg
         const [after] = await db.select({ deletedAt: certification.deletedAt }).from(certification).where(eq(certification.id, id));
         if (after?.deletedAt) await releaseBlob(stored.key, id);
         else if (old && old !== stored.key) await releaseBlob(old, id);
+        await emitHint(db, { kind: 'certification', id, audience: await audienceOfDiver(db, row.diverId) });
         return 'stored';
       } catch (error) {
         if (!options.final) throw error;
         await db.update(certification).set({ imageState: 'failed', updatedAt: new Date() }).where(eq(certification.id, id));
+        await emitHint(db, { kind: 'certification', id, audience: await audienceOfDiver(db, row.diverId) });
         // Only the kind of failure; the address holds a card ID.
-        if (!(error instanceof ProviderError || error instanceof ProviderServiceError)) throw error;
+        if (!providers.isProviderRefusal(error)) throw error;
         return 'failed';
       }
     },

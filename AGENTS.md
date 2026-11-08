@@ -22,6 +22,26 @@ Start at [docs/index.md](docs/index.md).
 | `docs/decisions/` | ADRs (`NNNN-title.md`, copy `template.md`) |
 | `docs/references/` | One file per external project/source |
 | `docs/research/` | Dated research notes (`YYYY-MM-DD-topic.md`), sources linked |
+| `docs/generated/` | CI-built navigation artefacts: `REPOMAP.md` (ranked symbol map; search it before grep-walking the tree), Graphify code graph and dependency-cruiser boundaries |
+
+## Code navigation
+
+`docs/generated/` holds three artefacts rebuilt on every merge to `main` ([ADR 0067](docs/decisions/0067-code-navigation-for-agents.md)):
+`REPOMAP.md` (layer 1, [scripts/repomap.mjs](scripts/repomap.mjs)), `graph.json` (Graphify's symbol/call graph) and
+`dependency-graph.json` (dependency-cruiser, [ADR 0053](docs/decisions/0053-module-boundaries.md)).
+Review diffs leave them out. **The map and graph are hints; verify by reading the code.**
+
+Start with `REPOMAP.md` for cheap per-module orientation, then drop to the code graph:
+
+- Resolve the exact symbol first with grep (`rg -n 'lockManagedDive' apps packages`).
+- Then ask with exact names: `graphify explain lockManagedDive --graph docs/generated/graph.json`,
+  `graphify affected lockManagedDive --depth 2 --graph docs/generated/graph.json`, and
+  `graphify path <from-file> <to-file> --graph docs/generated/graph.json`. An ambiguous name exits 3 with the
+  candidates; `norm_label` in `graph.json` is the name Graphify stores.
+- Do **not** use the natural-language `graphify query`: it was the weakest surface in the spike.
+- Many commits stale? `graphify update .` refreshes `graphify-out/graph.json` in ~16 s; query that file. It cannot
+  prune deleted or renamed files, so CI does a full rebuild.
+- "What may import what": `dependency-graph.json` with the rules and `MODULE_IMPORTS` in `.dependency-cruiser.cjs`.
 
 ## Conventions
 

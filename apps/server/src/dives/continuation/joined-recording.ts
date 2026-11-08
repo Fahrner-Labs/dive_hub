@@ -6,7 +6,7 @@ import type { Tx } from '../../db/client.js';
 import { continuationAppend, dive, recording, recordingEvent, sampleSeries } from '../../db/schema.js';
 import { reviseDive } from '../cylinders.js';
 import { followPrimary, refreshFromPrimary } from '../dive-service.js';
-import type { Actor, Changes, RevisionCause } from '../revisions.js';
+import type { Actor, Changes, RevisionCause } from '../../revisions/revisions.js';
 import { JOINED_PARSER } from '../recording-units.js';
 import { joinParts, type PartInput } from './join-parts.js';
 

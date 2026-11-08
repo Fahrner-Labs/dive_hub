@@ -8,18 +8,21 @@ const SERVER = '^apps/server/src/';
 // imports only. A new import between modules adds its entry here, in the same
 // commit, with the reason in the commit message; no new ADR needed. Removing an entry is always welcome.
 const MODULE_IMPORTS = {
+  revisions: [],
   assessment: ['divers', 'imports'],
-  centres: ['divers:type', 'dives', 'sites'],
-  certifications: ['divers', 'dives', 'providers'],
-  divers: ['centres', 'certifications', 'dives', 'providers'],
-  dives: ['assessment:type', 'centres', 'divers', 'imports', 'providers:type', 'sites'],
-  imports: ['divers', 'dives', 'sites'],
+  centres: ['divers', 'revisions', 'sites'],
+  certifications: ['divers', 'dives', 'live', 'revisions'],
+  divers: ['revisions'],
+  dives: ['centres', 'divers', 'revisions', 'sites'],
+  imports: ['divers', 'dives', 'live', 'revisions', 'sites'],
   lead: ['divers', 'dives'],
   mcp: ['assessment', 'divers', 'dives', 'planning', 'sites'],
   planning: ['divers', 'dives'],
-  providers: ['certifications', 'divers', 'dives', 'imports', 'sites'],
-  sites: ['dives'],
-  users: ['dives'],
+  providers: ['certifications', 'divers', 'dives', 'imports', 'live', 'revisions', 'sites'],
+  sites: ['live', 'revisions'],
+  // Live hints (ADR 0066) read Dive and site Revisions only through revisions/revisions.ts's type.
+  live: ['revisions:type'],
+  users: ['divers'],
 };
 const target = (names) => `${SERVER}(${names.join('|')})/`;
 const moduleRules = Object.entries(MODULE_IMPORTS).flatMap(([from, allowed]) => {
@@ -109,9 +112,9 @@ module.exports = {
       // inputs. A new lib/ file for api.ts joins this list, with the reason in the commit message.
       name: 'api-imports-only-query-inputs-from-lib',
       severity: 'error',
-      comment: 'api.ts takes from lib/ only the types and constants of its queries\' inputs: lib/logbook, sites-list, tools and waiting-push (ADR 0053, amendment of 2026-10-29).',
+      comment: 'api.ts takes from lib/ only the types and constants of its queries\' inputs: lib/logbook, sites-list, tools, waiting-push and the live channel\'s health (ADR 0053, amendment of 2026-10-29 and 2026-11-07).',
       from: { path: '^apps/web/src/api[.]ts$' },
-      to: { path: '^apps/web/src/lib/', pathNot: '^apps/web/src/lib/(logbook|sites-list|tools|waiting-push)[.]ts$' },
+      to: { path: '^apps/web/src/lib/', pathNot: '^apps/web/src/lib/(logbook|sites-list|tools|waiting-push|live)[.]ts$' },
     },
   ],
   options: {

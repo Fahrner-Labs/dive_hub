@@ -69,6 +69,12 @@ Migrations run automatically on start (one process at a time). Liveness and read
 Volumes: database data, file storage. TLS and the reverse proxy are the operator's
 responsibility (Caddy, Traefik, NAS proxy). We document a sample setup. The proxy's timeout should be at least
 2 minutes: sending a Dive to a Provider may wait up to 30 s for its turn and then call the Provider several times.
+The live hint stream (`GET /api/live`, [ADR 0066](../decisions/0066-live-updates-via-sse-hints.md)) needs streaming, not
+buffering: `Content-Type: text/event-stream`, `Cache-Control: no-cache`, `X-Accel-Buffering: no`, and no compression on
+that route. The server sends a heartbeat comment every 15 s, so a read timeout above 15 s (the documented ≥2 min already
+covers it) keeps the connection open. Caddy and Traefik stream by default; nginx needs `proxy_buffering off`. HTTP/2
+removes the browser's six-connections-per-origin concern; the client also elects one stream per browser, so it is never
+required.
 Several app processes on one database need clocks that agree (NTP), because the Provider leases use the app's time
 ([ADR 0027](../decisions/0027-providers-as-adapters.md#downsides-accepted-owner-2026-10-05)).
 Backup = `pg_dump` + the file volume.
@@ -139,7 +145,8 @@ derived from it, [ADR 0030](../decisions/0030-importing-dives-from-providers.md)
 - **How files reach the API:** single file, Garmin "Export Original" zip, full account
   export zip; resumable uploads for large account exports?
 - **Sample storage layout** in PostgreSQL (row per sample vs. arrays/compressed blocks per Recording).
-- **Notifications** from worker to client (polling vs. server-sent events).
+- **Notifications from worker to client:** decided — server-sent event hints on `GET /api/live`, with polling as the
+  automatic fallback ([ADR 0066](../decisions/0066-live-updates-via-sse-hints.md)).
 
 ## Implementation status
 
@@ -628,7 +635,7 @@ Implemented:
   dive's position, else its site's at the Provider (summer time through `Intl`), else the offset of the Diver's closest
   Dive within 7 days, else `unknown` (kept as if UTC). `dive.utc_offset_source` and `recording.utc_offset_source`
   (`device`, `position`, `nearby`, `unknown`); the Dive's follows its Primary recording. Placement and logbook matching
-  compare local times where an offset is unknown (`alignedForMatching`, `entryMatches` in `src/imports/matching.ts`).
+  compare local times where an offset is unknown (`alignedForMatching`, `entryMatches` in `src/dives/matching.ts`).
 - **The adapter** declares `dives.import` `list` and offers `dives.list(context, { recent })`, `dives.parse(record,
   context)` and `dives.parser`; SSI's are in `src/providers/ssi/ssi-import.ts` (evidence, local start, values, profile,
   Device, site ID and position, buddies as SSI accounts, notes). `ImportedDive`, `ImportContext` and `REFERENCE_PREFIX`
@@ -889,7 +896,7 @@ its [amendment](../decisions/0035-mcp-connector.md#amendment-2026-10-06-as-built
 - Not yet: rules beyond overlaps (a number twice, a dive inside a no-fly time), telling by e-mail, the checks over MCP.
 
 **Slice 22b (2026-10-09): dive numbers** ([ADR 0048](../decisions/0048-dive-numbers.md)).
-- `dive.number` is kept by `renumber(tx, diverIds)` in `apps/server/src/dives/dive-numbers.ts`: one `UPDATE … FROM (row_number() …)` per
+- `dive.number` is kept by `renumber(tx, diverIds)` in `apps/server/src/divers/dive-numbers.ts`: one `UPDATE … FROM (row_number() …)` per
   Diver, after a row lock on the Diver rows (ordered by id) so two concurrent changes do not interleave. It changes no `version` and
   writes no Revision. Called wherever a Diver's counted Dives change: `createDiveFromRecording`, `applyToDive` (start time or Primary
   recording), `remove`, `restore`, merge and move (both Divers), the provider dive import (create, and an update that moves the start),

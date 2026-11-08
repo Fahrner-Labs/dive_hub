@@ -47,8 +47,12 @@
 .dive-head .recorded-value { font-size: var(--text-sm); }
 
 
-/* Room for the chart and its legend before it's drawn, so the page doesn't jump (UI review C10). */
-.profile { width: 100%; min-height: 22.5rem; }
+/* Room for the chart and its legend before it's drawn, so the page doesn't jump (UI review C10). uPlot sets a pixel
+   width from its last ResizeObserver callback, so for one frame after the layout moves (the sidebar appears at 64rem)
+   the canvas can still be the width of the layout before: clipping it here keeps that frame off the page, and the
+   track can shrink below the canvas instead of being pinned open (FAH-55). */
+.profile { width: 100%; max-width: 100%; min-width: 0; min-height: 22.5rem; overflow-x: clip; }
+.profile-figure { min-width: 0; max-width: 100%; }
 /* The dive page's profile is the hero: taller (DepthProfile's HERO_HEIGHT, 440px, and the legend). */
 .dive-sheet .profile:not(.profile-tanks) { min-height: 30rem; }
 .profile .u-legend { color: var(--color-text); font-size: var(--text-sm); }
@@ -689,3 +693,40 @@ th[aria-sort='ascending'], th[aria-sort='descending'] { color: var(--color-text)
   .dive-waiting .waiting-push-retry, .dive-waiting .waiting-push > a { flex-basis: 100%; }
 }
 .waiting-push-panel { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-3); }
+
+/* A Dive that arrived through a live hint, a reconnect or the polling fallback (FAH-37): a short tint behind the row. */
+.dive-row { position: relative; scroll-margin-block-start: var(--space-4); }
+.dive-row.is-arrival::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius-sm);
+  background: var(--color-accent-soft);
+  animation: dive-arrival var(--duration-arrival) ease-out forwards;
+  pointer-events: none;
+}
+@keyframes dive-arrival {
+  0%, 83% { opacity: 1; }
+  100% { opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dive-row.is-arrival::before { animation: none; opacity: 1; }
+}
+
+/* The pill that goes to new rows out of sight; it never moves the list by itself. */
+.new-dives-pill {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--space-4) + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  z-index: 20;
+  border-radius: 999px;
+  border-color: var(--color-border-strong);
+  background: var(--color-surface);
+  box-shadow: none;
+  white-space: nowrap;
+}
+@media (max-width: 40rem) {
+  .new-dives-pill { bottom: calc(var(--bar-height, 3.5rem) + var(--space-2) + env(safe-area-inset-bottom, 0px)); }
+  html[data-typing] .new-dives-pill { display: none; }
+}

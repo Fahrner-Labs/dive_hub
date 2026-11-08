@@ -29,18 +29,15 @@ import type { ContinuationService } from './continuation/continuation-service.js
 import { LOGBOOK_CHECK_RULES } from './checks/logbook-check-rules.js';
 import type { LogbookCheckService } from './checks/logbook-check-service.js';
 import { valuesFromRecording, type DiveValues } from './dive-values.js';
-import { REVISION_CAUSES } from './revisions.js';
+import { REVISION_CAUSES } from '../revisions/revisions.js';
 import { sacOfDive } from './calc/sac.js';
 import { waterMismatch } from './calc/water.js';
 import { recordingPosition } from '../sites/dive-site-link.js';
 import type { CentreService } from '../centres/centre-service.js';
 import type { DiverService } from '../divers/diver-service.js';
-import type { PushService } from '../providers/push/push-service.js';
-import type { WaitingPushService } from '../providers/waiting-push/waiting-push-service.js';
-import type { AssessmentService } from '../assessment/assessment-service.js';
-import { refreshAssessmentsAfterChange } from './assessment-refresh.js';
+import { refreshAssessmentsAfterChange, type AssessmentRefresh } from './assessment-refresh.js';
 import { WaitingPushView } from './waiting-push-view.js';
-import type { ProviderAnswers } from '../providers/route-parts.js';
+import type { DiveProviderAnswers, DivePushes, DiveWaitingPushes } from './provider-port.js';
 import { Change, Changes, DateTime, historyRoute, IdParams, Made, Nullable, refTo } from '../http/schemas.js';
 
 export interface DiveRouteDeps {
@@ -53,8 +50,8 @@ export interface DiveRouteDeps {
   merging: MergingService;
   /** What in a logbook can't be right as it stands (ADR 0038). */
   checks: LogbookCheckService;
-  pushes: PushService;
-  waitingPushes: Pick<WaitingPushService, 'deletingItself'>;
+  pushes: Pick<DivePushes, 'currentOf'>;
+  waitingPushes: Pick<DiveWaitingPushes, 'deletingItself'>;
   /** Deleting a Dive asks every Provider it is at (ADR 0026, 0027). */
   deletion: DeletionService;
   /** Merging two Dives deletes the one not kept at the Providers asked first (ADR 0038). */
@@ -62,9 +59,9 @@ export interface DiveRouteDeps {
   /** Appending later Dives to the earlier one (ADR 0063), deleting their copies at the Providers asked first. */
   continuation: Pick<ContinuationService, 'previousCandidate' | 'restorePreview'>;
   append: AppendService;
-  assessments: AssessmentService;
+  assessments: AssessmentRefresh;
   /** How a refusal about a Provider is answered (providers/route-parts.ts). */
-  providerAnswers: ProviderAnswers;
+  providerAnswers: DiveProviderAnswers;
 }
 
 
