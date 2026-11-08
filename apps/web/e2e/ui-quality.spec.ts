@@ -1299,21 +1299,27 @@ test.describe('behaviour', () => {
    * Waits until the layout is at rest: the fonts are ready and every chart is as wide as the box it is drawn in. A
    * viewport change can move a chart's box on its own (the sidebar appears at 64rem), and uPlot sets its canvas width
    * from a ResizeObserver callback one frame later, so a measurement taken at once can see the chart from the layout
-   * before (FAH-55). Bounded: a chart that never fits is still measured, and the assertion then names it.
+   * before (FAH-55). A chart that is still too wide after the rounds fails here: clipping it keeps the page in place,
+   * so the sweep's overflow check alone would not see it.
    */
   async function settleLayout(page: Page) {
-    await page.evaluate(async () => {
+    const stale = await page.evaluate(async () => {
       await document.fonts.ready;
       const frames = () => new Promise<void>((done) => requestAnimationFrame(() => requestAnimationFrame(() => done())));
+      const tooWide = () => [...document.querySelectorAll<HTMLElement>('.profile')].flatMap((box) => {
+        const plot = box.querySelector<HTMLElement>(':scope > .uplot');
+        if (plot === null) return [];
+        const width = plot.getBoundingClientRect().width;
+        return width > box.clientWidth + 0.5 ? [`${Math.round(width)} px in a ${box.clientWidth} px box`] : [];
+      });
+      await frames();
       for (let round = 0; round < 10; round += 1) {
+        if (tooWide().length === 0) return [];
         await frames();
-        const stale = [...document.querySelectorAll<HTMLElement>('.profile')].some((box) => {
-          const plot = box.querySelector<HTMLElement>(':scope > .uplot');
-          return plot !== null && plot.getBoundingClientRect().width > box.clientWidth + 0.5;
-        });
-        if (!stale) return;
       }
+      return tooWide();
     });
+    expect(stale, 'charts that stayed wider than their box').toEqual([]);
   }
 
   // The variants above check four widths in depth; this sweeps the widths in between (tablets, split
