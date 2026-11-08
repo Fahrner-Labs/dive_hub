@@ -45,7 +45,7 @@ describe('OpenStreetMap through Overpass', () => {
 
     expect(net.sent).toHaveLength(1);
     expect(net.sent[0]).toMatchObject({ url: 'https://overpass.example/api/interpreter', method: 'POST' });
-    expect(net.sent[0]!.headers['User-Agent']).toBe('DiveHub (+https://github.com/fahrnertim/dive_hub; ops@example.org)');
+    expect(net.sent[0]!.headers['User-Agent']).toBe('DiveHub (+https://github.com/Fahrner-Labs/dive_hub; ops@example.org)');
     expect(query(net.sent[0]!, 'data')).toContain('area["ISO3166-1"="MT"][admin_level=2]');
     expect(query(net.sent[0]!, 'data')).toContain('"scuba_diving:divespot"="yes"');
 
@@ -209,7 +209,7 @@ describe("SSI's site list", () => {
     const { net, sites } = await fetchSites({ kind: 'world' });
     expect(net.sent).toHaveLength(1);
     expect(net.sent[0]).toMatchObject({ url, method: 'GET', body: '' });
-    expect(net.sent[0]!.headers['User-Agent']).toBe('DiveHub (+https://github.com/fahrnertim/dive_hub; ops@example.org)');
+    expect(net.sent[0]!.headers['User-Agent']).toBe('DiveHub (+https://github.com/Fahrner-Labs/dive_hub; ops@example.org)');
     expect(sites.find((s) => s.externalId === '3314')).toEqual({
       source: 'ssi', externalId: '3314', sameAs: {},
       values: { name: 'Hausreef', position: { latitude: 27.29, longitude: 33.82 }, country: 'EG', waterBody: null, description: null, maxDepthM: null, waterType: 'salt' },
