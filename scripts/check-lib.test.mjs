@@ -7,7 +7,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { test } from 'node:test';
 import { FULL_ONLY, VARIANTS, browserGrepInvert, variantsRun } from './check-lib.mjs';
-import { testsFilter, shellArgs, passedToRecord, browserTestList, baseCandidates, baselineGrowth, baselineSize, changedSince, chooseBase, clearFailed, clearPassed, carryPassed, passedRun, passedSince, recordPassed, reportedTests, stillPassed, countingBase, e2eServerLoads, failedRerunRenews, failedRun, failedTestsFromReport, forBrowserTests, greenRun, keptFailures, lintTargets, listedTests, planFor, planSteps, recordFailed, recordGreen, snapshot } from './check-lib.mjs';
+import { testsFilter, shellArgs, passedToRecord, browserTestList, baseCandidates, baselineGrowth, baselineSize, changedSince, chooseBase, clearFailed, clearPassed, carryPassed, passedRun, passedSince, recordPassed, reportedTests, stillPassed, countingBase, e2eServerLoads, failedRerunRenews, failedRun, failedTestsFromReport, forBrowserTests, greenRun, keptFailures, lintTargets, listedTests, planFor, planSteps, recordFailed, recordGreen, snapshot, REPO_MAP_STALE, repoMapBlocks } from './check-lib.mjs';
 
 /** A git repository with one commit holding `files`. */
 function repository(files) {
@@ -383,13 +383,24 @@ test('PR #5 replayed: a change to e2e/support.ts alone plans no browser tests in
 });
 
 test('the check scripts run their own tests only; the lint script also lints everything; one-off scripts and licences are quiet', () => {
-  for (const path of ['scripts/check.mjs', 'scripts/check-lib.mjs', 'scripts/check-lib.test.mjs', 'scripts/check-run.mjs', 'scripts/check-log.mjs', 'scripts/check-tags.mjs', 'scripts/code-graph.mjs', 'scripts/code-graph.test.mjs']) {
+  for (const path of ['scripts/check.mjs', 'scripts/check-lib.mjs', 'scripts/check-lib.test.mjs', 'scripts/check-run.mjs', 'scripts/check-log.mjs', 'scripts/check-tags.mjs', 'scripts/repomap.mjs', 'scripts/repomap.test.mjs', 'scripts/code-graph.mjs', 'scripts/code-graph.test.mjs']) {
     const plan = planFor([path]);
     assert.deepEqual([plan.scripts, plan.typecheck, plan.lint, plan.server, plan.web, plan.e2e], [true, false, 'none', 'none', 'none', 'none'], path);
   }
   const lintScript = planFor(['scripts/check-lint.mjs']);
   assert.deepEqual([lintScript.scripts, lintScript.lint, lintScript.server, lintScript.e2e], [true, 'all', 'none', 'none']);
-  assert.deepEqual(planFor(['scripts/fit-compressibility.mjs', 'LICENSE', 'NOTICE']), planFor([]));
+  assert.deepEqual(planFor(['scripts/fit-compressibility.mjs', 'LICENSE', 'NOTICE', '.gitattributes']), planFor([]));
+});
+
+test('a stale repo map stops the check except on a CI push to main, whose repo-map workflow rebuilds it', () => {
+  assert.equal(repoMapBlocks(REPO_MAP_STALE, {}), true);
+  assert.equal(repoMapBlocks(REPO_MAP_STALE, { CI: 'true', GITHUB_REF: 'refs/pull/7/merge' }), true);
+  assert.equal(repoMapBlocks(REPO_MAP_STALE, { CI: 'true', GITHUB_REF: 'refs/heads/main' }), false);
+  // A crash or a missing dependency is never excused, not even on main.
+  assert.equal(repoMapBlocks(1, { CI: 'true', GITHUB_REF: 'refs/heads/main' }), true);
+  assert.equal(repoMapBlocks(1, {}), true);
+  assert.equal(repoMapBlocks(0, { CI: 'true', GITHUB_REF: 'refs/heads/main' }), false);
+  assert.equal(repoMapBlocks(0, {}), false);
 });
 
 test('the dive number pages run the areas that show them', () => {

@@ -142,8 +142,8 @@ export function planFor(changed, { e2eServerLoads: loads } = {}) {
       plan.lint = 'all';
       continue;
     }
-    // The drift report and the code graph have tests of their own, and nothing else reads them.
-    if (/^scripts\/(drift|code-graph)/.test(path)) { plan.scripts = true; continue; }
+    // The drift report, the repo map and the code graph have tests of their own, and nothing else reads them.
+    if (/^scripts\/(drift|repomap|code-graph)/.test(path)) { plan.scripts = true; continue; }
     // So has the check script (amendment of 2026-10-24); its lint part also lints everything.
     if (/^scripts\/check/.test(path)) {
       plan.scripts = true;
@@ -223,6 +223,17 @@ export function planSteps(changedByStep, context = {}) {
 export const LINT_CONFIG = /^(eslint\.config\.mjs|eslint-suppressions\.json|\.dependency-cruiser\.cjs|\.dependency-cruiser-known-violations\.json)$/;
 /** The baselines: problems that existed when the rules came, which may only shrink. */
 export const BASELINES = ['eslint-suppressions.json', '.dependency-cruiser-known-violations.json'];
+
+/** `repomap.mjs --check` exits with this when the map is missing or stale; any other non-zero code is a real error. */
+export const REPO_MAP_STALE = 2;
+
+/**
+ * Whether a repo map that needs rebuilding stops the check: always, except on a CI push to main, whose repo-map
+ * workflow rebuilds it. Only the stale-or-missing exit code is excused there; a crashed run (any other non-zero
+ * code) always stops the check.
+ */
+export const repoMapBlocks = (status, env = process.env) => status !== 0
+  && (status !== REPO_MAP_STALE || !(env.CI && env.GITHUB_REF === 'refs/heads/main'));
 const ESLINT_FILES = /^(apps\/[\w-]+\/(src|test)\/|apps\/web\/e2e\/|packages\/[\w-]+\/src\/).*\.tsx?$/;
 const DEPS_FILES = /^apps\/(server|web)\/src\/.*\.tsx?$/;
 

@@ -19,8 +19,8 @@ Durable product knowledge lives here; work state (tasks, plans, discussion) live
   (UDDF, Garmin FIT, the SSI app API, libdivecomputer and others).
 - [research/](research/): dated notes (`YYYY-MM-DD-topic.md`) that an ADR or the spec cites, sources linked.
 - [development.md](development.md): setup, layout, common tasks and the checks (`pnpm check`).
-- [generated/](generated/): CI-built navigation artefacts (Graphify code graph, dependency-cruiser boundaries),
-  excluded from review diffs ([ADR 0067](decisions/0067-code-navigation-for-agents.md)).
+- [generated/](generated/): CI-built navigation artefacts (repo map, Graphify code graph, dependency-cruiser
+  boundaries), excluded from review diffs ([ADR 0067](decisions/0067-code-navigation-for-agents.md)).
 - [skills.md](skills.md): the installed agent skills and the project rules that win over them.
 - [agents/check-escapes.md](agents/check-escapes.md): failures CI's full check found after a green local check.
 - [../samples/README.md](../samples/README.md): where real dive files go and how fixtures are derived.

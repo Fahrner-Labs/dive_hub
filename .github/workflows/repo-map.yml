@@ -1,0 +1,80 @@
+# The repo map (ADR 0067, layer 1): the ranked symbol summary agents read before walking the tree. Built on every
+# merge to main and committed to docs/generated (marked generated in .gitattributes, so the review diff leaves it
+# out). `pnpm check` fails on a pull request when the committed map no longer matches the source.
+name: repo map
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: repo-map-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  map:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      # A main push installs and tests again inside the loop, after resetting to the newest main.
+      - run: pnpm install --frozen-lockfile
+        if: github.ref != 'refs/heads/main'
+
+      - name: Test the map script
+        if: github.ref != 'refs/heads/main'
+        run: node --test scripts/repomap.test.mjs
+
+      - name: Rebuild and commit the map
+        if: github.ref == 'refs/heads/main'
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          for attempt in 1 2 3; do
+            # Build from the newest main: another merge may have landed since this run started, and it may have
+            # moved the lockfile or TypeScript, so install and test again against the source being mapped.
+            git fetch --quiet origin main
+            git reset --quiet --hard origin/main
+            pnpm install --frozen-lockfile --prefer-offline
+            node --test scripts/repomap.test.mjs
+            built=$(git rev-parse --short HEAD)
+            node scripts/repomap.mjs
+            git add docs/generated/REPOMAP.md
+            if [ -z "$(git status --porcelain docs/generated/REPOMAP.md)" ]; then
+              echo "repo map: the map did not change"
+              exit 0
+            fi
+            git commit --quiet -m "chore(repomap): rebuild from ${built}"
+            # Retry only when another merge moved main; a rejected push for any other reason (branch protection,
+            # a token without write access) fails here with the real message instead of three silent retries.
+            if push=$(git push origin HEAD:main 2>&1); then
+              exit 0
+            fi
+            case "$push" in
+              *non-fast-forward*|*"fetch first"*|*"remote contains work"*)
+                echo "repo map: the push raced another merge; retrying (attempt ${attempt})"
+                sleep 5
+                ;;
+              *)
+                echo "repo map: push failed: ${push}" >&2
+                exit 1
+                ;;
+            esac
+          done
+          echo "repo map: could not push after 3 attempts" >&2
+          exit 1

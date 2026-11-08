@@ -22,13 +22,16 @@ Start at [docs/index.md](docs/index.md).
 | `docs/decisions/` | ADRs (`NNNN-title.md`, copy `template.md`) |
 | `docs/references/` | One file per external project/source |
 | `docs/research/` | Dated research notes (`YYYY-MM-DD-topic.md`), sources linked |
-| `docs/generated/` | CI-built navigation artefacts: Graphify code graph and dependency-cruiser boundaries |
+| `docs/generated/` | CI-built navigation artefacts: `REPOMAP.md` (ranked symbol map; search it before grep-walking the tree), Graphify code graph and dependency-cruiser boundaries |
 
 ## Code navigation
 
-`docs/generated/` holds two artefacts rebuilt on every merge to `main` ([ADR 0067](docs/decisions/0067-code-navigation-for-agents.md)):
-`graph.json` (Graphify's symbol/call graph) and `dependency-graph.json` (dependency-cruiser, [ADR 0053](docs/decisions/0053-module-boundaries.md)).
-Review diffs leave them out. **The graph is a hint; verify by reading the code.**
+`docs/generated/` holds three artefacts rebuilt on every merge to `main` ([ADR 0067](docs/decisions/0067-code-navigation-for-agents.md)):
+`REPOMAP.md` (layer 1, [scripts/repomap.mjs](scripts/repomap.mjs)), `graph.json` (Graphify's symbol/call graph) and
+`dependency-graph.json` (dependency-cruiser, [ADR 0053](docs/decisions/0053-module-boundaries.md)).
+Review diffs leave them out. **The map and graph are hints; verify by reading the code.**
+
+Start with `REPOMAP.md` for cheap per-module orientation, then drop to the code graph:
 
 - Resolve the exact symbol first with grep (`rg -n 'lockManagedDive' apps packages`).
 - Then ask with exact names: `graphify explain lockManagedDive --graph docs/generated/graph.json`,
