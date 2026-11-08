@@ -142,8 +142,8 @@ export function planFor(changed, { e2eServerLoads: loads } = {}) {
       plan.lint = 'all';
       continue;
     }
-    // The drift report and the repo map have tests of their own, and nothing else reads them.
-    if (/^scripts\/(drift|repomap)/.test(path)) { plan.scripts = true; continue; }
+    // The drift report, the repo map and the code graph have tests of their own, and nothing else reads them.
+    if (/^scripts\/(drift|repomap|code-graph)/.test(path)) { plan.scripts = true; continue; }
     // So has the check script (amendment of 2026-10-24); its lint part also lints everything.
     if (/^scripts\/check/.test(path)) {
       plan.scripts = true;

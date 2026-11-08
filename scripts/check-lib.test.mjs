@@ -383,7 +383,7 @@ test('PR #5 replayed: a change to e2e/support.ts alone plans no browser tests in
 });
 
 test('the check scripts run their own tests only; the lint script also lints everything; one-off scripts and licences are quiet', () => {
-  for (const path of ['scripts/check.mjs', 'scripts/check-lib.mjs', 'scripts/check-lib.test.mjs', 'scripts/check-run.mjs', 'scripts/check-log.mjs', 'scripts/check-tags.mjs', 'scripts/repomap.mjs', 'scripts/repomap.test.mjs']) {
+  for (const path of ['scripts/check.mjs', 'scripts/check-lib.mjs', 'scripts/check-lib.test.mjs', 'scripts/check-run.mjs', 'scripts/check-log.mjs', 'scripts/check-tags.mjs', 'scripts/repomap.mjs', 'scripts/repomap.test.mjs', 'scripts/code-graph.mjs', 'scripts/code-graph.test.mjs']) {
     const plan = planFor([path]);
     assert.deepEqual([plan.scripts, plan.typecheck, plan.lint, plan.server, plan.web, plan.e2e], [true, false, 'none', 'none', 'none', 'none'], path);
   }

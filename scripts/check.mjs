@@ -260,7 +260,9 @@ function otherSteps() {
     const file = dry ? resolve(CACHE, 'lint-files.txt') : listFile('lint-files.txt', lintFiles);
     lane.push({ name: `lint and module boundaries (${count} changed file(s))`, command: `node scripts/check-lint.mjs --files-from "${file}"`, step: 'lint' });
   }
-  if (plan.scripts) lane.push({ name: 'check script tests', command: 'node --test scripts/check-lib.test.mjs scripts/check-run.test.mjs scripts/check-log.test.mjs scripts/repomap.test.mjs', step: 'scripts' });
+  // The repo map's and code graph's tests run after the check scripts': a fourth concurrent test process made the
+  // timing-sensitive texts test flake on a 2-vCPU runner.
+  if (plan.scripts) lane.push({ name: 'check script tests', command: 'node --test scripts/check-lib.test.mjs scripts/check-run.test.mjs scripts/check-log.test.mjs && node --test scripts/repomap.test.mjs scripts/code-graph.test.mjs', step: 'scripts' });
   if (plan.server !== 'none') lane.push({ name: `server tests (${plan.server})`, command: unitTests('server', plan.server), step: 'server' });
   if (plan.web !== 'none') lane.push({ name: `web unit tests (${plan.web})`, command: unitTests('web', plan.web), step: 'web' });
   return lane;

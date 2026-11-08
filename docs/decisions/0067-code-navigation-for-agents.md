@@ -1,14 +1,14 @@
 ---
 title: "ADR 0067: Code navigation for agents"
 summary: Agents get three code-level navigation layers — a committed repo map, a Graphify symbol/call graph built in CI, and dependency-cruiser's boundary JSON; LSP-based tools are rejected for heartbeat runners.
-status: proposed
+status: accepted
 date: 2026-11-07
 ---
 
 # ADR 0067: Code navigation for agents
 
 ## Status
-Proposed – 2026-11-07 (Paperclip issue FAH-46, plan accepted by the owner).
+Accepted – 2026-11-07 – by the owner (plan approved on FAH-46, ADR merged in PR #34).
 
 ## Context
 Agents orient themselves well at the knowledge level (`AGENTS.md` → `docs/index.md` → ADRs/glossary/spec) but have
