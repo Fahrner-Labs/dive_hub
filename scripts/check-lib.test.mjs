@@ -32,10 +32,10 @@ function repository(files) {
   return { cwd, git, write, remove: (path) => rmSync(join(cwd, path)), drop: () => rmSync(cwd, { recursive: true, force: true }) };
 }
 
-/** A repository's refs, branch and local config: what a fixture command must never change in the enclosing repository. */
+/** A repository's refs, branch, local config and object store: what a fixture command must never change in the enclosing repository. */
 function repoState(cwd) {
   const git = (...args) => execFileSync('git', args, { cwd, env: withoutRepoEnv(), encoding: 'utf8' });
-  return [git('for-each-ref', '--format=%(refname) %(objectname)'), git('symbolic-ref', '--short', 'HEAD'), git('config', '--local', '--list')].join('\n');
+  return [git('for-each-ref', '--format=%(refname) %(objectname)'), git('symbolic-ref', '--short', 'HEAD'), git('config', '--local', '--list'), git('count-objects', '-v')].join('\n');
 }
 
 test('a fixture repository ignores GIT_DIR/GIT_WORK_TREE and never writes to the enclosing repository', (t) => {
