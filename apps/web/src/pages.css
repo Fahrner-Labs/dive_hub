@@ -47,8 +47,12 @@
 .dive-head .recorded-value { font-size: var(--text-sm); }
 
 
-/* Room for the chart and its legend before it's drawn, so the page doesn't jump (UI review C10). */
-.profile { width: 100%; min-height: 22.5rem; }
+/* Room for the chart and its legend before it's drawn, so the page doesn't jump (UI review C10). uPlot sets a pixel
+   width from its last ResizeObserver callback, so for one frame after the layout moves (the sidebar appears at 64rem)
+   the canvas can still be the width of the layout before: clipping it here keeps that frame off the page, and the
+   track can shrink below the canvas instead of being pinned open (FAH-55). */
+.profile { width: 100%; max-width: 100%; min-width: 0; min-height: 22.5rem; overflow-x: clip; }
+.profile-figure { min-width: 0; max-width: 100%; }
 /* The dive page's profile is the hero: taller (DepthProfile's HERO_HEIGHT, 440px, and the legend). */
 .dive-sheet .profile:not(.profile-tanks) { min-height: 30rem; }
 .profile .u-legend { color: var(--color-text); font-size: var(--text-sm); }
