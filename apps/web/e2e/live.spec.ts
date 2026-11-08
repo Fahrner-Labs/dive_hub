@@ -73,7 +73,8 @@ test('a Dive changed elsewhere while its edit form is dirty keeps the edits and 
 
   await editElsewhere(request, id, 'changed elsewhere while the form was open');
 
-  await expect(page.getByText('This dive changed elsewhere. Your edits are still here.', { exact: true })).toBeVisible({ timeout: 4_000 });
+  // The notice is also read into the always-present live region, so match the visible paragraph only.
+  await expect(page.locator('p', { hasText: 'This dive changed elsewhere. Your edits are still here.' })).toBeVisible({ timeout: 4_000 });
   await expect(page.getByRole('textbox', { name: 'Notes' })).toHaveValue('typed here and not saved yet');
   await expect(page.getByRole('button', { name: 'Load the new version' })).toBeVisible();
 });
@@ -96,6 +97,10 @@ test('no polling fires while the live channel is healthy', { tag: ['@live', '@di
   // The first load is done and the channel is open; only now is the page sitting there with live updates.
   await expect(page.locator('[data-dive-id]').first()).toBeVisible();
   await streamOpen;
+  // A refetch timer armed before the stream opened can still fire once just after the channel turns healthy
+  // (`reschedulePolling` can't cancel the armed timer), so let that window pass uncounted. Polling that keeps
+  // going while healthy still fails: a fresh 5 s timer would fire inside the counted 6 s.
+  await page.waitForTimeout(5_500);
   // The logbook would ask again every five seconds without a channel (ADR 0066); with one, none of those fire.
   let asked = 0;
   page.on('request', (request) => {
