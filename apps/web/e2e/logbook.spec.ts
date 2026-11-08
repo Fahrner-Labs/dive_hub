@@ -1,7 +1,7 @@
 // The logbook's rows in a real browser (ADR 0040, UI redesign slice C): what a row says, the months and totals around
 // the list, buddies as circles with their names as text, and "Show only" with its counts, in the address.
 import { expect, test } from '@playwright/test';
-import { clearParticipants, diveNumber, diveRows, diveWithoutRecording, externalDiver, leaveLena, openFilters, seededDiveId, setBuddies, setPreferences } from './support.ts';
+import { clearParticipants, diveNumber, diveRows, diveWithoutRecording, externalDiver, guardedRoute, leaveLena, openFilters, seededDiveId, setBuddies, setPreferences } from './support.ts';
 
 test.beforeEach(async ({ request }) => {
   await setPreferences(request, { language: null, units: null });
@@ -157,11 +157,11 @@ test('the Diver select is there only when there is more than one Diver', { tag: 
   await expect(diveRows(page).first()).toBeVisible();
   await expect(page.getByRole('button', { name: /Diver$/ })).toHaveCount(1);
 
-  await page.route('**/api/divers', async (route) => {
+  await page.route('**/api/divers', guardedRoute(async (route) => {
     const response = await route.fetch();
     const divers = await response.json() as unknown[];
     await route.fulfill({ response, json: divers.slice(0, 1) });
-  });
+  }));
   await page.goto('/');
   await expect(diveRows(page).first()).toBeVisible();
   await expect(page.getByRole('button', { name: /Sort by$/ })).toBeVisible();
