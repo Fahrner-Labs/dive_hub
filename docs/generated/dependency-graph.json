@@ -971,9 +971,9 @@
         "apps/server/src/planning/bottom-time-service.ts",
         "apps/server/src/planning/logbook-inputs.ts",
         "apps/server/src/providers/buddies/buddy-service.ts",
+        "apps/server/src/providers/connection-service.ts",
         "apps/server/src/providers/lease-service.ts",
         "apps/server/src/providers/waiting-push/waiting-push-queue.ts",
-        "apps/server/src/providers/connection-service.ts",
         "apps/server/src/dives/time-zone.ts",
         "apps/server/src/providers/list-entries.ts",
         "apps/server/src/providers/conflicts/conflict-service.ts",
@@ -1694,10 +1694,9 @@
         "apps/server/src/planning/gas-plan-service.ts",
         "apps/server/src/providers/layer.ts",
         "apps/server/src/providers/buddies/buddy-service.ts",
-        "apps/server/src/providers/advisory-lock.ts",
+        "apps/server/src/providers/connection-service.ts",
         "apps/server/src/providers/lease-service.ts",
         "apps/server/src/providers/waiting-push/waiting-push-queue.ts",
-        "apps/server/src/providers/connection-service.ts",
         "apps/server/src/dives/time-zone.ts",
         "apps/server/src/providers/list-entries.ts",
         "apps/server/src/providers/conflicts/conflict-service.ts",
@@ -1763,7 +1762,6 @@
       "dependents": [
         "apps/server/src/db/client.ts",
         "apps/server/src/live/listener.ts",
-        "apps/server/src/providers/advisory-lock.ts",
         "apps/server/src/worker.ts",
         "apps/server/src/db/migrate.ts"
       ],
@@ -1905,10 +1903,10 @@
         "apps/server/src/planning/bottom-time-service.ts",
         "apps/server/src/planning/logbook-inputs.ts",
         "apps/server/src/providers/buddies/buddy-service.ts",
+        "apps/server/src/providers/connection-service.ts",
         "apps/server/src/providers/lease-service.ts",
         "apps/server/src/providers/waiting-push/waiting-push-queue.ts",
         "apps/server/src/providers/current-remote.ts",
-        "apps/server/src/providers/connection-service.ts",
         "apps/server/src/providers/provider.ts",
         "apps/server/src/dives/time-zone.ts",
         "apps/server/src/providers/list-entries.ts",
@@ -5226,8 +5224,8 @@
         "apps/server/src/dives/continuation/joined-recording.ts",
         "apps/server/src/imports/archive.ts",
         "apps/server/src/secrets/secret-box.ts",
-        "apps/server/src/providers/lease-service.ts",
         "apps/server/src/providers/connection-service.ts",
+        "apps/server/src/providers/lease-service.ts",
         "apps/server/src/users/tokens.ts",
         "apps/server/src/users/setup-service.ts",
         "apps/server/src/auth/secret.ts",
@@ -11679,23 +11677,6 @@
         },
         {
           "dynamic": false,
-          "module": "../advisory-lock.js",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "apps/server/src/providers/advisory-lock.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
           "module": "../connection-service.js",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -11783,6 +11764,24 @@
         },
         {
           "dynamic": false,
+          "module": "../waiting-push/waiting-push-queue.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/providers/waiting-push/waiting-push-queue.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./buddy-names.js",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -11820,296 +11819,6 @@
         "apps/server/src/providers/layer.ts",
         "apps/server/src/providers/routes.ts",
         "apps/server/src/providers/account-routes.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "apps/server/src/providers/advisory-lock.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../db/client.js",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "import"
-          ],
-          "resolved": "apps/server/src/db/client.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./lease-service.js",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "apps/server/src/providers/lease-service.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "pg",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "npm",
-            "import"
-          ],
-          "resolved": "apps/server/node_modules/pg/lib/index.js",
-          "coreModule": false,
-          "followable": false,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": true,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "apps/server/src/providers/buddies/buddy-service.ts",
-        "apps/server/src/providers/push/buddies-for-send.ts",
-        "apps/server/src/providers/push/site-for-send.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "apps/server/src/providers/lease-service.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../db/client.js",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "import"
-          ],
-          "resolved": "apps/server/src/db/client.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../db/schema.js",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "apps/server/src/db/schema.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./waiting-push/waiting-push-queue.js",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "import"
-          ],
-          "resolved": "apps/server/src/providers/waiting-push/waiting-push-queue.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "crypto",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "core",
-            "import"
-          ],
-          "protocol": "node:",
-          "resolved": "crypto",
-          "coreModule": true,
-          "followable": false,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "drizzle-orm",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "npm",
-            "import"
-          ],
-          "resolved": "apps/server/node_modules/drizzle-orm/index.cjs",
-          "coreModule": false,
-          "followable": false,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": true,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "apps/server/src/compose.ts",
-        "apps/server/src/providers/layer.ts",
-        "apps/server/src/providers/buddies/buddy-service.ts",
-        "apps/server/src/providers/advisory-lock.ts",
-        "apps/server/src/providers/connection-service.ts",
-        "apps/server/src/providers/dive-import/dive-import.ts",
-        "apps/server/src/providers/dive-import/gone-dives.ts",
-        "apps/server/src/providers/dive-import/scheduled-fetch.ts",
-        "apps/server/src/providers/push/push-service.ts",
-        "apps/server/src/providers/push/buddies-for-send.ts",
-        "apps/server/src/providers/push/site-for-send.ts",
-        "apps/server/src/providers/waiting-push/waiting-push-service.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "apps/server/src/providers/waiting-push/waiting-push-queue.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../../db/client.js",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "import"
-          ],
-          "resolved": "apps/server/src/db/client.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../../db/schema.js",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "apps/server/src/db/schema.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../current-remote.js",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "apps/server/src/providers/current-remote.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "drizzle-orm",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "npm",
-            "import"
-          ],
-          "resolved": "apps/server/node_modules/drizzle-orm/index.cjs",
-          "coreModule": false,
-          "followable": false,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": true,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "apps/server/src/compose.ts",
-        "apps/server/src/providers/layer.ts",
-        "apps/server/src/providers/lease-service.ts",
-        "apps/server/src/providers/dive-import/dive-import.ts",
-        "apps/server/src/providers/dive-import/scheduled-fetch.ts",
-        "apps/server/src/providers/push/push-run-service.ts",
-        "apps/server/src/providers/push/push-service.ts",
-        "apps/server/src/providers/waiting-push/waiting-push-service.ts",
-        "apps/server/src/worker.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "apps/server/src/providers/current-remote.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../db/schema.js",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "import"
-          ],
-          "resolved": "apps/server/src/db/schema.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "apps/server/src/providers/waiting-push/waiting-push-queue.ts",
-        "apps/server/src/providers/remote-state.ts",
-        "apps/server/src/providers/waiting-push/waiting-push-service.ts"
       ],
       "orphan": false,
       "valid": true
@@ -12335,6 +12044,234 @@
         "apps/server/src/providers/site-pick.ts",
         "apps/server/src/providers/routes.ts",
         "apps/server/src/providers/connection-routes.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/server/src/providers/lease-service.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../db/client.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/db/client.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../db/schema.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/db/schema.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./waiting-push/waiting-push-queue.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/providers/waiting-push/waiting-push-queue.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "crypto",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "core",
+            "import"
+          ],
+          "protocol": "node:",
+          "resolved": "crypto",
+          "coreModule": true,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "drizzle-orm",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "npm",
+            "import"
+          ],
+          "resolved": "apps/server/node_modules/drizzle-orm/index.cjs",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": true,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/server/src/compose.ts",
+        "apps/server/src/providers/layer.ts",
+        "apps/server/src/providers/buddies/buddy-service.ts",
+        "apps/server/src/providers/connection-service.ts",
+        "apps/server/src/providers/dive-import/dive-import.ts",
+        "apps/server/src/providers/dive-import/gone-dives.ts",
+        "apps/server/src/providers/dive-import/scheduled-fetch.ts",
+        "apps/server/src/providers/push/push-service.ts",
+        "apps/server/src/providers/push/buddies-for-send.ts",
+        "apps/server/src/providers/push/site-for-send.ts",
+        "apps/server/src/providers/waiting-push/waiting-push-service.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/server/src/providers/waiting-push/waiting-push-queue.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../../db/client.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/db/client.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../../db/schema.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/db/schema.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../current-remote.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/providers/current-remote.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "drizzle-orm",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "npm",
+            "import"
+          ],
+          "resolved": "apps/server/node_modules/drizzle-orm/index.cjs",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": true,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/server/src/compose.ts",
+        "apps/server/src/providers/layer.ts",
+        "apps/server/src/providers/buddies/buddy-service.ts",
+        "apps/server/src/providers/lease-service.ts",
+        "apps/server/src/providers/dive-import/dive-import.ts",
+        "apps/server/src/providers/dive-import/scheduled-fetch.ts",
+        "apps/server/src/providers/push/push-run-service.ts",
+        "apps/server/src/providers/push/push-service.ts",
+        "apps/server/src/providers/push/buddies-for-send.ts",
+        "apps/server/src/providers/push/site-for-send.ts",
+        "apps/server/src/providers/waiting-push/waiting-push-service.ts",
+        "apps/server/src/worker.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/server/src/providers/current-remote.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../db/schema.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/db/schema.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/server/src/providers/waiting-push/waiting-push-queue.ts",
+        "apps/server/src/providers/remote-state.ts",
+        "apps/server/src/providers/waiting-push/waiting-push-service.ts"
       ],
       "orphan": false,
       "valid": true
@@ -15479,23 +15416,6 @@
         },
         {
           "dynamic": false,
-          "module": "../advisory-lock.js",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "apps/server/src/providers/advisory-lock.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
           "module": "../buddies/buddy-names.js",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -15555,6 +15475,23 @@
             "import"
           ],
           "resolved": "apps/server/src/providers/provider.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../waiting-push/waiting-push-queue.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/providers/waiting-push/waiting-push-queue.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -15696,23 +15633,6 @@
         },
         {
           "dynamic": false,
-          "module": "../advisory-lock.js",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "apps/server/src/providers/advisory-lock.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
           "module": "../lease-service.js",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -15739,6 +15659,23 @@
             "import"
           ],
           "resolved": "apps/server/src/providers/provider.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../waiting-push/waiting-push-queue.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/providers/waiting-push/waiting-push-queue.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -42383,8 +42320,8 @@
     "baselineSize": 0,
     "baselineStale": 0,
     "advisedExitCode": 0,
-    "totalCruised": 405,
-    "totalDependenciesCruised": 2111,
+    "totalCruised": 404,
+    "totalDependenciesCruised": 2108,
     "optionsUsed": {
       "baseDir": "/home/runner/work/dive_hub/dive_hub",
       "combinedDependencies": false,
