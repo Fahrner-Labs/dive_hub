@@ -77,7 +77,7 @@ const AREAS = [
   [/^apps\/server\/test\/zip\.ts$/, ['@admin', '@sites']],
 ];
 /** Paths that change no behaviour: no tests. */
-export const QUIET = /^(docs\/|samples\/|\.claude\/|\.github\/|\.githooks\/|AGENTS\.md$|CLAUDE\.md$|README\.md$|LICENSE$|NOTICE$|skills-lock\.json$|\.gitignore$|\.dockerignore$|\.env\.example$|compose(\.dev)?\.yaml$|Dockerfile$|apps\/server\/test\/fixtures\/site-sources\/record\.ts$|apps\/server\/test\/fixtures\/ssi\/round-trip\.ts$|apps\/server\/test\/fixtures\/write-assessment-fixture\.ts$|apps\/server\/test\/fixtures\/write-suunto-fixture\.ts$|apps\/server\/test\/fixtures\/write-merge-fixture\.ts$|apps\/server\/test\/fixtures\/write-account-export-fixture\.ts$|apps\/server\/test\/fixtures\/write-live-fixtures\.ts$|scripts\/token-report\.mjs$|scripts\/fit-compressibility\.mjs$)/;
+export const QUIET = /^(docs\/|samples\/|\.claude\/|\.github\/|\.githooks\/|AGENTS\.md$|CLAUDE\.md$|README\.md$|LICENSE$|NOTICE$|skills-lock\.json$|\.gitignore$|\.gitattributes$|\.dockerignore$|\.env\.example$|compose(\.dev)?\.yaml$|Dockerfile$|apps\/server\/test\/fixtures\/site-sources\/record\.ts$|apps\/server\/test\/fixtures\/ssi\/round-trip\.ts$|apps\/server\/test\/fixtures\/write-assessment-fixture\.ts$|apps\/server\/test\/fixtures\/write-suunto-fixture\.ts$|apps\/server\/test\/fixtures\/write-merge-fixture\.ts$|apps\/server\/test\/fixtures\/write-account-export-fixture\.ts$|apps\/server\/test\/fixtures\/write-live-fixtures\.ts$|scripts\/token-report\.mjs$|scripts\/fit-compressibility\.mjs$)/;
 
 /** The area tags a browser test can have; a test with none of them would run only in the full check. */
 export const TAGS = ['@dives', '@divers', '@sites', '@account', '@admin', '@layout', '@tools', '@live'];
@@ -155,8 +155,8 @@ export function planFor(changed, { e2eServerLoads: loads } = {}) {
       plan.lint = 'all';
       continue;
     }
-    // The drift report has tests of its own, and nothing else reads it.
-    if (/^scripts\/drift/.test(path)) { plan.scripts = true; continue; }
+    // The drift report, the repo map and the code graph have tests of their own, and nothing else reads them.
+    if (/^scripts\/(drift|repomap|code-graph)/.test(path)) { plan.scripts = true; continue; }
     // So has the check script (amendment of 2026-10-24); its lint part also lints everything.
     if (/^scripts\/check/.test(path)) {
       plan.scripts = true;
@@ -236,6 +236,17 @@ export function planSteps(changedByStep, context = {}) {
 export const LINT_CONFIG = /^(eslint\.config\.mjs|eslint-suppressions\.json|\.dependency-cruiser\.cjs|\.dependency-cruiser-known-violations\.json)$/;
 /** The baselines: problems that existed when the rules came, which may only shrink. */
 export const BASELINES = ['eslint-suppressions.json', '.dependency-cruiser-known-violations.json'];
+
+/** `repomap.mjs --check` exits with this when the map is missing or stale; any other non-zero code is a real error. */
+export const REPO_MAP_STALE = 2;
+
+/**
+ * Whether a repo map that needs rebuilding stops the check: always, except on a CI push to main, whose repo-map
+ * workflow rebuilds it. Only the stale-or-missing exit code is excused there; a crashed run (any other non-zero
+ * code) always stops the check.
+ */
+export const repoMapBlocks = (status, env = process.env) => status !== 0
+  && (status !== REPO_MAP_STALE || !(env.CI && env.GITHUB_REF === 'refs/heads/main'));
 const ESLINT_FILES = /^(apps\/[\w-]+\/(src|test)\/|apps\/web\/e2e\/|packages\/[\w-]+\/src\/).*\.tsx?$/;
 const DEPS_FILES = /^apps\/(server|web)\/src\/.*\.tsx?$/;
 
