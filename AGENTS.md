@@ -69,7 +69,10 @@ Start with `REPOMAP.md` for cheap per-module orientation, then drop to the code 
 ## Tests
 
 - Tests first.
-- Tests run against a real PostgreSQL. At most one `vi.fn`, no `vi.mock`.
+- Tests run against a real PostgreSQL, on the test server only: `DIVEHUB_TEST_DATABASE_URL` (older name
+  `TEST_DATABASE_URL`), else the local development default. Tests and browser tests never connect to `paperclip-db`,
+  never reuse `DATABASE_URL`'s server, and create or drop databases nowhere else.
+- At most one `vi.fn`, no `vi.mock`.
 - Browser tests carry an area tag.
 - `pnpm`, never `npm`.
 - Iterate with `pnpm check --failed` / `--tests <filter>`; one full `pnpm check` after the last edit.
