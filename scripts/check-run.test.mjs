@@ -46,6 +46,19 @@ test('the lanes run side by side', async (t) => {
   assert.deepEqual(results.map((r) => [r.name, r.status]), [['a', 0], ['b1', 0], ['b2', 0]]);
 });
 
+test('a step runs with the environment it names, which replaces the inherited one', async (t) => {
+  process.env.DIVEHUB_CHECK_INHERITED = 'present';
+  try {
+    const env = { ...process.env, DIVEHUB_CHECK_STEP: 'named' };
+    delete env.DIVEHUB_CHECK_INHERITED;
+    const command = `node -e "process.exit(process.env.DIVEHUB_CHECK_STEP === 'named' && process.env.DIVEHUB_CHECK_INHERITED === undefined ? 0 : 1)"`;
+    const [result] = await runLanes([[{ name: 'env', command, step: null, env }]], { sequential: true, outDir: outDir(t), onEnd: () => {} });
+    assert.equal(result.status, 0);
+  } finally {
+    delete process.env.DIVEHUB_CHECK_INHERITED;
+  }
+});
+
 test('a failing step does not stop the steps after it', async (t) => {
   const ended = [];
   const results = await runLanes([[step('a', wait(300))], [step('b1', wait(100, 1)), step('b2', wait(100))]], { sequential: false, outDir: outDir(t), onEnd: (result) => ended.push(result.name) });

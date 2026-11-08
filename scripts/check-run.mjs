@@ -27,12 +27,12 @@ const SETTLE_MS = 300;
 
 /**
  * Runs one step with its output to `log`; resolves with its exit code, or null when `stop` came while it ran or
- * within `settleMs` after it failed.
+ * within `settleMs` after it failed. A step's optional `env` replaces the inherited environment.
  */
-function runStep(command, log, running, settleMs) {
+function runStep({ command, env }, log, running, settleMs) {
   return new Promise((done) => {
     const fd = openSync(log, 'w');
-    const child = spawn(command, { shell: true, stdio: ['ignore', fd, fd], detached: !WINDOWS, windowsHide: true });
+    const child = spawn(command, { shell: true, env: env ?? process.env, stdio: ['ignore', fd, fd], detached: !WINDOWS, windowsHide: true });
     closeSync(fd);
     const entry = { child, stopped: false };
     running.add(entry);
@@ -53,12 +53,12 @@ function runStep(command, log, running, settleMs) {
 }
 
 /**
- * Runs `lanes` (arrays of `{ name, command, step }`) side by side, or with `sequential` all steps one after another
- * in lane order. Each step's output goes to `<outDir>/<step or name>.log`; `onEnd(result)` is called as each step
- * ends. Resolves with a result per step in lane order: `{ name, step, status, seconds, log }`, `status` the exit
- * code, or null for a step that was interrupted (SIGINT or `signal`) or never started. When `onEnd` throws, every
- * running step is stopped with its children and runLanes rejects with that error once they are gone. `settleMs` is
- * SETTLE_MS (tests set it).
+ * Runs `lanes` (arrays of `{ name, command, step }`, each with an optional `env`) side by side, or with
+ * `sequential` all steps one after another in lane order. Each step's output goes to `<outDir>/<step or name>.log`;
+ * `onEnd(result)` is called as each step ends. Resolves with a result per step in lane order:
+ * `{ name, step, status, seconds, log }`, `status` the exit code, or null for a step that was interrupted (SIGINT or
+ * `signal`) or never started. When `onEnd` throws, every running step is stopped with its children and runLanes
+ * rejects with that error once they are gone. `settleMs` is SETTLE_MS (tests set it).
  */
 export async function runLanes(lanes, { sequential = false, outDir, onEnd = () => {}, signal, settleMs = SETTLE_MS } = {}) {
   mkdirSync(outDir, { recursive: true });
@@ -83,7 +83,7 @@ export async function runLanes(lanes, { sequential = false, outDir, onEnd = () =
       for (const { laneStep, result } of lane) {
         if (stopped) return;
         const started = Date.now();
-        result.status = await runStep(laneStep.command, result.log, running, settleMs);
+        result.status = await runStep(laneStep, result.log, running, settleMs);
         result.seconds = (Date.now() - started) / 1000;
         if (result.status !== null) onEnd(result);
       }

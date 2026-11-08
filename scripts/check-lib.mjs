@@ -8,6 +8,19 @@ import { join, posix, resolve } from 'node:path';
 /** The steps that each remember their own green run, in the order they run. */
 export const STEPS = ['typecheck', 'lint', 'scripts', 'server', 'web', 'e2e'];
 
+/**
+ * The Git variables that locate a repository. A hook exports them, so `GIT_DIR` overrides the `cwd` of a fixture
+ * `git` command and makes it write to the enclosing repository instead (FAH-51).
+ */
+export const REPO_LOCATING_GIT_VARS = ['GIT_DIR', 'GIT_WORK_TREE', 'GIT_INDEX_FILE', 'GIT_OBJECT_DIRECTORY', 'GIT_ALTERNATE_OBJECT_DIRECTORIES', 'GIT_COMMON_DIR', 'GIT_NAMESPACE'];
+
+/** `env` without the variables that locate a repository: a child that pins its repository with `cwd` alone. */
+export function withoutRepoEnv(env = process.env) {
+  const clean = { ...env };
+  for (const name of REPO_LOCATING_GIT_VARS) delete clean[name];
+  return clean;
+}
+
 /** Browser test areas (tags in apps/web/e2e) by source path; first match wins. */
 const AREAS = [
   [/^apps\/web\/src\/SiteImportPage\.tsx$/, ['@admin', '@sites']],
@@ -275,7 +288,7 @@ export function baselineGrowth(baselines, renames = new Map()) {
   });
 }
 
-const git = (args, cwd, env) => execFileSync('git', ['-c', 'core.quotepath=off', ...args], { cwd, env: { ...process.env, ...env }, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
+const git = (args, cwd, env) => execFileSync('git', ['-c', 'core.quotepath=off', ...args], { cwd, env: { ...withoutRepoEnv(), ...env }, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
 const lines = (text) => text.split('\n').map((line) => line.trim()).filter(Boolean);
 
 /**
