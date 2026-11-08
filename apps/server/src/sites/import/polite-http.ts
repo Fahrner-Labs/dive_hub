@@ -5,7 +5,7 @@ import { errorMessage } from '../../errors.js';
 import type { ImportSource } from '../sources.js';
 import { SiteSourceError } from './site-source.js';
 
-export const PROJECT_URL = 'https://github.com/fahrnertim/dive_hub';
+export const PROJECT_URL = 'https://github.com/Fahrner-Labs/dive_hub';
 
 /** `DiveHub (+https://github.com/…; ops@example.org)`: never anything about the instance or its Users. */
 export const userAgent = (contact?: string) => `DiveHub (+${PROJECT_URL}${contact ? `; ${contact}` : ''})`;
