@@ -42386,7 +42386,7 @@
     "totalCruised": 405,
     "totalDependenciesCruised": 2111,
     "optionsUsed": {
-      "baseDir": "/paperclip/instances/default/workspaces/60c35ce8-111f-4f4f-8f36-1f0e151b50cd",
+      "baseDir": "/home/runner/work/dive_hub/dive_hub",
       "combinedDependencies": false,
       "detectImportsInAmbientModules": false,
       "detectJSDocImports": false,
@@ -42737,8 +42737,8 @@
     "environment": {
       "version": "18.7.0",
       "nodeVersionSupported": "^22||^24||>=26",
-      "nodeVersionFound": "v24.22.1",
-      "osVersionFound": "x64 linux@7.0.0-30-generic",
+      "nodeVersionFound": "v24.22.2",
+      "osVersionFound": "x64 linux@7.0.0-1019-azure",
       "transpilersFound": [
         {
           "name": "javascript",

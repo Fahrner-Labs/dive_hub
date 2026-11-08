@@ -1,15 +1,15 @@
-# Graph Report - 60c35ce8-111f-4f4f-8f36-1f0e151b50cd  (2026-11-07)
+# Graph Report - dive_hub  (2026-11-08)
 
 ## Corpus Check
 - cluster-only mode — file stats not available
 
 ## Summary
-- 6286 nodes · 19809 edges · 156 communities (146 shown, 10 thin omitted)
+- 6288 nodes · 19816 edges · 150 communities (146 shown, 4 thin omitted)
 - Extraction: 99% EXTRACTED · 1% INFERRED · 0% AMBIGUOUS · INFERRED: 197 edges (avg confidence: 0.85)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `34731d14`
+- Built from commit: `428d4c74`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -163,19 +163,13 @@
 - Community 146
 - Community 147
 - Community 148
-- Community 149
-- Community 150
-- Community 152
-- Community 153
-- Community 154
-- Community 155
 
 ## God Nodes (most connected - your core abstractions)
 1. `Notice()` - 181 edges
 2. `Button()` - 178 edges
 3. `unwrap()` - 175 edges
-4. `useDisplay()` - 148 edges
-5. `useErrorText()` - 148 edges
+4. `useErrorText()` - 148 edges
+5. `useDisplay()` - 148 edges
 6. `drizzle-orm` - 118 edges
 7. `Muted()` - 117 edges
 8. `announce()` - 95 edges
@@ -197,319 +191,319 @@
 ## Import Cycles
 - None detected.
 
-## Communities (156 total, 10 thin omitted)
+## Communities (150 total, 4 thin omitted)
 
 ### Community 0 - "Community 0"
-Cohesion: 0.03
-Nodes (177): bottomTimeRule(), cylinderCatalogueQuery(), defined(), LeadEstimate, leadEstimateQuery(), ToolsBottomTime, toolsBottomTimeQuery(), ToolsGas (+169 more)
+Cohesion: 0.04
+Nodes (150): allButDive(), api, ApiError, candidatesQuery(), CandidateView, ConflictChoices, ConflictEntryView, ConflictsOfConnection (+142 more)
 
 ### Community 1 - "Community 1"
-Cohesion: 0.05
-Nodes (167): ChangePassword(), DisplaySettings(), Sessions(), useDescribeAgent(), AdminSettings(), DeleteUserDialog(), Invitations(), Invite() (+159 more)
+Cohesion: 0.03
+Nodes (136): LeadPlacement, OVERRIDABLE_FIELDS, OverridableField, renumber(), managedDiverIds(), AppendRow, channelsOf(), createContinuationService() (+128 more)
 
 ### Community 2 - "Community 2"
-Cohesion: 0.02
-Nodes (105): graphile-worker@^0.18.0, createServer(), loadAuthSecret(), workerDeps(), Config, loadConfig(), ADR-0011, ADR-0021 (+97 more)
+Cohesion: 0.06
+Nodes (138): ChangePassword(), DisplaySettings(), SecuritySettings(), Sessions(), useDescribeAgent(), AdminSettings(), DeleteUserDialog(), Invitations() (+130 more)
 
 ### Community 3 - "Community 3"
 Cohesion: 0.05
-Nodes (96): user, accountListEntry, diver, revision, forget(), listAccountOf(), remember(), rememberedEntries() (+88 more)
+Nodes (90): user, accountListEntry, diver, revision, forget(), listAccountOf(), remember(), ADR-0057 (+82 more)
 
 ### Community 4 - "Community 4"
 Cohesion: 0.04
-Nodes (121): ImportedValues, SiteImportCounts, StoredConflictField, ADR-0021, ADR-0025, ADR-0053, diverExternalId, diveSite (+113 more)
+Nodes (112): bottomTimeRule(), cylinderCatalogueQuery(), defined(), LeadEstimate, ToolsBottomTime, toolsBottomTimeQuery(), ToolsGas, toolsGasQuery() (+104 more)
 
 ### Community 5 - "Community 5"
-Cohesion: 0.03
-Nodes (110): divesQuery(), DiveSummary, ExternalIdView, isUnauthorized(), LogbookPage, SiteImportArea, SiteImportView, siteQuery() (+102 more)
+Cohesion: 0.04
+Nodes (106): divesQuery(), LogbookPage, ProblemCode, pushRunActive(), pushRunBody(), PushRunChoices, PushRunDetail, PushRunPreview (+98 more)
 
 ### Community 6 - "Community 6"
 Cohesion: 0.03
-Nodes (100): Auth, CentreService, CentreRouteDeps, DiverService, DiverRouteDeps, downsampleMinMax(), AppendDeps, AppendOutcome (+92 more)
+Nodes (98): UTC_OFFSET_SOURCES, downsampleMinMax(), AppendDeps, AppendOutcome, AppendService, Side, ADR-0038, ADR-0063 (+90 more)
 
 ### Community 7 - "Community 7"
-Cohesion: 0.03
-Nodes (87): Assessment, FindingView, Row, ADR-0036, upload(), Check, Deleted, DiveView (+79 more)
+Cohesion: 0.04
+Nodes (102): buddiesQuery(), ConflictFieldView, ConnectionView, DiveImportMode, DiveImportPreview, diveImportPreviewQuery(), DiveKind, diveListPages (+94 more)
 
 ### Community 8 - "Community 8"
-Cohesion: 0.04
-Nodes (90): CertificationView, CertificationViewSchema, Day, ADR-0050, CardParams, CertificationRouteDeps, errors, Fields (+82 more)
+Cohesion: 0.02
+Nodes (100): AiAccessLogEntry, AiAccessView, AnyLogbookCheck, buddiesForQuery(), BuddyView, ContinuationCandidateView, DeletedDiveView, DETAILS (+92 more)
 
 ### Community 9 - "Community 9"
 Cohesion: 0.04
-Nodes (96): LeadPlacement, OVERRIDABLE_FIELDS, OverridableField, participant, renumber(), renumberStatement(), ADR-0048, AppendRow (+88 more)
+Nodes (93): importsQuery(), ImportView, isUnauthorized(), Me, setupQuery(), SiteImportArea, SiteImportView, uploadFile() (+85 more)
 
 ### Community 10 - "Community 10"
-Cohesion: 0.02
-Nodes (95): AiAccessLogEntry, AiAccessView, AnyLogbookCheck, BuddyView, ContinuationCandidateView, DETAILS, devicesQuery(), DeviceView (+87 more)
+Cohesion: 0.04
+Nodes (90): CertificationService, CYLINDER_MATERIALS, DIVE_IMPORT_MODES, MATCHING_WINDOWS, AssessmentRefresh, refreshAssessmentsAfterChange(), ADR-0036, ADR-0053 (+82 more)
 
 ### Community 11 - "Community 11"
-Cohesion: 0.05
-Nodes (94): allButDive(), continuationCandidateQuery(), DeletedDiveView, diveNeighboursQuery(), diveProvidersQuery(), diveQuery(), DiveView, mergeCandidatesQuery() (+86 more)
+Cohesion: 0.03
+Nodes (71): createServer(), createAuth(), loadAuthSecret(), workerDeps(), Config, loadConfig(), ADR-0011, ADR-0021 (+63 more)
 
 ### Community 12 - "Community 12"
-Cohesion: 0.03
-Nodes (67): connection, diveLease, providerConflict, push, pushRun, waitingPush, kept(), record() (+59 more)
+Cohesion: 0.04
+Nodes (78): fastify@^5.12.5, adminRole, AI_ACCESS_PREFIX, AI_ACCESS_RATE, AuthOptions, CLIENT_IP_HEADER, PUBLIC_AUTH_PATHS, SessionUser (+70 more)
 
 ### Community 13 - "Community 13"
-Cohesion: 0.04
-Nodes (74): adminRole, AI_ACCESS_PREFIX, AI_ACCESS_RATE, AuthOptions, CLIENT_IP_HEADER, PUBLIC_AUTH_PATHS, ADR-0011, ADR-0013 (+66 more)
+Cohesion: 0.05
+Nodes (64): CodeFigure(), DiveCodes(), showDiveCodes(), ADR-0043, avatarTone(), initials(), holdLeave(), mayLeave() (+56 more)
 
 ### Community 14 - "Community 14"
-Cohesion: 0.04
-Nodes (72): CENTRE_SOURCE_NAME, CentreDisplayNames, CentreError, CentreExternalId, CentreSource, createCentreService(), holder(), liveSite() (+64 more)
+Cohesion: 0.02
+Nodes (82): actorType, aiAccessOutcome, candidateResolution, centreSource, CERTIFICATION_IMAGE_STATES, CERTIFICATION_VERIFICATIONS, certificationImageState, certificationVerification (+74 more)
 
 ### Community 15 - "Community 15"
-Cohesion: 0.05
-Nodes (59): Me, CodeFigure(), DiveCodes(), showDiveCodes(), ADR-0043, DiverRow(), avatarTone(), initials() (+51 more)
+Cohesion: 0.06
+Nodes (71): diverExternalId, diveSite, siteSource, dataIdsOf(), settleSiteVisibility(), DiveRow, LIST_SOURCES, outgoingSite() (+63 more)
 
 ### Community 16 - "Community 16"
-Cohesion: 0.06
-Nodes (75): candidatesQuery(), CandidateView, ConflictChoices, ConflictEntryView, ConflictsOfConnection, deletedDivesQuery(), DiveCheckView, diversQuery() (+67 more)
+Cohesion: 0.05
+Nodes (74): ImportArea, ImportedValues, SiteImportCounts, StoredConflictField, ADR-0021, ADR-0025, ADR-0053, siteImport (+66 more)
 
 ### Community 17 - "Community 17"
-Cohesion: 0.03
-Nodes (75): actorType, aiAccessOutcome, candidateResolution, centreSource, CERTIFICATION_IMAGE_STATES, CERTIFICATION_VERIFICATIONS, certificationImageState, certificationVerification (+67 more)
+Cohesion: 0.04
+Nodes (62): halves(), Check, Deleted, DiveView, Outcome, RecordingView, ADR-0063, Candidate (+54 more)
 
 ### Community 18 - "Community 18"
-Cohesion: 0.08
-Nodes (67): AppDeps, buildApp(), Server, ADR-0014, ADR-0035, ADR-0066, AssessmentService, AssessmentView (+59 more)
+Cohesion: 0.04
+Nodes (68): connection, dive, diveFinding, importJob, providerConflict, push, waitingPush, kept() (+60 more)
 
 ### Community 19 - "Community 19"
-Cohesion: 0.04
-Nodes (63): diveSiteExternalId, lead, DIVE_FIELDS, SSI_CAPABILITIES, SsiCallLog, rowOf(), createSsiClient(), DEFAULT_CARD_IMAGE_BASE (+55 more)
+Cohesion: 0.05
+Nodes (53): createGarminAdapter(), called(), tokenOf(), withToken(), DEFAULT_PAUSE_MS, GARMIN_KEY_PAGE, garminCapabilities(), providerError() (+45 more)
 
 ### Community 20 - "Community 20"
-Cohesion: 0.07
-Nodes (61): api, ApiError, buddiesForQuery(), buddiesQuery(), centreQuery(), centresQuery(), CentreView, ConnectionView (+53 more)
+Cohesion: 0.06
+Nodes (66): logbookCheckAnswer, logbookCheckDiveAnswer, recording, keepApart(), keepDive(), keepRestored(), ADR-0038, agreeInDepthAndDuration() (+58 more)
 
 ### Community 21 - "Community 21"
-Cohesion: 0.06
-Nodes (66): Queryable, logbookCheckAnswer, logbookCheckDiveAnswer, recording, keepApart(), keepDive(), keepRestored(), ADR-0038 (+58 more)
+Cohesion: 0.05
+Nodes (62): tidyName(), DiverDetails, externalDiver(), mergeExternalDiver(), participations(), Caller, locked(), ADR-0057 (+54 more)
 
 ### Community 22 - "Community 22"
-Cohesion: 0.05
-Nodes (69): ConflictFieldView, diveListPages, ProblemCode, providerSitesQuery(), providersQuery(), providerStatusQuery(), PushView, RequirementView (+61 more)
+Cohesion: 0.04
+Nodes (63): pushRunItem, PushRunLeftOut, DIVE_ONLY, DIVE_ONLY_PATTERN, DiveListFilter, diveListFilter(), DiveOnly, FINDINGS_SHOWN (+55 more)
 
 ### Community 23 - "Community 23"
 Cohesion: 0.05
-Nodes (55): SsiClient, SsiRecord, contextOf(), buildCreateRecord(), buildDeleteRecord(), DiveForSsi, emptyRecord(), writableRecord() (+47 more)
+Nodes (48): auth, createServices(), ServiceParts, ADR-0027, ADR-0030, ADR-0061, ADR-0063, ADR-0066 (+40 more)
 
 ### Community 24 - "Community 24"
-Cohesion: 0.04
-Nodes (63): pushRunItem, PushRunLeftOut, DIVE_ONLY, DiveListFilter, diveListFilter(), DiveOnly, FINDINGS_SHOWN, NO_RECORDING (+55 more)
+Cohesion: 0.05
+Nodes (54): date(), FitAdapter, FitMessage, FitMessages, GARMIN_PRODUCTS, num(), parseWithFitFileParser(), position() (+46 more)
 
 ### Community 25 - "Community 25"
-Cohesion: 0.04
-Nodes (56): ServiceParts, Db, ComputerChoice, DiveImportMode, DiveKind, ImportErrorCode, ImportFound, importOriginal (+48 more)
+Cohesion: 0.06
+Nodes (56): Db, Queryable, ComputerChoice, DiveImportMode, DiveKind, importOriginal, ImportOutcome, providerSiteData (+48 more)
 
 ### Community 26 - "Community 26"
 Cohesion: 0.05
-Nodes (57): AiAccessScope, seesPositions(), VerifiedAccess, diversOf(), checkedByRunTool, createMcpServer(), INSTRUCTIONS, MCP_SERVER_INFO (+49 more)
+Nodes (56): PARTICIPANT_ROLES, siteImportStatus, ADR-0053, ADR-0056, WaitingPushViewSchema, PROBLEM_CODES, ProblemSchema, storedProblemCode() (+48 more)
 
 ### Community 27 - "Community 27"
-Cohesion: 0.05
-Nodes (55): CylinderMaterial, WeightingFelt, CatalogueCylinder, CYLINDER_CATALOGUE, ADR-0031, WeightingFeedback, answer(), baseFrom() (+47 more)
+Cohesion: 0.04
+Nodes (44): Direction, DiveExport, DiveListing, FIND_BY, FindBy, Operation, OPERATIONS, OutgoingDive (+36 more)
 
 ### Community 28 - "Community 28"
-Cohesion: 0.05
-Nodes (44): createAuth(), auth, cylinder, duplicateCandidate, importJob, original, ImportService, out (+36 more)
+Cohesion: 0.09
+Nodes (58): AppDeps, buildApp(), Server, ADR-0014, ADR-0035, ADR-0066, AssessmentService, AssessmentView (+50 more)
 
 ### Community 29 - "Community 29"
 Cohesion: 0.05
-Nodes (47): createServices(), ADR-0027, ADR-0030, ADR-0061, ADR-0063, ADR-0066, Tx, diverManagement (+39 more)
+Nodes (55): CylinderMaterial, WeightingFelt, CatalogueCylinder, CYLINDER_CATALOGUE, ADR-0031, WeightingFeedback, answer(), baseFrom() (+47 more)
 
 ### Community 30 - "Community 30"
-Cohesion: 0.07
-Nodes (47): ImportArea, errorMessage(), coordinate(), createSsiSiteSource(), DEFAULT_SSI_SITES_URL, parseSsiSites(), sitesJson(), truthy() (+39 more)
+Cohesion: 0.05
+Nodes (51): diveSiteExternalId, lead, createSsiClient(), Card, DEEP, OWD, Report, Summary (+43 more)
 
 ### Community 31 - "Community 31"
-Cohesion: 0.04
-Nodes (44): ParticipantRole, ProviderImportPlan, PushLeftOut, Capabilities, Direction, DiveExport, DiveListing, FindBy (+36 more)
+Cohesion: 0.07
+Nodes (47): errorMessage(), looksLikeZip(), coordinate(), createSsiSiteSource(), DEFAULT_SSI_SITES_URL, parseSsiSites(), sitesJson(), truthy() (+39 more)
 
 ### Community 32 - "Community 32"
-Cohesion: 0.07
-Nodes (57): SecuritySettings(), pushRunActive(), pushRunBody(), PushRunChoices, PushRunDetail, PushRunPreview, pushRunPreviewQuery(), pushRunQuery() (+49 more)
+Cohesion: 0.05
+Nodes (54): ConnectionRow, WaitingPushOptions, createConflictService(), loadWaiting(), stillDiffering(), fieldsOf(), isExists(), shownFields() (+46 more)
 
 ### Community 33 - "Community 33"
-Cohesion: 0.07
-Nodes (57): ADR-0025, ADR-0027, ADR-0030, ADR-0031, ADR-0032, ADR-0035, ADR-0043, ADR-0048 (+49 more)
+Cohesion: 0.06
+Nodes (52): Delivered, DIVE_FIELDS, ProviderError, createSsiAdapter(), buddyListOf(), called(), confirmed(), keepRecord() (+44 more)
 
 ### Community 34 - "Community 34"
-Cohesion: 0.08
-Nodes (56): managedDiverIds(), tieToJoined(), CylinderError, cylindersOf(), mergeProviderCylinder(), providerCylinderOf(), sameSeries(), setCylinders() (+48 more)
+Cohesion: 0.06
+Nodes (53): diveNeighboursQuery(), diveQuery(), DiveValues, NeighboursView, OverridableField, PAGE_SIZE, RecordingSummary, revisionsQuery() (+45 more)
 
 ### Community 35 - "Community 35"
 Cohesion: 0.07
-Nodes (54): waitingOf(), close(), currentRemote(), PushRow, ADR-0024, Choice, isExporting(), referenceOf() (+46 more)
+Nodes (49): BottomTime, bottomTime(), BottomTimeInput, Limit, ADR-0032, ADR-0033, ambientPressureBar(), bestMixPercent() (+41 more)
 
 ### Community 36 - "Community 36"
-Cohesion: 0.06
-Nodes (49): replyCertificationError, STATUS, CertificationService, AssessmentRefresh, refreshAssessmentsAfterChange(), ADR-0036, ADR-0053, CandidateRouteDeps (+41 more)
+Cohesion: 0.05
+Nodes (51): replyCertificationError, STATUS, CertificationView, CertificationViewSchema, Day, ADR-0050, CardParams, CertificationRouteDeps (+43 more)
 
 ### Community 37 - "Community 37"
-Cohesion: 0.07
-Nodes (54): ConnectionRow, WaitingPushOptions, audienceOfConnection(), audienceOfDive(), audienceOfDiver(), Hint, HINT_KINDS, HintAudience (+46 more)
+Cohesion: 0.06
+Nodes (53): defined(), Joined, joinedSummary(), joinParts(), median(), round3(), ADR-0063, buildJoined() (+45 more)
 
 ### Community 38 - "Community 38"
-Cohesion: 0.06
-Nodes (53): RecordingSummary, defined(), Joined, joinedSummary(), joinParts(), median(), PartInput, round3() (+45 more)
+Cohesion: 0.05
+Nodes (50): ADR-0038, ADR-0048, ADR-0062, globalSetup(), ADR-0023, AiAccess, assessedDive(), AssessedFinding (+42 more)
 
 ### Community 39 - "Community 39"
-Cohesion: 0.07
-Nodes (49): Delivered, ProviderError, createSsiAdapter(), buddyListOf(), called(), confirmed(), keepRecord(), logbookOf() (+41 more)
+Cohesion: 0.05
+Nodes (42): AssessmentError, CHANNELS, createAssessmentService(), assessRows(), readSeries(), refreshDiver(), replaceFindings(), requireManagedDive() (+34 more)
 
 ### Community 40 - "Community 40"
-Cohesion: 0.05
-Nodes (51): dependencies, @better-auth/api-key@1.7.7, drizzle-orm@^0.45.3, fastify@^5.12.5, @fastify/multipart@^10.1.2, @fastify/static@^10.1.5, @fastify/swagger@^9.9.1, @fastify/type-provider-typebox@^6.1.0 (+43 more)
+Cohesion: 0.06
+Nodes (51): leadEstimateQuery(), LeadHint(), orUndefined(), ADR-0025, ADR-0031, CylinderDraft, CylinderMaterial, BOTTOM_TIME_RULES (+43 more)
 
 ### Community 41 - "Community 41"
-Cohesion: 0.06
-Nodes (41): AssessmentError, CHANNELS, createAssessmentService(), assessRows(), readSeries(), refreshDiver(), replaceFindings(), requireManagedDive() (+33 more)
+Cohesion: 0.09
+Nodes (51): waitingOf(), open(), close(), createConnectionService(), checkAutomation(), checkFollowNumbers(), expiryOf(), onTurn() (+43 more)
 
 ### Community 42 - "Community 42"
-Cohesion: 0.05
-Nodes (49): LEAD_PLACEMENTS, SUIT_TYPES, SUIT_UNDERGARMENTS, WEIGHTING_FELT, ProfileSummary, round1(), Series, summariseProfile() (+41 more)
+Cohesion: 0.08
+Nodes (47): AREAS, baseCandidates(), carryPassed(), changedSince(), chooseBase(), countingBase(), currentBranch(), e2eServerLoads() (+39 more)
 
 ### Community 43 - "Community 43"
-Cohesion: 0.09
-Nodes (41): BottomTime, bottomTime(), BottomTimeInput, Limit, ADR-0032, ADR-0033, ambientPressureBar(), bestMixPercent() (+33 more)
+Cohesion: 0.08
+Nodes (41): SsiRecord, contextOf(), buildCreateRecord(), buildDeleteRecord(), buildUpdateRecord(), emptyRecord(), keysOf(), writableRecord() (+33 more)
 
 ### Community 44 - "Community 44"
-Cohesion: 0.06
-Nodes (43): ADR-0036, ADR-0063, ADR-0038, ADR-0048, ADR-0062, AiAccess, assessedDive(), AssessedFinding (+35 more)
+Cohesion: 0.08
+Nodes (38): sacOfDive(), BottomTimeQuery, DEFAULT_GF_HIGH, diverLogbook(), planBottomTime(), Source, ADR-0032, ADR-0033 (+30 more)
 
 ### Community 45 - "Community 45"
-Cohesion: 0.08
-Nodes (42): externalDiver(), mergeExternalDiver(), participations(), open(), AutomationSettings, createConnectionService(), checkAutomation(), checkFollowNumbers() (+34 more)
+Cohesion: 0.07
+Nodes (42): Leave, Series, DIVE_ROW, SENT_KEYS, SsiValueType, ADR-0027, diveModeOfSsi(), keepTraining() (+34 more)
 
 ### Community 46 - "Community 46"
-Cohesion: 0.09
-Nodes (36): sacOfDive(), BottomTimeQuery, DEFAULT_GF_HIGH, diverLogbook(), planBottomTime(), Source, ADR-0032, ADR-0033 (+28 more)
+Cohesion: 0.07
+Nodes (31): ADR-0036, headers, ADR-0031, headers, ADR-0043, ADR-0016, ADR-0063, ADR-0051 (+23 more)
 
 ### Community 47 - "Community 47"
-Cohesion: 0.09
-Nodes (41): Leave, SENT_KEYS, diveModeOfSsi(), keepTraining(), ssiDiveType(), ssiInteger(), ADR-0057, asNumber() (+33 more)
+Cohesion: 0.10
+Nodes (39): centreQuery(), centresQuery(), CentreView, sitesQuery(), SiteView, AddSiteDialog(), CentrePage(), CentresPage() (+31 more)
 
 ### Community 48 - "Community 48"
-Cohesion: 0.07
-Nodes (36): date(), FitAdapter, FitMessage, FitMessages, GARMIN_PRODUCTS, num(), parseWithFitFileParser(), position() (+28 more)
+Cohesion: 0.06
+Nodes (43): LEAD_PLACEMENTS, SUIT_TYPES, SUIT_UNDERGARMENTS, WEIGHTING_FELT, ProfileSummary, round1(), Series, summariseProfile() (+35 more)
 
 ### Community 49 - "Community 49"
-Cohesion: 0.05
-Nodes (32): SiteSourceAdapter, SourceSite, call(), createSite(), Method, openStream(), Stream, ADR-0066 (+24 more)
+Cohesion: 0.07
+Nodes (41): AiAccessScope, diversOf(), SiteRow, Cursor, cursorAt(), DateOnly(), Detail, diversAsked() (+33 more)
 
 ### Community 50 - "Community 50"
-Cohesion: 0.08
-Nodes (29): headers, ADR-0031, headers, ADR-0043, ADR-0016, created, headers, ADR-0066 (+21 more)
+Cohesion: 0.09
+Nodes (38): samplesQuery(), ToolsPlan, FindingLane(), useAssessment(), DepthProfile(), NO_POINTS, SurfaceBreakLane(), ADR-0036 (+30 more)
 
 ### Community 51 - "Community 51"
-Cohesion: 0.05
-Nodes (39): headers, ADR-0035, areaOf(), areas, capture(), findings, headers, ADR-0020 (+31 more)
+Cohesion: 0.06
+Nodes (28): diveLease, pushRun, ExportingProvider, DiveView, RevisionView, ADR-0015, ADR-0025, ADR-0048 (+20 more)
 
 ### Community 52 - "Community 52"
-Cohesion: 0.13
-Nodes (38): assessmentQuery(), AssessmentView, samplesQuery(), AsideItem(), AssessmentContext, AssessmentPanel(), AssessmentProvider(), AssessmentState (+30 more)
+Cohesion: 0.05
+Nodes (41): headers, ADR-0035, areaOf(), areas, capture(), findings, headers, ADR-0020 (+33 more)
 
 ### Community 53 - "Community 53"
-Cohesion: 0.06
-Nodes (31): CertificationAccount, CertificationProviders, RemoteCertification, ADR-0050, ADR-0053, CERTIFICATION_IMAGE_ATTEMPTS, CertificationError, CertificationExpiry (+23 more)
+Cohesion: 0.07
+Nodes (35): yauzl@^3.4.0, ImportErrorCode, ImportFound, ArchiveEntry, ArchiveLimitError, ArchiveLimits, DEFAULT_LIMITS, eachFile() (+27 more)
 
 ### Community 54 - "Community 54"
-Cohesion: 0.07
-Nodes (37): DIVE_ONLY_PATTERN, ErrorAnswer, PROBLEM_CODES, ProblemSchema, storedProblemCode(), ADR-0014, ADR-0027, oneOf() (+29 more)
+Cohesion: 0.06
+Nodes (37): ADR-0025, WaterMismatch, waterMismatch(), computerEventOf(), ADR-0036, CIRCUIT, circuitFromFit, computerEventFromFit() (+29 more)
 
 ### Community 55 - "Community 55"
-Cohesion: 0.06
-Nodes (39): Change(), Changes(), historyRoute, Made(), REVISION_CAUSES, PositionSchema, AdoptBody, Country (+31 more)
+Cohesion: 0.07
+Nodes (36): device, diverBodyWeight, participant, DiverError, ADR-0016, ADR-0053, ACCOUNT_PATTERN, accountKey() (+28 more)
 
 ### Community 56 - "Community 56"
-Cohesion: 0.08
-Nodes (39): buddiesOf(), BuddySearch, count(), DIVE_COLUMNS, DIVE_FROM, DiveFilter, diveOf(), divesAtSite() (+31 more)
+Cohesion: 0.06
+Nodes (31): CertificationAccount, CertificationProviders, RemoteCertification, ADR-0050, ADR-0053, CERTIFICATION_IMAGE_ATTEMPTS, CertificationError, CertificationExpiry (+23 more)
 
 ### Community 57 - "Community 57"
 Cohesion: 0.05
 Nodes (41): env, runs-on, services, steps, timeout-minutes, concurrency, cancel-in-progress, group (+33 more)
 
 ### Community 58 - "Community 58"
-Cohesion: 0.08
-Nodes (39): CylinderMaterial, BOTTOM_TIME_RULES, cylinderOf(), cylinderText(), diverOf(), diverText(), finite(), kept (+31 more)
+Cohesion: 0.07
+Nodes (33): sampleCount(), SsiCallLog, rowOf(), SsiBuddyRow, DEFAULT_CARD_IMAGE_BASE, DEFAULT_SSI_URL, idText(), isObject() (+25 more)
 
 ### Community 59 - "Community 59"
-Cohesion: 0.09
-Nodes (33): tidyName(), DiverDetails, Caller, locked(), foldName(), nameDiffers(), Buddy, createBuddyService() (+25 more)
+Cohesion: 0.08
+Nodes (37): args, browser, browserFailed(), browserListStep(), browserSteps(), byHand(), CACHE, code (+29 more)
 
 ### Community 60 - "Community 60"
-Cohesion: 0.10
-Nodes (39): siteRef(), kindOfMode(), deviceDiver(), closeFields(), createConflictService(), loadWaiting(), entryOf(), fieldsOf() (+31 more)
+Cohesion: 0.08
+Nodes (35): @modelcontextprotocol/server@^2.3.1, aiAccessLog, aiAccessSetting, AccessRefusal, AI_ACCESS_SCOPES, AiAccessError, AiAccessService, KeyRow (+27 more)
 
 ### Community 61 - "Community 61"
-Cohesion: 0.07
-Nodes (33): ADR-0025, WaterMismatch, waterMismatch(), CIRCUIT, circuitFromFit, DECO_MODEL, decoModelFromFit, DIVE_ALERT (+25 more)
+Cohesion: 0.06
+Nodes (32): DiverCertifications, replyDiverError, STATUS, CertificationSummary, DiverDetailsView, DiverDetailsViewSchema, DiverSource, DiverView (+24 more)
 
 ### Community 62 - "Community 62"
 Cohesion: 0.17
 Nodes (38): withBuddies(), APP_KEYS, appRow(), byId(), changedKeys(), deleteTestDive(), deleteTestEntries(), entryNamed() (+30 more)
 
 ### Community 63 - "Community 63"
-Cohesion: 0.06
-Nodes (31): DiverCertifications, replyDiverError, STATUS, CertificationSummary, DiverDetailsView, DiverDetailsViewSchema, DiverSource, DiverView (+23 more)
+Cohesion: 0.10
+Nodes (35): Answer, massFromDisplay(), massIn(), Dive, draftOfLead(), draftOfWeighting(), emptyLead(), hasThickness() (+27 more)
 
 ### Community 64 - "Community 64"
-Cohesion: 0.11
-Nodes (35): massIn(), Dive, draftOfLead(), draftOfWeighting(), emptyLead(), fromLastDive(), hasThickness(), kg() (+27 more)
+Cohesion: 0.08
+Nodes (32): CENTRE_SOURCE_NAME, CentreDisplayNames, CentreError, CentreExternalId, CentreSource, createCentreService(), holder(), liveSite() (+24 more)
 
 ### Community 65 - "Community 65"
+Cohesion: 0.08
+Nodes (32): PushLeftOut, PushRow, ADR-0024, Choice, Capabilities, isExporting(), referenceOf(), prepared() (+24 more)
+
+### Community 66 - "Community 66"
 Cohesion: 0.06
 Nodes (37): concurrency, cancel-in-progress, group, if, runs-on, steps, timeout-minutes, jobs (+29 more)
 
-### Community 66 - "Community 66"
-Cohesion: 0.13
-Nodes (34): acceptedFormat(), Answer, Ask, dateTime(), deleteAndCheck(), describe(), findDive(), findNewId() (+26 more)
-
 ### Community 67 - "Community 67"
-Cohesion: 0.09
-Nodes (32): ADR-0039, args, browser, browserFailed(), browserListStep(), browserSteps(), byHand(), CACHE (+24 more)
+Cohesion: 0.07
+Nodes (27): Tx, CandidateError, CandidateRow, createCandidateService(), lockMine(), RecordingRow, ADR-0016, ADR-0038 (+19 more)
 
 ### Community 68 - "Community 68"
-Cohesion: 0.08
-Nodes (31): AI_ACCESS_NAME_MAX, aiAccessLog, aiAccessSetting, Access, AccessView, AiAccessRouteDeps, LogEntryView, Scope (+23 more)
+Cohesion: 0.12
+Nodes (35): acceptedFormat(), Answer, Ask, dateTime(), deleteAndCheck(), describe(), findDive(), findNewId() (+27 more)
 
 ### Community 69 - "Community 69"
-Cohesion: 0.11
-Nodes (28): bar(), celsius(), Context, contextOf(), declaredTankDataOf(), Dialect, DIVE_MODES, divesOf() (+20 more)
+Cohesion: 0.12
+Nodes (32): useCylinderProblem(), DiveEditForm(), Draft, draftOf(), FIELD_OF, localStart(), nanToNull(), round1() (+24 more)
 
 ### Community 70 - "Community 70"
-Cohesion: 0.08
-Nodes (17): HINT_CHANNEL, parseHint(), createHub(), HEARTBEAT_MS, LiveHub, MAX_STREAMS_PER_USER, ADR-0066, createListener() (+9 more)
+Cohesion: 0.13
+Nodes (35): kindOfMode(), deviceDiver(), closeFields(), entryOf(), openFields(), currentRemote(), baseDiveOf(), providerChangesOf() (+27 more)
 
 ### Community 71 - "Community 71"
 Cohesion: 0.08
-Nodes (25): ADR-0057, createScheduledFetch(), blocked(), due(), minimumOf(), OPENING_AFTER_MINUTES, SCHEDULED_FETCH_TASK, ADR-0056 (+17 more)
+Nodes (17): HINT_CHANNEL, parseHint(), createHub(), HEARTBEAT_MS, LiveHub, MAX_STREAMS_PER_USER, ADR-0066, createListener() (+9 more)
 
 ### Community 72 - "Community 72"
-Cohesion: 0.11
-Nodes (30): DiveOrigin, REFERENCE_PREFIX, Series, SsiLogbook, asBool(), DIVE_ROW, SsiValueType, ADR-0027 (+22 more)
+Cohesion: 0.09
+Nodes (33): buddiesOf(), BuddySearch, count(), DIVE_COLUMNS, DIVE_FROM, DiveFilter, diveOf(), DiveRow (+25 more)
 
 ### Community 73 - "Community 73"
-Cohesion: 0.10
-Nodes (28): diveWith(), ADR-0028, ADR-0043, forget(), headers, ADR-0043, ADR-0051, headers (+20 more)
-
-### Community 74 - "Community 74"
 Cohesion: 0.06
 Nodes (34): build, depends_on, environment, image, ports, restart, volumes, condition (+26 more)
 
-### Community 75 - "Community 75"
+### Community 74 - "Community 74"
 Cohesion: 0.06
 Nodes (34): components, $defs, operations, paths, ADR-0014, ADR-0020, ADR-0022, ADR-0024 (+26 more)
 
-### Community 76 - "Community 76"
+### Community 75 - "Community 75"
 Cohesion: 0.08
-Nodes (30): AIR, compressibility(), Cubic, HE, minusOne(), N2, O2, pressureForLitres() (+22 more)
+Nodes (31): fit-file-parser@^6.1.2, geo-tz@8.1.9, devDependencies, auth@1.7.7, drizzle-kit@^0.31.11, @garmin/fitsdk@^21.217.0, @modelcontextprotocol/client@^2.3.1, tsup@^8.5.1 (+23 more)
+
+### Community 76 - "Community 76"
+Cohesion: 0.11
+Nodes (27): diveWith(), ADR-0028, ADR-0043, forget(), headers, ADR-0043, headers, Site (+19 more)
 
 ### Community 77 - "Community 77"
 Cohesion: 0.07
-Nodes (26): Cylinder, DiveView, RevisionView, ADR-0045, upload(), Candidate, Check, Outcome (+18 more)
+Nodes (25): account, accountRelations, apikey, rateLimit, session, sessionRelations, ADR-0011, ADR-0035 (+17 more)
 
 ### Community 78 - "Community 78"
 Cohesion: 0.06
@@ -521,223 +515,223 @@ Nodes (27): ENGINE_VERSION, EVIDENCE, Evidence, FindingValues, RULE_IDS, RuleId,
 
 ### Community 80 - "Community 80"
 Cohesion: 0.09
-Nodes (25): headers, ADR-0030, ADR-0040, conflictForLena(), diveWithoutRecording(), editInSsi(), externalDiver(), importLena() (+17 more)
+Nodes (27): AIR, compressibility(), Cubic, HE, minusOne(), N2, O2, pressureForLitres() (+19 more)
 
 ### Community 81 - "Community 81"
-Cohesion: 0.15
-Nodes (29): importsQuery(), ImportView, uploadFile(), Logbook(), ImportContext, ImportFilesButton(), ImportHistory(), ImportList() (+21 more)
+Cohesion: 0.09
+Nodes (25): headers, ADR-0030, ADR-0040, conflictForLena(), diveWithoutRecording(), editInSsi(), externalDiver(), importLena() (+17 more)
 
 ### Community 82 - "Community 82"
-Cohesion: 0.09
-Nodes (23): computerEventOf(), ADR-0036, computerEventFromFit(), COMPUTER_EVENT, computerEventFromSuunto(), DECO_MODEL, decoModelFromSuunto, DIVE_MODE (+15 more)
+Cohesion: 0.10
+Nodes (25): Auth, CENTRE_SOURCES, CentreService, CentreView, CentreViewSchema, Row, Source, toCentreView() (+17 more)
 
 ### Community 83 - "Community 83"
-Cohesion: 0.10
-Nodes (26): globalSetup(), ADR-0023, accept(), addCentre(), addCrowd(), dataFile(), importEgypt(), makeLinks() (+18 more)
+Cohesion: 0.14
+Nodes (26): bar(), celsius(), Context, contextOf(), declaredTankDataOf(), Dialect, DIVE_MODES, divesOf() (+18 more)
 
 ### Community 84 - "Community 84"
+Cohesion: 0.11
+Nodes (20): SsiClient, ClearChecks, NumberChecks, TwowayChecks, apneaDive(), DATASET_KEYS, datasetSummary(), findIn() (+12 more)
+
+### Community 85 - "Community 85"
 Cohesion: 0.09
 Nodes (27): devDependencies, @axe-core/playwright@^4.13.0, jsdom@^30.1.3, @playwright/cli@^0.1.22, playwright-core@^1.63.0, @playwright/test@^1.63.0, @testing-library/dom@^10.4.2, @testing-library/react@^16.3.3 (+19 more)
 
-### Community 85 - "Community 85"
-Cohesion: 0.10
-Nodes (26): applyHints(), LiveArrivals, Page, useLiveArrivals(), bump(), changedListeners, ChannelMessage, healthListeners (+18 more)
-
 ### Community 86 - "Community 86"
-Cohesion: 0.14
-Nodes (23): AscentBand, ascentBandsOf(), assessProfile(), ceiling(), ppo2(), Profile, PROFILE_RULES, ProfileInput (+15 more)
+Cohesion: 0.07
+Nodes (27): dependencies, @better-auth/api-key@1.7.7, drizzle-orm@^0.45.3, @fastify/multipart@^10.1.2, @fastify/static@^10.1.5, @fastify/swagger@^9.9.1, @fastify/type-provider-typebox@^6.1.0, graphile-worker@^0.18.0 (+19 more)
 
 ### Community 87 - "Community 87"
 Cohesion: 0.09
-Nodes (19): Cylinder, Dive, getDive(), headers, setCylinders(), ADR-0045, getDive(), headers (+11 more)
+Nodes (22): Cylinder, DiveView, RevisionView, ADR-0045, upload(), Candidate, Check, Outcome (+14 more)
 
 ### Community 88 - "Community 88"
+Cohesion: 0.18
+Nodes (24): assessmentQuery(), AssessmentView, AssessmentContext, AssessmentPanel(), AssessmentProvider(), AssessmentState, FixedNote(), rowId() (+16 more)
+
+### Community 89 - "Community 89"
+Cohesion: 0.13
+Nodes (23): durationFormat(), DurationFormatter, formatDepth(), formatDuration(), formatGasRate(), formatMass(), formatPressure(), formatPressureRate() (+15 more)
+
+### Community 90 - "Community 90"
+Cohesion: 0.16
+Nodes (24): DiveOrigin, REFERENCE_PREFIX, SsiLogbook, asBool(), aboveZero(), cylinderOf(), deviceOf(), deviceOfRef() (+16 more)
+
+### Community 91 - "Community 91"
+Cohesion: 0.11
+Nodes (20): diveRow(), rowOf(), ADR-0026, ADR-0048, clearQueue(), deletableDive(), diveRows(), fetchState() (+12 more)
+
+### Community 92 - "Community 92"
+Cohesion: 0.14
+Nodes (23): AscentBand, ascentBandsOf(), assessProfile(), ceiling(), ppo2(), Profile, PROFILE_RULES, ProfileInput (+15 more)
+
+### Community 93 - "Community 93"
+Cohesion: 0.12
+Nodes (19): createFileFormats(), FileFormat, looksLikeFit(), createSuuntoJsonAdapter(), looksLikeSuuntoJson(), ADR-0037, createUddfAdapter(), looksLikeUddf() (+11 more)
+
+### Community 94 - "Community 94"
+Cohesion: 0.09
+Nodes (19): Cylinder, Dive, getDive(), headers, setCylinders(), ADR-0045, getDive(), headers (+11 more)
+
+### Community 95 - "Community 95"
 Cohesion: 0.14
 Nodes (24): input, ADR-0039, path, targets, baselineEntries(), baselineGrowth(), BASELINES, LINT_CONFIG (+16 more)
 
-### Community 89 - "Community 89"
-Cohesion: 0.15
-Nodes (22): stillDiffering(), shownFields(), comparableOf(), hasTolerance(), isEmpty(), near(), planSend(), sameAtProvider() (+14 more)
+### Community 96 - "Community 96"
+Cohesion: 0.14
+Nodes (24): audienceOfConnection(), audienceOfDive(), audienceOfDiver(), emitHint(), Hint, HINT_KINDS, HintAudience, HintKind (+16 more)
 
-### Community 90 - "Community 90"
-Cohesion: 0.08
-Nodes (18): i18next@^26.4.2, CustomTypeOptions, i18next, StrayOverride, english, flatten(), Tree, ADR-0014 (+10 more)
-
-### Community 91 - "Community 91"
+### Community 97 - "Community 97"
 Cohesion: 0.17
-Nodes (21): ADR-0053, ADR-0067, build(), byId(), callersOf(), dependentsOf(), fileNode(), git() (+13 more)
+Nodes (21): build(), byId(), callersOf(), dependentsOf(), fileNode(), git(), GRAPH, metaFor() (+13 more)
 
-### Community 92 - "Community 92"
+### Community 98 - "Community 98"
 Cohesion: 0.11
 Nodes (16): ndl(), ProfileAssessment, Finding, LIMITS, dayNumber(), deepDays(), noFlyAfter(), SERIES_RULES (+8 more)
 
-### Community 93 - "Community 93"
-Cohesion: 0.13
-Nodes (18): CERTIFICATION_IMAGE_TASK, EXPIRE_WAITING_IMPORTS_TASK, PROCESS_IMPORT_TASK, PUSH_RUN_STEP_TASK, WAITING_PUSHES_TASK, waitingPushesKey(), AUTOMATION_TICK_TASK, IMPORT_DIVE_SITES_TASK (+10 more)
+### Community 99 - "Community 99"
+Cohesion: 0.12
+Nodes (18): CERTIFICATION_IMAGE_TASK, EXPIRE_WAITING_IMPORTS_TASK, PROCESS_IMPORT_TASK, SCHEDULED_FETCH_TASK, PUSH_RUN_STEP_TASK, WAITING_PUSHES_TASK, AUTOMATION_TICK_TASK, IMPORT_DIVE_SITES_TASK (+10 more)
 
-### Community 94 - "Community 94"
-Cohesion: 0.14
-Nodes (18): createFileFormats(), looksLikeFit(), createSuuntoJsonAdapter(), looksLikeSuuntoJson(), ADR-0037, createUddfAdapter(), looksLikeUddf(), decimal() (+10 more)
-
-### Community 95 - "Community 95"
+### Community 100 - "Community 100"
 Cohesion: 0.09
 Nodes (20): compilerOptions, types, extends, include, compilerOptions, allowImportingTsExtensions, jsx, lib (+12 more)
 
-### Community 96 - "Community 96"
-Cohesion: 0.16
-Nodes (19): Answer, CatalogueCylinder, CylinderDraft, CylinderInput, cylindersOfDrafts(), CylinderView, draftOfCylinder(), emptyDraft() (+11 more)
+### Community 101 - "Community 101"
+Cohesion: 0.13
+Nodes (21): applyHints(), bump(), changedListeners, ChannelMessage, healthListeners, HINT_KINDS, hintedDives, HintKind (+13 more)
 
-### Community 97 - "Community 97"
+### Community 102 - "Community 102"
 Cohesion: 0.12
 Nodes (15): TAGS, killTree(), ADR-0023, runLanes(), runStep(), takeLock(), meeting(), ADR-0023 (+7 more)
 
-### Community 98 - "Community 98"
-Cohesion: 0.13
-Nodes (17): providerGoneDive, compareGone(), GONE_WARNING_MIN, GoneCandidate, GoneComparison, goneWarning(), ADR-0051, candidatesOf() (+9 more)
-
-### Community 99 - "Community 99"
-Cohesion: 0.12
-Nodes (18): CENTRE_SOURCES, CentreView, CentreViewSchema, Row, Source, toCentreView(), ADR-0043, CreateBody (+10 more)
-
-### Community 100 - "Community 100"
+### Community 103 - "Community 103"
 Cohesion: 0.14
-Nodes (18): DAY_MS, MAX_OFFSET_MS, inZone(), NEARBY_DAYS, nearbyOffset(), offsetIn(), placeLocalTime(), Position (+10 more)
+Nodes (16): providerGoneDive, compareGone(), GONE_WARNING_MIN, GoneCandidate, GoneComparison, goneWarning(), ADR-0051, candidatesOf() (+8 more)
 
-### Community 101 - "Community 101"
+### Community 104 - "Community 104"
 Cohesion: 0.13
 Nodes (19): ADR-0023, devDependencies, dependency-cruiser@18.7.0, eslint@10.13.0, @eslint/js@10.0.1, eslint-plugin-sonarjs@4.2.2, typescript@6.0.3, typescript-eslint@8.72.0 (+11 more)
 
-### Community 102 - "Community 102"
+### Community 105 - "Community 105"
+Cohesion: 0.15
+Nodes (16): failedTitlesSince(), git(), eachSpec(), failedTestsFromReport(), lastStatuses(), localTime(), passedToRecord(), reportedTests() (+8 more)
+
+### Community 106 - "Community 106"
 Cohesion: 0.23
 Nodes (9): decode(), ENTITIES, localName(), Open, parseXml(), Reader, ADR-0003, XmlElement (+1 more)
 
-### Community 103 - "Community 103"
-Cohesion: 0.13
-Nodes (15): FIND_BY, OPERATIONS, SignInInput, CASES, ContractHarness, declared(), ELSEWHERE, later() (+7 more)
-
-### Community 104 - "Community 104"
-Cohesion: 0.11
-Nodes (15): ADR-0054, baselineSize(), cycleEdges(), days, hotspots(), lines, ADR-0039, ADR-0053 (+7 more)
-
-### Community 105 - "Community 105"
-Cohesion: 0.11
-Nodes (19): better-auth@1.7.7, dependencies, better-auth@1.7.7, @dive-hub/api-client@workspace:*, @fontsource-variable/ibm-plex-sans@^5.3.0, @internationalized/date@^3.12.4, lucide-react@^1.51.0, react@^19.3.0 (+11 more)
-
-### Community 106 - "Community 106"
-Cohesion: 0.14
-Nodes (14): nearest(), perMinute(), Series, summarize(), ChannelSeries, RecordedGas, Tank, tanksOf() (+6 more)
-
 ### Community 107 - "Community 107"
-Cohesion: 0.13
-Nodes (17): typescript@7.0.2, typescript@7.0.2, typescript, dependencies, openapi-fetch@^0.17.0, devDependencies, openapi-typescript@^7.13.0, typescript@5.9.3 (+9 more)
+Cohesion: 0.18
+Nodes (18): hasTolerance(), isEmpty(), near(), planSend(), sameAtProvider(), sameCylinder(), SendPlan, text() (+10 more)
 
 ### Community 108 - "Community 108"
 Cohesion: 0.11
-Nodes (16): account, accountRelations, apikey, rateLimit, session, sessionRelations, ADR-0011, ADR-0035 (+8 more)
+Nodes (15): ADR-0054, baselineSize(), cycleEdges(), days, hotspots(), lines, ADR-0039, ADR-0053 (+7 more)
 
 ### Community 109 - "Community 109"
-Cohesion: 0.22
-Nodes (14): looksLikeZip(), formatOf(), createImportService(), cancelImport(), createImport(), endWaiting(), expireWaiting(), openUpload() (+6 more)
+Cohesion: 0.11
+Nodes (19): better-auth@1.7.7, dependencies, better-auth@1.7.7, @dive-hub/api-client@workspace:*, @fontsource-variable/ibm-plex-sans@^5.3.0, @internationalized/date@^3.12.4, lucide-react@^1.51.0, react@^19.3.0 (+11 more)
 
 ### Community 110 - "Community 110"
+Cohesion: 0.16
+Nodes (16): inZone(), NEARBY_DAYS, nearbyOffset(), offsetIn(), placeLocalTime(), Position, ADR-0030, wallClockMs() (+8 more)
+
+### Community 111 - "Community 111"
+Cohesion: 0.14
+Nodes (17): defineTool(), Id(), Input, planGasPlanTool, ADR-0033, ADR-0035, Used(), HINT (+9 more)
+
+### Community 112 - "Community 112"
+Cohesion: 0.13
+Nodes (17): typescript@7.0.2, typescript@7.0.2, typescript, dependencies, openapi-fetch@^0.17.0, devDependencies, openapi-typescript@^7.13.0, typescript@5.9.3 (+9 more)
+
+### Community 113 - "Community 113"
+Cohesion: 0.11
+Nodes (14): StrayOverride, english, flatten(), Tree, ADR-0014, ADR-0028, ADR-0029, ADR-0032 (+6 more)
+
+### Community 114 - "Community 114"
 Cohesion: 0.12
 Nodes (15): PlanningService, BottomTimeQuery, BottomTimeView, Depth, Fraction, GasPlanBody, GasPlanView, GasQuery (+7 more)
 
-### Community 111 - "Community 111"
-Cohesion: 0.17
-Nodes (12): sampleCount(), storedList(), tryParseJson(), APP_PARAMS, createSsiTransport(), exchange(), isObject(), SSI_APP_USER_AGENT (+4 more)
+### Community 115 - "Community 115"
+Cohesion: 0.19
+Nodes (15): accept(), addCentre(), addCrowd(), dataFile(), importEgypt(), makeLinks(), offerSsiData(), PreparedData (+7 more)
 
-### Community 112 - "Community 112"
-Cohesion: 0.24
-Nodes (15): apneaDive(), DATASET_KEYS, datasetSummary(), findIn(), finishValuesChecks(), GAS, minutes(), NEW_KEYS (+7 more)
-
-### Community 113 - "Community 113"
+### Community 116 - "Community 116"
 Cohesion: 0.12
 Nodes (15): environment, healthcheck, image, ports, volumes, POSTGRES_DB, POSTGRES_PASSWORD, POSTGRES_USER (+7 more)
 
-### Community 114 - "Community 114"
-Cohesion: 0.20
-Nodes (12): fromOsm(), fromSsi(), fromWd(), HOUSE_REEF, osm(), plan(), site(), ssi() (+4 more)
+### Community 117 - "Community 117"
+Cohesion: 0.13
+Nodes (10): EGYPT, ExternalId, HOUSE_REEF, Method, Position, Revision, Site, SiteImport (+2 more)
 
-### Community 115 - "Community 115"
+### Community 118 - "Community 118"
 Cohesion: 0.18
 Nodes (10): ADR-0015, ADR-0023, ADR-0025, Status, ADR-0056, conflictAtSsi(), editAtSsi(), editElsewhere() (+2 more)
 
-### Community 116 - "Community 116"
-Cohesion: 0.20
-Nodes (11): clearQueue(), fetchState(), leaveConflict(), queueEntry(), ssiConnectionOf(), automatic(), leave(), openConnections() (+3 more)
-
-### Community 117 - "Community 117"
+### Community 119 - "Community 119"
 Cohesion: 0.19
 Nodes (11): qr@0.7.2, browserDetector(), Detector, DetectorClass, Picture, pictureOf(), readQr(), readQrFromFile() (+3 more)
 
-### Community 118 - "Community 118"
-Cohesion: 0.23
-Nodes (10): git(), localTime(), appendRun(), browserStats(), logPath(), main(), ADR-0023, summarise() (+2 more)
+### Community 120 - "Community 120"
+Cohesion: 0.20
+Nodes (10): DIVE_KINDS, ImportView, ImportViewSchema, toImportView(), ADR-0030, ImportRouteDeps, ADR-0044, ADR-0056 (+2 more)
 
-### Community 119 - "Community 119"
+### Community 121 - "Community 121"
+Cohesion: 0.24
+Nodes (13): asNumber(), asText(), compareReadBack(), datasetLength(), describe(), isObject(), keyDifferences(), pause() (+5 more)
+
+### Community 122 - "Community 122"
+Cohesion: 0.16
+Nodes (8): i18next@^26.4.2, CustomTypeOptions, i18next, initI18n(), resources, ADR-0014, ADR-0014, i18next
+
+### Community 123 - "Community 123"
 Cohesion: 0.14
 Nodes (13): compilerOptions, exactOptionalPropertyTypes, isolatedModules, lib, module, moduleResolution, noEmit, noUncheckedIndexedAccess (+5 more)
 
-### Community 120 - "Community 120"
+### Community 124 - "Community 124"
 Cohesion: 0.15
 Nodes (9): Sac, SAC_MISSING, SacMissing, ADR-0033, ADR-0045, Cylinder, dive, ADR-0033 (+1 more)
 
-### Community 121 - "Community 121"
-Cohesion: 0.26
-Nodes (9): ArchiveEntry, ArchiveLimitError, ArchiveLimits, DEFAULT_LIMITS, eachFile(), readEntry(), ADR-0044, walk() (+1 more)
-
-### Community 122 - "Community 122"
+### Community 125 - "Community 125"
 Cohesion: 0.21
 Nodes (9): createFitAdapter(), adapter, crossCheck(), decodeOfficial(), privateDir, ownersParts(), parse(), toPart() (+1 more)
 
-### Community 123 - "Community 123"
-Cohesion: 0.26
-Nodes (8): Profile, SKETCH_HEIGHT, SKETCH_WIDTH, sketchPaths(), sketchScale(), ADR-0041, ProfileSketch(), ADR-0041
+### Community 126 - "Community 126"
+Cohesion: 0.17
+Nodes (10): Dive, HOUSE_REEF, LIGHTHOUSE, Method, Page, Position, Revision, Site (+2 more)
 
-### Community 124 - "Community 124"
+### Community 127 - "Community 127"
+Cohesion: 0.26
+Nodes (7): DiveSummary, Profile, SKETCH_HEIGHT, SKETCH_WIDTH, sketchPaths(), ADR-0041, ADR-0041
+
+### Community 128 - "Community 128"
 Cohesion: 0.25
 Nodes (11): ascentRate(), descentRate(), judgedParts(), lastMetres(), safetyStop(), stopIn(), stopStability(), worstOf() (+3 more)
 
-### Community 125 - "Community 125"
+### Community 129 - "Community 129"
 Cohesion: 0.25
 Nodes (5): cameraShowing(), headers, ADR-0043, modules(), picture()
 
-### Community 126 - "Community 126"
-Cohesion: 0.22
-Nodes (8): diveRow(), rowOf(), ADR-0026, ADR-0048, diveRows(), goToMore(), expectFirstDiveInView(), rowOf()
-
-### Community 127 - "Community 127"
-Cohesion: 0.20
-Nodes (6): noAnswer, thrown(), ADR-0014, ApiClient, createApiClient(), ADR-0004
-
-### Community 128 - "Community 128"
+### Community 130 - "Community 130"
 Cohesion: 0.18
 Nodes (11): scripts, build, check, check:full, check:log, dev, hooks:install, lint (+3 more)
 
-### Community 129 - "Community 129"
+### Community 131 - "Community 131"
 Cohesion: 0.22
 Nodes (6): Dive, getDive(), headers, NOTHING, patchDive(), ADR-0031
 
-### Community 130 - "Community 130"
+### Community 132 - "Community 132"
 Cohesion: 0.22
 Nodes (6): contrast(), css, darkRoot, lightRoot, luminance(), schemes
 
-### Community 131 - "Community 131"
+### Community 133 - "Community 133"
 Cohesion: 0.22
 Nodes (9): scripts, auth:generate, build, db:generate, dev, openapi, start, test (+1 more)
 
-### Community 133 - "Community 133"
-Cohesion: 0.28
-Nodes (7): needsOsmAttribution(), siteOrigin(), ADR-0021, offer, osm, ssi, wikidata
-
-### Community 134 - "Community 134"
+### Community 135 - "Community 135"
 Cohesion: 0.22
 Nodes (8): allowBuilds, esbuild, peerDependencies, minimumReleaseAgeExclude, packageExtensions, dependency-cruiser, packages, typescript
-
-### Community 135 - "Community 135"
-Cohesion: 0.25
-Nodes (7): AIR, expectWithinReference(), GF100_FRESH, GF100_SALT, GF85_FRESH, ADR-0032, ADR-0046
 
 ### Community 136 - "Community 136"
 Cohesion: 0.36
@@ -756,24 +750,24 @@ Cohesion: 0.33
 Nodes (4): pollUntilDue(), ADR-0056, now, ADR-0056
 
 ### Community 140 - "Community 140"
-Cohesion: 0.53
-Nodes (4): argumentsText(), isLocal(), setupLines(), ADR-0035
+Cohesion: 0.33
+Nodes (6): ADR-0023, ADR-0053, ADR-0066, MODULE_IMPORTS, moduleRules, target()
 
 ### Community 141 - "Community 141"
 Cohesion: 0.53
-Nodes (3): mergeEdits(), Revision, same()
+Nodes (4): argumentsText(), isLocal(), setupLines(), ADR-0035
 
 ### Community 142 - "Community 142"
-Cohesion: 0.40
-Nodes (4): IMPORTABLE, splitImportable(), ADR-0037, ADR-0037
+Cohesion: 0.53
+Nodes (3): mergeEdits(), Revision, same()
+
+### Community 143 - "Community 143"
+Cohesion: 0.33
+Nodes (3): ApiClient, createApiClient(), ADR-0004
 
 ### Community 144 - "Community 144"
-Cohesion: 0.67
-Nodes (3): planSketch(), shape(), ADR-0033
-
-### Community 145 - "Community 145"
-Cohesion: 0.50
-Nodes (4): ToolsParams, SuitType, SuitUndergarment, ListControl
+Cohesion: 0.40
+Nodes (4): offer, osm, ssi, wikidata
 
 ### Community 146 - "Community 146"
 Cohesion: 0.50
@@ -784,24 +778,24 @@ Cohesion: 0.50
 Nodes (3): interface, display_name, short_description
 
 ## Knowledge Gaps
-- **1026 isolated node(s):** `ADR-0020`, `ADR-0025`, `ADR-0029`, `ADR-0057`, `ADR-0045` (+1021 more)
+- **1026 isolated node(s):** `ADR-0038`, `ADR-0063`, `ADR-0031`, `ADR-0016`, `ADR-0026` (+1021 more)
   These have ≤1 connection - possible missing edges. (Counts symbols only; 2537 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
-- **10 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **4 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `@playwright/test` connect `Community 50` to `Community 129`, `Community 136`, `Community 73`, `Community 44`, `Community 80`, `Community 51`, `Community 115`, `Community 83`, `Community 116`, `Community 87`, `Community 84`, `Community 125`, `Community 126`?**
-  _High betweenness centrality (0.031) - this node is a cross-community bridge._
-- **What connects `ADR-0020`, `ADR-0025`, `ADR-0029` to the rest of the system?**
+- **Why does `drizzle-orm` connect `Community 3` to `Community 1`, `Community 10`, `Community 11`, `Community 12`, `Community 14`, `Community 15`, `Community 16`, `Community 17`, `Community 18`, `Community 19`, `Community 20`, `Community 21`, `Community 22`, `Community 23`, `Community 25`, `Community 26`, `Community 28`, `Community 30`, `Community 32`, `Community 37`, `Community 39`, `Community 44`, `Community 49`, `Community 51`, `Community 53`, `Community 55`, `Community 56`, `Community 60`, `Community 64`, `Community 65`, `Community 67`, `Community 72`, `Community 75`, `Community 77`, `Community 86`, `Community 96`, `Community 103`, `Community 110`?**
+  _High betweenness centrality (0.034) - this node is a cross-community bridge._
+- **What connects `ADR-0038`, `ADR-0063`, `ADR-0031` to the rest of the system?**
   _1026 weakly-connected nodes found - possible missing edges._
 - **Should `Community 0` be split into smaller, more focused modules?**
-  _Cohesion score 0.02656716417910448 - nodes in this community are weakly interconnected._
-- **Why does `drizzle-orm` connect `Community 3` to `Community 2`, `Community 4`, `Community 7`, `Community 8`, `Community 9`, `Community 12`, `Community 13`, `Community 14`, `Community 17`, `Community 18`, `Community 19`, `Community 21`, `Community 24`, `Community 25`, `Community 26`, `Community 28`, `Community 29`, `Community 34`, `Community 35`, `Community 37`, `Community 38`, `Community 40`, `Community 41`, `Community 45`, `Community 46`, `Community 49`, `Community 53`, `Community 56`, `Community 59`, `Community 68`, `Community 71`, `Community 98`, `Community 100`, `Community 108`?**
-  _High betweenness centrality (0.030) - this node is a cross-community bridge._
+  _Cohesion score 0.035573400958016345 - nodes in this community are weakly interconnected._
+- **Why does `react` connect `Community 13` to `Community 0`, `Community 2`, `Community 34`, `Community 4`, `Community 69`, `Community 5`, `Community 7`, `Community 101`, `Community 9`, `Community 8`, `Community 109`, `Community 47`, `Community 50`, `Community 85`, `Community 88`, `Community 63`, `Community 127`?**
+  _High betweenness centrality (0.020) - this node is a cross-community bridge._
 - **Should `Community 1` be split into smaller, more focused modules?**
-  _Cohesion score 0.05414364640883978 - nodes in this community are weakly interconnected._
-- **Why does `react` connect `Community 15` to `Community 0`, `Community 1`, `Community 32`, `Community 64`, `Community 5`, `Community 105`, `Community 10`, `Community 11`, `Community 16`, `Community 81`, `Community 84`, `Community 52`, `Community 20`, `Community 85`, `Community 22`, `Community 123`?**
-  _High betweenness centrality (0.027) - this node is a cross-community bridge._
+  _Cohesion score 0.033983966538863715 - nodes in this community are weakly interconnected._
+- **Why does `unwrap()` connect `Community 2` to `Community 0`, `Community 34`, `Community 4`, `Community 5`, `Community 69`, `Community 7`, `Community 8`, `Community 9`, `Community 40`, `Community 47`, `Community 50`, `Community 88`?**
+  _High betweenness centrality (0.017) - this node is a cross-community bridge._
 - **Should `Community 2` be split into smaller, more focused modules?**
-  _Cohesion score 0.024820250172362848 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.06269534840963413 - nodes in this community are weakly interconnected._
