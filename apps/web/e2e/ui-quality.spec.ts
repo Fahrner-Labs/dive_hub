@@ -9,7 +9,7 @@ import { dataFile, type PreparedData } from './prepare.ts';
 import {
   cancelWaitingImports, waitingImport,
   E2E_BASE_URL, E2E_SERVERS, E2E_SESSION, LENA_SSI, activeResultShown, aiAccessReady, askMcp, assessedDive, diveNumber, seededDiveId, createAiAccess, putAside, uniqueWord, clearParticipants, conflictForLena, connectSsi, deletableDive, lenaClaimable, diveRows, diveWithoutRecording, expectAccessible, expectGoodPage, externalDiver, openLine,
-  clearPushRuns, clearQueue, connectGarmin, leaveGarmin, conflictAtSsi, fetchState, expireSsiTokens, leaveConflict, forgetDivers, goneAtSsi, goToMore, leaveLena, openFilters, leaveSsi, lenaReady, mergePair, mergeablePair, pushRunSetup, queueEntry, readyForSsi, resetDive, ssiConnectionOf, sendToSsi, setBuddies, setPreferences, signInSsi, falseStart, keepFalseStart, surfaceBreakPair, tankPodDive
+  clearPushRuns, clearQueue, connectGarmin, leaveGarmin, conflictAtSsi, fetchState, guardedRoute, expireSsiTokens, leaveConflict, forgetDivers, goneAtSsi, goToMore, leaveLena, openFilters, leaveSsi, lenaReady, mergePair, mergeablePair, pushRunSetup, queueEntry, readyForSsi, resetDive, ssiConnectionOf, sendToSsi, setBuddies, setPreferences, signInSsi, falseStart, keepFalseStart, surfaceBreakPair, tankPodDive
 } from './support.ts';
 
 // Spread over all workers (ADR 0023): every test stands alone; beforeAll prepares each worker's server.
@@ -672,11 +672,11 @@ for (const v of variants) {
     // The fetch's help shown while the import is off, and a switch busy while its save runs (backlog 0010, point 13).
     test('my account, automatic settings: the fetch needs the import, a switch saving', { tag: ['@account'] }, async ({ page, request }) => {
       await connectSsi(request);
-      await page.route('**/api/connections', async (route) => {
+      await page.route('**/api/connections', guardedRoute(async (route) => {
         const response = await route.fetch();
         const rows = (await response.json()) as Record<string, unknown>[];
         await route.fulfill({ status: response.status(), json: rows.map((row) => ({ ...row, diveImport: { mode: 'off', windowMinutes: 15 } })) });
-      });
+      }));
       // The save never answers here: the switch stays busy while the page is checked.
       await page.route('**/api/connections/*', (route) => (route.request().method() === 'PATCH' ? new Promise<void>(() => {}) : route.fallback()));
       await page.goto('/#/account?tab=connections');

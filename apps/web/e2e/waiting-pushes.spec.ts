@@ -3,7 +3,7 @@
 // The e2e server's worker settles real entries within a minute, so the states that must stay are put into the queue
 // by test-only routes (apps/server/test/e2e-server.ts); the saves and the delete are real.
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
-import { clearPushRuns, clearQueue, connectSsi, deletableDive, diveNumber, diveRows, editElsewhere, fetchState, headers, leaveConflict, leaveSsi, openLine, queueEntry, readyForSsi, sendToSsi, setPreferences, ssiConnectionOf } from './support.ts';
+import { clearPushRuns, clearQueue, connectSsi, deletableDive, diveNumber, diveRows, editElsewhere, fetchState, guardedRoute, headers, leaveConflict, leaveSsi, openLine, queueEntry, readyForSsi, sendToSsi, setPreferences, ssiConnectionOf } from './support.ts';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -315,15 +315,15 @@ test('the settings show only what the Provider offers and 6 hours is preselected
   try {
     // A Provider that can't delete and fetches every 6 hours at the soonest: the page shows what `offers` lists.
     const narrowed = (row: { offers: Record<string, unknown> }) => ({ ...row, offers: { ...row.offers, deleteAtProvider: false, fetchEvery: [360, 1440] } });
-    await page.route('**/api/connections', async (route) => {
+    await page.route('**/api/connections', guardedRoute(async (route) => {
       const response = await route.fetch();
       await route.fulfill({ status: response.status(), json: ((await response.json()) as { offers: Record<string, unknown> }[]).map(narrowed) });
-    });
-    await page.route('**/api/connections/*', async (route) => {
+    }));
+    await page.route('**/api/connections/*', guardedRoute(async (route) => {
       if (route.request().method() !== 'PATCH') return route.fallback();
       const response = await route.fetch();
       return route.fulfill({ status: response.status(), json: narrowed(await response.json() as { offers: Record<string, unknown> }) });
-    });
+    }));
     await openConnections(page);
     const settingsOf = automatic(page);
     await expect(settingsOf.getByRole('switch', { name: 'Send changes automatically' })).toBeVisible();
@@ -360,18 +360,18 @@ test('a stored interval the Provider no longer offers is still the selected one'
     let stored = true;
     const narrowed = (row: { offers: Record<string, unknown> }) =>
       ({ ...row, ...(stored ? { fetchEveryMinutes: 60 } : {}), offers: { ...row.offers, fetchEvery: [360, 1440] } });
-    await page.route('**/api/connections', async (route) => {
+    await page.route('**/api/connections', guardedRoute(async (route) => {
       const response = await route.fetch();
       await route.fulfill({ status: response.status(), json: ((await response.json()) as { offers: Record<string, unknown> }[]).map(narrowed) });
-    });
+    }));
     const bodies: unknown[] = [];
-    await page.route('**/api/connections/*', async (route) => {
+    await page.route('**/api/connections/*', guardedRoute(async (route) => {
       if (route.request().method() !== 'PATCH') return route.fallback();
       bodies.push(route.request().postDataJSON());
       stored = false;
       const response = await route.fetch();
       return route.fulfill({ status: response.status(), json: narrowed(await response.json() as { offers: Record<string, unknown> }) });
-    });
+    }));
     await openConnections(page);
     const every = automatic(page).getByRole('radiogroup', { name: 'How often' });
     await expect(every.getByRole('radio', { name: 'every hour' })).toBeChecked();
@@ -387,11 +387,11 @@ test('a stored interval the Provider no longer offers is still the selected one'
 test('the fetch switch says first that it needs the import', { tag: ['@account'] }, async ({ page, request }) => {
   await connectSsi(request);
   try {
-    await page.route('**/api/connections', async (route) => {
+    await page.route('**/api/connections', guardedRoute(async (route) => {
       const response = await route.fetch();
       const rows = (await response.json()) as Record<string, unknown>[];
       await route.fulfill({ status: response.status(), json: rows.map((row) => ({ ...row, diveImport: { mode: 'off', windowMinutes: 15 } })) });
-    });
+    }));
     await openConnections(page);
     const fetch = automatic(page).getByRole('switch', { name: 'Fetch from SSI' });
     await expect(fetch).not.toBeChecked();
