@@ -1,6 +1,6 @@
 ---
 title: Check escapes
-summary: Failures CI's full check found on a pull request whose local pnpm check was green; a log to measure how certain the local check is (ADR 0023, amendment of 2026-10-24).
+summary: Failures CI's full check found on a pull request whose local pnpm check was green, and local check incidents that wrote outside their fixtures; a log to measure how certain the local check is (ADR 0023, amendment of 2026-10-24).
 status: active
 date: 2026-10-24
 ---
@@ -9,17 +9,20 @@ date: 2026-10-24
 
 `pnpm check` runs only what changed, and in one ui-quality variant ([ADR 0023](../decisions/0023-faster-checks.md),
 amendments of 2026-10-24); CI's `pnpm check:full` on the pull request is the gate. This log counts what slipped past
-the local check, so its certainty can be measured and the path map widened where it is wrong.
+the local check, so its certainty can be measured and the path map widened where it is wrong. It also records a
+local check incident that wrote outside the sandbox it was meant to stay in, so the same escape is not repeated.
 
 **Who writes an entry:** whoever pushed the branch and sees its CI fail (the agent session that opened the pull
-request, or the owner), when every commit on it had a green local `pnpm check`. CI's job summary names the failed
-browser tests ("Failed browser tests"). A failure that is a flaky test also counts; say so.
+request, or the owner), when every commit on it had a green local `pnpm check`; or whoever sees the local check
+write outside its sandbox. CI's job summary names the failed browser tests ("Failed browser tests"). A failure that
+is a flaky test also counts; say so.
 
 **Format:** one line per escape, newest first:
 `- YYYY-MM-DD, PR #n, <commit sha7>: <failed spec or step> — <cause: map gap / variant / flaky / other> — <fix>`
 
 ## Escapes
 
+- 2026-11-08, PR #36, 84b2e2a: the pre-commit hook's `pnpm check` from a linked worktree — a tooling incident, not a CI failure: the check-script tests' fixture `git` commands inherited the hook's `GIT_DIR`/`GIT_WORK_TREE` and wrote fixture commits and refs into the real repository (branches renamed, `core.bare=true`), repaired by hand and the branch force-pushed, with no fixture commit on `main` — cause: other (a fixture pinned by `cwd` alone under hook-exported Git variables) — `scripts/check-lib.test.mjs` drops the repo-locating `GIT_*` variables for fixture commands, `scripts/check.mjs` drops them for its test steps, and a decoy-repo regression test guards it (FAH-51, incident comment `02f2e6d8`)
 - 2026-11-08, PR #36, 06ea729: waiting-pushes.spec.ts:356 (a stored interval the Provider no longer offers is still the selected one) — flaky: `apiResponse.json: Response has been disposed` while the test's `page.route('**/api/connections')` handler modified a `route.fetch()` response; the same spec failed the same way on the unrelated ADR branch FAH-46-adr-0067-accept (run 42417700731, before this branch existed), and this branch changes no app code — CI rerun
 - 2026-11-03, PR #19, 3259c0b: ui-quality.spec.ts:1308 (the dive page fits every width, 73 px too wide at 1120 px) — other, not flaky (both CI attempts): not reproduced locally, also not in Linux Chromium (Playwright's Docker image), with slow API answers or with the seeded Dive in CI's state; the branch changes nothing on the dive page — the test now names what sticks out, so the next failure says where to look. ui-quality.spec.ts:857 (English light small phone, every dialog has a close button) — flaky: the Actions menu was still fading out with its hidden Dismiss button when the delete question opened, and the duplicate-name check saw two — the test waits for the menu to close first
 - 2026-11-02, PR #17, 22adb97: dive-merge.spec.ts:70 and :119, ui-quality.spec.ts:956 (English light desktop) — other, not flaky (listed as flaky during the branch, wrongly): the merge tests clicked the only "Ask again" in Decided, but the surface break pair (answered "two dives" by its helper) was there too once another spec had used it, which this branch's spread of ui-quality tests over the workers made likely; the axe check measured the logbook's list fading in after its decision line had shown — each test clicks its own entry, and `expectAccessible` waits until no skeleton is left. provider-conflicts.spec.ts:15 — other, not flaky (three CI runs): an earlier spec in its worker had left the language German (cylinders, dive-page and navigation set it without resetting), and the test looks for English words; it and seven other specs that never reset the language now do in `beforeAll`, as twenty others did

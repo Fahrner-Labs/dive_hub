@@ -20,7 +20,7 @@
 import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { relative, resolve } from 'node:path';
-import { QUIET, STEPS, browserGrepInvert, browserTestList, listedTests, changedSince, variantsRun, clearFailed, countingBase, e2eServerLoads, failedRerunRenews, failedRun, forBrowserTests, keptFailures, failedTestsFromReport, REPORT, carryPassed, clearPassed, passedSince, passedToRecord, recordPassed, shellArgs, testsFilter, fullPlan, lintTargets, planSteps, recordFailed, recordGreen, snapshot, repoMapBlocks } from './check-lib.mjs';
+import { QUIET, STEPS, browserGrepInvert, browserTestList, listedTests, changedSince, variantsRun, clearFailed, countingBase, e2eServerLoads, failedRerunRenews, failedRun, forBrowserTests, keptFailures, failedTestsFromReport, REPORT, carryPassed, clearPassed, passedSince, passedToRecord, recordPassed, shellArgs, testsFilter, fullPlan, lintTargets, planSteps, recordFailed, recordGreen, snapshot, withoutRepoEnv, repoMapBlocks } from './check-lib.mjs';
 import { appendRun, browserStats, logPath } from './check-log.mjs';
 import { runLanes, takeLock } from './check-run.mjs';
 
@@ -250,6 +250,10 @@ function unitTests(app, level) {
 /** The lane beside the browser tests: typecheck, lint, the check script's tests and the unit tests. */
 function otherSteps() {
   const lane = [];
+  // Git exports the variables that locate a repository (GIT_DIR, GIT_WORK_TREE, …) to hooks. The test steps build
+  // fixture repositories in temp directories; inherited, those variables would make the fixtures write to the real
+  // repository (FAH-51). Strip them for the test child processes; `cwd` alone pins a fixture.
+  const testEnv = withoutRepoEnv();
   if (plan.typecheck) lane.push({ name: 'typecheck', command: pnpm('typecheck'), step: 'typecheck' });
   // ESLint and dependency-cruiser against their baselines; only problems are printed (ADR 0039).
   const lintFiles = since.lint.changed;
@@ -262,9 +266,9 @@ function otherSteps() {
   }
   // The repo map's and code graph's tests run after the check scripts': a fourth concurrent test process made the
   // timing-sensitive texts test flake on a 2-vCPU runner.
-  if (plan.scripts) lane.push({ name: 'check script tests', command: 'node --test scripts/check-lib.test.mjs scripts/check-run.test.mjs scripts/check-log.test.mjs && node --test scripts/repomap.test.mjs scripts/code-graph.test.mjs', step: 'scripts' });
-  if (plan.server !== 'none') lane.push({ name: `server tests (${plan.server})`, command: unitTests('server', plan.server), step: 'server' });
-  if (plan.web !== 'none') lane.push({ name: `web unit tests (${plan.web})`, command: unitTests('web', plan.web), step: 'web' });
+  if (plan.scripts) lane.push({ name: 'check script tests', command: 'node --test scripts/check-lib.test.mjs scripts/check-run.test.mjs scripts/check-log.test.mjs && node --test scripts/repomap.test.mjs scripts/code-graph.test.mjs', step: 'scripts', env: testEnv });
+  if (plan.server !== 'none') lane.push({ name: `server tests (${plan.server})`, command: unitTests('server', plan.server), step: 'server', env: testEnv });
+  if (plan.web !== 'none') lane.push({ name: `web unit tests (${plan.web})`, command: unitTests('web', plan.web), step: 'web', env: testEnv });
   return lane;
 }
 
