@@ -64,6 +64,8 @@ const AREAS = [
   [/^apps\/server\/src\/sites\//, ['@sites', '@dives']],
   [/^apps\/server\/src\/centres\//, ['@sites', '@dives']],
   [/^apps\/server\/src\/(dives|imports|assessment)\/|^apps\/server\/src\/vocabulary\.ts$/, ['@dives']],
+  // Equipment items and their service schedules (ADR 0034): their usage counts Dives; the browser tests stay under @dives until the page's own area lands.
+  [/^apps\/server\/src\/equipment\//, ['@dives']],
   // The change journal (ADR 0053, tiers T1): every domain writes through it, so its own changes reach every area's tests.
   [/^apps\/server\/src\/revisions\//, ['@dives', '@divers', '@sites', '@account', '@admin', '@live']],
   // Live hints (ADR 0066): the stream, its fan-out and the browser channel behind every page.

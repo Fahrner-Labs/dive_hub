@@ -4,7 +4,7 @@
 > `pnpm check` fails when this map is stale. Symbols are ranked by how widely the code references them;
 > each module shows its most-referenced ones (exported symbols rank higher). Search here before walking the tree.
 
-Files: 344 · symbols: 3068 · shown: 235
+Files: 346 · symbols: 3091 · shown: 241
 
 ### server/(root)
 apps/server/src/vocabulary.ts:13 type SiteWaterType
@@ -54,8 +54,8 @@ apps/server/src/certifications/certification-service.ts:119 fn createCertificati
 ### server/db
 apps/server/src/db/client.ts:5 type Db
 apps/server/src/db/schema.ts:652 const dive
-apps/server/src/db/client.ts:6 type Tx
 apps/server/src/db/client.ts:8 type Queryable
+apps/server/src/db/client.ts:6 type Tx
 apps/server/src/db/schema.ts:454 const diveSite
 apps/server/src/db/schema.ts:757 const recording
 apps/server/src/db/schema.ts:1066 const push
@@ -81,7 +81,6 @@ apps/server/src/dives/time-zone.ts:11 iface Position
 apps/server/src/dives/cylinders.ts:50 fn cylindersOf
 apps/server/src/dives/dive-service.ts:187 fn participantsOf
 apps/server/src/dives/cylinders.ts:9 iface ProviderCylinder
-apps/server/src/dives/matching.ts:81 const DAY_MS
 apps/server/src/dives/weighting.ts:17 fn leadOf
 apps/server/src/dives/matching.ts:83 const MAX_OFFSET_MS
 apps/server/src/dives/waiting-push-view.ts:20 const WaitingPushView
@@ -91,12 +90,22 @@ apps/server/src/dives/provider-port.ts:32 iface DivePushes
 apps/server/src/dives/provider-port.ts:39 iface DiveWaitingPushes
 apps/server/src/dives/recording-units.ts:9 const isUnit
 apps/server/src/dives/weighting.ts:23 const leadTotalKg
+apps/server/src/dives/matching.ts:81 const DAY_MS
 apps/server/src/dives/logbook-service.ts:266 type LogbookService
 apps/server/src/dives/dive-values.ts:6 iface DiveValues
 apps/server/src/dives/dive-service.ts:87 const nextVersion
 apps/server/src/dives/weighting.ts:96 iface Suit
 apps/server/src/dives/weighting.ts:106 const suitOf
 … 286 more symbols in this module
+
+### server/equipment
+apps/server/src/equipment/due.ts:58 const DAY_MS
+apps/server/src/equipment/due.ts:85 const round
+apps/server/src/equipment/due.ts:5 type DueState
+apps/server/src/equipment/usage.ts:9 iface UsageDive
+apps/server/src/equipment/usage.ts:16 iface Usage
+apps/server/src/equipment/usage.ts:24 iface UsageRow
+… 17 more symbols in this module
 
 ### server/http
 apps/server/src/http/schemas.ts:10 const Nullable
@@ -113,9 +122,9 @@ apps/server/src/imports/parsed-recording.ts:10 class ParseError
 apps/server/src/imports/parsed-recording.ts:28 iface ParsedEvent
 apps/server/src/imports/parsed-recording.ts:21 iface ParsedSeries
 apps/server/src/imports/import-view.ts:47 const ImportView
-apps/server/src/imports/formats.ts:8 iface FileFormat
 apps/server/src/imports/formats/suunto/suunto-json.ts:40 const round
 apps/server/src/imports/formats/uddf/uddf.ts:38 const round
+apps/server/src/imports/formats.ts:8 iface FileFormat
 apps/server/src/imports/import-service.ts:16 const PROCESS_IMPORT_TASK
 apps/server/src/imports/formats/uddf/xml.ts:141 const child
 apps/server/src/imports/formats/uddf/xml.ts:9 iface XmlElement
@@ -159,8 +168,8 @@ apps/server/src/planning/gas.ts:44 fn ambientPressureBar
 apps/server/src/planning/gas.ts:15 iface Conditions
 apps/server/src/planning/gas.ts:5 iface GasMix
 apps/server/src/planning/gas-plan.ts:21 type GasRule
-apps/server/src/planning/gas-numbers.ts:7 const DEFAULT_PPO2
-apps/server/src/planning/gas-plan-service.ts:13 const PLAN_RULES
+apps/server/src/planning/bottom-time-service.ts:20 const round
+apps/server/src/planning/gas-numbers.ts:9 const round
 … 85 more symbols in this module
 
 ### server/providers
