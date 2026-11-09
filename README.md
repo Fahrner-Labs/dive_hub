@@ -35,3 +35,4 @@ While working, `pnpm check` runs the type check, lint and only the tests affecte
 the full suite (`pnpm check:full`) on every pull request. Details: [development guide](docs/development.md).
 
 Licensed under [Apache-2.0](LICENSE).
+# Smoke-tested on the paperclip-mini instance (FAH-164)
