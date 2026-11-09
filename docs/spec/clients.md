@@ -1026,7 +1026,7 @@ dives, all off until the User turns them on. *Web:* `ProviderAutomation.tsx` (se
 - **Notices are dismissible client-side**, keyed by the digest of the due schedules: dismissing hides the logbook notice
   until the due set changes (a new schedule becomes due, or one is serviced). Due state is derived data, so nothing is
   persisted on the server. The navigation's count is the length of `GET /api/equipment/due`.
-- *Web:* `EquipmentPage.tsx` (`#/equipment`), `EquipmentNotice.tsx`, the gear section `DiveGear.tsx` on a Dive, and the
+- *Web:* `EquipmentPage.tsx` (`#/equipment`), `EquipmentDue.tsx`, the gear section `DiveGear.tsx` on a Dive, and the
   cylinder item in `Cylinders.tsx`.
 
 ### Dive sites

@@ -142,7 +142,7 @@ the pattern of the [2026-10-30 desloppify cleanup](../research/2026-10-30-deslop
 T7  interfaces/integrations   providers · mcp · lead · users      (nothing imports these)
 T6  analysis & credentials    certifications · assessment · planning
 T5  intake                    imports
-T4  logbook core              dives
+T4  logbook core              dives · equipment
 T3  verification              centres
 T2  registry                  divers · sites
 T1  foundation                revisions · live

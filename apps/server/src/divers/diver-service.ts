@@ -353,7 +353,7 @@ export function createDiverService(db: Db) {
       if (gone.length === 0) throw new DiverError('body_weight_not_found');
     },
 
-    /** Only empty Divers go: no Dives, no Devices, on no Dive. The User's own Diver stays. */
+    /** Only empty Divers go: no Dives, Devices or Equipment items, on no Dive. The User's own Diver stays. */
     async remove(userId: string, diverId: string) {
       const { isOwn } = await requireManagedDiver(userId, diverId);
       if (isOwn) throw new DiverError('own_diver');
@@ -361,7 +361,19 @@ export function createDiverService(db: Db) {
         const [used] = await tx.select({ n: sql<number>`count(*)::int` }).from(dive).where(eq(dive.diverId, diverId));
         const [devices] = await tx.select({ n: sql<number>`count(*)::int` }).from(device).where(eq(device.diverId, diverId));
         const [on] = await tx.select({ n: sql<number>`count(*)::int` }).from(participant).where(eq(participant.diverId, diverId));
-        if ((used?.n ?? 0) > 0 || (devices?.n ?? 0) > 0 || (on?.n ?? 0) > 0) throw new DiverError('diver_not_empty');
+        const [items] = await tx.select({ n: sql<number>`count(*)::int` }).from(equipmentItem)
+          .where(and(eq(equipmentItem.diverId, diverId), isNull(equipmentItem.deletedAt)));
+        if ((used?.n ?? 0) > 0 || (devices?.n ?? 0) > 0 || (on?.n ?? 0) > 0 || (items?.n ?? 0) > 0) throw new DiverError('diver_not_empty');
+        // A removed (soft-deleted) item has no uses, records, naming Cylinder or Device (equipment.remove refuses
+        // those), but its row and schedules would keep the foreign key: clear them, as deleting the User does.
+        const itemsOf = sql`select id from equipment_item where diver_id = ${diverId}`;
+        await tx.execute(sql`delete from equipment_use where item_id in (${itemsOf})`);
+        await tx.execute(sql`update cylinder set equipment_item_id = null where equipment_item_id in (${itemsOf})`);
+        await tx.execute(sql`delete from service_record_schedule where record_id in (select id from service_record where item_id in (${itemsOf}))
+          or schedule_id in (select id from service_schedule where item_id in (${itemsOf}))`);
+        await tx.execute(sql`delete from service_record where item_id in (${itemsOf})`);
+        await tx.execute(sql`delete from service_schedule where item_id in (${itemsOf})`);
+        await tx.execute(sql`delete from equipment_item where diver_id = ${diverId}`);
         // Its accounts at Targets go with it, and so do the User's Connections for it (ADR 0024).
         await tx.delete(connection).where(eq(connection.diverId, diverId));
         await tx.delete(diverExternalId).where(eq(diverExternalId.diverId, diverId));

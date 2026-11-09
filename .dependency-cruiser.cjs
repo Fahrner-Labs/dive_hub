@@ -14,7 +14,7 @@ const MODULE_IMPORTS = {
   certifications: ['divers', 'dives', 'live', 'revisions'],
   divers: ['revisions'],
   dives: ['centres', 'divers', 'revisions', 'sites'],
-  equipment: ['divers', 'dives', 'revisions'],
+  equipment: ['divers', 'revisions'],
   imports: ['divers', 'dives', 'equipment', 'live', 'revisions', 'sites'],
   lead: ['divers', 'dives'],
   mcp: ['assessment', 'divers', 'dives', 'equipment', 'planning', 'sites'],

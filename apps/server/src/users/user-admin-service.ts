@@ -133,7 +133,8 @@ async function deleteUserData(tx: Tx, userId: string) {
     select id from equipment_item where diver_id in (select id from doomed_diver)`);
 
   await tx.execute(sql`delete from revision where entity_id in (select id from doomed_recording)
-    or entity_id in (select id from doomed_dive) or entity_id in (select id from doomed_diver)`);
+    or entity_id in (select id from doomed_dive) or entity_id in (select id from doomed_diver)
+    or entity_id in (select id from doomed_item)`);
   await tx.execute(sql`delete from duplicate_candidate where recording_id in (select id from doomed_recording)`);
   // A surviving Dive (of a Diver someone else also manages) loses its Primary recording if it was one of these.
   // Their Divers' apnea sessions may stop counting, so those Divers' Dives are numbered again (ADR 0048).

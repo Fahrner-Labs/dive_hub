@@ -138,6 +138,14 @@ describe.skipIf(!(await databaseReachable()))('Equipment over HTTP', () => {
     expect(response.json()).toMatchObject({ code: 'equipment_in_use' });
   });
 
+  it('keeps a Diver with an item, and clears a removed item so the Diver can go', async () => {
+    const diver = (await inject('POST', '/api/divers', tim, { name: 'Diver with gear' })).json() as { id: string };
+    const item = (await createItem({ name: 'Spare mask' }, tim, diver.id)).json() as Detail;
+    expect((await inject('DELETE', `/api/divers/${diver.id}`, tim)).json()).toMatchObject({ code: 'diver_not_empty' });
+    expect((await inject('DELETE', `/api/equipment/${item.id}`, tim)).statusCode).toBe(204);
+    expect((await inject('DELETE', `/api/divers/${diver.id}`, tim)).statusCode).toBe(204);
+  });
+
   it('keeps another User\'s Diver and items away, as not found', async () => {
     const item = (await createItem({ name: 'Private' })).json() as Detail;
     expect((await inject('GET', `/api/equipment/${item.id}`, other)).statusCode).toBe(404);

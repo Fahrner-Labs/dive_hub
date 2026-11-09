@@ -5,7 +5,7 @@ import { EQUIPMENT_CATEGORIES, EQUIPMENT_STATUSES } from '../vocabulary.js';
 import { equipmentList } from '../equipment/read.js';
 import { DUE_STATES } from '../equipment/due.js';
 import {
-  Cursor, Detail, Id, Nullable, Paging, SharedText, defineTool, diversAsked, offsetOf, page,
+  Cursor, Id, Nullable, Paging, SharedText, defineTool, diversAsked, offsetOf, page,
 } from './tool.js';
 
 const DueState = Type.Enum([...DUE_STATES], { description: 'ok, due_soon, due or overdue; the worst dimension wins' });
@@ -69,7 +69,6 @@ const ListInput = Type.Object({
   category: Type.Optional(Type.Enum([...EQUIPMENT_CATEGORIES], { description: 'Only items of this kind' })),
   limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 50, default: 20, description: 'Items per page; every item carries its schedules and records' })),
   cursor: Cursor,
-  detail: Detail,
 }, { additionalProperties: false });
 
 export const listEquipment = defineTool({

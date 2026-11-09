@@ -46,7 +46,7 @@ export const PROBLEMS = {
   certification_read_only: 'An imported certification takes only notes; the agency\'s record is not edited here',
   certification_image_not_found: 'The certification has no picture (yet)',
   own_diver: 'Your own Diver can\'t be deleted',
-  diver_not_empty: 'This Diver still has dives or devices, or is on a dive',
+  diver_not_empty: 'This Diver still has dives, devices or equipment, or is on a dive',
   diver_in_use: 'This diver is on a dive; take them off it first',
   diver_not_deletable: 'Only whoever added this diver, or an admin, can delete them',
   diver_not_editable: 'Only the Users who keep this Diver\'s logbook can change it',
