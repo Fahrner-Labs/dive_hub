@@ -20,6 +20,8 @@ Durable product knowledge lives here; work state (tasks, plans, discussion) live
   (UDDF, Garmin FIT, the SSI app API, libdivecomputer and others).
 - [research/](research/): dated notes (`YYYY-MM-DD-topic.md`) that an ADR or the spec cites, sources linked.
 - [development.md](development.md): setup, layout, common tasks and the checks (`pnpm check`).
+- [self-hosting.md](self-hosting.md): running Dive Hub in production — first start, environment
+  variables, TLS reverse proxy, backups and upgrades.
 - [generated/](generated/): CI-built navigation artefacts (repo map, Graphify code graph, dependency-cruiser
   boundaries), excluded from review diffs ([ADR 0067](decisions/0067-code-navigation-for-agents.md)).
 - [skills.md](skills.md): the installed agent skills and the project rules that win over them.

@@ -11,6 +11,11 @@ Start at **[docs/index.md](docs/index.md)**.
 
 AI agents: see [AGENTS.md](AGENTS.md).
 
+## Self-host
+
+Run Dive Hub in production with Docker Compose: [self-hosting guide](docs/self-hosting.md).
+It covers the quick start, environment variables, a TLS reverse proxy, backups and upgrades.
+
 ## Try it (development)
 
 ```sh
