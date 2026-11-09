@@ -1,6 +1,6 @@
 ---
 title: "ADR 0023: Checks by what changed, and a faster full check"
-summary: pnpm check runs typecheck, the unit tests whose imports changed and the browser tests of the areas touched (tags); pnpm check:full runs everything, before a commit as decided, since the amendment of 2026-10-08 before a push or a release. pnpm check counts each step from its last green run (amendment of 2026-10-08) or from where the branch left main, whichever leaves fewer files (amendment of 2026-10-24) and leaves two ui-quality variants to the full check; changed texts run the pages that use them; --failed reruns the failed browser tests. Browser tests run on 2 workers with a server and database each, prepared once; no trace recording by default; axe in 2 of 4 ui-quality variants; server tests share modules. Full check 10.5 → 3 min. Amendment of 2026-10-24: test helpers no longer run everything, a passing --failed renews the browser record, one ui-quality variant in pnpm check, and CI's full check on the pull request is the gate (no full check before a push). Amendment of 2026-10-26: a check after a fix counts from the failed browser run, every step runs to its end with the browser step beside the others, and a local run log (pnpm check:log). Amendment of 2026-10-26 (second): browser test setup and fixtures run no browser tests locally, and --tests <filter> records passed browser tests that a later check leaves out.
+summary: pnpm check runs typecheck, the unit tests whose imports changed and the browser tests of the areas touched (tags); pnpm check:full runs everything, before a commit as decided, since the amendment of 2026-10-08 before a push or a release. pnpm check counts each step from its last green run (amendment of 2026-10-08) or from where the branch left main, whichever leaves fewer files (amendment of 2026-10-24) and leaves two ui-quality variants to the full check; changed texts run the pages that use them; --failed reruns the failed browser tests. Browser tests run on 2 workers with a server and database each, prepared once; no trace recording by default; axe in 2 of 4 ui-quality variants; server tests share modules. Full check 10.5 → 3 min. Amendment of 2026-10-24: test helpers no longer run everything, a passing --failed renews the browser record, one ui-quality variant in pnpm check, and CI's full check on the pull request is the gate (no full check before a push). Amendment of 2026-10-26: a check after a fix counts from the failed browser run, every step runs to its end with the browser step beside the others, and a local run log (pnpm check:log). Amendment of 2026-10-26 (second): browser test setup and fixtures run no browser tests locally, and --tests <filter> records passed browser tests that a later check leaves out. Amendment of 2026-11-09: axe once per ui-quality test everywhere, not only under pnpm check; E2E_AXE=every for every page state.
 status: accepted
 date: 2026-10-04
 ---
@@ -397,3 +397,33 @@ in `pnpm check` (418 s) and again in CI. Decided with the owner; [design](../sup
   areas); owed tests among them count as paid. A green browser step clears the record.
 - *What is given up:* a helper or fixture change that breaks a test its author didn't run is found by CI, not
   before the push.
+
+## Amendment 2026-11-09: axe once per test everywhere
+Why: the amendment of 2026-10-24 ran axe once per ui-quality test only under `pnpm check`, while `pnpm check:full` and
+CI ran it at every page state, and that saving was never measured. Measured on 2026-11-09 with Playwright's JSON
+report, 2 workers, on the check's English plan (130 tests):
+
+| axe | Wall | Worker time | Mean per test |
+|---|---|---|---|
+| off (measurement only) | 152 s | 251 s | 1.9 s |
+| once per test, on its final state | 231 s | 344 s | 2.6 s |
+| at every page state | 278 s | 395 s | 3.0 s |
+
+Axe is 27 % of the English variant's worker time when it runs once per test and 36 % at every state. The German, dark,
+phone variant (72 tests) went from 222 s to 280 s worker time at every state (+57 s). Running axe once per test
+everywhere saves about 108 s of worker time across the two axe variants (16 %) and about 7 axe scans per variant.
+The numbers are in the [testing strategies note](../research/2026-10-26-testing-strategies.md). Endorsed by the CTO on
+2026-11-09; the owner's approval happens with the pull request that carries this amendment.
+
+- **One axe pass per test, on the state the test ends on, everywhere**: `pnpm check`, `pnpm check:full` and CI. The
+  other page rules (one h1, the title, sideways overflow, duplicate button names) still run at every page state.
+- **`E2E_AXE=every` is the escape hatch** for the exhaustive run at every page state; it is no longer the default in
+  the full check. The check script sets no `E2E_AXE` value and names both the default and the escape hatch.
+- This replaces, in the amendment of 2026-10-24, "`pnpm check` sets `E2E_AXE=once` … `pnpm check:full` and CI leave it
+  unset and run axe at every page check", and the "axe once per ui-quality test locally" line of the amendment of
+  2026-10-26.
+- *What is given up:* an accessibility fault on an intermediate state (a dialog closed again, a page navigated away
+  from) is now found only with `E2E_AXE=every`, by hand; CI no longer finds it on every pull request.
+- *Considered:* dropping axe from one of the two variants (loses the light/dark coverage the axe rule exists for);
+  keeping the exhaustive run in CI and taking only the local saving (leaves the larger CI share unclaimed); one pass
+  per page rather than per test (finer than the CTO asked for, and the page a test ends on is the state it asserts).
