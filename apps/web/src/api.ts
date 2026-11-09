@@ -115,6 +115,18 @@ export type DiveImportPreview = Ok<'/api/connections/{id}/dive-import'>;
 export type DiveKind = ConnectionView['fetchKinds'][number];
 export type DiveImportMode = NonNullable<ConnectionView['diveImport']>['mode'];
 export type UtcOffsetSource = DiveView['utcOffsetSource'];
+/** An Equipment item with its schedules and their computed due (ADR 0034). */
+export type EquipmentItemView = Ok<'/api/divers/{id}/equipment'>[number];
+export type EquipmentScheduleView = EquipmentItemView['schedules'][number];
+export type EquipmentScheduleDue = NonNullable<EquipmentScheduleView['due']>;
+export type EquipmentDetailView = Ok<'/api/equipment/{id}'>;
+export type EquipmentRecordView = EquipmentDetailView['records'][number];
+export type EquipmentDueView = Ok<'/api/equipment/due'>[number];
+export type EquipmentCategory = EquipmentItemView['category'];
+export type EquipmentStatus = EquipmentItemView['equipmentStatus'];
+/** A Dive's gear: what its items say without an explicit use, and its put-on/taken-off exceptions. */
+export type DiveGearView = Ok<'/api/dives/{id}/equipment'>;
+export type DiveGearItemView = DiveGearView['putOn'][number];
 
 /** Query keys in one place (hierarchical, so invalidating ['dives'] covers every dive query). */
 export const keys = {
@@ -144,6 +156,12 @@ export const keys = {
   assessment: (id: string) => ['dives', id, 'assessment'] as const,
   divers: ['divers'] as const,
   devices: ['devices'] as const,
+  /** Equipment items and their service schedules (ADR 0034). A Dive's gear sits under the Dive, so it follows it. */
+  equipment: ['equipment'] as const,
+  equipmentDue: ['equipment', 'due'] as const,
+  equipmentOfDiver: (diverId: string) => ['equipment', 'diver', diverId] as const,
+  equipmentItem: (id: string) => ['equipment', id] as const,
+  diveGear: (diveId: string) => ['dives', diveId, 'equipment'] as const,
   candidates: (status: 'open' | 'discarded') => ['candidates', status] as const,
   samples: (recordingId: string) => ['recordings', recordingId, 'samples'] as const,
   sites: ['sites'] as const,
@@ -259,6 +277,26 @@ export const cylinderCatalogueQuery = () =>
 
 export const diversQuery = () => queryOptions({ queryKey: keys.divers, queryFn: async () => unwrap(await api.GET('/api/divers')) });
 export const devicesQuery = () => queryOptions({ queryKey: keys.devices, queryFn: async () => unwrap(await api.GET('/api/devices')) });
+/** A Diver's Equipment items with their schedules and computed due (ADR 0034). */
+export const equipmentOfDiverQuery = (diverId: string) => queryOptions({
+  queryKey: keys.equipmentOfDiver(diverId),
+  queryFn: async () => unwrap(await api.GET('/api/divers/{id}/equipment', { params: { path: { id: diverId } } })),
+});
+/** Every schedule due, due soon or overdue across the User's Divers: the navigation's count and the logbook's notice. */
+export const equipmentDueQuery = () => queryOptions({
+  queryKey: keys.equipmentDue,
+  queryFn: async () => unwrap(await api.GET('/api/equipment/due')),
+});
+/** One item with its usage, records and the last Cylinder that named it. */
+export const equipmentItemQuery = (id: string) => queryOptions({
+  queryKey: keys.equipmentItem(id),
+  queryFn: async () => unwrap(await api.GET('/api/equipment/{id}', { params: { path: { id } } })),
+});
+/** The Dive's gear: derived items and the put-on/taken-off exceptions (ADR 0034). */
+export const diveGearQuery = (diveId: string) => queryOptions({
+  queryKey: keys.diveGear(diveId),
+  queryFn: async () => unwrap(await api.GET('/api/dives/{id}/equipment', { params: { path: { id: diveId } } })),
+});
 export const candidatesQuery = (status: 'open' | 'discarded') =>
   queryOptions({ queryKey: keys.candidates(status), queryFn: async () => unwrap(await api.GET('/api/duplicate-candidates', { params: { query: { status } } })) });
 

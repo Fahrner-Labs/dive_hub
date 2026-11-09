@@ -1,6 +1,6 @@
 // A Dive's Cylinders in its form (ADR 0045): typed in the User's pressure unit, filled from the catalogue or from the last dive.
 import { describe, expect, it } from 'vitest';
-import { cylindersOfDrafts, draftOfCylinder, emptyDraft, fromCatalogue, fromLastDive, type CylinderView } from '../src/lib/cylinders.ts';
+import { cylindersOfDrafts, draftOfCylinder, emptyDraft, fromCatalogue, fromItemLastUse, fromLastDive, type CylinderView } from '../src/lib/cylinders.ts';
 
 const NaN_ = Number.NaN;
 const steel12: CylinderView = {
@@ -26,17 +26,25 @@ describe('a Cylinder in the Dive\'s form', () => {
     for (const units of ['metric', 'imperial'] as const) {
       expect(cylindersOfDrafts([draftOfCylinder(pod, units)], units)).toEqual([{
         volumeL: 12, workingPressureBar: 232, material: 'steel', gas: { o2: 32, he: 0 }, startPressureBar: 200.4, endPressureBar: 50.1,
-        series: { recordingId: 'r1', channel: 'tankPressure' },
+        series: { recordingId: 'r1', channel: 'tankPressure' }, equipmentItemId: null,
       }]);
     }
   });
 
   it('saves empty fields as unknown; a gas needs its oxygen, helium counts as none when left empty', () => {
     expect(cylindersOfDrafts([emptyDraft()], 'metric')).toEqual([{
-      volumeL: null, workingPressureBar: null, material: null, gas: null, startPressureBar: null, endPressureBar: null, series: null,
+      volumeL: null, workingPressureBar: null, material: null, gas: null, startPressureBar: null, endPressureBar: null, series: null, equipmentItemId: null,
     }]);
     expect(cylindersOfDrafts([{ ...emptyDraft(), o2: 21 }], 'metric')[0]!.gas).toEqual({ o2: 21, he: 0 });
     expect(cylindersOfDrafts([{ ...emptyDraft(), he: 35 }], 'metric')[0]!.gas).toBeNull();
+  });
+
+  it('fills from the item\'s last use, or leaves a first use as typed', () => {
+    const draft = { ...emptyDraft(), startPressure: 200 };
+    expect(fromItemLastUse(draft, { volumeL: 12, workingPressureBar: 232, material: 'steel', gas: { o2: 32, he: 0 } }, 'metric'))
+      .toMatchObject({ volumeL: 12, workingPressure: 232, material: 'steel', o2: 32, he: 0, startPressure: 200 });
+    expect(fromItemLastUse(draft, { volumeL: null, workingPressureBar: null, material: null, gas: null }, 'metric'))
+      .toMatchObject({ volumeL: Number.NaN, workingPressure: Number.NaN, material: null, o2: Number.NaN, he: Number.NaN });
   });
 
   it('picking from the catalogue fills volume, working pressure and material, and leaves the rest', () => {

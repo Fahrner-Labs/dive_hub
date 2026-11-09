@@ -730,3 +730,22 @@ th[aria-sort='ascending'], th[aria-sort='descending'] { color: var(--color-text)
   .new-dives-pill { bottom: calc(var(--bar-height, 3.5rem) + var(--space-2) + env(safe-area-inset-bottom, 0px)); }
   html[data-typing] .new-dives-pill { display: none; }
 }
+
+/* Equipment items and their service schedules (ADR 0034): the page's categories and item rows, a Dive's gear, and the
+   schedule and reset fieldsets of the forms. */
+.equipment-category { margin-top: var(--space-4); }
+.equipment-category h3 { margin: 0 0 var(--space-2); font-size: var(--text-lg); }
+.equipment-list, .plain-list { list-style: none; margin: 0; padding: 0; }
+.equipment-list { display: grid; gap: var(--space-3); }
+.equipment-item { display: grid; gap: var(--space-2); padding-top: var(--space-3); border-top: 1px solid var(--color-border); }
+.equipment-item-head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-3); }
+.equipment-item-name { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); margin: 0; font-size: var(--text-lg); }
+.equipment-history { display: grid; gap: var(--space-2); }
+.equipment-subheading { margin: var(--space-3) 0 var(--space-1); font-size: var(--text-sm); }
+.dive-gear { display: grid; gap: var(--space-1); }
+.plain-list li { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-2); padding: var(--space-1) 0; }
+.equipment-schedule { display: grid; gap: var(--space-3); justify-items: start; margin: 0; padding: var(--space-4); border: 1px solid var(--color-border); border-radius: var(--radius-md); min-width: 0; }
+.equipment-schedule > .form-grid { width: 100%; }
+.equipment-schedule legend { padding: 0 var(--space-2); font-weight: 600; }
+.equipment-resets { display: grid; gap: var(--space-1); margin: 0; padding: 0; border: 0; }
+.equipment-resets legend { padding: 0; font-weight: 600; }

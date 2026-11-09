@@ -33,6 +33,8 @@ const AREAS = [
   // The scanner for verification codes (ADR 0043): on the new centre form, where a centre's number is set, and where a diver's code is taken.
   [/^apps\/web\/src\/CodeScanner\.tsx$|^apps\/web\/src\/lib\/qr-reader\.ts$/, ['@sites', '@divers']],
   [/^apps\/web\/src\/lib\/address-search\.ts$/, ['@sites', '@dives']],
+  // Equipment items and their service schedules (ADR 0034): the page and its forms, the logbook's due notice and a Dive's gear.
+  [/^apps\/web\/src\/(EquipmentPage|EquipmentDue|DiveGear)\.tsx$|^apps\/web\/src\/lib\/equipment\.ts$/, ['@equipment', '@dives']],
   [/^apps\/web\/src\/(DivePage|DiveEditForm|DiveHistory|DiveList|ProfileSketch|DepthProfile|ProfilePlot|Decisions|ReviewPage|ReviewStrip|ReviewRows|ImportPanel|DeleteDive|DeletedDives|MergeDive|AppendDive|LogbookChecks|Participants|Assessment|Cylinders|Weighting|LeadHint|PushRun).tsx$|^apps\/web\/src\/lib\/(dive-values|history|profile|tanks|cylinders|weighting|answer|sketch|logbook|review|devices|importable|deletion|assessment|waiting-push)\.ts$/, ['@dives']],
   // A Diver's codes and details, and taking a scanned code (ADR 0043): on the divers page; the codes also show on a Dive.
   [/^apps\/web\/src\/DiverCodes\.tsx$/, ['@divers', '@dives']],
@@ -64,8 +66,8 @@ const AREAS = [
   [/^apps\/server\/src\/sites\//, ['@sites', '@dives']],
   [/^apps\/server\/src\/centres\//, ['@sites', '@dives']],
   [/^apps\/server\/src\/(dives|imports|assessment)\/|^apps\/server\/src\/vocabulary\.ts$/, ['@dives']],
-  // Equipment items and their service schedules (ADR 0034): their usage counts Dives; the browser tests stay under @dives until the page's own area lands.
-  [/^apps\/server\/src\/equipment\//, ['@dives']],
+  // Equipment items and their service schedules (ADR 0034): their usage counts Dives and their MCP tool reads the same reminders.
+  [/^apps\/server\/src\/equipment\//, ['@equipment', '@dives']],
   // The change journal (ADR 0053, tiers T1): every domain writes through it, so its own changes reach every area's tests.
   [/^apps\/server\/src\/revisions\//, ['@dives', '@divers', '@sites', '@account', '@admin', '@live']],
   // Live hints (ADR 0066): the stream, its fan-out and the browser channel behind every page.
@@ -82,7 +84,7 @@ const AREAS = [
 export const QUIET = /^(docs\/|samples\/|\.claude\/|\.github\/|\.githooks\/|AGENTS\.md$|CLAUDE\.md$|README\.md$|LICENSE$|NOTICE$|skills-lock\.json$|\.gitignore$|\.gitattributes$|\.dockerignore$|\.env\.example$|compose(\.dev)?\.yaml$|Dockerfile$|apps\/server\/test\/fixtures\/site-sources\/record\.ts$|apps\/server\/test\/fixtures\/ssi\/round-trip\.ts$|apps\/server\/test\/fixtures\/write-assessment-fixture\.ts$|apps\/server\/test\/fixtures\/write-suunto-fixture\.ts$|apps\/server\/test\/fixtures\/write-merge-fixture\.ts$|apps\/server\/test\/fixtures\/write-account-export-fixture\.ts$|apps\/server\/test\/fixtures\/write-live-fixtures\.ts$|scripts\/token-report\.mjs$|scripts\/fit-compressibility\.mjs$)/;
 
 /** The area tags a browser test can have; a test with none of them would run only in the full check. */
-export const TAGS = ['@dives', '@divers', '@sites', '@account', '@admin', '@layout', '@tools', '@live'];
+export const TAGS = ['@dives', '@divers', '@equipment', '@sites', '@account', '@admin', '@layout', '@tools', '@live'];
 
 /** The tag of browser tests that only the full check runs: ui-quality's two variants without axe (small phone, tablet). */
 export const FULL_ONLY = '@full';

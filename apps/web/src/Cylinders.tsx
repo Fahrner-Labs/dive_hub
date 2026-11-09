@@ -1,10 +1,10 @@
 // A Dive's Cylinders (ADR 0045): on the dive page as lines of text, and in the Dive's form as a group of fields each,
 // typed, filled from the cylinder catalogue or copied from the last dive (the Dive's form does that, with suit and lead).
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { cylinderCatalogueQuery, type DiveView } from './api.ts';
+import { api, cylinderCatalogueQuery, equipmentOfDiverQuery, unwrap, type DiveView } from './api.ts';
 import {
-  emptyDraft, fromCatalogue, type CatalogueCylinder, type CylinderDraft, type CylinderMaterial, type CylinderView,
+  emptyDraft, fromCatalogue, fromItemLastUse, type CatalogueCylinder, type CylinderDraft, type CylinderMaterial, type CylinderView,
 } from './lib/cylinders.ts';
 import { deviceName } from './lib/devices.ts';
 import { useDisplay } from './lib/display.ts';
@@ -95,6 +95,9 @@ export function CylinderFields({ dive: d, drafts, onChange, autoFocus }: {
   const problem = useCylinderProblem();
   const { units } = display;
   const catalogue = useQuery(cylinderCatalogueQuery());
+  // The Dive's Diver's cylinder items: naming one is a link, never a guess at what the item is (ADR 0034 D6).
+  const equipment = useQuery(equipmentOfDiverQuery(d.diverId));
+  const cylinderItems = (equipment.data ?? []).filter((item) => item.category === 'cylinder');
 
   const entryName = useCatalogueName();
   // The tank pods of the Dive's Recordings: one option per pressure series.
@@ -107,6 +110,15 @@ export function CylinderFields({ dive: d, drafts, onChange, autoFocus }: {
     }));
   });
   const set = (key: string, change: Partial<CylinderDraft>) => onChange(drafts.map((c) => (c.key === key ? { ...c, ...change } : c)));
+  // Picking an item fills what its last use on a Dive had; the first use leaves the fields as typed.
+  const pickItem = useMutation({
+    mutationFn: async ({ itemId }: { itemId: string; key: string }) => unwrap(await api.GET('/api/equipment/{id}', { params: { path: { id: itemId } } })),
+    onSuccess: (detail, { key }) => {
+      if (detail.lastCylinder) {
+        onChange(drafts.map((c) => (c.key === key ? fromItemLastUse(c, detail.lastCylinder!, units) : c)));
+      }
+    },
+  });
 
   return (
     <div className="cylinder-fields">
@@ -120,6 +132,22 @@ export function CylinderFields({ dive: d, drafts, onChange, autoFocus }: {
               {c.loaded?.fromPod && c.series && <> <Badge>{t('cylinders.fromPod')}</Badge></>}
             </legend>
             <div className="form-grid">
+              {(cylinderItems.length > 0 || c.equipmentItemId) && (
+                <Select
+                  label={t('cylinders.item')}
+                  value={c.equipmentItemId ?? 'none'}
+                  description={t('cylinders.itemHint')}
+                  options={[
+                    { id: 'none', label: t('cylinders.noItem') },
+                    ...cylinderItems.map((item) => ({ id: item.id, label: item.name })),
+                  ]}
+                  onChange={(id) => {
+                    if (id === null || id === 'none') { set(c.key, { equipmentItemId: null }); return; }
+                    set(c.key, { equipmentItemId: id });
+                    pickItem.mutate({ itemId: id, key: c.key });
+                  }}
+                />
+              )}
               {catalogue.data && (
                 <Select
                   label={t('cylinders.catalogue')} value={null}

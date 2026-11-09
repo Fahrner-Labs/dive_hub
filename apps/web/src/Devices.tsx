@@ -45,7 +45,7 @@ function DeviceRow({ device: d, divers }: { device: DeviceView; divers: DiverVie
   });
   return (
     <tr>
-      <td translate="no">{deviceName(d.manufacturer, d.product)}</td>
+      <td translate="no">{deviceName(d.manufacturer, d.product)}{' '}<a className="meta" href={`#/equipment?item=${d.equipmentItemId}`}>{t('equipment.openItem')}</a></td>
       <td translate="no">{d.serialNumber}</td>
       <td className="num">{d.recordingCount}</td>
       <td className="date">{d.lastUsedAt ? display.dateTime(d.lastUsedAt) : t('common.none')}</td>

@@ -22,6 +22,8 @@ export interface CylinderDraft {
   startPressure: number;
   endPressure: number;
   series: CylinderView['series'];
+  /** The Diver's cylinder item this Cylinder names (ADR 0034); null for a rental or an unnamed cylinder. */
+  equipmentItemId: string | null;
   /** The Cylinder as it was loaded: a value nobody touched is saved as it was, not as the field rounded it. */
   loaded?: CylinderView;
 }
@@ -34,14 +36,14 @@ const sameNumber = (a: number, b: number) => a === b || (Number.isNaN(a) && Numb
 
 export const emptyDraft = (): CylinderDraft => ({
   key: nextKey(), volumeL: Number.NaN, workingPressure: Number.NaN, material: null, o2: Number.NaN, he: Number.NaN,
-  startPressure: Number.NaN, endPressure: Number.NaN, series: null,
+  startPressure: Number.NaN, endPressure: Number.NaN, series: null, equipmentItemId: null,
 });
 
 export const draftOfCylinder = (c: CylinderView, units: UnitSystem): CylinderDraft => ({
   key: nextKey(), volumeL: orNaN(c.volumeL), workingPressure: shownPressure(c.workingPressureBar, units), material: c.material,
   o2: orNaN(c.gas?.o2), he: orNaN(c.gas?.he),
   startPressure: shownPressure(c.startPressureBar, units), endPressure: shownPressure(c.endPressureBar, units),
-  series: c.series, loaded: c,
+  series: c.series, equipmentItemId: c.equipmentItemId ?? null, loaded: c,
 });
 
 /** The drafts as the Dive's edit takes them. */
@@ -58,6 +60,7 @@ export function cylindersOfDrafts(list: CylinderDraft[], units: UnitSystem): Cyl
       gas: Number.isNaN(d.o2) ? null : { o2: d.o2, he: Number.isNaN(d.he) ? 0 : d.he },
       startPressureBar: bar(d.startPressure, d.loaded?.startPressureBar),
       endPressureBar: bar(d.endPressure, d.loaded?.endPressureBar),
+      equipmentItemId: d.equipmentItemId,
       series: d.series,
     };
   });
@@ -65,7 +68,20 @@ export function cylindersOfDrafts(list: CylinderDraft[], units: UnitSystem): Cyl
 
 /** A Cylinder nobody typed anything into: the form doesn't save it. */
 export const isBlank = (d: CylinderDraft) =>
-  [d.volumeL, d.workingPressure, d.o2, d.he, d.startPressure, d.endPressure].every(Number.isNaN) && d.material === null && d.series === null;
+  [d.volumeL, d.workingPressure, d.o2, d.he, d.startPressure, d.endPressure].every(Number.isNaN) && d.material === null && d.series === null && d.equipmentItemId === null;
+
+/** The values a Cylinder last had when it named an item (ADR 0034 D6); a first use fills nothing. */
+export interface LastUse {
+  volumeL: number | null;
+  workingPressureBar: number | null;
+  material: CylinderMaterial | null;
+  gas: { o2: number; he: number } | null;
+}
+
+export const fromItemLastUse = (draft: CylinderDraft, last: LastUse, units: UnitSystem): CylinderDraft => ({
+  ...draft, volumeL: orNaN(last.volumeL), workingPressure: shownPressure(last.workingPressureBar, units), material: last.material,
+  o2: orNaN(last.gas?.o2), he: orNaN(last.gas?.he),
+});
 
 /** Picking a cylinder from the catalogue fills what the cylinder is; what was in it stays. */
 export const fromCatalogue = (draft: CylinderDraft, entry: CatalogueCylinder, units: UnitSystem): CylinderDraft => ({
