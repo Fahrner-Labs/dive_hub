@@ -296,6 +296,40 @@
         },
         {
           "dynamic": false,
+          "module": "./equipment/equipment-view.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/equipment/equipment-view.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./equipment/routes.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/equipment/routes.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./http/problems.js",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -905,6 +939,7 @@
         "apps/server/src/dives/candidates/candidate-routes.ts",
         "apps/server/src/dives/logbook-routes.ts",
         "apps/server/src/dives/routes.ts",
+        "apps/server/src/equipment/routes.ts",
         "apps/server/src/imports/routes.ts",
         "apps/server/src/lead/routes.ts",
         "apps/server/src/mcp/access-routes.ts",
@@ -964,6 +999,8 @@
         "apps/server/src/dives/continuation/continuation-service.ts",
         "apps/server/src/dives/merging-service.ts",
         "apps/server/src/dives/continuation/joined-recording.ts",
+        "apps/server/src/equipment/equipment-service.ts",
+        "apps/server/src/equipment/usage.ts",
         "apps/server/src/imports/import-service.ts",
         "apps/server/src/imports/placement.ts",
         "apps/server/src/lead/lead-service.ts",
@@ -997,7 +1034,8 @@
         "apps/server/src/users/setup-service.ts",
         "apps/server/src/users/user-admin-service.ts",
         "apps/server/src/mcp/tool.ts",
-        "apps/server/src/mcp/read-service.ts"
+        "apps/server/src/mcp/read-service.ts",
+        "apps/server/src/equipment/read.ts"
       ],
       "orphan": false,
       "valid": true
@@ -1250,6 +1288,8 @@
         "apps/server/src/sites/position-view.ts",
         "apps/server/src/dives/logbook-routes.ts",
         "apps/server/src/dives/routes.ts",
+        "apps/server/src/equipment/equipment-view.ts",
+        "apps/server/src/equipment/routes.ts",
         "apps/server/src/imports/import-view.ts",
         "apps/server/src/imports/routes.ts",
         "apps/server/src/lead/routes.ts",
@@ -1257,6 +1297,7 @@
         "apps/server/src/mcp/tool.ts",
         "apps/server/src/mcp/tools-assessment.ts",
         "apps/server/src/mcp/tools-divers.ts",
+        "apps/server/src/mcp/tools-equipment.ts",
         "apps/server/src/mcp/tools-logbook.ts",
         "apps/server/src/mcp/profile.ts",
         "apps/server/src/mcp/tools-planning-gas-plan.ts",
@@ -1469,6 +1510,7 @@
         "apps/server/src/dives/candidates/candidate-routes.ts",
         "apps/server/src/dives/logbook-routes.ts",
         "apps/server/src/dives/routes.ts",
+        "apps/server/src/equipment/routes.ts",
         "apps/server/src/imports/routes.ts",
         "apps/server/src/lead/routes.ts",
         "apps/server/src/live/routes.ts",
@@ -1683,6 +1725,8 @@
         "apps/server/src/dives/continuation/continuation-service.ts",
         "apps/server/src/dives/merging-service.ts",
         "apps/server/src/dives/continuation/joined-recording.ts",
+        "apps/server/src/equipment/equipment-service.ts",
+        "apps/server/src/equipment/usage.ts",
         "apps/server/src/imports/import-service.ts",
         "apps/server/src/imports/placement.ts",
         "apps/server/src/lead/lead-service.ts",
@@ -1722,6 +1766,7 @@
         "apps/server/src/mcp/endpoint.ts",
         "apps/server/src/mcp/server.ts",
         "apps/server/src/mcp/tool.ts",
+        "apps/server/src/equipment/read.ts",
         "apps/server/src/auth/cli-config.ts",
         "apps/server/src/db/migrate.ts",
         "apps/server/src/start.ts",
@@ -1891,6 +1936,7 @@
         "apps/server/src/dives/continuation/joined-recording.ts",
         "apps/server/src/dives/continuation/join-parts.ts",
         "apps/server/src/dives/dive-summary-view.ts",
+        "apps/server/src/equipment/equipment-service.ts",
         "apps/server/src/imports/import-service.ts",
         "apps/server/src/imports/formats/fit/fit-adapter.ts",
         "apps/server/src/imports/parsed-recording.ts",
@@ -1937,11 +1983,13 @@
         "apps/server/src/dives/routes.ts",
         "apps/server/src/dives/calc/water.ts",
         "apps/server/src/dives/cylinder-catalogue.ts",
+        "apps/server/src/equipment/equipment-view.ts",
         "apps/server/src/imports/import-view.ts",
         "apps/server/src/imports/routes.ts",
         "apps/server/src/lead/routes.ts",
         "apps/server/src/mcp/read-service.ts",
         "apps/server/src/mcp/tools-divers.ts",
+        "apps/server/src/equipment/read.ts",
         "apps/server/src/mcp/tools-logbook.ts",
         "apps/server/src/providers/conflicts/conflict-view.ts",
         "apps/server/src/providers/connection-view.ts",
@@ -1990,6 +2038,7 @@
         "apps/server/src/sites/site-ids.ts",
         "apps/server/src/sites/import/import-plan.ts",
         "apps/server/src/divers/diver-service.ts",
+        "apps/server/src/equipment/equipment-service.ts",
         "apps/server/src/imports/import-service.ts",
         "apps/server/src/imports/parsed-recording.ts",
         "apps/server/src/imports/formats/uddf/uddf.ts",
@@ -1998,10 +2047,15 @@
         "apps/server/src/providers/provider.ts",
         "apps/server/src/sites/provider-sites.ts",
         "apps/server/src/dives/dive-view.ts",
+        "apps/server/src/dives/routes.ts",
         "apps/server/src/dives/calc/water.ts",
+        "apps/server/src/equipment/equipment-view.ts",
+        "apps/server/src/equipment/routes.ts",
         "apps/server/src/lead/routes.ts",
         "apps/server/src/mcp/tools-assessment.ts",
         "apps/server/src/mcp/read-service.ts",
+        "apps/server/src/mcp/tools-equipment.ts",
+        "apps/server/src/equipment/read.ts",
         "apps/server/src/mcp/tools-logbook.ts",
         "apps/server/src/mcp/tools-sites.ts",
         "apps/server/src/providers/dive-provider-routes.ts",
@@ -2218,6 +2272,7 @@
         "apps/server/src/dives/candidates/candidate-routes.ts",
         "apps/server/src/dives/logbook-routes.ts",
         "apps/server/src/dives/routes.ts",
+        "apps/server/src/equipment/routes.ts",
         "apps/server/src/imports/routes.ts",
         "apps/server/src/lead/routes.ts",
         "apps/server/src/live/routes.ts",
@@ -2328,6 +2383,7 @@
         "apps/server/src/dives/deletion-view.ts",
         "apps/server/src/dives/logbook-routes.ts",
         "apps/server/src/dives/routes.ts",
+        "apps/server/src/equipment/routes.ts",
         "apps/server/src/imports/routes.ts",
         "apps/server/src/lead/routes.ts",
         "apps/server/src/live/routes.ts",
@@ -2388,6 +2444,8 @@
         "apps/server/src/dives/dive-view.ts",
         "apps/server/src/dives/logbook-routes.ts",
         "apps/server/src/dives/routes.ts",
+        "apps/server/src/equipment/equipment-view.ts",
+        "apps/server/src/equipment/routes.ts",
         "apps/server/src/imports/import-view.ts",
         "apps/server/src/imports/routes.ts",
         "apps/server/src/lead/routes.ts",
@@ -2670,6 +2728,7 @@
         "apps/server/src/dives/logbook-service.ts",
         "apps/server/src/dives/continuation/continuation-service.ts",
         "apps/server/src/dives/merging-service.ts",
+        "apps/server/src/equipment/equipment-service.ts",
         "apps/server/src/imports/placement.ts",
         "apps/server/src/lead/lead-service.ts",
         "apps/server/src/planning/planning-service.ts",
@@ -3303,6 +3362,7 @@
         "apps/server/src/dives/continuation/continuation-service.ts",
         "apps/server/src/dives/merging-service.ts",
         "apps/server/src/dives/continuation/joined-recording.ts",
+        "apps/server/src/equipment/equipment-service.ts",
         "apps/server/src/imports/import-service.ts",
         "apps/server/src/imports/placement.ts",
         "apps/server/src/live/revision-hints.ts",
@@ -5561,6 +5621,23 @@
             "import"
           ],
           "resolved": "apps/server/src/dives/merging-service.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./equipment/equipment-service.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/equipment/equipment-service.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -8535,6 +8612,241 @@
       "valid": true
     },
     {
+      "source": "apps/server/src/equipment/equipment-service.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../db/client.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/db/client.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../db/schema.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/db/schema.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../divers/management.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/divers/management.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../revisions/revisions.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/revisions/revisions.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../vocabulary.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/vocabulary.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./due.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/equipment/due.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./equipment-error.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/equipment/equipment-error.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./usage.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/equipment/usage.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "drizzle-orm",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "npm",
+            "import"
+          ],
+          "resolved": "apps/server/node_modules/drizzle-orm/index.cjs",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": true,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/server/src/compose.ts",
+        "apps/server/src/imports/placement.ts",
+        "apps/server/src/equipment/routes.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/server/src/equipment/due.ts",
+      "dependencies": [],
+      "dependents": [
+        "apps/server/src/equipment/equipment-service.ts",
+        "apps/server/src/equipment/equipment-view.ts",
+        "apps/server/src/mcp/tools-equipment.ts",
+        "apps/server/src/equipment/read.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/server/src/equipment/equipment-error.ts",
+      "dependencies": [],
+      "dependents": [
+        "apps/server/src/equipment/equipment-service.ts",
+        "apps/server/src/equipment/routes.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/server/src/equipment/usage.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../db/client.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/db/client.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "drizzle-orm",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "npm",
+            "import"
+          ],
+          "resolved": "apps/server/node_modules/drizzle-orm/index.cjs",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": true,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/server/src/equipment/equipment-service.ts",
+        "apps/server/src/equipment/read.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "apps/server/src/http/attempt-limit.ts",
       "dependencies": [
         {
@@ -9661,6 +9973,23 @@
             "import"
           ],
           "resolved": "apps/server/src/dives/matching.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../equipment/equipment-service.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/equipment/equipment-service.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -18252,6 +18581,23 @@
         },
         {
           "dynamic": false,
+          "module": "../vocabulary.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/vocabulary.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./assessment-refresh.js",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -18743,6 +19089,283 @@
       ],
       "dependents": [
         "apps/server/src/dives/routes.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/server/src/equipment/equipment-view.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../db/schema.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/db/schema.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../http/schemas.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/http/schemas.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../vocabulary.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/vocabulary.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./due.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/equipment/due.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "typebox",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "unknown"
+          ],
+          "resolved": "typebox",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": true,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/server/src/app.ts",
+        "apps/server/src/equipment/routes.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/server/src/equipment/routes.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../auth/auth.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/auth/auth.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../auth/fastify.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/auth/fastify.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../http/problems.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/http/problems.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../http/schemas.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/http/schemas.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../vocabulary.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/vocabulary.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./equipment-error.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/equipment/equipment-error.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./equipment-service.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/equipment/equipment-service.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./equipment-view.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/equipment/equipment-view.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@fastify/type-provider-typebox",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "npm",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/node_modules/@fastify/type-provider-typebox/dist/cjs/index.js",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": true,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "typebox",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "unknown"
+          ],
+          "resolved": "typebox",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": true,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/server/src/app.ts"
       ],
       "orphan": false,
       "valid": true
@@ -19749,6 +20372,23 @@
         },
         {
           "dynamic": false,
+          "module": "./tools-equipment.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/mcp/tools-equipment.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./tools-logbook.js",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -19966,6 +20606,7 @@
         "apps/server/src/mcp/tools-assessment.ts",
         "apps/server/src/mcp/read-service.ts",
         "apps/server/src/mcp/tools-divers.ts",
+        "apps/server/src/mcp/tools-equipment.ts",
         "apps/server/src/mcp/tools-logbook.ts",
         "apps/server/src/mcp/tools-planning-gas-plan.ts",
         "apps/server/src/mcp/tools-planning.ts",
@@ -20321,6 +20962,214 @@
       ],
       "dependents": [
         "apps/server/src/mcp/server.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/server/src/mcp/tools-equipment.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../equipment/due.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/equipment/due.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../equipment/read.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/equipment/read.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../vocabulary.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/vocabulary.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./tool.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/mcp/tool.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "typebox",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "unknown"
+          ],
+          "resolved": "typebox",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": true,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/server/src/mcp/server.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/server/src/equipment/read.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../db/client.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/db/client.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../db/schema.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/db/schema.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../vocabulary.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/vocabulary.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./due.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/equipment/due.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./usage.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/equipment/usage.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "drizzle-orm",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "npm",
+            "import"
+          ],
+          "resolved": "apps/server/node_modules/drizzle-orm/index.cjs",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": true,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/server/src/mcp/tools-equipment.ts"
       ],
       "orphan": false,
       "valid": true
@@ -27106,6 +27955,7 @@
         "apps/web/src/DepthProfile.tsx",
         "apps/web/src/DiveEditForm.tsx",
         "apps/web/src/LeadHint.tsx",
+        "apps/web/src/DiveGear.tsx",
         "apps/web/src/DiveHistory.tsx",
         "apps/web/src/Participants.tsx",
         "apps/web/src/ProviderPanel.tsx",
@@ -27117,6 +27967,9 @@
         "apps/web/src/Certifications.tsx",
         "apps/web/src/DiverCodes.tsx",
         "apps/web/src/DiversPage.tsx",
+        "apps/web/src/EquipmentDue.tsx",
+        "apps/web/src/lib/equipment.ts",
+        "apps/web/src/EquipmentPage.tsx",
         "apps/web/src/ImportPanel.tsx",
         "apps/web/src/Decisions.tsx",
         "apps/web/src/GoneDives.tsx",
@@ -27197,6 +28050,7 @@
         "apps/web/src/DiveEditForm.tsx",
         "apps/web/src/lib/leave-guard.ts",
         "apps/web/src/Weighting.tsx",
+        "apps/web/src/DiveGear.tsx",
         "apps/web/src/DiveHistory.tsx",
         "apps/web/src/Participants.tsx",
         "apps/web/src/ProviderPanel.tsx",
@@ -27209,6 +28063,8 @@
         "apps/web/src/Certifications.tsx",
         "apps/web/src/DiverCodes.tsx",
         "apps/web/src/DiversPage.tsx",
+        "apps/web/src/EquipmentDue.tsx",
+        "apps/web/src/EquipmentPage.tsx",
         "apps/web/src/ImportPanel.tsx",
         "apps/web/src/Decisions.tsx",
         "apps/web/src/ReviewRows.tsx",
@@ -27280,6 +28136,7 @@
         "apps/web/src/LeadHint.tsx",
         "apps/web/src/lib/dive-values.ts",
         "apps/web/src/Weighting.tsx",
+        "apps/web/src/DiveGear.tsx",
         "apps/web/src/DiveHistory.tsx",
         "apps/web/src/Participants.tsx",
         "apps/web/src/ProviderPanel.tsx",
@@ -27293,6 +28150,8 @@
         "apps/web/src/DiverCodes.tsx",
         "apps/web/src/lib/divers.ts",
         "apps/web/src/DiversPage.tsx",
+        "apps/web/src/EquipmentDue.tsx",
+        "apps/web/src/EquipmentPage.tsx",
         "apps/web/src/ImportPanel.tsx",
         "apps/web/src/ReviewPage.tsx",
         "apps/web/src/Decisions.tsx",
@@ -27490,6 +28349,7 @@
         "apps/web/src/DiveEditForm.tsx",
         "apps/web/src/LeadHint.tsx",
         "apps/web/src/lib/dive-values.ts",
+        "apps/web/src/DiveGear.tsx",
         "apps/web/src/DiveHistory.tsx",
         "apps/web/src/Participants.tsx",
         "apps/web/src/ProviderPanel.tsx",
@@ -27503,6 +28363,9 @@
         "apps/web/src/DiverCodes.tsx",
         "apps/web/src/lib/divers.ts",
         "apps/web/src/DiversPage.tsx",
+        "apps/web/src/EquipmentDue.tsx",
+        "apps/web/src/lib/equipment.ts",
+        "apps/web/src/EquipmentPage.tsx",
         "apps/web/src/ImportPanel.tsx",
         "apps/web/src/Decisions.tsx",
         "apps/web/src/GoneDives.tsx",
@@ -27883,6 +28746,7 @@
         "apps/web/src/MergeDive.tsx",
         "apps/web/src/Assessment.tsx",
         "apps/web/src/DiveEditForm.tsx",
+        "apps/web/src/DiveGear.tsx",
         "apps/web/src/Participants.tsx",
         "apps/web/src/ProviderPanel.tsx",
         "apps/web/src/LinkOrAdd.tsx",
@@ -27891,6 +28755,7 @@
         "apps/web/src/Certifications.tsx",
         "apps/web/src/DiverCodes.tsx",
         "apps/web/src/DiversPage.tsx",
+        "apps/web/src/EquipmentPage.tsx",
         "apps/web/src/ImportPanel.tsx",
         "apps/web/src/GoneDives.tsx",
         "apps/web/src/LogbookChecks.tsx",
@@ -28021,6 +28886,7 @@
         "apps/web/src/LeadHint.tsx",
         "apps/web/src/lib/dive-values.ts",
         "apps/web/src/Weighting.tsx",
+        "apps/web/src/DiveGear.tsx",
         "apps/web/src/DiveHistory.tsx",
         "apps/web/src/Participants.tsx",
         "apps/web/src/ProviderPanel.tsx",
@@ -28033,6 +28899,7 @@
         "apps/web/src/Certifications.tsx",
         "apps/web/src/DiverCodes.tsx",
         "apps/web/src/DiversPage.tsx",
+        "apps/web/src/EquipmentPage.tsx",
         "apps/web/src/ImportPanel.tsx",
         "apps/web/src/Decisions.tsx",
         "apps/web/src/GoneDives.tsx",
@@ -28122,6 +28989,7 @@
         "apps/web/src/ProviderPanel.tsx",
         "apps/web/src/DiverPage.tsx",
         "apps/web/src/DiversPage.tsx",
+        "apps/web/src/EquipmentDue.tsx",
         "apps/web/src/Decisions.tsx",
         "apps/web/src/LogbookChecks.tsx",
         "apps/web/src/SitesPage.tsx"
@@ -28402,6 +29270,7 @@
         "apps/web/src/DivePage.tsx",
         "apps/web/src/DiverPage.tsx",
         "apps/web/src/DiversPage.tsx",
+        "apps/web/src/EquipmentPage.tsx",
         "apps/web/src/ReviewPage.tsx",
         "apps/web/src/SettingsPage.tsx",
         "apps/web/src/SiteImportPage.tsx",
@@ -28712,6 +29581,7 @@
         "apps/web/src/DiveEditForm.tsx",
         "apps/web/src/LeadHint.tsx",
         "apps/web/src/Weighting.tsx",
+        "apps/web/src/DiveGear.tsx",
         "apps/web/src/DiveHistory.tsx",
         "apps/web/src/Participants.tsx",
         "apps/web/src/ProviderPanel.tsx",
@@ -28724,6 +29594,8 @@
         "apps/web/src/Certifications.tsx",
         "apps/web/src/DiverCodes.tsx",
         "apps/web/src/DiversPage.tsx",
+        "apps/web/src/EquipmentDue.tsx",
+        "apps/web/src/EquipmentPage.tsx",
         "apps/web/src/ImportPanel.tsx",
         "apps/web/src/ReviewPage.tsx",
         "apps/web/src/Decisions.tsx",
@@ -30495,6 +31367,40 @@
             "dynamic-import"
           ],
           "resolved": "apps/web/src/DiversPage.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./EquipmentDue.tsx",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/web/src/EquipmentDue.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": true,
+          "module": "./EquipmentPage.tsx",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "dynamic-import"
+          ],
+          "resolved": "apps/web/src/EquipmentPage.tsx",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -32775,6 +33681,7 @@
       "dependents": [
         "apps/web/src/PushRun.tsx",
         "apps/web/src/DivePage.tsx",
+        "apps/web/src/EquipmentPage.tsx",
         "apps/web/src/i18n/i18next.d.ts",
         "apps/web/src/i18n/index.ts"
       ],
@@ -33043,6 +33950,23 @@
             "import"
           ],
           "resolved": "apps/web/src/DiveEditForm.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./DiveGear.tsx",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/web/src/DiveGear.tsx",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -35394,6 +36318,135 @@
       "valid": true
     },
     {
+      "source": "apps/web/src/DiveGear.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./api.ts",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/web/src/api.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./lib/announce.ts",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/web/src/lib/announce.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./lib/display.ts",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/web/src/lib/display.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./ui/index.ts",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/web/src/ui/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@tanstack/react-query",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "npm",
+            "import"
+          ],
+          "resolved": "apps/web/node_modules/@tanstack/react-query/build/legacy/index.cjs",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": true,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "react",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "npm",
+            "import"
+          ],
+          "resolved": "apps/web/node_modules/react/index.js",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": true,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "react-i18next",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "npm",
+            "import"
+          ],
+          "resolved": "apps/web/node_modules/react-i18next/dist/commonjs/index.js",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": true,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/web/src/DivePage.tsx"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "apps/web/src/DiveHistory.tsx",
       "dependencies": [
         {
@@ -37567,6 +38620,344 @@
             "import"
           ],
           "resolved": "apps/web/node_modules/@tanstack/react-query/build/legacy/index.cjs",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": true,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "react",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "npm",
+            "import"
+          ],
+          "resolved": "apps/web/node_modules/react/index.js",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": true,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "react-i18next",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "npm",
+            "import"
+          ],
+          "resolved": "apps/web/node_modules/react-i18next/dist/commonjs/index.js",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": true,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/web/src/App.tsx"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/web/src/EquipmentDue.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./api.ts",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/web/src/api.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./lib/equipment.ts",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/web/src/lib/equipment.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./lib/focus.ts",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/web/src/lib/focus.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./ui/index.ts",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/web/src/ui/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@tanstack/react-query",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "npm",
+            "import"
+          ],
+          "resolved": "apps/web/node_modules/@tanstack/react-query/build/legacy/index.cjs",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": true,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "react",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "npm",
+            "import"
+          ],
+          "resolved": "apps/web/node_modules/react/index.js",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": true,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "react-i18next",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "npm",
+            "import"
+          ],
+          "resolved": "apps/web/node_modules/react-i18next/dist/commonjs/index.js",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": true,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/web/src/App.tsx"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/web/src/lib/equipment.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../api.ts",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/web/src/api.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@tanstack/react-query",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "npm",
+            "import"
+          ],
+          "resolved": "apps/web/node_modules/@tanstack/react-query/build/legacy/index.cjs",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": true,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/web/src/EquipmentDue.tsx",
+        "apps/web/src/ui/Shell.tsx"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/web/src/EquipmentPage.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./api.ts",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/web/src/api.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./lib/announce.ts",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/web/src/lib/announce.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./lib/display.ts",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/web/src/lib/display.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./lib/page.ts",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/web/src/lib/page.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./ui/index.ts",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/web/src/ui/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@tanstack/react-query",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "npm",
+            "import"
+          ],
+          "resolved": "apps/web/node_modules/@tanstack/react-query/build/legacy/index.cjs",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": true,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "i18next",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "npm",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/web/node_modules/i18next/dist/cjs/i18next.js",
           "coreModule": false,
           "followable": false,
           "couldNotResolve": false,
@@ -41690,6 +43081,23 @@
         },
         {
           "dynamic": false,
+          "module": "../lib/equipment.ts",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/web/src/lib/equipment.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "../lib/narrow.ts",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -42320,8 +43728,8 @@
     "baselineSize": 0,
     "baselineStale": 0,
     "advisedExitCode": 0,
-    "totalCruised": 404,
-    "totalDependenciesCruised": 2108,
+    "totalCruised": 416,
+    "totalDependenciesCruised": 2180,
     "optionsUsed": {
       "baseDir": "/home/runner/work/dive_hub/dive_hub",
       "combinedDependencies": false,
@@ -42383,7 +43791,7 @@
             "path": "^apps/server/src/revisions/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|centres|certifications|divers|dives|imports|lead|mcp|planning|providers|sites|live|users)/"
+            "path": "^apps/server/src/(assessment|centres|certifications|divers|dives|equipment|imports|lead|mcp|planning|providers|sites|live|users)/"
           },
           "scope": "module"
         },
@@ -42395,7 +43803,7 @@
             "path": "^apps/server/src/assessment/"
           },
           "to": {
-            "path": "^apps/server/src/(revisions|centres|certifications|dives|lead|mcp|planning|providers|sites|live|users)/"
+            "path": "^apps/server/src/(revisions|centres|certifications|dives|equipment|lead|mcp|planning|providers|sites|live|users)/"
           },
           "scope": "module"
         },
@@ -42407,7 +43815,7 @@
             "path": "^apps/server/src/centres/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|certifications|dives|imports|lead|mcp|planning|providers|live|users)/"
+            "path": "^apps/server/src/(assessment|certifications|dives|equipment|imports|lead|mcp|planning|providers|live|users)/"
           },
           "scope": "module"
         },
@@ -42419,7 +43827,7 @@
             "path": "^apps/server/src/certifications/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|centres|imports|lead|mcp|planning|providers|sites|users)/"
+            "path": "^apps/server/src/(assessment|centres|equipment|imports|lead|mcp|planning|providers|sites|users)/"
           },
           "scope": "module"
         },
@@ -42431,7 +43839,7 @@
             "path": "^apps/server/src/divers/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|centres|certifications|dives|imports|lead|mcp|planning|providers|sites|live|users)/"
+            "path": "^apps/server/src/(assessment|centres|certifications|dives|equipment|imports|lead|mcp|planning|providers|sites|live|users)/"
           },
           "scope": "module"
         },
@@ -42443,14 +43851,26 @@
             "path": "^apps/server/src/dives/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|certifications|imports|lead|mcp|planning|providers|live|users)/"
+            "path": "^apps/server/src/(assessment|certifications|equipment|imports|lead|mcp|planning|providers|live|users)/"
+          },
+          "scope": "module"
+        },
+        {
+          "name": "module-imports-equipment",
+          "severity": "error",
+          "comment": "equipment/ may import only these domain modules: divers, revisions (MODULE_IMPORTS in .dependency-cruiser.cjs, ADR 0053).",
+          "from": {
+            "path": "^apps/server/src/equipment/"
+          },
+          "to": {
+            "path": "^apps/server/src/(assessment|centres|certifications|dives|imports|lead|mcp|planning|providers|sites|live|users)/"
           },
           "scope": "module"
         },
         {
           "name": "module-imports-imports",
           "severity": "error",
-          "comment": "imports/ may import only these domain modules: divers, dives, live, revisions, sites (MODULE_IMPORTS in .dependency-cruiser.cjs, ADR 0053).",
+          "comment": "imports/ may import only these domain modules: divers, dives, equipment, live, revisions, sites (MODULE_IMPORTS in .dependency-cruiser.cjs, ADR 0053).",
           "from": {
             "path": "^apps/server/src/imports/"
           },
@@ -42467,14 +43887,14 @@
             "path": "^apps/server/src/lead/"
           },
           "to": {
-            "path": "^apps/server/src/(revisions|assessment|centres|certifications|imports|mcp|planning|providers|sites|live|users)/"
+            "path": "^apps/server/src/(revisions|assessment|centres|certifications|equipment|imports|mcp|planning|providers|sites|live|users)/"
           },
           "scope": "module"
         },
         {
           "name": "module-imports-mcp",
           "severity": "error",
-          "comment": "mcp/ may import only these domain modules: assessment, divers, dives, planning, sites (MODULE_IMPORTS in .dependency-cruiser.cjs, ADR 0053).",
+          "comment": "mcp/ may import only these domain modules: assessment, divers, dives, equipment, planning, sites (MODULE_IMPORTS in .dependency-cruiser.cjs, ADR 0053).",
           "from": {
             "path": "^apps/server/src/mcp/"
           },
@@ -42491,7 +43911,7 @@
             "path": "^apps/server/src/planning/"
           },
           "to": {
-            "path": "^apps/server/src/(revisions|assessment|centres|certifications|imports|lead|mcp|providers|sites|live|users)/"
+            "path": "^apps/server/src/(revisions|assessment|centres|certifications|equipment|imports|lead|mcp|providers|sites|live|users)/"
           },
           "scope": "module"
         },
@@ -42503,7 +43923,7 @@
             "path": "^apps/server/src/providers/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|centres|lead|mcp|planning|users)/"
+            "path": "^apps/server/src/(assessment|centres|equipment|lead|mcp|planning|users)/"
           },
           "scope": "module"
         },
@@ -42515,7 +43935,7 @@
             "path": "^apps/server/src/sites/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|centres|certifications|divers|dives|imports|lead|mcp|planning|providers|users)/"
+            "path": "^apps/server/src/(assessment|centres|certifications|divers|dives|equipment|imports|lead|mcp|planning|providers|users)/"
           },
           "scope": "module"
         },
@@ -42527,7 +43947,7 @@
             "path": "^apps/server/src/live/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|centres|certifications|divers|dives|imports|lead|mcp|planning|providers|sites|users)/"
+            "path": "^apps/server/src/(assessment|centres|certifications|divers|dives|equipment|imports|lead|mcp|planning|providers|sites|users)/"
           },
           "scope": "module"
         },
@@ -42554,7 +43974,7 @@
             "path": "^apps/server/src/users/"
           },
           "to": {
-            "path": "^apps/server/src/(revisions|assessment|centres|certifications|dives|imports|lead|mcp|planning|providers|sites|live)/"
+            "path": "^apps/server/src/(revisions|assessment|centres|certifications|dives|equipment|imports|lead|mcp|planning|providers|sites|live)/"
           },
           "scope": "module"
         },
