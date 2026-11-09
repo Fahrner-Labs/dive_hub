@@ -4,8 +4,10 @@
 # On first start the log shows a setup token for creating the first admin: docker compose logs app
 services:
   app:
-    image: dive-hub:dev   # replace with a pinned release tag once images are published
-    build: .
+    # Pin an exact vX.Y.Z tag in production (docs/self-hosting.md#upgrades); `latest` moves.
+    image: ghcr.io/fahrner-labs/dive_hub:latest
+    # Hacking on Dive Hub itself? Comment out the image line above and build locally instead.
+    # build: .
     restart: unless-stopped
     environment:
       DATABASE_URL: postgres://divehub:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@db:5432/divehub

@@ -133,7 +133,7 @@ test('a page runs the typecheck, the web tests related to it and its areas with 
 });
 
 test('documentation runs nothing; shared code of an app runs its tests and every browser test; an unknown path everything', () => {
-  assert.deepEqual(planFor(['docs/index.md', 'README.md']), { typecheck: false, lint: 'none', scripts: false, server: 'none', web: 'none', e2e: 'none', areas: new Set(), specs: new Set(), notes: [] });
+  assert.deepEqual(planFor(['docs/index.md', 'README.md', 'SECURITY.md']), { typecheck: false, lint: 'none', scripts: false, server: 'none', web: 'none', e2e: 'none', areas: new Set(), specs: new Set(), notes: [] });
 
   const shared = planFor(['apps/web/src/api.ts']);
   assert.deepEqual([shared.server, shared.web, shared.e2e], ['none', 'all', 'all']);
