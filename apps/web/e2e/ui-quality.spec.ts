@@ -1259,7 +1259,7 @@ for (const v of variants) {
     try {
       await page.goto('/#/equipment');
       const card = page.locator(`#equipment-item-${item.id}`);
-      await expect(card.getByText(v.english ? 'Due soon' : 'Bald fällig')).toBeVisible();
+      await expect(card.getByText(v.english ? 'Due soon' : 'Bald fällig', { exact: true })).toBeVisible();
       await goodPage(page, title('Equipment'));
     } finally {
       await removeItem(request, item.id);
@@ -1274,7 +1274,7 @@ for (const v of variants) {
     try {
       await page.goto('/#/equipment');
       const card = page.locator(`#equipment-item-${item.id}`);
-      await expect(card.getByText(v.english ? 'Overdue' : 'Überfällig')).toBeVisible();
+      await expect(card.getByText(v.english ? 'Overdue' : 'Überfällig', { exact: true })).toBeVisible();
       await goodPage(page, title('Equipment'));
     } finally {
       await removeItem(request, item.id);
@@ -1289,7 +1289,7 @@ for (const v of variants) {
     try {
       await page.goto('/#/equipment');
       const card = page.locator(`#equipment-item-${item.id}`);
-      await expect(card.getByText(v.english ? 'Retired' : 'Ausgemustert')).toBeVisible();
+      await expect(card.getByText(v.english ? 'Retired' : 'Ausgemustert', { exact: true })).toBeVisible();
       await goodPage(page, title('Equipment'));
     } finally {
       await removeItem(request, item.id);

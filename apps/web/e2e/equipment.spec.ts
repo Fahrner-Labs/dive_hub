@@ -134,7 +134,9 @@ test('an item is put on and taken off a Dive', { tag: ['@equipment', '@dives'] }
   // Nothing is filled automatically: the item is put on this Dive (ADR 0031).
   await page.getByRole('button', { name: 'Put on an item' }).click();
   const dialog = page.getByRole('dialog');
-  await dialog.getByRole('button', { name: 'Item', exact: true }).click();
+  // A React Aria Select's button is named "<value> <label>": match the Item label at the end, not the bare word (the
+  // dialog's submit button is "Put on an item").
+  await dialog.getByRole('button', { name: / Item$/ }).click();
   await page.getByRole('option', { name: `${regulator.name} · Regulator` }).click();
   await dialog.getByRole('button', { name: 'Put on an item' }).click();
   await expect(dialog).toHaveCount(0);
@@ -170,7 +172,8 @@ test("a Dive's Cylinder names a cylinder item", { tag: ['@equipment', '@dives'] 
     await cylinder.getByRole('textbox', { name: /Working pressure/ }).fill('232');
     await cylinder.getByRole('button', { name: 'Material' }).click();
     await page.getByRole('option', { name: 'Steel' }).click();
-    await page.getByRole('button', { name: 'Save', exact: true }).click();
+    // The Cylinder fields live in the Dive's edit form, whose save is "Save dive" (not "Save").
+    await page.getByRole('button', { name: 'Save dive' }).click();
     await expect(page.locator('.cylinder-list li').filter({ hasText: '12 L, Steel, 232 bar' })).toBeVisible();
     const saved = await (await request.get(`/api/dives/${diveId}`)).json() as { cylinders: { equipmentItemId: string }[] };
     expect(saved.cylinders).toMatchObject([{ equipmentItemId: item.id }]);

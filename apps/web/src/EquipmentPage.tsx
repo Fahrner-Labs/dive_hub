@@ -78,14 +78,16 @@ function DiverEquipment({ diver, openItemId, deviceSerials, devicesPending }: {
         const group = list.filter((item) => item.category === category);
         if (group.length === 0) return null;
         return (
-          <section key={category} className="equipment-category" aria-labelledby={`equipment-${diver.id}-${category}`}>
-            <h3 id={`equipment-${diver.id}-${category}`}>{categoryName(t)(category)}</h3>
+          // A category heading, not a region: the same category name recurs for every Diver, and two regions with one
+          // name are a landmark-unique violation (axe). The heading gives the group its place in the page outline.
+          <div key={category} className="equipment-category">
+            <h3>{categoryName(t)(category)}</h3>
             <ul className="equipment-list">
               {group.map((item) => (
                 <ItemCard key={item.id} item={item} diverName={diver.name} deviceSerials={deviceSerials} open={item.id === openItemId} />
               ))}
             </ul>
-          </section>
+          </div>
         );
       })}
       {creating && <ItemForm diverId={diver.id} onClose={() => setCreating(false)} />}
