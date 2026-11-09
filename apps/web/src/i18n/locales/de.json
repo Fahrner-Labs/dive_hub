@@ -36,7 +36,7 @@
     "centres": "Tauchbasen",
     "tools": "Werkzeuge",
     "settings": "Einstellungen",
-    "short": { "sites": "Plätze", "centres": "Basen", "tools": "Werkzeug", "equipment": "Ausrüst." }
+    "short": { "sites": "Plätze", "centres": "Basen", "tools": "Werkzeug", "equipment": "Ausr." }
   },
   "form": {
     "requiredLegend": "* erforderlich",
