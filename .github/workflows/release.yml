@@ -6,6 +6,10 @@ name: release
 on:
   push:
     tags: ['v*']
+  # A release published in the GitHub UI creates the tag without a push event; its tag is the same input and still
+  # has to pass verify. Releases created by this workflow use GITHUB_TOKEN and do not trigger it again.
+  release:
+    types: [published]
   # Re-runs and repairs: give the existing release tag, e.g. v0.1.0. The job checks out that tag, not the branch.
   workflow_dispatch:
     inputs:
@@ -25,7 +29,7 @@ concurrency:
 
 env:
   IMAGE: ghcr.io/fahrner-labs/dive_hub
-  RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.version || github.ref_name }}
+  RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.version || github.event_name == 'release' && github.event.release.tag_name || github.ref_name }}
 
 jobs:
   verify:
@@ -223,7 +227,7 @@ jobs:
           set -euo pipefail
           tag="${{ needs.verify.outputs.tag }}"
           if gh release view "$tag" >/dev/null 2>&1; then
-            gh release edit "$tag" --title "$tag" --latest
+            gh release edit "$tag" --title "$tag" --latest --prerelease=false
           else
             gh release create "$tag" --verify-tag --generate-notes --title "$tag" --latest
           fi
