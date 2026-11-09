@@ -9,6 +9,7 @@ import { AssessmentPanel, AssessmentProvider } from './Assessment.tsx';
 import { DeleteDiveDialog } from './DeleteDive.tsx';
 import { DepthProfile } from './DepthProfile.tsx';
 import { CylinderList } from './Cylinders.tsx';
+import { DiveGear } from './DiveGear.tsx';
 import { useWeightingText } from './Weighting.tsx';
 import { DiveEditForm } from './DiveEditForm.tsx';
 import { DiveHistory } from './DiveHistory.tsx';
@@ -345,6 +346,7 @@ function DiveDetails({ dive: d, onAddNotes, onAddCylinders, onAddWeighting }: {
       </dl>
       {picking && <SitePicker dive={d} onClose={() => setPicking(false)} />}
       <CylinderList dive={d} />
+      <DiveGear dive={d} />
       {d.notes && (
         <>
           <h2 className="subheading">{t('dive.notes')}</h2>

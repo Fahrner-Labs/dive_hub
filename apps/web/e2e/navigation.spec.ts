@@ -117,7 +117,7 @@ test.describe('on the narrowest phone, in German', () => {
     await expect(diveRows(page).first()).toBeVisible();
     const bar = page.getByRole('navigation', { name: 'Hauptmenü' });
     const links = await bar.getByRole('link').all();
-    expect(links).toHaveLength(5);
+    expect(links).toHaveLength(6);
     for (const link of links) {
       const box = (await link.boundingBox())!;
       expect(box.x).toBeGreaterThanOrEqual(0);

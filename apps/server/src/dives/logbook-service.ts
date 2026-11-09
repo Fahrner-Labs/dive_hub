@@ -6,7 +6,7 @@
 import { and, count, desc, eq, inArray, isNotNull, isNull, lt, or, sql } from 'drizzle-orm';
 import type { Db } from '../db/client.js';
 import {
-  continuationAppend, device, dive, diveAssessment, diveSite, diverManagement, importJob, recording, revision, sampleSeries, user,
+  continuationAppend, device, dive, diveAssessment, diveSite, diverManagement, equipmentItem, equipmentUse, importJob, recording, revision, sampleSeries, user,
 } from '../db/schema.js';
 import { cylindersOf } from './cylinders.js';
 import { isUnit } from './recording-units.js';
@@ -203,6 +203,14 @@ export function createLogbookService(db: Db) {
     return { cylinders: await cylindersOf(db, diveId), lead: await leadOf(db, diveId) };
   }
 
+  /** The items put on a Dive explicitly, for "same as last dive"; every-Dive items need no action (ADR 0034). */
+  async function gearOf(diveId: string) {
+    return db.select({ id: equipmentItem.id, name: equipmentItem.name, category: equipmentItem.category })
+      .from(equipmentUse).innerJoin(equipmentItem, eq(equipmentItem.id, equipmentUse.itemId))
+      .where(and(eq(equipmentUse.diveId, diveId), eq(equipmentUse.use, 'put_on'), isNull(equipmentItem.deletedAt)))
+      .orderBy(equipmentItem.name);
+  }
+
   /** A Dive's Participants with their names (ADR 0028). */
   const participantsOfDive = (diveId: string) => participantsOf(db, diveId);
 
@@ -260,7 +268,7 @@ export function createLogbookService(db: Db) {
       .orderBy(desc(revision.at), desc(revision.id)).limit(200);
   }
 
-  return { managedDivers, listDives, ownDiveId, neighbours, ownRecordingId, samplesOf, findManagedDive, recordingsAndSite, previousDive, partsOf, participantsOfDive, versionOf, deletedDives, revisionsOfDive };
+  return { managedDivers, listDives, ownDiveId, neighbours, ownRecordingId, samplesOf, findManagedDive, recordingsAndSite, previousDive, partsOf, gearOf, participantsOfDive, versionOf, deletedDives, revisionsOfDive };
 }
 
 export type LogbookService = ReturnType<typeof createLogbookService>;

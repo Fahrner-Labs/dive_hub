@@ -129,9 +129,12 @@ async function deleteUserData(tx: Tx, userId: string) {
   await tx.execute(sql`create temp table doomed_recording on commit drop as
     select id from recording where import_id in (select id from import where user_id = ${userId})
        or dive_id in (select id from doomed_dive)`);
+  await tx.execute(sql`create temp table doomed_item on commit drop as
+    select id from equipment_item where diver_id in (select id from doomed_diver)`);
 
   await tx.execute(sql`delete from revision where entity_id in (select id from doomed_recording)
-    or entity_id in (select id from doomed_dive) or entity_id in (select id from doomed_diver)`);
+    or entity_id in (select id from doomed_dive) or entity_id in (select id from doomed_diver)
+    or entity_id in (select id from doomed_item)`);
   await tx.execute(sql`delete from duplicate_candidate where recording_id in (select id from doomed_recording)`);
   // A surviving Dive (of a Diver someone else also manages) loses its Primary recording if it was one of these.
   // Their Divers' apnea sessions may stop counting, so those Divers' Dives are numbered again (ADR 0048).
@@ -153,6 +156,15 @@ async function deleteUserData(tx: Tx, userId: string) {
   await tx.execute(sql`delete from dive where id in (select id from doomed_dive)`);
   await tx.execute(sql`update recording set device_id = null where device_id in (select id from device where diver_id in (select id from doomed_diver))`);
   await tx.execute(sql`delete from device where diver_id in (select id from doomed_diver)`);
+  // Equipment items of a doomed Diver go with it (ADR 0034): their uses, schedules and records first, and a surviving
+  // Cylinder that named one stays plain, like a rental.
+  await tx.execute(sql`delete from equipment_use where item_id in (select id from doomed_item)`);
+  await tx.execute(sql`update cylinder set equipment_item_id = null where equipment_item_id in (select id from doomed_item)`);
+  await tx.execute(sql`delete from service_record_schedule where record_id in (select id from service_record where item_id in (select id from doomed_item))
+    or schedule_id in (select id from service_schedule where item_id in (select id from doomed_item))`);
+  await tx.execute(sql`delete from service_record where item_id in (select id from doomed_item)`);
+  await tx.execute(sql`delete from service_schedule where item_id in (select id from doomed_item)`);
+  await tx.execute(sql`delete from equipment_item where id in (select id from doomed_item)`);
   await tx.execute(sql`delete from diver_management where user_id = ${userId}`);
   const pictures = (await rows<{ image_key: string }>(sql`select distinct image_key from certification
     where diver_id in (select id from doomed_diver) and image_key is not null`)).map((r) => r.image_key);

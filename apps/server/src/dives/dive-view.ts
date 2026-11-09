@@ -86,6 +86,7 @@ export const CylinderValues = {
   }, { additionalProperties: false, description: 'Oxygen and helium in percent' })),
   startPressureBar: Nullable(Type.Number({ minimum: 0, maximum: 500 })),
   endPressureBar: Nullable(Type.Number({ minimum: 0, maximum: 500, description: 'Not above the start pressure' })),
+  equipmentItemId: Type.Optional(Nullable(Type.String({ format: 'uuid', description: 'The Diver\'s cylinder item this Cylinder is (ADR 0034); null for a rental or an unnamed cylinder' }))),
 };
 export const CylinderView = Type.Object({
   ...CylinderValues,

@@ -8,6 +8,7 @@ import {
   device, dive, diverManagement, duplicateCandidate, original, recording, recordingEvent, sampleSeries, type ImportOutcome,
 } from '../db/schema.js';
 import { rebuildJoined } from '../dives/continuation/joined-recording.js';
+import { ensureItemForDevice } from '../equipment/equipment-service.js';
 import { attachRecording, createDiveFromRecording, refreshFromPrimary } from '../dives/dive-service.js';
 import { managedDiverIds } from '../divers/management.js';
 import { reviseDive, untieLostSeries } from '../dives/cylinders.js';
@@ -240,9 +241,11 @@ async function resolveDevice(tx: Tx, diverId: string, rec: ParsedRecording): Pro
     }
     return known.id;
   }
+  const inUseFrom = new Date(rec.startsAt.getTime() + (rec.utcOffsetSeconds ?? 0) * 1000).toISOString().slice(0, 10);
+  const equipmentItemId = await ensureItemForDevice(tx, { diverId, manufacturer: d.manufacturer, product: d.product ?? null, inUseFrom });
   const [created] = await tx.insert(device).values({
     diverId, manufacturer: d.manufacturer, serialNumber: d.serialNumber,
-    product: d.product ?? null, firmware: d.firmware ?? null,
+    product: d.product ?? null, firmware: d.firmware ?? null, equipmentItemId,
   }).returning();
   return created!.id;
 }

@@ -10,20 +10,28 @@ test.describe.configure({ mode: 'serial' });
 const headers = { origin: E2E_BASE_URL };
 const created: string[] = [];
 
-/** Uploads a fixture while the page is open; returns its Dive id once the worker is done. */
-async function importFixture(request: APIRequestContext, file: string): Promise<string> {
+/** Uploads a fixture while the page is open; `done` waits for the worker and returns the Dive it made. */
+async function uploadFixture(request: APIRequestContext, file: string): Promise<{ url: string; done: () => Promise<string> }> {
   const upload = await request.post('/api/imports', {
     headers,
     multipart: { file: { name: file, mimeType: 'application/octet-stream', buffer: readFileSync(`e2e/fixtures/${file}`) } },
   });
   expect(upload.status()).toBe(202);
   const url = `/api/imports/${(await upload.json() as { id: string }).id}`;
-  await expect.poll(async () => (await (await request.get(url)).json()).status, { timeout: 15_000 }).toBe('done');
-  const outcome = (await (await request.get(url)).json()) as { outcome: { diveId?: string }[] };
-  const id = outcome.outcome.find((entry) => entry.diveId)?.diveId;
-  if (!id) throw new Error(`${file} did not make a Dive`);
-  created.push(id);
-  return id;
+  const done = async () => {
+    await expect.poll(async () => (await (await request.get(url)).json()).status, { timeout: 15_000 }).toBe('done');
+    const outcome = (await (await request.get(url)).json()) as { outcome: { diveId?: string }[] };
+    const id = outcome.outcome.find((entry) => entry.diveId)?.diveId;
+    if (!id) throw new Error(`${file} did not make a Dive`);
+    created.push(id);
+    return id;
+  };
+  return { url, done };
+}
+
+/** Uploads a fixture and waits for its Dive. */
+async function importFixture(request: APIRequestContext, file: string): Promise<string> {
+  return (await uploadFixture(request, file)).done();
 }
 
 test.beforeAll(async ({ request }) => {
@@ -49,13 +57,23 @@ test('a background import brings a new Dive into an untouched logbook, tinted as
   const before = await page.locator('[data-dive-id]').count();
 
   const started = Date.now();
-  const id = await importFixture(request, 'live-computer.fit');
-  // The hint is emitted when the import's Revision commits; the row must show up without a reload or a scroll.
-  await expect(page.locator(`[data-dive-id="${id}"]`)).toBeVisible({ timeout: 4_000 });
+  const { done } = await uploadFixture(request, 'live-computer.fit');
+  // Let the worker finish in the background too, so its Dive is in `created` for cleanup even if the tint assertion
+  // fails; the catch keeps that background copy from surfacing when the test already failed.
+  const finished = done();
+  finished.catch(() => undefined);
+  // The hint fires when the import commits, which can be seconds before the worker marks it done; the tint lasts only
+  // 2.4 s after the row becomes visible. Watch for the tinted row from before the commit rather than sampling after
+  // `done`, where the tint can already have faded (FAH-165).
+  const arrivingRow = page.locator('.dive-row.is-arrival');
+  await expect(arrivingRow).toHaveCount(1, { timeout: 15_000 });
+  const id = await arrivingRow.getAttribute('data-dive-id');
+  if (!id) throw new Error('the arriving row has no Dive id');
+  // The row must show up without a reload or a scroll.
+  await expect(page.locator(`[data-dive-id="${id}"]`)).toBeVisible();
   expect(Date.now() - started).toBeLessThan(6_000);
   expect(await page.locator('[data-dive-id]').count()).toBeGreaterThan(before);
-  // It arrived at the top of the newest-first list, so the design's brief tint starts as it becomes visible.
-  await expect(page.locator(`[data-dive-id="${id}"]`)).toHaveClass(/is-arrival/, { timeout: 2_000 });
+  expect(await finished).toBe(id);
 });
 
 test('with the stream blocked, the polling fallback still brings the new Dive in', { tag: ['@live', '@dives'] }, async ({ page, request }) => {

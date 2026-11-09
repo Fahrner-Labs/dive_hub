@@ -14,9 +14,11 @@ const MODULE_IMPORTS = {
   certifications: ['divers', 'dives', 'live', 'revisions'],
   divers: ['revisions'],
   dives: ['centres', 'divers', 'revisions', 'sites'],
-  imports: ['divers', 'dives', 'live', 'revisions', 'sites'],
+  equipment: ['divers', 'revisions'],
+  // Narrower than plan D8's ['divers', 'dives', 'revisions'] on purpose: the equipment module needs nothing from dives.
+  imports: ['divers', 'dives', 'equipment', 'live', 'revisions', 'sites'],
   lead: ['divers', 'dives'],
-  mcp: ['assessment', 'divers', 'dives', 'planning', 'sites'],
+  mcp: ['assessment', 'divers', 'dives', 'equipment', 'planning', 'sites'],
   planning: ['divers', 'dives'],
   providers: ['certifications', 'divers', 'dives', 'imports', 'live', 'revisions', 'sites'],
   sites: ['live', 'revisions'],

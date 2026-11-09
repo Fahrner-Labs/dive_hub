@@ -2,7 +2,7 @@
 // imports lucide-react, so the set stays small and consistent; names here say what the icon means.
 // Names were checked with the suggest-lucide-icons skill against the installed version.
 import {
-  ArrowDown, ArrowLeftToLine, ArrowRightLeft, ArrowUp, Award, BookOpen, Camera, Check, ChevronDown, ChevronLeft, ChevronRight, CircleAlert, TriangleAlert,
+  ArrowDown, ArrowLeftToLine, Backpack, ArrowRightLeft, ArrowUp, Award, BookOpen, Camera, Check, ChevronDown, ChevronLeft, ChevronRight, CircleAlert, TriangleAlert,
   CircleCheck, CircleUser, Clock, CloudDownload, CloudUpload, Copy, Ellipsis, ExternalLink, Eye, EyeOff, Image, Info, KeyRound, Link, LogIn, LogOut, MapPin, Merge, Pencil, Plus, QrCode, Scissors, Settings, Shield, ShieldOff,
   Star, Store, Trash, Undo2, Unlink, Upload, User, UserCheck, Users, UserX, Wrench, X, type LucideIcon,
 } from 'lucide-react';
@@ -10,6 +10,8 @@ import {
 const ICONS = {
   logbook: BookOpen,
   divers: Users,
+  /** A Diver's Equipment: gear, its service schedules and records (ADR 0034). */
+  equipment: Backpack,
   site: MapPin,
   /** A Dive centre, and its verification code (ADR 0043). */
   centre: Store,

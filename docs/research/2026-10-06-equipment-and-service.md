@@ -1,7 +1,7 @@
 ---
 title: Equipment items and service intervals
-summary: Equipment items of a Diver (the data model's Equipment item, not built), which Dives they were used on, and service schedules the User sets up (several per item, by months, dives or hours, whichever first) with service records that reset them; how logbooks and formats do it (Subsurface has none, Submersion the richest model, MacDive and SSI dates only, Diving Log counts all dives, UDDF days only, DiveJSON months and dives), maintenance patterns from aviation and bike trackers, pitfalls; the model; decided (ADR 0034) with the prompt for slice 23.
-status: decided
+summary: Equipment items of a Diver (built in slice 23), which Dives they were used on, and service schedules the User sets up (several per item, by months, dives or hours, whichever first) with service records that reset them; how logbooks and formats do it (Subsurface has none, Submersion the richest model, MacDive and SSI dates only, Diving Log counts all dives, UDDF days only, DiveJSON months and dives), maintenance patterns from aviation and bike trackers, pitfalls; the model; decided (ADR 0034) with the prompt for slice 23.
+status: done
 date: 2026-10-06
 ---
 
@@ -198,6 +198,8 @@ Rules:
   "reminders", "recurring schedule") found nothing.
 - `pnpm check` while working, `pnpm check:full` before proposing a commit, review capture with
   REVIEW_AREAS=equipment,dives; a new page gets its path in scripts/check.mjs and an area tag.
+
+**Done: built in slice 23 (FAH-65, 2026-11).** The build deltas are in ADR 0034 ("Amendments while building").
 - Commit only when I say so (on main, short subject, blank line, body).
 - End with a short summary: what was built, what you checked, simplifications, what you need me to decide.
 ```

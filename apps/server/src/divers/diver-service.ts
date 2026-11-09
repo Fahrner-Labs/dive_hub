@@ -6,7 +6,7 @@ import { personCodes, readVerificationCode, type VerificationCode } from './veri
 import type { Db, Queryable, Tx } from '../db/client.js';
 import type { Caller } from '../http/caller.js';
 import {
-  connection, device, dive, diver, diverBodyWeight, diverExternalId, diverManagement, participant, recording,
+  connection, device, dive, diver, diverBodyWeight, diverExternalId, diverManagement, equipmentItem, participant, recording,
 } from '../db/schema.js';
 import { managedDiverIds, managementOf } from './management.js';
 import { renumber } from './dive-numbers.js';
@@ -353,7 +353,7 @@ export function createDiverService(db: Db) {
       if (gone.length === 0) throw new DiverError('body_weight_not_found');
     },
 
-    /** Only empty Divers go: no Dives, no Devices, on no Dive. The User's own Diver stays. */
+    /** Only empty Divers go: no Dives, Devices or Equipment items, on no Dive. The User's own Diver stays. */
     async remove(userId: string, diverId: string) {
       const { isOwn } = await requireManagedDiver(userId, diverId);
       if (isOwn) throw new DiverError('own_diver');
@@ -361,7 +361,19 @@ export function createDiverService(db: Db) {
         const [used] = await tx.select({ n: sql<number>`count(*)::int` }).from(dive).where(eq(dive.diverId, diverId));
         const [devices] = await tx.select({ n: sql<number>`count(*)::int` }).from(device).where(eq(device.diverId, diverId));
         const [on] = await tx.select({ n: sql<number>`count(*)::int` }).from(participant).where(eq(participant.diverId, diverId));
-        if ((used?.n ?? 0) > 0 || (devices?.n ?? 0) > 0 || (on?.n ?? 0) > 0) throw new DiverError('diver_not_empty');
+        const [items] = await tx.select({ n: sql<number>`count(*)::int` }).from(equipmentItem)
+          .where(and(eq(equipmentItem.diverId, diverId), isNull(equipmentItem.deletedAt)));
+        if ((used?.n ?? 0) > 0 || (devices?.n ?? 0) > 0 || (on?.n ?? 0) > 0 || (items?.n ?? 0) > 0) throw new DiverError('diver_not_empty');
+        // A removed (soft-deleted) item has no uses, records, naming Cylinder or Device (equipment.remove refuses
+        // those), but its row and schedules would keep the foreign key: clear them, as deleting the User does.
+        const itemsOf = sql`select id from equipment_item where diver_id = ${diverId}`;
+        await tx.execute(sql`delete from equipment_use where item_id in (${itemsOf})`);
+        await tx.execute(sql`update cylinder set equipment_item_id = null where equipment_item_id in (${itemsOf})`);
+        await tx.execute(sql`delete from service_record_schedule where record_id in (select id from service_record where item_id in (${itemsOf}))
+          or schedule_id in (select id from service_schedule where item_id in (${itemsOf}))`);
+        await tx.execute(sql`delete from service_record where item_id in (${itemsOf})`);
+        await tx.execute(sql`delete from service_schedule where item_id in (${itemsOf})`);
+        await tx.execute(sql`delete from equipment_item where diver_id = ${diverId}`);
         // Its accounts at Targets go with it, and so do the User's Connections for it (ADR 0024).
         await tx.delete(connection).where(eq(connection.diverId, diverId));
         await tx.delete(diverExternalId).where(eq(diverExternalId.diverId, diverId));
@@ -471,6 +483,7 @@ export function createDiverService(db: Db) {
         serialNumber: device.serialNumber,
         firmware: device.firmware,
         diverId: device.diverId,
+        equipmentItemId: device.equipmentItemId,
         recordingCount: sql<number>`count(${recording.id})::int`,
         lastUsedAt: sql<Date | null>`max(${recording.startsAt})`.mapWith(recording.startsAt),
       }).from(device)
@@ -496,6 +509,16 @@ export function createDiverService(db: Db) {
         await writeRevision(tx, 'device', deviceId, userActor(userId), 'assign-device', {
           diverId: { from: current.diverId, to: diverId },
         });
+        // The Device's Equipment item keeps one identity and follows it to the new Diver (ADR 0034 D7).
+        const [item] = await tx.select({ id: equipmentItem.id, diverId: equipmentItem.diverId }).from(equipmentItem)
+          .where(and(eq(equipmentItem.id, current.equipmentItemId), isNull(equipmentItem.deletedAt))).for('update');
+        if (item && item.diverId !== diverId) {
+          await tx.update(equipmentItem).set({ diverId, version: sql`${equipmentItem.version} + 1`, updatedAt: new Date() })
+            .where(eq(equipmentItem.id, item.id));
+          await writeRevision(tx, 'equipment_item', item.id, userActor(userId), 'assign-device', {
+            diverId: { from: item.diverId, to: diverId },
+          });
+        }
       });
     },
   };

@@ -4,6 +4,7 @@ import type { Me } from '../api.ts';
 import { initials } from '../lib/avatar.ts';
 import { navSection, type NavSection } from '../lib/nav.ts';
 import { useWide } from '../lib/narrow.ts';
+import { useEquipmentDueCount } from '../lib/equipment.ts';
 import { useToDecideCounts } from '../lib/review.ts';
 import { Avatar } from './Avatar.tsx';
 import { Icon } from './Icon.tsx';
@@ -12,7 +13,7 @@ import { ActionMenu } from './Menu.tsx';
 
 /**
  * The frame around every signed-in page (UI overhaul, "The shell"): a tinted frame with the page as a white sheet in it.
- * From 64rem the frame is a sidebar (brand, the five destinations, Settings and the user row at its foot) beside the sheet,
+ * From 64rem the frame is a sidebar (brand, the destinations, Settings and the user row at its foot) beside the sheet,
  * which is inset 8px; below that a top bar (brand and the user's avatar) over a full-width sheet, and the destinations in
  * a bottom bar. One `Main` navigation serves both. The user menu comes where it shows, so the order of Tab is the order on
  * screen (WCAG 2.4.3): after Settings in the sidebar, before the bottom bar in the top bar. `logbookMark` (a run going)
@@ -26,6 +27,8 @@ export function Shell({ me, route, children, logbookMark, onSignOut }: {
   const current = (place: NavSection) => (place === section ? { 'aria-current': 'page' as const } : {});
   // What waits for a decision is counted beside the logbook, visible from every page (UI redesign 4.3).
   const { total: toDecide } = useToDecideCounts();
+  // Equipment schedules that need attention, visible from every page beside their link (ADR 0034).
+  const equipmentDue = useEquipmentDueCount();
   const wide = useWide();
   // The account is a labelled menu, not a bare name link (UI review C6).
   const userMenu = (
@@ -56,11 +59,15 @@ export function Shell({ me, route, children, logbookMark, onSignOut }: {
             {toDecide > 0 && <span className="count"><span aria-hidden="true">{toDecide}</span><span className="visually-hidden">{t('nav.toDecide', { count: toDecide })}</span></span>}
           </a>
           <a href="#/divers" {...current('divers')}><Icon name="divers" /><span className="shell-nav-label">{t('nav.divers')}</span></a>
+          <a href="#/equipment" {...current('equipment')}>
+            <Icon name="equipment" /><NavLabel full={t('nav.equipment')} short={t('nav.short.equipment')} />
+            {equipmentDue > 0 && <span className="count"><span aria-hidden="true">{equipmentDue}</span><span className="visually-hidden">{t('nav.equipmentDue', { count: equipmentDue })}</span></span>}
+          </a>
           <a href="#/sites" {...current('sites')}><Icon name="site" /><NavLabel full={t('nav.sites')} short={t('nav.short.sites')} /></a>
           <a href="#/centres" {...current('centres')}><Icon name="centre" /><NavLabel full={t('nav.centres')} short={t('nav.short.centres')} /></a>
           <a href="#/tools" {...current('tools')}><Icon name="tools" /><NavLabel full={t('nav.tools')} short={t('nav.short.tools')} /></a>
         </nav>
-        {/* Below 64rem Settings is in the user menu: the bottom bar holds the five destinations only. */}
+        {/* Below 64rem Settings is in the user menu: the bottom bar holds the destinations only. */}
         <a href="#/settings" className="shell-settings" {...current('settings')}><Icon name="settings" />{t('nav.settings')}</a>
         {wide && userMenu}
       </header>

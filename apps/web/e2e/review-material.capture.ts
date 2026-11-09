@@ -23,8 +23,11 @@ test.use({ reducedMotion: 'reduce' });
 const areas = process.env.REVIEW_AREAS?.split(',').map((a) => a.trim()).filter(Boolean);
 const want = (area: string) => !areas?.length || areas.includes(area);
 /** Which area a capture belongs to, by its name. */
-const areaOf = (name: string) => (/site|centre/.test(name) ? 'sites' : /divers/.test(name) ? 'divers'
-  : /account|signin|invitation/.test(name) ? 'account' : /admin/.test(name) ? 'admin' : /tools/.test(name) ? 'tools' : 'dives');
+const AREA_OF: [RegExp, string][] = [
+  [/site|centre/, 'sites'], [/divers/, 'divers'], [/account|signin|invitation/, 'account'], [/admin/, 'admin'],
+  [/equipment|gear/, 'equipment'], [/tools/, 'tools'],
+];
+const areaOf = (name: string) => AREA_OF.find(([pattern]) => pattern.test(name))?.[1] ?? 'dives';
 
 /** Counts the page's requests until their bodies are read, so a capture can wait until the data is on screen. */
 async function trackRequests(page: Page) {
@@ -1140,6 +1143,69 @@ test('review material', async ({ page, request, browser }) => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await clearPushRuns(request);
     await leaveConflict(request);
+  }
+
+
+  // Equipment items and their service schedules (ADR 0034): the page with what is due and why, a record's history, the
+  // add form, the logbook's notice and a Dive's gear.
+  if (want('equipment')) {
+    const iso = (d: Date) => d.toISOString().slice(0, 10);
+    const minusMonths = (months: number, days = 0) => {
+      const d = new Date(); d.setUTCMonth(d.getUTCMonth() - months); d.setUTCDate(d.getUTCDate() + days); return iso(d);
+    };
+    const divers = await (await request.get('/api/divers')).json() as { id: string; isOwn: boolean }[];
+    const own = divers.find((d) => d.isOwn)!.id;
+    const create = async (body: object) => (await (await request.post(`/api/divers/${own}/equipment`, { data: body, headers })).json()) as {
+      id: string; schedules: { id: string }[];
+    };
+    const regulator = await create({
+      category: 'regulator', name: 'Regulator set', maker: 'Apeks', model: 'XTX50', serial: 'AP-2219', inUseFrom: minusMonths(36),
+      schedules: [{ name: 'Annual service', intervalMonths: 12, startDate: minusMonths(13) }],
+    });
+    await create({
+      category: 'bcd', name: 'Wing', maker: 'Halcyon', model: 'Eclipse', inUseFrom: minusMonths(18), onEveryDive: true,
+      schedules: [{ name: 'Annual service', intervalMonths: 12, startDate: minusMonths(11) }],
+    });
+    const bcd = await create({
+      category: 'drysuit', name: 'Drysuit', maker: 'Santi', inUseFrom: minusMonths(30),
+      schedules: [{ name: 'Seals and zipper', intervalMonths: 12, startDate: minusMonths(2) }],
+    });
+    await request.post(`/api/equipment/${bcd.id}/records`, {
+      data: { date: minusMonths(2), byWhom: 'Dive shop Dahab', notes: 'Seals replaced, zipper waxed', costAmount: 80, costCurrency: 'EUR', scheduleIds: bcd.schedules.map((s) => s.id) },
+      headers,
+    });
+    const cylinderItem = await create({ category: 'cylinder', name: '12 L steel', maker: 'Faber', inUseFrom: minusMonths(60) });
+    await request.post(`/api/dives/${dive42}/equipment`, { data: { itemId: regulator.id, use: 'put_on' }, headers });
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.goto('/#/equipment'); await page.getByRole('heading', { name: 'Equipment', level: 1 }).waitFor();
+    await capture(page, '80-equipment');
+    await tabOrder(page, '80-equipment');
+    await page.locator(`#equipment-item-${bcd.id}`).getByRole('button', { name: /^Service history/ }).click();
+    await page.getByText('Dive shop Dahab').waitFor();
+    await capture(page, '80b-equipment-history');
+    await page.getByRole('button', { name: 'Add item' }).first().click();
+    await page.getByRole('dialog').waitFor();
+    await capture(page, '80c-equipment-add', { full: false });
+    await page.keyboard.press('Escape');
+    await page.goto('/'); await page.getByRole('link', { name: 'Open equipment' }).waitFor();
+    await capture(page, '80d-logbook-equipment-notice', { full: false, aria: false });
+    await page.goto(`/#/dives/${dive42}`); await page.getByRole('heading', { name: 'Gear', exact: true }).waitFor();
+    await capture(page, '80e-dive-gear');
+    await page.goto(`/#/dives/${dive42}`); await page.getByRole('button', { name: 'Edit dive' }).click();
+    const addCylinder = page.getByRole('button', { name: 'Add cylinder', exact: true });
+    if (await addCylinder.count() > 0) await addCylinder.first().click();
+    await page.getByRole('button', { name: 'Cylinder item' }).first().waitFor();
+    await capture(page, '80f-dive-cylinder-item', { full: false });
+    await page.getByRole('button', { name: 'Cancel' }).first().click();
+    await setPreferences(request, { language: 'de' });
+    await page.emulateMedia({ colorScheme: 'dark' });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/#/equipment'); await page.getByRole('heading', { name: 'Ausrüstung', level: 1 }).waitFor();
+    await capture(page, '80g-equipment-de-dark-390', { aria: false });
+    await setPreferences(request, { language: null });
+    await page.emulateMedia({ colorScheme: 'light' });
+    await page.setViewportSize({ width: 1280, height: 900 });
+    void cylinderItem;
   }
 
   // Signed out, then signed up through the invitation: the empty logbook and Divers belong to the new account.

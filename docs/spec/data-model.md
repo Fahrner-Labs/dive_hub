@@ -1,6 +1,6 @@
 ---
 title: Data model
-summary: Entities, ownership and relationships of Dive Hub's internal model; UDDF coverage, gap coverage and stress-test scenarios; Dives without a Recording, offsets and their source, a Provider's dives as Originals, Recordings and Imports (ADR 0030); planned: lead, weighting feedback, exposure suit, Cylinders and body weight (ADR 0031); SAC and OTU on Recordings for the bottom-time tool (ADR 0032); SAC per Dive and gas plans for groups (ADR 0033); Equipment items with service schedules (ADR 0034); AI accesses, their setting and their log for the MCP endpoint (ADR 0035, built); findings of the dive assessment, dismissals and muted rules (ADR 0036, built).
+summary: Entities, ownership and relationships of Dive Hub's internal model; UDDF coverage, gap coverage and stress-test scenarios; Dives without a Recording, offsets and their source, a Provider's dives as Originals, Recordings and Imports (ADR 0030); planned: lead, weighting feedback, exposure suit, Cylinders and body weight (ADR 0031); SAC and OTU on Recordings for the bottom-time tool (ADR 0032); SAC per Dive and gas plans for groups (ADR 0033); Equipment items with service schedules and records (ADR 0034, built); AI accesses, their setting and their log for the MCP endpoint (ADR 0035, built); findings of the dive assessment, dismissals and muted rules (ADR 0036, built).
 status: draft
 date: 2026-10-06
 ---
@@ -19,7 +19,7 @@ Every entity belongs to exactly one tier. This answers "who can see/change it" a
 |---|---|
 | **Instance** (shared by all Users) | User, Dive site (→ External IDs), Site import, Operator, Agency catalog |
 | **User** | Connection (→ Diver mappings), Import, Original, external Divers they created, AI accesses and their log |
-| **Diver** (via the Users who manage it) | External IDs, Body weights, Equipment items with service schedules and records (planned), Dive (→ Recordings, Cylinders, Lead, Participants, Media, Signatures, Pushes), Trip, Certification, Membership, Insurance, Medical exam, Equipment (incl. Devices), Site note |
+| **Diver** (via the Users who manage it) | External IDs, Body weights, Equipment items with service schedules and records, Dive (→ Recordings, Cylinders, Lead, Participants, Media, Signatures, Pushes), Trip, Certification, Membership, Insurance, Medical exam, Equipment (incl. Devices), Site note |
 
 ## Overview
 
@@ -267,9 +267,10 @@ pod's series) and from each gas the computer gives a start or an end pressure fo
 Cylinders where it has none. A **cylinder catalogue in code** (`GET /cylinder-catalogue`: AL80, AL63, AL100, AL40,
 steel 7 to 15 L, a twin) fills the values when picked; any value can be typed. "Same as last dive" is a route that
 changes nothing.
-*Planned (ADR 0031, slice 19):* it may name the Diver's own cylinder item (ADR 0034, slice 23), which fills its values
-and counts the Dive for that item's schedules; the catalogue's entries get their empty buoyancy in seawater and its
-source. SSI gives one cylinder's volume, pressures
+*Built (ADR 0034, slice 23):* it may name the Diver's own cylinder item, any status; picking one fills volume, working
+pressure, material and gas from the most recent Cylinder that named it (the first use fills nothing) and counts the Dive
+for that item's schedules ([D6](../decisions/0034-equipment-items-and-service-schedules.md)). The catalogue's entries'
+empty buoyancy in seawater and its source stay later. SSI gives one cylinder's volume, pressures
 and a type ID (material once the IDs are looked up); FIT gives pressures (volume from message 147, later). UDDF:
 `tankmaterial`, `tankvolume`, `tankdata`. **Sensor mapping** links a
 Recording's pressure sensor (e.g. transmitter serial) to a Cylinder (Subsurface idea, B11).
@@ -361,11 +362,11 @@ category-specific properties (e.g. tank volume, working pressure, material),
 **Device** — an Equipment item that records data (dive computer, transmitter):
 serial number, firmware history. Assigning a Device to a Diver is how Imports attribute Recordings.
 *Implemented (ADR 0016):* reassigning affects only Imports from then on; single Dives can be moved.
-*Planned ([ADR 0034](../decisions/0034-equipment-items-and-service-schedules.md), slice 23):* each Device is linked to an
-Equipment item (`device.equipment_item_id`, created with it; a migration for existing Devices); its Dives are those of
-its Recordings.
+*Built ([ADR 0034](../decisions/0034-equipment-items-and-service-schedules.md), slice 23):* each Device is linked to an
+Equipment item (`device.equipment_item_id`, created with it; a migration made one for every existing Device); its Dives
+are those of its Recordings. Reassigning the Device moves its item to the new Diver in the same change.
 
-**Equipment item, usage, schedules and records** (planned, ADR 0034, slice 23):
+**Equipment item, usage, schedules and records** (built, [ADR 0034](../decisions/0034-equipment-items-and-service-schedules.md), slice 23):
 - *Item:* a Diver's (Users who manage it see and change it); category (vocabulary in code), name, maker, model, serial,
   purchase date, notes, status (`in use`, `retired`, `lost`, `sold`), **on every Dive while in use** with its in-use date;
   version, Revisions; retired, never deleted once used. One item per regulator set; parts later.
@@ -691,7 +692,7 @@ Edge cases:
 - *A 300 bar fill:* about 10 % less gas than ideal; the pressures account for it.
 - *30 m instead of 18 m:* rock bottom rises well above 50 bar, and the page shows why the fixed reserve isn't enough there.
 
-### 8. A regulator and a cylinder due for service (planned, ADR 0034)
+### 8. A regulator and a cylinder due for service (built, ADR 0034)
 
 Tim adds his regulator set (on every Dive while in use since 2025-04; schedule "service: 24 months or 100 dives", last
 done 2025-04) and his 12 L steel cylinder (schedules "visual inspection: 12 months", last 2026-03, and "pressure test:

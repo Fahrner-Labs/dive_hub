@@ -405,6 +405,14 @@
               "continuation_not_possible",
               "recording_is_part",
               "device_not_found",
+              "equipment_not_found",
+              "equipment_changed",
+              "equipment_in_use",
+              "equipment_use_mismatch",
+              "schedule_not_found",
+              "schedule_interval_required",
+              "record_not_found",
+              "equipment_item_not_cylinder",
               "candidate_not_found",
               "candidate_resolved",
               "not_a_candidate",
@@ -1621,6 +1629,18 @@
                       "minimum": 0,
                       "maximum": 500,
                       "description": "Not above the start pressure"
+                    }
+                  ]
+                },
+                "equipmentItemId": {
+                  "anyOf": [
+                    {
+                      "type": "null"
+                    },
+                    {
+                      "type": "string",
+                      "format": "uuid",
+                      "description": "The Diver's cylinder item this Cylinder is (ADR 0034); null for a rental or an unnamed cylinder"
                     }
                   ]
                 },
@@ -3271,6 +3291,14 @@
                   "continuation_not_possible",
                   "recording_is_part",
                   "device_not_found",
+                  "equipment_not_found",
+                  "equipment_changed",
+                  "equipment_in_use",
+                  "equipment_use_mismatch",
+                  "schedule_not_found",
+                  "schedule_interval_required",
+                  "record_not_found",
+                  "equipment_item_not_cylinder",
                   "candidate_not_found",
                   "candidate_resolved",
                   "not_a_candidate",
@@ -3461,6 +3489,14 @@
                   "continuation_not_possible",
                   "recording_is_part",
                   "device_not_found",
+                  "equipment_not_found",
+                  "equipment_changed",
+                  "equipment_in_use",
+                  "equipment_use_mismatch",
+                  "schedule_not_found",
+                  "schedule_interval_required",
+                  "record_not_found",
+                  "equipment_item_not_cylinder",
                   "candidate_not_found",
                   "candidate_resolved",
                   "not_a_candidate",
@@ -4258,6 +4294,14 @@
                         "continuation_not_possible",
                         "recording_is_part",
                         "device_not_found",
+                        "equipment_not_found",
+                        "equipment_changed",
+                        "equipment_in_use",
+                        "equipment_use_mismatch",
+                        "schedule_not_found",
+                        "schedule_interval_required",
+                        "record_not_found",
+                        "equipment_item_not_cylinder",
                         "candidate_not_found",
                         "candidate_resolved",
                         "not_a_candidate",
@@ -4427,6 +4471,1051 @@
             "description": "Newest first"
           }
         }
+      },
+      "ServiceSchedule": {
+        "type": "object",
+        "required": [
+          "id",
+          "itemId",
+          "name",
+          "intervalMonths",
+          "intervalDives",
+          "intervalHours",
+          "startDate",
+          "active",
+          "version",
+          "due"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "itemId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "intervalMonths": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "integer",
+                "minimum": 1
+              }
+            ]
+          },
+          "intervalDives": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "integer",
+                "minimum": 1
+              }
+            ]
+          },
+          "intervalHours": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "number",
+                "exclusiveMinimum": 0
+              }
+            ]
+          },
+          "startDate": {
+            "type": "string",
+            "description": "Last done before Dive Hub, YYYY-MM-DD"
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "version": {
+            "type": "integer"
+          },
+          "due": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "object",
+                "required": [
+                  "anchor",
+                  "state",
+                  "reason",
+                  "months",
+                  "dives",
+                  "hours"
+                ],
+                "properties": {
+                  "anchor": {
+                    "type": "string",
+                    "description": "The newest service record that resets it, else the schedule start, YYYY-MM-DD"
+                  },
+                  "state": {
+                    "enum": [
+                      "ok",
+                      "due_soon",
+                      "due",
+                      "overdue"
+                    ],
+                    "description": "ok, due_soon, due or overdue; the worst dimension wins"
+                  },
+                  "reason": {
+                    "anyOf": [
+                      {
+                        "type": "null"
+                      },
+                      {
+                        "type": "string",
+                        "description": "The worst dimension, when it is not ok: \"due 2027-03\", \"100 dives reached\""
+                      }
+                    ]
+                  },
+                  "months": {
+                    "anyOf": [
+                      {
+                        "type": "null"
+                      },
+                      {
+                        "type": "object",
+                        "required": [
+                          "dueDate",
+                          "remainingDays",
+                          "state"
+                        ],
+                        "properties": {
+                          "dueDate": {
+                            "type": "string",
+                            "description": "YYYY-MM-DD"
+                          },
+                          "remainingDays": {
+                            "type": "integer"
+                          },
+                          "state": {
+                            "enum": [
+                              "ok",
+                              "due_soon",
+                              "due",
+                              "overdue"
+                            ],
+                            "description": "ok, due_soon, due or overdue; the worst dimension wins"
+                          }
+                        },
+                        "additionalProperties": false
+                      }
+                    ]
+                  },
+                  "dives": {
+                    "anyOf": [
+                      {
+                        "type": "null"
+                      },
+                      {
+                        "type": "object",
+                        "required": [
+                          "used",
+                          "remaining",
+                          "state"
+                        ],
+                        "properties": {
+                          "used": {
+                            "type": "integer"
+                          },
+                          "remaining": {
+                            "type": "integer"
+                          },
+                          "state": {
+                            "enum": [
+                              "ok",
+                              "due_soon",
+                              "due",
+                              "overdue"
+                            ],
+                            "description": "ok, due_soon, due or overdue; the worst dimension wins"
+                          }
+                        },
+                        "additionalProperties": false
+                      }
+                    ]
+                  },
+                  "hours": {
+                    "anyOf": [
+                      {
+                        "type": "null"
+                      },
+                      {
+                        "type": "object",
+                        "required": [
+                          "used",
+                          "remaining",
+                          "state"
+                        ],
+                        "properties": {
+                          "used": {
+                            "type": "number"
+                          },
+                          "remaining": {
+                            "type": "number"
+                          },
+                          "state": {
+                            "enum": [
+                              "ok",
+                              "due_soon",
+                              "due",
+                              "overdue"
+                            ],
+                            "description": "ok, due_soon, due or overdue; the worst dimension wins"
+                          }
+                        },
+                        "additionalProperties": false
+                      }
+                    ]
+                  }
+                },
+                "additionalProperties": false,
+                "description": "Computed on every read, never stored (ADR 0034)"
+              }
+            ],
+            "description": "Null for an inactive schedule"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ServiceRecord": {
+        "type": "object",
+        "required": [
+          "id",
+          "itemId",
+          "date",
+          "byWhom",
+          "notes",
+          "costAmount",
+          "costCurrency",
+          "version",
+          "scheduleIds"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "itemId": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string",
+            "description": "YYYY-MM-DD"
+          },
+          "byWhom": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "costAmount": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "number"
+              }
+            ]
+          },
+          "costCurrency": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string",
+                "description": "Three letters, e.g. EUR"
+              }
+            ]
+          },
+          "version": {
+            "type": "integer"
+          },
+          "scheduleIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "description": "The schedules this record resets"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "DiveGearItem": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "category",
+          "equipmentStatus",
+          "onEveryDive"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "category": {
+            "enum": [
+              "regulator",
+              "bcd",
+              "wing",
+              "backplate",
+              "cylinder",
+              "drysuit",
+              "wetsuit",
+              "dive_computer",
+              "transmitter",
+              "light",
+              "camera",
+              "other"
+            ]
+          },
+          "equipmentStatus": {
+            "enum": [
+              "in_use",
+              "retired",
+              "lost",
+              "sold"
+            ]
+          },
+          "onEveryDive": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "EquipmentItem": {
+        "type": "object",
+        "required": [
+          "id",
+          "diverId",
+          "category",
+          "name",
+          "maker",
+          "model",
+          "serial",
+          "purchaseDate",
+          "notes",
+          "equipmentStatus",
+          "onEveryDive",
+          "inUseFrom",
+          "inUseUntil",
+          "version",
+          "createdAt",
+          "updatedAt",
+          "deviceId",
+          "schedules"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "diverId": {
+            "type": "string"
+          },
+          "category": {
+            "enum": [
+              "regulator",
+              "bcd",
+              "wing",
+              "backplate",
+              "cylinder",
+              "drysuit",
+              "wetsuit",
+              "dive_computer",
+              "transmitter",
+              "light",
+              "camera",
+              "other"
+            ],
+            "description": "What kind of gear it is"
+          },
+          "name": {
+            "type": "string"
+          },
+          "maker": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "serial": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "purchaseDate": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string",
+                "description": "YYYY-MM-DD"
+              }
+            ]
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "equipmentStatus": {
+            "enum": [
+              "in_use",
+              "retired",
+              "lost",
+              "sold"
+            ],
+            "description": "in_use, retired, lost or sold; a used item is retired, never deleted"
+          },
+          "onEveryDive": {
+            "type": "boolean",
+            "description": "Counts every Dive of its Diver while in use, minus the ones it was taken off"
+          },
+          "inUseFrom": {
+            "type": "string",
+            "description": "YYYY-MM-DD; earlier logbook Dives count from this date"
+          },
+          "inUseUntil": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string",
+                "description": "YYYY-MM-DD; set when the status leaves in use"
+              }
+            ]
+          },
+          "version": {
+            "type": "integer"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "deviceId": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string",
+                "description": "The Device this item is, when it is one"
+              }
+            ]
+          },
+          "schedules": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ServiceSchedule"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "EquipmentItemDetail": {
+        "type": "object",
+        "required": [
+          "id",
+          "diverId",
+          "category",
+          "name",
+          "maker",
+          "model",
+          "serial",
+          "purchaseDate",
+          "notes",
+          "equipmentStatus",
+          "onEveryDive",
+          "inUseFrom",
+          "inUseUntil",
+          "version",
+          "createdAt",
+          "updatedAt",
+          "deviceId",
+          "schedules",
+          "usage",
+          "records",
+          "lastCylinder"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "diverId": {
+            "type": "string"
+          },
+          "category": {
+            "enum": [
+              "regulator",
+              "bcd",
+              "wing",
+              "backplate",
+              "cylinder",
+              "drysuit",
+              "wetsuit",
+              "dive_computer",
+              "transmitter",
+              "light",
+              "camera",
+              "other"
+            ],
+            "description": "What kind of gear it is"
+          },
+          "name": {
+            "type": "string"
+          },
+          "maker": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "serial": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "purchaseDate": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string",
+                "description": "YYYY-MM-DD"
+              }
+            ]
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "equipmentStatus": {
+            "enum": [
+              "in_use",
+              "retired",
+              "lost",
+              "sold"
+            ],
+            "description": "in_use, retired, lost or sold; a used item is retired, never deleted"
+          },
+          "onEveryDive": {
+            "type": "boolean",
+            "description": "Counts every Dive of its Diver while in use, minus the ones it was taken off"
+          },
+          "inUseFrom": {
+            "type": "string",
+            "description": "YYYY-MM-DD; earlier logbook Dives count from this date"
+          },
+          "inUseUntil": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string",
+                "description": "YYYY-MM-DD; set when the status leaves in use"
+              }
+            ]
+          },
+          "version": {
+            "type": "integer"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "deviceId": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string",
+                "description": "The Device this item is, when it is one"
+              }
+            ]
+          },
+          "schedules": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ServiceSchedule"
+            }
+          },
+          "usage": {
+            "type": "object",
+            "required": [
+              "diveCount",
+              "hours",
+              "lastUsedOn"
+            ],
+            "properties": {
+              "diveCount": {
+                "type": "integer"
+              },
+              "hours": {
+                "type": "number"
+              },
+              "lastUsedOn": {
+                "anyOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "type": "string",
+                    "description": "YYYY-MM-DD"
+                  }
+                ]
+              }
+            },
+            "additionalProperties": false
+          },
+          "records": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ServiceRecord"
+            }
+          },
+          "lastCylinder": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "object",
+                "required": [
+                  "volumeL",
+                  "workingPressureBar",
+                  "material",
+                  "gas"
+                ],
+                "properties": {
+                  "volumeL": {
+                    "anyOf": [
+                      {
+                        "type": "null"
+                      },
+                      {
+                        "type": "number"
+                      }
+                    ]
+                  },
+                  "workingPressureBar": {
+                    "anyOf": [
+                      {
+                        "type": "null"
+                      },
+                      {
+                        "type": "number"
+                      }
+                    ]
+                  },
+                  "material": {
+                    "anyOf": [
+                      {
+                        "type": "null"
+                      },
+                      {
+                        "enum": [
+                          "aluminium",
+                          "steel",
+                          "carbon"
+                        ]
+                      }
+                    ]
+                  },
+                  "gas": {
+                    "anyOf": [
+                      {
+                        "type": "null"
+                      },
+                      {
+                        "type": "object",
+                        "required": [
+                          "o2",
+                          "he"
+                        ],
+                        "properties": {
+                          "o2": {
+                            "type": "number"
+                          },
+                          "he": {
+                            "type": "number"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                },
+                "additionalProperties": false
+              }
+            ],
+            "description": "For a cylinder item: the values its last Cylinder on a Dive had"
+          }
+        },
+        "additionalProperties": false
+      },
+      "EquipmentDue": {
+        "type": "object",
+        "required": [
+          "itemId",
+          "itemName",
+          "category",
+          "diverId",
+          "diverName",
+          "scheduleId",
+          "scheduleName",
+          "due"
+        ],
+        "properties": {
+          "itemId": {
+            "type": "string"
+          },
+          "itemName": {
+            "type": "string"
+          },
+          "category": {
+            "enum": [
+              "regulator",
+              "bcd",
+              "wing",
+              "backplate",
+              "cylinder",
+              "drysuit",
+              "wetsuit",
+              "dive_computer",
+              "transmitter",
+              "light",
+              "camera",
+              "other"
+            ]
+          },
+          "diverId": {
+            "type": "string"
+          },
+          "diverName": {
+            "type": "string"
+          },
+          "scheduleId": {
+            "type": "string"
+          },
+          "scheduleName": {
+            "type": "string"
+          },
+          "due": {
+            "type": "object",
+            "required": [
+              "anchor",
+              "state",
+              "reason",
+              "months",
+              "dives",
+              "hours"
+            ],
+            "properties": {
+              "anchor": {
+                "type": "string",
+                "description": "The newest service record that resets it, else the schedule start, YYYY-MM-DD"
+              },
+              "state": {
+                "enum": [
+                  "ok",
+                  "due_soon",
+                  "due",
+                  "overdue"
+                ],
+                "description": "ok, due_soon, due or overdue; the worst dimension wins"
+              },
+              "reason": {
+                "anyOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "type": "string",
+                    "description": "The worst dimension, when it is not ok: \"due 2027-03\", \"100 dives reached\""
+                  }
+                ]
+              },
+              "months": {
+                "anyOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "type": "object",
+                    "required": [
+                      "dueDate",
+                      "remainingDays",
+                      "state"
+                    ],
+                    "properties": {
+                      "dueDate": {
+                        "type": "string",
+                        "description": "YYYY-MM-DD"
+                      },
+                      "remainingDays": {
+                        "type": "integer"
+                      },
+                      "state": {
+                        "enum": [
+                          "ok",
+                          "due_soon",
+                          "due",
+                          "overdue"
+                        ],
+                        "description": "ok, due_soon, due or overdue; the worst dimension wins"
+                      }
+                    },
+                    "additionalProperties": false
+                  }
+                ]
+              },
+              "dives": {
+                "anyOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "type": "object",
+                    "required": [
+                      "used",
+                      "remaining",
+                      "state"
+                    ],
+                    "properties": {
+                      "used": {
+                        "type": "integer"
+                      },
+                      "remaining": {
+                        "type": "integer"
+                      },
+                      "state": {
+                        "enum": [
+                          "ok",
+                          "due_soon",
+                          "due",
+                          "overdue"
+                        ],
+                        "description": "ok, due_soon, due or overdue; the worst dimension wins"
+                      }
+                    },
+                    "additionalProperties": false
+                  }
+                ]
+              },
+              "hours": {
+                "anyOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "type": "object",
+                    "required": [
+                      "used",
+                      "remaining",
+                      "state"
+                    ],
+                    "properties": {
+                      "used": {
+                        "type": "number"
+                      },
+                      "remaining": {
+                        "type": "number"
+                      },
+                      "state": {
+                        "enum": [
+                          "ok",
+                          "due_soon",
+                          "due",
+                          "overdue"
+                        ],
+                        "description": "ok, due_soon, due or overdue; the worst dimension wins"
+                      }
+                    },
+                    "additionalProperties": false
+                  }
+                ]
+              }
+            },
+            "additionalProperties": false,
+            "description": "Computed on every read, never stored (ADR 0034)"
+          }
+        },
+        "additionalProperties": false
+      },
+      "DiveGear": {
+        "type": "object",
+        "required": [
+          "derived",
+          "putOn",
+          "takenOff"
+        ],
+        "properties": {
+          "derived": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "id",
+                "name",
+                "category",
+                "equipmentStatus",
+                "onEveryDive",
+                "sources"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "category": {
+                  "enum": [
+                    "regulator",
+                    "bcd",
+                    "wing",
+                    "backplate",
+                    "cylinder",
+                    "drysuit",
+                    "wetsuit",
+                    "dive_computer",
+                    "transmitter",
+                    "light",
+                    "camera",
+                    "other"
+                  ]
+                },
+                "equipmentStatus": {
+                  "enum": [
+                    "in_use",
+                    "retired",
+                    "lost",
+                    "sold"
+                  ]
+                },
+                "onEveryDive": {
+                  "type": "boolean"
+                },
+                "sources": {
+                  "type": "array",
+                  "items": {
+                    "enum": [
+                      "every_dive",
+                      "device",
+                      "cylinder"
+                    ]
+                  },
+                  "description": "Why the Dive has this item without an explicit use"
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "putOn": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DiveGearItem"
+            }
+          },
+          "takenOff": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DiveGearItem"
+            }
+          }
+        },
+        "additionalProperties": false
       },
       "User": {
         "type": "object",
@@ -7046,6 +8135,18 @@
                             }
                           ]
                         },
+                        "equipmentItemId": {
+                          "anyOf": [
+                            {
+                              "type": "null"
+                            },
+                            {
+                              "type": "string",
+                              "format": "uuid",
+                              "description": "The Diver's cylinder item this Cylinder is (ADR 0034); null for a rental or an unnamed cylinder"
+                            }
+                          ]
+                        },
                         "series": {
                           "anyOf": [
                             {
@@ -7485,7 +8586,8 @@
                     "diveId",
                     "cylinders",
                     "lead",
-                    "suit"
+                    "suit",
+                    "gear"
                   ],
                   "properties": {
                     "diveId": {
@@ -7678,6 +8780,42 @@
                           }
                         }
                       ]
+                    },
+                    "gear": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "id",
+                          "name",
+                          "category"
+                        ],
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "category": {
+                            "enum": [
+                              "regulator",
+                              "bcd",
+                              "wing",
+                              "backplate",
+                              "cylinder",
+                              "drysuit",
+                              "wetsuit",
+                              "dive_computer",
+                              "transmitter",
+                              "light",
+                              "camera",
+                              "other"
+                            ]
+                          }
+                        }
+                      },
+                      "description": "Items put on the previous Dive; an every-Dive item needs no action (ADR 0034)"
                     }
                   }
                 }
@@ -9995,6 +11133,18 @@
                                         }
                                       ]
                                     },
+                                    "equipmentItemId": {
+                                      "anyOf": [
+                                        {
+                                          "type": "null"
+                                        },
+                                        {
+                                          "type": "string",
+                                          "format": "uuid",
+                                          "description": "The Diver's cylinder item this Cylinder is (ADR 0034); null for a rental or an unnamed cylinder"
+                                        }
+                                      ]
+                                    },
                                     "fromPod": {
                                       "type": "boolean",
                                       "description": "An import made it from a tank pod's data and it still has the pod's series: clients say so (docs/spec/clients.md)"
@@ -10133,6 +11283,18 @@
                                           "minimum": 0,
                                           "maximum": 500,
                                           "description": "Not above the start pressure"
+                                        }
+                                      ]
+                                    },
+                                    "equipmentItemId": {
+                                      "anyOf": [
+                                        {
+                                          "type": "null"
+                                        },
+                                        {
+                                          "type": "string",
+                                          "format": "uuid",
+                                          "description": "The Diver's cylinder item this Cylinder is (ADR 0034); null for a rental or an unnamed cylinder"
                                         }
                                       ]
                                     },
@@ -13242,6 +14404,7 @@
                       "serialNumber",
                       "firmware",
                       "diverId",
+                      "equipmentItemId",
                       "recordingCount",
                       "lastUsedAt"
                     ],
@@ -13277,6 +14440,10 @@
                       },
                       "diverId": {
                         "type": "string"
+                      },
+                      "equipmentItemId": {
+                        "type": "string",
+                        "description": "The Equipment item this Device is (ADR 0034)"
                       },
                       "recordingCount": {
                         "type": "integer"
@@ -13349,6 +14516,1466 @@
             }
           },
           "403": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/divers/{id}/equipment": {
+      "get": {
+        "summary": "A Diver's Equipment items with their schedules and computed due",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/EquipmentItem"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create an Equipment item, optionally with its first schedules",
+        "description": "No interval comes from Dive Hub: the User enters what the manual or the cylinder's stamp says.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "category",
+                  "name",
+                  "inUseFrom"
+                ],
+                "properties": {
+                  "category": {
+                    "enum": [
+                      "regulator",
+                      "bcd",
+                      "wing",
+                      "backplate",
+                      "cylinder",
+                      "drysuit",
+                      "wetsuit",
+                      "dive_computer",
+                      "transmitter",
+                      "light",
+                      "camera",
+                      "other"
+                    ]
+                  },
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200,
+                    "pattern": "\\S"
+                  },
+                  "maker": {
+                    "anyOf": [
+                      {
+                        "type": "null"
+                      },
+                      {
+                        "type": "string",
+                        "maxLength": 200
+                      }
+                    ]
+                  },
+                  "model": {
+                    "anyOf": [
+                      {
+                        "type": "null"
+                      },
+                      {
+                        "type": "string",
+                        "maxLength": 200
+                      }
+                    ]
+                  },
+                  "serial": {
+                    "anyOf": [
+                      {
+                        "type": "null"
+                      },
+                      {
+                        "type": "string",
+                        "maxLength": 200
+                      }
+                    ]
+                  },
+                  "purchaseDate": {
+                    "anyOf": [
+                      {
+                        "type": "null"
+                      },
+                      {
+                        "type": "string",
+                        "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                        "description": "YYYY-MM-DD"
+                      }
+                    ]
+                  },
+                  "notes": {
+                    "anyOf": [
+                      {
+                        "type": "null"
+                      },
+                      {
+                        "type": "string",
+                        "maxLength": 20000
+                      }
+                    ]
+                  },
+                  "equipmentStatus": {
+                    "enum": [
+                      "in_use",
+                      "retired",
+                      "lost",
+                      "sold"
+                    ],
+                    "description": "Default in_use"
+                  },
+                  "onEveryDive": {
+                    "type": "boolean",
+                    "description": "Default false: the Dives it was put on count"
+                  },
+                  "inUseFrom": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                    "description": "YYYY-MM-DD"
+                  },
+                  "inUseUntil": {
+                    "anyOf": [
+                      {
+                        "type": "null"
+                      },
+                      {
+                        "type": "string",
+                        "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                        "description": "YYYY-MM-DD"
+                      }
+                    ]
+                  },
+                  "schedules": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "name",
+                        "startDate"
+                      ],
+                      "properties": {
+                        "name": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 200,
+                          "pattern": "\\S"
+                        },
+                        "intervalMonths": {
+                          "anyOf": [
+                            {
+                              "type": "null"
+                            },
+                            {
+                              "type": "integer",
+                              "minimum": 1,
+                              "maximum": 1200,
+                              "description": "Every this many months"
+                            }
+                          ]
+                        },
+                        "intervalDives": {
+                          "anyOf": [
+                            {
+                              "type": "null"
+                            },
+                            {
+                              "type": "integer",
+                              "minimum": 1,
+                              "maximum": 1000000,
+                              "description": "Every this many Dives"
+                            }
+                          ]
+                        },
+                        "intervalHours": {
+                          "anyOf": [
+                            {
+                              "type": "null"
+                            },
+                            {
+                              "type": "number",
+                              "exclusiveMinimum": 0,
+                              "maximum": 100000,
+                              "description": "Every this many dive hours"
+                            }
+                          ]
+                        },
+                        "startDate": {
+                          "type": "string",
+                          "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                          "description": "YYYY-MM-DD"
+                        },
+                        "active": {
+                          "type": "boolean",
+                          "description": "Default true; an inactive schedule computes nothing"
+                        }
+                      },
+                      "additionalProperties": false,
+                      "description": "At least one interval (months, dives or hours)"
+                    },
+                    "description": "Initial schedules, created with the item"
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EquipmentItemDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/equipment/due": {
+      "get": {
+        "summary": "Every schedule due, due soon or overdue across the User's Divers, worst first",
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/EquipmentDue"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/equipment/{id}": {
+      "get": {
+        "summary": "An Equipment item with schedules, usage, records and the last Cylinder that named it",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EquipmentItemDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "summary": "Change an Equipment item; send the version you started from",
+        "description": "409 equipment_changed when it changed meanwhile. When the status leaves in use the server stamps inUseUntil (today unless sent); returning to in use clears it. Only what is sent changes.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "version"
+                ],
+                "properties": {
+                  "version": {
+                    "type": "integer"
+                  },
+                  "category": {
+                    "enum": [
+                      "regulator",
+                      "bcd",
+                      "wing",
+                      "backplate",
+                      "cylinder",
+                      "drysuit",
+                      "wetsuit",
+                      "dive_computer",
+                      "transmitter",
+                      "light",
+                      "camera",
+                      "other"
+                    ]
+                  },
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200,
+                    "pattern": "\\S"
+                  },
+                  "maker": {
+                    "anyOf": [
+                      {
+                        "type": "null"
+                      },
+                      {
+                        "type": "string",
+                        "maxLength": 200
+                      }
+                    ]
+                  },
+                  "model": {
+                    "anyOf": [
+                      {
+                        "type": "null"
+                      },
+                      {
+                        "type": "string",
+                        "maxLength": 200
+                      }
+                    ]
+                  },
+                  "serial": {
+                    "anyOf": [
+                      {
+                        "type": "null"
+                      },
+                      {
+                        "type": "string",
+                        "maxLength": 200
+                      }
+                    ]
+                  },
+                  "purchaseDate": {
+                    "anyOf": [
+                      {
+                        "type": "null"
+                      },
+                      {
+                        "type": "string",
+                        "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                        "description": "YYYY-MM-DD"
+                      }
+                    ]
+                  },
+                  "notes": {
+                    "anyOf": [
+                      {
+                        "type": "null"
+                      },
+                      {
+                        "type": "string",
+                        "maxLength": 20000
+                      }
+                    ]
+                  },
+                  "equipmentStatus": {
+                    "enum": [
+                      "in_use",
+                      "retired",
+                      "lost",
+                      "sold"
+                    ],
+                    "description": "Leaving in use stamps inUseUntil; returning to it clears it"
+                  },
+                  "onEveryDive": {
+                    "type": "boolean"
+                  },
+                  "inUseFrom": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                    "description": "YYYY-MM-DD"
+                  },
+                  "inUseUntil": {
+                    "anyOf": [
+                      {
+                        "type": "null"
+                      },
+                      {
+                        "type": "string",
+                        "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                        "description": "YYYY-MM-DD"
+                      }
+                    ]
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EquipmentItemDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete an Equipment item that was never used; a used one is retired instead",
+        "description": "409 equipment_in_use when it has any use on a Dive, a Device, a naming Cylinder or a service record.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Default Response"
+          },
+          "400": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/equipment/{id}/schedules": {
+      "post": {
+        "summary": "Add a service schedule to an item",
+        "description": "400 schedule_interval_required without any interval.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name",
+                  "startDate"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200,
+                    "pattern": "\\S"
+                  },
+                  "intervalMonths": {
+                    "anyOf": [
+                      {
+                        "type": "null"
+                      },
+                      {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 1200,
+                        "description": "Every this many months"
+                      }
+                    ]
+                  },
+                  "intervalDives": {
+                    "anyOf": [
+                      {
+                        "type": "null"
+                      },
+                      {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 1000000,
+                        "description": "Every this many Dives"
+                      }
+                    ]
+                  },
+                  "intervalHours": {
+                    "anyOf": [
+                      {
+                        "type": "null"
+                      },
+                      {
+                        "type": "number",
+                        "exclusiveMinimum": 0,
+                        "maximum": 100000,
+                        "description": "Every this many dive hours"
+                      }
+                    ]
+                  },
+                  "startDate": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                    "description": "YYYY-MM-DD"
+                  },
+                  "active": {
+                    "type": "boolean",
+                    "description": "Default true; an inactive schedule computes nothing"
+                  }
+                },
+                "additionalProperties": false,
+                "description": "At least one interval (months, dives or hours)"
+              }
+            }
+          },
+          "description": "At least one interval (months, dives or hours)"
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServiceSchedule"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/schedules/{id}": {
+      "patch": {
+        "summary": "Change a service schedule; send the version you started from",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "version",
+                  "name",
+                  "startDate"
+                ],
+                "properties": {
+                  "version": {
+                    "type": "integer"
+                  },
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200,
+                    "pattern": "\\S"
+                  },
+                  "intervalMonths": {
+                    "anyOf": [
+                      {
+                        "type": "null"
+                      },
+                      {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 1200,
+                        "description": "Every this many months"
+                      }
+                    ]
+                  },
+                  "intervalDives": {
+                    "anyOf": [
+                      {
+                        "type": "null"
+                      },
+                      {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 1000000,
+                        "description": "Every this many Dives"
+                      }
+                    ]
+                  },
+                  "intervalHours": {
+                    "anyOf": [
+                      {
+                        "type": "null"
+                      },
+                      {
+                        "type": "number",
+                        "exclusiveMinimum": 0,
+                        "maximum": 100000,
+                        "description": "Every this many dive hours"
+                      }
+                    ]
+                  },
+                  "startDate": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                    "description": "YYYY-MM-DD"
+                  },
+                  "active": {
+                    "type": "boolean",
+                    "description": "Default true; an inactive schedule computes nothing"
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServiceSchedule"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete a service schedule; its records stay",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Default Response"
+          },
+          "400": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/equipment/{id}/records": {
+      "post": {
+        "summary": "Record a service: it resets the schedules it names",
+        "description": "At least one schedule; 404 schedule_not_found for one of another item.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "date",
+                  "scheduleIds"
+                ],
+                "properties": {
+                  "date": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                    "description": "YYYY-MM-DD"
+                  },
+                  "byWhom": {
+                    "anyOf": [
+                      {
+                        "type": "null"
+                      },
+                      {
+                        "type": "string",
+                        "maxLength": 200,
+                        "description": "The shop or person who did it"
+                      }
+                    ]
+                  },
+                  "notes": {
+                    "anyOf": [
+                      {
+                        "type": "null"
+                      },
+                      {
+                        "type": "string",
+                        "maxLength": 20000
+                      }
+                    ]
+                  },
+                  "costAmount": {
+                    "anyOf": [
+                      {
+                        "type": "null"
+                      },
+                      {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1000000
+                      }
+                    ]
+                  },
+                  "costCurrency": {
+                    "anyOf": [
+                      {
+                        "type": "null"
+                      },
+                      {
+                        "type": "string",
+                        "pattern": "^[A-Z]{3}$",
+                        "description": "Three capital letters, e.g. EUR"
+                      }
+                    ]
+                  },
+                  "scheduleIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "minItems": 1,
+                    "description": "The schedules this service resets"
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServiceRecord"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/records/{id}": {
+      "patch": {
+        "summary": "Change a service record; send the version you started from",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "version",
+                  "date",
+                  "scheduleIds"
+                ],
+                "properties": {
+                  "version": {
+                    "type": "integer"
+                  },
+                  "date": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                    "description": "YYYY-MM-DD"
+                  },
+                  "byWhom": {
+                    "anyOf": [
+                      {
+                        "type": "null"
+                      },
+                      {
+                        "type": "string",
+                        "maxLength": 200,
+                        "description": "The shop or person who did it"
+                      }
+                    ]
+                  },
+                  "notes": {
+                    "anyOf": [
+                      {
+                        "type": "null"
+                      },
+                      {
+                        "type": "string",
+                        "maxLength": 20000
+                      }
+                    ]
+                  },
+                  "costAmount": {
+                    "anyOf": [
+                      {
+                        "type": "null"
+                      },
+                      {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1000000
+                      }
+                    ]
+                  },
+                  "costCurrency": {
+                    "anyOf": [
+                      {
+                        "type": "null"
+                      },
+                      {
+                        "type": "string",
+                        "pattern": "^[A-Z]{3}$",
+                        "description": "Three capital letters, e.g. EUR"
+                      }
+                    ]
+                  },
+                  "scheduleIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "minItems": 1,
+                    "description": "The schedules this service resets"
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServiceRecord"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete a service record",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Default Response"
+          },
+          "400": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/dives/{id}/equipment": {
+      "get": {
+        "summary": "The Dive's gear: derived items and the explicit put-on/taken-off exceptions",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiveGear"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Put an item on a Dive or take it off (an exception to the item's mode)",
+        "description": "409 equipment_use_mismatch for put_on on an every-Dive item or taken_off on another.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "itemId",
+                  "use"
+                ],
+                "properties": {
+                  "itemId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "use": {
+                    "enum": [
+                      "put_on",
+                      "taken_off"
+                    ],
+                    "description": "put_on or taken_off"
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Default Response"
+          },
+          "400": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/dives/{id}/equipment/{itemId}": {
+      "delete": {
+        "summary": "Remove a put-on/taken-off row from a Dive",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "itemId",
+            "required": true
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Default Response"
+          },
+          "400": {
             "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
             "content": {
               "application/json": {
@@ -24554,7 +27181,7 @@
     "/api/connections/{id}/dive-sites/{siteId}": {
       "put": {
         "summary": "Set or clear a Dive site's ID at the Connection's Provider: picked from its sites or typed, after asking the Provider",
-        "description": "The Provider is asked about the ID first. One it calls public is stored public (with a Revision); the account's own private one is stored private to the Connection's account; an ID it has no site for (also another account's private site) is 422 provider_site_unknown and nothing is stored. When it does not say or cannot be asked, the ID is stored private, never public. null clears the account's private ID of the site only (the public ID is cleared with PUT /api/dive-sites/{id}/external-ids/{source}). 409 external_id_taken when another site has the ID.",
+        "description": "The Provider is asked about the ID first. One it calls public is stored public (with a Revision); the account's own private one is stored private to the Connection's account; an ID it has no site for (also another account's private site) is 422 provider_site_unknown and nothing is stored. When it does not say or cannot be asked, the ID is stored private, never public. A public ID replaces the account's private ID of the site. 409 provider_not_connected when the Connection's Diver has no account there; 502 provider_unavailable when the Provider cannot be asked and another account holds the ID privately. null clears the account's private ID of the site only (the public ID is cleared with PUT /api/dive-sites/{id}/external-ids/{source}). 409 external_id_taken when another site has the ID.",
         "requestBody": {
           "required": true,
           "content": {

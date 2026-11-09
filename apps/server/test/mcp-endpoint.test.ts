@@ -5,7 +5,7 @@ import { eq, sql } from 'drizzle-orm';
 import { Type, type TSchema } from 'typebox';
 import { Value } from 'typebox/value';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { aiAccessLog, apikey, dive, user } from '../src/db/schema.js';
+import { aiAccessLog, apikey, dive, serviceRecord, user } from '../src/db/schema.js';
 import { TOOLS } from '../src/mcp/server.js';
 import { MAX_RESULT_CHARS, defineTool, runTool } from '../src/mcp/tool.js';
 import { makeSyntheticDive } from './fixtures/synthetic-dive.js';
@@ -213,7 +213,7 @@ describe.skipIf(!(await databaseReachable()))('the MCP endpoint', () => {
       const { tools } = await client.listTools();
       expect(tools.map((x) => x.name)).toEqual([
         'logbook_search_dives', 'logbook_get_dive', 'logbook_get_dive_assessment', 'logbook_stats', 'sites_search', 'sites_get', 'divers_buddies', 'divers_list',
-        'planning_gas_and_bottom_time', 'planning_gas_plan',
+        'equipment_list', 'planning_gas_and_bottom_time', 'planning_gas_plan',
       ]);
       for (const listed of tools) {
         expect(listed.annotations).toMatchObject({ readOnlyHint: true, destructiveHint: false });
@@ -512,6 +512,41 @@ describe.skipIf(!(await databaseReachable()))('the MCP endpoint', () => {
       expect((await tool(await connect(annasKey), 'sites_search', { dived_only: false })).structuredContent!.sites[0]).toMatchObject({ shared_name: 'Blue Hole', your_dives: 0 });
     });
 
+    it('lists Equipment with its schedules and records, only for the User\'s Divers', async () => {
+      const client = await connect(key);
+      const created = await json<{ id: string; schedules: { id: string }[] }>('POST', `/api/divers/${timDiver}/equipment`, tim, {
+        category: 'regulator', name: 'Regulator set', maker: 'Apeks', inUseFrom: '2026-01-01',
+        schedules: [{ name: 'Annual service', intervalMonths: 1, startDate: '2026-01-01' }],
+      });
+      const scheduleId = created.schedules[0]!.id;
+      await call('POST', `/api/dives/${timsDive}/equipment`, tim, { itemId: created.id, use: 'put_on' });
+      const record = await json<{ id: string }>('POST', `/api/equipment/${created.id}/records`, tim, {
+        date: '2026-01-15', byWhom: 'Dive shop', notes: 'Replaced the seals', costAmount: 80, costCurrency: 'EUR', scheduleIds: [scheduleId],
+      });
+      // Another User's item never appears, and the Diver filter narrows the answer.
+      const annaDiver = (await json<{ id: string; isOwn: boolean }[]>('GET', '/api/divers', anna)).find((d) => d.isOwn)!.id;
+      await json('POST', `/api/divers/${annaDiver}/equipment`, anna, { category: 'light', name: 'Anna torch', inUseFrom: '2026-01-01' });
+
+      // The Device's own item exists too (ADR 0034 D7): narrow to the kind this test made.
+      const found = await tool(client, 'equipment_list', { category: 'regulator' });
+      expect(found.structuredContent).toMatchObject({ total: 1, count: 1 });
+      expect(found.structuredContent!.items[0]).toMatchObject({
+        id: created.id, diver: { id: timDiver, name: 'tim' }, category: 'regulator', shared_name: 'Regulator set',
+        shared_maker: 'Apeks', status: 'in_use', on_every_dive: false, in_use_from: '2026-01-01',
+        usage: { dive_count: 1, last_used_on: '2026-03-14' },
+        schedules: [{
+          id: scheduleId, shared_name: 'Annual service', interval_months: 1, interval_dives: null, interval_hours: null,
+          active: true, due: { state: 'overdue', reason: 'due 2026-02', anchor: '2026-01-15' },
+        }],
+        records: [{ id: record.id, date: '2026-01-15', shared_by_whom: 'Dive shop', shared_notes: 'Replaced the seals', cost_amount: 80, cost_currency: 'EUR', schedule_ids: [scheduleId] }],
+      });
+      expect((await tool(client, 'equipment_list', { diver_id: kid })).structuredContent).toMatchObject({ total: 0, items: [] });
+      expect((await tool(client, 'equipment_list', { category: 'light' })).structuredContent).toMatchObject({ total: 0, items: [] });
+      const annasNames = (await tool(await connect(annasKey), 'equipment_list')).structuredContent!.items.map((i: { shared_name: string }) => i.shared_name);
+      expect(annasNames).toContain('Anna torch');
+      expect(annasNames).not.toContain('Regulator set');
+    });
+
     it('says what to do when a call is wrong', async () => {
       const client = await connect(key);
       const unknown = await tool(client, 'logbook_search_dives', { limt: 5, country: 'Egypt' });
@@ -571,6 +606,30 @@ describe.skipIf(!(await databaseReachable()))('the MCP endpoint', () => {
       const full = (await tool(client, 'logbook_get_dive', { dive_id: one, detail: 'detailed' })).structuredContent!;
       expect(full).toMatchObject({ notes_truncated: true, profile: null, profile_channels: [] });
       expect(full.notes.length).toBeLessThanOrEqual(4001);
+    });
+
+    it('keeps one Equipment item with many long records under the size cap', async () => {
+      const client = await connect(key);
+      const made = await json<{ id: string }>('POST', `/api/divers/${kid}/equipment`, tim, {
+        category: 'regulator', name: 'Big records', inUseFrom: '2026-01-01', notes: 'n'.repeat(20_000),
+      });
+      await t.db.insert(serviceRecord).values(Array.from({ length: 40 }, (_, i) => ({
+        itemId: made.id,
+        date: `2020-${String((i % 12) + 1).padStart(2, '0')}-${String((i % 28) + 1).padStart(2, '0')}`,
+        byWhom: 'b'.repeat(200),
+        notes: 'r'.repeat(20_000),
+      })));
+
+      const answer = (await tool(client, 'equipment_list', { diver_id: kid, category: 'regulator' })).structuredContent!;
+      expect(answer).toMatchObject({ total: 1, count: 1 });
+      const item = answer.items[0];
+      expect(item.shared_notes.length).toBeLessThanOrEqual(501);
+      expect(item.shared_notes_truncated).toBe(true);
+      expect(item.records).toHaveLength(20);
+      expect(item.records_truncated).toBe(true);
+      expect(item.records[0].shared_notes.length).toBeLessThanOrEqual(501);
+      expect(item.records[0].shared_notes_truncated).toBe(true);
+      expect(JSON.stringify(answer).length).toBeLessThan(MAX_RESULT_CHARS);
     });
 
     it('cuts a page in half when its Dives are too long for one answer', async () => {

@@ -2,7 +2,7 @@
 // pressure series of one of the Dive's Recordings; an import makes them from a tank pod's data where the Dive has none.
 import { and, asc, eq, inArray, isNull, sql } from 'drizzle-orm';
 import type { Queryable, Tx } from '../db/client.js';
-import { cylinder, dive, recording, revision, sampleSeries, type CylinderMaterial } from '../db/schema.js';
+import { cylinder, dive, equipmentItem, recording, revision, sampleSeries, type CylinderMaterial } from '../db/schema.js';
 import { writeRevision, type Actor, type Changes, type RevisionCause } from '../revisions/revisions.js';
 
 /** A Provider's single tank: what it keeps of a Cylinder. A value it doesn't have is null. */
@@ -18,7 +18,7 @@ export interface ProviderCylinder {
 }
 
 export class CylinderError extends Error {
-  constructor(readonly code: 'cylinder_invalid' | 'cylinder_series_not_found') {
+  constructor(readonly code: 'cylinder_invalid' | 'cylinder_series_not_found' | 'equipment_item_not_cylinder') {
     super(code);
   }
 }
@@ -33,6 +33,8 @@ export interface CylinderInput {
   endPressureBar?: number | null;
   /** The pressure series of one of the Dive's Recordings that measured this Cylinder. */
   series?: { recordingId: string; channel: string } | null;
+  /** The Diver's cylinder item this Cylinder is (ADR 0034); null for a rental or an unnamed cylinder. */
+  equipmentItemId?: string | null;
 }
 
 export interface Cylinder extends Required<CylinderInput> {
@@ -54,6 +56,7 @@ export async function cylindersOf(tx: Queryable, diveId: string): Promise<Cylind
     gas: r.o2 === null || r.he === null ? null : { o2: r.o2, he: r.he },
     startPressureBar: r.startPressureBar, endPressureBar: r.endPressureBar, fromPod: r.fromPod,
     series: r.recordingId && r.channel ? { recordingId: r.recordingId, channel: r.channel } : null,
+    equipmentItemId: r.equipmentItemId,
   }));
 }
 
@@ -64,6 +67,7 @@ async function write(tx: Tx, diveId: string, list: Cylinder[]) {
     diveId, position, volumeL: c.volumeL, workingPressureBar: c.workingPressureBar, material: c.material,
     o2: c.gas?.o2 ?? null, he: c.gas?.he ?? null, startPressureBar: c.startPressureBar, endPressureBar: c.endPressureBar,
     fromPod: c.fromPod, recordingId: c.series?.recordingId ?? null, channel: c.series?.channel ?? null,
+    equipmentItemId: c.equipmentItemId,
   })));
 }
 
@@ -79,6 +83,7 @@ export async function setCylinders(tx: Tx, diveId: string, list: CylinderInput[]
       volumeL: c.volumeL ?? null, workingPressureBar: c.workingPressureBar ?? null, material: c.material ?? null,
       gas: c.gas ?? null, startPressureBar: c.startPressureBar ?? null, endPressureBar: c.endPressureBar ?? null,
       fromPod: before.some((b) => b.fromPod && sameSeries(b.series, series)), series,
+      equipmentItemId: c.equipmentItemId ?? null,
     };
   });
   if (JSON.stringify(before) === JSON.stringify(next)) return {};
@@ -93,6 +98,17 @@ export async function setCylinders(tx: Tx, diveId: string, list: CylinderInput[]
       .innerJoin(recording, eq(recording.id, sampleSeries.recordingId))
       .where(and(eq(recording.diveId, diveId), isNull(recording.deletedAt), inArray(sampleSeries.recordingId, tied.map((s) => s.recordingId))));
     if (!tied.every((s) => PRESSURE_CHANNEL.test(s.channel) && found.some((f) => sameSeries(f, s)))) throw new CylinderError('cylinder_series_not_found');
+  }
+  // A named item must exist, belong to the Dive's Diver and be a cylinder (ADR 0034 D6); any status is allowed, since a
+  // past Dive may have been on a cylinder sold since.
+  const named = [...new Set(next.flatMap((c) => (c.equipmentItemId ? [c.equipmentItemId] : [])))];
+  if (named.length > 0) {
+    const [row] = await tx.select({ diverId: dive.diverId }).from(dive).where(eq(dive.id, diveId));
+    const found = await tx.select({ id: equipmentItem.id }).from(equipmentItem).where(and(
+      inArray(equipmentItem.id, named), eq(equipmentItem.diverId, row!.diverId),
+      eq(equipmentItem.category, 'cylinder'), isNull(equipmentItem.deletedAt),
+    )).for('update');
+    if (found.length !== named.length) throw new CylinderError('equipment_item_not_cylinder');
   }
   await write(tx, diveId, next);
   return { cylinders: { from: before, to: next } };
@@ -122,7 +138,7 @@ export async function fillCylindersFromRecording(tx: Tx, diveId: string, rec: Pi
     return {
       volumeL: gas?.tankVolumeL ?? null, workingPressureBar: null, material: null, gas: gas ? { o2: gas.o2, he: gas.he } : null,
       startPressureBar: gas?.startPressureBar ?? s?.values[0] ?? null, endPressureBar: gas?.endPressureBar ?? s?.values.at(-1) ?? null,
-      fromPod: !!s, series: s ? { recordingId: rec.id, channel: s.channel } : null,
+      fromPod: !!s, series: s ? { recordingId: rec.id, channel: s.channel } : null, equipmentItemId: null,
     };
   });
   await write(tx, diveId, made);
@@ -163,7 +179,8 @@ export async function mergeProviderCylinder(tx: Tx, diveId: string, tank: Provid
     if (spoken) return {};
   }
   const base: Cylinder = only ?? {
-    volumeL: null, workingPressureBar: null, material: null, gas: null, startPressureBar: null, endPressureBar: null, fromPod: false, series: null,
+    volumeL: null, workingPressureBar: null, material: null, gas: null, startPressureBar: null, endPressureBar: null, fromPod: false,
+    series: null, equipmentItemId: null,
   };
   const pick = <T>(here: T | null, theirs: T | null) => (how === 'fill' ? here ?? theirs : theirs ?? here);
   const next: Cylinder = {

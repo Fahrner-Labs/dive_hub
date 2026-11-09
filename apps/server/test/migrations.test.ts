@@ -324,3 +324,45 @@ describe.skipIf(!(await databaseReachable()))('0040: private site IDs (ADR 0057)
     expect((await q(`select external_id from dive_site_external_id where site_id = $1`, [site])).rows).toEqual([{ external_id: '1' }]);
   });
 });
+
+describe.skipIf(!(await databaseReachable()))('0055: an Equipment item for every existing Device (ADR 0034 D7)', () => {
+  let t: TestDatabase;
+  let before: string;
+  beforeAll(async () => {
+    before = await migrationsBefore('0055_sweet_rocket_raccoon');
+    t = await createTestDatabase({ migrationsFolder: before });
+  });
+  afterAll(async () => {
+    await t?.drop();
+    if (before) await rm(before, { recursive: true, force: true });
+  });
+
+  it('names and links one item per Device, with the in-use window from its earliest Recording or today', async () => {
+    const q = (sql: string, params: unknown[] = []) => t.pool.query(sql, params);
+    const user = (await q(`insert into "user" (name, email) values ('Tim', 'tim@example.org') returning id`)).rows[0].id as string;
+    const original = (await q(`insert into original (user_id, sha256, media_type, size_bytes, storage_key) values ($1, 'sha', 'application/octet-stream', 1, 'key') returning id`, [user])).rows[0].id as string;
+    const diver = (await q(`insert into diver (name) values ('Tim') returning id`)).rows[0].id as string;
+    const used = (await q(`insert into device (diver_id, manufacturer, product, serial_number) values ($1, 'Garmin', 'Descent G1', 'G1') returning id`, [diver])).rows[0].id as string;
+    const unused = (await q(`insert into device (diver_id, manufacturer, product, serial_number) values ($1, 'Shearwater', 'Perdix', 'P1') returning id`, [diver])).rows[0].id as string;
+    const record = (key: string, startsAt: string, deleted = false) => q(
+      `insert into recording (device_id, original_id, recording_key, parser, parser_version, starts_at, duration_seconds, utc_offset_seconds, deleted_at)
+       values ($1, $2, $3, 'fit', '1', $4, 1800, 0, $5)`,
+      [used, original, key, startsAt, deleted ? '2020-01-01T00:00:00Z' : null],
+    );
+    await record('rec-later', '2024-05-01T10:00:00Z');
+    await record('rec-earliest', '2023-02-01T10:00:00Z');
+    await record('rec-deleted', '2020-01-01T10:00:00Z', true);
+
+    await migrateDatabase(t.db, t.pool, migrations);
+
+    const today = (await q(`select to_char(current_date, 'YYYY-MM-DD') as date`)).rows[0].date as string;
+    const { rows } = await q(`select d.id, d.equipment_item_id, i.diver_id, i.name, i.category, i.status, i.on_every_dive,
+        to_char(i.in_use_from, 'YYYY-MM-DD') as in_use_from
+      from device d join equipment_item i on i.id = d.equipment_item_id where d.id = any($1)`, [[used, unused]]);
+    expect(rows.find((r) => r.id === used)).toMatchObject({
+      equipment_item_id: used, diver_id: diver, name: 'Garmin Descent G1', category: 'dive_computer', status: 'in_use', on_every_dive: false, in_use_from: '2023-02-01',
+    });
+    expect(rows.find((r) => r.id === unused)).toMatchObject({ equipment_item_id: unused, name: 'Shearwater Perdix', in_use_from: today });
+    expect((await q('select count(*)::int as n from equipment_item')).rows[0].n).toBe(2);
+  });
+});

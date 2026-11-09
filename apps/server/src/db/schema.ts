@@ -12,6 +12,7 @@ import {
   index,
   integer,
   jsonb,
+  numeric,
   pgEnum,
   pgTable,
   primaryKey,
@@ -21,7 +22,10 @@ import {
   uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
-import { WATER_TYPES, type DecoModel, type DiveMode, type GasCircuit, type ImportSource, type SiteWaterType, type WaterType } from '../vocabulary.js';
+import {
+  EQUIPMENT_CATEGORIES, EQUIPMENT_STATUSES, EQUIPMENT_USES,
+  WATER_TYPES, type DecoModel, type DiveMode, type GasCircuit, type ImportSource, type SiteWaterType, type WaterType,
+} from '../vocabulary.js';
 import { user } from './auth-schema.js';
 import type { ImportArea, ImportedValues, SiteImportCounts, StoredConflictField } from './import-types.js';
 
@@ -142,6 +146,116 @@ export const userPreference = pgTable('user_preference', {
   updatedAt: updatedAt(),
 });
 
+export const equipmentCategory = pgEnum('equipment_category', [...EQUIPMENT_CATEGORIES]);
+export const equipmentStatus = pgEnum('equipment_status', [...EQUIPMENT_STATUSES]);
+export const equipmentUseKind = pgEnum('equipment_use_kind', [...EQUIPMENT_USES]);
+
+/**
+ * A piece of a Diver's gear (ADR 0034): category, name, maker, model, serial, purchase and status. `on_every_dive`
+ * items count every Dive of their Diver between `in_use_from` and `in_use_until` except the ones they were taken off;
+ * other items count the Dives they were put on. A used item is retired, lost or sold, never deleted.
+ */
+export const equipmentItem = pgTable(
+  'equipment_item',
+  {
+    id: id(),
+    diverId: uuid('diver_id').notNull().references(() => diver.id),
+    category: equipmentCategory('category').notNull(),
+    name: text('name').notNull(),
+    maker: text('maker'),
+    model: text('model'),
+    serial: text('serial'),
+    purchaseDate: date('purchase_date', { mode: 'string' }),
+    notes: text('notes'),
+    status: equipmentStatus('status').notNull().default('in_use'),
+    onEveryDive: boolean('on_every_dive').notNull().default(false),
+    inUseFrom: date('in_use_from', { mode: 'string' }).notNull(),
+    inUseUntil: date('in_use_until', { mode: 'string' }),
+    version: integer('version').notNull().default(1),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+    deletedAt: deletedAt(),
+  },
+  (t) => [
+    index('equipment_item_diver_idx').on(t.diverId),
+    check('equipment_item_window_ck', sql`${t.inUseUntil} is null or ${t.inUseUntil} >= ${t.inUseFrom}`),
+  ],
+);
+
+/**
+ * The exceptions to an item's mode on a Dive (ADR 0034): an every-Dive item taken off (rented gear on a holiday), or
+ * another item put on. One row per Dive and item; deleted Dives count nowhere.
+ */
+export const equipmentUse = pgTable(
+  'equipment_use',
+  {
+    diveId: uuid('dive_id').notNull().references(() => dive.id, { onDelete: 'cascade' }),
+    itemId: uuid('item_id').notNull().references(() => equipmentItem.id),
+    use: equipmentUseKind('use').notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.diveId, t.itemId] }), index('equipment_use_item_idx').on(t.itemId)],
+);
+
+/** A rule for one kind of service on an item (ADR 0034), due at whichever of months, dives or hours comes first. */
+export const serviceSchedule = pgTable(
+  'service_schedule',
+  {
+    id: id(),
+    itemId: uuid('item_id').notNull().references(() => equipmentItem.id),
+    name: text('name').notNull(),
+    intervalMonths: integer('interval_months'),
+    intervalDives: integer('interval_dives'),
+    intervalHours: real('interval_hours'),
+    startDate: date('start_date', { mode: 'string' }).notNull(),
+    active: boolean('active').notNull().default(true),
+    version: integer('version').notNull().default(1),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    index('service_schedule_item_idx').on(t.itemId),
+    check(
+      'service_schedule_interval_ck',
+      sql`(${t.intervalMonths} is not null or ${t.intervalDives} is not null or ${t.intervalHours} is not null)
+        and coalesce(${t.intervalMonths}, 1) > 0 and coalesce(${t.intervalDives}, 1) > 0 and coalesce(${t.intervalHours}, 1) > 0`,
+    ),
+  ],
+);
+
+/** A service done to an item (ADR 0034): a fact; a schedule deleted later keeps its records. */
+export const serviceRecord = pgTable(
+  'service_record',
+  {
+    id: id(),
+    itemId: uuid('item_id').notNull().references(() => equipmentItem.id),
+    date: date('date', { mode: 'string' }).notNull(),
+    byWhom: text('by_whom'),
+    notes: text('notes'),
+    costAmount: numeric('cost_amount', { precision: 12, scale: 2 }),
+    costCurrency: text('cost_currency'),
+    version: integer('version').notNull().default(1),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    index('service_record_item_idx').on(t.itemId),
+    check(
+      'service_record_cost_ck',
+      sql`(${t.costAmount} is null) = (${t.costCurrency} is null) and (${t.costAmount} is null or ${t.costAmount} >= 0) and (${t.costCurrency} is null or ${t.costCurrency} ~ '^[A-Z]{3}$')`,
+    ),
+  ],
+);
+
+/** Which service schedules a record resets (ADR 0034); a deleted schedule takes its join rows, not the record. */
+export const serviceRecordSchedule = pgTable(
+  'service_record_schedule',
+  {
+    recordId: uuid('record_id').notNull().references(() => serviceRecord.id, { onDelete: 'cascade' }),
+    scheduleId: uuid('schedule_id').notNull().references(() => serviceSchedule.id, { onDelete: 'cascade' }),
+  },
+  (t) => [primaryKey({ columns: [t.recordId, t.scheduleId] }), index('service_record_schedule_schedule_idx').on(t.scheduleId)],
+);
+
 export const device = pgTable(
   'device',
   {
@@ -151,6 +265,8 @@ export const device = pgTable(
     product: text('product'),
     serialNumber: text('serial_number').notNull(),
     firmware: text('firmware'),
+    /** The Equipment item this Device is (ADR 0034): its Dives count through the Device's Recordings. */
+    equipmentItemId: uuid('equipment_item_id').notNull().references(() => equipmentItem.id),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
     deletedAt: deletedAt(),
@@ -732,10 +848,13 @@ export const cylinder = pgTable(
     fromPod: boolean('from_pod').notNull().default(false),
     recordingId: uuid('recording_id').references(() => recording.id),
     channel: text('channel'),
+    /** The Diver's cylinder item this Cylinder is (ADR 0034); a rental cylinder stays plain. */
+    equipmentItemId: uuid('equipment_item_id').references(() => equipmentItem.id),
   },
   (t) => [
     primaryKey({ columns: [t.diveId, t.position] }),
     index('cylinder_recording_idx').on(t.recordingId),
+    index('cylinder_equipment_idx').on(t.equipmentItemId),
     check('cylinder_series_ck', sql`(${t.recordingId} is null) = (${t.channel} is null)`),
     check('cylinder_gas_ck', sql`(${t.o2} is null) = (${t.he} is null)`),
   ],

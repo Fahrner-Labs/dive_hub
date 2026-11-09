@@ -8,8 +8,9 @@ date: 2026-10-06
 # ADR 0034: Equipment items with service schedules the User sets up
 
 ## Status
-Accepted – 2026-10-06. Not built yet. Amends [ADR 0016](0016-recording-decisions-and-divers.md) (a Device is linked to an
-Equipment item). Builds on [ADR 0031](0031-lead-suit-cylinders-and-lead-estimate.md) (Cylinders on a Dive). Designed in
+Accepted – 2026-10-06. Built in slice 23 (2026-11); the build deltas are below. Amends
+[ADR 0016](0016-recording-decisions-and-divers.md) (a Device is linked to an Equipment item). Builds on
+[ADR 0031](0031-lead-suit-cylinders-and-lead-estimate.md) (Cylinders on a Dive). Designed in
 [Equipment items and service intervals](../research/2026-10-06-equipment-and-service.md).
 
 ## Context
@@ -66,6 +67,22 @@ that an item can have several schedules; and chose the recommendation for each o
 
 ### Order
 Slice 23, after the planning tools (slices 19–22); the cylinder link builds on slice 19's Cylinders.
+
+## Amendments while building
+
+The locked plan resolved three gaps the decision left open; the build followed them.
+
+- **D5 — the anchor day itself does not count.** Usage Dives count **strictly after** a service record's date, and the
+  same rule applies to a schedule's start date ("last done before Dive Hub"): a Dive on that day was before the service.
+  One rule for both anchors; a backdated record is still a fact but never moves the anchor's clock back.
+- **D6 — naming a cylinder item fills from its last use, not from the item.** Items carry no volume, pressure or material
+  (that would be a later extension). Choosing a cylinder item in a Dive's cylinder form fills those values from the most
+  recent Cylinder that named the same item; the first use fills nothing. Any status is allowed, so a past Dive on a
+  since-sold cylinder stays valid.
+- **D7 — a Device and its item move together.** `device.equipment_item_id` is NOT NULL after the backfill; new Devices get
+  their item where the Device is created, and reassigning a Device moves its item to the new Diver in the same
+  transaction. The backfill names each item `manufacturer + product` and categorizes **every** Device as `dive computer`;
+  the Device table cannot tell a transmitter apart, so the User recategorizes it.
 
 ## Considered options
 - **Built-in templates per category** (Submersion seeds intervals): rejected by the owner; manufacturers and countries

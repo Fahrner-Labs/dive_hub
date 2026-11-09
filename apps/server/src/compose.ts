@@ -17,6 +17,7 @@ import { createLogbookService } from './dives/logbook-service.js';
 import { createMergeService } from './dives/merge-service.js';
 import { createMergingService } from './dives/merging-service.js';
 import { createDiverService } from './divers/diver-service.js';
+import { createEquipmentService } from './equipment/equipment-service.js';
 import { createImportService } from './imports/import-service.js';
 import { listenToChanges } from './revisions/revisions.js';
 import { createLive } from './live/service.js';
@@ -90,6 +91,7 @@ export function createServices({ db, blobs, auth, secrets, adapters, siteSources
     userAdmin: createUserAdminService(db, blobs),
     logbook, dives, checks, merging,
     divers: createDiverService(db),
+    equipment: createEquipmentService(db),
     centres: createCentreService(db, { ssi: ssiCentreDisplayName }),
     deletion: createDeletionService({ dives, logbook, pushes, waitingPushes }),
     merge: createMergeService({ merging, logbook, pushes }),

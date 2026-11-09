@@ -114,11 +114,11 @@ Noted for later; not designed or decided yet.
   repetitive dives from the logbook, sites' altitude, trimix limits, what a planned dive is and whether it becomes the
   Dive once dived.
 
-- **Equipment and service intervals** (owner, 2026-10-06). A Diver's Equipment items with service schedules the User sets
-  up (several per item; months, dives and/or hours, whichever first) and service records; usage from items on every Dive
-  while in use (with exceptions), items put on single Dives, Devices and Cylinders; reminders in the app. Decided in
-  [ADR 0034](../decisions/0034-equipment-items-and-service-schedules.md), designed in the
-  [equipment note](../research/2026-10-06-equipment-and-service.md) (slice 23). Later: lending and holders over time, parts,
+- **Equipment and service intervals** (owner, 2026-10-06; built in slice 23). A Diver's Equipment items with service
+  schedules the User sets up (several per item; months, dives and/or hours, whichever first) and service records; usage
+  from items on every Dive while in use (with exceptions), items put on single Dives, Devices and Cylinders; reminders in
+  the app. Decided in [ADR 0034](../decisions/0034-equipment-items-and-service-schedules.md), designed in the
+  [equipment note](../research/2026-10-06-equipment-and-service.md). Later: lending and holders over time, parts,
   receipts, SSI's gear list.
 
 - **An MCP connector** (owner, 2026-10-06). A User lets their LLM client read their logbook through a read-only MCP

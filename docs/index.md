@@ -2,7 +2,7 @@
 title: Documentation index
 summary: Folder-level map of the project's durable knowledge.
 status: living
-date: 2026-11-04
+date: 2026-11-09
 ---
 
 # Documentation index
@@ -11,7 +11,8 @@ Durable product knowledge lives here; work state (tasks, plans, discussion) live
 ([ADR 0065](decisions/0065-work-runs-through-paperclip.md)). Search a folder instead of reading it through.
 
 - [spec/](spec/README.md): the product specification. Vision, data model, architecture with implementation status,
-  the client contract every API client follows, and the design system.
+  the client contract every API client follows, and the design system. The data model and client contract include the
+  built Equipment items and their service schedules ([ADR 0034](decisions/0034-equipment-items-and-service-schedules.md)).
 - [glossary.md](glossary.md): domain language with the German UI words. Tests and interfaces use its terms.
 - [decisions/](decisions/template.md): ADRs, numbered `NNNN-title.md`, copied from `template.md`. Only decisions that
   are hard to reverse, surprising and a real trade-off.

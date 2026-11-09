@@ -43,9 +43,9 @@ describe.skipIf(!(await databaseReachable()))('Cylinders on a Dive', () => {
   const garminDive = async (d: number, serialNumber = 111) => (await upload(`garmin-${d}.fit`, makeSyntheticDive({ serialNumber, start: day(d) }))).diveId;
 
   const steel12 = {
-    volumeL: 12, workingPressureBar: 232, material: 'steel', gas: { o2: 32, he: 0 }, startPressureBar: 205, endPressureBar: 60,
+    volumeL: 12, workingPressureBar: 232, material: 'steel', gas: { o2: 32, he: 0 }, startPressureBar: 205, endPressureBar: 60, equipmentItemId: null,
   };
-  const stage = { volumeL: 7, workingPressureBar: 200, material: 'aluminium', gas: { o2: 50, he: 0 }, startPressureBar: 200, endPressureBar: 180 };
+  const stage = { volumeL: 7, workingPressureBar: 200, material: 'aluminium', gas: { o2: 50, he: 0 }, startPressureBar: 200, endPressureBar: 180, equipmentItemId: null };
 
   beforeAll(async () => {
     t = await createTestDatabase();
@@ -100,7 +100,7 @@ describe.skipIf(!(await databaseReachable()))('Cylinders on a Dive', () => {
     it('a value left out is unknown, and an empty list takes them all away', async () => {
       const set = (await setCylinders(diveId, [{ volumeL: 10 }])).json() as DiveView;
       expect(set.cylinders).toEqual([{
-        volumeL: 10, workingPressureBar: null, material: null, gas: null, startPressureBar: null, endPressureBar: null, fromPod: false, series: null,
+        volumeL: 10, workingPressureBar: null, material: null, gas: null, startPressureBar: null, endPressureBar: null, fromPod: false, series: null, equipmentItemId: null,
       }]);
       expect(((await setCylinders(diveId, [])).json() as DiveView).cylinders).toEqual([]);
       await setCylinders(diveId, [steel12]);
@@ -138,7 +138,7 @@ describe.skipIf(!(await databaseReachable()))('Cylinders on a Dive', () => {
       const d = await getDive(diveId);
       expect(d.cylinders).toEqual([{
         volumeL: 12, workingPressureBar: null, material: null, gas: { o2: 32, he: 0 },
-        startPressureBar: expect.closeTo(200.4, 2), endPressureBar: expect.closeTo(50.1, 2), fromPod: true, series: pod(),
+        startPressureBar: expect.closeTo(200.4, 2), endPressureBar: expect.closeTo(50.1, 2), fromPod: true, series: pod(), equipmentItemId: null,
       }]);
       // One entry in the history says the Dive was made, with its Cylinders.
       const entries = await history(diveId);
@@ -224,7 +224,7 @@ describe.skipIf(!(await databaseReachable()))('Cylinders on a Dive', () => {
       const { diveId } = await upload('summed-up.json', withoutSeries(12));
       expect((await getDive(diveId)).cylinders).toEqual([{
         volumeL: 12, workingPressureBar: null, material: null, gas: { o2: 32, he: 0 },
-        startPressureBar: expect.closeTo(200.4, 2), endPressureBar: expect.closeTo(50.1, 2), fromPod: false, series: null,
+        startPressureBar: expect.closeTo(200.4, 2), endPressureBar: expect.closeTo(50.1, 2), fromPod: false, series: null, equipmentItemId: null,
       }]);
       expect((await history(diveId)).find((e) => e.changes.cylinders)).toMatchObject({ cause: 'import-create', actor: { type: 'import' } });
     });
@@ -304,12 +304,12 @@ describe.skipIf(!(await databaseReachable()))('Cylinders on a Dive', () => {
       const pod = await upload('pod-21.json', makeSuuntoJson({ start: day(21), serialNumber: '900000000001' }));
       const next = await garminDive(22);
       await setCylinders(previous, [steel12, stage]);
-      const { startPressureBar: _s, endPressureBar: _e, ...steelOnly } = steel12;
-      const { startPressureBar: _s2, endPressureBar: _e2, ...stageOnly } = stage;
-      expect((await sameAsLast(pod.diveId)).json()).toEqual({ diveId: previous, cylinders: [steelOnly, stageOnly], lead: [], suit: null });
+      const { startPressureBar: _s, endPressureBar: _e, equipmentItemId: _i, ...steelOnly } = steel12;
+      const { startPressureBar: _s2, endPressureBar: _e2, equipmentItemId: _i2, ...stageOnly } = stage;
+      expect((await sameAsLast(pod.diveId)).json()).toEqual({ diveId: previous, cylinders: [steelOnly, stageOnly], lead: [], suit: null, gear: [] });
       // The Dive before is the one with the pod: its Cylinder comes as a plain one.
       expect((await sameAsLast(next)).json()).toEqual({
-        diveId: pod.diveId, cylinders: [{ volumeL: 12, workingPressureBar: null, material: null, gas: { o2: 32, he: 0 } }], lead: [], suit: null,
+        diveId: pod.diveId, cylinders: [{ volumeL: 12, workingPressureBar: null, material: null, gas: { o2: 32, he: 0 } }], lead: [], suit: null, gear: [],
       });
       // Nothing was filled: the Dive asked about still has what it had.
       expect((await getDive(next)).cylinders).toEqual([]);
@@ -317,7 +317,7 @@ describe.skipIf(!(await databaseReachable()))('Cylinders on a Dive', () => {
 
     it('gives none for a Diver\'s first Dive, and nothing to a User who doesn\'t manage the Diver', async () => {
       const first = await upload('theirs.fit', makeSyntheticDive({ serialNumber: 333, start: day(20) }), other);
-      expect((await sameAsLast(first.diveId, other)).json()).toEqual({ diveId: null, cylinders: [], lead: [], suit: null });
+      expect((await sameAsLast(first.diveId, other)).json()).toEqual({ diveId: null, cylinders: [], lead: [], suit: null, gear: [] });
       expect((await sameAsLast(first.diveId)).statusCode).toBe(404);
     });
   });

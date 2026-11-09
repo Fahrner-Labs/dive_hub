@@ -61,6 +61,14 @@ describe.each([['de', de]])('%s translation', (_name, locale) => {
   });
 });
 
+describe('Equipment due states', () => {
+  it('has a text for every computed state', () => {
+    const states = enumsOf('state').filter((state) => ['ok', 'due_soon', 'due', 'overdue'].includes(state));
+    expect(states.sort()).toEqual(['due', 'due_soon', 'ok', 'overdue']);
+    for (const state of states) expect(english.has(`equipment.dueState.${state}`), state).toBe(true);
+  });
+});
+
 describe('counts in the send dialog and its strip', () => {
   // "1 Tauchgänge" read wrong (UI/UX pass C3): a text that counts has a singular and a plural form.
   it.each([['en', en], ['de', de]])('has a singular form for every count, in %s', (_name, locale) => {
@@ -115,6 +123,10 @@ describe('codes from the API', () => {
     ['event', 'assessment.event'],
     // A User's role on the instance, and a Participant's on a Dive (ADR 0028).
     ['role', 'admin.roles', 'participants.role'],
+    // Equipment items and their service schedules (ADR 0034): what kind of gear, its status, and an exception's use.
+    ['category', 'vocabulary.equipmentCategory'],
+    ['equipmentStatus', 'vocabulary.equipmentStatus'],
+    ['use', 'vocabulary.equipmentUse'],
   ])('every %s has an English text under %s', (property, ...prefixes) => {
     const codes = enumsOf(property);
     expect(codes.length).toBeGreaterThan(0);
