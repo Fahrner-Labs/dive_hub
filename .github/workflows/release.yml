@@ -1,0 +1,229 @@
+# Publishes a release: the vX.Y.Z tag is the only input (ADR 0068). The tag must point at a commit on main, the
+# image is built for amd64 and arm64, smoke-tested, pushed to ghcr.io under four tags, and announced on the Releases
+# page. A tag that fails the checks publishes nothing.
+name: release
+
+on:
+  push:
+    tags: ['v*']
+  # Re-runs and repairs: give the existing release tag, e.g. v0.1.0. The job checks out that tag, not the branch.
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release tag to publish (vX.Y.Z)'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  packages: write
+
+concurrency:
+  # One run per tag; never cancel half way through a push.
+  group: release-${{ github.event_name == 'workflow_dispatch' && inputs.version || github.ref_name }}
+  cancel-in-progress: false
+
+env:
+  IMAGE: ghcr.io/fahrner-labs/dive_hub
+  RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.version || github.ref_name }}
+
+jobs:
+  verify:
+    name: verify tag on main
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      tag: ${{ steps.release.outputs.tag }}
+      version: ${{ steps.release.outputs.version }}
+      major: ${{ steps.release.outputs.major }}
+      minor: ${{ steps.release.outputs.minor }}
+      sha: ${{ steps.release.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # The whole history: the ancestor check needs it.
+          fetch-depth: 0
+          ref: ${{ env.RELEASE_TAG }}
+
+      - name: Check the tag and its commit
+        id: release
+        run: |
+          set -euo pipefail
+          tag="$RELEASE_TAG"
+          if [[ ! "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::'$tag' is not a release tag of the form vX.Y.Z"
+            exit 1
+          fi
+          git rev-parse --verify "refs/tags/$tag" >/dev/null || {
+            echo "::error::tag $tag does not exist"
+            exit 1
+          }
+          sha="$(git rev-parse "refs/tags/$tag^{commit}")"
+          git fetch --no-tags origin +refs/heads/main:refs/remotes/origin/main
+          if ! git merge-base --is-ancestor "$sha" origin/main; then
+            echo "::error::commit $sha of $tag is not an ancestor of origin/main; tags are cut only on main (ADR 0068)"
+            exit 1
+          fi
+          version="${tag#v}"
+          major="${version%%.*}"
+          rest="${version#*.}"
+          minor="${rest%%.*}"
+          {
+            echo "tag=$tag"
+            echo "version=$version"
+            echo "major=$major"
+            echo "minor=$minor"
+            echo "sha=$sha"
+          } >> "$GITHUB_OUTPUT"
+          echo "Publishing $tag from $sha"
+
+  build-smoke:
+    name: build + smoke
+    needs: verify
+    runs-on: ubuntu-latest
+    # arm64 runs under QEMU; expect about 15–25 minutes.
+    timeout-minutes: 60
+    services:
+      # The image runs its migrations on start, so it needs a real database (ADR 0004).
+      postgres:
+        image: postgres:18.0-alpine
+        env:
+          POSTGRES_USER: divehub
+          POSTGRES_PASSWORD: divehub-dev
+          POSTGRES_DB: divehub
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U divehub"
+          --health-interval 2s
+          --health-timeout 5s
+          --health-retries 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ env.RELEASE_TAG }}
+
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+
+      # Both architectures must build before anything is published. The layers land in the GHA cache for the
+      # publish job; this build itself has no output.
+      - name: Build linux/amd64 and linux/arm64
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: false
+          load: false
+          build-args: |
+            DIVEHUB_VERSION=${{ needs.verify.outputs.tag }}
+            DIVEHUB_REVISION=${{ needs.verify.outputs.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Load the amd64 image for the smoke test
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64
+          push: false
+          load: true
+          tags: divehub-smoke:${{ needs.verify.outputs.tag }}
+          build-args: |
+            DIVEHUB_VERSION=${{ needs.verify.outputs.tag }}
+            DIVEHUB_REVISION=${{ needs.verify.outputs.sha }}
+          cache-from: type=gha
+
+      - name: Start the image against PostgreSQL
+        run: |
+          docker run -d --name divehub-smoke --network host \
+            -e NODE_ENV=production \
+            -e DATABASE_URL=postgres://divehub:divehub-dev@127.0.0.1:5432/divehub \
+            -e DIVEHUB_BASE_URL=http://127.0.0.1:3000 \
+            "divehub-smoke:${{ needs.verify.outputs.tag }}"
+
+      - name: Wait for readiness
+        run: |
+          for _ in $(seq 1 60); do
+            code="$(curl -s -o /tmp/ready.json -w '%{http_code}' http://127.0.0.1:3000/api/health/ready || true)"
+            if [ "$code" = "200" ]; then
+              cat /tmp/ready.json
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "::error::/api/health/ready did not return 200 within 120 s: the migrations did not run"
+          docker logs divehub-smoke
+          exit 1
+
+      - name: The live route reports the release tag
+        run: |
+          version="$(curl -fsS http://127.0.0.1:3000/api/health/live | jq -r .version)"
+          echo "live version: $version"
+          if [ "$version" != "${{ needs.verify.outputs.tag }}" ]; then
+            echo "::error::/api/health/live reports '$version', not the tag '${{ needs.verify.outputs.tag }}'"
+            exit 1
+          fi
+
+      - name: No Garmin FIT SDK in the image (ADR 0006)
+        run: |
+          if docker run --rm --entrypoint sh "divehub-smoke:${{ needs.verify.outputs.tag }}" \
+              -c 'test -e /app/node_modules/@garmin/fitsdk'; then
+            echo "::error::@garmin/fitsdk is in the image; its licence forbids redistribution (ADR 0006)"
+            exit 1
+          fi
+
+      - name: Stop the container
+        if: always()
+        run: docker rm -f divehub-smoke || true
+
+  publish:
+    name: publish
+    needs: [verify, build-smoke]
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ env.RELEASE_TAG }}
+
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Log in to ghcr.io
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Idempotent: a re-run overwrites the same four tags.
+      - name: Push the image tags
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          build-args: |
+            DIVEHUB_VERSION=${{ needs.verify.outputs.tag }}
+            DIVEHUB_REVISION=${{ needs.verify.outputs.sha }}
+          tags: |
+            ${{ env.IMAGE }}:${{ needs.verify.outputs.tag }}
+            ${{ env.IMAGE }}:${{ needs.verify.outputs.major }}.${{ needs.verify.outputs.minor }}
+            ${{ env.IMAGE }}:${{ needs.verify.outputs.major }}
+            ${{ env.IMAGE }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Create or update the GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          tag="${{ needs.verify.outputs.tag }}"
+          if gh release view "$tag" >/dev/null 2>&1; then
+            gh release edit "$tag" --title "$tag" --latest
+          else
+            gh release create "$tag" --verify-tag --generate-notes --title "$tag" --latest
+          fi
