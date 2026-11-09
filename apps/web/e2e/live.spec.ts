@@ -58,6 +58,10 @@ test('a background import brings a new Dive into an untouched logbook, tinted as
 
   const started = Date.now();
   const { done } = await uploadFixture(request, 'live-computer.fit');
+  // Let the worker finish in the background too, so its Dive is in `created` for cleanup even if the tint assertion
+  // fails; the catch keeps that background copy from surfacing when the test already failed.
+  const finished = done();
+  finished.catch(() => undefined);
   // The hint fires when the import commits, which can be seconds before the worker marks it done; the tint lasts only
   // 2.4 s after the row becomes visible. Watch for the tinted row from before the commit rather than sampling after
   // `done`, where the tint can already have faded (FAH-165).
@@ -69,7 +73,7 @@ test('a background import brings a new Dive into an untouched logbook, tinted as
   await expect(page.locator(`[data-dive-id="${id}"]`)).toBeVisible();
   expect(Date.now() - started).toBeLessThan(6_000);
   expect(await page.locator('[data-dive-id]').count()).toBeGreaterThan(before);
-  expect(await done()).toBe(id);
+  expect(await finished).toBe(id);
 });
 
 test('with the stream blocked, the polling fallback still brings the new Dive in', { tag: ['@live', '@dives'] }, async ({ page, request }) => {
