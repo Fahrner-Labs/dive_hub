@@ -17,13 +17,13 @@ test.describe.configure({ mode: 'parallel' });
 
 const headers = { origin: E2E_BASE_URL };
 
-// pnpm check sets E2E_AXE=once: axe runs once per test, on the page as the test leaves it; CI and pnpm check:full run
-// it at every page check (ADR 0023, amendment of 2026-10-24). axe is about half of this file's time.
-const AXE_ONCE = process.env.E2E_AXE === 'once';
+// axe runs once per test, on the page as the test leaves it: every step still gets the page rules, but axe (the
+// slowest check, ADR 0023) runs once. E2E_AXE=every runs it at every page state instead.
+const AXE_EVERY = process.env.E2E_AXE === 'every';
 let axeOwed = false;
-/** expectGoodPage, with axe deferred to the end of the test when AXE_ONCE. */
+/** expectGoodPage, with axe deferred to the end of the test unless E2E_AXE=every. */
 async function goodPage(page: Page, title?: string, options: { axe?: boolean } = {}) {
-  if (!AXE_ONCE || options.axe === false) return expectGoodPage(page, title, options);
+  if (AXE_EVERY || options.axe === false) return expectGoodPage(page, title, options);
   axeOwed = true;
   return expectGoodPage(page, title, { ...options, axe: false });
 }

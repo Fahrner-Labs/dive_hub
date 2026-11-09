@@ -25,9 +25,7 @@ import { appendRun, browserStats, logPath } from './check-log.mjs';
 import { runLanes, takeLock } from './check-run.mjs';
 
 const args = process.argv.slice(2);
-// pnpm check runs axe once per ui-quality test, on its final state; check:full (CI) at every page check (ADR 0023,
-// amendment of 2026-10-24). Set here so that --failed reruns tests the way the failed check ran them.
-if (!args.includes('--full')) process.env.E2E_AXE ??= 'once';
+// ui-quality runs axe once per test, on the page the test ends on (ADR 0023); E2E_AXE=every runs it at every page state.
 
 /**
  * One check at a time per clone (a second would fight the first over the ports, the browsers and the cache): the lock
@@ -119,7 +117,7 @@ if (args.includes('--tests')) {
   const invert = filter.some((arg) => arg === '--grep-invert' || arg.startsWith('--grep-invert=')) ? [] : ['--grep-invert', browserGrepInvert({ full: false, variants: variants.run })];
   console.log(`check: browser tests by hand (${filter.join(' ')}); those that pass count as passed on these files`);
   console.log(`check: ${variants.why ?? 'browser tests in English, light, desktop only; the other ui-quality variants run in CI (pnpm check:full)'}`);
-  if (process.env.E2E_AXE === 'once') console.log('check: axe once per ui-quality test, on its final state; CI runs it at every page check');
+  if (process.env.E2E_AXE !== 'every') console.log('check: axe once per ui-quality test, on its final state (E2E_AXE=every for every page state)');
   const startedAt = Date.now();
   // Under pnpm the arguments go through as an array, unchanged; else through a shell, quoted for it.
   let ran;
@@ -326,7 +324,7 @@ function browserSteps() {
   const variants = variantsRun(since.e2e.changed);
   if (!full) {
     console.log(`check: ${variants.why ?? 'browser tests in English, light, desktop only; the other ui-quality variants run in CI (pnpm check:full)'}`);
-    if (process.env.E2E_AXE === 'once') console.log('check: axe once per ui-quality test, on its final state; CI runs it at every page check');
+    if (process.env.E2E_AXE !== 'every') console.log('check: axe once per ui-quality test, on its final state (E2E_AXE=every for every page state)');
   }
   const leftOut = browserGrepInvert({ full, variants: variants.run });
   const without = leftOut ? ` --grep-invert "${leftOut}"` : '';

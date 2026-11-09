@@ -27,6 +27,20 @@ read).
 the same local plan took 334 s wall (229 tests, 2.6 s a test, ui-quality 42 % of worker time, axe at every check +33 s
 on ui-quality), 4 workers 284 s without timeouts. The 7.3 s did not reproduce; the ranking below was written before.
 
+*Measured again on 2026-11-09* (Playwright's JSON report, 2 workers, the check's English plan of 130 tests):
+
+| axe | Wall | Worker time | Mean per test |
+|---|---|---|---|
+| off (measurement only) | 152 s | 251 s | 1.9 s |
+| once per test, on its final state | 231 s | 344 s | 2.6 s |
+| at every page state | 278 s | 395 s | 3.0 s |
+
+So axe is 27 % of the English variant's worker time when it runs once per test, and 36 % at every state. The German,
+dark, phone variant (72 tests) went from 222 s to 280 s worker time for every state (+57 s). Running axe once per test
+everywhere, not only in `pnpm check`, saves about 108 s of worker time across the two axe variants (16 %) and about 7
+axe scans per variant. What is given up: an axe fault on an intermediate state (a dialog closed again, a page navigated
+away from) is only found with `E2E_AXE=every`; the other page rules still run at every state.
+
 So most of the time sits in a few places (one spec file, axe, per-test setup), not spread evenly. That shapes the
 ranking at the end.
 
