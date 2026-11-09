@@ -6,7 +6,7 @@ import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import {
-  api, diversQuery, equipmentItemQuery, equipmentOfDiverQuery, keys, unwrap,
+  api, devicesQuery, diversQuery, equipmentItemQuery, equipmentOfDiverQuery, keys, unwrap,
   type DiverView, type EquipmentCategory, type EquipmentItemView, type EquipmentScheduleDue,
   type EquipmentScheduleView, type EquipmentStatus,
 } from './api.ts';
@@ -31,37 +31,49 @@ const statusTone = (status: EquipmentStatus): 'neutral' | 'success' | 'danger' =
 
 const today = () => new Date().toISOString().slice(0, 10);
 
+/** The label that tells two items of the same name apart: their serial, from the Device when the item is one. */
+const itemReference = (item: EquipmentItemView, deviceSerials: ReadonlyMap<string, string>) =>
+  `${item.name}, ${item.serial ?? deviceSerials.get(item.id) ?? ''}`.replace(/, $/, '');
+
 /** The Equipment page, at "#/equipment"; `itemId` ("?item=…") is the item a Device's Settings row links to. */
 export function EquipmentPage({ itemId }: { itemId?: string | undefined }) {
   const { t } = useTranslation();
   const errorText = useErrorText();
   usePageTitle(t('equipment.title'));
   const divers = useQuery(diversQuery());
+  // A Device's item carries no serial of its own; the Device's tells two computers of the same model apart.
+  const devices = useQuery(devicesQuery());
+  const deviceSerials = new Map((devices.data ?? []).map((device) => [device.equipmentItemId, device.serialNumber]));
   return (
     <>
       <PageHeader title={t('equipment.title')} lead={t('equipment.intro')} />
       {divers.isPending && <RowsSkeleton rows={3} />}
       {divers.error && <Notice tone="danger">{errorText(divers.error)}</Notice>}
-      {divers.data?.map((diver) => <DiverEquipment key={diver.id} diver={diver} openItemId={itemId} />)}
+      {divers.data?.map((diver) => (
+        <DiverEquipment key={diver.id} diver={diver} openItemId={itemId} deviceSerials={deviceSerials} devicesPending={devices.isPending} />
+      ))}
       {divers.data?.length === 0 && <Panel><Muted>{t('equipment.noDivers')}</Muted></Panel>}
     </>
   );
 }
 
-function DiverEquipment({ diver, openItemId }: { diver: DiverView; openItemId?: string | undefined }) {
+function DiverEquipment({ diver, openItemId, deviceSerials, devicesPending }: {
+  diver: DiverView; openItemId?: string | undefined; deviceSerials: ReadonlyMap<string, string>; devicesPending: boolean;
+}) {
   const { t } = useTranslation();
   const errorText = useErrorText();
   const items = useQuery(equipmentOfDiverQuery(diver.id));
   const [creating, setCreating] = useState(false);
-  const list = items.data ?? [];
+  const pending = items.isPending || devicesPending;
+  const list = pending ? [] : (items.data ?? []);
   return (
     <Panel
       title={t('equipment.ofDiver', { name: diver.name })}
       actions={<Button icon="add" onPress={() => setCreating(true)} aria-label={t('common.forItem', { action: t('equipment.add'), item: diver.name })}>{t('equipment.add')}</Button>}
     >
-      {items.isPending && <RowsSkeleton rows={2} />}
+      {pending && <RowsSkeleton rows={2} />}
       {items.error && <Notice tone="danger">{errorText(items.error)}</Notice>}
-      {items.data?.length === 0 && <Muted>{t('equipment.none')}</Muted>}
+      {!pending && items.data?.length === 0 && <Muted>{t('equipment.none')}</Muted>}
       {CATEGORIES.map((category) => {
         const group = list.filter((item) => item.category === category);
         if (group.length === 0) return null;
@@ -69,7 +81,9 @@ function DiverEquipment({ diver, openItemId }: { diver: DiverView; openItemId?: 
           <section key={category} className="equipment-category" aria-labelledby={`equipment-${diver.id}-${category}`}>
             <h3 id={`equipment-${diver.id}-${category}`}>{categoryName(t)(category)}</h3>
             <ul className="equipment-list">
-              {group.map((item) => <ItemCard key={item.id} item={item} diverName={diver.name} open={item.id === openItemId} />)}
+              {group.map((item) => (
+                <ItemCard key={item.id} item={item} diverName={diver.name} deviceSerials={deviceSerials} open={item.id === openItemId} />
+              ))}
             </ul>
           </section>
         );
@@ -79,8 +93,11 @@ function DiverEquipment({ diver, openItemId }: { diver: DiverView; openItemId?: 
   );
 }
 
-function ItemCard({ item, diverName, open }: { item: EquipmentItemView; diverName: string; open: boolean }) {
+function ItemCard({ item, diverName, deviceSerials, open }: {
+  item: EquipmentItemView; diverName: string; deviceSerials: ReadonlyMap<string, string>; open: boolean;
+}) {
   const { t } = useTranslation();
+  const reference = itemReference(item, deviceSerials);
   const display = useDisplay();
   const errorText = useErrorText();
   const queryClient = useQueryClient();
@@ -138,7 +155,7 @@ function ItemCard({ item, diverName, open }: { item: EquipmentItemView; diverNam
           <p className="meta">{[
             categoryName(t)(item.category),
             [item.maker, item.model].filter(Boolean).join(' '),
-            item.serial,
+            item.serial ?? deviceSerials.get(item.id),
           ].filter(Boolean).join(' · ')}</p>
           <p className="meta">
             {item.onEveryDive
@@ -150,7 +167,7 @@ function ItemCard({ item, diverName, open }: { item: EquipmentItemView; diverNam
         </div>
         <ActionMenu
           label={t('equipment.actions')}
-          aria-label={t('common.forItem', { action: t('equipment.actions'), item: `${item.name}, ${diverName}` })}
+          aria-label={t('common.forItem', { action: t('equipment.actions'), item: `${reference}, ${diverName}` })}
           actions={actions}
         />
       </div>
@@ -162,8 +179,8 @@ function ItemCard({ item, diverName, open }: { item: EquipmentItemView; diverNam
               <td>{intervalText(t, schedule)}</td>
               <td><DueState due={schedule.due} /></td>
               <td className="actions">
-                <Button variant="quiet" size="small" icon="edit" aria-label={t('common.forItem', { action: t('equipment.editSchedule'), item: schedule.name })} onPress={() => setEditingSchedule(schedule)} />
-                <Button variant="quiet" size="small" icon="delete" aria-label={t('common.forItem', { action: t('equipment.deleteSchedule'), item: schedule.name })} onPress={() => setRemoving(schedule)} />
+                <Button variant="quiet" size="small" icon="edit" aria-label={t('common.forItem', { action: t('equipment.editSchedule'), item: `${reference}, ${schedule.name}` })} onPress={() => setEditingSchedule(schedule)} />
+                <Button variant="quiet" size="small" icon="delete" aria-label={t('common.forItem', { action: t('equipment.deleteSchedule'), item: `${reference}, ${schedule.name}` })} onPress={() => setRemoving(schedule)} />
               </td>
             </tr>
           ))}
@@ -172,9 +189,10 @@ function ItemCard({ item, diverName, open }: { item: EquipmentItemView; diverNam
       {setStatus.error && <Notice tone="danger">{errorText(setStatus.error)}</Notice>}
       {removeSchedule.error && <Notice tone="danger">{errorText(removeSchedule.error)}</Notice>}
       <div className="form-actions">
-        <Button size="small" icon="add" onPress={() => setScheduling(true)}>{t('equipment.addSchedule')}</Button>
-        <Button size="small" icon="save" onPress={() => setRecording(true)}>{t('equipment.record')}</Button>
-        <Button variant="quiet" size="small" onPress={() => setHistory((shown) => !shown)} aria-expanded={history}>
+        <Button size="small" icon="add" onPress={() => setScheduling(true)} aria-label={t('common.forItem', { action: t('equipment.addSchedule'), item: reference })}>{t('equipment.addSchedule')}</Button>
+        <Button size="small" icon="save" onPress={() => setRecording(true)} aria-label={t('common.forItem', { action: t('equipment.record'), item: reference })}>{t('equipment.record')}</Button>
+        <Button variant="quiet" size="small" onPress={() => setHistory((shown) => !shown)} aria-expanded={history}
+          aria-label={t('common.forItem', { action: history ? t('equipment.hideHistory') : t('equipment.showHistory'), item: reference })}>
           {history ? t('equipment.hideHistory') : t('equipment.showHistory')}
         </Button>
       </div>
@@ -340,7 +358,7 @@ function ScheduleForm({ item, schedule, onClose }: { item: EquipmentItemView; sc
               {item.schedules.map((schedule) => (
                 <li key={schedule.id}>
                   <span>{schedule.name} · {intervalText(t, schedule)}</span>
-                  <Button variant="quiet" size="small" icon="delete" aria-label={t('common.forItem', { action: t('equipment.deleteSchedule'), item: schedule.name })} onPress={() => setRemoving(schedule)} />
+                  <Button variant="quiet" size="small" icon="delete" aria-label={t('common.forItem', { action: t('equipment.deleteSchedule'), item: `${item.name}, ${schedule.name}` })} onPress={() => setRemoving(schedule)} />
                 </li>
               ))}
             </ul>

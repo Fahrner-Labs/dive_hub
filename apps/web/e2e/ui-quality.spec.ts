@@ -4,7 +4,7 @@
 // asked for: focus after navigation, a quick "not found", field names with units, admin safeguards.
 // Its tests run spread over all workers (ADR 0023); e2e/prepare.ts crowds each server first.
 import { readFileSync } from 'node:fs';
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
 import { dataFile, type PreparedData } from './prepare.ts';
 import {
   cancelWaitingImports, waitingImport,
@@ -1210,6 +1210,106 @@ for (const v of variants) {
         await request.put('/api/admin/provider-site-data/ssi', { data: { allowed: false }, headers });
       }
     });
+
+  // Equipment states (ADR 0034, slice 23): the empty page, a schedule due soon, an overdue one, a retired item and a
+  // schedule counted in dives. Each is a page the UI review looks at, so each passes every page check with axe.
+  const daysAgo = (days: number) => {
+    const date = new Date();
+    date.setUTCDate(date.getUTCDate() - days);
+    return date.toISOString().slice(0, 10);
+  };
+  /** An item of the own Diver, for a page state the UI does not have to be driven into. */
+  const addItem = async (request: APIRequestContext, body: object) => {
+    const divers = await (await request.get('/api/divers')).json() as { id: string; isOwn: boolean }[];
+    const response = await request.post(`/api/divers/${divers.find((diver) => diver.isOwn)!.id}/equipment`, { data: body, headers });
+    expect(response.status()).toBe(201);
+    return await response.json() as { id: string };
+  };
+  const removeItem = async (request: APIRequestContext, id: string) => {
+    const detail = await request.get(`/api/equipment/${id}`);
+    if (detail.ok()) {
+      for (const record of (await detail.json() as { records: { id: string }[] }).records) {
+        await request.delete(`/api/records/${record.id}`, { headers });
+      }
+    }
+    await request.delete(`/api/equipment/${id}`, { headers });
+  };
+
+  test('equipment: a Diver with no items yet', { tag: ['@equipment'] }, async ({ page, request }) => {
+    const name = `Empty gear ${uniqueWord()}`;
+    const made = await request.post('/api/divers', { data: { name }, headers });
+    const diver = await made.json() as { id: string };
+    try {
+      await page.goto('/#/equipment');
+      const panel = page.locator('section.panel', {
+        has: page.getByRole('heading', { name: v.english ? `${name}'s equipment` : `Ausrüstung von ${name}` }),
+      });
+      await expect(panel.getByText(v.english ? 'No equipment yet.' : 'Noch keine Ausrüstung.')).toBeVisible();
+      await goodPage(page, title('Equipment'));
+    } finally {
+      await request.delete(`/api/divers/${diver.id}`, { headers });
+    }
+  });
+
+  test('equipment: a schedule due soon', { tag: ['@equipment'] }, async ({ page, request }) => {
+    const item = await addItem(request, {
+      category: 'regulator', name: `Due soon ${uniqueWord()}`, inUseFrom: '2020-01-01',
+      schedules: [{ name: 'Annual service', intervalMonths: 1, startDate: daysAgo(15) }],
+    });
+    try {
+      await page.goto('/#/equipment');
+      const card = page.locator(`#equipment-item-${item.id}`);
+      await expect(card.getByText(v.english ? 'Due soon' : 'Bald fällig')).toBeVisible();
+      await goodPage(page, title('Equipment'));
+    } finally {
+      await removeItem(request, item.id);
+    }
+  });
+
+  test('equipment: an overdue schedule', { tag: ['@equipment'] }, async ({ page, request }) => {
+    const item = await addItem(request, {
+      category: 'bcd', name: `Overdue ${uniqueWord()}`, inUseFrom: '2020-01-01',
+      schedules: [{ name: 'Annual service', intervalMonths: 1, startDate: daysAgo(45) }],
+    });
+    try {
+      await page.goto('/#/equipment');
+      const card = page.locator(`#equipment-item-${item.id}`);
+      await expect(card.getByText(v.english ? 'Overdue' : 'Überfällig')).toBeVisible();
+      await goodPage(page, title('Equipment'));
+    } finally {
+      await removeItem(request, item.id);
+    }
+  });
+
+  test('equipment: a retired item', { tag: ['@equipment'] }, async ({ page, request }) => {
+    const item = await addItem(request, {
+      category: 'drysuit', name: `Retired ${uniqueWord()}`, inUseFrom: '2020-01-01',
+      equipmentStatus: 'retired', inUseUntil: '2025-06-01',
+    });
+    try {
+      await page.goto('/#/equipment');
+      const card = page.locator(`#equipment-item-${item.id}`);
+      await expect(card.getByText(v.english ? 'Retired' : 'Ausgemustert')).toBeVisible();
+      await goodPage(page, title('Equipment'));
+    } finally {
+      await removeItem(request, item.id);
+    }
+  });
+
+  test('equipment: a schedule counted in dives', { tag: ['@equipment'] }, async ({ page, request }) => {
+    const item = await addItem(request, {
+      category: 'regulator', name: `By dives ${uniqueWord()}`, inUseFrom: '2020-01-01',
+      schedules: [{ name: 'Annual service', intervalDives: 100, startDate: '2025-01-01' }],
+    });
+    try {
+      await page.goto('/#/equipment');
+      const card = page.locator(`#equipment-item-${item.id}`);
+      await expect(card.getByText(v.english ? /every 100 dives/ : /alle 100 Tauchgänge/)).toBeVisible();
+      await goodPage(page, title('Equipment'));
+    } finally {
+      await removeItem(request, item.id);
+    }
+  });
 
     test.describe('signed out', () => {
       test.use({ storageState: { cookies: [], origins: [] } });

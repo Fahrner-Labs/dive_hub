@@ -4,7 +4,7 @@
 > `pnpm check` fails when this map is stale. Symbols are ranked by how widely the code references them;
 > each module shows its most-referenced ones (exported symbols rank higher). Search here before walking the tree.
 
-Files: 356 · symbols: 3215 · shown: 243
+Files: 356 · symbols: 3216 · shown: 243
 
 ### server/(root)
 apps/server/src/vocabulary.ts:13 type SiteWaterType
@@ -279,7 +279,7 @@ apps/web/src/ProviderConflicts.tsx:14 fn useConflictValueText
 apps/web/src/WaitingPush.tsx:117 fn WaitingPushState
 apps/web/src/ImportPanel.tsx:39 const ImportContext
 apps/web/src/ToolsLead.tsx:54 fn Conditions
-… 656 more symbols in this module
+… 657 more symbols in this module
 
 ### web/i18n
 apps/web/src/i18n/languages.ts:6 fn pickLanguage

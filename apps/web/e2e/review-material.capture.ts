@@ -1180,7 +1180,7 @@ test('review material', async ({ page, request, browser }) => {
     await page.goto('/#/equipment'); await page.getByRole('heading', { name: 'Equipment', level: 1 }).waitFor();
     await capture(page, '80-equipment');
     await tabOrder(page, '80-equipment');
-    await page.locator(`#equipment-item-${bcd.id}`).getByRole('button', { name: 'Service history' }).click();
+    await page.locator(`#equipment-item-${bcd.id}`).getByRole('button', { name: /^Service history/ }).click();
     await page.getByText('Dive shop Dahab').waitFor();
     await capture(page, '80b-equipment-history');
     await page.getByRole('button', { name: 'Add item' }).first().click();

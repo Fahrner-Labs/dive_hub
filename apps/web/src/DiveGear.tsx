@@ -73,7 +73,7 @@ export function DiveGear({ dive }: { dive: DiveView }) {
                 <span className="meta">
                   {item.sources.map((source) => t(sourceKey(source))).join(', ')}
                   {item.sources.includes('every_dive') && (
-                    <Button variant="quiet" size="small" onPress={() => use.mutate({ itemId: item.id, kind: 'taken_off' })}>
+                    <Button variant="quiet" size="small" aria-label={t('common.forItem', { action: t('equipment.takeOff'), item: item.name })} onPress={() => use.mutate({ itemId: item.id, kind: 'taken_off' })}>
                       {t('equipment.takeOff')}
                     </Button>
                   )}
@@ -91,7 +91,7 @@ export function DiveGear({ dive }: { dive: DiveView }) {
               <li key={item.id}>
                 <span>{item.name}</span>{' '}
                 <span className="meta">{t(`vocabulary.equipmentCategory.${item.category}`)}
-                  <Button variant="quiet" size="small" onPress={() => removeUse.mutate(item.id)}>{t('equipment.remove')}</Button>
+                  <Button variant="quiet" size="small" aria-label={t('common.forItem', { action: t('equipment.remove'), item: item.name })} onPress={() => removeUse.mutate(item.id)}>{t('equipment.remove')}</Button>
                 </span>
               </li>
             ))}
@@ -106,7 +106,7 @@ export function DiveGear({ dive }: { dive: DiveView }) {
               <li key={item.id}>
                 <span>{item.name}</span>{' '}
                 <span className="meta">{t(`vocabulary.equipmentCategory.${item.category}`)}
-                  <Button variant="quiet" size="small" onPress={() => removeUse.mutate(item.id)}>{t('equipment.putBackOn')}</Button>
+                  <Button variant="quiet" size="small" aria-label={t('common.forItem', { action: t('equipment.putBackOn'), item: item.name })} onPress={() => removeUse.mutate(item.id)}>{t('equipment.putBackOn')}</Button>
                 </span>
               </li>
             ))}

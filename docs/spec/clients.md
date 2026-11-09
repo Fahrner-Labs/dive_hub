@@ -1247,6 +1247,8 @@ An LLM client is an API client Dive Hub can't make follow this contract, so the 
 - **Everything is logged for the User:** each tool call with its arguments (search words replaced), rows and outcome.
 - **The dive assessment** comes with its rules for the model in the tool's description and its fixed note in every
   result: no score, findings as facts with their source, no verdict on a dive's safety ([above](#the-dive-assessment)).
+- **Equipment reminders** come from `equipment_list`: each schedule carries its computed `due` (`state`, `reason`,
+  `anchor`); the intervals are the User's, so a client passes the reason on and never invents a default.
 - **Not a planner:** the instructions say that Dive Hub's numbers are a record, not advice on whether a dive is safe.
   The planning tools of later slices carry their assumptions and disclaimer in every result.
 
