@@ -119,9 +119,25 @@ const SEVERITY: Record<ScheduleDue['state'], number> = { overdue: 0, due: 1, due
 
 const trimName = (name: string) => name.trim();
 
+/** `2026-02-30` is no date, though it looks like one (the same check as the Diver's body weight). */
+const isCalendarDate = (text: string) => {
+  const parsed = new Date(`${text}T00:00:00Z`);
+  return /^\d{4}-\d{2}-\d{2}$/.test(text) && !Number.isNaN(parsed.getTime()) && parsed.toISOString().startsWith(text);
+};
+
+/** Every date an input carries is a real calendar date, so PostgreSQL is never asked to reject one. */
+function checkDates(...dates: (string | null)[]) {
+  for (const date of dates) if (date !== null && !isCalendarDate(date)) throw new EquipmentError('invalid_input');
+}
+
 /** An item's date window must be a real one. */
 function checkWindow(from: string, until: string | null) {
   if (until !== null && until < from) throw new EquipmentError('invalid_input');
+}
+
+/** A record's amount and currency come together, as the database's check requires. */
+function checkCost(costAmount: number | null, costCurrency: string | null) {
+  if ((costAmount === null) !== (costCurrency === null)) throw new EquipmentError('invalid_input');
 }
 
 /** The summary of an item's usage Dives. */
@@ -259,6 +275,7 @@ export function createEquipmentService(db: Db) {
 
   /** A validated schedule input: at least one positive interval. */
   function checkSchedule(input: ScheduleInput) {
+    checkDates(input.startDate);
     if (input.intervalMonths === null && input.intervalDives === null && input.intervalHours === null) throw new EquipmentError('schedule_interval_required');
     if ((input.intervalMonths !== null && input.intervalMonths <= 0)
       || (input.intervalDives !== null && input.intervalDives <= 0)
@@ -335,6 +352,7 @@ export function createEquipmentService(db: Db) {
 
     async create(userId: string, diverId: string, input: ItemInput): Promise<ItemDetailView> {
       if (!(await managementOf(db, userId, diverId))) throw new EquipmentError('diver_not_found');
+      checkDates(input.inUseFrom, input.inUseUntil, input.purchaseDate);
       checkWindow(input.inUseFrom, input.inUseUntil);
       const status = input.equipmentStatus;
       const inUseUntil = status === 'in_use' ? null : (input.inUseUntil ?? today());
@@ -363,6 +381,7 @@ export function createEquipmentService(db: Db) {
         const inUseUntil = status === 'in_use'
           ? null
           : edit.inUseUntil !== undefined ? edit.inUseUntil : (current.inUseUntil ?? today());
+        checkDates(inUseFrom, inUseUntil, edit.purchaseDate ?? null);
         checkWindow(inUseFrom, inUseUntil);
         const next = {
           category: edit.category ?? current.category, name: edit.name === undefined ? current.name : trimName(edit.name),
@@ -432,8 +451,11 @@ export function createEquipmentService(db: Db) {
     },
 
     async addRecord(userId: string, itemId: string, input: RecordInput): Promise<RecordView> {
-      await managedItem(db, userId, itemId);
+      checkDates(input.date);
+      checkCost(input.costAmount, input.costCurrency);
       const made = await db.transaction(async (tx) => {
+        // The lock makes deleting the item wait for this record; once deleted, the item is not found here.
+        await managedItem(tx, userId, itemId, true);
         await checkResets(tx, itemId, input.scheduleIds);
         const [record] = await tx.insert(serviceRecord).values({
           itemId, date: input.date, byWhom: input.byWhom, notes: input.notes,
@@ -446,6 +468,8 @@ export function createEquipmentService(db: Db) {
     },
 
     async editRecord(userId: string, recordId: string, version: number, input: RecordInput): Promise<RecordView> {
+      checkDates(input.date);
+      checkCost(input.costAmount, input.costCurrency);
       return db.transaction(async (tx) => {
         const { record } = await managedRecord(tx, userId, recordId, true);
         if (record.version !== version) throw new EquipmentError('equipment_changed');
@@ -518,10 +542,12 @@ export function createEquipmentService(db: Db) {
       add(await db.selectDistinct(getTableColumns(equipmentItem)).from(equipmentItem)
         .innerJoin(device, eq(device.equipmentItemId, equipmentItem.id))
         .innerJoin(recording, and(eq(recording.deviceId, device.id), isNull(recording.deletedAt)))
-        .where(and(eq(recording.diveId, diveId), isNull(equipmentItem.deletedAt))), 'device');
+        .where(and(eq(recording.diveId, diveId), isNull(equipmentItem.deletedAt),
+          eq(equipmentItem.diverId, row.dive.diverId), isNull(device.deletedAt))), 'device');
       add(await db.selectDistinct(getTableColumns(equipmentItem)).from(equipmentItem)
         .innerJoin(cylinder, eq(cylinder.equipmentItemId, equipmentItem.id))
-        .where(and(eq(cylinder.diveId, diveId), isNull(equipmentItem.deletedAt))), 'cylinder');
+        .where(and(eq(cylinder.diveId, diveId), isNull(equipmentItem.deletedAt),
+          eq(equipmentItem.diverId, row.dive.diverId))), 'cylinder');
       const uses = await db.select({ use: equipmentUse.use, item: equipmentItem }).from(equipmentUse)
         .innerJoin(equipmentItem, eq(equipmentItem.id, equipmentUse.itemId))
         .where(and(eq(equipmentUse.diveId, diveId), isNull(equipmentItem.deletedAt)));

@@ -5,7 +5,7 @@ import { eq, sql } from 'drizzle-orm';
 import { Type, type TSchema } from 'typebox';
 import { Value } from 'typebox/value';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { aiAccessLog, apikey, dive, user } from '../src/db/schema.js';
+import { aiAccessLog, apikey, dive, serviceRecord, user } from '../src/db/schema.js';
 import { TOOLS } from '../src/mcp/server.js';
 import { MAX_RESULT_CHARS, defineTool, runTool } from '../src/mcp/tool.js';
 import { makeSyntheticDive } from './fixtures/synthetic-dive.js';
@@ -606,6 +606,30 @@ describe.skipIf(!(await databaseReachable()))('the MCP endpoint', () => {
       const full = (await tool(client, 'logbook_get_dive', { dive_id: one, detail: 'detailed' })).structuredContent!;
       expect(full).toMatchObject({ notes_truncated: true, profile: null, profile_channels: [] });
       expect(full.notes.length).toBeLessThanOrEqual(4001);
+    });
+
+    it('keeps one Equipment item with many long records under the size cap', async () => {
+      const client = await connect(key);
+      const made = await json<{ id: string }>('POST', `/api/divers/${kid}/equipment`, tim, {
+        category: 'regulator', name: 'Big records', inUseFrom: '2026-01-01', notes: 'n'.repeat(20_000),
+      });
+      await t.db.insert(serviceRecord).values(Array.from({ length: 40 }, (_, i) => ({
+        itemId: made.id,
+        date: `2020-${String((i % 12) + 1).padStart(2, '0')}-${String((i % 28) + 1).padStart(2, '0')}`,
+        byWhom: 'b'.repeat(200),
+        notes: 'r'.repeat(20_000),
+      })));
+
+      const answer = (await tool(client, 'equipment_list', { diver_id: kid, category: 'regulator' })).structuredContent!;
+      expect(answer).toMatchObject({ total: 1, count: 1 });
+      const item = answer.items[0];
+      expect(item.shared_notes.length).toBeLessThanOrEqual(501);
+      expect(item.shared_notes_truncated).toBe(true);
+      expect(item.records).toHaveLength(20);
+      expect(item.records_truncated).toBe(true);
+      expect(item.records[0].shared_notes.length).toBeLessThanOrEqual(501);
+      expect(item.records[0].shared_notes_truncated).toBe(true);
+      expect(JSON.stringify(answer).length).toBeLessThan(MAX_RESULT_CHARS);
     });
 
     it('cuts a page in half when its Dives are too long for one answer', async () => {

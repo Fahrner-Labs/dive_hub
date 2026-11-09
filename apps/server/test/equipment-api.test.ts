@@ -2,7 +2,7 @@
 // naming validation.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { desc, eq } from 'drizzle-orm';
-import { dive, revision } from '../src/db/schema.js';
+import { device, dive, original, recording, revision, user } from '../src/db/schema.js';
 import { BASE_URL, createTestApp, createTestDatabase, createUser, databaseReachable, signIn, type TestDatabase } from './support.js';
 
 type Schedule = {
@@ -78,6 +78,65 @@ describe.skipIf(!(await databaseReachable()))('Equipment over HTTP', () => {
     expect(response.json()).toMatchObject({ code: 'schedule_interval_required' });
   });
 
+  it('refuses a date that is no calendar date, as invalid input', async () => {
+    const badFrom = await createItem({ inUseFrom: '2026-02-30' });
+    expect(badFrom.statusCode).toBe(400);
+    expect(badFrom.json()).toMatchObject({ code: 'invalid_input' });
+
+    const badUntil = await createItem({ inUseFrom: '2026-01-01', inUseUntil: '2026-02-30' });
+    expect(badUntil.statusCode).toBe(400);
+    expect(badUntil.json()).toMatchObject({ code: 'invalid_input' });
+
+    const badPurchase = await createItem({ purchaseDate: '2026-02-30' });
+    expect(badPurchase.statusCode).toBe(400);
+    expect(badPurchase.json()).toMatchObject({ code: 'invalid_input' });
+
+    const badSchedule = await createItem({ schedules: [{ name: 'Bad', intervalMonths: 12, startDate: '2026-02-30' }] });
+    expect(badSchedule.statusCode).toBe(400);
+    expect(badSchedule.json()).toMatchObject({ code: 'invalid_input' });
+
+    const item = (await createItem({ schedules: [{ name: 'Annual', intervalMonths: 12, startDate: '2025-01-01' }] })).json() as Detail;
+    const schedule = item.schedules[0]!;
+    const badRecord = await inject('POST', `/api/equipment/${item.id}/records`, tim, { date: '2026-02-30', scheduleIds: [schedule.id] });
+    expect(badRecord.statusCode).toBe(400);
+    expect(badRecord.json()).toMatchObject({ code: 'invalid_input' });
+
+    const badEdit = await inject('PATCH', `/api/equipment/${item.id}`, tim, { version: item.version, equipmentStatus: 'retired', inUseUntil: '2026-02-30' });
+    expect(badEdit.statusCode).toBe(400);
+    expect(badEdit.json()).toMatchObject({ code: 'invalid_input' });
+
+    const badScheduleEdit = await inject('PATCH', `/api/schedules/${schedule.id}`, tim, {
+      version: schedule.version, name: 'Annual', intervalMonths: 12, startDate: '2026-02-30',
+    });
+    expect(badScheduleEdit.statusCode).toBe(400);
+    expect(badScheduleEdit.json()).toMatchObject({ code: 'invalid_input' });
+  });
+
+  it('refuses a cost amount and currency that do not come together', async () => {
+    const item = (await createItem({ schedules: [{ name: 'Annual', intervalMonths: 12, startDate: '2025-01-01' }] })).json() as Detail;
+    const scheduleId = item.schedules[0]!.id;
+    const amountOnly = await inject('POST', `/api/equipment/${item.id}/records`, tim, {
+      date: '2026-01-10', costAmount: 80, scheduleIds: [scheduleId],
+    });
+    expect(amountOnly.statusCode).toBe(400);
+    expect(amountOnly.json()).toMatchObject({ code: 'invalid_input' });
+
+    const currencyOnly = await inject('POST', `/api/equipment/${item.id}/records`, tim, {
+      date: '2026-01-10', costCurrency: 'EUR', scheduleIds: [scheduleId],
+    });
+    expect(currencyOnly.statusCode).toBe(400);
+    expect(currencyOnly.json()).toMatchObject({ code: 'invalid_input' });
+
+    const made = await inject('POST', `/api/equipment/${item.id}/records`, tim, { date: '2026-01-10', scheduleIds: [scheduleId] });
+    expect(made.statusCode).toBe(201);
+    const record = made.json() as { id: string; version: number };
+    const editAmountOnly = await inject('PATCH', `/api/records/${record.id}`, tim, {
+      version: record.version, date: '2026-01-10', costAmount: 80, scheduleIds: [scheduleId],
+    });
+    expect(editAmountOnly.statusCode).toBe(400);
+    expect(editAmountOnly.json()).toMatchObject({ code: 'invalid_input' });
+  });
+
   it('changes an item only from the version sent, and maintains the in-use window', async () => {
     const item = (await createItem({})).json() as Detail;
     const stale = await inject('PATCH', `/api/equipment/${item.id}`, tim, { version: item.version + 1, name: 'Nope' });
@@ -136,6 +195,47 @@ describe.skipIf(!(await databaseReachable()))('Equipment over HTTP', () => {
     const response = await inject('DELETE', `/api/equipment/${used.id}`, tim);
     expect(response.statusCode).toBe(409);
     expect(response.json()).toMatchObject({ code: 'equipment_in_use' });
+  });
+
+  it('never puts a service record on a deleted item, nor names a deleted cylinder', async () => {
+    const item = (await createItem({ name: 'Gone soon', schedules: [{ name: 'Annual', intervalMonths: 12, startDate: '2025-01-01' }] })).json() as Detail;
+    expect((await inject('DELETE', `/api/equipment/${item.id}`, tim)).statusCode).toBe(204);
+    const record = await inject('POST', `/api/equipment/${item.id}/records`, tim, {
+      date: '2026-01-10', scheduleIds: [item.schedules[0]!.id],
+    });
+    expect(record.statusCode).toBe(404);
+    expect(record.json()).toMatchObject({ code: 'equipment_not_found' });
+
+    const cylinderItem = (await createItem({ name: 'Retired 12 L', category: 'cylinder' })).json() as Detail;
+    const diveId = await addDive(timDiver, '2026-02-07');
+    expect((await inject('DELETE', `/api/equipment/${cylinderItem.id}`, tim)).statusCode).toBe(204);
+    const version = async () => ((await inject('GET', `/api/dives/${diveId}`, tim)).json() as { version: number }).version;
+    const named = await inject('PATCH', `/api/dives/${diveId}`, tim, {
+      version: await version(), cylinders: [{ equipmentItemId: cylinderItem.id }],
+    });
+    expect(named.statusCode).toBe(400);
+    expect(named.json()).toMatchObject({ code: 'equipment_item_not_cylinder' });
+  });
+
+  it('keeps an item that moved to another Diver off the old Diver\'s Dive', async () => {
+    const movedTo = (await inject('POST', '/api/divers', tim, { name: 'New owner' })).json() as { id: string };
+    const item = (await createItem({ name: 'Moved computer', category: 'dive_computer' })).json() as Detail;
+    const [computer] = await t.db.insert(device).values({
+      diverId: timDiver, manufacturer: 'Shearwater', serialNumber: 'MOVED-1', equipmentItemId: item.id,
+    }).returning({ id: device.id });
+    const diveId = await addDive(timDiver, '2026-02-08');
+    const userId = (await t.db.select({ id: user.id }).from(user).where(eq(user.email, 'tim@example.com')))[0]!.id;
+    const [file] = await t.db.insert(original).values({
+      userId, sha256: 'moved-device', mediaType: 'application/octet-stream', sizeBytes: 1, storageKey: 'originals/moved-device',
+    }).returning({ id: original.id });
+    await t.db.insert(recording).values({
+      diveId, deviceId: computer!.id, originalId: file!.id, recordingKey: 'moved-device', parser: 'fit', parserVersion: '1',
+      startsAt: new Date('2026-02-08T09:00:00Z'), durationSeconds: 3600,
+    });
+
+    expect((await inject('PATCH', `/api/devices/${computer!.id}`, tim, { diverId: movedTo.id })).statusCode).toBe(204);
+    const gear = (await inject('GET', `/api/dives/${diveId}/equipment`, tim)).json() as { derived: { id: string }[] };
+    expect(gear.derived.map((i) => i.id)).not.toContain(item.id);
   });
 
   it('keeps a Diver with an item, and clears a removed item so the Diver can go', async () => {

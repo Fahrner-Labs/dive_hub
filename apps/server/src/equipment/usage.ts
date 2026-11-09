@@ -48,6 +48,7 @@ export async function usageMap(tx: Queryable, items: readonly { id: string }[]):
              ((d.starts_at at time zone 'UTC') + make_interval(secs => coalesce(d.utc_offset_seconds, 0)))::date as local_date
       from dive d
       where d.deleted_at is null
+        and d.diver_id in (select diver_id from wanted)
     ),
     used as (
       select w.id as item_id, l.id, l.duration_seconds, l.local_date
@@ -67,17 +68,20 @@ export async function usageMap(tx: Queryable, items: readonly { id: string }[]):
       join equipment_use u on u.dive_id = l.id
       join wanted w on w.id = u.item_id
       where u.use = 'put_on'
+        and l.diver_id = w.diver_id
       union
       select w.id as item_id, l.id, l.duration_seconds, l.local_date
       from dive_local l
       join recording r on r.dive_id = l.id and r.deleted_at is null
       join device dv on dv.id = r.device_id and dv.deleted_at is null
       join wanted w on w.id = dv.equipment_item_id
+      where l.diver_id = w.diver_id
       union
       select w.id as item_id, l.id, l.duration_seconds, l.local_date
       from dive_local l
       join cylinder c on c.dive_id = l.id
       join wanted w on w.id = c.equipment_item_id
+      where l.diver_id = w.diver_id
     )
     select item_id, id, local_date::text as date, duration_seconds
     from (select distinct item_id, id, local_date, duration_seconds from used) distinct_used

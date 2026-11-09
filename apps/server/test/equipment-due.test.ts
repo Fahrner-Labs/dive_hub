@@ -76,6 +76,13 @@ describe('service schedule due', () => {
       { usage: Array.from({ length: 90 }, () => dived('2026-02-01')), today: '2026-02-02' },
     );
     expect(soon?.dives).toEqual({ used: 90, remaining: 10, state: 'due_soon' });
+    expect(soon?.reason).toBe('10 dives to go');
+    const oneLeft = run(
+      { intervalDives: 10 },
+      { usage: Array.from({ length: 9 }, () => dived('2026-02-01')), today: '2026-02-02' },
+    );
+    expect(oneLeft?.dives).toEqual({ used: 9, remaining: 1, state: 'due_soon' });
+    expect(oneLeft?.reason).toBe('1 dive to go');
     const ok = run(
       { intervalDives: 100 },
       { usage: Array.from({ length: 89 }, () => dived('2026-02-01')), today: '2026-02-02' },
@@ -99,6 +106,9 @@ describe('service schedule due', () => {
       .toEqual({ used: 9, remaining: 1, state: 'due_soon' });
     expect(run({ intervalHours: 10 }, { usage: [dived('2026-02-01', 8.9)], today: '2026-02-02' })?.hours)
       .toEqual({ used: 8.9, remaining: 1.1, state: 'ok' });
+    const soonHours = run({ intervalHours: 10 }, { usage: [dived('2026-02-01', 9.5)], today: '2026-02-02' });
+    expect(soonHours?.hours).toEqual({ used: 9.5, remaining: 0.5, state: 'due_soon' });
+    expect(soonHours?.reason).toBe('0.5 hours to go');
     const over = run({ intervalHours: 10 }, { usage: [dived('2026-02-01', 12)], today: '2026-02-02' });
     expect(over?.hours).toEqual({ used: 12, remaining: -2, state: 'overdue' });
     expect(over?.reason).toBe('10 hours reached');

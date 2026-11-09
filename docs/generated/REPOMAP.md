@@ -4,7 +4,7 @@
 > `pnpm check` fails when this map is stale. Symbols are ranked by how widely the code references them;
 > each module shows its most-referenced ones (exported symbols rank higher). Search here before walking the tree.
 
-Files: 356 · symbols: 3216 · shown: 243
+Files: 356 · symbols: 3226 · shown: 243
 
 ### server/(root)
 apps/server/src/vocabulary.ts:13 type SiteWaterType
@@ -106,7 +106,7 @@ apps/server/src/equipment/usage.ts:16 iface Usage
 apps/server/src/equipment/due.ts:36 iface ScheduleDue
 apps/server/src/equipment/due.ts:86 const round
 apps/server/src/equipment/equipment-view.ts:22 const ServiceScheduleViewSchema
-… 84 more symbols in this module
+… 92 more symbols in this module
 
 ### server/http
 apps/server/src/http/schemas.ts:10 const Nullable
@@ -161,7 +161,7 @@ apps/server/src/mcp/read-service.ts:25 const count
 apps/server/src/mcp/profile.ts:5 iface Series
 apps/server/src/mcp/access-service.ts:36 iface VerifiedAccess
 apps/server/src/mcp/access-service.ts:24 class AiAccessError
-… 150 more symbols in this module
+… 152 more symbols in this module
 
 ### server/planning
 apps/server/src/planning/planning-error.ts:3 class PlanningError

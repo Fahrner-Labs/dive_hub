@@ -552,4 +552,3 @@ function ItemForm({ diverId, item, onClose }: { diverId: string; item?: Equipmen
     </Dialog>
   );
 }
-

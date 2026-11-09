@@ -107,7 +107,7 @@ export async function setCylinders(tx: Tx, diveId: string, list: CylinderInput[]
     const found = await tx.select({ id: equipmentItem.id }).from(equipmentItem).where(and(
       inArray(equipmentItem.id, named), eq(equipmentItem.diverId, row!.diverId),
       eq(equipmentItem.category, 'cylinder'), isNull(equipmentItem.deletedAt),
-    ));
+    )).for('update');
     if (found.length !== named.length) throw new CylinderError('equipment_item_not_cylinder');
   }
   await write(tx, diveId, next);

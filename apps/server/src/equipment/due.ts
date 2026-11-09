@@ -38,7 +38,7 @@ export interface ScheduleDue {
   anchor: string;
   /** The worst dimension's state. */
   state: DueState;
-  /** The worst dimension, when it isn't ok: "due 2027-03", "100 dives reached", "10 hours reached". */
+  /** The worst dimension, when it isn't ok: "due 2027-03", "10 dives to go", "100 dives reached", "10 hours reached". */
   reason: string | null;
   months: MonthsDue | null;
   dives: CountDue | null;
@@ -86,6 +86,14 @@ function dimensionState(remaining: number, threshold: number): DueState {
 const round = (value: number): number => Math.round(value * 1e6) / 1e6;
 
 const plural = (hours: number): string => `${hours} ${hours === 1 ? 'hour' : 'hours'}`;
+const divesLeft = (dives: number): string => `${dives} ${dives === 1 ? 'dive' : 'dives'} to go`;
+const divesReached = (dives: number): string => `${dives} ${dives === 1 ? 'dive' : 'dives'} reached`;
+const hoursReached = (hours: number): string => `${plural(hours)} reached`;
+const hoursLeft = (hours: number): string => `${plural(hours)} to go`;
+
+/** "reached" only once an interval is due; while it is only due soon, say how much is left. */
+const countReason = (state: DueState, interval: number, remaining: number, reached: (n: number) => string, left: (n: number) => string) =>
+  state === 'due_soon' ? left(remaining) : reached(interval);
 
 /**
  * The schedule's due state, or null when it is inactive (it computes nothing). A backdated service record does not
@@ -103,10 +111,11 @@ export function scheduleDue({ schedule, resets, usage, today }: DueInput): Sched
     return { dueDate, remainingDays, state: dimensionState(remainingDays, DUE_SOON_DAYS) };
   })();
 
-  const dives = schedule.intervalDives === null ? null : (() => {
+  const divesInterval = schedule.intervalDives;
+  const dives = divesInterval === null ? null : (() => {
     const used = afterAnchor.length;
-    const remaining = schedule.intervalDives - used;
-    return { used, remaining, state: dimensionState(remaining, schedule.intervalDives * DUE_SOON_FRACTION) };
+    const remaining = divesInterval - used;
+    return { used, remaining, state: dimensionState(remaining, divesInterval * DUE_SOON_FRACTION) };
   })();
 
   const hoursInterval = schedule.intervalHours;
@@ -118,8 +127,8 @@ export function scheduleDue({ schedule, resets, usage, today }: DueInput): Sched
 
   const dimensions: { state: DueState; reason: string }[] = [];
   if (months) dimensions.push({ state: months.state, reason: `due ${months.dueDate.slice(0, 7)}` });
-  if (dives) dimensions.push({ state: dives.state, reason: `${schedule.intervalDives} dives reached` });
-  if (hours && hoursInterval !== null) dimensions.push({ state: hours.state, reason: `${plural(hoursInterval)} reached` });
+  if (dives && divesInterval !== null) dimensions.push({ state: dives.state, reason: countReason(dives.state, divesInterval, dives.remaining, divesReached, divesLeft) });
+  if (hours && hoursInterval !== null) dimensions.push({ state: hours.state, reason: countReason(hours.state, hoursInterval, hours.remaining, hoursReached, hoursLeft) });
 
   let state: DueState = 'ok';
   let reason: string | null = null;

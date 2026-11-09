@@ -1,9 +1,10 @@
 // An item's usage (ADR 0034, plan D3): the union of four sources over the Diver's never-deleted Dives. A Dive counts
 // once, however many sources name it, and its duration feeds the item's hours.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { eq } from 'drizzle-orm';
 import { user } from '../src/db/auth-schema.js';
 import { cylinder, device, dive, diver, equipmentItem, equipmentUse, original, recording } from '../src/db/schema.js';
-import { usageOf } from '../src/equipment/usage.js';
+import { usageMap, usageOf } from '../src/equipment/usage.js';
 import { createTestDatabase, databaseReachable, type TestDatabase } from './support.js';
 
 const ids = async (usage: { dives: { id: string }[] }) => usage.dives.map((d) => d.id).sort();
@@ -109,6 +110,38 @@ describe.skipIf(!(await databaseReachable()))('equipment usage (PostgreSQL)', ()
 
     const usage = await usageOf(t.db, item);
     expect(await ids(usage)).toEqual([recorded]);
+  });
+
+  it('a reassigned Device counts only the new Diver\'s Dives', async () => {
+    const item = await makeItem({ category: 'dive_computer', name: 'Moved' });
+    const [computer] = await t.db.insert(device).values({
+      diverId: tim, manufacturer: 'Shearwater', serialNumber: 'MOVE-1', equipmentItemId: item,
+    }).returning({ id: device.id });
+    const record = async (diveId: string, key: string) => {
+      const [file] = await t.db.insert(original).values({
+        userId, sha256: key, mediaType: 'application/octet-stream', sizeBytes: 1, storageKey: `originals/${key}`,
+      }).returning({ id: original.id });
+      await t.db.insert(recording).values({
+        diveId, deviceId: computer!.id, originalId: file!.id, recordingKey: key, parser: 'fit', parserVersion: '1',
+        startsAt: new Date('2026-10-01T09:00:00Z'), durationSeconds: 3600,
+      });
+    };
+    const oldDive = await makeDive(tim, '2026-10-01');
+    const newDive = await makeDive(ana, '2026-10-02');
+    await record(oldDive, 'moved-old');
+    await record(newDive, 'moved-new');
+    await t.db.insert(equipmentUse).values({ diveId: oldDive, itemId: item, use: 'put_on' });
+    const timItem = await makeItem({ name: 'Tim item' });
+    expect(await ids(await usageOf(t.db, item))).toEqual([oldDive]);
+
+    await t.db.transaction(async (tx) => {
+      await tx.update(device).set({ diverId: ana }).where(eq(device.id, computer!.id));
+      await tx.update(equipmentItem).set({ diverId: ana }).where(eq(equipmentItem.id, item));
+    });
+    expect(await ids(await usageOf(t.db, item))).toEqual([newDive]);
+    // With an item of the old Diver on the same page, the old Diver's Dive still does not count.
+    const page = await usageMap(t.db, [{ id: item }, { id: timItem }]);
+    expect(await ids(page.get(item)!)).toEqual([newDive]);
   });
 
   it('a Cylinder naming the item counts its Dive', async () => {

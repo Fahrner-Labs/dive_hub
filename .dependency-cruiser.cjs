@@ -15,6 +15,7 @@ const MODULE_IMPORTS = {
   divers: ['revisions'],
   dives: ['centres', 'divers', 'revisions', 'sites'],
   equipment: ['divers', 'revisions'],
+  // Narrower than plan D8's ['divers', 'dives', 'revisions'] on purpose: the equipment module needs nothing from dives.
   imports: ['divers', 'dives', 'equipment', 'live', 'revisions', 'sites'],
   lead: ['divers', 'dives'],
   mcp: ['assessment', 'divers', 'dives', 'equipment', 'planning', 'sites'],
