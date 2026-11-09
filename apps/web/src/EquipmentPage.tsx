@@ -174,7 +174,7 @@ function ItemCard({ item, diverName, deviceSerials, open }: {
         />
       </div>
       {item.schedules.length === 0 ? <Muted>{t('equipment.noSchedules')}</Muted> : (
-        <Table label={t('equipment.schedulesOf', { name: item.name })} head={[t('equipment.schedule'), t('equipment.interval'), t('equipment.due'), { label: t('common.actions'), hidden: true }]}>
+        <Table cards label={t('equipment.schedulesOf', { name: item.name })} head={[t('equipment.schedule'), t('equipment.interval'), t('equipment.due'), { label: t('common.actions'), hidden: true }]}>
           {item.schedules.map((schedule) => (
             <tr key={schedule.id}>
               <td>{schedule.name}{!schedule.active && <> <Badge>{t('equipment.inactive')}</Badge></>}</td>
@@ -265,7 +265,7 @@ function ItemHistory({ item }: { item: EquipmentItemView }) {
         })}</p>
       )}
       {d.records.length === 0 ? <Muted>{t('equipment.noRecords')}</Muted> : (
-        <Table label={t('equipment.recordsOf', { name: item.name })} head={[t('equipment.recordDate'), t('equipment.byWhom'), t('equipment.resets'), t('equipment.notes'), t('equipment.cost')]}>
+        <Table cards label={t('equipment.recordsOf', { name: item.name })} head={[t('equipment.recordDate'), t('equipment.byWhom'), t('equipment.resets'), t('equipment.notes'), t('equipment.cost')]}>
           {d.records.map((record) => (
             <tr key={record.id}>
               <td className="date">{display.date(record.date)}</td>
