@@ -15,11 +15,20 @@ RUN pnpm --filter @dive-hub/web build \
  && pnpm --filter @dive-hub/server deploy --prod /out
 
 FROM node:24-alpine
+# The release workflow passes these as build args (D4); plain `docker build .` and compose.dev.yaml keep the defaults.
+ARG DIVEHUB_VERSION=dev
+ARG DIVEHUB_REVISION=unknown
 ENV NODE_ENV=production \
     DIVEHUB_HOST=0.0.0.0 \
     DIVEHUB_PORT=3000 \
     DIVEHUB_DATA_DIR=/data \
-    DIVEHUB_WEB_DIR=/app/web
+    DIVEHUB_WEB_DIR=/app/web \
+    DIVEHUB_VERSION=$DIVEHUB_VERSION \
+    DIVEHUB_REVISION=$DIVEHUB_REVISION
+LABEL org.opencontainers.image.version=$DIVEHUB_VERSION \
+      org.opencontainers.image.source=https://github.com/Fahrner-Labs/dive_hub \
+      org.opencontainers.image.revision=$DIVEHUB_REVISION \
+      org.opencontainers.image.licenses=Apache-2.0
 WORKDIR /app
 # Production dependencies only: Garmin's FIT SDK is a dev dependency and must not ship (ADR 0006).
 COPY --from=build /out/node_modules ./node_modules
