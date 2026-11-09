@@ -2,7 +2,8 @@
 // A schedule is due at whichever of months, dives or hours comes first, counted from the newest service record that
 // resets it, else its start date. The boundary day itself does not count as usage: a Dive on the anchor date (or a
 // dive on a schedule's start date) happened before that day's service, so only later Dives count.
-export type DueState = 'ok' | 'due_soon' | 'due' | 'overdue';
+export const DUE_STATES = ['ok', 'due_soon', 'due', 'overdue'] as const;
+export type DueState = (typeof DUE_STATES)[number];
 
 /** The part of a usage Dive the due dimensions read: its local date and duration. */
 export interface UsageDive {

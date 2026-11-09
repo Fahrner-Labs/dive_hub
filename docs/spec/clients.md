@@ -978,6 +978,57 @@ dives, all off until the User turns them on. *Web:* `ProviderAutomation.tsx` (se
   changed; single Dives move with "Move". *Web:* `Devices.tsx`, Settings → Devices.
 - **The logbook offers a Diver filter only when the User keeps several Divers,** and then shows the Diver column.
 
+### Equipment
+- **Intervals are the User's** ([ADR 0034](../decisions/0034-equipment-items-and-service-schedules.md)): Dive Hub ships
+  no per-category defaults. The item form says the numbers come from the manual, the shop or the cylinder's stamp, and
+  a schedule needs at least one of months, dives or hours (`schedule_interval_required`).
+- **Due is computed, never stored.** Each schedule carries `due` with `state` (`ok`, `due_soon`, `due`, `overdue`), the
+  `anchor` (the newest service record resetting it, else its start date), a `reason` (the worst dimension's text, e.g.
+  "100 dives reached" or "due 2027-03"; null when ok) and the `months`, `dives` and `hours` numbers. Show the reason,
+  not only the colour. Due soon is within 30 days, or within 10 % of a dive or hour interval. An inactive schedule has
+  `due: null`.
+- **Usage Dives count strictly after the anchor** ([ADR 0034 D5](../decisions/0034-equipment-items-and-service-schedules.md)):
+  a Dive on the service day itself was before the service. The same rule applies to a schedule's start date, so a
+  schedule started from "last done before Dive Hub" counts only later Dives. A backdated record is a fact but never moves
+  the clock back; an item is never deleted once used (`equipment_in_use`), only retired.
+- **Routes** (all scoped to the Divers the User manages; another User's Diver or item answers 404 `diver_not_found` or
+  `equipment_not_found`, never 403):
+  - `GET /api/divers/{id}/equipment` — items with schedules and due.
+  - `POST /api/divers/{id}/equipment` — create an item, optionally with initial `schedules`.
+  - `GET /api/equipment/{id}` — detail with `usage` (dive count, hours, last day), `records` and, for a cylinder item,
+    `lastCylinder` (the values its most recent Cylinder on a Dive had, to fill the cylinder form).
+  - `PATCH /api/equipment/{id}` with `version` — edit; 409 `equipment_changed`. Leaving `in_use` stamps `inUseUntil`
+    (today unless sent) and returning to it clears the date; only what is sent changes.
+  - `DELETE /api/equipment/{id}` — only an item never used; otherwise 409 `equipment_in_use`.
+  - `POST /api/equipment/{id}/schedules`, `PATCH /api/schedules/{id}` (with `version`), `DELETE /api/schedules/{id}` —
+    schedule CRUD; deleting a schedule keeps its records.
+  - `POST /api/equipment/{id}/records`, `PATCH /api/records/{id}` (with `version`), `DELETE /api/records/{id}` — record
+    CRUD. A record resets at least one schedule of its item (`invalid_input` when empty, `schedule_not_found` for one of
+    another item).
+  - `GET /api/equipment/due` — every due, due-soon and overdue schedule across the User's Divers, worst first; each row
+    carries the same `due` object.
+  - `GET /api/dives/{id}/equipment` — the Dive's gear: `derived` (every-Dive items in their window, the Device's Dives, a
+    named Cylinder, each with its `sources`) and the explicit `putOn` / `takenOff` rows.
+  - `POST /api/dives/{id}/equipment` `{ itemId, use }`, `DELETE /api/dives/{id}/equipment/{itemId}` — put on / take off.
+    A use that contradicts the item's mode is 409 `equipment_use_mismatch`: an every-Dive item can only be taken off,
+    another only put on.
+  - `GET /api/dives/{id}/same-as-last` also returns `gear`: the previous Dive's put-on items; every-Dive items need no
+    action.
+- **A Dive's Cylinder may name a cylinder item** of its own Diver (`equipmentItemId` in the Cylinders list), any status:
+  a past Dive on a since-sold cylinder is valid. A wrong category or another Diver's item is 400
+  `equipment_item_not_cylinder`. Picking an item fills volume, working pressure, material and gas from the most recent
+  Cylinder that named it (`GET /api/equipment/{id}` → `lastCylinder`); its first use fills nothing ([ADR 0034
+  D6](../decisions/0034-equipment-items-and-service-schedules.md)).
+- **Devices:** every Device is an item (`equipmentItemId` on `GET /api/devices`) and counts its Dives through its
+  Recordings. Reassigning the Device moves its item to the new Diver in the same transaction ([ADR 0034
+  D7](../decisions/0034-equipment-items-and-service-schedules.md)); a migration made an item for every existing Device,
+  and new ones get one.
+- **Notices are dismissible client-side**, keyed by the digest of the due schedules: dismissing hides the logbook notice
+  until the due set changes (a new schedule becomes due, or one is serviced). Due state is derived data, so nothing is
+  persisted on the server. The navigation's count is the length of `GET /api/equipment/due`.
+- *Web:* `EquipmentPage.tsx` (`#/equipment`), `EquipmentNotice.tsx`, the gear section `DiveGear.tsx` on a Dive, and the
+  cylinder item in `Cylinders.tsx`.
+
 ### Dive sites
 - **Shared and editable by every User** (ADR 0020). Deleting is for the creator or an admin while no Dive is
   there: use `canDelete` and `inUse`, and say why it can't be deleted.

@@ -6,7 +6,7 @@ import { personCodes, readVerificationCode, type VerificationCode } from './veri
 import type { Db, Queryable, Tx } from '../db/client.js';
 import type { Caller } from '../http/caller.js';
 import {
-  connection, device, dive, diver, diverBodyWeight, diverExternalId, diverManagement, participant, recording,
+  connection, device, dive, diver, diverBodyWeight, diverExternalId, diverManagement, equipmentItem, participant, recording,
 } from '../db/schema.js';
 import { managedDiverIds, managementOf } from './management.js';
 import { renumber } from './dive-numbers.js';
@@ -471,6 +471,7 @@ export function createDiverService(db: Db) {
         serialNumber: device.serialNumber,
         firmware: device.firmware,
         diverId: device.diverId,
+        equipmentItemId: device.equipmentItemId,
         recordingCount: sql<number>`count(${recording.id})::int`,
         lastUsedAt: sql<Date | null>`max(${recording.startsAt})`.mapWith(recording.startsAt),
       }).from(device)
@@ -496,6 +497,16 @@ export function createDiverService(db: Db) {
         await writeRevision(tx, 'device', deviceId, userActor(userId), 'assign-device', {
           diverId: { from: current.diverId, to: diverId },
         });
+        // The Device's Equipment item keeps one identity and follows it to the new Diver (ADR 0034 D7).
+        const [item] = await tx.select({ id: equipmentItem.id, diverId: equipmentItem.diverId }).from(equipmentItem)
+          .where(and(eq(equipmentItem.id, current.equipmentItemId), isNull(equipmentItem.deletedAt))).for('update');
+        if (item && item.diverId !== diverId) {
+          await tx.update(equipmentItem).set({ diverId, version: sql`${equipmentItem.version} + 1`, updatedAt: new Date() })
+            .where(eq(equipmentItem.id, item.id));
+          await writeRevision(tx, 'equipment_item', item.id, userActor(userId), 'assign-device', {
+            diverId: { from: item.diverId, to: diverId },
+          });
+        }
       });
     },
   };

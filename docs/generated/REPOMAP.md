@@ -4,15 +4,15 @@
 > `pnpm check` fails when this map is stale. Symbols are ranked by how widely the code references them;
 > each module shows its most-referenced ones (exported symbols rank higher). Search here before walking the tree.
 
-Files: 346 · symbols: 3091 · shown: 241
+Files: 350 · symbols: 3152 · shown: 241
 
 ### server/(root)
 apps/server/src/vocabulary.ts:13 type SiteWaterType
 apps/server/src/vocabulary.ts:12 const SITE_WATER_TYPES
 apps/server/src/vocabulary.ts:51 type ImportSource
 apps/server/src/errors.ts:2 const errorMessage
-apps/server/src/compose.ts:64 fn createServices
-apps/server/src/app.ts:64 fn buildApp
+apps/server/src/compose.ts:65 fn createServices
+apps/server/src/app.ts:69 fn buildApp
 … 40 more symbols in this module
 
 ### server/assessment
@@ -58,7 +58,7 @@ apps/server/src/db/client.ts:8 type Queryable
 apps/server/src/db/client.ts:6 type Tx
 apps/server/src/db/schema.ts:454 const diveSite
 apps/server/src/db/schema.ts:757 const recording
-apps/server/src/db/schema.ts:1066 const push
+apps/server/src/db/schema.ts:75 const diverManagement
 apps/server/src/db/auth-schema.ts:20 const user
 apps/server/src/db/import-types.ts:12 iface ImportedValues
 apps/server/src/db/import-types.ts:6 type ImportArea
@@ -71,14 +71,14 @@ apps/server/src/divers/dive-numbers.ts:34 fn renumber
 apps/server/src/divers/diver-view.ts:5 const DiverSource
 apps/server/src/divers/diver-error.ts:3 class DiverError
 apps/server/src/divers/management.ts:25 const managesDiveDiver
-apps/server/src/divers/diver-view.ts:56 const DiverView
+apps/server/src/divers/management.ts:17 fn managementOf
 … 51 more symbols in this module
 
 ### server/dives
 apps/server/src/dives/dive-service.ts:20 class DiveError
-apps/server/src/dives/dive-view.ts:202 const DiveView
+apps/server/src/dives/dive-view.ts:203 const DiveView
 apps/server/src/dives/time-zone.ts:11 iface Position
-apps/server/src/dives/cylinders.ts:50 fn cylindersOf
+apps/server/src/dives/cylinders.ts:52 fn cylindersOf
 apps/server/src/dives/dive-service.ts:187 fn participantsOf
 apps/server/src/dives/cylinders.ts:9 iface ProviderCylinder
 apps/server/src/dives/weighting.ts:17 fn leadOf
@@ -91,7 +91,7 @@ apps/server/src/dives/provider-port.ts:39 iface DiveWaitingPushes
 apps/server/src/dives/recording-units.ts:9 const isUnit
 apps/server/src/dives/weighting.ts:23 const leadTotalKg
 apps/server/src/dives/matching.ts:81 const DAY_MS
-apps/server/src/dives/logbook-service.ts:266 type LogbookService
+apps/server/src/dives/logbook-service.ts:274 type LogbookService
 apps/server/src/dives/dive-values.ts:6 iface DiveValues
 apps/server/src/dives/dive-service.ts:87 const nextVersion
 apps/server/src/dives/weighting.ts:96 iface Suit
@@ -99,21 +99,21 @@ apps/server/src/dives/weighting.ts:106 const suitOf
 … 286 more symbols in this module
 
 ### server/equipment
-apps/server/src/equipment/due.ts:58 const DAY_MS
-apps/server/src/equipment/due.ts:85 const round
-apps/server/src/equipment/due.ts:5 type DueState
-apps/server/src/equipment/usage.ts:9 iface UsageDive
-apps/server/src/equipment/usage.ts:16 iface Usage
-apps/server/src/equipment/usage.ts:24 iface UsageRow
-… 17 more symbols in this module
+apps/server/src/equipment/equipment-error.ts:2 class EquipmentError
+apps/server/src/equipment/due.ts:59 const DAY_MS
+apps/server/src/equipment/due.ts:86 const round
+apps/server/src/equipment/equipment-view.ts:22 const ServiceScheduleViewSchema
+apps/server/src/equipment/equipment-view.ts:32 const ServiceRecordViewSchema
+apps/server/src/equipment/equipment-view.ts:50 const EquipmentItemViewSchema
+… 78 more symbols in this module
 
 ### server/http
 apps/server/src/http/schemas.ts:10 const Nullable
 apps/server/src/http/schemas.ts:5 const DateTime
-apps/server/src/http/schemas.ts:4 const IdParams
-apps/server/src/http/problems.ts:162 const problem
-apps/server/src/http/problems.ts:159 const Problem
-apps/server/src/http/problems.ts:186 const answerErrors
+apps/server/src/http/schemas.ts:16 fn refTo
+apps/server/src/http/problems.ts:167 const Problem
+apps/server/src/http/problems.ts:170 const problem
+apps/server/src/http/problems.ts:194 const answerErrors
 … 22 more symbols in this module
 
 ### server/imports

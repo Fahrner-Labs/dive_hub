@@ -34,6 +34,7 @@ const FoundDiver = Type.Object({
 const DeviceView = Type.Object({
   id: Type.String(), manufacturer: Type.String(), product: Nullable(Type.String()), serialNumber: Type.String(),
   firmware: Nullable(Type.String()), diverId: Type.String(),
+  equipmentItemId: Type.String({ description: 'The Equipment item this Device is (ADR 0034)' }),
   recordingCount: Type.Integer(), lastUsedAt: Nullable(DateTime),
 });
 

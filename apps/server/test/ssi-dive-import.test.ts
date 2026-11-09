@@ -392,7 +392,7 @@ describe.skipIf(!(await databaseReachable()))('importing dives from SSI', () => 
       const made = of('tank').diveId!;
       expect(await cylindersOfDive(made)).toEqual([{
         volumeL: 12, workingPressureBar: null, material: 'steel', gas: { o2: 32, he: 0 }, startPressureBar: 204, endPressureBar: 47,
-        fromPod: false, series: null,
+        fromPod: false, series: null, equipmentItemId: null,
       }]);
       const history = (await call('GET', `/api/dives/${made}/revisions`)).json() as { cause: string; changes: Record<string, unknown> }[];
       expect(history.find((r) => 'cylinders' in r.changes)).toMatchObject({ cause: 'fill' });

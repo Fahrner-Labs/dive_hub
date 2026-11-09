@@ -31,6 +31,11 @@ import { candidateRoutes } from './dives/candidates/candidate-routes.js';
 import { diveRoutes } from './dives/routes.js';
 import { certificationRoutes } from './certifications/routes.js';
 import { diverRoutes } from './divers/routes.js';
+import { equipmentRoutes } from './equipment/routes.js';
+import {
+  DiveGearItemViewSchema, DiveGearViewSchema, EquipmentDetailViewSchema, EquipmentDueViewSchema, EquipmentItemViewSchema,
+  ServiceRecordViewSchema, ServiceScheduleViewSchema,
+} from './equipment/equipment-view.js';
 import { leadRoutes } from './lead/routes.js';
 import { planningRoutes } from './planning/routes.js';
 import { siteRoutes } from './sites/routes.js';
@@ -86,6 +91,8 @@ export async function buildApp(deps: AppDeps, app: Server = createServer()) {
     ProblemSchema, ProviderProblemSchema, DeleteProblemSchema,
     UserViewSchema, ImportViewSchema, DiveViewSchema, DiverViewSchema, DiverDetailsViewSchema, ExternalDiverViewSchema, CertificationViewSchema,
     SiteViewSchema, CentreViewSchema, SiteImportViewSchema, PushRunViewSchema, ConnectionViewSchema, DiveProviderStatusSchema,
+    ServiceScheduleViewSchema, ServiceRecordViewSchema, DiveGearItemViewSchema, EquipmentItemViewSchema, EquipmentDetailViewSchema,
+    EquipmentDueViewSchema, DiveGearViewSchema,
   ]) app.addSchema(schema);
   await app.register(multipart, { limits: { files: 1, fileSize: deps.maxUploadBytes } });
 
@@ -119,6 +126,7 @@ export async function buildApp(deps: AppDeps, app: Server = createServer()) {
   await app.register(candidateRoutes, { prefix: '/api', auth, candidates: deps.candidates, assessments });
   await app.register(assessmentRoutes, { prefix: '/api', auth, assessments });
   await app.register(diverRoutes, { prefix: '/api', auth, divers, certifications });
+  await app.register(equipmentRoutes, { prefix: '/api', auth, equipment: deps.equipment });
   await app.register(certificationRoutes, { prefix: '/api', auth, certifications });
   await app.register(planningRoutes, { prefix: '/api', auth, planning: deps.planning });
   await app.register(leadRoutes, { prefix: '/api', auth, lead: deps.lead });

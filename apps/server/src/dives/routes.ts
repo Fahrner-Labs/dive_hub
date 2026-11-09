@@ -30,6 +30,7 @@ import { LOGBOOK_CHECK_RULES } from './checks/logbook-check-rules.js';
 import type { LogbookCheckService } from './checks/logbook-check-service.js';
 import { valuesFromRecording, type DiveValues } from './dive-values.js';
 import { REVISION_CAUSES } from '../revisions/revisions.js';
+import { EQUIPMENT_CATEGORIES } from '../vocabulary.js';
 import { sacOfDive } from './calc/sac.js';
 import { waterMismatch } from './calc/water.js';
 import { recordingPosition } from '../sites/dive-site-link.js';
@@ -136,7 +137,7 @@ const STATUS: Record<DiveError['code'], number> = {
   recording_not_found: 404, last_recording: 409, diver_not_found: 404, site_not_found: 404, participant_invalid: 400,
   merge_not_possible: 400, check_not_found: 404, continuation_not_possible: 400, recording_is_part: 400,
 };
-const CYLINDER_STATUS: Record<CylinderError['code'], number> = { cylinder_invalid: 400, cylinder_series_not_found: 400 };
+const CYLINDER_STATUS: Record<CylinderError['code'], number> = { cylinder_invalid: 400, cylinder_series_not_found: 400, equipment_item_not_cylinder: 400 };
 const WEIGHTING_STATUS: Record<WeightingError['code'], number> = { weighting_feedback_invalid: 400, suit_invalid: 400 };
 
 const DeletedDiveView = Type.Object({
@@ -347,6 +348,9 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
           })),
           lead: Type.Array(LeadEntry),
           suit: Nullable(Type.Object(SuitValues)),
+          gear: Type.Array(Type.Object({
+            id: Type.String(), name: Type.String(), category: Type.Enum([...EQUIPMENT_CATEGORIES]),
+          }), { description: 'Items put on the previous Dive; an every-Dive item needs no action (ADR 0034)' }),
         }),
         404: Problem,
       },
@@ -355,9 +359,11 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
     const row = await findDive(request, request.params.id);
     if (!row) return reply.code(404).send(problem('dive_not_found'));
     const previous = await logbook.previousDive(row);
-    if (!previous) return { diveId: null, cylinders: [], lead: [], suit: null };
+    if (!previous) return { diveId: null, cylinders: [], lead: [], suit: null, gear: [] };
     const { cylinders, lead } = await logbook.partsOf(previous.id);
-    return { diveId: previous.id, cylinders: cylinders.map(withoutPressures), lead, suit: suitOf(previous) };
+    return {
+      diveId: previous.id, cylinders: cylinders.map(withoutPressures), lead, suit: suitOf(previous), gear: await logbook.gearOf(previous.id),
+    };
   });
 
   app.put('/dives/:id/participants', {

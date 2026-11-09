@@ -5,9 +5,10 @@
 import { and, desc, eq, gte, inArray, isNotNull, isNull, like, lte, sql } from 'drizzle-orm';
 import type { Queryable, Tx } from '../db/client.js';
 import {
-  device, dive, diverManagement, duplicateCandidate, equipmentItem, original, recording, recordingEvent, sampleSeries, type ImportOutcome,
+  device, dive, diverManagement, duplicateCandidate, original, recording, recordingEvent, sampleSeries, type ImportOutcome,
 } from '../db/schema.js';
 import { rebuildJoined } from '../dives/continuation/joined-recording.js';
+import { ensureItemForDevice } from '../equipment/equipment-service.js';
 import { attachRecording, createDiveFromRecording, refreshFromPrimary } from '../dives/dive-service.js';
 import { managedDiverIds } from '../divers/management.js';
 import { reviseDive, untieLostSeries } from '../dives/cylinders.js';
@@ -240,14 +241,11 @@ async function resolveDevice(tx: Tx, diverId: string, rec: ParsedRecording): Pro
     }
     return known.id;
   }
-  const startDay = new Date(rec.startsAt.getTime() + (rec.utcOffsetSeconds ?? 0) * 1000).toISOString().slice(0, 10);
-  const [item] = await tx.insert(equipmentItem).values({
-    diverId, category: 'dive_computer', name: `${d.manufacturer} ${d.product ?? ''}`.trim(),
-    status: 'in_use', onEveryDive: false, inUseFrom: startDay,
-  }).returning({ id: equipmentItem.id });
+  const inUseFrom = new Date(rec.startsAt.getTime() + (rec.utcOffsetSeconds ?? 0) * 1000).toISOString().slice(0, 10);
+  const equipmentItemId = await ensureItemForDevice(tx, { diverId, manufacturer: d.manufacturer, product: d.product ?? null, inUseFrom });
   const [created] = await tx.insert(device).values({
     diverId, manufacturer: d.manufacturer, serialNumber: d.serialNumber,
-    product: d.product ?? null, firmware: d.firmware ?? null, equipmentItemId: item!.id,
+    product: d.product ?? null, firmware: d.firmware ?? null, equipmentItemId,
   }).returning();
   return created!.id;
 }
