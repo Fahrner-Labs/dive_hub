@@ -64,6 +64,7 @@ Start with `REPOMAP.md` for cheap per-module orientation, then drop to the code 
 - A new duty for API clients (something to show, ask, format or send) updates the [client contract](docs/spec/clients.md).
 - The owner decides migrations (`apps/server/drizzle/**`), `**/db/schema.ts` and `docs/decisions/**`
   ([CODEOWNERS](.github/CODEOWNERS)); a task needing them without approval stops and hands back.
+  Approval is the owner's review comment on the pull request ([development.md](docs/development.md)).
 - Keep this file short.
 
 ## Tests
