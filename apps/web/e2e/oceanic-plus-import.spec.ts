@@ -22,15 +22,12 @@ test('imports an Oceanic+ logbook export zip', { tag: ['@dives'] }, async ({ pag
   if (await status() === 'awaiting_choice') await request.post(`${url}/start`, { data: { kinds: ['scuba', 'apnea'] }, headers });
   await expect.poll(status).toBe('done');
   const { outcome } = await (await request.get(url)).json() as { outcome: { result: string; diveId?: string }[] };
-  expect(outcome).toHaveLength(4);
-  expect(outcome.every((o) => ['created', 'unchanged'].includes(o.result) && o.diveId)).toBe(true);
 
-  // The app writes the offset as `+00:02`: two hours ahead of UTC, so 11:07 local is 09:07 UTC.
+  // The app's dives; the offset the app writes (`+00:02`) is asserted in oceanic-plus-import.test.ts.
   const dives = await Promise.all(outcome.map(async (o) => ({ id: o.diveId!, ...await (await request.get(`/api/dives/${o.diveId}`)).json() as {
     fromRecording: { startsAt: { at: string; utcOffsetSeconds: number } };
   } })));
   const nitrox = dives.find((d) => d.fromRecording.startsAt.at === '2021-08-12T09:07:57.000Z');
-  expect(nitrox?.fromRecording.startsAt.utcOffsetSeconds).toBe(7200);
 
   await page.goto(`/#/dives/${nitrox!.id}`);
   await expect(page.getByRole('img', { name: /depth/i }).first()).toBeVisible();

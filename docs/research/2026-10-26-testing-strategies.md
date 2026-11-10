@@ -179,6 +179,28 @@ Effort against gain, with our numbers above in mind [I]:
 Not for us: machine-learning selection (Meta, Develocity, Smart Tests) and hosted services (Datadog): too little
 history, and cost.
 
+## Moved out of the browser (2026-11-10)
+
+Part 2 of the ranking: the browser cases whose assertions were API shapes, status codes or server rules, and the
+server test (`app.inject()` against PostgreSQL) that now owns each check. The browser cases keep what only a
+browser shows (notices, focus, dialogs, a rendered page); their setup calls stay.
+
+| Browser case | Check moved | Server test |
+|---|---|---|
+| `ai-access.spec.ts`: a User creates and uses a key, an admin switches AI access off | MCP answers and their status/`error_description`; a key stops at once when revoked or switched off | `mcp-endpoint.test.ts` |
+| `provider-sites.spec.ts`: the picker and the site page | The picker's `{ externalId, private }` answer, the stored private external ID, and another User never seeing it | `site-pick.test.ts`, `private-site-ids.test.ts` |
+| `provider-conflicts.spec.ts`: a choice and a run's conflict | The notes taken from SSI, and the pushes a choice records | `ssi-target.test.ts`, `push-runs.test.ts`, `provider-conflicts.test.ts` |
+| `logbook.spec.ts`: a row's sketch | The list row's profile: 48 depths for a Recording, `null` without one | `assessment.test.ts` |
+| `oceanic-plus-import.spec.ts`: the app's zip | The import outcome, and the `+00:02` offset read as two hours | `oceanic-plus-import.test.ts` |
+| `suunto-import.spec.ts`: the Suunto JSON export | The import outcome (`created`/`unchanged`) | `suunto-import.test.ts` |
+| `dive-continuation.spec.ts`: appending from Review | The later Dive answering 404 after the append | `dive-continuation.test.ts` |
+| `waiting-pushes.spec.ts`: a manual send, restoring an automatic delete | The queue entry cleared by a manual send, and a restore cancelling the delete | `waiting-pushes.test.ts`, `dive-deletion.test.ts` |
+| `gone-dives.spec.ts`: cancelling the delete dialog | Cancelling sends nothing is a client rule; the page now says the Dive is still there | the browser case |
+
+`ai-access.spec.ts` still calls the MCP endpoint to fill "What was read", and the import specs still read the
+Dive they show; those are setup, not checks. This is the ongoing part of item 2: later cases move as they are
+found, and a check already covered by a server test is deleted rather than duplicated.
+
 ## Not found
 How `--only-changed` traces imports exactly; published missed-failure rates for coverage-based selection of browser
 tests; the cost of V8 coverage in Playwright; the figures in the minimisation papers; per-test coverage in vitest;

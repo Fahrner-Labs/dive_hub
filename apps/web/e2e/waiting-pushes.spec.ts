@@ -51,7 +51,6 @@ test('a saved Dive shows waiting in the logbook and on its page', { tag: ['@dive
     await line.getByRole('button', { name: 'Update in SSI' }).click();
     await expect(page.locator('#main').getByText('Up to date')).toBeVisible();
     await expect(line.getByText('Waiting to send to SSI')).toBeHidden();
-    expect((await status(request, id)).waiting).toBeNull();
   } finally {
     await leave(request);
   }
@@ -270,7 +269,6 @@ test('the delete dialog doesn\'t ask for a Provider that deletes by itself, and 
     await expect(panel.getByText('Will be deleted in SSI in 5 min')).toHaveCount(0);
     // The dive itself is back in the logbook: its Restore button is gone from the list.
     await expect(restore).toHaveCount(0);
-    expect((await status(request, id)).waiting).toBeNull();
   } finally {
     await leave(request);
   }

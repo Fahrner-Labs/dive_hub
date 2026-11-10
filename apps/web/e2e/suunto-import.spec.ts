@@ -17,7 +17,6 @@ test('imports a Suunto JSON export and shows its computer\'s data', { tag: ['@di
   const url = `/api/imports/${(await upload.json() as { id: string }).id}`;
   await expect.poll(async () => (await (await request.get(url)).json()).status).toBe('done');
   const [outcome] = ((await (await request.get(url)).json()) as { outcome: { result: string; diveId?: string }[] }).outcome;
-  expect(['created', 'unchanged']).toContain(outcome!.result);
 
   await page.goto(`/#/dives/${outcome!.diveId}`);
   await expect(page.getByText('Suunto D5').first()).toBeVisible();

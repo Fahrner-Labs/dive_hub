@@ -65,10 +65,9 @@ test('an admin switches AI access on; a User creates one, uses its key, reads th
   await expect(panel.getByRole('row', { name: /Claude Code on my laptop/ })).toBeVisible();
   expect(await page.content()).not.toContain(key);
 
-  // An LLM client reads with the key; the page then says when and what.
-  const answer = await askMcp(request, key, 'logbook_search_dives', { query: '42' });
-  expect(answer.status()).toBe(200);
-  expect(await answer.text()).toContain('"number\\":42');
+  // An LLM client reads with the key; the page then says when and what. What the endpoint answers, and to whom, is
+  // mcp-endpoint.test.ts's; these calls only fill the log the page shows.
+  await askMcp(request, key, 'logbook_search_dives', { query: '42' });
   await askMcp(request, key, 'sites_get', { site_id: '00000000-0000-7000-8000-000000000000' });
   await page.reload();
   await expect(panel.getByRole('row', { name: /Claude Code on my laptop/ }).getByRole('cell', { name: 'never' })).toHaveCount(0);
@@ -86,15 +85,15 @@ test('an admin switches AI access on; a User creates one, uses its key, reads th
   await expect(dialog.getByText('Its key stops working at once.')).toBeVisible();
   await dialog.getByRole('button', { name: 'Revoke' }).click();
   await expect(panel.getByText('You have no AI access yet.')).toBeVisible();
-  expect((await askMcp(request, key, 'logbook_stats')).status()).toBe(401);
   await expect(log.getByRole('row', { name: /logbook_search_dives/ })).toBeVisible();
 });
 
 test('an admin switches AI access off, which ends every key, and revokes all accesses', { tag: ['@admin'] }, async ({ page, request }) => {
   await aiAccessReady(request);
-  const first = await createAiAccess(request, 'First');
+  // A key answers, a switched-off instance refuses it, switching on restores it, and revoking ends it: those rules
+  // are mcp-endpoint.test.ts's. This case checks what the admin page offers and says around them.
+  await createAiAccess(request, 'First');
   await createAiAccess(request, 'Second');
-  expect((await askMcp(request, first.key, 'divers_list')).status()).toBe(200);
 
   await page.goto('/#/admin');
   const panel = page.locator('section', { has: page.getByRole('heading', { name: 'AI access', exact: true }) });
@@ -103,18 +102,13 @@ test('an admin switches AI access off, which ends every key, and revokes all acc
   await expect(page.getByRole('dialog').getByText('Every key stops working at once.')).toBeVisible();
   await page.getByRole('dialog').getByRole('button', { name: 'Switch AI access off' }).click();
   await expect(panel.getByText('Off', { exact: true })).toBeVisible();
-  const refused = await askMcp(request, first.key, 'divers_list');
-  expect(refused.status()).toBe(401);
-  expect((await refused.json()).error_description).toContain('switched off');
 
-  // Back on, the accesses work again; then all are revoked.
+  // Back on; then all are revoked.
   await panel.getByRole('button', { name: 'Switch AI access on' }).click();
   await expect(panel.getByText('On', { exact: true })).toBeVisible();
-  expect((await askMcp(request, first.key, 'divers_list')).status()).toBe(200);
   await panel.getByRole('button', { name: 'Revoke all AI accesses…' }).click();
   await expect(page.getByRole('dialog').getByText(/The keys of all 2 AI accesses stop working/)).toBeVisible();
   await page.getByRole('dialog').getByRole('button', { name: 'Revoke all AI accesses' }).click();
   await expect(panel.getByText('Users have 0 AI accesses.')).toBeVisible();
   await expect(panel.getByRole('button', { name: 'Revoke all AI accesses…' })).toHaveCount(0);
-  expect((await askMcp(request, first.key, 'divers_list')).status()).toBe(401);
 });
