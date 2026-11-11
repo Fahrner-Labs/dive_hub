@@ -201,6 +201,22 @@ browser shows (notices, focus, dialogs, a rendered page); their setup calls stay
 Dive they show; those are setup, not checks. This is the ongoing part of item 2: later cases move as they are
 found, and a check already covered by a server test is deleted rather than duplicated.
 
+## Template databases (2026-11-11)
+
+Item 3 of the ranking, the database part of setup. The browser tests now build one migrated template database per
+migration state and clone the per-worker databases from it (`CREATE DATABASE ... TEMPLATE ...`) instead of running
+migrations for every e2e server. The template's name carries a key over the migration files' hashes, a format version
+and Graphile Worker's version: a new or changed migration builds a new template, and each clone is checked against the
+migration files before use, so an old template cannot hide a migration. An unchanged template is reused by later runs;
+its migrations are checked once against it for each run, not once per worker.
+
+Measured on the agent machine's PostgreSQL 17 (the repository needs 18; the two workers are the browser tests'
+default), first run on a fresh test server: creating a fresh database and migrating it took 602 and 632 ms; building
+the template once took 629 ms and cloning it 113 and 102 ms. So the two-worker setup saved about 0.4 s per run here,
+and more workers or a slower server save proportionally more. The rest of the per-worker setup (seeding the User and
+Dive, `e2e/prepare.ts`) is unchanged; a prepared template would save that too, but would bring back the hidden
+dependencies between tests that serial preparation had.
+
 ## Not found
 How `--only-changed` traces imports exactly; published missed-failure rates for coverage-based selection of browser
 tests; the cost of V8 coverage in Playwright; the figures in the minimisation papers; per-test coverage in vitest;
