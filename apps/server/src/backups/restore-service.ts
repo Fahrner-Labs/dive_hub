@@ -7,10 +7,10 @@ import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { promisify } from 'node:util';
 import pg from 'pg';
-import { errorMessage } from '../errors.js';
 import {
   BACKUP_SKIPPED_DIRS, BackupArchiveError, encryptionKeyFingerprint, openArchiveStreamingWith, type BackupDecryptionKey, type BackupManifest,
 } from './backup-archive.js';
+import { pgCommand, pgFailureMessage } from './pg-command.js';
 
 const execFileAsync = promisify(execFile);
 
@@ -104,12 +104,6 @@ export function verifyEncryptionKey(manifest: BackupManifest, encryptionKey: Buf
       : 'DIVEHUB_ENCRYPTION_KEY differs from the one this backup was made with; the stored credentials would be undecryptable');
 }
 
-/** pg_restore's own message when it has one: the operator needs to know what the database refused. */
-function stderrOf(error: unknown): string {
-  const stderr = (error as { stderr?: unknown }).stderr;
-  return typeof stderr === 'string' && stderr.trim() !== '' ? stderr.trim() : errorMessage(error);
-}
-
 /** Directories a restore must leave in place: the same ones the backup leaves out. */
 const KEPT_ON_RESTORE = new Set(BACKUP_SKIPPED_DIRS);
 
@@ -170,7 +164,7 @@ export function createRestoreService({ dataDir, databaseUrl, migrationsFolder, e
       try {
         await replaceFiles(dataDir, filesPath);
       } catch (error) {
-        throw new RestoreError('backup_files_failed', `the files could not be restored: ${stderrOf(error)}`, { cause: error });
+        throw new RestoreError('backup_files_failed', `the files could not be restored: ${pgFailureMessage(error, databaseUrl)}`, { cause: error });
       }
 
       log.info(`restoring the database from the backup made ${manifest.createdAt}`);
@@ -179,11 +173,13 @@ export function createRestoreService({ dataDir, databaseUrl, migrationsFolder, e
         // so a newer image's surviving tables and FK dependencies would break the restore. A failed run leaves the
         // database wiped; both paths restore into a disposable or explicitly replaced instance (ADR 0069 D5).
         await resetSchemas(databaseUrl);
+        // As for pg_dump, the password goes through PGPASSWORD rather than a URL on the command line.
+        const restore = pgCommand(databaseUrl);
         await execFileAsync('pg_restore', [
-          '--no-owner', '--no-privileges', '--single-transaction', '-d', databaseUrl, databasePath,
-        ], { maxBuffer: 1 << 20 });
+          '--no-owner', '--no-privileges', '--single-transaction', '-d', restore.url, databasePath,
+        ], { maxBuffer: 1 << 20, env: restore.env });
       } catch (error) {
-        throw new RestoreError('backup_restore_failed', `the database could not be restored: ${stderrOf(error)}`, { cause: error });
+        throw new RestoreError('backup_restore_failed', `the database could not be restored: ${pgFailureMessage(error, databaseUrl)}`, { cause: error });
       }
 
       log.info(`restore finished: ${manifest.files.count} file(s), schema ${manifest.migrationHead ?? 'none'}`);

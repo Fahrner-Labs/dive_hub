@@ -125,12 +125,21 @@ describe.skipIf(!(await databaseReachable()))('backup runs', () => {
   });
 
   it('marks a run failed and removes its temp files when the dump cannot run', async () => {
-    const failing = serviceWith('postgres://divehub:wrong@127.0.0.1:1/missing');
+    const logged: string[] = [];
+    const password = 'a-database-password-that-must-not-leak';
+    const failing = createBackupService({
+      db: t.db, blobs, dataDir: t.dataDir, databaseUrl: `postgres://divehub:${password}@127.0.0.1:1/missing`,
+      migrationsFolder, appVersion: 'test', encryptionKey: TEST_ENCRYPTION_KEY,
+      log: { info() {}, warn() {}, error(detail) { logged.push(JSON.stringify(detail)); } },
+    });
     const run = await failing.create({ kind: 'manual', passphrase: 'still only in memory' });
     await failing.run(run.id);
     const row = await failing.find(run.id);
     expect(row).toMatchObject({ status: 'failed' });
     expect(row!.error).toBeTruthy();
+    // pg_dump's execFile message repeats its command line; the stored and logged one must not carry the password.
+    expect(row!.error).not.toContain(password);
+    expect(logged.join('\n')).not.toContain(password);
     const temp = await readdir(join(t.dataDir, 'tmp')).catch(() => []);
     expect(temp).not.toContain(`backup-${run.id}`);
   });

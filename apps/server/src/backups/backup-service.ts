@@ -15,6 +15,7 @@ import {
   BACKUP_EXTENSION, BACKUP_SKIPPED_DIRS, BackupArchiveError, buildManifest, encryptionKeyFingerprint, fileTreeChecksum, isRecipient,
   packContainer, passphraseEncryption, recipientEncryption, tarDirectory, type BackupEncryption, type BackupPart,
 } from './backup-archive.js';
+import { pgCommand, pgFailureMessage } from './pg-command.js';
 import { createRestoreService, RestoreError, type RestoreLog } from './restore-service.js';
 
 const execFileAsync = promisify(execFile);
@@ -366,7 +367,9 @@ export function createBackupService({ db, blobs, dataDir, databaseUrl, migration
       try {
         await mkdir(workDir, { recursive: true });
         const databasePath = join(workDir, 'database.dump');
-        await execFileAsync('pg_dump', ['-Fc', '--file', databasePath, databaseUrl], { maxBuffer: 1 << 20 });
+        // The password travels in PGPASSWORD, never in the URL on the command line (an execFile error repeats argv).
+        const dump = pgCommand(databaseUrl);
+        await execFileAsync('pg_dump', ['-Fc', '--file', databasePath, dump.url], { maxBuffer: 1 << 20, env: dump.env });
         const filesPath = join(workDir, 'files.tar.gz');
         await tarDirectory(dataDir, filesPath, BACKUP_SKIPPED_DIRS);
         const [databasePart, filesPart, filesTree, counts, head] = await Promise.all([
@@ -390,8 +393,10 @@ export function createBackupService({ db, blobs, dataDir, databaseUrl, migration
           await sweepRetention().catch((error) => log.warn({ err: error, backupRunId: id }, 'could not sweep old scheduled backups'));
         }
       } catch (error) {
-        log.error({ err: error, backupRunId: id }, 'backup failed');
-        await fail(id, error instanceof Error ? error.message : 'the backup failed');
+        // The stored and logged detail is the child's own stderr with any database password redacted.
+        const message = pgFailureMessage(error, databaseUrl);
+        log.error({ backupRunId: id, error: message }, 'backup failed');
+        await fail(id, message);
       } finally {
         await rm(workDir, { recursive: true, force: true }).catch(() => {});
       }

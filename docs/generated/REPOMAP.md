@@ -4,7 +4,7 @@
 > `pnpm check` fails when this map is stale. Symbols are ranked by how widely the code references them;
 > each module shows its most-referenced ones (exported symbols rank higher). Search here before walking the tree.
 
-Files: 368 · symbols: 3411 · shown: 253
+Files: 369 · symbols: 3413 · shown: 253
 
 ### server/(root)
 apps/server/src/vocabulary.ts:13 type SiteWaterType
@@ -36,15 +36,15 @@ apps/server/src/auth/password.ts:11 const MIN_PASSWORD_LENGTH
 ### server/backups
 apps/server/src/backups/backup-archive.ts:51 class BackupArchiveError
 apps/server/src/backups/restore-service.ts:25 class RestoreError
-apps/server/src/backups/restore-service.ts:145 fn createRestoreService
-apps/server/src/backups/backup-service.ts:47 class BackupError
+apps/server/src/backups/restore-service.ts:139 fn createRestoreService
+apps/server/src/backups/backup-service.ts:48 class BackupError
 apps/server/src/backups/backup-archive.ts:131 const encryptionKeyFingerprint
-apps/server/src/backups/backup-service.ts:83 const isUniqueViolation
-apps/server/src/backups/backup-service.ts:402 type BackupService
+apps/server/src/backups/backup-service.ts:84 const isUniqueViolation
+apps/server/src/backups/backup-service.ts:407 type BackupService
 apps/server/src/backups/backup-archive.ts:82 iface BackupManifest
+apps/server/src/backups/pg-command.ts:39 fn pgFailureMessage
 apps/server/src/backups/backup-archive.ts:307 fn passphraseEncryption
-apps/server/src/backups/backup-service.ts:95 fn createBackupService
-… 138 more symbols in this module
+… 140 more symbols in this module
 
 ### server/centres
 apps/server/src/centres/centre-view.ts:24 const CentreView
