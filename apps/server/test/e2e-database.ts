@@ -80,6 +80,7 @@ export async function createE2eDatabase(options: {
   const key = migrationKey(options.migrationsFolder);
   const template = templateDatabaseName(key, options.templatePrefix);
   const admin = new pg.Client({ connectionString: options.databaseUrl });
+  admin.on('error', (error) => console.error('PostgreSQL connection error', error));
   await admin.connect();
   try {
     await admin.query('select pg_advisory_lock($1)', [TEMPLATE_LOCK]);

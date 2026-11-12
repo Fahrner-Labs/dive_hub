@@ -59,6 +59,7 @@ export interface TestDatabase {
 export async function createTestDatabase(options: { migrationsFolder?: string } = {}): Promise<TestDatabase> {
   const name = `divehub_test_${process.pid}_${Date.now()}_${Math.floor(Math.random() * 1e6)}`;
   const admin = new pg.Client({ connectionString: baseDbUrl });
+  admin.on('error', (error) => console.error('PostgreSQL connection error', error));
   await admin.connect();
   await admin.query(`create database ${name}`);
   const url = new URL(baseDbUrl);

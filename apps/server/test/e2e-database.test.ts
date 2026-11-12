@@ -44,6 +44,7 @@ describe.skipIf(!(await databaseReachable()))('a template database', () => {
 
   beforeAll(async () => {
     admin = new pg.Client({ connectionString: baseUrl });
+    admin.on('error', (error) => console.error('PostgreSQL connection error', error));
     await admin.connect();
     one = await createE2eDatabase({ databaseUrl: baseUrl, databaseName: first, migrationsFolder: migrations, templatePrefix: prefix, runId: 'first-run' });
     two = await createE2eDatabase({ databaseUrl: baseUrl, databaseName: second, migrationsFolder: migrations, templatePrefix: prefix, runId: 'first-run' });
