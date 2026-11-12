@@ -470,6 +470,35 @@ export function failedTestsFromReport(report) {
   return lines;
 }
 
+/** One failed attempt of a test: its status and the first line of its error, or just the status without a message. */
+const describeAttempt = (result) => {
+  const message = (result.error?.message ?? result.errors?.[0]?.message ?? '').split('\n')[0].trim();
+  return message ? `${result.status}: ${message}` : String(result.status);
+};
+
+/**
+ * The tests of a Playwright JSON report that passed only on a retry (CI sets `E2E_RETRIES=1`): one entry per
+ * `--test-list` line, the attempt that passed (2 for one retry) and the failed attempts before it, one line each.
+ * Playwright marks such a test `flaky`; a test that failed every attempt is `unexpected`, not here.
+ */
+export function flakyTestsFromReport(report) {
+  const flaky = new Map();
+  eachSpec(report, (spec, line) => {
+    for (const test of spec.tests ?? []) {
+      if (test.status !== 'flaky') continue;
+      const results = test.results ?? [];
+      const passedOnAttempt = (results.at(-1)?.retry ?? results.length - 1) + 1;
+      const seen = flaky.get(line);
+      flaky.set(line, {
+        line,
+        passedOnAttempt: Math.max(seen?.passedOnAttempt ?? 0, passedOnAttempt),
+        failures: [...(seen?.failures ?? []), ...results.slice(0, -1).map(describeAttempt)],
+      });
+    }
+  });
+  return [...flaky.values()];
+}
+
 /**
  * Records that `step` failed on the snapshot `tree`: the ids of the tests that failed (what `.last-run.json` lists)
  * and their `--test-list` lines (`failedTestsFromReport`).

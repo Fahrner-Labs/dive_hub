@@ -6,12 +6,10 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Readable } from 'node:stream';
 import { fileURLToPath } from 'node:url';
-import pg from 'pg';
 import { createAuth } from '../src/auth/auth.js';
 import { buildApp } from '../src/app.js';
 import { createServices, workerDeps } from '../src/compose.js';
 import { createDb } from '../src/db/client.js';
-import { migrateDatabase } from '../src/db/migrate.js';
 import { createSiteSources } from '../src/site-sources.js';
 import type { Fetch } from '../src/sites/import/polite-http.js';
 import { ssiSitesZip } from './zip.js';
@@ -23,6 +21,7 @@ import { createSsiClient } from '../src/providers/ssi/ssi-client.js';
 import { createLocalBlobStore } from '../src/storage/blob-store.js';
 import { createFakeGarmin } from './fake-garmin.js';
 import { computerDive, createFakeSsi, fakeCard, handTypedDive, type FakeSsiSite } from './fake-ssi.js';
+import { createE2eDatabase } from './e2e-database.js';
 import { makeSyntheticDive } from './fixtures/synthetic-dive.js';
 import { resettableClock } from './support.js';
 import { resolveTestDatabaseUrl } from './test-database-url.js';
@@ -39,21 +38,17 @@ export const E2E_USER = { email: 'erika@example.com', name: 'Erika', password: '
 
 const port = Number(process.env.E2E_PORT ?? 3300);
 const baseDbUrl = resolveTestDatabaseUrl();
-// One database per e2e server: the browser tests run one server per worker (ADR 0023).
+// One database per e2e server: the browser tests run one server per worker (ADR 0023), cloned from a migrated
+// template so the migrations run once per run against it instead of once per worker.
 const dbName = process.env.E2E_DB ?? 'divehub_e2e';
-if (!/^[a-z0-9_]+$/.test(dbName)) throw new Error(`E2E_DB must be a plain name: ${dbName}`);
 const here = (path: string) => fileURLToPath(new URL(path, import.meta.url));
 
-const admin = new pg.Client({ connectionString: baseDbUrl });
-await admin.connect();
-await admin.query(`drop database if exists ${dbName} with (force)`);
-await admin.query(`create database ${dbName}`);
-await admin.end();
-const url = new URL(baseDbUrl);
-url.pathname = `/${dbName}`;
-
-const { db, pool } = createDb(url.toString());
-await migrateDatabase(db, pool, here('../drizzle'));
+const database = await createE2eDatabase({
+  databaseUrl: baseDbUrl, databaseName: dbName, migrationsFolder: here('../drizzle'),
+  ...(process.env.E2E_RUN_ID && { runId: process.env.E2E_RUN_ID }),
+});
+console.log(`e2e database ${dbName}: ${database.reusedTemplate ? 'cloned an existing' : 'built a new'} template ${database.template}`);
+const { db, pool } = createDb(database.url);
 
 /**
  * Overpass and Wikidata as recorded, SSI's site list hand-made in its format (test/fixtures/site-sources): the
@@ -132,7 +127,7 @@ const services = createServices({
   // The fake needs no pause between actions; the browser tests would only wait, so the pauses are skipped.
   clock: resettableClock(),
   // Open pages hear about background work in the browser tests too (ADR 0066).
-  live: { connectionString: url.toString() },
+  live: { connectionString: database.url },
 });
 const { imports } = services;
 const app = await buildApp({ ...services, baseUrl: `http://localhost:${port}`, maxUploadBytes: 1 << 26, webDir: here('../../web/dist') });

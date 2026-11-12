@@ -71,7 +71,6 @@ test('suggests the pair in Needs your decision and appends on Anhängen', { tag:
     // One dive, on the Review page still; the check is gone.
     await expect(page).toHaveURL(/#\/review$/);
     await expect(page.getByRole('button', { name: /^Append…: / })).toHaveCount(0);
-    expect((await request.get(`/api/dives/${second}`)).status()).toBe(404);
   } finally {
     await surfaceBreakPair(request); // two dives again, so other specs find no deleted one
   }

@@ -27,6 +27,20 @@ read).
 the same local plan took 334 s wall (229 tests, 2.6 s a test, ui-quality 42 % of worker time, axe at every check +33 s
 on ui-quality), 4 workers 284 s without timeouts. The 7.3 s did not reproduce; the ranking below was written before.
 
+*Measured again on 2026-11-09* (Playwright's JSON report, 2 workers, the check's English plan of 130 tests):
+
+| axe | Wall | Worker time | Mean per test |
+|---|---|---|---|
+| off (measurement only) | 152 s | 251 s | 1.9 s |
+| once per test, on its final state | 231 s | 344 s | 2.6 s |
+| at every page state | 278 s | 395 s | 3.0 s |
+
+So axe is 27 % of the English variant's worker time when it runs once per test, and 36 % at every state. The German,
+dark, phone variant (72 tests) went from 222 s to 280 s worker time for every state (+57 s). Running axe once per test
+everywhere, not only in `pnpm check`, saves about 108 s of worker time across the two axe variants (16 %) and about 7
+axe scans per variant. What is given up: an axe fault on an intermediate state (a dialog closed again, a page navigated
+away from) is only found with `E2E_AXE=every`; the other page rules still run at every state.
+
 So most of the time sits in a few places (one spec file, axe, per-test setup), not spread evenly. That shapes the
 ranking at the end.
 
@@ -164,6 +178,62 @@ Effort against gain, with our numbers above in mind [I]:
 
 Not for us: machine-learning selection (Meta, Develocity, Smart Tests) and hosted services (Datadog): too little
 history, and cost.
+
+## Moved out of the browser (2026-11-10)
+
+Part 2 of the ranking: the browser cases whose assertions were API shapes, status codes or server rules, and the
+server test (`app.inject()` against PostgreSQL) that now owns each check. The browser cases keep what only a
+browser shows (notices, focus, dialogs, a rendered page); their setup calls stay.
+
+| Browser case | Check moved | Server test |
+|---|---|---|
+| `ai-access.spec.ts`: a User creates and uses a key, an admin switches AI access off | MCP answers and their status/`error_description`; a key stops at once when revoked or switched off | `mcp-endpoint.test.ts` |
+| `provider-sites.spec.ts`: the picker and the site page | The picker's `{ externalId, private }` answer, the stored private external ID, and another User never seeing it | `site-pick.test.ts`, `private-site-ids.test.ts` |
+| `provider-conflicts.spec.ts`: a choice and a run's conflict | The notes taken from SSI, and the pushes a choice records | `ssi-target.test.ts`, `push-runs.test.ts`, `provider-conflicts.test.ts` |
+| `logbook.spec.ts`: a row's sketch | The list row's profile: 48 depths for a Recording, `null` without one | `assessment.test.ts` |
+| `oceanic-plus-import.spec.ts`: the app's zip | The import outcome, and the `+00:02` offset read as two hours | `oceanic-plus-import.test.ts` |
+| `suunto-import.spec.ts`: the Suunto JSON export | The import outcome (`created`/`unchanged`) | `suunto-import.test.ts` |
+| `dive-continuation.spec.ts`: appending from Review | The later Dive answering 404 after the append | `dive-continuation.test.ts` |
+| `waiting-pushes.spec.ts`: a manual send, restoring an automatic delete | The queue entry cleared by a manual send, and a restore cancelling the delete | `waiting-pushes.test.ts`, `dive-deletion.test.ts` |
+| `gone-dives.spec.ts`: cancelling the delete dialog | Cancelling sends nothing is a client rule; the page now says the Dive is still there | the browser case |
+
+`ai-access.spec.ts` still calls the MCP endpoint to fill "What was read", and the import specs still read the
+Dive they show; those are setup, not checks. This is the ongoing part of item 2: later cases move as they are
+found, and a check already covered by a server test is deleted rather than duplicated.
+
+## Template databases (2026-11-11)
+
+Item 3 of the ranking, the database part of setup. The browser tests now build one migrated template database per
+migration state and clone the per-worker databases from it (`CREATE DATABASE ... TEMPLATE ...`) instead of running
+migrations for every e2e server. The template's name carries a key over the migration files' hashes, a format version
+and Graphile Worker's version: a new or changed migration builds a new template, and each clone is checked against the
+migration files before use, so an old template cannot hide a migration. An unchanged template is reused by later runs;
+its migrations are checked once against it for each run, not once per worker.
+
+Measured on the agent machine's PostgreSQL 17 (the repository needs 18; the two workers are the browser tests'
+default), first run on a fresh test server: creating a fresh database and migrating it took 602 and 632 ms; building
+the template once took 629 ms and cloning it 113 and 102 ms. So the two-worker setup saved about 0.4 s per run here,
+and more workers or a slower server save proportionally more. The rest of the per-worker setup (seeding the User and
+Dive, `e2e/prepare.ts`) is unchanged; a prepared template would save that too, but would bring back the hidden
+dependencies between tests that serial preparation had.
+
+## Flaky tests counted in CI (2026-11-12)
+
+Item 4 of the ranking. CI reported nothing about flakes: a flaky test either reddened the run or, when it passed
+again, left no trace, while [check escapes](../agents/check-escapes.md) and the flake fixes FAH-53–FAH-56 kept
+showing what they cost.
+
+- **One retry in CI only** (`E2E_RETRIES=1` in `.github/workflows/check.yml`); locally there is none, so a flake still
+  shows. Playwright marks a test `flaky` when it failed and then passed on the retry, and its JSON report already
+  carries that status and the earlier attempts.
+- **Counted in the job summary.** `node scripts/check-log.mjs --flaky` reads `apps/web/test-results/report.json` and
+  appends a "Flaky browser tests" table: the case, the attempt that passed, and the first line of each earlier
+  failure. A run with no flaky case says so; a run without a report (an earlier step failed) says so too.
+- **Not hidden, but no longer blocking.** The run stays green when a case passes on its retry; the table is the
+  count. `--fail-on-flaky-tests` is not used, and the failed-browser-tests summary still lists only the cases that
+  failed every attempt (from the same report).
+- This note records the mechanism; the rate itself is read from the job summaries of the PRs and pushes that follow.
+  For comparison, Google reported about 1.5 % of test runs flaky in 2016 (section 5).
 
 ## Not found
 How `--only-changed` traces imports exactly; published missed-failure rates for coverage-based selection of browser

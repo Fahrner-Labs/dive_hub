@@ -201,6 +201,7 @@ on the document and on the language names in the picker.
 From the [UI review](../research/2026-10-03-ui-review.md). `expectGoodPage` in `apps/web/e2e/support.ts`
 checks them. `e2e/ui-quality.spec.ts` runs it on every page in four variants: English light desktop (1280), German dark phone (390),
 English light small phone (320) and German light tablet (768), with crowded data (long names and e-mail addresses).
+axe-core runs once per test, on the state the test ends on (ADR 0023); `E2E_AXE=every` runs it at every page state.
 It also sweeps every page from 320 to 1440 px and checks text at 200 % ([responsiveness](../research/2026-10-04-responsiveness.md)).
 **A new page gets a test there.**
 

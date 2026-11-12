@@ -67,7 +67,8 @@ test('"Delete here too" asks SSI again, then opens the dive\'s own delete dialog
     await expect(dialog.getByRole('button', { name: 'Delete dive', exact: true })).toBeVisible();
     await dialog.getByRole('button', { name: 'Cancel' }).click();
     // Cancelling deletes nothing: the dive is still here, no longer at SSI.
-    expect((await request.get(`/api/dives/${id}`)).ok()).toBe(true);
+    await page.goto(`/#/dives/${id}`);
+    await expect(page.getByRole('heading', { name: `Dive ${n}`, level: 1 })).toBeVisible();
   } finally {
     await deletableDive(request);
   }

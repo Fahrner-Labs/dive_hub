@@ -55,6 +55,9 @@ describe.skipIf(!(await databaseReachable()))('an Oceanic+ export through the im
     const apnea = recs.filter((r) => r.summary.diveMode === 'apnea');
     expect(apnea).toHaveLength(1);
     expect(await db.select().from(dive)).toHaveLength(4);
+    // The app writes the offset as `+00:02`: 11:07 local is 09:07 UTC, two hours ahead.
+    const nitrox = (await db.select().from(dive)).find((d) => d.startsAt.toISOString() === '2021-08-12T09:07:57.000Z');
+    expect(nitrox).toMatchObject({ utcOffsetSeconds: 7200 });
     // A `tankdata` link only names the mix; without a pressure it is no tank the diver used (ADR 0045).
     // The breath-hold session has no tank data either, so the export makes no Cylinder at all.
     expect(await db.select().from(cylinder).where(eq(cylinder.diveId, apnea[0]!.diveId!))).toEqual([]);

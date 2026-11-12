@@ -45,10 +45,7 @@ test('a row says its number, when and with whom; a month heading and the logbook
 
 test('a row sketches its dive from the recorded profile; a dive without a recording has an empty dashed box instead', { tag: ['@dives'] }, async ({ page, request }) => {
   const id = await seededDiveId(request);
-  const without = await diveWithoutRecording(request);
-  const { dives } = await (await request.get('/api/dives?limit=200')).json() as { dives: { id: string; profile: { depthsM: number[] } | null }[] };
-  expect(dives.find((d) => d.id === id)!.profile!.depthsM.length).toBe(48);
-  expect(dives.find((d) => d.id === without)!.profile).toBeNull();
+  await diveWithoutRecording(request);
 
   const n = await diveNumber(request, id);
   await page.goto(`/#/?q=${n}`);
