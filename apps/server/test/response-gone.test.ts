@@ -29,4 +29,22 @@ describe('when a response is gone', () => {
     response.emit('close');
     expect(calls).toBe(1);
   });
+
+  it('fires at once when the client disconnected before the listeners were attached', () => {
+    // The reviewer's reproduction: the socket died during the restore, so Node's `close` is already past.
+    const response = Object.assign(new EventEmitter(), { destroyed: true, writableFinished: false });
+    let calls = 0;
+    whenResponseGone(response, () => { calls += 1; });
+    expect(calls).toBe(1);
+    // A late event must not run the callback a second time.
+    response.emit('close');
+    expect(calls).toBe(1);
+  });
+
+  it('fires at once when the answer finished before the listeners were attached', () => {
+    const response = Object.assign(new EventEmitter(), { destroyed: false, writableFinished: true });
+    let calls = 0;
+    whenResponseGone(response, () => { calls += 1; });
+    expect(calls).toBe(1);
+  });
 });

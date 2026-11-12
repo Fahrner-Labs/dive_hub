@@ -1,12 +1,14 @@
 // First-start restore (plan FAH-175 slice 3): a fresh instance is provisioned from a backup through the setup route,
 // the setup token protects it, uploads stream in without the app's upload cap, and the worker is held until setup.
 import { execFile } from 'node:child_process';
-import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
+import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
-import { generateRecipientKeyPair } from '../src/backups/backup-archive.js';
+import { encryptFile, generateRecipientKeyPair, openArchive, packContainer } from '../src/backups/backup-archive.js';
 import { createBackupService } from '../src/backups/backup-service.js';
 import { createLocalBlobStore } from '../src/storage/blob-store.js';
 import {
@@ -46,6 +48,26 @@ function multipart(fields: Record<string, string>, file?: { field: string; name:
   }
   parts.push(Buffer.from(`--${boundary}--\r\n`));
   return { payload: Buffer.concat(parts), headers: { 'content-type': `multipart/form-data; boundary=${boundary}` } };
+}
+
+/** A copy of `archive` whose database part is not a pg_dump: verification passes, then pg_restore fails after the reset. */
+async function archiveWithBrokenDatabase(archive: Buffer): Promise<Buffer> {
+  const dir = await mkdtemp(join(tmpdir(), 'divehub-broken-backup-'));
+  try {
+    const valid = join(dir, 'valid.divehub-backup');
+    await writeFile(valid, archive);
+    const unpacked = join(dir, 'unpacked');
+    const opened = await openArchive(valid, PASSPHRASE, unpacked);
+    const broken = Buffer.from('this is not a pg_dump archive\n');
+    await writeFile(opened.databasePath, broken);
+    opened.manifest.parts.database = { sha256: createHash('sha256').update(broken).digest('hex'), bytes: broken.byteLength };
+    const container = await packContainer(unpacked, opened.manifest);
+    const output = join(dir, 'broken.divehub-backup');
+    await encryptFile(container, output, PASSPHRASE);
+    return await readFile(output);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
 }
 
 describe.skipIf(!(await databaseReachable()))('first-start restore', () => {
@@ -111,6 +133,36 @@ describe.skipIf(!(await databaseReachable()))('first-start restore', () => {
       expect(await readFile(join(target.dataDir, 'auth-secret'), 'utf8')).toBe('the auth secret from the backup');
       // The streamed upload was cleaned up, not left in incoming/.
       expect(await readdir(join(target.dataDir, 'incoming')).catch(() => [])).toEqual([]);
+    } finally {
+      await ctx.app.close();
+      await target.drop();
+    }
+  });
+
+  it('still needs setup after a failed restore reset the schemas, so the operator can retry', async () => {
+    if (!(await restoreToolsAvailable())) return;
+    const target = await createTestDatabase();
+    const ctx = await createTestApp(target);
+    try {
+      const token = await ctx.setup.issue();
+      const failed = await ctx.app.inject({
+        method: 'POST', url: '/api/setup/restore',
+        ...multipart({ token: token!, passphrase: PASSPHRASE }, { field: 'file', name: 'broken.divehub-backup', data: await archiveWithBrokenDatabase(archive) }),
+      });
+      // pg_restore failed after the schemas were reset outside its transaction, so `"user"` no longer exists.
+      expect(failed.statusCode).toBe(500);
+      expect(failed.json()).toMatchObject({ code: 'setup_restore_failed' });
+
+      // Setup is still needed (not a 500 from the missing relation), and the token went back for a retry.
+      const setup = await ctx.app.inject({ method: 'GET', url: '/api/setup' });
+      expect(setup.statusCode).toBe(200);
+      expect(setup.json()).toEqual({ needed: true });
+      const retried = await ctx.app.inject({
+        method: 'POST', url: '/api/setup/restore',
+        ...multipart({ token: token!, passphrase: PASSPHRASE }, { field: 'file', name: 'backup.divehub-backup', data: archive }),
+      });
+      expect(retried.statusCode).toBe(200);
+      expect((await ctx.app.inject({ method: 'GET', url: '/api/setup' })).json()).toEqual({ needed: false });
     } finally {
       await ctx.app.close();
       await target.drop();
@@ -186,6 +238,22 @@ describe.skipIf(!(await databaseReachable()))('first-start restore', () => {
       });
       expect(expired.statusCode).toBe(403);
       expect((await ctx.app.inject({ method: 'GET', url: '/api/setup' })).json()).toEqual({ needed: true });
+    } finally {
+      await ctx.app.close();
+      await target.drop();
+    }
+  });
+
+  it('treats a missing "user" relation as setup still needed, so the setup screen answers', async () => {
+    const target = await createTestDatabase();
+    const ctx = await createTestApp(target);
+    try {
+      expect((await ctx.app.inject({ method: 'GET', url: '/api/setup' })).json()).toEqual({ needed: true });
+      // What `resetSchemas` leaves behind when pg_restore fails afterwards: the table is gone, not the setup.
+      await target.pool.query('drop table "user" cascade');
+      const setup = await ctx.app.inject({ method: 'GET', url: '/api/setup' });
+      expect(setup.statusCode).toBe(200);
+      expect(setup.json()).toEqual({ needed: true });
     } finally {
       await ctx.app.close();
       await target.drop();

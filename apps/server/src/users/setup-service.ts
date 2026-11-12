@@ -6,6 +6,14 @@ import { newToken, sha256 } from './tokens.js';
 
 const SETUP_TOKEN_TTL_MS = 24 * 3600_000;
 
+/** PostgreSQL's `undefined_table`, however deep the driver and Drizzle wrapped it. */
+function isMissingRelation(error: unknown): boolean {
+  for (let e = error as { code?: string; cause?: unknown } | undefined; e; e = e.cause as typeof e) {
+    if (e.code === '42P01') return true;
+  }
+  return false;
+}
+
 /**
  * First-admin bootstrap (ADR 0012). While no User exists, the server holds one setup token in memory
  * (hashed) and prints it to the log; whoever has it may create the first admin. A restart issues a new one.
@@ -16,7 +24,16 @@ export function createSetupService(db: Db, now: () => number = Date.now) {
   let doneListener: (() => void | Promise<void>) | undefined;
   let done = false;
 
-  const isNeeded = async () => (await db.select({ n: count() }).from(user))[0]!.n === 0;
+  // A restore that fails after `resetSchemas` leaves no `"user"` table. That is setup still needed, not a server
+  // error: the operator can retry the archive (ADR 0069 D5), and the retry's reset is idempotent.
+  const isNeeded = async () => {
+    try {
+      return (await db.select({ n: count() }).from(user))[0]!.n === 0;
+    } catch (error) {
+      if (isMissingRelation(error)) return true;
+      throw error;
+    }
+  };
 
   return {
     isNeeded,
