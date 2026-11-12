@@ -1,12 +1,32 @@
 ---
 title: SSI External API (MySSI developer program)
-summary: SSI's official partner API (v1, HMAC-signed), granted to Dive Hub through the SSI developer program - endpoints granted to our application (divelogs read/batch upsert, user signup handshake, self-documentation), the auth model, what it replaces and what it cannot do compared with the private app API, and the open questions for SSI. Credentials are never recorded here.
+summary: SSI's official partner API (v1, HMAC-signed), granted to Dive Hub through the SSI developer program - endpoints granted to our application (divelogs read/batch upsert, user signup handshake, self-documentation), the auth model, what it replaces and what it cannot do compared with the private app API, and the open questions for SSI. Reviewed 2026-11-12 and parked: not pursued for now, the app API remains the integration. Credentials are never recorded here.
 status: living
 date: 2026-11-12
 url: https://api.divessi.com/rst/extern/v1
 ---
 
 # SSI External API (MySSI developer program)
+
+## Status: reviewed and parked (2026-11-12)
+
+The owner reviewed the comparison on 2026-11-12 (FAH-191) and decided: **not pursued for now.** The private app
+API ([ssi-app-api.md](ssi-app-api.md)) remains the SSI integration, unchanged. This page stays as the record of
+what the official API offers, so a future revisit starts here instead of from scratch.
+
+If it is ever picked up, the agreed target is the **hybrid**: the official API owns the core loop (connect via the
+signup handshake, dive create/update/delete, logbook read-back) wherever an application key exists; the app API
+keeps only the gaps the official contract cannot do (rich profile series, site management, buddy-list management,
+certifications) and remains the **complete core for unregistered self-hosted deployments**, which have no
+application key. One write-owner per field; enrichment only ever adds what the official contract lacks.
+
+Why parked, in one paragraph: the official API loses profile richness (depth-only samples) and cannot do sites,
+buddy lists or certifications, so the app-API client would have to be kept and tested alongside it anyway —
+including an unproven cross-write seam on the same dive. And the credential model does not scale to
+self-hosting: the HMAC secret is symmetric, so sharing access *is* sharing the value (attribution and revocation
+are lost; a signing proxy would make us a man-in-the-middle for other operators' users). Every self-hosting
+operator would need their own developer-program application unless SSI offers a multi-deployment model. None of
+that buys enough over the working app-API integration today.
 
 ## What it is
 
@@ -77,9 +97,11 @@ our application; otherwise name + lat + lon are sent.
   unconfirmed either way (verification remains the QR flow, [ADR 0043](../decisions/0043-dive-centres-and-ssi-verification-codes.md)).
   The app API remains the integration for those until SSI grants more routes.
 - **Access:** the key belongs to the *application*, not to individual divers or operators. Divers connect through
-  `requestsignup` and need no developer-program account. A self-hosted instance cannot share our secret and would
-  need its own developer-program application — whether SSI covers all DiveHub deployments under one registration
-  is an open question for them.
+  `requestsignup` and need no developer-program account. The HMAC secret is **symmetric** — signing *is*
+  possessing the value, so access can never be shared without sharing the secret itself (attribution and
+  revocation would be lost; a signing proxy would make us a man-in-the-middle for other operators' users and was
+  rejected). A self-hosted instance therefore needs its **own developer-program application** — whether SSI
+  covers all DiveHub deployments under one registration is an open question for them.
 - **Open questions for SSI** (full list in the FAH-191 review document): the `requestsignup` handshake details
   and token lifetime; deployment model for self-hosted instances; site resolution (`divesite_id` vs
   name+coordinates); sample-interval contract, payload and rate limits; adopting dives previously pushed via the
