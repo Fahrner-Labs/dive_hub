@@ -14,8 +14,9 @@ local check incident that wrote outside the sandbox it was meant to stay in, so 
 
 **Who writes an entry:** whoever pushed the branch and sees its CI fail (the agent session that opened the pull
 request, or the owner), when every commit on it had a green local `pnpm check`; or whoever sees the local check
-write outside its sandbox. CI's job summary names the failed browser tests ("Failed browser tests"). A failure that
-is a flaky test also counts; say so.
+write outside its sandbox. CI's job summary names the failed browser tests ("Failed browser tests") and the tests
+that passed only on a retry ("Flaky browser tests"). A failure that is a flaky test also counts; say so. A test that
+passed on its retry does not fail the run, so it needs no entry here; the job summary counts it.
 
 **Format:** one line per escape, newest first:
 `- YYYY-MM-DD, PR #n, <commit sha7>: <failed spec or step> — <cause: map gap / variant / flaky / other> — <fix>`

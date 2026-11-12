@@ -7,7 +7,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { test } from 'node:test';
 import { FULL_ONLY, VARIANTS, browserGrepInvert, variantsRun } from './check-lib.mjs';
-import { testsFilter, shellArgs, passedToRecord, browserTestList, baseCandidates, baselineGrowth, baselineSize, changedSince, chooseBase, clearFailed, clearPassed, carryPassed, passedRun, passedSince, recordPassed, reportedTests, stillPassed, countingBase, e2eServerLoads, failedRerunRenews, failedRun, failedTestsFromReport, forBrowserTests, greenRun, keptFailures, lintTargets, listedTests, planFor, planSteps, recordFailed, recordGreen, snapshot, REPO_LOCATING_GIT_VARS, withoutRepoEnv, REPO_MAP_STALE, repoMapBlocks } from './check-lib.mjs';
+import { testsFilter, shellArgs, passedToRecord, browserTestList, baseCandidates, baselineGrowth, baselineSize, changedSince, chooseBase, clearFailed, clearPassed, carryPassed, passedRun, passedSince, recordPassed, reportedTests, stillPassed, countingBase, e2eServerLoads, failedRerunRenews, failedRun, failedTestsFromReport, flakyTestsFromReport, forBrowserTests, greenRun, keptFailures, lintTargets, listedTests, planFor, planSteps, recordFailed, recordGreen, snapshot, REPO_LOCATING_GIT_VARS, withoutRepoEnv, REPO_MAP_STALE, repoMapBlocks } from './check-lib.mjs';
 
 // The pre-commit hook exports GIT_DIR/GIT_WORK_TREE; inherited by this test process they would make the fixture
 // `git` commands, and the check helpers these tests call, write to the real repository instead of a temp directory.
@@ -588,6 +588,30 @@ test('the failed tests of a report are named as test-list lines, curly quotes an
   assert.deepEqual(failedTestsFromReport(report), [
     'ui-quality.spec.ts › English, light, desktop › Dive 100% of the “Shark’s” sites',
     "ui-quality.spec.ts › English, light, desktop › Equipment: the 'list'",
+  ]);
+});
+
+test('the flaky tests of a report passed on a retry, with the attempts before it', () => {
+  const attempt = (status, retry, message) => ({ status, retry, duration: 100, error: message ? { message } : undefined });
+  const test = (status, results) => ({ status, results });
+  const report = {
+    stats: { expected: 2, unexpected: 0, flaky: 2, skipped: 0 },
+    suites: [{
+      title: 'ui-quality.spec.ts',
+      file: 'ui-quality.spec.ts',
+      suites: [{
+        title: 'English, light, desktop',
+        specs: [
+          { file: 'ui-quality.spec.ts', title: 'Divers, a diver’s certifications', tests: [test('flaky', [attempt('failed', 0, 'expect(locator).toBeVisible()\n\nLocator: …'), attempt('passed', 1)])] },
+          { file: 'ui-quality.spec.ts', title: 'Sites', tests: [test('expected', [attempt('passed', 0)])] },
+          { file: 'ui-quality.spec.ts', title: 'Equipment', tests: [test('flaky', [attempt('timedOut', 0), attempt('failed', 1, 'expect(page).toHaveTitle()\n\nExpected: …'), attempt('passed', 2)])] },
+        ],
+      }],
+    }],
+  };
+  assert.deepEqual(flakyTestsFromReport(report), [
+    { line: 'ui-quality.spec.ts › English, light, desktop › Divers, a diver’s certifications', passedOnAttempt: 2, failures: ['failed: expect(locator).toBeVisible()'] },
+    { line: 'ui-quality.spec.ts › English, light, desktop › Equipment', passedOnAttempt: 3, failures: ['timedOut', 'failed: expect(page).toHaveTitle()'] },
   ]);
 });
 

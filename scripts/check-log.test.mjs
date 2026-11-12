@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { localTime } from './check-lib.mjs';
-import { appendRun, browserStats, summarise } from './check-log.mjs';
+import { appendRun, browserStats, failedSummary, flakySummary, summarise } from './check-log.mjs';
 
 const entry = (over = {}) => ({
   at: '2026-10-26T10:00:00.000Z', branch: 'main', head: 'abc1234', by: 'person', args: [], wall: 60, result: 'passed',
@@ -39,6 +39,38 @@ test('the browser stats come from the report', () => {
   assert.deepEqual(stats.failed, ['a.spec.ts › two']);
   assert.equal(stats.slowest[0].seconds, 2.5);
   assert.equal(stats.slowest[0].test, 'a.spec.ts › two');
+});
+
+test('the flaky summary is a job-summary table of what passed on a retry', () => {
+  const attempt = (status, retry, message) => ({ status, retry, duration: 100, error: message ? { message } : undefined });
+  const report = {
+    stats: { expected: 1, unexpected: 0, flaky: 1, skipped: 0 },
+    suites: [{ title: 'a.spec.ts', file: 'a.spec.ts', specs: [
+      { file: 'a.spec.ts', title: 'one | two', tests: [{ status: 'flaky', results: [attempt('failed', 0, 'expect(x)\n\ndetail'), attempt('passed', 1)] }] },
+      { file: 'a.spec.ts', title: 'three', tests: [{ status: 'expected', results: [attempt('passed', 0)] }] },
+    ] }],
+  };
+  const text = flakySummary(report);
+  assert.match(text, /### Flaky browser tests/);
+  assert.match(text, /1 of the 2 browser tests passed only on a retry:/);
+  assert.match(text, /\| Browser test \| Passed on attempt \| Earlier attempts \|/);
+  assert.match(text, /\| `a.spec.ts › one \\\| two` \| 2 \| failed: expect\(x\) \|/);
+  assert.match(flakySummary({ stats: { expected: 1, unexpected: 0, flaky: 0, skipped: 0 }, suites: [] }), /None of the 1 browser test passed only on a retry\./);
+  assert.match(flakySummary(null), /No browser test report/);
+});
+
+test('the failed summary lists only the tests that failed every attempt', () => {
+  const attempt = (status, retry) => ({ status, retry, duration: 100 });
+  const report = { suites: [{ title: 'a.spec.ts', file: 'a.spec.ts', specs: [
+    { file: 'a.spec.ts', title: 'one', tests: [{ status: 'flaky', results: [attempt('failed', 0), attempt('passed', 1)] }] },
+    { file: 'a.spec.ts', title: 'two', tests: [{ status: 'unexpected', results: [attempt('failed', 0), attempt('failed', 1)] }] },
+  ] }] };
+  const text = failedSummary(report);
+  assert.match(text, /### Failed browser tests/);
+  assert.match(text, /- `a.spec.ts › two`/);
+  assert.doesNotMatch(text, /a.spec.ts › one/);
+  assert.match(failedSummary({ suites: [{ title: 'a.spec.ts', file: 'a.spec.ts', specs: [report.suites[0].specs[0]] }] }), /None: no browser test failed every attempt\./);
+  assert.match(failedSummary(null), /No browser test report/);
 });
 
 test('the summary lists the last runs and sums each branch', () => {

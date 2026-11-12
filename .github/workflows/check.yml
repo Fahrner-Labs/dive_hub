@@ -38,6 +38,8 @@ jobs:
       REQUIRE_DATABASE: '1'
       # Playwright's own Chromium (cached below); on a laptop the tests use the installed Edge.
       PLAYWRIGHT_CHANNEL: chromium
+      # One retry, in CI only: a test that passes on it is flaky, and the job summary names it (ADR 0023).
+      E2E_RETRIES: '1'
     steps:
       - uses: actions/checkout@v4
         with:
@@ -73,13 +75,16 @@ jobs:
 
       - run: pnpm check:full
 
-      # Names what failed in the job summary, for the log of check escapes (docs/agents/check-escapes.md):
-      # Playwright keeps a folder per failed test.
+      # Which browser tests passed only on a retry (ADR 0023, amendment 2026-11-12), on a green run too.
+      - name: Flaky browser tests
+        if: always()
+        run: node scripts/check-log.mjs --flaky >> "$GITHUB_STEP_SUMMARY"
+
+      # Names what failed in the job summary, for the log of check escapes (docs/agents/check-escapes.md). From
+      # Playwright's report, not its output folders: with a retry, a flaky test leaves the folder of its failed attempt.
       - name: Failed browser tests
         if: failure()
-        run: |
-          echo "### Failed browser tests" >> "$GITHUB_STEP_SUMMARY"
-          find apps/web/test-results -mindepth 1 -maxdepth 1 -type d -printf '- %f\n' >> "$GITHUB_STEP_SUMMARY" 2>/dev/null || echo "- none (another step failed)" >> "$GITHUB_STEP_SUMMARY"
+        run: node scripts/check-log.mjs --failed >> "$GITHUB_STEP_SUMMARY"
 
       - name: Browser test results
         if: failure()

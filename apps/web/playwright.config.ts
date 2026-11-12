@@ -14,6 +14,9 @@ export default defineConfig({
   // ui-quality.spec.ts spreads its tests over all workers.
   fullyParallel: false,
   workers: E2E_SERVERS,
+  // One retry, only in CI (`E2E_RETRIES=1` in .github/workflows/check.yml): a test that passes on it is flaky and is
+  // named in the job summary (ADR 0023, amendment 2026-11-12). Locally there is none, so a flake shows.
+  retries: Number(process.env.E2E_RETRIES ?? 0),
   reporter: [['list'], ['json', { outputFile: 'test-results/report.json' }]],
   // Pages answer more slowly while other workers run (ADR 0023).
   expect: { timeout: 10_000 },

@@ -217,6 +217,24 @@ and more workers or a slower server save proportionally more. The rest of the pe
 Dive, `e2e/prepare.ts`) is unchanged; a prepared template would save that too, but would bring back the hidden
 dependencies between tests that serial preparation had.
 
+## Flaky tests counted in CI (2026-11-12)
+
+Item 4 of the ranking. CI reported nothing about flakes: a flaky test either reddened the run or, when it passed
+again, left no trace, while [check escapes](../agents/check-escapes.md) and the flake fixes FAH-53–FAH-56 kept
+showing what they cost.
+
+- **One retry in CI only** (`E2E_RETRIES=1` in `.github/workflows/check.yml`); locally there is none, so a flake still
+  shows. Playwright marks a test `flaky` when it failed and then passed on the retry, and its JSON report already
+  carries that status and the earlier attempts.
+- **Counted in the job summary.** `node scripts/check-log.mjs --flaky` reads `apps/web/test-results/report.json` and
+  appends a "Flaky browser tests" table: the case, the attempt that passed, and the first line of each earlier
+  failure. A run with no flaky case says so; a run without a report (an earlier step failed) says so too.
+- **Not hidden, but no longer blocking.** The run stays green when a case passes on its retry; the table is the
+  count. `--fail-on-flaky-tests` is not used, and the failed-browser-tests summary still lists only the cases that
+  failed every attempt (from the same report).
+- This note records the mechanism; the rate itself is read from the job summaries of the PRs and pushes that follow.
+  For comparison, Google reported about 1.5 % of test runs flaky in 2016 (section 5).
+
 ## Not found
 How `--only-changed` traces imports exactly; published missed-failure rates for coverage-based selection of browser
 tests; the cost of V8 coverage in Playwright; the figures in the minimisation papers; per-test coverage in vitest;
