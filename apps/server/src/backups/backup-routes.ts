@@ -84,7 +84,7 @@ export const backupRoutes: FastifyPluginAsyncTypebox<BackupRouteDeps> = async (s
       summary: 'Start a manual backup, encrypted with this passphrase (admins only)',
       description: 'The passphrase is used for this run only; it is never stored or logged. A backup already queued or running answers 409.',
       body: Type.Object({
-        passphrase: Type.String({ minLength: 8, maxLength: 1024, description: 'At least 8 characters; needed again to restore' }),
+        passphrase: Type.String({ minLength: 15, maxLength: 1024, description: 'At least 15 characters; needed again to restore' }),
       }),
       response: { 201: BackupRunView, ...errors },
     },

@@ -92,7 +92,8 @@ describe.skipIf(!(await databaseReachable()))('the admin backups API', () => {
 
   it('needs a passphrase and refuses a second run while one is in flight', async () => {
     expect((await call('POST', '/api/admin/backups', admin, {})).statusCode).toBe(400);
-    expect((await call('POST', '/api/admin/backups', admin, { passphrase: 'short' })).statusCode).toBe(400);
+    // The app's password minimum: an archive stored anywhere needs offline-crack resistance.
+    expect((await call('POST', '/api/admin/backups', admin, { passphrase: 'fourteen-chars' })).statusCode).toBe(400);
     const created = await call('POST', '/api/admin/backups', admin, { passphrase: backup.passphrase });
     expect(created.statusCode).toBe(201);
     const run = created.json();

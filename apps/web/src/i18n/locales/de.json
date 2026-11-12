@@ -200,7 +200,7 @@
     "open": "Sicherungen",
     "new": "Neue Sicherung",
     "passphrase": "Passphrase der Sicherung",
-    "passphraseHint": "Mindestens 8 Zeichen. Sie gilt nur für diese Sicherung, wird nie gespeichert und ist zum Wiederherstellen wieder nötig.",
+    "passphraseHint": "Mindestens 15 Zeichen. Sie gilt nur für diese Sicherung, wird nie gespeichert und ist zum Wiederherstellen wieder nötig.",
     "create": "Sicherung erstellen",
     "created": "Sicherung gestartet.",
     "busy": "Eine Sicherung wartet bereits oder läuft. Warte, bis sie fertig ist.",

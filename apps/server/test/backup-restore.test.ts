@@ -15,6 +15,8 @@ import { buildManifest, encryptFile, packContainer, type BackupManifest } from '
 import { createBackupService, type BackupService } from '../src/backups/backup-service.js';
 import { runRestoreCli } from '../src/backups/restore-cli.js';
 import { createRestoreService, imageMigrationHead } from '../src/backups/restore-service.js';
+import { createDb } from '../src/db/client.js';
+import { migrateDatabase } from '../src/db/migrate.js';
 import { createLocalBlobStore } from '../src/storage/blob-store.js';
 import {
   TEST_ENCRYPTION_KEY, createTestAuth, createTestDatabase, createUser, databaseReachable, type TestDatabase,
@@ -159,6 +161,56 @@ describe.skipIf(!(await databaseReachable()))('restoring a backup', () => {
       expect(await readFile(join(targetDir, 'tmp', 'keep.txt'), 'utf8')).toBe('restore scratch');
       expect(await readFile(join(targetDir, 'run', 'heartbeat.json'), 'utf8')).toBe('the app lock');
     } finally {
+      await scratch.drop();
+      await rm(targetDir, { recursive: true, force: true });
+    }
+  });
+
+  it('replaces a newer image\'s schema when restoring a backup', async () => {
+    if (!(await restoreToolsAvailable())) return;
+    const passphrase = 'newer-target-passphrase';
+    const run = await backups.create({ kind: 'manual', createdBy: owner.id, passphrase });
+    await backups.run(run.id);
+    expect(await backups.find(run.id)).toMatchObject({ status: 'ready' });
+
+    const scratch = await createScratchDatabase();
+    const targetDir = await mkdtemp(join(tmpdir(), 'divehub-restore-target-'));
+    const { db: targetDb, pool: targetPool } = createDb(scratch.url);
+    const fakeMigrationAt = Date.now() + 1_000_000;
+    try {
+      // start.ts migrates the image's head before the setup screen can restore onto it.
+      await migrateDatabase(targetDb, targetPool, migrationsFolder);
+      // Simulate a newer image: its migration made this table with an FK to user and recorded itself. A
+      // pg_restore --clean cannot drop user while this depends on it, and the surviving drizzle row would
+      // make the next boot re-run a migration whose objects already exist.
+      await targetPool.query('create table newer_only (id serial primary key, user_id uuid not null references "user"(id))');
+      await targetPool.query('insert into drizzle.__drizzle_migrations (hash, created_at) values ($1, $2)', ['a newer image migration', fakeMigrationAt]);
+
+      const restore = createRestoreService({
+        dataDir: targetDir, databaseUrl: scratch.url, migrationsFolder, encryptionKey: TEST_ENCRYPTION_KEY, log: silent,
+      });
+      const result = await restore.restore({ archivePath: backups.archivePath(run.id), passphrase });
+      expect(result.manifest.migrationHead).toBe(await imageMigrationHead(migrationsFolder));
+
+      const client = new pg.Client({ connectionString: scratch.url });
+      await client.connect();
+      try {
+        const newerOnly = await client.query<{ name: string | null }>("select to_regclass('public.newer_only')::text as name");
+        expect(newerOnly.rows[0]!.name).toBeNull();
+        const fakeMigration = await client.query('select 1 from drizzle.__drizzle_migrations where created_at = $1', [fakeMigrationAt]);
+        expect(fakeMigration.rowCount).toBe(0);
+        const users = await client.query<{ email: string }>('select email from "user" order by email');
+        expect(users.rows.map((row) => row.email)).toContain('restore-me@example.com');
+      } finally {
+        await client.end();
+      }
+
+      // The restored schema is the image's: the real migration runner lands clean on the next boot.
+      await migrateDatabase(targetDb, targetPool, migrationsFolder);
+      const dives = await targetPool.query<{ n: number }>('select count(*)::int as n from dive');
+      expect(dives.rows[0]!.n).toBe(result.manifest.tableCounts.dive ?? 0);
+    } finally {
+      await targetPool.end();
       await scratch.drop();
       await rm(targetDir, { recursive: true, force: true });
     }

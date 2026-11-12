@@ -156,7 +156,7 @@ operator CLI below is the secondary path.
 A manual backup is encrypted with a passphrase an admin types for that run:
 
 1. Open **Admin → Backups** and choose **New backup**.
-2. Enter a passphrase of at least 8 characters. It is used for this run only; the server never stores
+2. Enter a passphrase of at least 15 characters. It is used for this run only; the server never stores
    or logs it. Without it the archive cannot be restored, so keep it with the archive — off this
    server.
 3. Wait until the run is `ready` and download it. Only one backup runs at a time.
@@ -242,14 +242,17 @@ and no background job runs while the restore replaces the database and the files
    before restoring it.
 
 A refused restore leaves the setup token usable, so a wrong passphrase or a mistyped archive can be
-corrected and tried again. The database is still the fresh, empty one until a restore succeeds.
+corrected and tried again. A refusal before the database work leaves the fresh database untouched. A
+failure once the schema replacement has started leaves it wiped, so retry the same archive; the
+token remains usable either way.
 
 ### Restoring with the operator CLI
 
 A `.divehub-backup` archive from Dive Hub's backup feature is restored with the operator CLI while
 the app is stopped; it is the secondary path for staging resets, scripted recovery and operators who
 prefer the shell. The CLI verifies the archive's checksums, the encryption-key fingerprint and the
-schema version before it writes anything, then replaces the database and the files volume.
+schema version before it replaces the instance's files or database (it unpacks the archive into the
+data volume's `tmp/` directory first), then replaces the database and the files volume.
 
 1. Stop the app, leaving the database container up:
 
@@ -297,6 +300,12 @@ afterwards and reconnect those accounts to encrypt them again.
 
 Restoring replaces the database and the files volume. Keep a copy of the current state first if
 you are not restoring onto a fresh instance.
+
+If a restore fails after the database work starts, the database is left wiped: the non-system
+schemas are dropped before the dump replays, and `pg_restore` runs in a single transaction, so a
+failure rolls back to an empty schema rather than the previous state. The files may already be the
+backup's while the database is not. Retry the same archive; the first-start path restores into a
+disposable database and the CLI path expects a stopped app and a copy of the current state.
 
 ### Database and files without an archive (fallback)
 

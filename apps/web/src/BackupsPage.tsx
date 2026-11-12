@@ -64,7 +64,7 @@ function CreateBackup() {
           label={t('backups.passphrase')}
           name="passphrase"
           isRequired
-          minLength={8}
+          minLength={15}
           maxLength={1024}
           autoComplete="off"
           description={t('backups.passphraseHint')}

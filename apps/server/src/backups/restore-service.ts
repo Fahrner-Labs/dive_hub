@@ -6,6 +6,7 @@ import { mkdir, readFile, readdir, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { promisify } from 'node:util';
+import pg from 'pg';
 import { errorMessage } from '../errors.js';
 import {
   BACKUP_SKIPPED_DIRS, BackupArchiveError, encryptionKeyFingerprint, openArchiveStreamingWith, type BackupDecryptionKey, type BackupManifest,
@@ -112,6 +113,25 @@ function stderrOf(error: unknown): string {
 /** Directories a restore must leave in place: the same ones the backup leaves out. */
 const KEPT_ON_RESTORE = new Set(BACKUP_SKIPPED_DIRS);
 
+/**
+ * The non-system schemas a restore replaces. Graphile Worker recreates its own schema on start and is held during a
+ * first-start restore, so nothing survives there that the archive needs to keep. `pg_dump` never recreates `public`
+ * by itself on PostgreSQL 15+, hence the explicit drop and create.
+ */
+const REPLACED_SCHEMAS = ['graphile_worker', 'drizzle', 'public'] as const;
+
+/** Wipes the instance's schema state, so the archive's dump lands without colliding with a newer image's objects. */
+async function resetSchemas(databaseUrl: string): Promise<void> {
+  const client = new pg.Client({ connectionString: databaseUrl });
+  await client.connect();
+  try {
+    for (const schema of REPLACED_SCHEMAS) await client.query(`drop schema if exists ${schema} cascade`);
+    await client.query('create schema public');
+  } finally {
+    await client.end().catch(() => {});
+  }
+}
+
 /** Replaces the managed data directory: remove what the archive does not own, then unpack its files over it. */
 async function replaceFiles(dataDir: string, filesPath: string): Promise<void> {
   await mkdir(dataDir, { recursive: true });
@@ -155,8 +175,12 @@ export function createRestoreService({ dataDir, databaseUrl, migrationsFolder, e
 
       log.info(`restoring the database from the backup made ${manifest.createdAt}`);
       try {
+        // Replace the schema state rather than clean individual objects: --clean only drops what the archive holds,
+        // so a newer image's surviving tables and FK dependencies would break the restore. A failed run leaves the
+        // database wiped; both paths restore into a disposable or explicitly replaced instance (ADR 0069 D5).
+        await resetSchemas(databaseUrl);
         await execFileAsync('pg_restore', [
-          '--clean', '--if-exists', '--no-owner', '--no-privileges', '--single-transaction', '-d', databaseUrl, databasePath,
+          '--no-owner', '--no-privileges', '--single-transaction', '-d', databaseUrl, databasePath,
         ], { maxBuffer: 1 << 20 });
       } catch (error) {
         throw new RestoreError('backup_restore_failed', `the database could not be restored: ${stderrOf(error)}`, { cause: error });

@@ -200,7 +200,7 @@
     "open": "Backups",
     "new": "New backup",
     "passphrase": "Backup passphrase",
-    "passphraseHint": "At least 8 characters. It is used for this backup only, never stored, and needed again to restore.",
+    "passphraseHint": "At least 15 characters. It is used for this backup only, never stored, and needed again to restore.",
     "create": "Create backup",
     "created": "Backup started.",
     "busy": "A backup is already queued or running. Wait until it is done.",

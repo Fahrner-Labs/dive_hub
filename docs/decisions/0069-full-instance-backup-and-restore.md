@@ -68,8 +68,10 @@ Encryption is mandatory. There is no unencrypted archive variant and no "skip en
 become plaintext by accident or by convenience.
 
 ### D3 — Two envelopes: passphrase and X25519 recipient
-**Manual backups** are encrypted with a passphrase an admin enters for that run. The passphrase is normalised (NFKC) and
-stretched with scrypt (`N = 16384`, `r = 8`, `p = 1`, a 16-byte salt and a 12-byte IV). The passphrase is used for that
+**Manual backups** are encrypted with a passphrase an admin enters for that run. It is at least 15 characters, the
+same minimum the app applies to passwords: an archive is stored anywhere, so the passphrase must resist an offline
+crack. The passphrase is normalised (NFKC) and stretched with scrypt (`N = 16384`, `r = 8`, `p = 1`, a 16-byte salt
+and a 12-byte IV). The passphrase is used for that
 run only: it is never stored, logged, put in the address or sent to a client again. It travels only in the memory of
 the app process that accepted the request to the in-process worker; a deployment that runs the optional separate worker
 service, or routes the job to another app process, fails a manual run instead of writing the passphrase to a table or a
@@ -89,7 +91,9 @@ The key is excluded on purpose. It is already outside the database, and putting 
 encrypted Provider credentials would defeat that separation. The manifest carries only its SHA-256 fingerprint and a
 `plaintextCredentials` flag.
 
-Before writing anything, a restore compares the fingerprint with the key in the target's environment:
+Before the instance is touched — before its files or database are replaced — a restore compares the fingerprint with
+the key in the target's environment. The archive is unpacked to `dataDir/tmp/restore-*` first; a refusal or a damaged
+archive leaves the instance as it was:
 
 - both present and equal: proceed;
 - both absent: proceed, because the backup was made without a key and its credentials are plain text;
@@ -104,8 +108,13 @@ A fresh instance shows the setup screen with two paths: **Start fresh** (today's
 backup**. The restore path is protected by the same setup token, takes the archive's key, and accepts either a browser
 upload (streamed to disk, no fixed size cap) or an archive the operator placed in `/data/restore/`. The restore core
 decrypts and verifies the archive, checks the key fingerprint and the migration head, replaces the managed files and
-then runs `pg_restore --clean --if-exists --single-transaction`, and answers. The process then exits so it
-cannot keep running on a database it just replaced; the operator runs `docker compose restart app`. On the next boot,
+then replaces the database's schema state: it drops and recreates the non-system schemas (`public`, `drizzle` and the
+worker's schema) and replays the dump with `pg_restore --no-owner --no-privileges --single-transaction`. Cleaning
+individual objects instead cannot work, because `--clean` only drops what the archive holds and a newer image's
+surviving tables and foreign keys then block the restore. With the schema replaced, a backup whose head the image knows
+restores and the forward migrations settle it on the next boot. A failed run leaves the database wiped; on the
+first-start path it is disposable and the setup token stays usable for a retry. On success it answers, then the
+process exits so it cannot keep running on a database it just replaced; the operator runs `docker compose restart app`. On the next boot,
 forward migrations bring an older-schema backup up to the image's schema and sign-in works with the backed-up accounts.
 
 This is safe because it happens in the setup window described above: no session exists, no authenticated route is open,

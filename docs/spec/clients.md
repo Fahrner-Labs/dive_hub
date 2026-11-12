@@ -262,7 +262,8 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   Admins see how many accesses exist, never whose or what they read. *Web:* `AiAccess.tsx` (`AiAccessSetting`).
 - **Admin pages only for admins.** The server refuses anyone else (`admins_only`).
 - **Manual backups** (`GET`/`POST /api/admin/backups`, `GET /api/admin/backups/{id}/download`):
-  - `POST` with a `passphrase` (8–1024 characters) queues one run encrypted with it. **Must not store or log the
+  - `POST` with a `passphrase` (15–1024 characters, the app's password minimum: an archive stored anywhere must resist
+    an offline crack) queues one run encrypted with it. **Must not store or log the
     passphrase** (not in local storage, the address or a request log); say it is needed again to restore. A run is
     `queued`/`running` until `ready` or `failed`: poll the list (no live hint carries it), and show kind, status,
     size, created-at and error. While one is queued or running, offer no second start (`backup_in_progress`).
