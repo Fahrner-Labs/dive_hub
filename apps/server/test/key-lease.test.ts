@@ -1,10 +1,8 @@
 // A lease per key (ADR 0027, backlog 0005): one holder per key at a time across app processes, a waiter refused after
 // MAX_WAIT_MS, a lease that ran out taken over, and no pool connection held while waiting or holding.
-import { drizzle } from 'drizzle-orm/node-postgres';
 import { eq, sql } from 'drizzle-orm';
-import pg from 'pg';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import * as schema from '../src/db/schema.js';
+import { createDb } from '../src/db/client.js';
 import { providerLease } from '../src/db/schema.js';
 import { LEASE_MS, LeaseBusy, MAX_WAIT_MS, POLL_MS, keyLease, realClock } from '../src/providers/lease-service.js';
 import { createTestDatabase, databaseReachable, resettableClock, type TestDatabase } from './support.js';
@@ -99,9 +97,8 @@ describe.skipIf(!(await databaseReachable()))('keyLease', () => {
   });
 
   it('holds no connection: two holders of different keys on a pool of one, whose work queries, both finish', async () => {
-    const small = new pg.Pool({ connectionString: t.pool.options.connectionString, max: 1 });
+    const { db, pool: small } = createDb(t.pool.options.connectionString!, { max: 1 });
     try {
-      const db = drizzle(small, { schema });
       const work = async () => {
         await db.execute(sql`select 1`);
         await new Promise((resolve) => setImmediate(resolve));

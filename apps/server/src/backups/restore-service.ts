@@ -115,8 +115,10 @@ const KEPT_ON_RESTORE = new Set(BACKUP_SKIPPED_DIRS);
 const REPLACED_SCHEMAS = ['graphile_worker', 'drizzle', 'public'] as const;
 
 /** Wipes the instance's schema state, so the archive's dump lands without colliding with a newer image's objects. */
-async function resetSchemas(databaseUrl: string): Promise<void> {
+async function resetSchemas(databaseUrl: string, log: RestoreLog): Promise<void> {
   const client = new pg.Client({ connectionString: databaseUrl });
+  // A lost connection must reach the awaited query (and its RestoreError), not the process as an uncaught exception.
+  client.on('error', (error) => log.warn(`the restore database connection failed: ${error.message}`));
   await client.connect();
   try {
     for (const schema of REPLACED_SCHEMAS) await client.query(`drop schema if exists ${schema} cascade`);
@@ -172,7 +174,7 @@ export function createRestoreService({ dataDir, databaseUrl, migrationsFolder, e
         // Replace the schema state rather than clean individual objects: --clean only drops what the archive holds,
         // so a newer image's surviving tables and FK dependencies would break the restore. A failed run leaves the
         // database wiped; both paths restore into a disposable or explicitly replaced instance (ADR 0069 D5).
-        await resetSchemas(databaseUrl);
+        await resetSchemas(databaseUrl, log);
         // As for pg_dump, the password goes through PGPASSWORD rather than a URL on the command line.
         const restore = pgCommand(databaseUrl);
         await execFileAsync('pg_restore', [

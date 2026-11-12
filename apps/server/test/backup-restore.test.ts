@@ -47,6 +47,7 @@ interface ScratchDatabase {
 /** A fresh database next to the test databases, dropped afterwards; its admin connection stays open until then. */
 async function createScratchDatabase(): Promise<ScratchDatabase> {
   const admin = new pg.Client({ connectionString: resolveTestDatabaseUrl() });
+  admin.on('error', (error) => console.error('PostgreSQL connection error', error));
   await admin.connect();
   const name = `divehub_restore_${process.pid}_${Date.now()}_${Math.floor(Math.random() * 1e6)}`;
   await admin.query(`create database ${name}`);

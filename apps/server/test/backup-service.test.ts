@@ -189,6 +189,7 @@ describe.skipIf(!(await databaseReachable()))('backup runs', () => {
 
     // The dump restores into an empty database, users and all, which is what the archive is for.
     const admin = new pg.Client({ connectionString: resolveTestDatabaseUrl() });
+    admin.on('error', (error) => console.error('PostgreSQL connection error', error));
     await admin.connect();
     const scratch = `divehub_backup_restore_${process.pid}_${Date.now()}`;
     try {

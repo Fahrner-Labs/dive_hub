@@ -3,10 +3,8 @@
 // makes there (stored private). A retried send, a Push run and a failed dive save make no second site (Review Focus 2);
 // a User managing two Divers with their own SSI accounts never sends one's private ID for the other (Review Focus 3).
 import { and, eq } from 'drizzle-orm';
-import { drizzle } from 'drizzle-orm/node-postgres';
-import pg from 'pg';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import * as schema from '../src/db/schema.js';
+import { createDb } from '../src/db/client.js';
 import { dive, diveSiteExternalId } from '../src/db/schema.js';
 import { siteForSend } from '../src/providers/push/site-for-send.js';
 import { createSsiAdapter } from '../src/providers/ssi/ssi-adapter.js';
@@ -158,9 +156,9 @@ describe.skipIf(!(await databaseReachable()))('the send finds or creates the sit
     const site = await newSite('Narrow Reef', 21);
     const adapter = createSsiAdapter({ client: createSsiClient({ url: 'https://ssi.invalid/app/a21.php', fetch: ctx.fakeSsi.fetch }) });
     const { account, access } = await adapter.signIn({ kind: 'password', login: 'x@example.com', password: 'ssi-password' });
-    const small = new pg.Pool({ connectionString: t.pool.options.connectionString, max: 2 });
+    const { db, pool: small } = createDb(t.pool.options.connectionString!, { max: 2 });
     try {
-      const once = () => siteForSend(drizzle(small, { schema }), {
+      const once = () => siteForSend(db, {
         adapter, context: { connectionId: connectionX, accountId: account.id, access }, diverId: divers.x, siteId: site, source: 'ssi',
         actor: { type: 'user', id: 'tim' },
       });
@@ -193,9 +191,9 @@ describe.skipIf(!(await databaseReachable()))('the send finds or creates the sit
     const adapter = createSsiAdapter({ client: createSsiClient({ url: 'https://ssi.invalid/app/a21.php', fetch: ctx.fakeSsi.fetch }) });
     const { account, access } = await adapter.signIn({ kind: 'password', login: 'x@example.com', password: 'ssi-password' });
     const before = siteSaves();
-    const small = new pg.Pool({ connectionString: t.pool.options.connectionString, max: 1 });
+    const { db, pool: small } = createDb(t.pool.options.connectionString!, { max: 1 });
     try {
-      const once = (siteId: string) => siteForSend(drizzle(small, { schema }), {
+      const once = (siteId: string) => siteForSend(db, {
         adapter, context: { connectionId: connectionX, accountId: account.id, access }, diverId: divers.x, siteId, source: 'ssi',
         actor: { type: 'user', id: 'tim' },
       });
