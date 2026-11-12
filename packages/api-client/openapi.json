@@ -7329,9 +7329,9 @@
                 "properties": {
                   "passphrase": {
                     "type": "string",
-                    "minLength": 8,
+                    "minLength": 15,
                     "maxLength": 1024,
-                    "description": "At least 8 characters; needed again to restore"
+                    "description": "At least 15 characters; needed again to restore"
                   }
                 }
               }
@@ -7655,7 +7655,7 @@
     },
     "/api/admin/backups/{id}": {
       "delete": {
-        "summary": "Delete a finished backup and its archive (admins only)",
+        "summary": "Delete a finished backup, or cancel a queued one, and its archive (admins only)",
         "parameters": [
           {
             "schema": {

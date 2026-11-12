@@ -151,6 +151,11 @@ fingerprint of `DIVEHUB_ENCRYPTION_KEY` — never the key itself
 **Admin → Backups** (`#/settings/admin/backups`). Restore a fresh instance from the setup screen; the
 operator CLI below is the secondary path.
 
+v1 backups assume **one app process** per data volume: the `app.lock` heartbeat the restore CLI checks
+and the boot-time reconciliation of interrupted backup runs are per volume, and a manual backup's
+passphrase lives only in the app process that accepted it. Run one `app` service against the database
+and volume (the compose file's default). A separate worker service can still run scheduled backups.
+
 ### Manual backups
 
 A manual backup is encrypted with a passphrase an admin types for that run:

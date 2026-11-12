@@ -55,8 +55,8 @@ export interface ServiceParts {
   secrets: SecretBox;
   /** Where the data volume is mounted; backups read it and use its `tmp/`. */
   dataDir: string;
-  /** The database a backup dumps (default: DATABASE_URL). */
-  databaseUrl?: string;
+  /** The database a backup dumps; production passes DIVEHUB's `loadConfig().databaseUrl`. */
+  databaseUrl: string;
   /** DIVEHUB_ENCRYPTION_KEY, whose fingerprint a backup manifest records (never the key itself). */
   encryptionKey?: Buffer | undefined;
   /** The Providers of this instance (ADR 0027): the production SSI, or the fake and test-only ones. */
@@ -80,7 +80,7 @@ export function createServices({
     error: (detail, message) => log?.error(detail, message),
   };
   const backups = createBackupService({
-    db, blobs, dataDir, databaseUrl: databaseUrl ?? process.env.DATABASE_URL ?? '',
+    db, blobs, dataDir, databaseUrl,
     migrationsFolder: fileURLToPath(new URL('../drizzle', import.meta.url)), appVersion: process.env.DIVEHUB_VERSION ?? 'dev',
     encryptionKey, log: backupLog, now: clock ? () => clock.now() : undefined,
   });

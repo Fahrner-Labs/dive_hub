@@ -163,6 +163,19 @@ describe('packing and opening an archive', () => {
     expect(await readFile(opened.filesPath, 'utf8')).toBe('gzipped tar');
   });
 
+  it('writes the packed container and its manifest readable only by the owner', async () => {
+    const work = join(dir, 'perm-work');
+    await mkdir(work, { recursive: true });
+    const database = join(work, 'database.dump');
+    const files = join(work, 'files.tar.gz');
+    await writeFile(database, 'dump');
+    await writeFile(files, 'files');
+    const manifest = manifestFor({ database: await partOf(database), files: await partOf(files) });
+    const container = await packContainer(work, manifest);
+    expect((await stat(container)).mode & 0o777).toBe(0o600);
+    expect((await stat(join(work, 'manifest.json'))).mode & 0o777).toBe(0o600);
+  });
+
   it('refuses an archive whose part does not match its manifest', async () => {
     const work = join(dir, 'work2');
     const out = join(dir, 'out2');
@@ -249,6 +262,21 @@ describe('the file-tree checksum', () => {
       expect(again.sha256).toBe(tree.sha256);
     } finally {
       await rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('hashes the same files the same way whatever order they were created in', async () => {
+    const first = await mkdtemp(join(tmpdir(), 'divehub-backup-tree-a-'));
+    const second = await mkdtemp(join(tmpdir(), 'divehub-backup-tree-b-'));
+    try {
+      await writeFile(join(first, 'b.bin'), 'same');
+      await writeFile(join(first, 'a.bin'), 'same');
+      await writeFile(join(second, 'a.bin'), 'same');
+      await writeFile(join(second, 'b.bin'), 'same');
+      expect(await fileTreeChecksum(first, [])).toEqual(await fileTreeChecksum(second, []));
+    } finally {
+      await rm(first, { recursive: true, force: true });
+      await rm(second, { recursive: true, force: true });
     }
   });
 });

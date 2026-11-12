@@ -7,7 +7,7 @@ import {
 } from 'node:crypto';
 import { execFile, spawn } from 'node:child_process';
 import { createReadStream, createWriteStream } from 'node:fs';
-import { mkdir, open, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
+import { mkdir, open, readdir, readFile, rm, stat, writeFile, chmod } from 'node:fs/promises';
 import { join, relative, sep } from 'node:path';
 import { Readable } from 'node:stream';
 import { promisify } from 'node:util';
@@ -99,7 +99,7 @@ export interface BackupManifest {
   /** Drizzle journal tag of the newest migration the dumped database has applied. */
   migrationHead: string | null;
   createdAt: string;
-  /** Rows per public base table at dump time; the restore's spot check. */
+  /** Approximate row count per public base table, taken after the dump (one query per table); the restore's spot check. */
   tableCounts: Record<string, number>;
   /** A hash over the data directory's relative paths and sizes (never their contents; files.tar.gz covers those). */
   files: { sha256: string; count: number };
@@ -356,7 +356,7 @@ export async function encryptStream(inputPath: string, passphrase: string, optio
 /** Encrypts `inputPath` into `outputPath`; the caller hashes the file when it needs the archive's size and SHA-256. */
 export async function encryptFile(inputPath: string, outputPath: string, passphrase: string, options: { salt?: Buffer; iv?: Buffer } = {}) {
   const { stream, salt } = await encryptStream(inputPath, passphrase, options);
-  await pipeline(stream, createWriteStream(outputPath, { flags: 'w' }));
+  await pipeline(stream, createWriteStream(outputPath, { flags: 'w', mode: 0o600 }));
   return { salt };
 }
 
@@ -364,7 +364,7 @@ export async function encryptFile(inputPath: string, outputPath: string, passphr
 export async function encryptFileToRecipient(inputPath: string, outputPath: string, recipient: string, options: { salt?: Buffer; iv?: Buffer } = {}) {
   const encryption = recipientEncryption(recipient, options);
   const { stream, salt } = await encryption.encrypt(inputPath);
-  await pipeline(stream, createWriteStream(outputPath, { flags: 'w' }));
+  await pipeline(stream, createWriteStream(outputPath, { flags: 'w', mode: 0o600 }));
   return { salt, encryption: encryption.metadata };
 }
 
@@ -378,7 +378,7 @@ export async function decryptFile(archivePath: string, outputPath: string, passp
 
 /** Decrypts `archivePath` into `outputPath` with either kind of key. */
 export async function decryptFileWith(archivePath: string, outputPath: string, key: BackupDecryptionKey): Promise<void> {
-  await pipeline(await decryptStreamWith(archivePath, key), createWriteStream(outputPath, { flags: 'w' }));
+  await pipeline(await decryptStreamWith(archivePath, key), createWriteStream(outputPath, { flags: 'w', mode: 0o600 }));
 }
 
 async function decipherOf(archivePath: string, key: BackupDecryptionKey): Promise<{ decipher: ReturnType<typeof createDecipheriv>; input: Readable }> {
@@ -425,11 +425,6 @@ export async function decryptStreamWith(archivePath: string, key: BackupDecrypti
     yield decipher.final();
   }
   return Readable.from(chunks());
-}
-
-/** The decrypted container as one stream, for a passphrase-protected archive. */
-export async function decryptStream(archivePath: string, passphrase: string): Promise<Readable> {
-  return decryptStreamWith(archivePath, { kind: 'passphrase', passphrase });
 }
 
 const BECH32_CHARSET = 'qpzry9x8gf2tvdw0s3jn54khce6mua7l';
@@ -542,7 +537,6 @@ export function generateRecipientKeyPair(): { recipient: string; privateKey: str
   };
 }
 
-
 async function sha256File(path: string): Promise<string> {
   const hash = createHash('sha256');
   for await (const chunk of createReadStream(path)) hash.update(chunk as Buffer);
@@ -561,7 +555,10 @@ export async function fileTreeChecksum(root: string, skip: string[]): Promise<{ 
   const hash = createHash('sha256');
   let count = 0;
   const walk = async (dir: string) => {
-    for (const entry of await readdir(dir, { withFileTypes: true })) {
+    // Sorted, so the hash is the same whatever order a filesystem returns entries in.
+    const entries = (await readdir(dir, { withFileTypes: true }))
+      .sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
+    for (const entry of entries) {
       const path = join(dir, entry.name);
       const rel = relative(root, path).split(sep).join('/');
       if (dir === root && skip.includes(entry.name)) continue;
@@ -584,9 +581,10 @@ export async function fileTreeChecksum(root: string, skip: string[]): Promise<{ 
  */
 export async function tarDirectory(root: string, outputPath: string, skip: string[]): Promise<void> {
   const excludes = `${outputPath}.exclude`;
-  await writeFile(excludes, `${skip.flatMap((name) => [`./${name}`, `./${name}/*`]).join('\n')}\n`);
+  await writeFile(excludes, `${skip.flatMap((name) => [`./${name}`, `./${name}/*`]).join('\n')}\n`, { mode: 0o600 });
   try {
     await execFileAsync('tar', ['-czf', outputPath, '-X', excludes, '-C', root, '.'], { maxBuffer: 1 << 20 });
+    await chmod(outputPath, 0o600);
   } finally {
     await rm(excludes, { force: true });
   }
@@ -595,9 +593,10 @@ export async function tarDirectory(root: string, outputPath: string, skip: strin
 /** Packs the three parts into the container tar whose bytes are then encrypted. */
 export async function packContainer(workDir: string, manifest: BackupManifest): Promise<string> {
   const manifestPath = join(workDir, MANIFEST_NAME);
-  await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+  await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`, { mode: 0o600 });
   const container = join(workDir, CONTAINER_NAME);
   await execFileAsync('tar', ['-cf', container, '-C', workDir, MANIFEST_NAME, DATABASE_NAME, FILES_NAME], { maxBuffer: 1 << 20 });
+  await chmod(container, 0o600);
   return container;
 }
 
@@ -625,14 +624,9 @@ export async function readUnpackedArchive(workDir: string): Promise<OpenedArchiv
 
 /** Decrypts and unpacks an archive into `workDir` with the decrypted container going straight into tar. */
 export async function openArchiveStreamingWith(archivePath: string, key: BackupDecryptionKey, workDir: string): Promise<OpenedArchive> {
-  await mkdir(workDir, { recursive: true });
+  await mkdir(workDir, { recursive: true, mode: 0o700 });
   await unpackTarStream(await decryptStreamWith(archivePath, key), workDir);
   return readUnpackedArchive(workDir);
-}
-
-/** Decrypts and unpacks an archive into `workDir` with a passphrase. */
-export async function openArchiveStreaming(archivePath: string, passphrase: string, workDir: string): Promise<OpenedArchive> {
-  return openArchiveStreamingWith(archivePath, { kind: 'passphrase', passphrase }, workDir);
 }
 
 /** Decrypts and unpacks an archive into `workDir`, verifying its manifest and both part checksums. */
@@ -642,7 +636,7 @@ export async function openArchive(archivePath: string, passphrase: string, workD
 
 /** Decrypts and unpacks an archive into `workDir` with either kind of key. */
 export async function openArchiveWith(archivePath: string, key: BackupDecryptionKey, workDir: string): Promise<OpenedArchive> {
-  await mkdir(workDir, { recursive: true });
+  await mkdir(workDir, { recursive: true, mode: 0o700 });
   const container = join(workDir, CONTAINER_NAME);
   await decryptFileWith(archivePath, container, key);
   await execFileAsync('tar', ['-xf', container, '-C', workDir], { maxBuffer: 1 << 20 });

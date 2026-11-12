@@ -3,7 +3,7 @@
 import { createHash } from 'node:crypto';
 import { execFile } from 'node:child_process';
 import { createReadStream } from 'node:fs';
-import { mkdir, readFile, readdir, rm, stat } from 'node:fs/promises';
+import { chmod, mkdir, readFile, readdir, rm, stat } from 'node:fs/promises';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
 import { and, desc, eq, gt, inArray, sql } from 'drizzle-orm';
@@ -120,7 +120,7 @@ export function createBackupService({ db, blobs, dataDir, databaseUrl, migration
 
   const keyOfRun = (id: string) => `backups/${id}${BACKUP_EXTENSION}`;
 
-  /** Rows per public table: the manifest's spot check after a restore. */
+  /** An approximate post-dump row count per public table, for the manifest's spot check after a restore. */
   async function tableCounts(tx: Db | Tx): Promise<Record<string, number>> {
     const tables = (await tx.execute(sql`select table_name from information_schema.tables
       where table_schema = 'public' and table_type = 'BASE TABLE' order by table_name`)).rows as { table_name: string }[];
@@ -416,6 +416,8 @@ export function createBackupService({ db, blobs, dataDir, databaseUrl, migration
         // The password travels in PGPASSWORD, never in the URL on the command line (an execFile error repeats argv).
         const dump = pgCommand(databaseUrl);
         await execFileAsync('pg_dump', ['-Fc', '--file', databasePath, dump.url], { maxBuffer: 1 << 20, env: dump.env });
+        // The dump holds personal data until the archive is encrypted and it is removed in `finally`.
+        await chmod(databasePath, 0o600);
         const filesPath = join(workDir, 'files.tar.gz');
         await tarDirectory(dataDir, filesPath, BACKUP_SKIPPED_DIRS);
         const [databasePart, filesPart, filesTree, counts, head] = await Promise.all([
