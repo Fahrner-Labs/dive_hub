@@ -21,8 +21,8 @@ const execFileAsync = promisify(execFile);
 /** The graphile-worker task that writes one backup; the payload carries the row's id. */
 export const BACKUP_RUN_TASK = 'backup-run';
 
-/** Directories the file tar leaves out: archives, our own temp files, and a restore's uploads. */
-export const BACKUP_SKIPPED_DIRS = ['backups', 'tmp', 'restore'];
+/** Directories the file tar leaves out: archives, our own temp files, a restore's uploads, and the app's ephemeral run files. */
+export const BACKUP_SKIPPED_DIRS = ['backups', 'tmp', 'restore', 'run'];
 
 export type BackupRunRow = typeof backupRun.$inferSelect;
 

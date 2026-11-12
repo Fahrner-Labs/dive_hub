@@ -162,6 +162,56 @@ To restore, stop the app, load the dump into the database (`docker compose exec 
 divehub -d divehub < divehub-db-….sql`), unpack the archive into the files volume, restore the
 same image tag and start the stack.
 
+### Restoring an archive with the operator CLI
+
+A `.divehub-backup` archive from Dive Hub's backup feature is restored with the operator CLI while
+the app is stopped. The CLI verifies the archive's checksums, the encryption-key fingerprint and
+the schema version before it writes anything, then replaces the database and the files volume.
+
+1. Stop the app, leaving the database container up:
+
+   ```sh
+   docker compose stop app
+   ```
+
+2. Put the passphrase in the environment (it reaches the one-off container, never the shell
+   history or a log):
+
+   ```sh
+   printf 'Backup passphrase: '; read -rs DIVEHUB_BACKUP_PASSPHRASE; export DIVEHUB_BACKUP_PASSPHRASE
+   ```
+
+3. Restore the archive from wherever it sits on the host:
+
+   ```sh
+   scripts/restore-backup.sh /path/to/backup.divehub-backup
+   ```
+
+   The wrapper mounts the archive read-only and runs `docker compose run --rm app node
+   dist/main.js restore-backup …`. Without it:
+
+   ```sh
+   docker compose run --rm -e DIVEHUB_BACKUP_PASSPHRASE \
+     -v "$PWD/backup.divehub-backup:/restore/backup.divehub-backup:ro" \
+     app node dist/main.js restore-backup /restore/backup.divehub-backup
+   ```
+
+   Add `-v "$PWD/passphrase:/restore/passphrase:ro"` and pass `--passphrase-file
+   /restore/passphrase` to read the passphrase from a mounted file instead; delete it after.
+
+4. Start the app again with `docker compose up -d app`. Forward migrations bring an older
+   archive up to the image's schema.
+
+The CLI refuses while the app's heartbeat in the data volume is fresh; after a crash the lock goes
+stale within 30 seconds and `--force` overrides it. It also refuses when `DIVEHUB_ENCRYPTION_KEY`
+differs from the backup's — the stored provider credentials would be undecryptable — and when the
+backup's schema is newer than the image. A backup made without `DIVEHUB_ENCRYPTION_KEY` restores
+while the variable is unset and warns that its provider credentials are plain text; set the key
+afterwards and reconnect those accounts to encrypt them again.
+
+Restoring replaces the database and the files volume. Keep a copy of the current state first if
+you are not restoring onto a fresh instance.
+
 ## Upgrades
 
 Upgrades are `docker compose pull && docker compose up -d` with a new image tag. Migrations run

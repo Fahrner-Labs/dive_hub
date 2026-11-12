@@ -3,6 +3,7 @@
 import { fileURLToPath } from 'node:url';
 import { createAuth } from './auth/auth.js';
 import { loadAuthSecret } from './auth/secret.js';
+import { acquireAppLock } from './backups/app-lock.js';
 import type { Config } from './config.js';
 import { createDb } from './db/client.js';
 import { findChangedMigrations, migrateDatabase } from './db/migrate.js';
@@ -18,6 +19,8 @@ import { createLocalBlobStore } from './storage/blob-store.js';
 import { startWorker } from './worker.js';
 
 export async function start(config: Config) {
+  // From the first moment the process can touch the instance, the restore CLI can tell it is running (plan FAH-175).
+  const appLock = await acquireAppLock(config.dataDir);
   const { db, pool } = createDb(config.databaseUrl);
   // The logger comes first: the Providers and the worker log through it.
   const app = createServer({
@@ -71,6 +74,7 @@ export async function start(config: Config) {
       await app.close();
       await worker?.stop();
       await pool.end();
+      await appLock.release();
     },
   };
 }

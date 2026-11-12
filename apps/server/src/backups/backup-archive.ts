@@ -1,7 +1,7 @@
 // The `.divehub-backup` container (ADR 0068, plan FAH-175): a manifest, a pg_dump custom-format dump and a gzipped tar
 // of the data directory, read as one tar and encrypted as one AES-256-GCM stream under a passphrase-derived key.
 import { createCipheriv, createDecipheriv, createHash, randomBytes, scrypt as scryptCallback, type ScryptOptions } from 'node:crypto';
-import { execFile } from 'node:child_process';
+import { execFile, spawn } from 'node:child_process';
 import { createReadStream, createWriteStream } from 'node:fs';
 import { mkdir, open, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { join, relative, sep } from 'node:path';
@@ -207,6 +207,10 @@ export async function encryptFile(inputPath: string, outputPath: string, passphr
 
 /** Decrypts `archivePath` into `outputPath`; a wrong passphrase or a changed byte fails the GCM check. */
 export async function decryptFile(archivePath: string, outputPath: string, passphrase: string): Promise<void> {
+  await pipeline(await decryptStream(archivePath, passphrase), createWriteStream(outputPath, { flags: 'w' }));
+}
+
+async function decipherOf(archivePath: string, passphrase: string): Promise<{ decipher: ReturnType<typeof createDecipheriv>; input: Readable }> {
   const size = (await stat(archivePath)).size;
   if (size < HEADER_BYTES + TAG_BYTES) throw new BackupArchiveError('the backup archive is truncated');
   const file = await open(archivePath, 'r');
@@ -228,7 +232,17 @@ export async function decryptFile(archivePath: string, outputPath: string, passp
   const input = body === 0
     ? Readable.from([])
     : createReadStream(archivePath, { start: HEADER_BYTES, end: size - TAG_BYTES - 1 });
-  await pipeline(input, decipher, createWriteStream(outputPath, { flags: 'w' }));
+  return { decipher, input };
+}
+
+/** The decrypted container as one stream, for a caller that unpacks it without a second copy on disk. */
+export async function decryptStream(archivePath: string, passphrase: string): Promise<Readable> {
+  const { decipher, input } = await decipherOf(archivePath, passphrase);
+  async function* chunks() {
+    for await (const chunk of input) yield decipher.update(chunk as Buffer);
+    yield decipher.final();
+  }
+  return Readable.from(chunks());
 }
 
 
@@ -296,12 +310,8 @@ export interface OpenedArchive {
   filesPath: string;
 }
 
-/** Decrypts and unpacks an archive into `workDir`, verifying its manifest and both part checksums. */
-export async function openArchive(archivePath: string, passphrase: string, workDir: string): Promise<OpenedArchive> {
-  await mkdir(workDir, { recursive: true });
-  const container = join(workDir, CONTAINER_NAME);
-  await decryptFile(archivePath, container, passphrase);
-  await execFileAsync('tar', ['-xf', container, '-C', workDir], { maxBuffer: 1 << 20 });
+/** Reads the manifest a decrypted container left in `workDir` and verifies it and both part checksums. */
+export async function readUnpackedArchive(workDir: string): Promise<OpenedArchive> {
   let manifest: BackupManifest;
   try {
     manifest = JSON.parse(await readFile(join(workDir, MANIFEST_NAME), 'utf8')) as BackupManifest;
@@ -314,6 +324,73 @@ export async function openArchive(archivePath: string, passphrase: string, workD
   await verifyPart(databasePath, manifest.parts.database);
   await verifyPart(filesPath, manifest.parts.files);
   return { manifest, databasePath, filesPath };
+}
+
+/** Decrypts and unpacks an archive into `workDir` with the decrypted container going straight into tar. */
+export async function openArchiveStreaming(archivePath: string, passphrase: string, workDir: string): Promise<OpenedArchive> {
+  await mkdir(workDir, { recursive: true });
+  await unpackTarStream(await decryptStream(archivePath, passphrase), workDir);
+  return readUnpackedArchive(workDir);
+}
+
+/** Decrypts and unpacks an archive into `workDir`, verifying its manifest and both part checksums. */
+export async function openArchive(archivePath: string, passphrase: string, workDir: string): Promise<OpenedArchive> {
+  await mkdir(workDir, { recursive: true });
+  const container = join(workDir, CONTAINER_NAME);
+  await decryptFile(archivePath, container, passphrase);
+  await execFileAsync('tar', ['-xf', container, '-C', workDir], { maxBuffer: 1 << 20 });
+  return readUnpackedArchive(workDir);
+}
+
+/** Waits until a writable is ready, or gone: a closed pipe must not hold the decryption stream open. */
+function drained(writable: NodeJS.WritableStream): Promise<void> {
+  return new Promise((resolve) => {
+    const done = () => {
+      writable.off('drain', done);
+      writable.off('close', done);
+      writable.off('error', done);
+      resolve();
+    };
+    writable.once('drain', done);
+    writable.once('close', done);
+    writable.once('error', done);
+  });
+}
+
+/**
+ * Feeds a tar stream to `tar` directly: no intermediate container file, constant memory however large the archive.
+ * tar stops at the end-of-archive marker and closes its stdin while the stream still has block padding, so the whole
+ * ciphertext is drained even after that; the GCM tag is checked only at its end, and a closed pipe must not skip it.
+ */
+async function unpackTarStream(stream: Readable, workDir: string): Promise<void> {
+  const child = spawn('tar', ['-xf', '-', '-C', workDir], { stdio: ['pipe', 'ignore', 'pipe'] });
+  const stdin = child.stdin!;
+  let stderr = '';
+  child.stderr.on('data', (chunk: Buffer) => {
+    stderr = `${stderr}${chunk.toString()}`.slice(-4096);
+  });
+  let writeError: unknown = null;
+  stdin.on('error', (error) => { writeError = error; });
+  const exited = new Promise<number>((resolve, reject) => {
+    child.once('error', reject);
+    child.once('close', (code) => resolve(code ?? 1));
+  });
+  try {
+    for await (const chunk of stream) {
+      if (writeError !== null || stdin.destroyed || !stdin.writable) continue;
+      try {
+        if (!stdin.write(chunk as Buffer)) await drained(stdin);
+      } catch (error) {
+        writeError = error;
+      }
+    }
+    if (writeError === null && !stdin.destroyed && stdin.writable) stdin.end();
+  } catch (error) {
+    stdin.destroy();
+    throw error;
+  }
+  const code = await exited;
+  if (code !== 0) throw new BackupArchiveError(`the backup container could not be unpacked${stderr.trim() ? `: ${stderr.trim()}` : ''}`);
 }
 
 export { DATABASE_NAME, FILES_NAME, MANIFEST_NAME };

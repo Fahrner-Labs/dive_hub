@@ -4,16 +4,16 @@
 > `pnpm check` fails when this map is stale. Symbols are ranked by how widely the code references them;
 > each module shows its most-referenced ones (exported symbols rank higher). Search here before walking the tree.
 
-Files: 360 · symbols: 3283 · shown: 249
+Files: 363 · symbols: 3319 · shown: 250
 
 ### server/(root)
 apps/server/src/vocabulary.ts:13 type SiteWaterType
+apps/server/src/errors.ts:2 const errorMessage
 apps/server/src/vocabulary.ts:12 const SITE_WATER_TYPES
 apps/server/src/vocabulary.ts:51 type ImportSource
-apps/server/src/errors.ts:2 const errorMessage
 apps/server/src/compose.ts:73 fn createServices
 apps/server/src/app.ts:70 fn buildApp
-… 40 more symbols in this module
+… 39 more symbols in this module
 
 ### server/assessment
 apps/server/src/assessment/rules.ts:42 const RULES
@@ -34,13 +34,14 @@ apps/server/src/auth/password.ts:11 const MIN_PASSWORD_LENGTH
 … 23 more symbols in this module
 
 ### server/backups
+apps/server/src/backups/backup-archive.ts:34 class BackupArchiveError
 apps/server/src/backups/backup-service.ts:29 class BackupError
+apps/server/src/backups/backup-archive.ts:99 const encryptionKeyFingerprint
+apps/server/src/backups/restore-service.ts:24 class RestoreError
 apps/server/src/backups/backup-service.ts:53 const isUniqueViolation
 apps/server/src/backups/backup-service.ts:201 type BackupService
-apps/server/src/backups/backup-archive.ts:184 fn encryptStream
-apps/server/src/backups/backup-archive.ts:41 iface BackupPart
-apps/server/src/backups/backup-archive.ts:34 class BackupArchiveError
-… 48 more symbols in this module
+apps/server/src/backups/backup-archive.ts:46 iface BackupManifest
+… 84 more symbols in this module
 
 ### server/centres
 apps/server/src/centres/centre-view.ts:24 const CentreView
