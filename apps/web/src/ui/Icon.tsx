@@ -43,6 +43,8 @@ const ICONS = {
   import: Upload,
   /** Fetching Dive sites from open data (ADR 0021). */
   siteImport: CloudDownload,
+  /** Downloading a backup archive to the browser (plan FAH-175). */
+  download: ArrowDown,
   copy: Copy,
   copied: Check,
   save: Check,

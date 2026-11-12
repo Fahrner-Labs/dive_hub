@@ -4,7 +4,7 @@
 > `pnpm check` fails when this map is stale. Symbols are ranked by how widely the code references them;
 > each module shows its most-referenced ones (exported symbols rank higher). Search here before walking the tree.
 
-Files: 366 · symbols: 3389 · shown: 253
+Files: 368 · symbols: 3407 · shown: 253
 
 ### server/(root)
 apps/server/src/vocabulary.ts:13 type SiteWaterType
@@ -268,15 +268,15 @@ apps/server/src/users/tokens.ts:4 const newToken
 … 57 more symbols in this module
 
 ### web/(root)
-apps/web/src/api.ts:217 fn unwrap
+apps/web/src/api.ts:224 fn unwrap
 apps/web/src/api.ts:10 const api
-apps/web/src/api.ts:132 const keys
+apps/web/src/api.ts:136 const keys
 apps/web/src/api.ts:35 class ApiError
 apps/web/src/ToolsLead.tsx:45 fn Panel
 apps/web/src/api.ts:15 type Problem
-apps/web/src/api.ts:285 const diversQuery
+apps/web/src/api.ts:305 const diversQuery
 apps/web/src/api.ts:70 type DiveView
-apps/web/src/api.ts:101 type ProviderView
+apps/web/src/api.ts:105 type ProviderView
 apps/web/src/PushRun.tsx:21 const named
 apps/web/src/ReviewRows.tsx:35 fn Candidates
 apps/web/src/CodeScanner.tsx:106 fn CodeScanner
@@ -292,7 +292,7 @@ apps/web/src/ProviderConflicts.tsx:14 fn useConflictValueText
 apps/web/src/WaitingPush.tsx:117 fn WaitingPushState
 apps/web/src/ImportPanel.tsx:39 const ImportContext
 apps/web/src/ToolsLead.tsx:54 fn Conditions
-… 661 more symbols in this module
+… 672 more symbols in this module
 
 ### web/i18n
 apps/web/src/i18n/languages.ts:6 fn pickLanguage
@@ -309,30 +309,30 @@ apps/web/src/lib/providers.ts:70 fn useProviderText
 apps/web/src/lib/providers.ts:47 fn useProviders
 apps/web/src/lib/page.ts:8 fn usePageTitle
 apps/web/src/lib/providers.ts:87 fn useJoinNames
+apps/web/src/lib/settings.ts:13 fn settingsHref
 apps/web/src/lib/focus.ts:28 fn refocusAfterRemoval
 apps/web/src/lib/geo.ts:4 iface Position
-apps/web/src/lib/settings.ts:13 fn settingsHref
 apps/web/src/lib/focus.ts:16 fn focusHeading
 apps/web/src/lib/units.ts:20 const depthIn
 apps/web/src/lib/providers.ts:9 type SyncedField
 apps/web/src/lib/tools.ts:49 iface ToolsParams
+apps/web/src/lib/form.ts:4 const formValues
 apps/web/src/lib/devices.ts:18 const deviceName
 apps/web/src/lib/review.ts:14 fn reviewHref
 apps/web/src/lib/providers.ts:55 fn useProviderOf
 apps/web/src/lib/providers.ts:52 type ProviderRef
 apps/web/src/lib/logbook.ts:11 iface LogbookParams
 apps/web/src/lib/units.ts:4 type UnitSystem
-apps/web/src/lib/form.ts:4 const formValues
 apps/web/src/lib/units.ts:22 const pressureIn
 apps/web/src/lib/logbook.ts:39 fn logbookHref
 apps/web/src/lib/display.ts:53 fn useProblemText
-… 325 more symbols in this module
+… 332 more symbols in this module
 
 ### web/ui
 apps/web/src/ui/Layout.tsx:85 fn Notice
 apps/web/src/ui/Button.tsx:20 fn Button
 apps/web/src/ui/Layout.tsx:99 const Muted
 apps/web/src/ui/Overlay.tsx:13 fn Dialog
-apps/web/src/ui/TextField.tsx:35 fn TextField
 apps/web/src/ui/Form.tsx:9 fn Form
+apps/web/src/ui/TextField.tsx:35 fn TextField
 … 56 more symbols in this module

@@ -1,6 +1,6 @@
 ---
 title: Client contract
-summary: What every client of the Dive Hub API must do (web client, native mobile app, scripts) - obligations first, then each area's duties and conventions; with reasons, ADRs and where the web client does it; importing dives from a Provider (settings, preview, decisions, outcome), times without a time zone, Dives without a Recording; the dive assessment (findings as facts with sources, the fixed note, no score); AI accesses (what to say before one is made, the key once, the log) and the MCP endpoint (what it promises LLM clients); plus server gaps found while writing it.
+summary: What every client of the Dive Hub API must do (web client, native mobile app, scripts) - obligations first, then each area's duties and conventions; with reasons, ADRs and where the web client does it; importing dives from a Provider (settings, preview, decisions, outcome), times without a time zone, Dives without a Recording; the dive assessment (findings as facts with sources, the fixed note, no score); AI accesses (what to say before one is made, the key once, the log), the MCP endpoint (what it promises LLM clients) and admin backups (a manual run, its download, the schedule); plus server gaps found while writing it.
 status: living
 date: 2026-10-06
 ---
@@ -261,13 +261,22 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   and works again when switched back on. "Revoke all" (`DELETE /api/admin/ai-accesses`) asks first and can't be undone.
   Admins see how many accesses exist, never whose or what they read. *Web:* `AiAccess.tsx` (`AiAccessSetting`).
 - **Admin pages only for admins.** The server refuses anyone else (`admins_only`).
+- **Manual backups** (`GET`/`POST /api/admin/backups`, `GET /api/admin/backups/{id}/download`):
+  - `POST` with a `passphrase` (8–1024 characters) queues one run encrypted with it. **Must not store or log the
+    passphrase** (not in local storage, the address or a request log); say it is needed again to restore. A run is
+    `queued`/`running` until `ready` or `failed`: poll the list (no live hint carries it), and show kind, status,
+    size, created-at and error. While one is queued or running, offer no second start (`backup_in_progress`).
+  - **Download only a `ready` run**, through a plain authenticated link (`backup_running`/`backup_not_ready` while it
+    isn't, `backup_file_missing` when the archive is gone). This is a file handoff: the browser saves the archive and
+    nothing renders in the app. **Admins still see no other User's Dives**; a backup is the whole instance's state as
+    an encrypted file, not an admin view of it.
 - **Scheduled backups** (`GET`/`PUT /api/admin/backups/settings`): one setting for the instance — on/off, interval in
   hours (1–168), retention count (1–365), and the operator-held X25519 recipient (`age1…`) that scheduled archives
   encrypt to. The recipient is required while scheduling is on; the private key never goes to the server. Say that a
   scheduled backup lands on the server's `/data/backups`, that retention keeps the newest scheduled runs and never
   deletes a manual run or the last successful one, and that the operator must keep the private key to restore. On
   `backup_recipient_missing` / `backup_recipient_invalid` say what to paste; on `backup_settings_invalid` show the
-  allowed ranges. The admin page itself is a later slice; until then the routes are the contract.
+  allowed ranges. *Web:* `BackupsPage.tsx` (both manual and scheduled backups, `#/settings/admin/backups`).
 - **Users:**
   - Don't offer to demote, disable or delete the last enabled admin, or to disable or delete oneself; the
     server refuses those too (ADR 0013).

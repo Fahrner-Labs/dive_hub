@@ -18,6 +18,9 @@ export function settingsHref(section: SettingsSection, query?: Record<string, st
 /** The SSI site import, an admin's page under Administration. */
 export const SITE_IMPORTS_HREF = `${settingsHref('admin')}/site-imports`;
 
+/** Manual backups and their schedule, an admin's page under Administration (plan FAH-175). */
+export const BACKUPS_HREF = `${settingsHref('admin')}/backups`;
+
 /** A Connection's settings ("#/settings/connections?connection=<id>"): the section goes to them. */
 export function connectionHref(connectionId: string): string {
   return settingsHref('connections', { connection: connectionId });

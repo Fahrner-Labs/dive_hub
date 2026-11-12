@@ -439,6 +439,11 @@ Two Originals can hold the same dive (Suunto's FIT and JSON): both are kept, and
 _Avoid_: Raw file, upload, dump
 _German_: Originaldatei
 
+**Backup**:
+One encrypted archive of a whole Dive Hub instance: the database and the data directory, with a manifest that records the app and schema version and a fingerprint of the instance's encryption key, never the key itself. A manual backup is encrypted with a passphrase an admin enters for that run; a scheduled backup is encrypted to an operator-held X25519 recipient, so its private key never reaches the server. The passphrase or private key is required to restore; there is no other way in. Downloading hands the archive to the admin as a file, and nothing of another User's data is shown in the app.
+_Avoid_: Dump, snapshot, data export (an export is a User's own data)
+_German_: Sicherung
+
 **Import**:
 One ingestion of what a User delivered at once (one or more Originals, possibly unpacked from an archive), producing or updating Recordings and Dives. An import from a Provider reads the account's dives and keeps one Original per dive ([ADR 0030](decisions/0030-importing-dives-from-providers.md)). An upload is analysed before anything is written; one that holds several Kinds of dive waits for the User's choice ([ADR 0044](decisions/0044-account-export-import-and-kinds.md)).
 

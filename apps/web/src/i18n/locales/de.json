@@ -36,7 +36,12 @@
     "centres": "Tauchbasen",
     "tools": "Werkzeuge",
     "settings": "Einstellungen",
-    "short": { "sites": "Plätze", "centres": "Basen", "tools": "Werkz.", "equipment": "Ausr." }
+    "short": {
+      "sites": "Plätze",
+      "centres": "Basen",
+      "tools": "Werkz.",
+      "equipment": "Ausr."
+    }
   },
   "form": {
     "requiredLegend": "* erforderlich",
@@ -187,6 +192,51 @@
     "disableBody": "Die Person kann sich nicht mehr anmelden und wird überall abgemeldet. Ihre Daten bleiben, und du kannst sie wieder aktivieren.",
     "signOutTitle": "{{name}} überall abmelden?",
     "signOutBody": "Alle Sitzungen enden. Die Person kann sich wieder anmelden."
+  },
+  "backups": {
+    "title": "Sicherungen",
+    "intro": "Eine Sicherung enthält die Datenbank und das Datenverzeichnis als ein verschlüsseltes Archiv. Bewahre das Archiv und die Passphrase oder den privaten Schlüssel sicher auf.",
+    "adminLead": "Sichere diese Dive-Hub-Instanz, lade die Sicherung herunter und richte geplante Sicherungen ein.",
+    "open": "Sicherungen",
+    "new": "Neue Sicherung",
+    "passphrase": "Passphrase der Sicherung",
+    "passphraseHint": "Mindestens 8 Zeichen. Sie gilt nur für diese Sicherung, wird nie gespeichert und ist zum Wiederherstellen wieder nötig.",
+    "create": "Sicherung erstellen",
+    "created": "Sicherung gestartet.",
+    "busy": "Eine Sicherung wartet bereits oder läuft. Warte, bis sie fertig ist.",
+    "list": "Sicherungsläufe",
+    "empty": "Noch keine Sicherungen.",
+    "time": "Erstellt",
+    "kind": "Art",
+    "status": "Status",
+    "size": "Größe",
+    "error": "Fehler",
+    "kindName": {
+      "manual": "Manuell",
+      "scheduled": "Geplant"
+    },
+    "statusName": {
+      "queued": "wartet",
+      "running": "läuft",
+      "ready": "fertig",
+      "failed": "fehlgeschlagen"
+    },
+    "download": "Herunterladen",
+    "downloadOf": "Sicherung vom {{date}} herunterladen",
+    "schedule": "Geplante Sicherungen",
+    "scheduleLead": "Geplante Sicherungen landen in /data/backups auf dem Server. Bewahre den privaten Schlüssel des Empfängers auf: ohne ihn lassen sich geplante Archive nicht wiederherstellen.",
+    "enabled": "Regelmäßig sichern",
+    "intervalHours": "Alle (Stunden)",
+    "intervalHint": "Eine ganze Zahl von 1 bis 168 Stunden.",
+    "retentionCount": "Aufzubewahrende Läufe",
+    "retentionHint": "Eine ganze Zahl von 1 bis 365 geplanten Läufen. Manuelle Sicherungen werden nie gelöscht, die letzte erfolgreiche auch nicht.",
+    "recipientPublicKey": "Öffentlicher Empfängerschlüssel",
+    "recipientHint": "Füge einen X25519-Empfänger im age-Stil ein (age1…). Geplante Archive werden für ihn verschlüsselt; der private Schlüssel geht nie an den Server.",
+    "save": "Zeitplan speichern",
+    "saved": "Sicherungszeitplan gespeichert.",
+    "intervalInvalid": "Verwende eine ganze Stundenzahl von 1 bis 168.",
+    "retentionInvalid": "Verwende eine ganze Zahl von 1 bis 365 Läufen.",
+    "recipientMissing": "Füge den öffentlichen Empfängerschlüssel ein oder schalte geplante Sicherungen aus."
   },
   "import": {
     "title": "Import",
@@ -1729,7 +1779,10 @@
     "importFetch": "Tauchgänge abrufen",
     "importFetchHint": "Dive Hub holt die Tauchgänge, die du noch nicht hast, wenn du es willst, und von selbst, wenn du unten den automatischen Abruf einschaltest.",
     "fetchKinds": "Arten von Tauchgängen abrufen",
-    "fetchKind": { "scuba": "Gerätetauchgänge", "apnea": "Apnoe-Sessions" },
+    "fetchKind": {
+      "scuba": "Gerätetauchgänge",
+      "apnea": "Apnoe-Sessions"
+    },
     "fetchKindsHint": "Mindestens eine bleibt gewählt. Schaltest du eine Art ein, kommen mit dem nächsten Abruf auch ihre älteren Tauchgänge.",
     "importOff": "Nichts",
     "importOffHint": "Dive Hub importiert deine Tauchgänge aus {{name}} nicht.",
@@ -1932,7 +1985,10 @@
       "tokenCreate": "Schlüssel bei Garmin Connect erstellen",
       "signInBodyToken": "Füge einen neuen Garmin-Schlüssel für {{account}} ein.",
       "disconnectBody": "Dive Hub vergisst deinen Garmin-Schlüssel. Die bereits abgerufenen Tauchgänge bleiben hier.",
-      "automation": { "title": "Automatisch bei Garmin", "titleDiver": "Automatisch bei Garmin: {{diver}}" }
+      "automation": {
+        "title": "Automatisch bei Garmin",
+        "titleDiver": "Automatisch bei Garmin: {{diver}}"
+      }
     },
     "ssi": {
       "intro": "Schicke deine Tauchgänge in dein SSI-Logbuch (die MySSI-App). Dive Hub meldet sich dafür für dich bei SSI an. SSI bietet dafür keine offizielle Schnittstelle, deshalb kann das Senden aufhören zu funktionieren, sobald SSI seine App ändert.",
@@ -2863,7 +2919,7 @@
       "leftOut_one": "{{count}} Tauchgang mit Blei und Anzug blieb unberücksichtigt, weil sein Platz keine Wasserart hat. Trage die Wasserart beim Platz ein.",
       "leftOut_other": "{{count}} Tauchgänge mit Blei und Anzug blieben unberücksichtigt, weil ihr Platz keine Wasserart hat. Trage die Wasserart beim Platz ein.",
       "openDive": "Tauchgang {{n}} öffnen",
-    "toSites": "Zu den Tauchplätzen",
+      "toSites": "Zu den Tauchplätzen",
       "check": "Gewichtscheck",
       "checkIntro": "Prüfe dein Gewicht vor dem Tauchgang im Wasser. Die Schätzung ist nur der Ausgangspunkt.",
       "step": {
