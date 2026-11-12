@@ -56,6 +56,23 @@
         },
         {
           "dynamic": false,
+          "module": "./backups/backup-routes.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/backups/backup-routes.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./centres/centre-view.js",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -722,6 +739,23 @@
         },
         {
           "dynamic": false,
+          "module": "./users/setup-restore-routes.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/users/setup-restore-routes.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./users/views.js",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -933,6 +967,7 @@
       "dependents": [
         "apps/server/src/app.ts",
         "apps/server/src/assessment/routes.ts",
+        "apps/server/src/backups/backup-routes.ts",
         "apps/server/src/centres/routes.ts",
         "apps/server/src/certifications/routes.ts",
         "apps/server/src/divers/routes.ts",
@@ -955,7 +990,8 @@
         "apps/server/src/sites/routes.ts",
         "apps/server/src/users/account-routes.ts",
         "apps/server/src/users/admin-routes.ts",
-        "apps/server/src/users/routes.ts"
+        "apps/server/src/users/routes.ts",
+        "apps/server/src/users/setup-restore-routes.ts"
       ],
       "orphan": false,
       "valid": true
@@ -977,6 +1013,7 @@
         "apps/server/src/db/auth-schema.ts",
         "apps/server/src/assessment/assessment-service.ts",
         "apps/server/src/divers/management.ts",
+        "apps/server/src/backups/backup-service.ts",
         "apps/server/src/centres/centre-service.ts",
         "apps/server/src/sites/site-service.ts",
         "apps/server/src/sites/site-ids.ts",
@@ -1069,7 +1106,8 @@
         "apps/server/src/mcp/endpoint.ts",
         "apps/server/src/providers/route-parts.ts",
         "apps/server/src/users/admin-routes.ts",
-        "apps/server/src/users/routes.ts"
+        "apps/server/src/users/routes.ts",
+        "apps/server/src/users/setup-restore-routes.ts"
       ],
       "orphan": false,
       "valid": true
@@ -1087,6 +1125,9 @@
       "dependencies": [],
       "dependents": [
         "apps/server/src/app.ts",
+        "apps/server/src/backups/backup-routes.ts",
+        "apps/server/src/backups/backup-archive.ts",
+        "apps/server/src/backups/backup-service.ts",
         "apps/server/src/storage/blob-store.ts",
         "apps/server/src/imports/archive.ts",
         "apps/server/src/db/migrate.ts",
@@ -1273,6 +1314,7 @@
         "apps/server/src/assessment/routes.ts",
         "apps/server/src/http/problems.ts",
         "apps/server/src/http/schemas.ts",
+        "apps/server/src/backups/backup-routes.ts",
         "apps/server/src/centres/centre-view.ts",
         "apps/server/src/centres/verification-code-view.ts",
         "apps/server/src/centres/routes.ts",
@@ -1323,7 +1365,8 @@
         "apps/server/src/users/account-routes.ts",
         "apps/server/src/users/views.ts",
         "apps/server/src/users/admin-routes.ts",
-        "apps/server/src/users/routes.ts"
+        "apps/server/src/users/routes.ts",
+        "apps/server/src/users/setup-restore-routes.ts"
       ],
       "orphan": false,
       "valid": true
@@ -1502,6 +1545,7 @@
         "apps/server/src/assessment/routes.ts",
         "apps/server/src/auth/fastify.ts",
         "apps/server/src/auth/openapi.ts",
+        "apps/server/src/backups/backup-routes.ts",
         "apps/server/src/centres/routes.ts",
         "apps/server/src/certifications/routes.ts",
         "apps/server/src/compose.ts",
@@ -1702,6 +1746,7 @@
         "apps/server/src/auth/auth.ts",
         "apps/server/src/assessment/assessment-service.ts",
         "apps/server/src/divers/management.ts",
+        "apps/server/src/backups/backup-service.ts",
         "apps/server/src/centres/centre-service.ts",
         "apps/server/src/revisions/revisions.ts",
         "apps/server/src/sites/site-service.ts",
@@ -1806,6 +1851,7 @@
       "dependencies": [],
       "dependents": [
         "apps/server/src/db/client.ts",
+        "apps/server/src/backups/restore-service.ts",
         "apps/server/src/live/listener.ts",
         "apps/server/src/worker.ts",
         "apps/server/src/db/migrate.ts"
@@ -1908,6 +1954,7 @@
         "apps/server/src/db/client.ts",
         "apps/server/src/assessment/assessment-service.ts",
         "apps/server/src/divers/management.ts",
+        "apps/server/src/backups/backup-service.ts",
         "apps/server/src/centres/centre-service.ts",
         "apps/server/src/revisions/revisions.ts",
         "apps/server/src/sites/site-service.ts",
@@ -2265,6 +2312,7 @@
       "dependents": [
         "apps/server/src/app.ts",
         "apps/server/src/assessment/routes.ts",
+        "apps/server/src/backups/backup-routes.ts",
         "apps/server/src/http/caller.ts",
         "apps/server/src/centres/routes.ts",
         "apps/server/src/certifications/routes.ts",
@@ -2369,6 +2417,8 @@
         "apps/server/src/app.ts",
         "apps/server/src/assessment/routes.ts",
         "apps/server/src/auth/fastify.ts",
+        "apps/server/src/backups/backup-routes.ts",
+        "apps/server/src/backups/backup-service.ts",
         "apps/server/src/centres/routes.ts",
         "apps/server/src/certifications/routes.ts",
         "apps/server/src/certifications/certification-answers.ts",
@@ -2404,7 +2454,8 @@
         "apps/server/src/users/account-routes.ts",
         "apps/server/src/users/views.ts",
         "apps/server/src/users/admin-routes.ts",
-        "apps/server/src/users/routes.ts"
+        "apps/server/src/users/routes.ts",
+        "apps/server/src/users/setup-restore-routes.ts"
       ],
       "orphan": false,
       "valid": true
@@ -2432,6 +2483,7 @@
       "dependents": [
         "apps/server/src/assessment/routes.ts",
         "apps/server/src/http/problems.ts",
+        "apps/server/src/backups/backup-routes.ts",
         "apps/server/src/centres/centre-view.ts",
         "apps/server/src/centres/routes.ts",
         "apps/server/src/certifications/certification-view.ts",
@@ -2472,7 +2524,8 @@
         "apps/server/src/users/account-routes.ts",
         "apps/server/src/users/views.ts",
         "apps/server/src/users/admin-routes.ts",
-        "apps/server/src/users/routes.ts"
+        "apps/server/src/users/routes.ts",
+        "apps/server/src/users/setup-restore-routes.ts"
       ],
       "orphan": false,
       "valid": true
@@ -3028,6 +3081,1112 @@
       ],
       "dependents": [
         "apps/server/src/app.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/server/src/backups/backup-routes.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../auth/auth.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/auth/auth.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../auth/fastify.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/auth/fastify.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../http/problems.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/http/problems.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../http/schemas.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/http/schemas.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./backup-archive.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/backups/backup-archive.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./backup-service.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/backups/backup-service.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@fastify/type-provider-typebox",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "npm",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/node_modules/@fastify/type-provider-typebox/dist/cjs/index.js",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": true,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "fs",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "core",
+            "import"
+          ],
+          "protocol": "node:",
+          "resolved": "fs",
+          "coreModule": true,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "fs/promises",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "core",
+            "import"
+          ],
+          "protocol": "node:",
+          "resolved": "fs/promises",
+          "coreModule": true,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "typebox",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "unknown"
+          ],
+          "resolved": "typebox",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": true,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/server/src/app.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "fs/promises",
+      "followable": false,
+      "coreModule": true,
+      "couldNotResolve": false,
+      "matchesDoNotFollow": false,
+      "dependencyTypes": [
+        "core",
+        "import"
+      ],
+      "dependencies": [],
+      "dependents": [
+        "apps/server/src/backups/backup-routes.ts",
+        "apps/server/src/backups/backup-archive.ts",
+        "apps/server/src/backups/backup-service.ts",
+        "apps/server/src/storage/blob-store.ts",
+        "apps/server/src/backups/restore-service.ts",
+        "apps/server/src/imports/archive.ts",
+        "apps/server/src/auth/secret.ts",
+        "apps/server/src/backups/app-lock.ts",
+        "apps/server/src/backups/restore-cli.ts",
+        "apps/server/src/providers/garmin/garmin-client.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/server/src/backups/backup-archive.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "child_process",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "core",
+            "import"
+          ],
+          "protocol": "node:",
+          "resolved": "child_process",
+          "coreModule": true,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "crypto",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "core",
+            "import"
+          ],
+          "protocol": "node:",
+          "resolved": "crypto",
+          "coreModule": true,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "fs",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "core",
+            "import"
+          ],
+          "protocol": "node:",
+          "resolved": "fs",
+          "coreModule": true,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "fs/promises",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "core",
+            "import"
+          ],
+          "protocol": "node:",
+          "resolved": "fs/promises",
+          "coreModule": true,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "path",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "core",
+            "import"
+          ],
+          "protocol": "node:",
+          "resolved": "path",
+          "coreModule": true,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "stream",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "core",
+            "import"
+          ],
+          "protocol": "node:",
+          "resolved": "stream",
+          "coreModule": true,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "stream/promises",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "core",
+            "import"
+          ],
+          "protocol": "node:",
+          "resolved": "stream/promises",
+          "coreModule": true,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "util",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "core",
+            "import"
+          ],
+          "protocol": "node:",
+          "resolved": "util",
+          "coreModule": true,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/server/src/backups/backup-routes.ts",
+        "apps/server/src/backups/backup-service.ts",
+        "apps/server/src/backups/restore-service.ts",
+        "apps/server/src/backups/restore-cli.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "child_process",
+      "followable": false,
+      "coreModule": true,
+      "couldNotResolve": false,
+      "matchesDoNotFollow": false,
+      "dependencyTypes": [
+        "core",
+        "import"
+      ],
+      "dependencies": [],
+      "dependents": [
+        "apps/server/src/backups/backup-archive.ts",
+        "apps/server/src/backups/backup-service.ts",
+        "apps/server/src/backups/restore-service.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "crypto",
+      "followable": false,
+      "coreModule": true,
+      "couldNotResolve": false,
+      "matchesDoNotFollow": false,
+      "dependencyTypes": [
+        "core",
+        "import"
+      ],
+      "dependencies": [],
+      "dependents": [
+        "apps/server/src/backups/backup-archive.ts",
+        "apps/server/src/backups/backup-service.ts",
+        "apps/server/src/storage/blob-store.ts",
+        "apps/server/src/backups/restore-service.ts",
+        "apps/server/src/dives/continuation/joined-recording.ts",
+        "apps/server/src/imports/archive.ts",
+        "apps/server/src/secrets/secret-box.ts",
+        "apps/server/src/providers/connection-service.ts",
+        "apps/server/src/providers/lease-service.ts",
+        "apps/server/src/users/tokens.ts",
+        "apps/server/src/users/setup-service.ts",
+        "apps/server/src/auth/secret.ts",
+        "apps/server/src/providers/ssi/ssi-record.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "path",
+      "followable": false,
+      "coreModule": true,
+      "couldNotResolve": false,
+      "matchesDoNotFollow": false,
+      "dependencyTypes": [
+        "core",
+        "import"
+      ],
+      "dependencies": [],
+      "dependents": [
+        "apps/server/src/backups/backup-archive.ts",
+        "apps/server/src/backups/backup-service.ts",
+        "apps/server/src/storage/blob-store.ts",
+        "apps/server/src/backups/restore-service.ts",
+        "apps/server/src/imports/archive.ts",
+        "apps/server/src/auth/secret.ts",
+        "apps/server/src/backups/app-lock.ts",
+        "apps/server/src/config.ts",
+        "apps/server/src/db/migrate.ts",
+        "apps/server/src/providers/garmin/garmin-client.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "stream",
+      "followable": false,
+      "coreModule": true,
+      "couldNotResolve": false,
+      "matchesDoNotFollow": false,
+      "dependencyTypes": [
+        "core",
+        "import"
+      ],
+      "dependencies": [],
+      "dependents": [
+        "apps/server/src/backups/backup-archive.ts",
+        "apps/server/src/storage/blob-store.ts",
+        "apps/server/src/imports/import-service.ts",
+        "apps/server/src/mcp/endpoint.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "stream/promises",
+      "followable": false,
+      "coreModule": true,
+      "couldNotResolve": false,
+      "matchesDoNotFollow": false,
+      "dependencyTypes": [
+        "core",
+        "import"
+      ],
+      "dependencies": [],
+      "dependents": [
+        "apps/server/src/backups/backup-archive.ts",
+        "apps/server/src/storage/blob-store.ts",
+        "apps/server/src/imports/archive.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "util",
+      "followable": false,
+      "coreModule": true,
+      "couldNotResolve": false,
+      "matchesDoNotFollow": false,
+      "dependencyTypes": [
+        "core",
+        "import"
+      ],
+      "dependencies": [],
+      "dependents": [
+        "apps/server/src/backups/backup-archive.ts",
+        "apps/server/src/backups/backup-service.ts",
+        "apps/server/src/backups/restore-service.ts",
+        "apps/server/src/providers/dive-import/dive-import.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/server/src/backups/backup-service.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../db/client.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/db/client.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../db/schema.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/db/schema.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../http/problems.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/http/problems.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../storage/blob-store.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/storage/blob-store.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./backup-archive.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/backups/backup-archive.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./pg-command.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/backups/pg-command.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./restore-service.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/backups/restore-service.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "child_process",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "core",
+            "import"
+          ],
+          "protocol": "node:",
+          "resolved": "child_process",
+          "coreModule": true,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "crypto",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "core",
+            "import"
+          ],
+          "protocol": "node:",
+          "resolved": "crypto",
+          "coreModule": true,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "drizzle-orm",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "npm",
+            "import"
+          ],
+          "resolved": "apps/server/node_modules/drizzle-orm/index.cjs",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": true,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "fs",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "core",
+            "import"
+          ],
+          "protocol": "node:",
+          "resolved": "fs",
+          "coreModule": true,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "fs/promises",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "core",
+            "import"
+          ],
+          "protocol": "node:",
+          "resolved": "fs/promises",
+          "coreModule": true,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "path",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "core",
+            "import"
+          ],
+          "protocol": "node:",
+          "resolved": "path",
+          "coreModule": true,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "util",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "core",
+            "import"
+          ],
+          "protocol": "node:",
+          "resolved": "util",
+          "coreModule": true,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/server/src/backups/backup-routes.ts",
+        "apps/server/src/compose.ts",
+        "apps/server/src/worker.ts",
+        "apps/server/src/backups/backup-task.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/server/src/storage/blob-store.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "crypto",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "core",
+            "import"
+          ],
+          "protocol": "node:",
+          "resolved": "crypto",
+          "coreModule": true,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "fs",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "core",
+            "import"
+          ],
+          "protocol": "node:",
+          "resolved": "fs",
+          "coreModule": true,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "fs/promises",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "core",
+            "import"
+          ],
+          "protocol": "node:",
+          "resolved": "fs/promises",
+          "coreModule": true,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "path",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "core",
+            "import"
+          ],
+          "protocol": "node:",
+          "resolved": "path",
+          "coreModule": true,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "stream",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "core",
+            "import"
+          ],
+          "protocol": "node:",
+          "resolved": "stream",
+          "coreModule": true,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "stream",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "core",
+            "type-only",
+            "import"
+          ],
+          "protocol": "node:",
+          "resolved": "stream",
+          "coreModule": true,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "stream/promises",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "core",
+            "import"
+          ],
+          "protocol": "node:",
+          "resolved": "stream/promises",
+          "coreModule": true,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/server/src/backups/backup-service.ts",
+        "apps/server/src/certifications/certification-service.ts",
+        "apps/server/src/compose.ts",
+        "apps/server/src/imports/import-service.ts",
+        "apps/server/src/providers/layer.ts",
+        "apps/server/src/providers/conflicts/conflict-service.ts",
+        "apps/server/src/providers/dive-import/dive-changes.ts",
+        "apps/server/src/providers/dive-import/dive-import.ts",
+        "apps/server/src/providers/push/push-service.ts",
+        "apps/server/src/users/user-admin-service.ts",
+        "apps/server/src/imports/routes.ts",
+        "apps/server/src/users/setup-restore-routes.ts",
+        "apps/server/src/start.ts",
+        "apps/server/src/scripts/write-openapi.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/server/src/backups/pg-command.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../errors.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/errors.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/server/src/backups/backup-service.ts",
+        "apps/server/src/backups/restore-service.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/server/src/errors.ts",
+      "dependencies": [],
+      "dependents": [
+        "apps/server/src/backups/pg-command.ts",
+        "apps/server/src/imports/import-service.ts",
+        "apps/server/src/imports/formats/fit/fit-adapter.ts",
+        "apps/server/src/imports/formats/suunto/suunto-json.ts",
+        "apps/server/src/imports/formats/uddf/uddf.ts",
+        "apps/server/src/providers/dive-import/dive-import.ts",
+        "apps/server/src/sites/import/site-import-service.ts",
+        "apps/server/src/backups/restore-cli.ts",
+        "apps/server/src/providers/ssi/ssi-sites.ts",
+        "apps/server/src/sites/import/polite-http.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/server/src/backups/restore-service.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./backup-archive.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/backups/backup-archive.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./pg-command.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/backups/pg-command.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "child_process",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "core",
+            "import"
+          ],
+          "protocol": "node:",
+          "resolved": "child_process",
+          "coreModule": true,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "crypto",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "core",
+            "import"
+          ],
+          "protocol": "node:",
+          "resolved": "crypto",
+          "coreModule": true,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "fs/promises",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "core",
+            "import"
+          ],
+          "protocol": "node:",
+          "resolved": "fs/promises",
+          "coreModule": true,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "path",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "core",
+            "import"
+          ],
+          "protocol": "node:",
+          "resolved": "path",
+          "coreModule": true,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "pg",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "npm",
+            "import"
+          ],
+          "resolved": "apps/server/node_modules/pg/lib/index.js",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": true,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "util",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "core",
+            "import"
+          ],
+          "protocol": "node:",
+          "resolved": "util",
+          "coreModule": true,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/server/src/backups/backup-service.ts",
+        "apps/server/src/backups/restore-cli.ts"
       ],
       "orphan": false,
       "valid": true
@@ -5139,242 +6298,6 @@
       "valid": true
     },
     {
-      "source": "apps/server/src/storage/blob-store.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "crypto",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "core",
-            "import"
-          ],
-          "protocol": "node:",
-          "resolved": "crypto",
-          "coreModule": true,
-          "followable": false,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "fs",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "core",
-            "import"
-          ],
-          "protocol": "node:",
-          "resolved": "fs",
-          "coreModule": true,
-          "followable": false,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "fs/promises",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "core",
-            "import"
-          ],
-          "protocol": "node:",
-          "resolved": "fs/promises",
-          "coreModule": true,
-          "followable": false,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "path",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "core",
-            "import"
-          ],
-          "protocol": "node:",
-          "resolved": "path",
-          "coreModule": true,
-          "followable": false,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "stream",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "core",
-            "type-only",
-            "import"
-          ],
-          "protocol": "node:",
-          "resolved": "stream",
-          "coreModule": true,
-          "followable": false,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "stream/promises",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "core",
-            "import"
-          ],
-          "protocol": "node:",
-          "resolved": "stream/promises",
-          "coreModule": true,
-          "followable": false,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "apps/server/src/certifications/certification-service.ts",
-        "apps/server/src/compose.ts",
-        "apps/server/src/imports/import-service.ts",
-        "apps/server/src/providers/layer.ts",
-        "apps/server/src/providers/conflicts/conflict-service.ts",
-        "apps/server/src/providers/dive-import/dive-changes.ts",
-        "apps/server/src/providers/dive-import/dive-import.ts",
-        "apps/server/src/providers/push/push-service.ts",
-        "apps/server/src/users/user-admin-service.ts",
-        "apps/server/src/imports/routes.ts",
-        "apps/server/src/start.ts",
-        "apps/server/src/scripts/write-openapi.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "crypto",
-      "followable": false,
-      "coreModule": true,
-      "couldNotResolve": false,
-      "matchesDoNotFollow": false,
-      "dependencyTypes": [
-        "core",
-        "import"
-      ],
-      "dependencies": [],
-      "dependents": [
-        "apps/server/src/storage/blob-store.ts",
-        "apps/server/src/dives/continuation/joined-recording.ts",
-        "apps/server/src/imports/archive.ts",
-        "apps/server/src/secrets/secret-box.ts",
-        "apps/server/src/providers/connection-service.ts",
-        "apps/server/src/providers/lease-service.ts",
-        "apps/server/src/users/tokens.ts",
-        "apps/server/src/users/setup-service.ts",
-        "apps/server/src/auth/secret.ts",
-        "apps/server/src/providers/ssi/ssi-record.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "fs/promises",
-      "followable": false,
-      "coreModule": true,
-      "couldNotResolve": false,
-      "matchesDoNotFollow": false,
-      "dependencyTypes": [
-        "core",
-        "import"
-      ],
-      "dependencies": [],
-      "dependents": [
-        "apps/server/src/storage/blob-store.ts",
-        "apps/server/src/imports/archive.ts",
-        "apps/server/src/auth/secret.ts",
-        "apps/server/src/providers/garmin/garmin-client.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "path",
-      "followable": false,
-      "coreModule": true,
-      "couldNotResolve": false,
-      "matchesDoNotFollow": false,
-      "dependencyTypes": [
-        "core",
-        "import"
-      ],
-      "dependencies": [],
-      "dependents": [
-        "apps/server/src/storage/blob-store.ts",
-        "apps/server/src/imports/archive.ts",
-        "apps/server/src/auth/secret.ts",
-        "apps/server/src/config.ts",
-        "apps/server/src/db/migrate.ts",
-        "apps/server/src/providers/garmin/garmin-client.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "stream",
-      "followable": false,
-      "coreModule": true,
-      "couldNotResolve": false,
-      "matchesDoNotFollow": false,
-      "dependencyTypes": [
-        "core",
-        "type-only",
-        "import"
-      ],
-      "dependencies": [],
-      "dependents": [
-        "apps/server/src/storage/blob-store.ts",
-        "apps/server/src/imports/import-service.ts",
-        "apps/server/src/mcp/endpoint.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "stream/promises",
-      "followable": false,
-      "coreModule": true,
-      "couldNotResolve": false,
-      "matchesDoNotFollow": false,
-      "dependencyTypes": [
-        "core",
-        "import"
-      ],
-      "dependencies": [],
-      "dependents": [
-        "apps/server/src/storage/blob-store.ts",
-        "apps/server/src/imports/archive.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
       "source": "apps/server/src/certifications/certification-providers.ts",
       "dependencies": [],
       "dependents": [
@@ -5416,6 +6339,23 @@
             "import"
           ],
           "resolved": "apps/server/src/auth/auth.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./backups/backup-service.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/backups/backup-service.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -6129,10 +7069,48 @@
           "matchesDoNotFollow": true,
           "circular": false,
           "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "url",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "core",
+            "import"
+          ],
+          "protocol": "node:",
+          "resolved": "url",
+          "coreModule": true,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
         }
       ],
       "dependents": [
         "apps/server/src/app.ts",
+        "apps/server/src/start.ts",
+        "apps/server/src/scripts/write-openapi.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "url",
+      "followable": false,
+      "coreModule": true,
+      "couldNotResolve": false,
+      "matchesDoNotFollow": false,
+      "dependencyTypes": [
+        "core",
+        "import"
+      ],
+      "dependencies": [],
+      "dependents": [
+        "apps/server/src/compose.ts",
+        "apps/server/src/main.ts",
         "apps/server/src/start.ts",
         "apps/server/src/scripts/write-openapi.ts"
       ],
@@ -8906,7 +9884,8 @@
       "dependents": [
         "apps/server/src/compose.ts",
         "apps/server/src/users/account-routes.ts",
-        "apps/server/src/users/routes.ts"
+        "apps/server/src/users/routes.ts",
+        "apps/server/src/users/setup-restore-routes.ts"
       ],
       "orphan": false,
       "valid": true
@@ -9182,22 +10161,6 @@
         "apps/server/src/providers/dive-import/dive-import.ts",
         "apps/server/src/worker.ts",
         "apps/server/src/imports/routes.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "apps/server/src/errors.ts",
-      "dependencies": [],
-      "dependents": [
-        "apps/server/src/imports/import-service.ts",
-        "apps/server/src/imports/formats/fit/fit-adapter.ts",
-        "apps/server/src/imports/formats/suunto/suunto-json.ts",
-        "apps/server/src/imports/formats/uddf/uddf.ts",
-        "apps/server/src/providers/dive-import/dive-import.ts",
-        "apps/server/src/sites/import/site-import-service.ts",
-        "apps/server/src/providers/ssi/ssi-sites.ts",
-        "apps/server/src/sites/import/polite-http.ts"
       ],
       "orphan": false,
       "valid": true
@@ -14682,23 +15645,6 @@
       "valid": true
     },
     {
-      "source": "util",
-      "followable": false,
-      "coreModule": true,
-      "couldNotResolve": false,
-      "matchesDoNotFollow": false,
-      "dependencyTypes": [
-        "core",
-        "import"
-      ],
-      "dependencies": [],
-      "dependents": [
-        "apps/server/src/providers/dive-import/dive-import.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
       "source": "apps/server/src/providers/dive-import/gone-dives.ts",
       "dependencies": [
         {
@@ -17081,7 +18027,8 @@
       ],
       "dependents": [
         "apps/server/src/compose.ts",
-        "apps/server/src/users/routes.ts"
+        "apps/server/src/users/routes.ts",
+        "apps/server/src/users/setup-restore-routes.ts"
       ],
       "orphan": false,
       "valid": true
@@ -17233,6 +18180,40 @@
             "import"
           ],
           "resolved": "apps/server/src/assessment/assessment-service.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./backups/backup-service.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/backups/backup-service.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./backups/backup-task.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/backups/backup-task.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -17452,6 +18433,34 @@
       "dependents": [
         "apps/server/src/worker.ts",
         "apps/server/src/db/migrate.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/server/src/backups/backup-task.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./backup-service.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/backups/backup-service.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/server/src/worker.ts"
       ],
       "orphan": false,
       "valid": true
@@ -25566,6 +26575,246 @@
       "valid": true
     },
     {
+      "source": "apps/server/src/users/setup-restore-routes.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../http/attempt-limit.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/http/attempt-limit.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../http/problems.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/http/problems.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../http/response-gone.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/http/response-gone.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../http/schemas.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/http/schemas.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../storage/blob-store.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/storage/blob-store.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./setup-restore.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/users/setup-restore.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./setup-service.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/users/setup-service.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@fastify/type-provider-typebox",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "npm",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/node_modules/@fastify/type-provider-typebox/dist/cjs/index.js",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": true,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "fastify",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "npm",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/node_modules/fastify/fastify.js",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": true,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "typebox",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "unknown"
+          ],
+          "resolved": "typebox",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": true,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/server/src/app.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/server/src/http/response-gone.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "events",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "core",
+            "type-only",
+            "import"
+          ],
+          "protocol": "node:",
+          "resolved": "events",
+          "coreModule": true,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/server/src/users/setup-restore-routes.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "events",
+      "followable": false,
+      "coreModule": true,
+      "couldNotResolve": false,
+      "matchesDoNotFollow": false,
+      "dependencyTypes": [
+        "core",
+        "type-only",
+        "import"
+      ],
+      "dependencies": [],
+      "dependents": [
+        "apps/server/src/http/response-gone.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/server/src/users/setup-restore.ts",
+      "dependencies": [],
+      "dependents": [
+        "apps/server/src/users/setup-restore-routes.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "apps/server/src/auth/cli-config.ts",
       "dependencies": [
         {
@@ -25704,6 +26953,149 @@
       ],
       "dependents": [
         "apps/server/src/start.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/server/src/backups/app-lock.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "fs/promises",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "core",
+            "import"
+          ],
+          "protocol": "node:",
+          "resolved": "fs/promises",
+          "coreModule": true,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "path",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "core",
+            "import"
+          ],
+          "protocol": "node:",
+          "resolved": "path",
+          "coreModule": true,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/server/src/backups/restore-cli.ts",
+        "apps/server/src/start.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/server/src/backups/restore-cli.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../errors.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/errors.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./app-lock.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/backups/app-lock.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./backup-archive.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/backups/backup-archive.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./restore-service.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/backups/restore-service.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "fs/promises",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "core",
+            "import"
+          ],
+          "protocol": "node:",
+          "resolved": "fs/promises",
+          "coreModule": true,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/server/src/main.ts"
       ],
       "orphan": false,
       "valid": true
@@ -25926,6 +27318,23 @@
       "dependencies": [
         {
           "dynamic": false,
+          "module": "./backups/restore-cli.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/backups/restore-cli.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./config.js",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -25953,6 +27362,24 @@
           "resolved": "apps/server/src/start.ts",
           "coreModule": false,
           "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "url",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "core",
+            "import"
+          ],
+          "protocol": "node:",
+          "resolved": "url",
+          "coreModule": true,
+          "followable": false,
           "couldNotResolve": false,
           "matchesDoNotFollow": false,
           "circular": false,
@@ -26010,6 +27437,23 @@
             "import"
           ],
           "resolved": "apps/server/src/auth/secret.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./backups/app-lock.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/backups/app-lock.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -26243,24 +27687,6 @@
       ],
       "dependents": [
         "apps/server/src/main.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "url",
-      "followable": false,
-      "coreModule": true,
-      "couldNotResolve": false,
-      "matchesDoNotFollow": false,
-      "dependencyTypes": [
-        "core",
-        "import"
-      ],
-      "dependencies": [],
-      "dependents": [
-        "apps/server/src/start.ts",
-        "apps/server/src/scripts/write-openapi.ts"
       ],
       "orphan": false,
       "valid": true
@@ -27933,10 +29359,12 @@
         "apps/web/src/lib/live.ts",
         "apps/web/src/lib/display.ts",
         "apps/web/src/SignedOut.tsx",
+        "apps/web/src/SetupRestore.tsx",
         "apps/web/src/AdminSettings.tsx",
         "apps/web/src/AiAccess.tsx",
         "apps/web/src/lib/providers.ts",
         "apps/web/src/App.tsx",
+        "apps/web/src/BackupsPage.tsx",
         "apps/web/src/CentresPage.tsx",
         "apps/web/src/lib/centres.ts",
         "apps/web/src/NewCentre.tsx",
@@ -28009,8 +29437,10 @@
         "apps/web/src/lib/live.ts",
         "apps/web/src/lib/focus.ts",
         "apps/web/src/lib/form.ts",
+        "apps/web/src/SignedOut.tsx",
         "apps/web/src/lib/deletion.ts",
         "apps/web/src/lib/page.ts",
+        "apps/web/src/SetupRestore.tsx",
         "apps/web/src/ui/Button.tsx",
         "apps/web/src/ui/Chip.tsx",
         "apps/web/src/ui/Choice.tsx",
@@ -28029,6 +29459,7 @@
         "apps/web/src/AdminSettings.tsx",
         "apps/web/src/AiAccess.tsx",
         "apps/web/src/App.tsx",
+        "apps/web/src/BackupsPage.tsx",
         "apps/web/src/CentresPage.tsx",
         "apps/web/src/CodeScanner.tsx",
         "apps/web/src/DiveCodes.tsx",
@@ -28106,6 +29537,7 @@
         "apps/web/src/lib/display.ts",
         "apps/web/src/SignedOut.tsx",
         "apps/web/src/lib/page.ts",
+        "apps/web/src/SetupRestore.tsx",
         "apps/web/src/ui/Fields.tsx",
         "apps/web/src/ui/Form.tsx",
         "apps/web/src/ui/Overlay.tsx",
@@ -28115,6 +29547,7 @@
         "apps/web/src/AiAccess.tsx",
         "apps/web/src/lib/providers.ts",
         "apps/web/src/App.tsx",
+        "apps/web/src/BackupsPage.tsx",
         "apps/web/src/CentresPage.tsx",
         "apps/web/src/CodeScanner.tsx",
         "apps/web/src/DiveCodes.tsx",
@@ -28323,10 +29756,12 @@
         "apps/web/src/lib/display.ts",
         "apps/web/src/SignedOut.tsx",
         "apps/web/src/lib/deletion.ts",
+        "apps/web/src/SetupRestore.tsx",
         "apps/web/src/AdminSettings.tsx",
         "apps/web/src/AiAccess.tsx",
         "apps/web/src/lib/providers.ts",
         "apps/web/src/App.tsx",
+        "apps/web/src/BackupsPage.tsx",
         "apps/web/src/CentresPage.tsx",
         "apps/web/src/DiveCodes.tsx",
         "apps/web/src/lib/centres.ts",
@@ -28734,6 +30169,7 @@
         "apps/web/src/ui/Overlay.tsx",
         "apps/web/src/AdminSettings.tsx",
         "apps/web/src/AiAccess.tsx",
+        "apps/web/src/BackupsPage.tsx",
         "apps/web/src/CentresPage.tsx",
         "apps/web/src/NewCentre.tsx",
         "apps/web/src/DeletedDives.tsx",
@@ -28863,10 +30299,12 @@
       "dependents": [
         "apps/web/src/AccountSettings.tsx",
         "apps/web/src/SignedOut.tsx",
+        "apps/web/src/SetupRestore.tsx",
         "apps/web/src/ui/Overlay.tsx",
         "apps/web/src/AdminSettings.tsx",
         "apps/web/src/AiAccess.tsx",
         "apps/web/src/App.tsx",
+        "apps/web/src/BackupsPage.tsx",
         "apps/web/src/CentresPage.tsx",
         "apps/web/src/NewCentre.tsx",
         "apps/web/src/DeletedDives.tsx",
@@ -29022,7 +30460,9 @@
       "dependents": [
         "apps/web/src/AccountSettings.tsx",
         "apps/web/src/SignedOut.tsx",
+        "apps/web/src/SetupRestore.tsx",
         "apps/web/src/AiAccess.tsx",
+        "apps/web/src/BackupsPage.tsx",
         "apps/web/src/Connections.tsx"
       ],
       "orphan": false,
@@ -29118,6 +30558,23 @@
         },
         {
           "dynamic": false,
+          "module": "./SetupRestore.tsx",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/web/src/SetupRestore.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./ui/index.ts",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -29143,6 +30600,23 @@
             "import"
           ],
           "resolved": "apps/web/node_modules/@tanstack/react-query/build/legacy/index.cjs",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": true,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "react",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "npm",
+            "import"
+          ],
+          "resolved": "apps/web/node_modules/react/index.js",
           "coreModule": false,
           "followable": false,
           "couldNotResolve": false,
@@ -29265,6 +30739,7 @@
       "dependents": [
         "apps/web/src/SignedOut.tsx",
         "apps/web/src/App.tsx",
+        "apps/web/src/BackupsPage.tsx",
         "apps/web/src/CentresPage.tsx",
         "apps/web/src/DiveList.tsx",
         "apps/web/src/DivePage.tsx",
@@ -29276,6 +30751,185 @@
         "apps/web/src/SiteImportPage.tsx",
         "apps/web/src/SitesPage.tsx",
         "apps/web/src/ToolsPage.tsx"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/web/src/SetupRestore.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./api.ts",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/web/src/api.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./lib/display.ts",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/web/src/lib/display.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./lib/form.ts",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/web/src/lib/form.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./ui/index.ts",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/web/src/ui/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@tanstack/react-query",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "npm",
+            "import"
+          ],
+          "resolved": "apps/web/node_modules/@tanstack/react-query/build/legacy/index.cjs",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": true,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "react",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "npm",
+            "import"
+          ],
+          "resolved": "apps/web/node_modules/react/index.js",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": true,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "react-aria-components",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "npm",
+            "import"
+          ],
+          "resolved": "apps/web/node_modules/react-aria-components/dist/exports/index.cjs",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": true,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "react-i18next",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "npm",
+            "import"
+          ],
+          "resolved": "apps/web/node_modules/react-i18next/dist/commonjs/index.js",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": true,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/web/src/SignedOut.tsx"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/web/node_modules/react-aria-components/dist/exports/index.cjs",
+      "followable": false,
+      "coreModule": false,
+      "couldNotResolve": false,
+      "matchesDoNotFollow": true,
+      "dependencyTypes": [
+        "npm",
+        "import"
+      ],
+      "dependencies": [],
+      "dependents": [
+        "apps/web/src/SetupRestore.tsx",
+        "apps/web/src/ui/Button.tsx",
+        "apps/web/src/ui/Chip.tsx",
+        "apps/web/src/ui/Choice.tsx",
+        "apps/web/src/ui/Disclosure.tsx",
+        "apps/web/src/ui/Fields.tsx",
+        "apps/web/src/ui/Form.tsx",
+        "apps/web/src/ui/Layout.tsx",
+        "apps/web/src/ui/Menu.tsx",
+        "apps/web/src/ui/Overlay.tsx",
+        "apps/web/src/ui/SearchList.tsx",
+        "apps/web/src/ui/TextField.tsx",
+        "apps/web/src/CodeScanner.tsx",
+        "apps/web/src/PushRun.tsx",
+        "apps/web/src/DivePage.tsx",
+        "apps/web/src/ImportPanel.tsx",
+        "apps/web/src/main.tsx"
       ],
       "orphan": false,
       "valid": true
@@ -29559,9 +31213,11 @@
       "dependents": [
         "apps/web/src/AccountSettings.tsx",
         "apps/web/src/SignedOut.tsx",
+        "apps/web/src/SetupRestore.tsx",
         "apps/web/src/AdminSettings.tsx",
         "apps/web/src/AiAccess.tsx",
         "apps/web/src/App.tsx",
+        "apps/web/src/BackupsPage.tsx",
         "apps/web/src/CentresPage.tsx",
         "apps/web/src/CodeScanner.tsx",
         "apps/web/src/DiveCodes.tsx",
@@ -29720,38 +31376,6 @@
         "apps/web/src/ui/index.ts",
         "apps/web/src/ui/Menu.tsx",
         "apps/web/src/ui/Overlay.tsx"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "apps/web/node_modules/react-aria-components/dist/exports/index.cjs",
-      "followable": false,
-      "coreModule": false,
-      "couldNotResolve": false,
-      "matchesDoNotFollow": true,
-      "dependencyTypes": [
-        "npm",
-        "import"
-      ],
-      "dependencies": [],
-      "dependents": [
-        "apps/web/src/ui/Button.tsx",
-        "apps/web/src/ui/Chip.tsx",
-        "apps/web/src/ui/Choice.tsx",
-        "apps/web/src/ui/Disclosure.tsx",
-        "apps/web/src/ui/Fields.tsx",
-        "apps/web/src/ui/Form.tsx",
-        "apps/web/src/ui/Layout.tsx",
-        "apps/web/src/ui/Menu.tsx",
-        "apps/web/src/ui/Overlay.tsx",
-        "apps/web/src/ui/SearchList.tsx",
-        "apps/web/src/ui/TextField.tsx",
-        "apps/web/src/CodeScanner.tsx",
-        "apps/web/src/PushRun.tsx",
-        "apps/web/src/DivePage.tsx",
-        "apps/web/src/ImportPanel.tsx",
-        "apps/web/src/main.tsx"
       ],
       "orphan": false,
       "valid": true
@@ -31117,6 +32741,7 @@
         "apps/web/src/AdminSettings.tsx",
         "apps/web/src/AiAccess.tsx",
         "apps/web/src/App.tsx",
+        "apps/web/src/BackupsPage.tsx",
         "apps/web/src/PushRun.tsx",
         "apps/web/src/NumberChain.tsx",
         "apps/web/src/ProviderPanel.tsx",
@@ -31265,6 +32890,23 @@
             "import"
           ],
           "resolved": "apps/web/src/api.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": true,
+          "module": "./BackupsPage.tsx",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "dynamic-import"
+          ],
+          "resolved": "apps/web/src/BackupsPage.tsx",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -31819,6 +33461,212 @@
       ],
       "dependents": [
         "apps/web/src/main.tsx"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/web/src/BackupsPage.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./api.ts",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/web/src/api.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./lib/announce.ts",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/web/src/lib/announce.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./lib/backups.ts",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/web/src/lib/backups.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./lib/display.ts",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/web/src/lib/display.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./lib/form.ts",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/web/src/lib/form.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./lib/page.ts",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/web/src/lib/page.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./lib/settings.ts",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/web/src/lib/settings.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./ui/index.ts",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/web/src/ui/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@tanstack/react-query",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "npm",
+            "import"
+          ],
+          "resolved": "apps/web/node_modules/@tanstack/react-query/build/legacy/index.cjs",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": true,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "react",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "npm",
+            "import"
+          ],
+          "resolved": "apps/web/node_modules/react/index.js",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": true,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "react-i18next",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "npm",
+            "import"
+          ],
+          "resolved": "apps/web/node_modules/react-i18next/dist/commonjs/index.js",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": true,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/web/src/App.tsx"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/web/src/lib/backups.ts",
+      "dependencies": [],
+      "dependents": [
+        "apps/web/src/BackupsPage.tsx"
       ],
       "orphan": false,
       "valid": true
@@ -43728,8 +45576,8 @@
     "baselineSize": 0,
     "baselineStale": 0,
     "advisedExitCode": 0,
-    "totalCruised": 416,
-    "totalDependenciesCruised": 2180,
+    "totalCruised": 432,
+    "totalDependenciesCruised": 2272,
     "optionsUsed": {
       "baseDir": "/home/runner/work/dive_hub/dive_hub",
       "combinedDependencies": false,
@@ -43791,7 +45639,7 @@
             "path": "^apps/server/src/revisions/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|centres|certifications|divers|dives|equipment|imports|lead|mcp|planning|providers|sites|live|users)/"
+            "path": "^apps/server/src/(assessment|backups|centres|certifications|divers|dives|equipment|imports|lead|mcp|planning|providers|sites|live|users)/"
           },
           "scope": "module"
         },
@@ -43803,7 +45651,19 @@
             "path": "^apps/server/src/assessment/"
           },
           "to": {
-            "path": "^apps/server/src/(revisions|centres|certifications|dives|equipment|lead|mcp|planning|providers|sites|live|users)/"
+            "path": "^apps/server/src/(revisions|backups|centres|certifications|dives|equipment|lead|mcp|planning|providers|sites|live|users)/"
+          },
+          "scope": "module"
+        },
+        {
+          "name": "module-imports-backups",
+          "severity": "error",
+          "comment": "backups/ may import only these domain modules:  (MODULE_IMPORTS in .dependency-cruiser.cjs, ADR 0053).",
+          "from": {
+            "path": "^apps/server/src/backups/"
+          },
+          "to": {
+            "path": "^apps/server/src/(revisions|assessment|centres|certifications|divers|dives|equipment|imports|lead|mcp|planning|providers|sites|live|users)/"
           },
           "scope": "module"
         },
@@ -43815,7 +45675,7 @@
             "path": "^apps/server/src/centres/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|certifications|dives|equipment|imports|lead|mcp|planning|providers|live|users)/"
+            "path": "^apps/server/src/(assessment|backups|certifications|dives|equipment|imports|lead|mcp|planning|providers|live|users)/"
           },
           "scope": "module"
         },
@@ -43827,7 +45687,7 @@
             "path": "^apps/server/src/certifications/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|centres|equipment|imports|lead|mcp|planning|providers|sites|users)/"
+            "path": "^apps/server/src/(assessment|backups|centres|equipment|imports|lead|mcp|planning|providers|sites|users)/"
           },
           "scope": "module"
         },
@@ -43839,7 +45699,7 @@
             "path": "^apps/server/src/divers/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|centres|certifications|dives|equipment|imports|lead|mcp|planning|providers|sites|live|users)/"
+            "path": "^apps/server/src/(assessment|backups|centres|certifications|dives|equipment|imports|lead|mcp|planning|providers|sites|live|users)/"
           },
           "scope": "module"
         },
@@ -43851,7 +45711,7 @@
             "path": "^apps/server/src/dives/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|certifications|equipment|imports|lead|mcp|planning|providers|live|users)/"
+            "path": "^apps/server/src/(assessment|backups|certifications|equipment|imports|lead|mcp|planning|providers|live|users)/"
           },
           "scope": "module"
         },
@@ -43863,7 +45723,7 @@
             "path": "^apps/server/src/equipment/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|centres|certifications|dives|imports|lead|mcp|planning|providers|sites|live|users)/"
+            "path": "^apps/server/src/(assessment|backups|centres|certifications|dives|imports|lead|mcp|planning|providers|sites|live|users)/"
           },
           "scope": "module"
         },
@@ -43875,7 +45735,7 @@
             "path": "^apps/server/src/imports/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|centres|certifications|lead|mcp|planning|providers|users)/"
+            "path": "^apps/server/src/(assessment|backups|centres|certifications|lead|mcp|planning|providers|users)/"
           },
           "scope": "module"
         },
@@ -43887,7 +45747,7 @@
             "path": "^apps/server/src/lead/"
           },
           "to": {
-            "path": "^apps/server/src/(revisions|assessment|centres|certifications|equipment|imports|mcp|planning|providers|sites|live|users)/"
+            "path": "^apps/server/src/(revisions|assessment|backups|centres|certifications|equipment|imports|mcp|planning|providers|sites|live|users)/"
           },
           "scope": "module"
         },
@@ -43899,7 +45759,7 @@
             "path": "^apps/server/src/mcp/"
           },
           "to": {
-            "path": "^apps/server/src/(revisions|centres|certifications|imports|lead|providers|live|users)/"
+            "path": "^apps/server/src/(revisions|backups|centres|certifications|imports|lead|providers|live|users)/"
           },
           "scope": "module"
         },
@@ -43911,7 +45771,7 @@
             "path": "^apps/server/src/planning/"
           },
           "to": {
-            "path": "^apps/server/src/(revisions|assessment|centres|certifications|equipment|imports|lead|mcp|providers|sites|live|users)/"
+            "path": "^apps/server/src/(revisions|assessment|backups|centres|certifications|equipment|imports|lead|mcp|providers|sites|live|users)/"
           },
           "scope": "module"
         },
@@ -43923,7 +45783,7 @@
             "path": "^apps/server/src/providers/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|centres|equipment|lead|mcp|planning|users)/"
+            "path": "^apps/server/src/(assessment|backups|centres|equipment|lead|mcp|planning|users)/"
           },
           "scope": "module"
         },
@@ -43935,7 +45795,7 @@
             "path": "^apps/server/src/sites/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|centres|certifications|divers|dives|equipment|imports|lead|mcp|planning|providers|users)/"
+            "path": "^apps/server/src/(assessment|backups|centres|certifications|divers|dives|equipment|imports|lead|mcp|planning|providers|users)/"
           },
           "scope": "module"
         },
@@ -43947,7 +45807,7 @@
             "path": "^apps/server/src/live/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|centres|certifications|divers|dives|equipment|imports|lead|mcp|planning|providers|sites|users)/"
+            "path": "^apps/server/src/(assessment|backups|centres|certifications|divers|dives|equipment|imports|lead|mcp|planning|providers|sites|users)/"
           },
           "scope": "module"
         },
@@ -43974,7 +45834,7 @@
             "path": "^apps/server/src/users/"
           },
           "to": {
-            "path": "^apps/server/src/(revisions|assessment|centres|certifications|dives|equipment|imports|lead|mcp|planning|providers|sites|live)/"
+            "path": "^apps/server/src/(revisions|assessment|backups|centres|certifications|dives|equipment|imports|lead|mcp|planning|providers|sites|live)/"
           },
           "scope": "module"
         },
