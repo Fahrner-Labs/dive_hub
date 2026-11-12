@@ -44,7 +44,7 @@ const AREAS = [
   [/^apps\/web\/src\/BodyWeight\.tsx$/, ['@divers']],
   // A Diver certification cards (ADR 0050), a section of a Diver's page (slice 25c); their server side also takes part in the import.
   [/^apps\/web\/src\/Certifications\.tsx$|^apps\/server\/src\/certifications\//, ['@divers', '@account']],
-  [/^apps\/web\/src\/(SignedOut|AccountSettings|Connections|ProviderBuddies)\.tsx$|^apps\/web\/src\/lib\/form\.ts$/, ['@account']],
+  [/^apps\/web\/src\/(SignedOut|SetupRestore|AccountSettings|Connections|ProviderBuddies)\.tsx$|^apps\/web\/src\/lib\/form\.ts$/, ['@account']],
   [/^apps\/web\/src\/SettingsPage\.tsx$/, ['@account', '@admin']],
   // The Settings addresses: also the links to a Connection's settings from a Dive's panels, an Import and a push run.
   [/^apps\/web\/src\/lib\/settings\.ts$/, ['@account', '@admin', '@dives']],
@@ -62,6 +62,9 @@ const AREAS = [
   // AI accesses to the MCP endpoint (ADR 0035): on the account page, their switch on the admin page.
   [/^apps\/web\/src\/AiAccess\.tsx$|^apps\/web\/src\/lib\/ai-access\.ts$/, ['@account', '@admin']],
   [/^apps\/server\/src\/mcp\//, ['@account', '@admin']],
+  // Backup runs (plan FAH-175): the admin's page triggers them, downloads an archive and sets the schedule.
+  [/^apps\/web\/src\/BackupsPage\.tsx$|^apps\/web\/src\/lib\/backups\.ts$/, ['@admin']],
+  [/^apps\/server\/src\/backups\//, ['@admin']],
   [/^apps\/server\/src\/sites\/import\/|^apps\/server\/src\/(site-sources|providers\/ssi\/ssi-sites)\.ts$/, ['@admin', '@sites']],
   [/^apps\/server\/src\/sites\//, ['@sites', '@dives']],
   [/^apps\/server\/src\/centres\//, ['@sites', '@dives']],

@@ -1512,3 +1512,65 @@ export const certification = pgTable(
     check('certification_dives_ck', sql`${t.divesAtIssue} between 0 and 100000`),
   ],
 );
+
+/** A backup's trigger (ADR 0069): one the admin starts by hand, or the scheduled one. */
+export const backupRunKind = pgEnum('backup_run_kind', ['manual', 'scheduled']);
+
+/** A backup run's life: queued, being written, downloadable, or failed. */
+export const backupRunStatus = pgEnum('backup_run_status', ['queued', 'running', 'ready', 'failed']);
+
+/**
+ * One full-instance backup (ADR 0069, plan FAH-175): the worker writes one encrypted `.divehub-backup` archive under
+ * `backups/`, and the row is what the admin page lists. The partial unique index keeps at most one run in flight, so
+ * a manual and a scheduled backup never write at the same time.
+ */
+export const backupRun = pgTable(
+  'backup_runs',
+  {
+    id: id(),
+    kind: backupRunKind('kind').notNull(),
+    status: backupRunStatus('status').notNull().default('queued'),
+    bytes: bigint('bytes', { mode: 'number' }),
+    sha256: text('sha256'),
+    /** Why the run failed, as a code or a short operator-facing message; never a passphrase. */
+    error: text('error'),
+    createdBy: uuid('created_by').references(() => user.id, { onDelete: 'set null' }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+    startedAt: timestamp('started_at', { withTimezone: true }),
+    finishedAt: timestamp('finished_at', { withTimezone: true }),
+  },
+  (t) => [
+    index('backup_run_created_idx').on(t.createdAt),
+    // One in-flight backup at a time, manual or scheduled.
+    uniqueIndex('backup_run_in_flight_uq').on(sql`(1)`).where(sql`${t.status} in ('queued', 'running')`),
+    check('backup_run_bytes_ck', sql`${t.bytes} is null or ${t.bytes} >= 0`),
+  ],
+);
+
+/**
+ * The instance's scheduled-backup setting (plan FAH-175 slice 4): one row once an admin decides. A scheduled
+ * backup encrypts to the operator-held X25519 recipient, so the private key never reaches the server; the manual
+ * backup's passphrase stays in the request and the worker's memory.
+ */
+export const backupSettings = pgTable(
+  'backup_settings',
+  {
+    /** Always true: the table holds one row. */
+    id: boolean('id').primaryKey().default(true),
+    enabled: boolean('enabled').notNull().default(false),
+    /** How often a scheduled backup runs, in hours. */
+    intervalHours: integer('interval_hours').notNull().default(24),
+    /** How many scheduled runs retention keeps; manual runs are never deleted. */
+    retentionCount: integer('retention_count').notNull().default(7),
+    /** An age-style X25519 recipient (`age1…`); required while scheduling is on. */
+    recipientPublicKey: text('recipient_public_key'),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    check('backup_settings_one_row_ck', sql`${t.id}`),
+    check('backup_settings_interval_ck', sql`${t.intervalHours} between 1 and 168`),
+    check('backup_settings_retention_ck', sql`${t.retentionCount} between 1 and 365`),
+    check('backup_settings_recipient_ck', sql`not ${t.enabled} or ${t.recipientPublicKey} is not null`),
+  ],
+);

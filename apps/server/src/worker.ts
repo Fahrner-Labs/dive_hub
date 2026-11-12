@@ -1,6 +1,8 @@
 import { run, type Runner } from 'graphile-worker';
 import type pg from 'pg';
 import type { FastifyBaseLogger } from 'fastify';
+import { BACKUP_RUN_TASK, type BackupService } from './backups/backup-service.js';
+import { backupTask } from './backups/backup-task.js';
 import { EXPIRE_WAITING_IMPORTS_TASK, PROCESS_IMPORT_TASK, type ImportService } from './imports/import-service.js';
 import { IMPORT_DIVE_SITES_TASK, type SiteImportService } from './sites/import/site-import-service.js';
 import { PUSH_RUN_STEP_TASK, type PushRunService } from './providers/push/push-run-service.js';
@@ -64,6 +66,7 @@ export function processImportTask(
 }
 
 export interface WorkerDeps {
+  backups: BackupService;
   imports: ImportService;
   siteImports: SiteImportService;
   aiAccesses: AiAccessService;
@@ -76,7 +79,9 @@ export interface WorkerDeps {
 }
 
 export async function startWorker(pool: pg.Pool, deps: WorkerDeps): Promise<Runner> {
-  const { imports, siteImports, aiAccesses, assessments, pushRuns, waitingPushes, scheduledFetch, certifications, log } = deps;
+  const { backups, imports, siteImports, aiAccesses, assessments, pushRuns, waitingPushes, scheduledFetch, certifications, log } = deps;
+  // A backup still "running" now was cut off when the worker last stopped; its passphrase is gone with the process.
+  await backups.reconcileOrphans();
   // An import still "running" now was cut off when the worker last stopped.
   await siteImports.failInterrupted();
   // A run that was going when the worker stopped goes on: its next step is queued again (ADR 0047).
@@ -88,6 +93,7 @@ export async function startWorker(pool: pg.Pool, deps: WorkerDeps): Promise<Runn
     // Every night at 03:17 (UTC), the waiting Imports every hour, and automation every minute (ADR 0056).
     crontab: `17 3 * * * ${PURGE_AI_ACCESS_LOG_TASK}\n47 * * * * ${EXPIRE_WAITING_IMPORTS_TASK}\n* * * * * ${AUTOMATION_TICK_TASK}`,
     taskList: {
+      [BACKUP_RUN_TASK]: backupTask(backups, log),
       [PROCESS_IMPORT_TASK]: processImportTask(imports, waitingPushes, scheduledFetch, log),
       [IMPORT_DIVE_SITES_TASK]: async (payload) => {
         const siteImportId = idOf(payload, 'siteImportId');
@@ -112,10 +118,11 @@ export async function startWorker(pool: pg.Pool, deps: WorkerDeps): Promise<Runn
           });
         }
       },
-      // Wakes Waiting pushes and queues the scheduled fetches that are due (ADR 0056).
+      // Wakes Waiting pushes, queues the scheduled fetches that are due, and a backup whose interval passed (ADR 0056).
       [AUTOMATION_TICK_TASK]: async () => {
         await waitingPushes.tick();
         await scheduledFetch.tick();
+        await backups.tick();
       },
       // One Connection's scheduled fetch: an unattended Import, which PROCESS_IMPORT_TASK then runs.
       [SCHEDULED_FETCH_TASK]: async (payload) => {

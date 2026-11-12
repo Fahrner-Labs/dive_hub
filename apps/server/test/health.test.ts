@@ -14,7 +14,7 @@ import type { BlobStore } from '../src/storage/blob-store.js';
 
 /** The services as write-openapi.ts builds them, over no database: this route touches none. */
 const services = () => createServices({
-  db: {} as Db, blobs: {} as BlobStore, auth, secrets: createSecretBox(undefined), siteSources: {} as Record<ImportSource, SiteSourceAdapter>,
+  db: {} as Db, blobs: {} as BlobStore, auth, secrets: createSecretBox(undefined), dataDir: '/tmp', databaseUrl: 'postgres://unused', siteSources: {} as Record<ImportSource, SiteSourceAdapter>,
   adapters: [createSsiAdapter({ client: {} as SsiClient })],
 });
 

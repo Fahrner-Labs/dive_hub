@@ -1433,7 +1433,7 @@ test.describe('behaviour', () => {
     ['an imported dive site', () => `/#/sites/${importedSiteId}`, ['@sites']],
     ['Dive centres', () => '/#/centres', ['@sites']], ['Tools', () => '/#/tools?o2=32&depth=30&volume=11.1&pressure=200', ['@tools']], ['a gas plan', () => '/#/tools/plan?water=fresh&lv=20x15,12x10&dv=Tim~12~200~20~&dv=Ann~10~200~15~', ['@tools']], ['the lead calculator', () => '/#/tools/lead?lw=salt&suit=wetsuit&mm=5&hood=0&cyl=11.1%7Ealuminium', ['@tools']], ['a dive centre', () => `/#/centres/${centreId}`, ['@sites']], ['Settings', () => '/#/settings', ['@account']], ['Display', () => '/#/settings/display', ['@account']], ['Sign-in and security', () => '/#/settings/security', ['@account']],
     ['Connections', () => '/#/settings/connections', ['@account']], ['AI access', () => '/#/settings/ai-access', ['@account']], ['Devices', () => '/#/settings/devices', ['@account', '@divers']],
-    ['Review', () => '/#/review', ['@dives']], ['Administration', () => '/#/settings/admin', ['@admin']], ['site import', () => '/#/settings/admin/site-imports', ['@admin', '@sites']],
+    ['Review', () => '/#/review', ['@dives']], ['Administration', () => '/#/settings/admin', ['@admin']], ['site import', () => '/#/settings/admin/site-imports', ['@admin', '@sites']], ['Backups', () => '/#/settings/admin/backups', ['@admin']],
   ];
   for (const [name, path, tag] of sweep) {
     test(`${name} fits every width from 320 to 1440 px: no page or table scrolls sideways`, { tag: [...tag, '@layout'] }, async ({ page }) => {
@@ -1458,7 +1458,7 @@ test.describe('behaviour', () => {
   }
 
   test('text at 200 % still fits: nothing scrolls sideways (WCAG 1.4.4)', { tag: ['@layout'] }, async ({ page }) => {
-    for (const path of ['/', `/#/dives/${diveId}`, '/#/divers', '/#/sites', `/#/sites/${siteId}`, `/#/sites/${importedSiteId}`, '/#/centres', `/#/centres/${centreId}`, '/#/tools?o2=32&depth=30&volume=11.1&pressure=200', '/#/tools/lead?lw=salt&suit=wetsuit&mm=5&hood=0&cyl=11.1%7Ealuminium', '/#/review', '/#/settings', '/#/settings/display', '/#/settings/security', '/#/settings/connections', '/#/settings/ai-access', '/#/settings/devices', '/#/settings/admin', '/#/settings/admin/site-imports']) {
+    for (const path of ['/', `/#/dives/${diveId}`, '/#/divers', '/#/sites', `/#/sites/${siteId}`, `/#/sites/${importedSiteId}`, '/#/centres', `/#/centres/${centreId}`, '/#/tools?o2=32&depth=30&volume=11.1&pressure=200', '/#/tools/lead?lw=salt&suit=wetsuit&mm=5&hood=0&cyl=11.1%7Ealuminium', '/#/review', '/#/settings', '/#/settings/display', '/#/settings/security', '/#/settings/connections', '/#/settings/ai-access', '/#/settings/devices', '/#/settings/admin', '/#/settings/admin/site-imports', '/#/settings/admin/backups']) {
       await page.goto(path);
       await page.getByRole('heading', { level: 1 }).waitFor();
       await page.addStyleTag({ content: 'html { font-size: 200% !important; }' });

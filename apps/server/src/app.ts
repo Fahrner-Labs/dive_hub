@@ -50,6 +50,8 @@ import { aiAccessRoutes } from './mcp/access-routes.js';
 import { mcpEndpoint } from './mcp/endpoint.js';
 import { accountRoutes } from './users/account-routes.js';
 import { adminRoutes } from './users/admin-routes.js';
+import { backupRoutes } from './backups/backup-routes.js';
+import { setupRestoreRoutes } from './users/setup-restore-routes.js';
 import { userRoutes } from './users/routes.js';
 
 /** Every service, as createServices (compose.ts) builds them, and the instance's settings. */
@@ -58,6 +60,8 @@ export type AppDeps = Services & {
   baseUrl: string;
   maxUploadBytes: number;
   webDir?: string | undefined;
+  /** Called once the setup screen has restored an instance and its answer is written: the process exits (FAH-175). */
+  onRestored?: (() => void) | undefined;
 };
 
 /** The Fastify instance, logger included, before any route: main.ts hands its logger to the services first. */
@@ -109,8 +113,13 @@ export async function buildApp(deps: AppDeps, app: Server = createServer()) {
   const { db, auth, assessments, baseUrl, passwordResets, tokenAttempts, logbook, divers, centres, dives, merging, checks } = deps;
   const { pushes, waitingPushes, certifications } = deps.providers;
   await app.register(userRoutes, { prefix: '/api', auth, profiles: deps.profiles, setup: deps.setup, invitations: deps.invitations, tokenAttempts });
+  await app.register(setupRestoreRoutes, {
+    prefix: '/api', setup: deps.setup, setupRestore: deps.backups, blobs: deps.blobs, tokenAttempts,
+    ...(deps.onRestored && { onRestored: deps.onRestored }),
+  });
   await app.register(accountRoutes, { prefix: '/api', auth, passwordResets, sessions: deps.sessions, tokenAttempts });
   await app.register(adminRoutes, { prefix: '/api', auth, passwordResets, userAdmin: deps.userAdmin, invitations: deps.invitations, baseUrl });
+  await app.register(backupRoutes, { prefix: '/api', auth, backups: deps.backups });
   await app.register(importRoutes, { prefix: '/api', auth, imports: deps.imports, waitingPushes, maxUploadBytes: deps.maxUploadBytes });
   await app.register(logbookRoutes, { prefix: '/api', auth, logbook, pushes, waitingPushes });
   // dives owns the shapes it needs (dives/provider-port.ts); this is where the real Provider answerer is wired in.

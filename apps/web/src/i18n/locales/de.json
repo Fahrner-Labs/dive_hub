@@ -36,7 +36,12 @@
     "centres": "Tauchbasen",
     "tools": "Werkzeuge",
     "settings": "Einstellungen",
-    "short": { "sites": "Plätze", "centres": "Basen", "tools": "Werkz.", "equipment": "Ausr." }
+    "short": {
+      "sites": "Plätze",
+      "centres": "Basen",
+      "tools": "Werkz.",
+      "equipment": "Ausr."
+    }
   },
   "form": {
     "requiredLegend": "* erforderlich",
@@ -63,9 +68,25 @@
   },
   "setup": {
     "title": "Dive Hub einrichten",
+    "path": "Wie möchtest du starten?",
+    "pathFresh": "Neu anfangen",
+    "pathRestore": "Aus Backup wiederherstellen",
     "intro": "Lege das erste Admin-Konto an. Den Einrichtungscode findest du im Server-Log (zum Beispiel mit <code>docker compose logs app</code>).",
+    "restoreIntro": "Lade ein <code>.divehub-backup</code>-Archiv hoch oder wähle eines, das die Betreuung unter <code>/data/restore/</code> auf dem Server abgelegt hat. Die Wiederherstellung ersetzt diese frische Instanz durch das Backup; danach startet sie neu, damit die Instanz mit den wiederhergestellten Daten hochkommt.",
     "token": "Einrichtungscode",
-    "submit": "Admin anlegen"
+    "passphrase": "Backup-Passphrase oder privater Empfängerschlüssel",
+    "archive": "Backup-Archiv",
+    "chooseArchive": "Archiv wählen",
+    "noArchiveChosen": "Noch kein Archiv gewählt",
+    "source": "Wo liegt das Archiv?",
+    "sourceUpload": "Im Browser hochladen",
+    "sourcePlaced": "Eines auf dem Server verwenden",
+    "placedArchive": "Archiv unter /data/restore/",
+    "archiveMissing": "Wähle zuerst ein Archiv.",
+    "submit": "Admin anlegen",
+    "restoreSubmit": "Diese Instanz wiederherstellen",
+    "restored": "Das Backup wurde wiederhergestellt. Der Server hat sich beendet, damit er mit den wiederhergestellten Daten neu starten kann: Führe <code>docker compose restart app</code> in dem Ordner mit deiner Compose-Datei aus.",
+    "restoredHint": "Melde dich nach dem Neustart mit einem Konto aus dem Backup an."
   },
   "invitation": {
     "title": "Dive Hub beitreten",
@@ -171,6 +192,51 @@
     "disableBody": "Die Person kann sich nicht mehr anmelden und wird überall abgemeldet. Ihre Daten bleiben, und du kannst sie wieder aktivieren.",
     "signOutTitle": "{{name}} überall abmelden?",
     "signOutBody": "Alle Sitzungen enden. Die Person kann sich wieder anmelden."
+  },
+  "backups": {
+    "title": "Sicherungen",
+    "intro": "Eine Sicherung enthält die Datenbank und das Datenverzeichnis als ein verschlüsseltes Archiv. Bewahre das Archiv und die Passphrase oder den privaten Schlüssel sicher auf.",
+    "adminLead": "Sichere diese Dive-Hub-Instanz, lade die Sicherung herunter und richte geplante Sicherungen ein.",
+    "open": "Sicherungen",
+    "new": "Neue Sicherung",
+    "passphrase": "Passphrase der Sicherung",
+    "passphraseHint": "Mindestens 15 Zeichen. Sie gilt nur für diese Sicherung, wird nie gespeichert und ist zum Wiederherstellen wieder nötig.",
+    "create": "Sicherung erstellen",
+    "created": "Sicherung gestartet.",
+    "busy": "Eine Sicherung wartet bereits oder läuft. Warte, bis sie fertig ist.",
+    "list": "Sicherungsläufe",
+    "empty": "Noch keine Sicherungen.",
+    "time": "Erstellt",
+    "kind": "Art",
+    "status": "Status",
+    "size": "Größe",
+    "error": "Fehler",
+    "kindName": {
+      "manual": "Manuell",
+      "scheduled": "Geplant"
+    },
+    "statusName": {
+      "queued": "wartet",
+      "running": "läuft",
+      "ready": "fertig",
+      "failed": "fehlgeschlagen"
+    },
+    "download": "Herunterladen",
+    "downloadOf": "Sicherung vom {{date}} herunterladen",
+    "schedule": "Geplante Sicherungen",
+    "scheduleLead": "Geplante Sicherungen landen in /data/backups auf dem Server. Bewahre den privaten Schlüssel des Empfängers auf: ohne ihn lassen sich geplante Archive nicht wiederherstellen.",
+    "enabled": "Regelmäßig sichern",
+    "intervalHours": "Alle (Stunden)",
+    "intervalHint": "Eine ganze Zahl von 1 bis 168 Stunden.",
+    "retentionCount": "Aufzubewahrende Läufe",
+    "retentionHint": "Eine ganze Zahl von 1 bis 365 geplanten Läufen. Manuelle Sicherungen werden nie gelöscht, die letzte erfolgreiche auch nicht.",
+    "recipientPublicKey": "Öffentlicher Empfängerschlüssel",
+    "recipientHint": "Füge einen X25519-Empfänger im age-Stil ein (age1…). Geplante Archive werden für ihn verschlüsselt; der private Schlüssel geht nie an den Server.",
+    "save": "Zeitplan speichern",
+    "saved": "Sicherungszeitplan gespeichert.",
+    "intervalInvalid": "Verwende eine ganze Stundenzahl von 1 bis 168.",
+    "retentionInvalid": "Verwende eine ganze Zahl von 1 bis 365 Läufen.",
+    "recipientMissing": "Füge den öffentlichen Empfängerschlüssel ein oder schalte geplante Sicherungen aus."
   },
   "import": {
     "title": "Import",
@@ -454,6 +520,17 @@
     "upload_too_large": "Die Datei ist zu groß.",
     "setup_done": "Die Einrichtung ist bereits abgeschlossen. Melde dich stattdessen an.",
     "setup_token_invalid": "Der Einrichtungscode ist falsch oder abgelaufen. Den aktuellen findest du im Server-Log.",
+    "backup_passphrase_missing": "Gib die Passphrase des Backups ein.",
+    "setup_restore_key_missing": "Gib die Passphrase des Backups oder den privaten Empfängerschlüssel ein.",
+    "backup_settings_invalid": "Der Backup-Zeitplan liegt außerhalb des erlaubten Bereichs.",
+    "backup_recipient_missing": "Geplante Backups brauchen einen öffentlichen Empfängerschlüssel.",
+    "backup_recipient_invalid": "Das ist kein age-Empfänger (age1…).",
+    "setup_restore_source_missing": "Wähle ein Archiv zum Wiederherstellen.",
+    "setup_restore_archive_missing": "Unter /data/restore/ auf dem Server gibt es dieses Archiv nicht.",
+    "setup_restore_decrypt_failed": "Das Archiv konnte nicht entschlüsselt werden. Prüfe die Passphrase oder den privaten Empfängerschlüssel; das Archiv kann auch beschädigt sein.",
+    "setup_restore_key_mismatch": "Dieses Backup braucht denselben DIVEHUB_ENCRYPTION_KEY, mit dem es erstellt wurde. Setze den Schlüssel, bevor du es wiederherstellst.",
+    "setup_restore_schema_newer": "Dieses Backup wurde von einer neueren Dive-Hub-Version erstellt. Aktualisiere diese Instanz, bevor du es wiederherstellst.",
+    "setup_restore_failed": "Das Backup konnte nicht wiederhergestellt werden. Die Datenbank ist weiterhin leer; prüfe das Server-Log und versuch es noch einmal.",
     "invitation_invalid": "Diese Einladung ist ungültig, schon benutzt oder abgelaufen.",
     "invitation_not_found": "Diese Einladung ist nicht mehr offen.",
     "email_taken": "Mit dieser E-Mail-Adresse gibt es schon ein Konto.",
@@ -568,7 +645,12 @@
     "suit_invalid": "Die Angaben zum Anzug passen nicht: Eine Dicke gehört zu einem Nass- oder Halbtrockenanzug, ein Unterzieher zu einem Trockenanzug.",
     "gas_not_breathable": "Ein Gemisch mit unter 16 % Sauerstoff ist an der Oberfläche nicht atembar.",
     "too_many_live_streams": "Für dieses Konto sind zu viele Live-Verbindungen offen; schließe einen anderen Tab oder warte einen Moment.",
-    "live_unavailable": "Live-Aktualisierungen sind nicht verfügbar; die Seite prüft weiterhin auf Änderungen."
+    "live_unavailable": "Live-Aktualisierungen sind nicht verfügbar; die Seite prüft weiterhin auf Änderungen.",
+    "backup_not_found": "Dieses Backup gibt es nicht (mehr).",
+    "backup_in_progress": "Ein Backup ist bereits eingeplant oder läuft. Warte, bis es fertig ist.",
+    "backup_running": "Dieses Backup wird noch geschrieben.",
+    "backup_not_ready": "Dieses Backup ist noch nicht zum Herunterladen bereit.",
+    "backup_file_missing": "Das Backup-Archiv fehlt auf dem Server."
   },
   "vocabulary": {
     "waterType": {
@@ -1697,7 +1779,10 @@
     "importFetch": "Tauchgänge abrufen",
     "importFetchHint": "Dive Hub holt die Tauchgänge, die du noch nicht hast, wenn du es willst, und von selbst, wenn du unten den automatischen Abruf einschaltest.",
     "fetchKinds": "Arten von Tauchgängen abrufen",
-    "fetchKind": { "scuba": "Gerätetauchgänge", "apnea": "Apnoe-Sessions" },
+    "fetchKind": {
+      "scuba": "Gerätetauchgänge",
+      "apnea": "Apnoe-Sessions"
+    },
     "fetchKindsHint": "Mindestens eine bleibt gewählt. Schaltest du eine Art ein, kommen mit dem nächsten Abruf auch ihre älteren Tauchgänge.",
     "importOff": "Nichts",
     "importOffHint": "Dive Hub importiert deine Tauchgänge aus {{name}} nicht.",
@@ -1900,7 +1985,10 @@
       "tokenCreate": "Schlüssel bei Garmin Connect erstellen",
       "signInBodyToken": "Füge einen neuen Garmin-Schlüssel für {{account}} ein.",
       "disconnectBody": "Dive Hub vergisst deinen Garmin-Schlüssel. Die bereits abgerufenen Tauchgänge bleiben hier.",
-      "automation": { "title": "Automatisch bei Garmin", "titleDiver": "Automatisch bei Garmin: {{diver}}" }
+      "automation": {
+        "title": "Automatisch bei Garmin",
+        "titleDiver": "Automatisch bei Garmin: {{diver}}"
+      }
     },
     "ssi": {
       "intro": "Schicke deine Tauchgänge in dein SSI-Logbuch (die MySSI-App). Dive Hub meldet sich dafür für dich bei SSI an. SSI bietet dafür keine offizielle Schnittstelle, deshalb kann das Senden aufhören zu funktionieren, sobald SSI seine App ändert.",
@@ -2831,7 +2919,7 @@
       "leftOut_one": "{{count}} Tauchgang mit Blei und Anzug blieb unberücksichtigt, weil sein Platz keine Wasserart hat. Trage die Wasserart beim Platz ein.",
       "leftOut_other": "{{count}} Tauchgänge mit Blei und Anzug blieben unberücksichtigt, weil ihr Platz keine Wasserart hat. Trage die Wasserart beim Platz ein.",
       "openDive": "Tauchgang {{n}} öffnen",
-    "toSites": "Zu den Tauchplätzen",
+      "toSites": "Zu den Tauchplätzen",
       "check": "Gewichtscheck",
       "checkIntro": "Prüfe dein Gewicht vor dem Tauchgang im Wasser. Die Schätzung ist nur der Ausgangspunkt.",
       "step": {

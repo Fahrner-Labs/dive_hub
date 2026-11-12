@@ -70,6 +70,12 @@ export const userRoutes: FastifyPluginAsyncTypebox<UserRouteDeps> = async (app, 
       const { token: _, ...input } = request.body;
       const created = await createAndSignIn(request, reply, { ...input, role: 'admin' });
       request.log.info({ userId: created.id }, 'first admin created');
+      // The worker was held back while no admin existed (plan FAH-175); starting it now must not undo the creation.
+      try {
+        await setup.notifyDone();
+      } catch (error) {
+        request.log.error({ err: error }, 'could not start the worker after the first admin');
+      }
       return reply.code(201).send(toUserView(created));
     } catch (error) {
       restore();

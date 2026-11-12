@@ -4,16 +4,16 @@
 > `pnpm check` fails when this map is stale. Symbols are ranked by how widely the code references them;
 > each module shows its most-referenced ones (exported symbols rank higher). Search here before walking the tree.
 
-Files: 356 · symbols: 3226 · shown: 243
+Files: 370 · symbols: 3419 · shown: 254
 
 ### server/(root)
 apps/server/src/vocabulary.ts:13 type SiteWaterType
+apps/server/src/errors.ts:2 const errorMessage
 apps/server/src/vocabulary.ts:12 const SITE_WATER_TYPES
 apps/server/src/vocabulary.ts:51 type ImportSource
-apps/server/src/errors.ts:2 const errorMessage
-apps/server/src/compose.ts:65 fn createServices
-apps/server/src/app.ts:69 fn buildApp
-… 40 more symbols in this module
+apps/server/src/compose.ts:73 fn createServices
+apps/server/src/app.ts:73 fn buildApp
+… 39 more symbols in this module
 
 ### server/assessment
 apps/server/src/assessment/rules.ts:42 const RULES
@@ -33,12 +33,26 @@ apps/server/src/auth/auth.ts:52 fn createAuth
 apps/server/src/auth/password.ts:11 const MIN_PASSWORD_LENGTH
 … 23 more symbols in this module
 
+### server/backups
+apps/server/src/backups/backup-archive.ts:65 class BackupArchiveError
+apps/server/src/backups/restore-service.ts:25 class RestoreError
+apps/server/src/backups/restore-service.ts:139 fn createRestoreService
+apps/server/src/backups/backup-service.ts:48 class BackupError
+apps/server/src/backups/backup-archive.ts:145 const encryptionKeyFingerprint
+apps/server/src/backups/backup-service.ts:86 const isUniqueViolation
+apps/server/src/backups/backup-service.ts:458 type BackupService
+apps/server/src/backups/pg-command.ts:42 fn pgFailureMessage
+apps/server/src/backups/backup-archive.ts:96 iface BackupManifest
+apps/server/src/backups/backup-archive.ts:321 fn passphraseEncryption
+apps/server/src/backups/backup-service.ts:101 fn createBackupService
+… 142 more symbols in this module
+
 ### server/centres
 apps/server/src/centres/centre-view.ts:24 const CentreView
 apps/server/src/centres/centre-service.ts:12 const CENTRE_SOURCES
 apps/server/src/centres/centre-service.ts:18 class CentreError
-apps/server/src/centres/centre-service.ts:254 type CentreService
 apps/server/src/centres/centre-view.ts:7 const Source
+apps/server/src/centres/centre-service.ts:254 type CentreService
 apps/server/src/centres/routes.ts:61 const errors
 … 24 more symbols in this module
 
@@ -63,7 +77,7 @@ apps/server/src/db/auth-schema.ts:20 const user
 apps/server/src/db/import-types.ts:12 iface ImportedValues
 apps/server/src/db/import-types.ts:6 type ImportArea
 apps/server/src/db/auth-schema.ts:39 const session
-… 140 more symbols in this module
+… 144 more symbols in this module
 
 ### server/divers
 apps/server/src/divers/management.ts:8 fn managedDiverIds
@@ -111,11 +125,11 @@ apps/server/src/equipment/equipment-view.ts:22 const ServiceScheduleViewSchema
 ### server/http
 apps/server/src/http/schemas.ts:10 const Nullable
 apps/server/src/http/schemas.ts:5 const DateTime
-apps/server/src/http/schemas.ts:16 fn refTo
-apps/server/src/http/problems.ts:167 const Problem
-apps/server/src/http/problems.ts:170 const problem
-apps/server/src/http/problems.ts:194 const answerErrors
-… 22 more symbols in this module
+apps/server/src/http/schemas.ts:4 const IdParams
+apps/server/src/http/problems.ts:183 const Problem
+apps/server/src/http/problems.ts:186 const problem
+apps/server/src/http/problems.ts:210 const answerErrors
+… 24 more symbols in this module
 
 ### server/imports
 apps/server/src/imports/parsed-recording.ts:36 iface ParsedRecording
@@ -219,9 +233,9 @@ apps/server/src/scripts/write-openapi.ts:23 const response
 apps/server/src/secrets/secret-box.ts:12 iface SecretBox
 apps/server/src/secrets/secret-box.ts:31 fn createSecretBox
 apps/server/src/secrets/secret-box.ts:22 fn parseEncryptionKey
-apps/server/src/secrets/secret-box.ts:10 const VERSION
-apps/server/src/secrets/secret-box.ts:7 const KEY_BYTES
 apps/server/src/secrets/secret-box.ts:9 const TAG_BYTES
+apps/server/src/secrets/secret-box.ts:8 const IV_BYTES
+apps/server/src/secrets/secret-box.ts:10 const VERSION
 … 1 more symbols in this module
 
 ### server/sites
@@ -234,16 +248,16 @@ apps/server/src/sites/import/site-source.ts:41 class SiteSourceError
 apps/server/src/sites/import/site-source.ts:27 iface SourceSite
 apps/server/src/sites/sources.ts:10 const SITE_SOURCES
 apps/server/src/sites/sources.ts:33 const SOURCE_INFO
-apps/server/src/sites/site-error.ts:13 fn isUniqueViolation
 apps/server/src/sites/sources.ts:14 const IMPORT_SOURCES
 apps/server/src/sites/site-ids.ts:26 fn accountOf
+apps/server/src/sites/site-ids.ts:105 fn storeId
 … 163 more symbols in this module
 
 ### server/storage
-apps/server/src/storage/blob-store.ts:25 iface BlobStore
-apps/server/src/storage/blob-store.ts:14 class UploadTooLargeError
-apps/server/src/storage/blob-store.ts:36 fn createLocalBlobStore
-apps/server/src/storage/blob-store.ts:8 iface StoredBlob
+apps/server/src/storage/blob-store.ts:26 iface BlobStore
+apps/server/src/storage/blob-store.ts:15 class UploadTooLargeError
+apps/server/src/storage/blob-store.ts:9 iface StoredBlob
+apps/server/src/storage/blob-store.ts:39 fn createLocalBlobStore
 
 ### server/users
 apps/server/src/users/views.ts:23 const UserView
@@ -252,18 +266,18 @@ apps/server/src/users/tokens.ts:5 const sha256
 apps/server/src/users/views.ts:43 const toUserView
 apps/server/src/users/user-admin-service.ts:10 class UserAdminError
 apps/server/src/users/tokens.ts:4 const newToken
-… 45 more symbols in this module
+… 58 more symbols in this module
 
 ### web/(root)
-apps/web/src/api.ts:216 fn unwrap
+apps/web/src/api.ts:224 fn unwrap
 apps/web/src/api.ts:10 const api
-apps/web/src/api.ts:132 const keys
+apps/web/src/api.ts:136 const keys
 apps/web/src/api.ts:35 class ApiError
 apps/web/src/ToolsLead.tsx:45 fn Panel
-apps/web/src/api.ts:278 const diversQuery
 apps/web/src/api.ts:15 type Problem
+apps/web/src/api.ts:305 const diversQuery
 apps/web/src/api.ts:70 type DiveView
-apps/web/src/api.ts:101 type ProviderView
+apps/web/src/api.ts:105 type ProviderView
 apps/web/src/PushRun.tsx:21 const named
 apps/web/src/ReviewRows.tsx:35 fn Candidates
 apps/web/src/CodeScanner.tsx:106 fn CodeScanner
@@ -279,7 +293,7 @@ apps/web/src/ProviderConflicts.tsx:14 fn useConflictValueText
 apps/web/src/WaitingPush.tsx:117 fn WaitingPushState
 apps/web/src/ImportPanel.tsx:39 const ImportContext
 apps/web/src/ToolsLead.tsx:54 fn Conditions
-… 657 more symbols in this module
+… 672 more symbols in this module
 
 ### web/i18n
 apps/web/src/i18n/languages.ts:6 fn pickLanguage
@@ -296,13 +310,14 @@ apps/web/src/lib/providers.ts:70 fn useProviderText
 apps/web/src/lib/providers.ts:47 fn useProviders
 apps/web/src/lib/page.ts:8 fn usePageTitle
 apps/web/src/lib/providers.ts:87 fn useJoinNames
+apps/web/src/lib/settings.ts:13 fn settingsHref
 apps/web/src/lib/focus.ts:28 fn refocusAfterRemoval
 apps/web/src/lib/geo.ts:4 iface Position
-apps/web/src/lib/settings.ts:13 fn settingsHref
 apps/web/src/lib/focus.ts:16 fn focusHeading
 apps/web/src/lib/units.ts:20 const depthIn
 apps/web/src/lib/providers.ts:9 type SyncedField
 apps/web/src/lib/tools.ts:49 iface ToolsParams
+apps/web/src/lib/form.ts:4 const formValues
 apps/web/src/lib/devices.ts:18 const deviceName
 apps/web/src/lib/review.ts:14 fn reviewHref
 apps/web/src/lib/providers.ts:55 fn useProviderOf
@@ -312,14 +327,13 @@ apps/web/src/lib/units.ts:4 type UnitSystem
 apps/web/src/lib/units.ts:22 const pressureIn
 apps/web/src/lib/logbook.ts:39 fn logbookHref
 apps/web/src/lib/display.ts:53 fn useProblemText
-apps/web/src/lib/focus.ts:9 fn focusFirstIn
-… 325 more symbols in this module
+… 332 more symbols in this module
 
 ### web/ui
 apps/web/src/ui/Layout.tsx:85 fn Notice
 apps/web/src/ui/Button.tsx:20 fn Button
 apps/web/src/ui/Layout.tsx:99 const Muted
 apps/web/src/ui/Overlay.tsx:13 fn Dialog
-apps/web/src/ui/TextField.tsx:35 fn TextField
 apps/web/src/ui/Form.tsx:9 fn Form
+apps/web/src/ui/TextField.tsx:35 fn TextField
 … 56 more symbols in this module

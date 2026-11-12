@@ -77,7 +77,9 @@ removes the browser's six-connections-per-origin concern; the client also elects
 required.
 Several app processes on one database need clocks that agree (NTP), because the Provider leases use the app's time
 ([ADR 0027](../decisions/0027-providers-as-adapters.md#downsides-accepted-owner-2026-10-05)).
-Backup = `pg_dump` + the file volume.
+Backup = one encrypted `.divehub-backup` archive of the database and the file volume, with a manifest
+([ADR 0069](../decisions/0069-full-instance-backup-and-restore.md)); an operator's own `pg_dump` and `tar` remain
+possible.
 
 ## Authentication
 
@@ -94,7 +96,7 @@ switches it on; behind a reverse proxy, `/mcp` must be forwarded like `/api`.
 | `DIVEHUB_TRUSTED_PROXIES` | Comma-separated IPs/CIDRs of the reverse proxy. Only their `X-Forwarded-For` counts for the client IP (rate limiting, session records). |
 | `DIVEHUB_AUTH_SECRET` | Cookie signing secret; generated into the data directory when unset. |
 | `DIVEHUB_CONTACT` | Optional: the operator's e-mail address or URL, added to the User-Agent of Site imports ([below](#dive-site-imports-and-licenses)). Not sent to SSI: calls there carry the SSI app's User-Agent ([ADR 0049](../decisions/0049-ssi-app-user-agent.md)). |
-| `DIVEHUB_ENCRYPTION_KEY` | Optional: 32 bytes as base64 (`openssl rand -base64 32`). Encrypts what Dive Hub keeps for Targets (SSI tokens and passwords, [ADR 0024](../decisions/0024-ssi-target-via-app-api.md)). Without it, Users can't choose "Keep me signed in" for SSI, and tokens are stored as they are. Keep it apart from database backups; losing it means every User signs in to SSI again. A wrong length stops the server at start. |
+| `DIVEHUB_ENCRYPTION_KEY` | Optional: 32 bytes as base64 (`openssl rand -base64 32`). Encrypts what Dive Hub keeps for Targets (SSI tokens and passwords, [ADR 0024](../decisions/0024-ssi-target-via-app-api.md)). Without it, Users can't choose "Keep me signed in" for SSI, and tokens are stored as they are. A `.divehub-backup` archive stores only its fingerprint, never the key ([ADR 0069](../decisions/0069-full-instance-backup-and-restore.md)); losing it means every User signs in to SSI again. A wrong length stops the server at start. |
 | `DIVEHUB_SSI_URL` | Only for tests: another endpoint for SSI's app API. |
 | `DIVEHUB_OVERPASS_URL`, `DIVEHUB_WIKIDATA_SPARQL_URL` | Optional: other endpoints for Site imports (default `overpass-api.de`, `query.wikidata.org`). |
 | `DIVEHUB_SSI_SITES_URL` | Optional: another address for SSI's site list (default `api.divessi.com/app/APP_CACHE_SITES.zip`, ADR 0025). |

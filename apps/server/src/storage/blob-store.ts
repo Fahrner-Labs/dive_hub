@@ -3,6 +3,7 @@ import { createWriteStream } from 'node:fs';
 import { mkdir, open, readFile, rename, rm, stat } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import type { Readable } from 'node:stream';
+import { Transform } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 
 export interface StoredBlob {
@@ -25,6 +26,8 @@ export class UploadTooLargeError extends Error {
 export interface BlobStore {
   putIncoming(stream: Readable, maxBytes: number): Promise<StoredBlob>;
   putOriginal(data: Uint8Array): Promise<StoredBlob>;
+  /** Writes a stream at `key` (its directory made first) and returns what it wrote; used for backups, which can be huge. */
+  put(key: string, stream: Readable): Promise<StoredBlob>;
   read(key: string): Promise<Buffer>;
   /** The first bytes, at most `bytes` of them: enough to tell what a file is without reading it whole. */
   head(key: string, bytes: number): Promise<Buffer>;
@@ -74,6 +77,27 @@ export function createLocalBlobStore(root: string): BlobStore {
         await rename(tmp, target);
       }
       return { key, sha256, sizeBytes: data.byteLength };
+    },
+
+    async put(key, stream) {
+      const target = pathOf(key);
+      await mkdir(dirname(target), { recursive: true });
+      const hash = createHash('sha256');
+      let size = 0;
+      const digest = new Transform({
+        transform(chunk: Buffer, _encoding, done) {
+          size += chunk.length;
+          hash.update(chunk);
+          done(null, chunk);
+        },
+      });
+      try {
+        await pipeline(stream, digest, createWriteStream(target, { flags: 'w' }));
+      } catch (error) {
+        await rm(target, { force: true });
+        throw error;
+      }
+      return { key, sha256: hash.digest('hex'), sizeBytes: size };
     },
 
     read: (key) => readFile(pathOf(key)),

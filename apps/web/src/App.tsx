@@ -35,10 +35,11 @@ const ReviewPage = lazy(() => import('./ReviewPage.tsx').then((m) => ({ default:
 const ToolsPage = lazy(() => import('./ToolsPage.tsx').then((m) => ({ default: m.ToolsPage })));
 const EquipmentPage = lazy(() => import('./EquipmentPage.tsx').then((m) => ({ default: m.EquipmentPage })));
 const SiteImportPage = lazy(() => import('./SiteImportPage.tsx').then((m) => ({ default: m.SiteImportPage })));
+const BackupsPage = lazy(() => import('./BackupsPage.tsx').then((m) => ({ default: m.BackupsPage })));
 
 /**
  * Minimal hash routing: "#/" (logbook, "#/?diver=<id>" for one Diver, "#/?site=<id>" for one Dive site),
- * "#/dives/<id>" ("?recording=<id>"), "#/review" ("?tab=imports|decided|deleted"), "#/divers" ("?certifications=own|<diver id>" leads on to the Diver's page), "#/divers/<id>" ("?open=certifications"), "#/sites" ("?q=…&country=…&mine=1&sort=…&order=…&page=…"), "#/sites/<id>", "#/centres", "#/centres/<id>", "#/equipment" ("?item=<id>" opens a Device's item), "#/tools" ("?o2=32&depth=30&…"), "#/tools/plan" ("?mix=32&lv=20x20&dv=…"), "#/tools/lead" ("?lw=salt&suit=wetsuit&mm=5&cyl=12~steel"), "#/settings" ("#/settings/<section>", "#/settings/connections?connection=<id>"), "#/settings/admin/site-imports", "#/setup", "#/invite/<token>", "#/reset/<token>".
+ * "#/dives/<id>" ("?recording=<id>"), "#/review" ("?tab=imports|decided|deleted"), "#/divers" ("?certifications=own|<diver id>" leads on to the Diver's page), "#/divers/<id>" ("?open=certifications"), "#/sites" ("?q=…&country=…&mine=1&sort=…&order=…&page=…"), "#/sites/<id>", "#/centres", "#/centres/<id>", "#/equipment" ("?item=<id>" opens a Device's item), "#/tools" ("?o2=32&depth=30&…"), "#/tools/plan" ("?mix=32&lv=20x20&dv=…"), "#/tools/lead" ("?lw=salt&suit=wetsuit&mm=5&cyl=12~steel"), "#/settings" ("#/settings/<section>", "#/settings/connections?connection=<id>"), "#/settings/admin/site-imports", "#/settings/admin/backups", "#/setup", "#/invite/<token>", "#/reset/<token>".
  * The addresses from before Settings ("#/account…", "#/admin…") are replaced by their new ones before routing.
  */
 function useRoute(): string {
@@ -150,6 +151,9 @@ function SignedIn({ route, me }: { route: string; me: Me }) {
   if (settings) return <SettingsPage section={settings[1]} me={me} params={params} />;
   if (path === '/settings/admin/site-imports') {
     return me.user.role === 'admin' ? <SiteImportPage /> : <><PageHeader title={t('siteImport.title')} /><Notice tone="danger">{t('errors.admins_only')}</Notice></>;
+  }
+  if (path === '/settings/admin/backups') {
+    return me.user.role === 'admin' ? <BackupsPage /> : <><PageHeader title={t('backups.title')} /><Notice tone="danger">{t('errors.admins_only')}</Notice></>;
   }
   return <Logbook params={logbookParams(params)} />;
 }

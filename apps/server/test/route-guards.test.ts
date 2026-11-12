@@ -23,6 +23,7 @@ const PUBLIC = new Set([
   'GET /api/health/live', 'GET /api/health/ready', 'GET /api/openapi.json',
   'GET /api/auth/*', 'POST /api/auth/*',
   'GET /api/setup', 'POST /api/setup',
+  'GET /api/setup/restore/archives', 'POST /api/setup/restore',
   'POST /api/invitations/lookup', 'POST /api/invitations/accept',
   'POST /api/password-resets/lookup', 'POST /api/password-resets/complete',
 ]);

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Trans, useTranslation } from 'react-i18next';
 import { api, authClient, invitationLinkQuery, passwordResetQuery, unwrap } from './api.ts';
@@ -5,7 +6,8 @@ import { resetDeletion } from './lib/deletion.ts';
 import { useErrorText } from './lib/display.ts';
 import { formValues } from './lib/form.ts';
 import { usePageTitle } from './lib/page.ts';
-import { Button, Form, Muted, Notice, Panel, PasswordField, TextField } from './ui/index.ts';
+import { SetupRestore } from './SetupRestore.tsx';
+import { Button, Form, Muted, Notice, Panel, PasswordField, RadioGroup, TextField } from './ui/index.ts';
 
 const MIN_PASSWORD_LENGTH = 15;
 const MAX_PASSWORD_LENGTH = 128;
@@ -65,12 +67,13 @@ export function SignIn() {
   );
 }
 
-/** First start: whoever has the setup token from the server log creates the first admin. */
+/** First start: create the first admin, or restore the instance from a backup (plan FAH-175). */
 export function Setup() {
   const { t } = useTranslation();
   usePageTitle(t('setup.title'));
   const errorText = useErrorText();
   const signedIn = useUserChanged();
+  const [path, setPath] = useState<'fresh' | 'restore'>('fresh');
   const setup = useMutation({
     mutationFn: async ({ token, name, email, password }: Record<string, string>) =>
       unwrap(await api.POST('/api/setup', { body: { token: token!.trim(), name: name!, email: email!, password: password! } })),
@@ -79,15 +82,28 @@ export function Setup() {
 
   return (
     <Panel title={t('setup.title')} narrow level={1}>
-      <p><Trans i18nKey="setup.intro" components={{ code: <code /> }} /></p>
-      <Form className="form" onSubmit={(e) => setup.mutate(formValues(e))}>
-        <TextField label={t('setup.token')} name="token" isRequired autoComplete="off" autoCorrect="off" spellCheck="false" />
-        <TextField label={t('form.name')} name="name" isRequired maxLength={100} autoComplete="name" />
-        <TextField label={t('form.email')} name="email" type="email" isRequired autoComplete="username" spellCheck="false" />
-        <NewPasswordField label={t('form.password')} />
-        {setup.error && <Notice tone="danger">{errorText(setup.error)}</Notice>}
-        <div className="form-actions"><Button type="submit" variant="primary" isPending={setup.isPending}>{t('setup.submit')}</Button></div>
-      </Form>
+      <RadioGroup
+        label={t('setup.path')}
+        value={path}
+        onChange={(value) => setPath(value as 'fresh' | 'restore')}
+        options={[
+          { value: 'fresh', label: t('setup.pathFresh') },
+          { value: 'restore', label: t('setup.pathRestore') },
+        ]}
+      />
+      {path === 'restore' ? <SetupRestore /> : (
+        <>
+          <p><Trans i18nKey="setup.intro" components={{ code: <code /> }} /></p>
+          <Form className="form" onSubmit={(e) => setup.mutate(formValues(e))}>
+            <TextField label={t('setup.token')} name="token" isRequired autoComplete="off" autoCorrect="off" spellCheck="false" />
+            <TextField label={t('form.name')} name="name" isRequired maxLength={100} autoComplete="name" />
+            <TextField label={t('form.email')} name="email" type="email" isRequired autoComplete="username" spellCheck="false" />
+            <NewPasswordField label={t('form.password')} />
+            {setup.error && <Notice tone="danger">{errorText(setup.error)}</Notice>}
+            <div className="form-actions"><Button type="submit" variant="primary" isPending={setup.isPending}>{t('setup.submit')}</Button></div>
+          </Form>
+        </>
+      )}
     </Panel>
   );
 }

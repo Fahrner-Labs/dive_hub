@@ -98,6 +98,10 @@ export type ReadCodeView = paths['/api/verification-codes/read']['post']['respon
 export type SiteRevisionView = Ok<'/api/dive-sites/{id}/revisions'>[number];
 export type SiteImportView = Ok<'/api/admin/site-imports/{id}'>;
 export type SiteImportArea = SiteImportView['area'];
+/** One backup run as the admin page lists it (plan FAH-175): no archive until it is ready. */
+export type BackupRunView = Ok<'/api/admin/backups'>[number];
+/** The instance's scheduled-backup setting. */
+export type BackupSettingsView = Ok<'/api/admin/backups/settings'>;
 export type ProviderView = Ok<'/api/providers'>[number];
 export type ConnectionView = Ok<'/api/connections'>[number];
 export type ProviderStatusView = Ok<'/api/dives/{id}/providers/{provider}'>;
@@ -132,6 +136,7 @@ export type DiveGearItemView = DiveGearView['putOn'][number];
 export const keys = {
   me: ['me'] as const,
   setup: ['setup'] as const,
+  setupRestoreArchives: ['setup', 'restore', 'archives'] as const,
   users: ['users'] as const,
   invitations: ['invitations'] as const,
   /** What an invitation or password reset link opens (ADR 0013); not under ['invitations'], the admin's list. */
@@ -171,6 +176,9 @@ export const keys = {
   centres: ['centres'] as const,
   centre: (id: string) => ['centres', id] as const,
   siteImports: ['site-imports'] as const,
+  /** Admin backups (plan FAH-175): the run list, and the scheduled-backup setting under it. */
+  backups: ['backups'] as const,
+  backupSettings: ['backups', 'settings'] as const,
   providers: ['providers'] as const,
   connections: ['connections'] as const,
   /** Dives gone at a Provider, waiting for the User's choice (ADR 0051). */
@@ -237,6 +245,25 @@ export const meQuery = () => queryOptions({
 });
 export const setupQuery = () =>
   queryOptions({ queryKey: keys.setup, queryFn: async () => unwrap(await api.GET('/api/setup')) });
+/** Backups the operator put in /data/restore/ on the server, offered instead of a browser upload (plan FAH-175). */
+export const setupRestoreArchivesQuery = () =>
+  queryOptions({
+    queryKey: keys.setupRestoreArchives,
+    queryFn: async () => unwrap(await api.GET('/api/setup/restore/archives')),
+  });
+/** Admin backups (plan FAH-175): poll while a run is queued or running, as no live hint carries their progress. */
+export const backupsQuery = () =>
+  queryOptions({
+    queryKey: keys.backups,
+    queryFn: async () => unwrap(await api.GET('/api/admin/backups')),
+    refetchInterval: (q) => (q.state.data?.some((r) => r.status === 'queued' || r.status === 'running') ? 2000 : false),
+  });
+/** The instance's scheduled-backup setting. */
+export const backupSettingsQuery = () =>
+  queryOptions({
+    queryKey: keys.backupSettings,
+    queryFn: async () => unwrap(await api.GET('/api/admin/backups/settings')),
+  });
 export const usersQuery = () => queryOptions({ queryKey: keys.users, queryFn: async () => unwrap(await api.GET('/api/users')) });
 export const sessionsQuery = () => queryOptions({ queryKey: keys.sessions, queryFn: async () => unwrap(await api.GET('/api/me/sessions')) });
 export const invitationsQuery = () => queryOptions({ queryKey: keys.invitations, queryFn: async () => unwrap(await api.GET('/api/invitations')) });

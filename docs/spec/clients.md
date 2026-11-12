@@ -1,6 +1,6 @@
 ---
 title: Client contract
-summary: What every client of the Dive Hub API must do (web client, native mobile app, scripts) - obligations first, then each area's duties and conventions; with reasons, ADRs and where the web client does it; importing dives from a Provider (settings, preview, decisions, outcome), times without a time zone, Dives without a Recording; the dive assessment (findings as facts with sources, the fixed note, no score); AI accesses (what to say before one is made, the key once, the log) and the MCP endpoint (what it promises LLM clients); plus server gaps found while writing it.
+summary: What every client of the Dive Hub API must do (web client, native mobile app, scripts) - obligations first, then each area's duties and conventions; with reasons, ADRs and where the web client does it; importing dives from a Provider (settings, preview, decisions, outcome), times without a time zone, Dives without a Recording; the dive assessment (findings as facts with sources, the fixed note, no score); AI accesses (what to say before one is made, the key once, the log), the MCP endpoint (what it promises LLM clients) and admin backups (a manual run, its download, the schedule); plus server gaps found while writing it.
 status: living
 date: 2026-10-06
 ---
@@ -200,6 +200,15 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
 ### Signing in and the first start
 - **First start:** if `GET /api/setup` says `needed`, show the setup form. Whoever has the setup token from the
   server log creates the first admin. Say where the token is (ADR 0012). *Web:* `SignedOut.tsx` (`Setup`).
+- **First start offers two paths:** *Start fresh* (the first-admin form above) or *Restore from backup*: the setup
+  token, the archive's key, and either an uploaded `.divehub-backup` archive (`POST /api/setup/restore`,
+  multipart; streamed to disk, no fixed upload cap) or one the operator placed in `/data/restore/`
+  (`GET /api/setup/restore/archives` lists them). The key is a manual backup's passphrase or a scheduled backup's
+  age-style recipient private key (`AGE-SECRET-KEY-1…`); the route takes the former in `passphrase` and the latter in
+  `recipientKey`, and also recognises a private key sent in `passphrase`. Say that restoring replaces this fresh
+  instance and that the server stops after success; the operator restarts it and signs in with an account from the
+  backup. A refusal keeps the setup token usable for a corrected retry. *Web:* `SignedOut.tsx` (`Setup`),
+  `SetupRestore.tsx`.
 - **Invitations and reset links:** look the token up first (`/lookup`), then show for whom it is (the e-mail).
   An invalid, used or expired link says so and to ask the admin for a new one. *Web:* `AcceptInvitation`, `ResetPassword`.
 - **Passwords:** 15 to 128 characters, enforced by the server. Say the rule beside the field
@@ -252,6 +261,27 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   and works again when switched back on. "Revoke all" (`DELETE /api/admin/ai-accesses`) asks first and can't be undone.
   Admins see how many accesses exist, never whose or what they read. *Web:* `AiAccess.tsx` (`AiAccessSetting`).
 - **Admin pages only for admins.** The server refuses anyone else (`admins_only`).
+- **Manual backups** (`GET`/`POST /api/admin/backups`, `GET /api/admin/backups/{id}/download`):
+  - `POST` with a `passphrase` (15–1024 characters, the app's password minimum: an archive stored anywhere must resist
+    an offline crack) queues one run encrypted with it. **Must not store or log the
+    passphrase** (not in local storage, the address or a request log); say it is needed again to restore. A run is
+    `queued`/`running` until `ready` or `failed`: poll the list (no live hint carries it), and show kind, status,
+    size, created-at and error. While one is queued or running, offer no second start (`backup_in_progress`).
+  - **Download only a `ready` run**, through a plain authenticated link (`backup_running`/`backup_not_ready` while it
+    isn't, `backup_file_missing` when the archive is gone). This is a file handoff: the browser saves the archive and
+    nothing renders in the app. **Admins still see no other User's Dives**; a backup is the whole instance's state as
+    an encrypted file, not an admin view of it ([ADR 0069](../decisions/0069-full-instance-backup-and-restore.md)).
+  - `DELETE /api/admin/backups/{id}` removes a finished run and its archive, and cancels a `queued` run (removing its
+    job too, so the one-in-flight slot frees); only a `running` one is refused (`backup_running`). **Cancelling a
+    queued run is a client duty:** offer it on a queued run, since leaving one behind keeps every later run out. A
+    client that offers it asks first; the v1 web page offers neither yet.
+- **Scheduled backups** (`GET`/`PUT /api/admin/backups/settings`): one setting for the instance — on/off, interval in
+  hours (1–168), retention count (1–365), and the operator-held X25519 recipient (`age1…`) that scheduled archives
+  encrypt to. The recipient is required while scheduling is on; the private key never goes to the server. Say that a
+  scheduled backup lands on the server's `/data/backups`, that retention keeps the newest scheduled runs and never
+  deletes a manual run or the last successful one, and that the operator must keep the private key to restore. On
+  `backup_recipient_missing` / `backup_recipient_invalid` say what to paste; on `backup_settings_invalid` show the
+  allowed ranges. *Web:* `BackupsPage.tsx` (both manual and scheduled backups, `#/settings/admin/backups`).
 - **Users:**
   - Don't offer to demote, disable or delete the last enabled admin, or to disable or delete oneself; the
     server refuses those too (ADR 0013).

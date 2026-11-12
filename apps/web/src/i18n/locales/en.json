@@ -36,7 +36,12 @@
     "centres": "Dive centres",
     "tools": "Tools",
     "settings": "Settings",
-    "short": { "sites": "Sites", "centres": "Centres", "tools": "Tools", "equipment": "Gear" }
+    "short": {
+      "sites": "Sites",
+      "centres": "Centres",
+      "tools": "Tools",
+      "equipment": "Gear"
+    }
   },
   "form": {
     "required": "Fill in this field.",
@@ -63,9 +68,25 @@
   },
   "setup": {
     "title": "Set up Dive Hub",
+    "path": "How do you want to start?",
+    "pathFresh": "Start fresh",
+    "pathRestore": "Restore from backup",
     "intro": "Create the first admin account. The setup token is in the server log (for example <code>docker compose logs app</code>).",
+    "restoreIntro": "Upload a <code>.divehub-backup</code> archive, or pick one the operator placed in <code>/data/restore/</code> on the server. Restoring replaces this fresh instance with the backup; it then restarts so the instance can come up on the restored data.",
     "token": "Setup token",
-    "submit": "Create admin"
+    "passphrase": "Backup passphrase or recipient private key",
+    "archive": "Backup archive",
+    "chooseArchive": "Choose archive",
+    "noArchiveChosen": "No archive chosen yet",
+    "source": "Where is the archive?",
+    "sourceUpload": "Upload it in the browser",
+    "sourcePlaced": "Use one on the server",
+    "placedArchive": "Archive in /data/restore/",
+    "archiveMissing": "Choose an archive first.",
+    "submit": "Create admin",
+    "restoreSubmit": "Restore this instance",
+    "restored": "The backup was restored. The server has stopped itself so it can restart on the restored data: run <code>docker compose restart app</code> in the folder with your Compose file.",
+    "restoredHint": "After the restart, sign in with an account from the backup."
   },
   "invitation": {
     "title": "Join Dive Hub",
@@ -171,6 +192,51 @@
     "disableBody": "They can’t sign in anymore and are signed out everywhere. Their data stays, and you can enable them again.",
     "signOutTitle": "Sign {{name}} out everywhere?",
     "signOutBody": "All their sessions end. They can sign in again."
+  },
+  "backups": {
+    "title": "Backups",
+    "intro": "A backup holds the database and the data directory as one encrypted archive. Keep the archive and its passphrase or private key somewhere safe.",
+    "adminLead": "Take a backup of this Dive Hub, download it, and set up scheduled backups.",
+    "open": "Backups",
+    "new": "New backup",
+    "passphrase": "Backup passphrase",
+    "passphraseHint": "At least 15 characters. It is used for this backup only, never stored, and needed again to restore.",
+    "create": "Create backup",
+    "created": "Backup started.",
+    "busy": "A backup is already queued or running. Wait until it is done.",
+    "list": "Backup runs",
+    "empty": "No backups yet.",
+    "time": "Created",
+    "kind": "Kind",
+    "status": "Status",
+    "size": "Size",
+    "error": "Error",
+    "kindName": {
+      "manual": "Manual",
+      "scheduled": "Scheduled"
+    },
+    "statusName": {
+      "queued": "waiting",
+      "running": "running",
+      "ready": "ready",
+      "failed": "failed"
+    },
+    "download": "Download",
+    "downloadOf": "Download the backup from {{date}}",
+    "schedule": "Scheduled backups",
+    "scheduleLead": "Scheduled backups land in /data/backups on the server. Keep the private key for the recipient: without it, scheduled archives cannot be restored.",
+    "enabled": "Back up on a schedule",
+    "intervalHours": "Every (hours)",
+    "intervalHint": "A whole number from 1 to 168 hours.",
+    "retentionCount": "Runs to keep",
+    "retentionHint": "A whole number from 1 to 365 scheduled runs. Manual backups are never deleted, and neither is the last successful one.",
+    "recipientPublicKey": "Recipient public key",
+    "recipientHint": "Paste an age-style X25519 recipient (age1…). Scheduled archives encrypt to it; the private key never goes to the server.",
+    "save": "Save schedule",
+    "saved": "Backup schedule saved.",
+    "intervalInvalid": "Use a whole number of hours from 1 to 168.",
+    "retentionInvalid": "Use a whole number of runs from 1 to 365.",
+    "recipientMissing": "Paste the recipient public key, or switch scheduled backups off."
   },
   "import": {
     "title": "Import",
@@ -454,6 +520,17 @@
     "upload_too_large": "The file is too large.",
     "setup_done": "Setup is already done. Sign in instead.",
     "setup_token_invalid": "The setup token is wrong or expired. Check the server log for the current one.",
+    "backup_passphrase_missing": "Enter the backup’s passphrase.",
+    "setup_restore_key_missing": "Enter the backup passphrase or the recipient private key.",
+    "backup_settings_invalid": "The backup schedule is outside the allowed range.",
+    "backup_recipient_missing": "Scheduled backups need a recipient public key.",
+    "backup_recipient_invalid": "That is not an age recipient (age1…).",
+    "setup_restore_source_missing": "Choose an archive to restore.",
+    "setup_restore_archive_missing": "There is no such archive in /data/restore/ on the server.",
+    "setup_restore_decrypt_failed": "The archive could not be decrypted. Check the passphrase or recipient private key; the archive may also be damaged.",
+    "setup_restore_key_mismatch": "This backup needs the same DIVEHUB_ENCRYPTION_KEY it was made with. Set that key before restoring it.",
+    "setup_restore_schema_newer": "This backup was made by a newer Dive Hub. Upgrade this instance before restoring it.",
+    "setup_restore_failed": "The backup could not be restored. The database is still empty; check the server log and try again.",
     "invitation_invalid": "This invitation is invalid, used or expired.",
     "invitation_not_found": "This invitation is no longer open.",
     "email_taken": "Someone with this e-mail address already has an account.",
@@ -568,7 +645,12 @@
     "suit_invalid": "The suit’s values don’t fit: a thickness is for a wetsuit or a semidry suit, an undergarment for a drysuit.",
     "gas_not_breathable": "A mix with under 16 % oxygen can’t be breathed at the surface.",
     "too_many_live_streams": "Too many live connections are open for this account; close another tab or wait a moment.",
-    "live_unavailable": "Live updates are unavailable; the page keeps checking for changes."
+    "live_unavailable": "Live updates are unavailable; the page keeps checking for changes.",
+    "backup_not_found": "This backup doesn’t exist (anymore).",
+    "backup_in_progress": "A backup is already queued or running. Wait until it is done.",
+    "backup_running": "This backup is still being written.",
+    "backup_not_ready": "This backup is not ready to download.",
+    "backup_file_missing": "The backup archive is missing on the server."
   },
   "vocabulary": {
     "waterType": {
@@ -1697,7 +1779,10 @@
     "importFetch": "Fetch dives",
     "importFetchHint": "Dive Hub fetches the dives you haven’t got yet when you ask, and by itself if you turn on the automatic fetch below.",
     "fetchKinds": "Kinds of dive to fetch",
-    "fetchKind": { "scuba": "Scuba dives", "apnea": "Apnea sessions" },
+    "fetchKind": {
+      "scuba": "Scuba dives",
+      "apnea": "Apnea sessions"
+    },
     "fetchKindsHint": "At least one stays chosen. Turning a kind on takes in its older dives with the next fetch.",
     "importOff": "Nothing",
     "importOffHint": "Dive Hub doesn’t import your dives from {{name}}.",
@@ -1900,7 +1985,10 @@
       "tokenCreate": "Create a key at Garmin Connect",
       "signInBodyToken": "Paste a new Garmin key for {{account}}.",
       "disconnectBody": "Dive Hub forgets your Garmin key. The dives already fetched stay here.",
-      "automation": { "title": "Automatic at Garmin", "titleDiver": "Automatic at Garmin: {{diver}}" }
+      "automation": {
+        "title": "Automatic at Garmin",
+        "titleDiver": "Automatic at Garmin: {{diver}}"
+      }
     },
     "ssi": {
       "intro": "Send your dives to your SSI logbook (the MySSI app). Dive Hub signs in to SSI for you. SSI has no official interface for this, so sending can stop working whenever SSI changes its app.",
@@ -2831,7 +2919,7 @@
       "leftOut_one": "{{count}} dive with lead and a suit was left out because its site has no water type. Add the water type to the site.",
       "leftOut_other": "{{count}} dives with lead and a suit were left out because their site has no water type. Add the water type to the site.",
       "openDive": "Open dive {{n}}",
-    "toSites": "Go to the sites",
+      "toSites": "Go to the sites",
       "check": "Weight check",
       "checkIntro": "Check your weight in the water before the dive. The estimate is only where to start.",
       "step": {
