@@ -39,7 +39,8 @@ test('restores from an archive placed in /data/restore/ and says to restart the 
 
   await page.goto('/#/setup');
   await page.getByText('Restore from backup', { exact: true }).click();
-  await expect(page.getByText('nightly.divehub-backup')).toBeVisible();
+  await page.getByText('Use one on the server', { exact: true }).click();
+  await expect(page.getByRole('button', { name: /nightly\.divehub-backup/ })).toBeVisible();
   await page.getByLabel('Setup token').fill('a-setup-token-long-enough');
   await page.getByRole('textbox', { name: 'Backup passphrase' }).fill('the backup passphrase');
   await page.getByRole('button', { name: 'Restore this instance' }).click();

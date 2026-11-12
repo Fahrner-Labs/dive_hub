@@ -31,7 +31,7 @@ test('an admin takes a manual backup, downloads it, and saves a schedule', { tag
       && response.request().method() === 'PUT' && response.ok()),
     page.getByRole('button', { name: 'Save schedule' }).click(),
   ]);
-  await page.getByRole('checkbox', { name: 'Back up on a schedule' }).click();
+  await page.getByText('Back up on a schedule', { exact: true }).click();
   await page.getByRole('spinbutton', { name: 'Every (hours)' }).fill('12');
   await page.getByRole('spinbutton', { name: 'Runs to keep' }).fill('4');
   await page.getByRole('textbox', { name: 'Recipient public key' }).fill(RECIPIENT);
@@ -45,7 +45,7 @@ test('an admin takes a manual backup, downloads it, and saves a schedule', { tag
   await expect(page.getByRole('textbox', { name: 'Recipient public key' })).toHaveValue(RECIPIENT);
 
   // Leave none behind for the next test on this server: a schedule would queue runs of its own.
-  await page.getByRole('checkbox', { name: 'Back up on a schedule' }).click();
+  await page.getByText('Back up on a schedule', { exact: true }).click();
   await saveSchedule();
   await expect(page.getByRole('checkbox', { name: 'Back up on a schedule' })).not.toBeChecked();
 });
