@@ -12,7 +12,7 @@ test('an admin takes a manual backup, downloads it, and saves a schedule', { tag
   await expectGoodPage(page, 'Backups');
 
   // A manual run: the passphrase is used for this run only.
-  await page.getByLabel('Backup passphrase').fill('correct horse battery staple');
+  await page.getByRole('textbox', { name: 'Backup passphrase' }).fill('correct horse battery staple');
   await page.getByRole('button', { name: 'Create backup' }).click();
   const run = page.getByRole('region', { name: 'Backup runs' }).locator('tbody tr').first();
   await expect(run).toContainText('Manual');

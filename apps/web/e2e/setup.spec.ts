@@ -17,16 +17,16 @@ test('offers starting fresh or restoring, and the fresh form is unchanged', { ta
   await expect(page.getByLabel('Setup token')).toBeVisible();
   await expect(page.getByLabel('Name')).toBeVisible();
   await expect(page.getByLabel('E-mail')).toBeVisible();
-  await expect(page.getByLabel('Password', { exact: true })).toBeVisible();
+  await expect(page.getByRole('textbox', { name: 'Password' })).toBeVisible();
 
-  await page.getByRole('radio', { name: 'Restore from backup' }).click();
-  await expect(page.getByLabel('Backup passphrase')).toBeVisible();
+  await page.getByText('Restore from backup', { exact: true }).click();
+  await expect(page.getByRole('textbox', { name: 'Backup passphrase' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Choose archive' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Restore this instance' })).toBeVisible();
 
-  await page.getByRole('radio', { name: 'Start fresh' }).click();
+  await page.getByText('Start fresh', { exact: true }).click();
   await expect(page.getByLabel('Name')).toBeVisible();
-  await expect(page.getByLabel('Backup passphrase')).toHaveCount(0);
+  await expect(page.getByRole('textbox', { name: 'Backup passphrase' })).toHaveCount(0);
 });
 
 test('restores from an archive placed in /data/restore/ and says to restart the server', { tag: ['@account'] }, async ({ page }) => {
@@ -38,10 +38,10 @@ test('restores from an archive placed in /data/restore/ and says to restart the 
   });
 
   await page.goto('/#/setup');
-  await page.getByRole('radio', { name: 'Restore from backup' }).click();
+  await page.getByText('Restore from backup', { exact: true }).click();
   await expect(page.getByText('nightly.divehub-backup')).toBeVisible();
   await page.getByLabel('Setup token').fill('a-setup-token-long-enough');
-  await page.getByLabel('Backup passphrase').fill('the backup passphrase');
+  await page.getByRole('textbox', { name: 'Backup passphrase' }).fill('the backup passphrase');
   await page.getByRole('button', { name: 'Restore this instance' }).click();
 
   await expect(page.getByText(/The backup was restored/)).toBeVisible();
