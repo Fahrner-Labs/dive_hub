@@ -32,16 +32,16 @@ test('an admin takes a manual backup, downloads it, and saves a schedule', { tag
     page.getByRole('button', { name: 'Save schedule' }).click(),
   ]);
   await page.getByText('Back up on a schedule', { exact: true }).click();
-  await page.getByRole('spinbutton', { name: 'Every (hours)' }).fill('12');
-  await page.getByRole('spinbutton', { name: 'Runs to keep' }).fill('4');
+  await page.getByRole('textbox', { name: 'Every (hours)' }).fill('12');
+  await page.getByRole('textbox', { name: 'Runs to keep' }).fill('4');
   await page.getByRole('textbox', { name: 'Recipient public key' }).fill(RECIPIENT);
   await saveSchedule();
   await expect(page.getByRole('checkbox', { name: 'Back up on a schedule' })).toBeChecked();
 
   await page.reload();
   await expect(page.getByRole('checkbox', { name: 'Back up on a schedule' })).toBeChecked();
-  await expect(page.getByRole('spinbutton', { name: 'Every (hours)' })).toHaveValue('12');
-  await expect(page.getByRole('spinbutton', { name: 'Runs to keep' })).toHaveValue('4');
+  await expect(page.getByRole('textbox', { name: 'Every (hours)' })).toHaveValue('12');
+  await expect(page.getByRole('textbox', { name: 'Runs to keep' })).toHaveValue('4');
   await expect(page.getByRole('textbox', { name: 'Recipient public key' })).toHaveValue(RECIPIENT);
 
   // Leave none behind for the next test on this server: a schedule would queue runs of its own.
