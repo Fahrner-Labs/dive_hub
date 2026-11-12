@@ -131,6 +131,7 @@ export async function createTestApp(t: TestDatabase, options: {
   const ssiClock = { now: 0, advance(ms: number) { this.now += ms; } };
   const services = createServices({
     db: t.db, auth: createTestAuth(t.db, authOptions), blobs: createLocalBlobStore(t.dataDir), secrets: createSecretBox(encryptionKey ?? undefined),
+    dataDir: t.dataDir, databaseUrl: t.pool.options.connectionString!, encryptionKey: encryptionKey ?? undefined,
     siteSources: siteSources ?? { osm: unreachable('osm'), wikidata: unreachable('wikidata'), ssi: unreachable('ssi') },
     adapters: [
       ssi(createSsiAdapter({

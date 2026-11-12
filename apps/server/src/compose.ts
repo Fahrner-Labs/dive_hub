@@ -2,10 +2,12 @@
 // Divers, centres, Dives, sites, planning and the rest), built in the order they use each other. start.ts, the server
 // tests' createTestApp, the browser tests' server and write-openapi.ts all build them here, and differ only in the parts
 // they pass in (adapters, sources, clock); buildApp in app.ts only registers the routes with them.
+import { fileURLToPath } from 'node:url';
 import type { Auth } from './auth/auth.js';
 import type { Db } from './db/client.js';
 import type { FastifyBaseLogger } from 'fastify';
 import { createAssessmentService } from './assessment/assessment-service.js';
+import { createBackupService, type BackupLog } from './backups/backup-service.js';
 import { createCentreService } from './centres/centre-service.js';
 import { createCandidateService } from './dives/candidates/candidate-service.js';
 import { createLogbookCheckService } from './dives/checks/logbook-check-service.js';
@@ -51,6 +53,12 @@ export interface ServiceParts {
   blobs: BlobStore;
   auth: Auth;
   secrets: SecretBox;
+  /** Where the data volume is mounted (default: the blob store's root); backups read it and use its `tmp/`. */
+  dataDir?: string;
+  /** The database a backup dumps (default: DATABASE_URL). */
+  databaseUrl?: string;
+  /** DIVEHUB_ENCRYPTION_KEY, whose fingerprint a backup manifest records (never the key itself). */
+  encryptionKey?: Buffer | undefined;
   /** The Providers of this instance (ADR 0027): the production SSI, or the fake and test-only ones. */
   adapters: ProviderAdapter[];
   siteSources: Record<ImportSource, SiteSourceAdapter>;
@@ -62,8 +70,20 @@ export interface ServiceParts {
   live?: { connectionString: string };
 }
 
-export function createServices({ db, blobs, auth, secrets, adapters, siteSources, clock, log, live: liveSettings }: ServiceParts) {
+export function createServices({
+  db, blobs, auth, secrets, adapters, siteSources, clock, log, live: liveSettings, dataDir, databaseUrl, encryptionKey,
+}: ServiceParts) {
   const assessments = createAssessmentService(db);
+  const backupLog: BackupLog = {
+    info: () => {},
+    warn: (detail, message) => log?.warn(detail, message),
+    error: (detail, message) => log?.error(detail, message),
+  };
+  const backups = createBackupService({
+    db, blobs, dataDir: dataDir ?? blobs.pathOf(''), databaseUrl: databaseUrl ?? process.env.DATABASE_URL ?? '',
+    migrationsFolder: fileURLToPath(new URL('../drizzle', import.meta.url)), appVersion: process.env.DIVEHUB_VERSION ?? 'dev',
+    encryptionKey, log: backupLog,
+  });
   const providers = createProviderLayer({ db, blobs, secrets, adapters, ...(clock && { clock }), ...(log && { log }) });
   // Dive and site Revisions also tell open pages (ADR 0066), through the same listener seam as the Waiting pushes.
   listenToChanges(withRevisionHints(providers.noteChanges));
@@ -78,7 +98,7 @@ export function createServices({ db, blobs, auth, secrets, adapters, siteSources
   // Restoring a Dive an append took undoes the append (ADR 0063).
   const dives = createDiveService(db, continuation);
   return {
-    db, blobs, auth, assessments, providers, imports,
+    db, blobs, auth, assessments, backups, providers, imports,
     siteImports: createSiteImportService({ db, sources: siteSources }),
     aiAccesses: createAiAccessService(db, auth),
     setup: createSetupService(db),
@@ -109,6 +129,6 @@ export type Services = ReturnType<typeof createServices>;
 
 /** What the worker's tasks use, from the services. */
 export const workerDeps = (s: Services, log: FastifyBaseLogger): WorkerDeps => ({
-  imports: s.imports, siteImports: s.siteImports, aiAccesses: s.aiAccesses, assessments: s.assessments, pushRuns: s.providers.pushRuns,
+  backups: s.backups, imports: s.imports, siteImports: s.siteImports, aiAccesses: s.aiAccesses, assessments: s.assessments, pushRuns: s.providers.pushRuns,
   waitingPushes: s.providers.waitingPushes, scheduledFetch: s.providers.scheduledFetch, certifications: s.providers.certifications, log,
 });

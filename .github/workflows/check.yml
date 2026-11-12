@@ -49,6 +49,16 @@ jobs:
       - name: Baseline to compare with
         run: echo "BASELINE_REF=${{ github.event_name == 'pull_request' && format('origin/{0}', github.base_ref) || github.event_name == 'workflow_dispatch' && 'origin/main' || github.event.before }}" >> "$GITHUB_ENV"
 
+      # pg_dump/pg_restore for the backup tests (ADR 0068); the major version tracks the postgres service image.
+      - name: PostgreSQL 18 client
+        run: |
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl -fsSL -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client-18
+          pg_dump --version
+
       # pnpm's version comes from packageManager in package.json.
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4

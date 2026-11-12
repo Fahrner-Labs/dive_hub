@@ -32,6 +32,7 @@ export async function start(config: Config) {
   });
   const services = createServices({
     db, auth, blobs: createLocalBlobStore(config.dataDir), secrets: createSecretBox(config.encryptionKey),
+    dataDir: config.dataDir, databaseUrl: config.databaseUrl, encryptionKey: config.encryptionKey,
     siteSources: createSiteSources({ contact: config.contact, overpassUrl: config.overpassUrl, wikidataUrl: config.wikidataSparqlUrl, ssiSitesUrl: config.ssiSitesUrl }),
     // The Providers of this instance (ADR 0027): SSI and Garmin. Every call to SSI is logged (no token or password), to
     // tell Dive Hub's use of an account from the owner's own (docs/references/ssi-app-api.md).

@@ -4,15 +4,15 @@
 > `pnpm check` fails when this map is stale. Symbols are ranked by how widely the code references them;
 > each module shows its most-referenced ones (exported symbols rank higher). Search here before walking the tree.
 
-Files: 356 · symbols: 3226 · shown: 243
+Files: 360 · symbols: 3283 · shown: 249
 
 ### server/(root)
 apps/server/src/vocabulary.ts:13 type SiteWaterType
 apps/server/src/vocabulary.ts:12 const SITE_WATER_TYPES
 apps/server/src/vocabulary.ts:51 type ImportSource
 apps/server/src/errors.ts:2 const errorMessage
-apps/server/src/compose.ts:65 fn createServices
-apps/server/src/app.ts:69 fn buildApp
+apps/server/src/compose.ts:73 fn createServices
+apps/server/src/app.ts:70 fn buildApp
 … 40 more symbols in this module
 
 ### server/assessment
@@ -32,6 +32,15 @@ apps/server/src/auth/fastify.ts:94 fn requireAdmin
 apps/server/src/auth/auth.ts:52 fn createAuth
 apps/server/src/auth/password.ts:11 const MIN_PASSWORD_LENGTH
 … 23 more symbols in this module
+
+### server/backups
+apps/server/src/backups/backup-service.ts:29 class BackupError
+apps/server/src/backups/backup-service.ts:53 const isUniqueViolation
+apps/server/src/backups/backup-service.ts:201 type BackupService
+apps/server/src/backups/backup-archive.ts:184 fn encryptStream
+apps/server/src/backups/backup-archive.ts:41 iface BackupPart
+apps/server/src/backups/backup-archive.ts:34 class BackupArchiveError
+… 48 more symbols in this module
 
 ### server/centres
 apps/server/src/centres/centre-view.ts:24 const CentreView
@@ -63,7 +72,7 @@ apps/server/src/db/auth-schema.ts:20 const user
 apps/server/src/db/import-types.ts:12 iface ImportedValues
 apps/server/src/db/import-types.ts:6 type ImportArea
 apps/server/src/db/auth-schema.ts:39 const session
-… 140 more symbols in this module
+… 143 more symbols in this module
 
 ### server/divers
 apps/server/src/divers/management.ts:8 fn managedDiverIds
@@ -111,10 +120,10 @@ apps/server/src/equipment/equipment-view.ts:22 const ServiceScheduleViewSchema
 ### server/http
 apps/server/src/http/schemas.ts:10 const Nullable
 apps/server/src/http/schemas.ts:5 const DateTime
-apps/server/src/http/schemas.ts:16 fn refTo
-apps/server/src/http/problems.ts:167 const Problem
-apps/server/src/http/problems.ts:170 const problem
-apps/server/src/http/problems.ts:194 const answerErrors
+apps/server/src/http/schemas.ts:4 const IdParams
+apps/server/src/http/problems.ts:173 const Problem
+apps/server/src/http/problems.ts:176 const problem
+apps/server/src/http/problems.ts:200 const answerErrors
 … 22 more symbols in this module
 
 ### server/imports
@@ -219,9 +228,9 @@ apps/server/src/scripts/write-openapi.ts:23 const response
 apps/server/src/secrets/secret-box.ts:12 iface SecretBox
 apps/server/src/secrets/secret-box.ts:31 fn createSecretBox
 apps/server/src/secrets/secret-box.ts:22 fn parseEncryptionKey
-apps/server/src/secrets/secret-box.ts:10 const VERSION
-apps/server/src/secrets/secret-box.ts:7 const KEY_BYTES
 apps/server/src/secrets/secret-box.ts:9 const TAG_BYTES
+apps/server/src/secrets/secret-box.ts:8 const IV_BYTES
+apps/server/src/secrets/secret-box.ts:10 const VERSION
 … 1 more symbols in this module
 
 ### server/sites
@@ -234,16 +243,16 @@ apps/server/src/sites/import/site-source.ts:41 class SiteSourceError
 apps/server/src/sites/import/site-source.ts:27 iface SourceSite
 apps/server/src/sites/sources.ts:10 const SITE_SOURCES
 apps/server/src/sites/sources.ts:33 const SOURCE_INFO
-apps/server/src/sites/site-error.ts:13 fn isUniqueViolation
 apps/server/src/sites/sources.ts:14 const IMPORT_SOURCES
 apps/server/src/sites/site-ids.ts:26 fn accountOf
+apps/server/src/sites/site-ids.ts:105 fn storeId
 … 163 more symbols in this module
 
 ### server/storage
-apps/server/src/storage/blob-store.ts:25 iface BlobStore
-apps/server/src/storage/blob-store.ts:14 class UploadTooLargeError
-apps/server/src/storage/blob-store.ts:36 fn createLocalBlobStore
-apps/server/src/storage/blob-store.ts:8 iface StoredBlob
+apps/server/src/storage/blob-store.ts:26 iface BlobStore
+apps/server/src/storage/blob-store.ts:15 class UploadTooLargeError
+apps/server/src/storage/blob-store.ts:9 iface StoredBlob
+apps/server/src/storage/blob-store.ts:39 fn createLocalBlobStore
 
 ### server/users
 apps/server/src/users/views.ts:23 const UserView
@@ -260,8 +269,8 @@ apps/web/src/api.ts:10 const api
 apps/web/src/api.ts:132 const keys
 apps/web/src/api.ts:35 class ApiError
 apps/web/src/ToolsLead.tsx:45 fn Panel
-apps/web/src/api.ts:278 const diversQuery
 apps/web/src/api.ts:15 type Problem
+apps/web/src/api.ts:278 const diversQuery
 apps/web/src/api.ts:70 type DiveView
 apps/web/src/api.ts:101 type ProviderView
 apps/web/src/PushRun.tsx:21 const named

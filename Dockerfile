@@ -37,7 +37,9 @@ COPY --from=build /repo/apps/server/dist ./dist
 COPY --from=build /repo/apps/server/drizzle ./drizzle
 COPY --from=build /repo/apps/web/dist ./web
 COPY LICENSE NOTICE ./
-RUN mkdir -p /data && chown node:node /data
+# pg_dump/pg_restore for instance backups (ADR 0068); the major version tracks the postgres service image.
+RUN apk add --no-cache postgresql18-client \
+ && mkdir -p /data && chown node:node /data
 USER node
 EXPOSE 3000
 VOLUME ["/data"]

@@ -1512,3 +1512,38 @@ export const certification = pgTable(
     check('certification_dives_ck', sql`${t.divesAtIssue} between 0 and 100000`),
   ],
 );
+
+/** A backup's trigger (ADR 0068): one the admin starts by hand, or the scheduled one. */
+export const backupRunKind = pgEnum('backup_run_kind', ['manual', 'scheduled']);
+
+/** A backup run's life: queued, being written, downloadable, or failed. */
+export const backupRunStatus = pgEnum('backup_run_status', ['queued', 'running', 'ready', 'failed']);
+
+/**
+ * One full-instance backup (ADR 0068, plan FAH-175): the worker writes one encrypted `.divehub-backup` archive under
+ * `backups/`, and the row is what the admin page lists. The partial unique index keeps at most one run in flight, so
+ * a manual and a scheduled backup never write at the same time.
+ */
+export const backupRun = pgTable(
+  'backup_runs',
+  {
+    id: id(),
+    kind: backupRunKind('kind').notNull(),
+    status: backupRunStatus('status').notNull().default('queued'),
+    bytes: bigint('bytes', { mode: 'number' }),
+    sha256: text('sha256'),
+    /** Why the run failed, as a code or a short operator-facing message; never a passphrase. */
+    error: text('error'),
+    createdBy: uuid('created_by').references(() => user.id, { onDelete: 'set null' }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+    startedAt: timestamp('started_at', { withTimezone: true }),
+    finishedAt: timestamp('finished_at', { withTimezone: true }),
+  },
+  (t) => [
+    index('backup_run_created_idx').on(t.createdAt),
+    // One in-flight backup at a time, manual or scheduled.
+    uniqueIndex('backup_run_in_flight_uq').on(sql`(1)`).where(sql`${t.status} in ('queued', 'running')`),
+    check('backup_run_bytes_ck', sql`${t.bytes} is null or ${t.bytes} >= 0`),
+  ],
+);
