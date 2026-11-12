@@ -12,8 +12,8 @@ import { backupRun, backupSettings } from '../db/schema.js';
 import { PROBLEMS } from '../http/problems.js';
 import type { BlobStore } from '../storage/blob-store.js';
 import {
-  BACKUP_EXTENSION, BackupArchiveError, buildManifest, encryptionKeyFingerprint, fileTreeChecksum, isRecipient, packContainer,
-  passphraseEncryption, recipientEncryption, tarDirectory, type BackupEncryption, type BackupPart,
+  BACKUP_EXTENSION, BACKUP_SKIPPED_DIRS, BackupArchiveError, buildManifest, encryptionKeyFingerprint, fileTreeChecksum, isRecipient,
+  packContainer, passphraseEncryption, recipientEncryption, tarDirectory, type BackupEncryption, type BackupPart,
 } from './backup-archive.js';
 import { createRestoreService, RestoreError, type RestoreLog } from './restore-service.js';
 
@@ -21,9 +21,6 @@ const execFileAsync = promisify(execFile);
 
 /** The graphile-worker task that writes one backup; the payload carries the row's id. */
 export const BACKUP_RUN_TASK = 'backup-run';
-
-/** Directories the file tar leaves out: archives, our own temp files, a restore's uploads, and the app's ephemeral run files. */
-export const BACKUP_SKIPPED_DIRS = ['backups', 'tmp', 'restore', 'run'];
 
 export type BackupRunRow = typeof backupRun.$inferSelect;
 

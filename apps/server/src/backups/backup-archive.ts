@@ -20,6 +20,9 @@ const execFileAsync = promisify(execFile);
 export const BACKUP_FORMAT_VERSION = 1;
 export const BACKUP_EXTENSION = '.divehub-backup';
 
+/** Top-level data-directory directories a backup leaves out and a restore leaves in place. */
+export const BACKUP_SKIPPED_DIRS = ['backups', 'tmp', 'restore', 'run'];
+
 const MANIFEST_NAME = 'manifest.json';
 const DATABASE_NAME = 'database.dump';
 const FILES_NAME = 'files.tar.gz';

@@ -8,7 +8,7 @@ import { randomUUID } from 'node:crypto';
 import { promisify } from 'node:util';
 import { errorMessage } from '../errors.js';
 import {
-  BackupArchiveError, encryptionKeyFingerprint, openArchiveStreamingWith, type BackupDecryptionKey, type BackupManifest,
+  BACKUP_SKIPPED_DIRS, BackupArchiveError, encryptionKeyFingerprint, openArchiveStreamingWith, type BackupDecryptionKey, type BackupManifest,
 } from './backup-archive.js';
 
 const execFileAsync = promisify(execFile);
@@ -109,8 +109,8 @@ function stderrOf(error: unknown): string {
   return typeof stderr === 'string' && stderr.trim() !== '' ? stderr.trim() : errorMessage(error);
 }
 
-/** Directories a restore must leave in place: archives, its own temp work, uploads and the app's run files. */
-const KEPT_ON_RESTORE = new Set(['backups', 'tmp', 'restore', 'run']);
+/** Directories a restore must leave in place: the same ones the backup leaves out. */
+const KEPT_ON_RESTORE = new Set(BACKUP_SKIPPED_DIRS);
 
 /** Replaces the managed data directory: remove what the archive does not own, then unpack its files over it. */
 async function replaceFiles(dataDir: string, filesPath: string): Promise<void> {

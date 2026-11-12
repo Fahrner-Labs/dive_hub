@@ -123,9 +123,15 @@ describe.skipIf(!(await databaseReachable()))('restoring a backup', () => {
       const restore = createRestoreService({
         dataDir: targetDir, databaseUrl: scratch.url, migrationsFolder, encryptionKey: TEST_ENCRYPTION_KEY, log: silent,
       });
-      // A restore replaces the managed files: a file the archive does not hold must not survive; archives stay.
+      // A restore replaces the managed files: a file the archive does not hold must not survive; the kept dirs stay.
       await mkdir(join(targetDir, 'backups'), { recursive: true });
       await writeFile(join(targetDir, 'backups', 'older.divehub-backup'), 'an older archive');
+      await mkdir(join(targetDir, 'restore'), { recursive: true });
+      await writeFile(join(targetDir, 'restore', 'placed.divehub-backup'), 'a placed archive');
+      await mkdir(join(targetDir, 'tmp'), { recursive: true });
+      await writeFile(join(targetDir, 'tmp', 'keep.txt'), 'restore scratch');
+      await mkdir(join(targetDir, 'run'), { recursive: true });
+      await writeFile(join(targetDir, 'run', 'heartbeat.json'), 'the app lock');
       await mkdir(join(targetDir, 'stale-dir'), { recursive: true });
       await writeFile(join(targetDir, 'stale-dir', 'old.txt'), 'not in the backup');
       await writeFile(join(targetDir, 'stale-file.txt'), 'not in the backup');
@@ -149,8 +155,34 @@ describe.skipIf(!(await databaseReachable()))('restoring a backup', () => {
       expect(await stat(join(targetDir, 'stale-file.txt')).catch(() => null)).toBeNull();
       expect(await stat(join(targetDir, 'stale-dir')).catch(() => null)).toBeNull();
       expect(await readFile(join(targetDir, 'backups', 'older.divehub-backup'), 'utf8')).toBe('an older archive');
+      expect(await readFile(join(targetDir, 'restore', 'placed.divehub-backup'), 'utf8')).toBe('a placed archive');
+      expect(await readFile(join(targetDir, 'tmp', 'keep.txt'), 'utf8')).toBe('restore scratch');
+      expect(await readFile(join(targetDir, 'run', 'heartbeat.json'), 'utf8')).toBe('the app lock');
     } finally {
       await scratch.drop();
+      await rm(targetDir, { recursive: true, force: true });
+    }
+  });
+
+  it('fails on the files before touching the database', async () => {
+    if (!(await restoreToolsAvailable())) return;
+    // A grammar-valid archive whose files part is not a tar: the checksums and manifest pass, tar fails.
+    const passphrase = 'file-failure-passphrase';
+    const archive = await makeArchive(t.dataDir, {
+      passphrase, migrationHead: await imageMigrationHead(migrationsFolder), key: TEST_ENCRYPTION_KEY,
+    });
+    const targetDir = await mkdtemp(join(tmpdir(), 'divehub-restore-target-'));
+    await writeFile(join(targetDir, 'stale-file.txt'), 'not in the backup');
+    try {
+      const restore = createRestoreService({
+        dataDir: targetDir, databaseUrl: 'postgres://divehub:nowhere@127.0.0.1:1/never',
+        migrationsFolder, encryptionKey: TEST_ENCRYPTION_KEY, log: silent,
+      });
+      // The file error, not the unreachable database: files are unpacked before pg_restore runs.
+      await expect(restore.restore({ archivePath: archive, passphrase }))
+        .rejects.toMatchObject({ name: 'RestoreError', code: 'backup_files_failed' });
+      expect(await stat(join(targetDir, 'stale-file.txt')).catch(() => null)).toBeNull();
+    } finally {
       await rm(targetDir, { recursive: true, force: true });
     }
   });
