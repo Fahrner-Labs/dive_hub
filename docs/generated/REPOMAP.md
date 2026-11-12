@@ -41,7 +41,7 @@ apps/server/src/backups/backup-service.ts:48 class BackupError
 apps/server/src/backups/backup-archive.ts:145 const encryptionKeyFingerprint
 apps/server/src/backups/backup-service.ts:86 const isUniqueViolation
 apps/server/src/backups/backup-service.ts:458 type BackupService
-apps/server/src/backups/pg-command.ts:39 fn pgFailureMessage
+apps/server/src/backups/pg-command.ts:42 fn pgFailureMessage
 apps/server/src/backups/backup-archive.ts:96 iface BackupManifest
 apps/server/src/backups/backup-archive.ts:321 fn passphraseEncryption
 apps/server/src/backups/backup-service.ts:101 fn createBackupService
