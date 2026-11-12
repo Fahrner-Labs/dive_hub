@@ -270,6 +270,8 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
     isn't, `backup_file_missing` when the archive is gone). This is a file handoff: the browser saves the archive and
     nothing renders in the app. **Admins still see no other User's Dives**; a backup is the whole instance's state as
     an encrypted file, not an admin view of it ([ADR 0069](../decisions/0069-full-instance-backup-and-restore.md)).
+  - `DELETE /api/admin/backups/{id}` removes a finished run and its archive; a queued or running one is refused
+    (`backup_running`). A client that offers it asks first; the v1 web page does not.
 - **Scheduled backups** (`GET`/`PUT /api/admin/backups/settings`): one setting for the instance — on/off, interval in
   hours (1–168), retention count (1–365), and the operator-held X25519 recipient (`age1…`) that scheduled archives
   encrypt to. The recipient is required while scheduling is on; the private key never goes to the server. Say that a

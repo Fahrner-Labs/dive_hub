@@ -1513,14 +1513,14 @@ export const certification = pgTable(
   ],
 );
 
-/** A backup's trigger (ADR 0068): one the admin starts by hand, or the scheduled one. */
+/** A backup's trigger (ADR 0069): one the admin starts by hand, or the scheduled one. */
 export const backupRunKind = pgEnum('backup_run_kind', ['manual', 'scheduled']);
 
 /** A backup run's life: queued, being written, downloadable, or failed. */
 export const backupRunStatus = pgEnum('backup_run_status', ['queued', 'running', 'ready', 'failed']);
 
 /**
- * One full-instance backup (ADR 0068, plan FAH-175): the worker writes one encrypted `.divehub-backup` archive under
+ * One full-instance backup (ADR 0069, plan FAH-175): the worker writes one encrypted `.divehub-backup` archive under
  * `backups/`, and the row is what the admin page lists. The partial unique index keeps at most one run in flight, so
  * a manual and a scheduled backup never write at the same time.
  */

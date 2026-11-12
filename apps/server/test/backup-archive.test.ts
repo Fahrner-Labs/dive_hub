@@ -1,4 +1,4 @@
-// The `.divehub-backup` container (ADR 0068): manifest rules, the passphrase envelope, and pack/open roundtrips.
+// The `.divehub-backup` container (ADR 0069): manifest rules, the passphrase envelope, and pack/open roundtrips.
 import { createHash, randomBytes } from 'node:crypto';
 import { createReadStream } from 'node:fs';
 import { mkdir, mkdtemp, readFile, rename, rm, stat, writeFile } from 'node:fs/promises';

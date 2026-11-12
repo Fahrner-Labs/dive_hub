@@ -1,4 +1,4 @@
-// Backup runs against real PostgreSQL (ADR 0068): the row and its job commit together, a run writes a readable
+// Backup runs against real PostgreSQL (ADR 0069): the row and its job commit together, a run writes a readable
 // encrypted archive whose dump restores, and a failure marks the row failed and cleans its temp files.
 import { execFile } from 'node:child_process';
 import { readdir, rm } from 'node:fs/promises';

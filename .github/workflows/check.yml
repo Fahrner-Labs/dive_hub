@@ -49,7 +49,7 @@ jobs:
       - name: Baseline to compare with
         run: echo "BASELINE_REF=${{ github.event_name == 'pull_request' && format('origin/{0}', github.base_ref) || github.event_name == 'workflow_dispatch' && 'origin/main' || github.event.before }}" >> "$GITHUB_ENV"
 
-      # pg_dump/pg_restore for the backup tests (ADR 0068); the major version tracks the postgres service image.
+      # pg_dump/pg_restore for the backup tests (ADR 0069); the major version tracks the postgres service image.
       - name: PostgreSQL 18 client
         run: |
           sudo install -d /usr/share/postgresql-common/pgdg

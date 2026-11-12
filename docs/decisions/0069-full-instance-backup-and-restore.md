@@ -51,7 +51,8 @@ An archive is a tar container with three members:
 The file tar leaves out `backups/`, `tmp/`, `restore/` and `run/`: the backup must not contain earlier archives, its
 own temporary files, a restore upload or the app's ephemeral lock/heartbeat files. The dump is one MVCC snapshot; the
 files are copied afterwards, and the only mutable part, a transient upload in `incoming/`, is harmless. The manifest's
-row counts and the file-tree checksum give the restore a cheap sanity check without reading every sample again.
+row counts and the file-tree checksum are recorded for diagnostics and spot checks; the restore itself verifies the
+part checksums, the key fingerprint and the schema head.
 
 The format has its own magic and version byte. A reader refuses a version it does not know; changing the container in a
 way an older reader cannot take bumps `BACKUP_FORMAT_VERSION` and needs a reader that understands both.
@@ -69,8 +70,11 @@ become plaintext by accident or by convenience.
 ### D3 — Two envelopes: passphrase and X25519 recipient
 **Manual backups** are encrypted with a passphrase an admin enters for that run. The passphrase is normalised (NFKC) and
 stretched with scrypt (`N = 16384`, `r = 8`, `p = 1`, a 16-byte salt and a 12-byte IV). The passphrase is used for that
-run only: it is never stored, logged, put in the address or sent to a client again. The manifest records the KDF
-parameters so a later reader can explain and verify the archive.
+run only: it is never stored, logged, put in the address or sent to a client again. It travels only in the memory of
+the app process that accepted the request to the in-process worker; a deployment that runs the optional separate worker
+service, or routes the job to another app process, fails a manual run instead of writing the passphrase to a table or a
+job payload. Scheduled runs are unaffected. The manifest records the KDF parameters so a later reader can explain and
+verify the archive.
 
 **Scheduled backups** are encrypted to an X25519 **recipient** the operator holds the private key for. The server
 generates an ephemeral keypair per archive, derives a shared secret with the recipient's public key and turns it into
@@ -99,8 +103,8 @@ Provider credentials (users sign in again), not the dives.
 A fresh instance shows the setup screen with two paths: **Start fresh** (today's first-admin form) and **Restore from
 backup**. The restore path is protected by the same setup token, takes the archive's key, and accepts either a browser
 upload (streamed to disk, no fixed size cap) or an archive the operator placed in `/data/restore/`. The restore core
-decrypts and verifies the archive, checks the key fingerprint and the migration head, then runs
-`pg_restore --clean --if-exists --single-transaction`, unpacks the files and answers. The process then exits so it
+decrypts and verifies the archive, checks the key fingerprint and the migration head, replaces the managed files and
+then runs `pg_restore --clean --if-exists --single-transaction`, and answers. The process then exits so it
 cannot keep running on a database it just replaced; the operator runs `docker compose restart app`. On the next boot,
 forward migrations bring an older-schema backup up to the image's schema and sign-in works with the backed-up accounts.
 
@@ -111,8 +115,8 @@ Hub is refused by the migration-head check.
 
 The **operator CLI** (`restore-backup`, wrapped by `scripts/restore-backup.sh`) runs the same core while the app is
 stopped. It takes the key from the environment or a mounted file, refuses while the app's heartbeat lock is fresh
-(`--force` overrides after a crash), and then starts the app again. It exists for staging resets, scripted recovery and
-operators who prefer the shell; it is not the documented first choice.
+(`--force` overrides after a crash), and tells the operator to start the app again. It exists for staging resets,
+scripted recovery and operators who prefer the shell; it is not the documented first choice.
 
 Maintenance mode is deliberately not built in v1. It would have to drain writes, stop the worker, invalidate sessions
 and keep the app serving while its database is replaced — a feature with its own failure modes — and the first-start
@@ -139,9 +143,14 @@ handoff, so an admin still never sees another User's Dives in the app.
 
 ## Consequences
 - One file restores the whole instance; there is no selective restore of one table, Diver or Dive in v1.
+- Manual backups need the in-process worker: the passphrase is never persisted, so the optional separate worker service
+  fails a manual run instead of executing it. Scheduled backups are unaffected.
 - Losing the passphrase or the recipient private key makes an archive unrecoverable; losing `DIVEHUB_ENCRYPTION_KEY`
   makes the restored Provider credentials unusable. Operators keep copies of both somewhere other than the server and
   never inside an archive.
+- The files are replaced before the database transaction. If the database restore then fails, the files are already the
+  backup's while the database is unchanged: on a fresh instance a retry is safe; an operator restoring over a used
+  instance keeps a copy first.
 - The archive includes sessions, stored API keys and the worker queue along with the domain data. A restored instance
   resumes from that state; stale queue jobs are deduplicated by their job keys.
 - Backups and restores stream end to end and are disk-bound; an archive larger than a browser upload can comfortably

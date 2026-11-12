@@ -2,7 +2,7 @@
 // `.divehub-backup` archive, then replace the database and the files under DIVEHUB_DATA_DIR. Streaming throughout:
 // the archive is decrypted into tar, pg_restore reads the dump from disk, and tar unpacks the files.
 import { execFile } from 'node:child_process';
-import { mkdir, readFile, rm } from 'node:fs/promises';
+import { mkdir, readFile, readdir, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { promisify } from 'node:util';
@@ -109,6 +109,19 @@ function stderrOf(error: unknown): string {
   return typeof stderr === 'string' && stderr.trim() !== '' ? stderr.trim() : errorMessage(error);
 }
 
+/** Directories a restore must leave in place: archives, its own temp work, uploads and the app's run files. */
+const KEPT_ON_RESTORE = new Set(['backups', 'tmp', 'restore', 'run']);
+
+/** Replaces the managed data directory: remove what the archive does not own, then unpack its files over it. */
+async function replaceFiles(dataDir: string, filesPath: string): Promise<void> {
+  await mkdir(dataDir, { recursive: true });
+  const entries = await readdir(dataDir, { withFileTypes: true });
+  await Promise.all(entries
+    .filter((entry) => !KEPT_ON_RESTORE.has(entry.name))
+    .map((entry) => rm(join(dataDir, entry.name), { recursive: true, force: true })));
+  await execFileAsync('tar', ['-xzf', filesPath, '-C', dataDir], { maxBuffer: 1 << 20 });
+}
+
 export function createRestoreService({ dataDir, databaseUrl, migrationsFolder, encryptionKey, log }: RestoreServiceDeps) {
   async function restore(input: RestoreInput): Promise<RestoreResult> {
     const workDir = join(dataDir, 'tmp', `restore-${randomUUID()}`);
@@ -132,6 +145,14 @@ export function createRestoreService({ dataDir, databaseUrl, migrationsFolder, e
         log.warn('WARNING: this backup was made without DIVEHUB_ENCRYPTION_KEY; its stored Provider credentials are plain text in the restored database');
       }
 
+      // Files first: if unpacking fails, the database is untouched and a first-start retry still works.
+      log.info('restoring the files');
+      try {
+        await replaceFiles(dataDir, filesPath);
+      } catch (error) {
+        throw new RestoreError('backup_files_failed', `the files could not be restored: ${stderrOf(error)}`, { cause: error });
+      }
+
       log.info(`restoring the database from the backup made ${manifest.createdAt}`);
       try {
         await execFileAsync('pg_restore', [
@@ -139,14 +160,6 @@ export function createRestoreService({ dataDir, databaseUrl, migrationsFolder, e
         ], { maxBuffer: 1 << 20 });
       } catch (error) {
         throw new RestoreError('backup_restore_failed', `the database could not be restored: ${stderrOf(error)}`, { cause: error });
-      }
-
-      await mkdir(dataDir, { recursive: true });
-      log.info('restoring the files');
-      try {
-        await execFileAsync('tar', ['-xzf', filesPath, '-C', dataDir], { maxBuffer: 1 << 20 });
-      } catch (error) {
-        throw new RestoreError('backup_files_failed', `the files could not be restored: ${stderrOf(error)}`, { cause: error });
       }
 
       log.info(`restore finished: ${manifest.files.count} file(s), schema ${manifest.migrationHead ?? 'none'}`);

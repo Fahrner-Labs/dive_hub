@@ -1,4 +1,4 @@
-// The admin backups API (ADR 0068): the 401/403 matrix, creating a manual run, its download, and delete.
+// The admin backups API (ADR 0069): the 401/403 matrix, creating a manual run, its download, and delete.
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';

@@ -123,6 +123,12 @@ describe.skipIf(!(await databaseReachable()))('restoring a backup', () => {
       const restore = createRestoreService({
         dataDir: targetDir, databaseUrl: scratch.url, migrationsFolder, encryptionKey: TEST_ENCRYPTION_KEY, log: silent,
       });
+      // A restore replaces the managed files: a file the archive does not hold must not survive; archives stay.
+      await mkdir(join(targetDir, 'backups'), { recursive: true });
+      await writeFile(join(targetDir, 'backups', 'older.divehub-backup'), 'an older archive');
+      await mkdir(join(targetDir, 'stale-dir'), { recursive: true });
+      await writeFile(join(targetDir, 'stale-dir', 'old.txt'), 'not in the backup');
+      await writeFile(join(targetDir, 'stale-file.txt'), 'not in the backup');
       const result = await restore.restore({ archivePath: backups.archivePath(run.id), passphrase });
       expect(result.manifest.tableCounts.user).toBeGreaterThanOrEqual(1);
       expect(result.manifest.migrationHead).toMatch(/^\d{4}_/);
@@ -140,6 +146,9 @@ describe.skipIf(!(await databaseReachable()))('restoring a backup', () => {
 
       expect(await readFile(join(targetDir, 'originals', 'ab', 'cd', 'dive-1.fit'), 'utf8')).toBe('the original dive file');
       expect(await readFile(join(targetDir, 'auth-secret'), 'utf8')).toBe('the auth secret from the backup');
+      expect(await stat(join(targetDir, 'stale-file.txt')).catch(() => null)).toBeNull();
+      expect(await stat(join(targetDir, 'stale-dir')).catch(() => null)).toBeNull();
+      expect(await readFile(join(targetDir, 'backups', 'older.divehub-backup'), 'utf8')).toBe('an older archive');
     } finally {
       await scratch.drop();
       await rm(targetDir, { recursive: true, force: true });
