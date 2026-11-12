@@ -71,8 +71,8 @@ become plaintext by accident or by convenience.
 **Manual backups** are encrypted with a passphrase an admin enters for that run. It is at least 15 characters, the
 same minimum the app applies to passwords: an archive is stored anywhere, so the passphrase must resist an offline
 crack. The passphrase is normalised (NFKC) and stretched with scrypt (`N = 16384`, `r = 8`, `p = 1`, a 16-byte salt
-and a 12-byte IV). The passphrase is used for that
-run only: it is never stored, logged, put in the address or sent to a client again. It travels only in the memory of
+and a 12-byte IV). The passphrase is used for that run only: it is never stored, logged, put in the address or sent to a
+client again. It travels only in the memory of
 the app process that accepted the request to the in-process worker; a deployment that runs the optional separate worker
 service, or routes the job to another app process, fails a manual run instead of writing the passphrase to a table or a
 job payload. Scheduled runs are unaffected. The manifest records the KDF parameters so a later reader can explain and
@@ -114,7 +114,8 @@ individual objects instead cannot work, because `--clean` only drops what the ar
 surviving tables and foreign keys then block the restore. With the schema replaced, a backup whose head the image knows
 restores and the forward migrations settle it on the next boot. A failed run leaves the database wiped; on the
 first-start path it is disposable and the setup token stays usable for a retry. On success it answers, then the
-process exits so it cannot keep running on a database it just replaced; the operator runs `docker compose restart app`. On the next boot,
+process exits so it cannot keep running on a database it just replaced; the operator runs
+`docker compose restart app`. On the next boot,
 forward migrations bring an older-schema backup up to the image's schema and sign-in works with the backed-up accounts.
 
 This is safe because it happens in the setup window described above: no session exists, no authenticated route is open,
