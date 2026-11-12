@@ -132,6 +132,7 @@ export type DiveGearItemView = DiveGearView['putOn'][number];
 export const keys = {
   me: ['me'] as const,
   setup: ['setup'] as const,
+  setupRestoreArchives: ['setup', 'restore', 'archives'] as const,
   users: ['users'] as const,
   invitations: ['invitations'] as const,
   /** What an invitation or password reset link opens (ADR 0013); not under ['invitations'], the admin's list. */
@@ -237,6 +238,12 @@ export const meQuery = () => queryOptions({
 });
 export const setupQuery = () =>
   queryOptions({ queryKey: keys.setup, queryFn: async () => unwrap(await api.GET('/api/setup')) });
+/** Backups the operator put in /data/restore/ on the server, offered instead of a browser upload (plan FAH-175). */
+export const setupRestoreArchivesQuery = () =>
+  queryOptions({
+    queryKey: keys.setupRestoreArchives,
+    queryFn: async () => unwrap(await api.GET('/api/setup/restore/archives')),
+  });
 export const usersQuery = () => queryOptions({ queryKey: keys.users, queryFn: async () => unwrap(await api.GET('/api/users')) });
 export const sessionsQuery = () => queryOptions({ queryKey: keys.sessions, queryFn: async () => unwrap(await api.GET('/api/me/sessions')) });
 export const invitationsQuery = () => queryOptions({ queryKey: keys.invitations, queryFn: async () => unwrap(await api.GET('/api/invitations')) });

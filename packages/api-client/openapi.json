@@ -455,6 +455,18 @@
               "provider_not_sent",
               "provider_dive_gone",
               "provider_busy",
+              "backup_not_found",
+              "backup_in_progress",
+              "backup_running",
+              "backup_not_ready",
+              "backup_file_missing",
+              "backup_passphrase_missing",
+              "setup_restore_source_missing",
+              "setup_restore_archive_missing",
+              "setup_restore_decrypt_failed",
+              "setup_restore_key_mismatch",
+              "setup_restore_schema_newer",
+              "setup_restore_failed",
               "provider_number_taken",
               "provider_numbers_off",
               "provider_number_nothing_to_set",
@@ -3341,6 +3353,18 @@
                   "provider_not_sent",
                   "provider_dive_gone",
                   "provider_busy",
+                  "backup_not_found",
+                  "backup_in_progress",
+                  "backup_running",
+                  "backup_not_ready",
+                  "backup_file_missing",
+                  "backup_passphrase_missing",
+                  "setup_restore_source_missing",
+                  "setup_restore_archive_missing",
+                  "setup_restore_decrypt_failed",
+                  "setup_restore_key_mismatch",
+                  "setup_restore_schema_newer",
+                  "setup_restore_failed",
                   "provider_number_taken",
                   "provider_numbers_off",
                   "provider_number_nothing_to_set",
@@ -3539,6 +3563,18 @@
                   "provider_not_sent",
                   "provider_dive_gone",
                   "provider_busy",
+                  "backup_not_found",
+                  "backup_in_progress",
+                  "backup_running",
+                  "backup_not_ready",
+                  "backup_file_missing",
+                  "backup_passphrase_missing",
+                  "setup_restore_source_missing",
+                  "setup_restore_archive_missing",
+                  "setup_restore_decrypt_failed",
+                  "setup_restore_key_mismatch",
+                  "setup_restore_schema_newer",
+                  "setup_restore_failed",
                   "provider_number_taken",
                   "provider_numbers_off",
                   "provider_number_nothing_to_set",
@@ -4344,6 +4380,18 @@
                         "provider_not_sent",
                         "provider_dive_gone",
                         "provider_busy",
+                        "backup_not_found",
+                        "backup_in_progress",
+                        "backup_running",
+                        "backup_not_ready",
+                        "backup_file_missing",
+                        "backup_passphrase_missing",
+                        "setup_restore_source_missing",
+                        "setup_restore_archive_missing",
+                        "setup_restore_decrypt_failed",
+                        "setup_restore_key_mismatch",
+                        "setup_restore_schema_newer",
+                        "setup_restore_failed",
                         "provider_number_taken",
                         "provider_numbers_off",
                         "provider_number_nothing_to_set",
@@ -6068,6 +6116,141 @@
         }
       }
     },
+    "/api/setup/restore/archives": {
+      "get": {
+        "summary": "Archives the operator placed in /data/restore/, for the setup screen",
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "archives"
+                  ],
+                  "properties": {
+                    "archives": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "name",
+                          "bytes"
+                        ],
+                        "properties": {
+                          "name": {
+                            "type": "string"
+                          },
+                          "bytes": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/setup/restore": {
+      "post": {
+        "summary": "Restore a fresh instance from a .divehub-backup archive (setup token required)",
+        "description": "Multipart fields: token, passphrase, then either a file in \"file\" or the name of an archive in /data/restore/ in \"placed\". The upload has no fixed size cap. On success the server exits; restart it.",
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "restored",
+                    "createdAt",
+                    "migrationHead"
+                  ],
+                  "properties": {
+                    "restored": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "createdAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "migrationHead": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/password-resets/lookup": {
       "post": {
         "summary": "Whose password a reset link is for",
@@ -6926,6 +7109,397 @@
                 }
               }
             }
+          },
+          "400": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/backups": {
+      "post": {
+        "summary": "Start a manual backup, encrypted with this passphrase (admins only)",
+        "description": "The passphrase is used for this run only; it is never stored or logged. A backup already queued or running answers 409.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "passphrase"
+                ],
+                "properties": {
+                  "passphrase": {
+                    "type": "string",
+                    "minLength": 8,
+                    "maxLength": 1024,
+                    "description": "At least 8 characters; needed again to restore"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "kind",
+                    "status",
+                    "bytes",
+                    "sha256",
+                    "error",
+                    "createdAt",
+                    "startedAt",
+                    "finishedAt"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "kind": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "enum": [
+                            "manual"
+                          ]
+                        },
+                        {
+                          "type": "string",
+                          "enum": [
+                            "scheduled"
+                          ]
+                        }
+                      ]
+                    },
+                    "status": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "enum": [
+                            "queued"
+                          ]
+                        },
+                        {
+                          "type": "string",
+                          "enum": [
+                            "running"
+                          ]
+                        },
+                        {
+                          "type": "string",
+                          "enum": [
+                            "ready"
+                          ]
+                        },
+                        {
+                          "type": "string",
+                          "enum": [
+                            "failed"
+                          ]
+                        }
+                      ]
+                    },
+                    "bytes": {
+                      "anyOf": [
+                        {
+                          "type": "integer"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "sha256": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "error": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "createdAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "startedAt": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "finishedAt": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "All backup runs, newest first (admins only)",
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "kind",
+                      "status",
+                      "bytes",
+                      "sha256",
+                      "error",
+                      "createdAt",
+                      "startedAt",
+                      "finishedAt"
+                    ],
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "kind": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "enum": [
+                              "manual"
+                            ]
+                          },
+                          {
+                            "type": "string",
+                            "enum": [
+                              "scheduled"
+                            ]
+                          }
+                        ]
+                      },
+                      "status": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "enum": [
+                              "queued"
+                            ]
+                          },
+                          {
+                            "type": "string",
+                            "enum": [
+                              "running"
+                            ]
+                          },
+                          {
+                            "type": "string",
+                            "enum": [
+                              "ready"
+                            ]
+                          },
+                          {
+                            "type": "string",
+                            "enum": [
+                              "failed"
+                            ]
+                          }
+                        ]
+                      },
+                      "bytes": {
+                        "anyOf": [
+                          {
+                            "type": "integer"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "sha256": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "error": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "createdAt": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "startedAt": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "finishedAt": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/backups/{id}/download": {
+      "get": {
+        "summary": "Download a ready backup archive (admins only)",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/api/admin/backups/{id}": {
+      "delete": {
+        "summary": "Delete a finished backup and its archive (admins only)",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Default Response"
           },
           "400": {
             "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",

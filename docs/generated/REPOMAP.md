@@ -4,7 +4,7 @@
 > `pnpm check` fails when this map is stale. Symbols are ranked by how widely the code references them;
 > each module shows its most-referenced ones (exported symbols rank higher). Search here before walking the tree.
 
-Files: 363 · symbols: 3319 · shown: 250
+Files: 366 · symbols: 3334 · shown: 250
 
 ### server/(root)
 apps/server/src/vocabulary.ts:13 type SiteWaterType
@@ -12,7 +12,7 @@ apps/server/src/errors.ts:2 const errorMessage
 apps/server/src/vocabulary.ts:12 const SITE_WATER_TYPES
 apps/server/src/vocabulary.ts:51 type ImportSource
 apps/server/src/compose.ts:73 fn createServices
-apps/server/src/app.ts:70 fn buildApp
+apps/server/src/app.ts:73 fn buildApp
 … 39 more symbols in this module
 
 ### server/assessment
@@ -35,20 +35,20 @@ apps/server/src/auth/password.ts:11 const MIN_PASSWORD_LENGTH
 
 ### server/backups
 apps/server/src/backups/backup-archive.ts:34 class BackupArchiveError
-apps/server/src/backups/backup-service.ts:29 class BackupError
-apps/server/src/backups/backup-archive.ts:99 const encryptionKeyFingerprint
 apps/server/src/backups/restore-service.ts:24 class RestoreError
-apps/server/src/backups/backup-service.ts:53 const isUniqueViolation
-apps/server/src/backups/backup-service.ts:201 type BackupService
-apps/server/src/backups/backup-archive.ts:46 iface BackupManifest
+apps/server/src/backups/restore-service.ts:102 fn createRestoreService
+apps/server/src/backups/backup-service.ts:30 class BackupError
+apps/server/src/backups/backup-archive.ts:99 const encryptionKeyFingerprint
+apps/server/src/backups/backup-service.ts:54 const isUniqueViolation
+apps/server/src/backups/backup-service.ts:241 type BackupService
 … 84 more symbols in this module
 
 ### server/centres
 apps/server/src/centres/centre-view.ts:24 const CentreView
 apps/server/src/centres/centre-service.ts:12 const CENTRE_SOURCES
 apps/server/src/centres/centre-service.ts:18 class CentreError
-apps/server/src/centres/centre-service.ts:254 type CentreService
 apps/server/src/centres/centre-view.ts:7 const Source
+apps/server/src/centres/centre-service.ts:254 type CentreService
 apps/server/src/centres/routes.ts:61 const errors
 … 24 more symbols in this module
 
@@ -122,9 +122,9 @@ apps/server/src/equipment/equipment-view.ts:22 const ServiceScheduleViewSchema
 apps/server/src/http/schemas.ts:10 const Nullable
 apps/server/src/http/schemas.ts:5 const DateTime
 apps/server/src/http/schemas.ts:4 const IdParams
-apps/server/src/http/problems.ts:173 const Problem
-apps/server/src/http/problems.ts:176 const problem
-apps/server/src/http/problems.ts:200 const answerErrors
+apps/server/src/http/problems.ts:179 const Problem
+apps/server/src/http/problems.ts:182 const problem
+apps/server/src/http/problems.ts:206 const answerErrors
 … 22 more symbols in this module
 
 ### server/imports
@@ -262,16 +262,16 @@ apps/server/src/users/tokens.ts:5 const sha256
 apps/server/src/users/views.ts:43 const toUserView
 apps/server/src/users/user-admin-service.ts:10 class UserAdminError
 apps/server/src/users/tokens.ts:4 const newToken
-… 45 more symbols in this module
+… 56 more symbols in this module
 
 ### web/(root)
-apps/web/src/api.ts:216 fn unwrap
+apps/web/src/api.ts:217 fn unwrap
 apps/web/src/api.ts:10 const api
 apps/web/src/api.ts:132 const keys
 apps/web/src/api.ts:35 class ApiError
 apps/web/src/ToolsLead.tsx:45 fn Panel
 apps/web/src/api.ts:15 type Problem
-apps/web/src/api.ts:278 const diversQuery
+apps/web/src/api.ts:285 const diversQuery
 apps/web/src/api.ts:70 type DiveView
 apps/web/src/api.ts:101 type ProviderView
 apps/web/src/PushRun.tsx:21 const named
@@ -289,7 +289,7 @@ apps/web/src/ProviderConflicts.tsx:14 fn useConflictValueText
 apps/web/src/WaitingPush.tsx:117 fn WaitingPushState
 apps/web/src/ImportPanel.tsx:39 const ImportContext
 apps/web/src/ToolsLead.tsx:54 fn Conditions
-… 657 more symbols in this module
+… 661 more symbols in this module
 
 ### web/i18n
 apps/web/src/i18n/languages.ts:6 fn pickLanguage
@@ -319,10 +319,10 @@ apps/web/src/lib/providers.ts:55 fn useProviderOf
 apps/web/src/lib/providers.ts:52 type ProviderRef
 apps/web/src/lib/logbook.ts:11 iface LogbookParams
 apps/web/src/lib/units.ts:4 type UnitSystem
+apps/web/src/lib/form.ts:4 const formValues
 apps/web/src/lib/units.ts:22 const pressureIn
 apps/web/src/lib/logbook.ts:39 fn logbookHref
 apps/web/src/lib/display.ts:53 fn useProblemText
-apps/web/src/lib/focus.ts:9 fn focusFirstIn
 … 325 more symbols in this module
 
 ### web/ui

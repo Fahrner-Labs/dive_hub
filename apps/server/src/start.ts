@@ -46,7 +46,23 @@ export async function start(config: Config) {
     // The live layer listens on its own connection to the same database (ADR 0066).
     live: { connectionString: config.databaseUrl },
   });
-  await buildApp({ ...services, baseUrl: config.baseUrl, maxUploadBytes: config.maxUploadBytes, webDir: config.webDir }, app);
+  // The worker stays away until setup is done (plan FAH-175): during a first-start restore, no background job may
+  // touch the database. The first-admin route starts it; when setup was done already, it starts with the boot below.
+  let worker: Awaited<ReturnType<typeof startWorker>> | undefined;
+  const startWorkerIfConfigured = async () => {
+    if (!config.inProcessWorker || worker) return;
+    worker = await startWorker(pool, workerDeps(services, app.log));
+  };
+  services.setup.whenDone(startWorkerIfConfigured);
+  await buildApp({
+    ...services, baseUrl: config.baseUrl, maxUploadBytes: config.maxUploadBytes, webDir: config.webDir,
+    // A restored instance is ready, but its schema may be older and its pools point at replaced objects: exit, and the
+    // operator restarts the container (docs/self-hosting.md). The answer is already written when this runs.
+    onRestored: () => {
+      app.log.warn('the setup screen restored this instance; exiting so the container can restart it');
+      setTimeout(() => process.exit(0), 250);
+    },
+  }, app);
 
   // src/ (dev) and dist/ (image) both sit one level below the drizzle/ folder.
   const migrationsFolder = fileURLToPath(new URL('../drizzle', import.meta.url));
@@ -57,13 +73,14 @@ export async function start(config: Config) {
   }
   const setupToken = await services.setup.issue();
   if (setupToken) {
-    // Deliberately logged: whoever can read the server log may create the first admin (ADR 0012).
+    // Deliberately logged: whoever can read the server log may create the first admin (ADR 0012). No worker starts yet.
     app.log.warn(`No admin yet. Open ${config.baseUrl}/#/setup and enter this setup token (valid 24 h, until the first admin exists): ${setupToken}`);
+  } else {
+    await startWorkerIfConfigured();
   }
   // The worker starts after the migrations, and the server listens last. The live layer listens for hints in this app
   // process (a worker-only process emits but has no streams, ADR 0066).
   services.live.start();
-  const worker = config.inProcessWorker ? await startWorker(pool, workerDeps(services, app.log)) : undefined;
   await app.listen({ host: config.host, port: config.port });
 
   return {

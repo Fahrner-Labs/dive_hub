@@ -121,10 +121,14 @@ export async function createTestApp(t: TestDatabase, options: {
   clock?: ReturnType<typeof resettableClock>;
   /** A test's change to the SSI adapter, such as which way its fields travel. */
   ssi?: (adapter: ProviderAdapter) => ProviderAdapter;
+  /** The app's upload cap (default 64 MiB); the setup restore route ignores it, which a test checks with a tiny one. */
+  maxUploadBytes?: number;
+  /** What the setup restore route does after its success answer (production: the process exits). */
+  onRestored?: () => void;
 } = {}) {
   const {
     webDir, siteSources, fakeSsi = createFakeSsi(), encryptionKey = TEST_ENCRYPTION_KEY, extraProviders = [], clock = resettableClock(), ssi = (a) => a,
-    ...authOptions
+    maxUploadBytes = 1 << 26, onRestored, ...authOptions
   } = options;
   // SSI keeps its last logbook read for two minutes (ADR 0027); a test that changes the fake SSI behind Dive Hub's back
   // moves this clock on, as if the change happened a while later. Pauses between actions are skipped and recorded.
@@ -143,7 +147,9 @@ export async function createTestApp(t: TestDatabase, options: {
     clock,
     live: { connectionString: t.pool.options.connectionString! },
   });
-  const app = await buildApp({ ...services, baseUrl: BASE_URL, maxUploadBytes: 1 << 26, webDir });
+  const app = await buildApp({
+    ...services, baseUrl: BASE_URL, maxUploadBytes, webDir, ...(onRestored && { onRestored }),
+  });
   return { ...services, app, fakeSsi, ssiClock, clock, pauses: clock.slept };
 }
 

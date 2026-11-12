@@ -63,9 +63,25 @@
   },
   "setup": {
     "title": "Dive Hub einrichten",
+    "path": "Wie möchtest du starten?",
+    "pathFresh": "Neu anfangen",
+    "pathRestore": "Aus Backup wiederherstellen",
     "intro": "Lege das erste Admin-Konto an. Den Einrichtungscode findest du im Server-Log (zum Beispiel mit <code>docker compose logs app</code>).",
+    "restoreIntro": "Lade ein <code>.divehub-backup</code>-Archiv hoch oder wähle eines, das die Betreuung unter <code>/data/restore/</code> auf dem Server abgelegt hat. Die Wiederherstellung ersetzt diese frische Instanz durch das Backup; danach startet sie neu, damit die Instanz mit den wiederhergestellten Daten hochkommt.",
     "token": "Einrichtungscode",
-    "submit": "Admin anlegen"
+    "passphrase": "Backup-Passphrase",
+    "archive": "Backup-Archiv",
+    "chooseArchive": "Archiv wählen",
+    "noArchiveChosen": "Noch kein Archiv gewählt",
+    "source": "Wo liegt das Archiv?",
+    "sourceUpload": "Im Browser hochladen",
+    "sourcePlaced": "Eines auf dem Server verwenden",
+    "placedArchive": "Archiv unter /data/restore/",
+    "archiveMissing": "Wähle zuerst ein Archiv.",
+    "submit": "Admin anlegen",
+    "restoreSubmit": "Diese Instanz wiederherstellen",
+    "restored": "Das Backup wurde wiederhergestellt. Der Server hat sich beendet, damit er mit den wiederhergestellten Daten neu starten kann: Führe <code>docker compose restart app</code> in dem Ordner mit deiner Compose-Datei aus.",
+    "restoredHint": "Melde dich nach dem Neustart mit einem Konto aus dem Backup an."
   },
   "invitation": {
     "title": "Dive Hub beitreten",
@@ -454,6 +470,13 @@
     "upload_too_large": "Die Datei ist zu groß.",
     "setup_done": "Die Einrichtung ist bereits abgeschlossen. Melde dich stattdessen an.",
     "setup_token_invalid": "Der Einrichtungscode ist falsch oder abgelaufen. Den aktuellen findest du im Server-Log.",
+    "backup_passphrase_missing": "Gib die Passphrase des Backups ein.",
+    "setup_restore_source_missing": "Wähle ein Archiv zum Wiederherstellen.",
+    "setup_restore_archive_missing": "Unter /data/restore/ auf dem Server gibt es dieses Archiv nicht.",
+    "setup_restore_decrypt_failed": "Das Archiv konnte nicht entschlüsselt werden. Prüfe die Passphrase; das Archiv kann auch beschädigt sein.",
+    "setup_restore_key_mismatch": "Dieses Backup braucht denselben DIVEHUB_ENCRYPTION_KEY, mit dem es erstellt wurde. Setze den Schlüssel, bevor du es wiederherstellst.",
+    "setup_restore_schema_newer": "Dieses Backup wurde von einer neueren Dive-Hub-Version erstellt. Aktualisiere diese Instanz, bevor du es wiederherstellst.",
+    "setup_restore_failed": "Das Backup konnte nicht wiederhergestellt werden. Die Datenbank ist weiterhin leer; prüfe das Server-Log und versuch es noch einmal.",
     "invitation_invalid": "Diese Einladung ist ungültig, schon benutzt oder abgelaufen.",
     "invitation_not_found": "Diese Einladung ist nicht mehr offen.",
     "email_taken": "Mit dieser E-Mail-Adresse gibt es schon ein Konto.",
@@ -568,7 +591,12 @@
     "suit_invalid": "Die Angaben zum Anzug passen nicht: Eine Dicke gehört zu einem Nass- oder Halbtrockenanzug, ein Unterzieher zu einem Trockenanzug.",
     "gas_not_breathable": "Ein Gemisch mit unter 16 % Sauerstoff ist an der Oberfläche nicht atembar.",
     "too_many_live_streams": "Für dieses Konto sind zu viele Live-Verbindungen offen; schließe einen anderen Tab oder warte einen Moment.",
-    "live_unavailable": "Live-Aktualisierungen sind nicht verfügbar; die Seite prüft weiterhin auf Änderungen."
+    "live_unavailable": "Live-Aktualisierungen sind nicht verfügbar; die Seite prüft weiterhin auf Änderungen.",
+    "backup_not_found": "Dieses Backup gibt es nicht (mehr).",
+    "backup_in_progress": "Ein Backup ist bereits eingeplant oder läuft. Warte, bis es fertig ist.",
+    "backup_running": "Dieses Backup wird noch geschrieben.",
+    "backup_not_ready": "Dieses Backup ist noch nicht zum Herunterladen bereit.",
+    "backup_file_missing": "Das Backup-Archiv fehlt auf dem Server."
   },
   "vocabulary": {
     "waterType": {

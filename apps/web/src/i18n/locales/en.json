@@ -63,9 +63,25 @@
   },
   "setup": {
     "title": "Set up Dive Hub",
+    "path": "How do you want to start?",
+    "pathFresh": "Start fresh",
+    "pathRestore": "Restore from backup",
     "intro": "Create the first admin account. The setup token is in the server log (for example <code>docker compose logs app</code>).",
+    "restoreIntro": "Upload a <code>.divehub-backup</code> archive, or pick one the operator placed in <code>/data/restore/</code> on the server. Restoring replaces this fresh instance with the backup; it then restarts so the instance can come up on the restored data.",
     "token": "Setup token",
-    "submit": "Create admin"
+    "passphrase": "Backup passphrase",
+    "archive": "Backup archive",
+    "chooseArchive": "Choose archive",
+    "noArchiveChosen": "No archive chosen yet",
+    "source": "Where is the archive?",
+    "sourceUpload": "Upload it in the browser",
+    "sourcePlaced": "Use one on the server",
+    "placedArchive": "Archive in /data/restore/",
+    "archiveMissing": "Choose an archive first.",
+    "submit": "Create admin",
+    "restoreSubmit": "Restore this instance",
+    "restored": "The backup was restored. The server has stopped itself so it can restart on the restored data: run <code>docker compose restart app</code> in the folder with your Compose file.",
+    "restoredHint": "After the restart, sign in with an account from the backup."
   },
   "invitation": {
     "title": "Join Dive Hub",
@@ -454,6 +470,13 @@
     "upload_too_large": "The file is too large.",
     "setup_done": "Setup is already done. Sign in instead.",
     "setup_token_invalid": "The setup token is wrong or expired. Check the server log for the current one.",
+    "backup_passphrase_missing": "Enter the backup’s passphrase.",
+    "setup_restore_source_missing": "Choose an archive to restore.",
+    "setup_restore_archive_missing": "There is no such archive in /data/restore/ on the server.",
+    "setup_restore_decrypt_failed": "The archive could not be decrypted. Check the passphrase; the archive may also be damaged.",
+    "setup_restore_key_mismatch": "This backup needs the same DIVEHUB_ENCRYPTION_KEY it was made with. Set that key before restoring it.",
+    "setup_restore_schema_newer": "This backup was made by a newer Dive Hub. Upgrade this instance before restoring it.",
+    "setup_restore_failed": "The backup could not be restored. The database is still empty; check the server log and try again.",
     "invitation_invalid": "This invitation is invalid, used or expired.",
     "invitation_not_found": "This invitation is no longer open.",
     "email_taken": "Someone with this e-mail address already has an account.",
@@ -568,7 +591,12 @@
     "suit_invalid": "The suit’s values don’t fit: a thickness is for a wetsuit or a semidry suit, an undergarment for a drysuit.",
     "gas_not_breathable": "A mix with under 16 % oxygen can’t be breathed at the surface.",
     "too_many_live_streams": "Too many live connections are open for this account; close another tab or wait a moment.",
-    "live_unavailable": "Live updates are unavailable; the page keeps checking for changes."
+    "live_unavailable": "Live updates are unavailable; the page keeps checking for changes.",
+    "backup_not_found": "This backup doesn’t exist (anymore).",
+    "backup_in_progress": "A backup is already queued or running. Wait until it is done.",
+    "backup_running": "This backup is still being written.",
+    "backup_not_ready": "This backup is not ready to download.",
+    "backup_file_missing": "The backup archive is missing on the server."
   },
   "vocabulary": {
     "waterType": {

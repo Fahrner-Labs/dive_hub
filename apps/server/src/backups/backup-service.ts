@@ -3,7 +3,7 @@
 import { createHash, randomBytes } from 'node:crypto';
 import { execFile } from 'node:child_process';
 import { createReadStream } from 'node:fs';
-import { mkdir, readFile, rm, stat } from 'node:fs/promises';
+import { mkdir, readFile, readdir, rm, stat } from 'node:fs/promises';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
 import { desc, eq, inArray, sql } from 'drizzle-orm';
@@ -12,9 +12,10 @@ import { backupRun } from '../db/schema.js';
 import { PROBLEMS } from '../http/problems.js';
 import type { BlobStore } from '../storage/blob-store.js';
 import {
-  BACKUP_EXTENSION, buildManifest, encryptStream, encryptionKeyFingerprint, fileTreeChecksum, packContainer, tarDirectory,
-  type BackupPart,
+  BACKUP_EXTENSION, BackupArchiveError, buildManifest, encryptStream, encryptionKeyFingerprint, fileTreeChecksum, packContainer,
+  tarDirectory, type BackupPart,
 } from './backup-archive.js';
+import { createRestoreService, RestoreError, type RestoreLog } from './restore-service.js';
 
 const execFileAsync = promisify(execFile);
 
@@ -67,6 +68,16 @@ export function createBackupService({ db, blobs, dataDir, databaseUrl, migration
   // it is never written to a table, a job payload or a log, and a restart therefore fails the run instead of leaking it.
   const passphrases = new Map<string, string>();
 
+  // The setup screen's restore path (plan FAH-175 slice 3): the same core the operator CLI runs, with the app's logger.
+  const restoreLog: RestoreLog = {
+    info: (message) => log.info({}, message),
+    warn: (message) => log.warn({}, message),
+  };
+  const restoreCore = createRestoreService({ dataDir, databaseUrl, migrationsFolder, encryptionKey, log: restoreLog });
+  const restoreDir = join(dataDir, 'restore');
+  /** A bare file name ending in the archive extension; nothing that could leave the restore directory. */
+  const isPlacedName = (name: string) => name.endsWith(BACKUP_EXTENSION) && !name.includes('/') && !name.includes('\\') && name !== '.' && name !== '..';
+
   const keyOfRun = (id: string) => `backups/${id}${BACKUP_EXTENSION}`;
 
   /** Rows per public table: the manifest's spot check after a restore. */
@@ -118,6 +129,35 @@ export function createBackupService({ db, blobs, dataDir, databaseUrl, migration
       }
       log.info({ backupRunId: run.id, kind: run.kind }, 'backup queued');
       return run;
+    },
+
+    /** The archives the operator placed in `/data/restore/`, for the setup screen's picker. */
+    async placedArchives(): Promise<{ name: string; bytes: number }[]> {
+      const entries = await readdir(restoreDir, { withFileTypes: true }).catch(() => []);
+      const archives = await Promise.all(entries
+        .filter((entry) => entry.isFile() && isPlacedName(entry.name))
+        .map(async (entry) => ({ name: entry.name, bytes: (await stat(join(restoreDir, entry.name))).size })));
+      return archives.sort((a, b) => a.name.localeCompare(b.name));
+    },
+
+    /** The absolute path of a placed archive; null for anything that is not a plain archive file there. */
+    async placedArchive(name: string): Promise<string | null> {
+      if (!isPlacedName(name)) return null;
+      const path = join(restoreDir, name);
+      return (await stat(path).catch(() => null))?.isFile() ? path : null;
+    },
+
+    /** The setup screen's restore: the shared core, reported as a refusal instead of an exception (users can't see it). */
+    async restore({ archivePath, passphrase }: { archivePath: string; passphrase: string }) {
+      try {
+        const { manifest } = await restoreCore.restore({ archivePath, passphrase });
+        return { ok: true as const, manifest: { createdAt: manifest.createdAt, migrationHead: manifest.migrationHead } };
+      } catch (error) {
+        if (error instanceof RestoreError) return { ok: false as const, code: error.code, message: error.message };
+        // An archive that will not decrypt or unpack is the same refusal to the operator as a wrong passphrase.
+        if (error instanceof BackupArchiveError) return { ok: false as const, code: 'backup_decrypt_failed' as const, message: error.message };
+        throw error;
+      }
     },
 
     /** Every run, newest first. */

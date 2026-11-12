@@ -200,6 +200,12 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
 ### Signing in and the first start
 - **First start:** if `GET /api/setup` says `needed`, show the setup form. Whoever has the setup token from the
   server log creates the first admin. Say where the token is (ADR 0012). *Web:* `SignedOut.tsx` (`Setup`).
+- **First start offers two paths:** *Start fresh* (the first-admin form above) or *Restore from backup*: the setup
+  token, the backup passphrase, and either an uploaded `.divehub-backup` archive (`POST /api/setup/restore`,
+  multipart; streamed to disk, no fixed upload cap) or one the operator placed in `/data/restore/`
+  (`GET /api/setup/restore/archives` lists them). Say that restoring replaces this fresh instance and that the server
+  stops after success; the operator restarts it and signs in with an account from the backup. A refusal keeps the
+  setup token usable for a corrected retry. *Web:* `SignedOut.tsx` (`Setup`), `SetupRestore.tsx`.
 - **Invitations and reset links:** look the token up first (`/lookup`), then show for whom it is (the e-mail).
   An invalid, used or expired link says so and to ask the admin for a new one. *Web:* `AcceptInvitation`, `ResetPassword`.
 - **Passwords:** 15 to 128 characters, enforced by the server. Say the rule beside the field

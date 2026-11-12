@@ -101,7 +101,7 @@ export function createServices({
     db, blobs, auth, assessments, backups, providers, imports,
     siteImports: createSiteImportService({ db, sources: siteSources }),
     aiAccesses: createAiAccessService(db, auth),
-    setup: createSetupService(db),
+    setup: createSetupService(db, clock ? () => clock.now() : undefined),
     invitations: createInvitationService(db),
     passwordResets: createPasswordResetService(db),
     // One count per client IP across the public token routes (ADR 0061).

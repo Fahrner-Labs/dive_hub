@@ -12,6 +12,9 @@ const SETUP_TOKEN_TTL_MS = 24 * 3600_000;
  */
 export function createSetupService(db: Db, now: () => number = Date.now) {
   let current: { hash: Buffer; expiresAt: number } | null = null;
+  // The worker waits until setup is done (plan FAH-175): start.ts registers how to start it, the setup route calls it.
+  let doneListener: (() => void | Promise<void>) | undefined;
+  let done = false;
 
   const isNeeded = async () => (await db.select({ n: count() }).from(user))[0]!.n === 0;
 
@@ -37,6 +40,22 @@ export function createSetupService(db: Db, now: () => number = Date.now) {
       if (!timingSafeEqual(given, held.hash)) return null;
       current = null; // synchronously, so a concurrent second request can't use it too
       return () => { current ??= held; };
+    },
+
+    /**
+     * How the process starts what was held back until setup existed (the in-process worker); start.ts registers it
+     * before the server listens. Called once by the first-admin route.
+     */
+    whenDone(listener: () => void | Promise<void>): void {
+      doneListener = listener;
+      if (done) void listener();
+    },
+
+    /** Setup is no longer needed: run the registered listener once. */
+    async notifyDone(): Promise<void> {
+      if (done) return;
+      done = true;
+      await doneListener?.();
     },
   };
 }

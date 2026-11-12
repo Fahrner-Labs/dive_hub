@@ -162,6 +162,52 @@ To restore, stop the app, load the dump into the database (`docker compose exec 
 divehub -d divehub < divehub-db-….sql`), unpack the archive into the files volume, restore the
 same image tag and start the stack.
 
+### Restoring a fresh instance from the setup screen
+
+A new machine, or one whose volumes were wiped, is provisioned from a `.divehub-backup` archive on
+the setup screen. This is the primary restore path; the setup state guarantees no one is signed in
+and no background job runs while the restore replaces the database and the files volume.
+
+1. Start the stack as usual:
+
+   ```sh
+   docker compose up -d
+   ```
+
+2. Read the setup token from the app log:
+
+   ```sh
+   docker compose logs app | grep 'setup token'
+   ```
+
+3. Open `https://dives.example.com/#/setup`, choose **Restore from backup**, and enter the setup
+   token and the archive's passphrase.
+
+   Upload the archive in the browser, or place it in the app's `/data/restore/` directory first and
+   pick it there (better for very large archives; the browser upload is streamed to disk and has no
+   fixed size cap):
+
+   ```sh
+   docker compose exec app mkdir -p /data/restore
+   docker compose cp /path/to/backup.divehub-backup app:/data/restore/
+   ```
+
+   `DIVEHUB_ENCRYPTION_KEY` must be the one the backup was made with; the restore refuses a
+   different or missing key, as it does a backup from a newer Dive Hub.
+
+4. The server answers, then exits so it cannot keep running on a database it just replaced. Restart
+   it:
+
+   ```sh
+   docker compose restart app
+   ```
+
+5. Sign in with an account from the backup. Forward migrations bring an older backup up to the
+   image's schema on that restart.
+
+A refused restore leaves the setup token usable, so a wrong passphrase or a mistyped archive can be
+corrected and tried again. The database is still the fresh, empty one until a restore succeeds.
+
 ### Restoring an archive with the operator CLI
 
 A `.divehub-backup` archive from Dive Hub's backup feature is restored with the operator CLI while
