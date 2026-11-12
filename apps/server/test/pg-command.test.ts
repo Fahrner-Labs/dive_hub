@@ -16,6 +16,11 @@ describe('running a PostgreSQL client command', () => {
     expect(env.PGPASSWORD).toBeUndefined();
   });
 
+  it('keeps the rest of the URL byte for byte, including a missing database path', () => {
+    const { url } = pgCommand('postgres://divehub:s3cret@db.example:5432');
+    expect(url).toBe('postgres://divehub@db.example:5432');
+  });
+
   it('redacts a password a URL or a libpq string repeats', () => {
     expect(redactPassword('Command failed: pg_dump postgres://u:hunter2@db/dive\nboom', 'postgres://u:hunter2@db/dive'))
       .toBe('Command failed: pg_dump postgres://u:***@db/dive\nboom');

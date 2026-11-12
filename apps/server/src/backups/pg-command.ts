@@ -13,8 +13,11 @@ export function pgCommand(databaseUrl: string): { url: string; env: NodeJS.Proce
   }
   if (parsed.password === '') return { url: databaseUrl, env: process.env };
   const password = decodeURIComponent(parsed.password);
+  // Remove just the `:password` part, keeping every other character of the URL: re-serialising an URL without a
+  // database path would add a trailing slash and change which database pg connects to.
+  const stripped = databaseUrl.replace(/^([a-z][a-z0-9+.-]*:\/\/[^@/]*):[^@/]*@/i, '$1@');
   parsed.password = '';
-  return { url: parsed.toString(), env: { ...process.env, PGPASSWORD: password } };
+  return { url: stripped === databaseUrl ? parsed.toString() : stripped, env: { ...process.env, PGPASSWORD: password } };
 }
 
 /** Removes a database password from text that may repeat a connection URL or libpq key/value string. */
