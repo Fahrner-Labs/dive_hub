@@ -87,7 +87,7 @@ describe('the OpenAPI document', () => {
   beforeAll(async () => {
     // As write-openapi.ts builds it: describing the routes calls none of the services.
     const services = createServices({
-      db: {} as Db, blobs: {} as BlobStore, auth, secrets: createSecretBox(undefined), siteSources: {} as Record<ImportSource, SiteSourceAdapter>,
+      db: {} as Db, blobs: {} as BlobStore, auth, secrets: createSecretBox(undefined), dataDir: '/tmp', siteSources: {} as Record<ImportSource, SiteSourceAdapter>,
       adapters: [createSsiAdapter({ client: {} as SsiClient })],
     });
     app = await buildApp({ ...services, baseUrl: 'http://localhost', maxUploadBytes: 1 });

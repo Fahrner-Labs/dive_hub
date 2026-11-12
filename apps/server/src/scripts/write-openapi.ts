@@ -15,7 +15,7 @@ import type { BlobStore } from '../storage/blob-store.js';
 
 // The services as main.ts builds them, over no database: describing the routes calls none of them.
 const services = createServices({
-  db: {} as Db, blobs: {} as BlobStore, auth, secrets: createSecretBox(undefined), siteSources: {} as Record<ImportSource, SiteSourceAdapter>,
+  db: {} as Db, blobs: {} as BlobStore, auth, secrets: createSecretBox(undefined), dataDir: '/tmp', siteSources: {} as Record<ImportSource, SiteSourceAdapter>,
   // The production Providers: their ids become the routes' enum.
   adapters: [createSsiAdapter({ client: {} as SsiClient })],
 });

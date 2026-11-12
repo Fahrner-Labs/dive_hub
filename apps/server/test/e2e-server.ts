@@ -115,8 +115,9 @@ const quick = <A extends { capabilities: { limits: { pauseMs: number; run: unkno
   ...adapter, capabilities: { ...adapter.capabilities, limits: { ...adapter.capabilities.limits, pauseMs: 0, run: { pauseMs: 150, maxDives: 100 } } },
 });
 const auth = createAuth({ db, baseUrl: `http://localhost:${port}`, secret: 'e2e-secret-with-enough-entropy-0123456789abcdef' });
+const dataDir = await mkdtemp(join(tmpdir(), 'divehub-e2e-'));
 const services = createServices({
-  db, auth, blobs: createLocalBlobStore(await mkdtemp(join(tmpdir(), 'divehub-e2e-'))), secrets: createSecretBox(Buffer.alloc(32, 9)),
+  db, auth, blobs: createLocalBlobStore(dataDir), secrets: createSecretBox(Buffer.alloc(32, 9)), dataDir,
   siteSources: createSiteSources({
     fetch: replay, overpassUrl: 'https://overpass.invalid/api/interpreter', wikidataUrl: 'https://wikidata.invalid/sparql',
     ssiSitesUrl: 'https://ssi.invalid/app/APP_CACHE_SITES.zip',
