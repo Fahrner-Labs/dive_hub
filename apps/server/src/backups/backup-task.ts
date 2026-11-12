@@ -1,4 +1,4 @@
-// The worker task of a backup run (ADR 0068, plan FAH-175): the row was queued in the request's transaction, so this
+// The worker task of a backup run (ADR 0069, plan FAH-175): the row was queued in the request's transaction, so this
 // only reads the id and lets the service do the dump, tar and encryption.
 import type { BackupService } from './backup-service.js';
 

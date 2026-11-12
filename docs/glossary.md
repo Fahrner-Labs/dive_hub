@@ -440,7 +440,7 @@ _Avoid_: Raw file, upload, dump
 _German_: Originaldatei
 
 **Backup**:
-One encrypted archive of a whole Dive Hub instance: the database and the data directory, with a manifest that records the app and schema version and a fingerprint of the instance's encryption key, never the key itself. A manual backup is encrypted with a passphrase an admin enters for that run; a scheduled backup is encrypted to an operator-held X25519 recipient, so its private key never reaches the server. The passphrase or private key is required to restore; there is no other way in. Downloading hands the archive to the admin as a file, and nothing of another User's data is shown in the app.
+One encrypted archive of a whole Dive Hub instance: the database and the data directory, with a manifest that records the app and schema version and a fingerprint of the instance's encryption key, never the key itself ([ADR 0069](decisions/0069-full-instance-backup-and-restore.md)). A manual backup is encrypted with a passphrase an admin enters for that run; a scheduled backup is encrypted to an operator-held X25519 recipient, so its private key never reaches the server. The passphrase or private key is required to restore; there is no other way in. Downloading hands the archive to the admin as a file, and nothing of another User's data is shown in the app.
 _Avoid_: Dump, snapshot, data export (an export is a User's own data)
 _German_: Sicherung
 

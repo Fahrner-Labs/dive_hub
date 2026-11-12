@@ -1,4 +1,4 @@
-// Manual and scheduled backups (ADR 0068, plan FAH-175): the `backup_runs` row, the queued worker job, and the run
+// Manual and scheduled backups (ADR 0069, plan FAH-175): the `backup_runs` row, the queued worker job, and the run
 // that dumps the database, tars the data directory and writes one encrypted archive.
 import { createHash } from 'node:crypto';
 import { execFile } from 'node:child_process';

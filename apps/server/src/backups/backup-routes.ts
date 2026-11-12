@@ -1,4 +1,4 @@
-// Admin backups (ADR 0068, plan FAH-175): start a manual passphrase-encrypted backup, list runs, download and delete.
+// Admin backups (ADR 0069, plan FAH-175): start a manual passphrase-encrypted backup, list runs, download and delete.
 import { createReadStream } from 'node:fs';
 import { stat } from 'node:fs/promises';
 import type { FastifyPluginAsyncTypebox, TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
