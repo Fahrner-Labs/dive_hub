@@ -8,7 +8,7 @@ import { randomUUID } from 'node:crypto';
 import { promisify } from 'node:util';
 import { errorMessage } from '../errors.js';
 import {
-  BackupArchiveError, encryptionKeyFingerprint, openArchiveStreaming, type BackupManifest,
+  BackupArchiveError, encryptionKeyFingerprint, openArchiveStreamingWith, type BackupDecryptionKey, type BackupManifest,
 } from './backup-archive.js';
 
 const execFileAsync = promisify(execFile);
@@ -45,7 +45,17 @@ export interface RestoreServiceDeps {
 
 export interface RestoreInput {
   archivePath: string;
-  passphrase: string;
+  /** A manual backup's passphrase. */
+  passphrase?: string | undefined;
+  /** A scheduled backup's age-style recipient private key (`AGE-SECRET-KEY-1…`). */
+  recipientKey?: string | undefined;
+}
+
+/** The envelope key the archive's header asks for: the operator supplies either the passphrase or the private key. */
+function decryptionKeyOf({ passphrase, recipientKey }: RestoreInput): BackupDecryptionKey {
+  return passphrase !== undefined
+    ? { kind: 'passphrase', passphrase }
+    : { kind: 'recipient', privateKey: recipientKey ?? '' };
 }
 
 export interface RestoreResult {
@@ -100,17 +110,17 @@ function stderrOf(error: unknown): string {
 }
 
 export function createRestoreService({ dataDir, databaseUrl, migrationsFolder, encryptionKey, log }: RestoreServiceDeps) {
-  async function restore({ archivePath, passphrase }: RestoreInput): Promise<RestoreResult> {
+  async function restore(input: RestoreInput): Promise<RestoreResult> {
     const workDir = join(dataDir, 'tmp', `restore-${randomUUID()}`);
     try {
       let opened;
       try {
-        opened = await openArchiveStreaming(archivePath, passphrase, workDir);
+        opened = await openArchiveStreamingWith(input.archivePath, decryptionKeyOf(input), workDir);
       } catch (error) {
         if (error instanceof BackupArchiveError) throw error;
         throw new RestoreError(
           'backup_decrypt_failed',
-          'the archive could not be decrypted: the passphrase is wrong or the archive is damaged',
+          'the archive could not be decrypted: the passphrase or private key is wrong, or the archive is damaged',
           { cause: error },
         );
       }

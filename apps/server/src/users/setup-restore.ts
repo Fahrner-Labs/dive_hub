@@ -29,5 +29,5 @@ export interface SetupRestore {
   /** The absolute path of a placed archive, or null when the name is not a plain file in that directory. */
   placedArchive(name: string): Promise<string | null>;
   /** Replace the database and files from an archive; never throws a refusal, it answers one. */
-  restore(input: { archivePath: string; passphrase: string }): Promise<SetupRestoreOutcome>;
+  restore(input: { archivePath: string; passphrase?: string | undefined; recipientKey?: string | undefined }): Promise<SetupRestoreOutcome>;
 }

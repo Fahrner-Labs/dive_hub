@@ -6,8 +6,8 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import pg from 'pg';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { openArchive } from '../src/backups/backup-archive.js';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { generateRecipientKeyPair, openArchive, openArchiveWith } from '../src/backups/backup-archive.js';
 import { BackupError, createBackupService, type BackupService } from '../src/backups/backup-service.js';
 import { createLocalBlobStore } from '../src/storage/blob-store.js';
 import {
@@ -142,5 +142,126 @@ describe.skipIf(!(await databaseReachable()))('backup runs', () => {
     await service.run(run.id);
     await service.remove(run.id);
     await expect(service.find(run.id)).resolves.toBeNull();
+  });
+});
+
+describe.skipIf(!(await databaseReachable()))('scheduled backups', () => {
+  let t: TestDatabase;
+  let blobs: ReturnType<typeof createLocalBlobStore>;
+  let service: BackupService;
+  let nowMs: number;
+
+  beforeAll(async () => {
+    t = await createTestDatabase();
+    blobs = createLocalBlobStore(t.dataDir);
+    nowMs = Date.now();
+    service = createBackupService({
+      db: t.db, blobs, dataDir: t.dataDir, databaseUrl: t.pool.options.connectionString!,
+      migrationsFolder, appVersion: 'test', encryptionKey: TEST_ENCRYPTION_KEY, log: silent, now: () => nowMs,
+    });
+  });
+
+  afterAll(async () => {
+    await t?.drop();
+  });
+
+  beforeEach(async () => {
+    await t.pool.query('delete from graphile_worker._private_jobs');
+    await t.pool.query('delete from backup_runs');
+  });
+
+  it('starts quiet and validates the settings before saving them', async () => {
+    const keys = generateRecipientKeyPair();
+    expect(await service.settings()).toEqual({ enabled: false, intervalHours: 24, retentionCount: 7, recipientPublicKey: null });
+    await expect(service.saveSettings({ enabled: true, intervalHours: 24, retentionCount: 7, recipientPublicKey: null }))
+      .rejects.toMatchObject({ code: 'backup_recipient_missing' });
+    await expect(service.saveSettings({ enabled: true, intervalHours: 24, retentionCount: 7, recipientPublicKey: 'age1nope' }))
+      .rejects.toMatchObject({ code: 'backup_recipient_invalid' });
+    await expect(service.saveSettings({ enabled: false, intervalHours: 0, retentionCount: 7, recipientPublicKey: null }))
+      .rejects.toMatchObject({ code: 'backup_settings_invalid' });
+    await expect(service.saveSettings({ enabled: false, intervalHours: 24, retentionCount: 0, recipientPublicKey: null }))
+      .rejects.toMatchObject({ code: 'backup_settings_invalid' });
+    const saved = await service.saveSettings({ enabled: true, intervalHours: 6, retentionCount: 3, recipientPublicKey: keys.recipient });
+    expect(saved).toEqual({ enabled: true, intervalHours: 6, retentionCount: 3, recipientPublicKey: keys.recipient });
+    expect(await service.settings()).toEqual(saved);
+  });
+
+  it('queues one scheduled run per interval, not one per tick', async () => {
+    const keys = generateRecipientKeyPair();
+    await service.saveSettings({ enabled: true, intervalHours: 6, retentionCount: 7, recipientPublicKey: keys.recipient });
+    await service.tick();
+    await service.tick();
+    const scheduled = (await service.list()).filter((run) => run.kind === 'scheduled');
+    expect(scheduled).toHaveLength(1);
+    expect(scheduled[0]).toMatchObject({ status: 'queued' });
+    const jobs = await t.pool.query<{ payload: unknown }>('select payload from graphile_worker._private_jobs where key = $1', [`backup-run:${scheduled[0]!.id}`]);
+    expect(jobs.rows).toHaveLength(1);
+    expect(jobs.rows[0]!.payload).toEqual({ backupRunId: scheduled[0]!.id });
+
+    // A manual backup in flight keeps the scheduler from writing over it; the next interval can try again.
+    await t.pool.query("update backup_runs set status = 'ready' where id = $1", [scheduled[0]!.id]);
+    nowMs += 7 * 3_600_000;
+    const manual = await service.create({ kind: 'manual', passphrase: 'a manual passphrase' });
+    await service.tick();
+    expect((await service.list()).filter((run) => run.kind === 'scheduled')).toHaveLength(1);
+    await t.pool.query("update backup_runs set status = 'failed' where id = $1", [manual.id]);
+    await service.tick();
+    expect((await service.list()).filter((run) => run.kind === 'scheduled')).toHaveLength(2);
+  });
+
+  it('keeps the newest scheduled runs, never a manual run, and always the last success', async () => {
+    const insert = async (kind: 'manual' | 'scheduled', status: string, at: Date): Promise<string> => {
+      const [row] = (await t.pool.query<{ id: string }>(
+        'insert into backup_runs (kind, status, created_at, updated_at) values ($1, $2, $3, now()) returning id',
+        [kind, status, at],
+      )).rows;
+      return row!.id;
+    };
+    const day = 86_400_000;
+    const at = new Date(nowMs);
+    const manual = await insert('manual', 'ready', new Date(at.getTime() - 10 * day));
+    const ready = [];
+    for (const days of [6, 5, 4, 3, 2]) ready.push(await insert('scheduled', 'ready', new Date(at.getTime() - days * day)));
+    const failed = await insert('scheduled', 'failed', new Date(at.getTime() - day));
+    await service.saveSettings({ enabled: false, intervalHours: 24, retentionCount: 3, recipientPublicKey: null });
+    expect(await service.sweepRetention()).toBe(3);
+    const left = (await service.list()).map((run) => run.id);
+    expect(left).toContain(manual);
+    expect(left).toEqual(expect.arrayContaining([failed, ready[3]!, ready[4]!]));
+    for (const removed of ready.slice(0, 3)) expect(left).not.toContain(removed);
+
+    // With room for one, the newest run may be a failure; the last successful run is still never deleted.
+    await t.pool.query('delete from backup_runs');
+    const olderSuccess = await insert('scheduled', 'ready', new Date(at.getTime() - 2 * 3_600_000));
+    const newerFailure = await insert('scheduled', 'failed', new Date(at.getTime() - 3_600_000));
+    await service.saveSettings({ enabled: false, intervalHours: 24, retentionCount: 1, recipientPublicKey: null });
+    expect(await service.sweepRetention()).toBe(0);
+    const kept = (await service.list()).map((run) => run.id);
+    expect(kept).toEqual(expect.arrayContaining([olderSuccess, newerFailure]));
+  });
+
+  it('writes a scheduled archive to the recipient, and a failing dump marks the run failed', async () => {
+    if (!(await dumpToolAvailable())) return;
+    const keys = generateRecipientKeyPair();
+    await service.saveSettings({ enabled: true, intervalHours: 6, retentionCount: 7, recipientPublicKey: keys.recipient });
+    await service.tick();
+    const queued = (await service.list()).find((run) => run.kind === 'scheduled' && run.status === 'queued');
+    expect(queued).toBeDefined();
+    await service.run(queued!.id);
+    expect(await service.find(queued!.id)).toMatchObject({ status: 'ready' });
+    const opened = await openArchiveWith(service.archivePath(queued!.id), { kind: 'recipient', privateKey: keys.privateKey }, join(t.dataDir, 'verify-recipient'));
+    expect(opened.manifest.encryption).toMatchObject({ kdf: 'x25519', recipient: keys.recipient });
+    expect(opened.manifest.tableCounts.user).toBeGreaterThanOrEqual(0);
+
+    const [row] = (await t.pool.query<{ id: string }>(
+      "insert into backup_runs (kind, status) values ('scheduled', 'queued') returning id",
+    )).rows;
+    const failing = createBackupService({
+      db: t.db, blobs, dataDir: t.dataDir, databaseUrl: 'postgres://divehub:wrong@127.0.0.1:1/missing',
+      migrationsFolder, appVersion: 'test', encryptionKey: TEST_ENCRYPTION_KEY, log: silent, now: () => nowMs,
+    });
+    await failing.run(row!.id);
+    expect(await failing.find(row!.id)).toMatchObject({ status: 'failed' });
+    expect((await failing.find(row!.id))!.error).toBeTruthy();
   });
 });

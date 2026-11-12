@@ -461,8 +461,12 @@
               "backup_not_ready",
               "backup_file_missing",
               "backup_passphrase_missing",
+              "backup_settings_invalid",
+              "backup_recipient_missing",
+              "backup_recipient_invalid",
               "setup_restore_source_missing",
               "setup_restore_archive_missing",
+              "setup_restore_key_missing",
               "setup_restore_decrypt_failed",
               "setup_restore_key_mismatch",
               "setup_restore_schema_newer",
@@ -3359,8 +3363,12 @@
                   "backup_not_ready",
                   "backup_file_missing",
                   "backup_passphrase_missing",
+                  "backup_settings_invalid",
+                  "backup_recipient_missing",
+                  "backup_recipient_invalid",
                   "setup_restore_source_missing",
                   "setup_restore_archive_missing",
+                  "setup_restore_key_missing",
                   "setup_restore_decrypt_failed",
                   "setup_restore_key_mismatch",
                   "setup_restore_schema_newer",
@@ -3569,8 +3577,12 @@
                   "backup_not_ready",
                   "backup_file_missing",
                   "backup_passphrase_missing",
+                  "backup_settings_invalid",
+                  "backup_recipient_missing",
+                  "backup_recipient_invalid",
                   "setup_restore_source_missing",
                   "setup_restore_archive_missing",
+                  "setup_restore_key_missing",
                   "setup_restore_decrypt_failed",
                   "setup_restore_key_mismatch",
                   "setup_restore_schema_newer",
@@ -4386,8 +4398,12 @@
                         "backup_not_ready",
                         "backup_file_missing",
                         "backup_passphrase_missing",
+                        "backup_settings_invalid",
+                        "backup_recipient_missing",
+                        "backup_recipient_invalid",
                         "setup_restore_source_missing",
                         "setup_restore_archive_missing",
+                        "setup_restore_key_missing",
                         "setup_restore_decrypt_failed",
                         "setup_restore_key_mismatch",
                         "setup_restore_schema_newer",
@@ -6159,7 +6175,7 @@
     "/api/setup/restore": {
       "post": {
         "summary": "Restore a fresh instance from a .divehub-backup archive (setup token required)",
-        "description": "Multipart fields: token, passphrase, then either a file in \"file\" or the name of an archive in /data/restore/ in \"placed\". The upload has no fixed size cap. On success the server exits; restart it.",
+        "description": "Multipart fields: token, passphrase (a manual backup) or recipientKey (a scheduled backup), then either a file in \"file\" or the name of an archive in /data/restore/ in \"placed\". The upload has no fixed size cap. On success the server exits; restart it.",
         "responses": {
           "200": {
             "description": "Default Response",
@@ -7104,6 +7120,160 @@
                     "expiresAt": {
                       "type": "string",
                       "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/backups/settings": {
+      "get": {
+        "summary": "The scheduled-backup setting (admins only)",
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "enabled",
+                    "intervalHours",
+                    "retentionCount",
+                    "recipientPublicKey"
+                  ],
+                  "properties": {
+                    "enabled": {
+                      "type": "boolean"
+                    },
+                    "intervalHours": {
+                      "type": "integer"
+                    },
+                    "retentionCount": {
+                      "type": "integer"
+                    },
+                    "recipientPublicKey": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Schedule backups and set their retention (admins only)",
+        "description": "Scheduled backups encrypt to the operator-held X25519 recipient; the private key never reaches the server. Retention keeps the newest scheduled runs and never deletes a manual run or the last successful run.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "enabled",
+                  "intervalHours",
+                  "retentionCount"
+                ],
+                "properties": {
+                  "enabled": {
+                    "type": "boolean"
+                  },
+                  "intervalHours": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 168,
+                    "description": "How often a scheduled backup runs, in hours"
+                  },
+                  "retentionCount": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 365,
+                    "description": "How many scheduled runs to keep; manual runs are never deleted"
+                  },
+                  "recipientPublicKey": {
+                    "type": "string",
+                    "maxLength": 128,
+                    "description": "An age-style X25519 recipient (age1…) that scheduled backups encrypt to; required while enabled. Omit or send an empty string to clear."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "enabled",
+                    "intervalHours",
+                    "retentionCount",
+                    "recipientPublicKey"
+                  ],
+                  "properties": {
+                    "enabled": {
+                      "type": "boolean"
+                    },
+                    "intervalHours": {
+                      "type": "integer"
+                    },
+                    "retentionCount": {
+                      "type": "integer"
+                    },
+                    "recipientPublicKey": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
                     }
                   }
                 }

@@ -214,7 +214,7 @@ describe.skipIf(!(await databaseReachable()))('restoring a backup', () => {
       encryptionKey: TEST_ENCRYPTION_KEY,
       env: { DIVEHUB_BACKUP_PASSPHRASE: 'a passphrase' },
       io: { out() {}, err() {} },
-      restore: async ({ archivePath }: { archivePath: string; passphrase: string }) => {
+      restore: async ({ archivePath }: { archivePath: string }) => {
         calls.push(archivePath);
         return {
           manifest: { createdAt: '2026-11-12T10:00:00.000Z', migrationHead: '0056_keen_maelstrom' } as BackupManifest,
@@ -230,6 +230,29 @@ describe.skipIf(!(await databaseReachable()))('restoring a backup', () => {
       await lock.release();
     }
     expect(await probeAppLock(t.dataDir)).toMatchObject({ running: false, reason: 'missing' });
+  });
+
+  it('takes a scheduled archive key from a recipient-key file', async () => {
+    const archive = join(t.dataDir, 'scheduled.divehub-backup');
+    await writeFile(archive, 'not opened by the stubbed restore');
+    const keyFile = join(t.dataDir, 'recipient-key.txt');
+    const privateKey = 'AGE-SECRET-KEY-1QQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQ';
+    await writeFile(keyFile, `${privateKey}\n`);
+    let seen: { archivePath: string; passphrase?: string | undefined; recipientKey?: string | undefined } | undefined;
+    const deps = {
+      dataDir: t.dataDir,
+      databaseUrl: 'postgres://divehub:nowhere@127.0.0.1:1/never',
+      migrationsFolder,
+      encryptionKey: TEST_ENCRYPTION_KEY,
+      env: {},
+      io: { out() {}, err() {} },
+      restore: async (input: { archivePath: string; passphrase?: string | undefined; recipientKey?: string | undefined }) => {
+        seen = input;
+        return { manifest: { createdAt: '2026-11-12T10:00:00.000Z', migrationHead: '0056_keen_maelstrom' } as BackupManifest };
+      },
+    };
+    expect(await runRestoreCli([archive, '--recipient-key-file', keyFile], deps)).toBe(0);
+    expect(seen).toEqual({ archivePath: archive, recipientKey: privateKey });
   });
 
   it('treats an old heartbeat as a stopped app', async () => {

@@ -158,6 +158,38 @@ Run this on a schedule and copy the files off the host. Store `.env` with your s
 but keep `DIVEHUB_ENCRYPTION_KEY` apart from the database dump: the dump plus the key decrypts
 what it protects.
 
+### Scheduled backups and their recipient key
+
+Dive Hub can write a full `.divehub-backup` archive to its own `/data/backups` directory at an
+interval. Scheduled archives are encrypted to an X25519 **recipient** you hold the private key for,
+so the server can create backups but cannot read them:
+
+```sh
+# On your workstation, not the server. age-keygen comes from the age package.
+age-keygen -o divehub-backup.key
+grep 'public key' divehub-backup.key   # age1… — paste this into the backup settings
+```
+
+Keep `divehub-backup.key` (the `AGE-SECRET-KEY-1…` inside) off the server and backed up separately;
+without it no scheduled archive can be restored. Set the schedule with the admin backups
+`PUT /api/admin/backups/settings` route (the admin page follows in a later slice): `enabled`,
+`intervalHours`, `retentionCount`, and `recipientPublicKey`. Retention keeps the newest scheduled
+runs and never deletes a manual run or the last successful scheduled one. Archives arrive under
+`/data/backups` on the data volume, next to the files they protect.
+
+Restore a scheduled archive with the private key. On the setup screen, choose **Restore from
+backup** and paste the `AGE-SECRET-KEY-1…` text where it asks for the archive key; the operator CLI
+takes it from `DIVEHUB_BACKUP_RECIPIENT_KEY` (or `--recipient-key-file <path>`):
+
+```sh
+read -rs DIVEHUB_BACKUP_RECIPIENT_KEY; export DIVEHUB_BACKUP_RECIPIENT_KEY
+scripts/restore-backup.sh /path/to/backup.divehub-backup
+```
+
+The archive format and encryption are Dive Hub's own (AES-256-GCM); the recipient and private key
+use age's `age1…` / `AGE-SECRET-KEY-1…` bech32 text so `age-keygen` can make them, but `age` itself
+does not open a `.divehub-backup` file.
+
 To restore, stop the app, load the dump into the database (`docker compose exec -T db psql -U
 divehub -d divehub < divehub-db-….sql`), unpack the archive into the files volume, restore the
 same image tag and start the stack.
@@ -181,7 +213,8 @@ and no background job runs while the restore replaces the database and the files
    ```
 
 3. Open `https://dives.example.com/#/setup`, choose **Restore from backup**, and enter the setup
-   token and the archive's passphrase.
+   token and the archive's key: a manual backup's passphrase, or a scheduled backup's
+   `AGE-SECRET-KEY-1…` private key.
 
    Upload the archive in the browser, or place it in the app's `/data/restore/` directory first and
    pick it there (better for very large archives; the browser upload is streamed to disk and has no
@@ -220,11 +253,13 @@ the schema version before it writes anything, then replaces the database and the
    docker compose stop app
    ```
 
-2. Put the passphrase in the environment (it reaches the one-off container, never the shell
-   history or a log):
+2. Put the archive's key in the environment (it reaches the one-off container, never the shell
+   history or a log): a manual backup's passphrase, or a scheduled backup's private key.
 
    ```sh
    printf 'Backup passphrase: '; read -rs DIVEHUB_BACKUP_PASSPHRASE; export DIVEHUB_BACKUP_PASSPHRASE
+   # For a scheduled archive, instead:
+   # read -rs DIVEHUB_BACKUP_RECIPIENT_KEY; export DIVEHUB_BACKUP_RECIPIENT_KEY
    ```
 
 3. Restore the archive from wherever it sits on the host:
@@ -243,7 +278,8 @@ the schema version before it writes anything, then replaces the database and the
    ```
 
    Add `-v "$PWD/passphrase:/restore/passphrase:ro"` and pass `--passphrase-file
-   /restore/passphrase` to read the passphrase from a mounted file instead; delete it after.
+   /restore/passphrase` to read the passphrase from a mounted file instead; delete it after. For a
+   scheduled archive, mount the private-key file and pass `--recipient-key-file /restore/key`.
 
 4. Start the app again with `docker compose up -d app`. Forward migrations bring an older
    archive up to the image's schema.

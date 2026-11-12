@@ -201,11 +201,14 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
 - **First start:** if `GET /api/setup` says `needed`, show the setup form. Whoever has the setup token from the
   server log creates the first admin. Say where the token is (ADR 0012). *Web:* `SignedOut.tsx` (`Setup`).
 - **First start offers two paths:** *Start fresh* (the first-admin form above) or *Restore from backup*: the setup
-  token, the backup passphrase, and either an uploaded `.divehub-backup` archive (`POST /api/setup/restore`,
+  token, the archive's key, and either an uploaded `.divehub-backup` archive (`POST /api/setup/restore`,
   multipart; streamed to disk, no fixed upload cap) or one the operator placed in `/data/restore/`
-  (`GET /api/setup/restore/archives` lists them). Say that restoring replaces this fresh instance and that the server
-  stops after success; the operator restarts it and signs in with an account from the backup. A refusal keeps the
-  setup token usable for a corrected retry. *Web:* `SignedOut.tsx` (`Setup`), `SetupRestore.tsx`.
+  (`GET /api/setup/restore/archives` lists them). The key is a manual backup's passphrase or a scheduled backup's
+  age-style recipient private key (`AGE-SECRET-KEY-1…`); the route takes the former in `passphrase` and the latter in
+  `recipientKey`, and also recognises a private key sent in `passphrase`. Say that restoring replaces this fresh
+  instance and that the server stops after success; the operator restarts it and signs in with an account from the
+  backup. A refusal keeps the setup token usable for a corrected retry. *Web:* `SignedOut.tsx` (`Setup`),
+  `SetupRestore.tsx`.
 - **Invitations and reset links:** look the token up first (`/lookup`), then show for whom it is (the e-mail).
   An invalid, used or expired link says so and to ask the admin for a new one. *Web:* `AcceptInvitation`, `ResetPassword`.
 - **Passwords:** 15 to 128 characters, enforced by the server. Say the rule beside the field
@@ -258,6 +261,13 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   and works again when switched back on. "Revoke all" (`DELETE /api/admin/ai-accesses`) asks first and can't be undone.
   Admins see how many accesses exist, never whose or what they read. *Web:* `AiAccess.tsx` (`AiAccessSetting`).
 - **Admin pages only for admins.** The server refuses anyone else (`admins_only`).
+- **Scheduled backups** (`GET`/`PUT /api/admin/backups/settings`): one setting for the instance — on/off, interval in
+  hours (1–168), retention count (1–365), and the operator-held X25519 recipient (`age1…`) that scheduled archives
+  encrypt to. The recipient is required while scheduling is on; the private key never goes to the server. Say that a
+  scheduled backup lands on the server's `/data/backups`, that retention keeps the newest scheduled runs and never
+  deletes a manual run or the last successful one, and that the operator must keep the private key to restore. On
+  `backup_recipient_missing` / `backup_recipient_invalid` say what to paste; on `backup_settings_invalid` show the
+  allowed ranges. The admin page itself is a later slice; until then the routes are the contract.
 - **Users:**
   - Don't offer to demote, disable or delete the last enabled admin, or to disable or delete oneself; the
     server refuses those too (ADR 0013).

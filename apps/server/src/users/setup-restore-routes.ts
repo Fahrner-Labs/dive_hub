@@ -44,6 +44,7 @@ const ANSWER: Record<SetupRestoreFailure, { code: ProblemCode; status: 400 | 500
 interface RestoreParts {
   retry: (() => void) | null;
   passphrase?: string | undefined;
+  recipientKey?: string | undefined;
   placed?: string | undefined;
   stored?: StoredBlob | undefined;
 }
@@ -64,11 +65,17 @@ async function readParts(request: FastifyRequest, blobs: BlobStore, consume: (to
       parts.retry = consume(String(part.value).trim());
     } else if (part.fieldname === 'passphrase') {
       parts.passphrase = String(part.value);
+    } else if (part.fieldname === 'recipientKey') {
+      parts.recipientKey = String(part.value);
     } else if (part.fieldname === 'placed') {
       parts.placed = String(part.value);
     }
   }
 }
+
+/** A scheduled archive's key is age-style; the setup form's one field takes either that or a passphrase. */
+const looksLikeRecipientPrivateKey = (value: string): boolean =>
+  value.trim().toUpperCase().startsWith('AGE-SECRET-KEY-1');
 
 export const setupRestoreRoutes: FastifyPluginAsyncTypebox<SetupRestoreRouteDeps> = async (app, { setup, setupRestore, blobs, tokenAttempts, onRestored }) => {
   const limited = limitAttempts(tokenAttempts);
@@ -84,8 +91,9 @@ export const setupRestoreRoutes: FastifyPluginAsyncTypebox<SetupRestoreRouteDeps
     onRequest: limited,
     schema: {
       summary: 'Restore a fresh instance from a .divehub-backup archive (setup token required)',
-      description: 'Multipart fields: token, passphrase, then either a file in "file" or the name of an archive in '
-        + '/data/restore/ in "placed". The upload has no fixed size cap. On success the server exits; restart it.',
+      description: 'Multipart fields: token, passphrase (a manual backup) or recipientKey (a scheduled backup), then '
+        + 'either a file in "file" or the name of an archive in /data/restore/ in "placed". The upload has no fixed size cap. '
+        + 'On success the server exits; restart it.',
       consumes: ['multipart/form-data'],
       response: { 200: RestoreResult, 400: Problem, 403: Problem, 409: Problem, 429: Problem, 500: Problem },
     },
@@ -110,14 +118,18 @@ export const setupRestoreRoutes: FastifyPluginAsyncTypebox<SetupRestoreRouteDeps
 
     try {
       if (!parts.retry) return fail('setup_token_invalid', undefined, 403);
-      if (!parts.passphrase) return fail('backup_passphrase_missing');
+      const suppliedKey = parts.recipientKey ?? parts.passphrase;
+      if (suppliedKey === undefined || suppliedKey === '') return fail('setup_restore_key_missing');
       let archivePath: string | null;
       if (parts.stored) archivePath = blobs.pathOf(parts.stored.key);
       else if (parts.placed) archivePath = await setupRestore.placedArchive(parts.placed);
       else return fail('setup_restore_source_missing');
       if (!archivePath) return fail('setup_restore_archive_missing');
 
-      const outcome = await setupRestore.restore({ archivePath, passphrase: parts.passphrase });
+      const key = parts.recipientKey !== undefined || looksLikeRecipientPrivateKey(suppliedKey)
+        ? { recipientKey: suppliedKey.trim() }
+        : { passphrase: suppliedKey };
+      const outcome = await setupRestore.restore({ archivePath, ...key });
       if (!outcome.ok) {
         request.log.warn({ code: outcome.code, detail: outcome.message }, 'setup restore refused');
         const answer = ANSWER[outcome.code];

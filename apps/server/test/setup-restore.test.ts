@@ -6,6 +6,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { generateRecipientKeyPair } from '../src/backups/backup-archive.js';
 import { createBackupService } from '../src/backups/backup-service.js';
 import { createLocalBlobStore } from '../src/storage/blob-store.js';
 import {
@@ -50,6 +51,8 @@ function multipart(fields: Record<string, string>, file?: { field: string; name:
 describe.skipIf(!(await databaseReachable()))('first-start restore', () => {
   let source: TestDatabase;
   let archive: Buffer;
+  let recipientArchive: Buffer;
+  let recipientPrivateKey: string;
 
   beforeAll(async () => {
     source = await createTestDatabase();
@@ -66,6 +69,16 @@ describe.skipIf(!(await databaseReachable()))('first-start restore', () => {
     await backups.run(run.id);
     expect(await backups.find(run.id)).toMatchObject({ status: 'ready' });
     archive = await readFile(backups.archivePath(run.id));
+
+    const keys = generateRecipientKeyPair();
+    recipientPrivateKey = keys.privateKey;
+    await backups.saveSettings({ enabled: true, intervalHours: 6, retentionCount: 7, recipientPublicKey: keys.recipient });
+    await backups.tick();
+    const scheduled = (await backups.list()).find((candidate) => candidate.kind === 'scheduled' && candidate.status === 'queued');
+    expect(scheduled).toBeDefined();
+    await backups.run(scheduled!.id);
+    expect(await backups.find(scheduled!.id)).toMatchObject({ status: 'ready' });
+    recipientArchive = await readFile(backups.archivePath(scheduled!.id));
   });
 
   afterAll(async () => {
@@ -98,6 +111,26 @@ describe.skipIf(!(await databaseReachable()))('first-start restore', () => {
       expect(await readFile(join(target.dataDir, 'auth-secret'), 'utf8')).toBe('the auth secret from the backup');
       // The streamed upload was cleaned up, not left in incoming/.
       expect(await readdir(join(target.dataDir, 'incoming')).catch(() => [])).toEqual([]);
+    } finally {
+      await ctx.app.close();
+      await target.drop();
+    }
+  });
+
+  it('restores a scheduled archive with the recipient private key', async () => {
+    if (!(await restoreToolsAvailable())) return;
+    const target = await createTestDatabase();
+    const ctx = await createTestApp(target);
+    try {
+      const token = await ctx.setup.issue();
+      const response = await ctx.app.inject({
+        method: 'POST', url: '/api/setup/restore',
+        ...multipart({ token: token!, recipientKey: recipientPrivateKey }, { field: 'file', name: 'scheduled.divehub-backup', data: recipientArchive }),
+      });
+      expect(response.statusCode).toBe(200);
+      expect((await ctx.app.inject({ method: 'GET', url: '/api/setup' })).json()).toEqual({ needed: false });
+      const users = (await target.pool.query<{ email: string }>('select email from "user"')).rows;
+      expect(users.map((row) => row.email)).toContain(ADMIN_EMAIL);
     } finally {
       await ctx.app.close();
       await target.drop();
@@ -192,7 +225,7 @@ describe.skipIf(!(await databaseReachable()))('first-start restore', () => {
         method: 'POST', url: '/api/setup/restore', ...multipart({ token: token!, placed: 'nightly.divehub-backup' }),
       });
       expect(noPassphrase.statusCode).toBe(400);
-      expect(noPassphrase.json()).toMatchObject({ code: 'backup_passphrase_missing' });
+      expect(noPassphrase.json()).toMatchObject({ code: 'setup_restore_key_missing' });
 
       const missingArchive = await ctx.app.inject({
         method: 'POST', url: '/api/setup/restore', ...multipart({ token: token!, passphrase: PASSPHRASE, placed: 'nowhere.divehub-backup' }),

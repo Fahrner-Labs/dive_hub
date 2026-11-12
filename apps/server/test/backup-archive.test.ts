@@ -6,8 +6,9 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
-  BACKUP_FORMAT_VERSION, BackupArchiveError, buildManifest, decryptFile, encryptFile, encryptionKeyFingerprint,
-  fileTreeChecksum, openArchive, packContainer, verifyManifest, type BackupManifest,
+  BACKUP_FORMAT_VERSION, BackupArchiveError, buildManifest, decryptFile, decryptFileWith, encodeRecipient,
+  encryptFile, encryptFileToRecipient, encryptionKeyFingerprint, fileTreeChecksum, generateRecipientKeyPair,
+  isRecipient, openArchive, packContainer, verifyManifest, type BackupManifest,
 } from '../src/backups/backup-archive.js';
 
 const sha256 = async (path: string) => {
@@ -18,11 +19,15 @@ const sha256 = async (path: string) => {
 
 const partOf = async (path: string) => ({ sha256: await sha256(path), bytes: (await stat(path)).size });
 
-const manifestFor = (parts: { database: { sha256: string; bytes: number }; files: { sha256: string; bytes: number } }, key?: Buffer): BackupManifest =>
+const manifestFor = (
+  parts: { database: { sha256: string; bytes: number }; files: { sha256: string; bytes: number } },
+  key?: Buffer,
+  encryption?: BackupManifest['encryption'],
+): BackupManifest =>
   buildManifest({
     appVersion: '9.9.9', migrationHead: '0055_sweet_rocket_raccoon', createdAt: new Date('2026-11-12T10:00:00Z'),
     tableCounts: { dive: 2, user: 1 }, files: { sha256: 'a'.repeat(64), count: 3 }, parts,
-    encryptionKey: key, salt: randomBytes(16),
+    encryptionKey: key, salt: randomBytes(16), ...(encryption && { encryption }),
   });
 
 describe('the backup manifest', () => {
@@ -101,7 +106,7 @@ describe('the passphrase envelope', () => {
       encryptionKey: undefined, salt,
     });
     expect(manifest.encryption.salt).toBe(salt.toString('base64'));
-    expect(manifest.encryption.n).toBe(16_384);
+    expect(manifest.encryption).toMatchObject({ kdf: 'scrypt', n: 16_384 });
   });
 });
 
@@ -146,6 +151,58 @@ describe('packing and opening an archive', () => {
     const archive = join(dir, 'corrupt.divehub-backup');
     await encryptFile(join(dir, 'corrupt.tar'), archive, 'a passphrase');
     await expect(openArchive(archive, 'a passphrase', out)).rejects.toThrow(/backup part/);
+  });
+});
+
+describe('the recipient envelope', () => {
+  let dir: string;
+  beforeAll(async () => { dir = await mkdtemp(join(tmpdir(), 'divehub-backup-recipient-')); });
+  afterAll(async () => { await rm(dir, { recursive: true, force: true }); });
+
+  it('roundtrips a file with the recipient private key and refuses another key', async () => {
+    const plain = join(dir, 'plain.bin');
+    const archive = join(dir, 'archive.bin');
+    const opened = join(dir, 'opened.bin');
+    const data = randomBytes(32 * 1024 + 7);
+    await writeFile(plain, data);
+    const keys = generateRecipientKeyPair();
+    const other = generateRecipientKeyPair();
+    await encryptFileToRecipient(plain, archive, keys.recipient);
+    await decryptFileWith(archive, opened, { kind: 'recipient', privateKey: keys.privateKey });
+    expect(await readFile(opened)).toEqual(data);
+    await expect(decryptFileWith(archive, join(dir, 'wrong.bin'), { kind: 'recipient', privateKey: other.privateKey })).rejects.toThrow();
+  });
+
+  it('draws age-style keys that decode back to the same bytes', () => {
+    const keys = generateRecipientKeyPair();
+    expect(keys.recipient).toMatch(/^age1[02-9ac-hj-np-z]{58}$/);
+    expect(keys.privateKey).toMatch(/^AGE-SECRET-KEY-1[02-9AC-HJ-NP-Z]{58}$/);
+    expect(isRecipient(keys.recipient)).toBe(true);
+    expect(isRecipient(encodeRecipient(Buffer.alloc(32, 3)))).toBe(true);
+    expect(isRecipient('age1not-a-real-key')).toBe(false);
+    expect(isRecipient('AGE-SECRET-KEY-1QQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQ')).toBe(false);
+  });
+
+  it('records the recipient and ephemeral key in the manifest', async () => {
+    const plain = join(dir, 'plain2.bin');
+    await writeFile(plain, 'x');
+    const keys = generateRecipientKeyPair();
+    const { encryption } = await encryptFileToRecipient(plain, join(dir, 'archive2.bin'), keys.recipient);
+    const manifest = manifestFor({ database: { sha256: 'd'.repeat(64), bytes: 1 }, files: { sha256: 'e'.repeat(64), bytes: 1 } }, undefined, encryption);
+    expect(manifest.encryption).toMatchObject({ kdf: 'x25519', recipient: keys.recipient });
+    expect(verifyManifest(manifest)).toBe(manifest);
+  });
+
+  it('refuses the wrong kind of key for either envelope', async () => {
+    const plain = join(dir, 'plain3.bin');
+    const passphraseArchive = join(dir, 'passphrase.bin');
+    const recipientArchive = join(dir, 'recipient.bin');
+    await writeFile(plain, 'x');
+    const keys = generateRecipientKeyPair();
+    await encryptFile(plain, passphraseArchive, 'a passphrase');
+    await encryptFileToRecipient(plain, recipientArchive, keys.recipient);
+    await expect(decryptFileWith(passphraseArchive, join(dir, 'a.bin'), { kind: 'recipient', privateKey: keys.privateKey })).rejects.toThrow(/passphrase/);
+    await expect(decryptFileWith(recipientArchive, join(dir, 'b.bin'), { kind: 'passphrase', passphrase: 'a passphrase' })).rejects.toThrow(/recipient/);
   });
 });
 

@@ -4,7 +4,7 @@
 > `pnpm check` fails when this map is stale. Symbols are ranked by how widely the code references them;
 > each module shows its most-referenced ones (exported symbols rank higher). Search here before walking the tree.
 
-Files: 366 · symbols: 3334 · shown: 250
+Files: 366 · symbols: 3389 · shown: 253
 
 ### server/(root)
 apps/server/src/vocabulary.ts:13 type SiteWaterType
@@ -34,14 +34,17 @@ apps/server/src/auth/password.ts:11 const MIN_PASSWORD_LENGTH
 … 23 more symbols in this module
 
 ### server/backups
-apps/server/src/backups/backup-archive.ts:34 class BackupArchiveError
+apps/server/src/backups/backup-archive.ts:48 class BackupArchiveError
 apps/server/src/backups/restore-service.ts:24 class RestoreError
-apps/server/src/backups/restore-service.ts:102 fn createRestoreService
-apps/server/src/backups/backup-service.ts:30 class BackupError
-apps/server/src/backups/backup-archive.ts:99 const encryptionKeyFingerprint
-apps/server/src/backups/backup-service.ts:54 const isUniqueViolation
-apps/server/src/backups/backup-service.ts:241 type BackupService
-… 84 more symbols in this module
+apps/server/src/backups/restore-service.ts:112 fn createRestoreService
+apps/server/src/backups/backup-service.ts:50 class BackupError
+apps/server/src/backups/backup-archive.ts:128 const encryptionKeyFingerprint
+apps/server/src/backups/backup-service.ts:86 const isUniqueViolation
+apps/server/src/backups/backup-service.ts:405 type BackupService
+apps/server/src/backups/backup-archive.ts:79 iface BackupManifest
+apps/server/src/backups/backup-archive.ts:304 fn passphraseEncryption
+apps/server/src/backups/backup-service.ts:98 fn createBackupService
+… 134 more symbols in this module
 
 ### server/centres
 apps/server/src/centres/centre-view.ts:24 const CentreView
@@ -73,7 +76,7 @@ apps/server/src/db/auth-schema.ts:20 const user
 apps/server/src/db/import-types.ts:12 iface ImportedValues
 apps/server/src/db/import-types.ts:6 type ImportArea
 apps/server/src/db/auth-schema.ts:39 const session
-… 143 more symbols in this module
+… 144 more symbols in this module
 
 ### server/divers
 apps/server/src/divers/management.ts:8 fn managedDiverIds
@@ -122,9 +125,9 @@ apps/server/src/equipment/equipment-view.ts:22 const ServiceScheduleViewSchema
 apps/server/src/http/schemas.ts:10 const Nullable
 apps/server/src/http/schemas.ts:5 const DateTime
 apps/server/src/http/schemas.ts:4 const IdParams
-apps/server/src/http/problems.ts:179 const Problem
-apps/server/src/http/problems.ts:182 const problem
-apps/server/src/http/problems.ts:206 const answerErrors
+apps/server/src/http/problems.ts:183 const Problem
+apps/server/src/http/problems.ts:186 const problem
+apps/server/src/http/problems.ts:210 const answerErrors
 … 22 more symbols in this module
 
 ### server/imports
@@ -262,7 +265,7 @@ apps/server/src/users/tokens.ts:5 const sha256
 apps/server/src/users/views.ts:43 const toUserView
 apps/server/src/users/user-admin-service.ts:10 class UserAdminError
 apps/server/src/users/tokens.ts:4 const newToken
-… 56 more symbols in this module
+… 57 more symbols in this module
 
 ### web/(root)
 apps/web/src/api.ts:217 fn unwrap

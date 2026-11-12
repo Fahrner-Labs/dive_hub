@@ -118,10 +118,11 @@ export async function startWorker(pool: pg.Pool, deps: WorkerDeps): Promise<Runn
           });
         }
       },
-      // Wakes Waiting pushes and queues the scheduled fetches that are due (ADR 0056).
+      // Wakes Waiting pushes, queues the scheduled fetches that are due, and a backup whose interval passed (ADR 0056).
       [AUTOMATION_TICK_TASK]: async () => {
         await waitingPushes.tick();
         await scheduledFetch.tick();
+        await backups.tick();
       },
       // One Connection's scheduled fetch: an unattended Import, which PROCESS_IMPORT_TASK then runs.
       [SCHEDULED_FETCH_TASK]: async (payload) => {

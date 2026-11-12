@@ -1547,3 +1547,30 @@ export const backupRun = pgTable(
     check('backup_run_bytes_ck', sql`${t.bytes} is null or ${t.bytes} >= 0`),
   ],
 );
+
+/**
+ * The instance's scheduled-backup setting (plan FAH-175 slice 4): one row once an admin decides. A scheduled
+ * backup encrypts to the operator-held X25519 recipient, so the private key never reaches the server; the manual
+ * backup's passphrase stays in the request and the worker's memory.
+ */
+export const backupSettings = pgTable(
+  'backup_settings',
+  {
+    /** Always true: the table holds one row. */
+    id: boolean('id').primaryKey().default(true),
+    enabled: boolean('enabled').notNull().default(false),
+    /** How often a scheduled backup runs, in hours. */
+    intervalHours: integer('interval_hours').notNull().default(24),
+    /** How many scheduled runs retention keeps; manual runs are never deleted. */
+    retentionCount: integer('retention_count').notNull().default(7),
+    /** An age-style X25519 recipient (`age1…`); required while scheduling is on. */
+    recipientPublicKey: text('recipient_public_key'),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    check('backup_settings_one_row_ck', sql`${t.id}`),
+    check('backup_settings_interval_ck', sql`${t.intervalHours} between 1 and 168`),
+    check('backup_settings_retention_ck', sql`${t.retentionCount} between 1 and 365`),
+    check('backup_settings_recipient_ck', sql`not ${t.enabled} or ${t.recipientPublicKey} is not null`),
+  ],
+);

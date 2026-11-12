@@ -2,6 +2,7 @@
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { generateRecipientKeyPair } from '../src/backups/backup-archive.js';
 import {
   BASE_URL, createTestApp, createTestDatabase, createUser, databaseReachable, signIn, type TestDatabase,
 } from './support.js';
@@ -24,7 +25,7 @@ describe.skipIf(!(await databaseReachable()))('the admin backups API', () => {
   let admin: string;
   let member: string;
 
-  const call = (method: 'GET' | 'POST' | 'DELETE', url: string, cookie?: string, payload?: object) =>
+  const call = (method: 'GET' | 'POST' | 'PUT' | 'DELETE', url: string, cookie?: string, payload?: object) =>
     ctx.app.inject({
       method, url,
       headers: { ...(cookie ? { cookie } : {}), origin: BASE_URL },
@@ -55,6 +56,8 @@ describe.skipIf(!(await databaseReachable()))('the admin backups API', () => {
     expect((await call('GET', '/api/admin/backups')).statusCode).toBe(401);
     expect((await call('GET', `/api/admin/backups/${backup.id}/download`)).statusCode).toBe(401);
     expect((await call('DELETE', `/api/admin/backups/${backup.id}`)).statusCode).toBe(401);
+    expect((await call('GET', '/api/admin/backups/settings')).statusCode).toBe(401);
+    expect((await call('PUT', '/api/admin/backups/settings', undefined, { enabled: false, intervalHours: 24, retentionCount: 7, recipientPublicKey: null })).statusCode).toBe(401);
   });
 
   it('answers 403 to a signed-in user who is not an admin', async () => {
@@ -62,6 +65,29 @@ describe.skipIf(!(await databaseReachable()))('the admin backups API', () => {
     expect((await call('GET', '/api/admin/backups', member)).statusCode).toBe(403);
     expect((await call('GET', `/api/admin/backups/${backup.id}/download`, member)).statusCode).toBe(403);
     expect((await call('DELETE', `/api/admin/backups/${backup.id}`, member)).statusCode).toBe(403);
+    expect((await call('GET', '/api/admin/backups/settings', member)).statusCode).toBe(403);
+    expect((await call('PUT', '/api/admin/backups/settings', member, { enabled: false, intervalHours: 24, retentionCount: 7, recipientPublicKey: null })).statusCode).toBe(403);
+  });
+
+  it('reads the quiet defaults and validates a schedule before saving it', async () => {
+    const initial = await call('GET', '/api/admin/backups/settings', admin);
+    expect(initial.statusCode).toBe(200);
+    expect(initial.json()).toEqual({ enabled: false, intervalHours: 24, retentionCount: 7, recipientPublicKey: null });
+
+    const keys = generateRecipientKeyPair();
+    const missing = await call('PUT', '/api/admin/backups/settings', admin, { enabled: true, intervalHours: 24, retentionCount: 7, recipientPublicKey: null });
+    expect(missing.statusCode).toBe(400);
+    expect(missing.json()).toMatchObject({ code: 'backup_recipient_missing' });
+    const invalid = await call('PUT', '/api/admin/backups/settings', admin, { enabled: true, intervalHours: 24, retentionCount: 7, recipientPublicKey: 'age1nope' });
+    expect(invalid.statusCode).toBe(400);
+    expect(invalid.json()).toMatchObject({ code: 'backup_recipient_invalid' });
+    expect((await call('PUT', '/api/admin/backups/settings', admin, { enabled: false, intervalHours: 0, retentionCount: 7, recipientPublicKey: null })).statusCode).toBe(400);
+    expect((await call('PUT', '/api/admin/backups/settings', admin, { enabled: false, intervalHours: 24, retentionCount: 0, recipientPublicKey: null })).statusCode).toBe(400);
+
+    const saved = await call('PUT', '/api/admin/backups/settings', admin, { enabled: true, intervalHours: 6, retentionCount: 3, recipientPublicKey: keys.recipient });
+    expect(saved.statusCode).toBe(200);
+    expect(saved.json()).toEqual({ enabled: true, intervalHours: 6, retentionCount: 3, recipientPublicKey: keys.recipient });
+    expect((await call('GET', '/api/admin/backups/settings', admin)).json()).toEqual(saved.json());
   });
 
   it('needs a passphrase and refuses a second run while one is in flight', async () => {

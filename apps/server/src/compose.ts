@@ -82,7 +82,7 @@ export function createServices({
   const backups = createBackupService({
     db, blobs, dataDir, databaseUrl: databaseUrl ?? process.env.DATABASE_URL ?? '',
     migrationsFolder: fileURLToPath(new URL('../drizzle', import.meta.url)), appVersion: process.env.DIVEHUB_VERSION ?? 'dev',
-    encryptionKey, log: backupLog,
+    encryptionKey, log: backupLog, now: clock ? () => clock.now() : undefined,
   });
   const providers = createProviderLayer({ db, blobs, secrets, adapters, ...(clock && { clock }), ...(log && { log }) });
   // Dive and site Revisions also tell open pages (ADR 0066), through the same listener seam as the Waiting pushes.

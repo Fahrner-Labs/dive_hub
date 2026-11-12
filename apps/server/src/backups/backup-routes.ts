@@ -19,7 +19,22 @@ const STATUS: Record<BackupError['code'], number> = {
   backup_not_found: 404, backup_file_missing: 404,
   backup_in_progress: 409, backup_running: 409, backup_not_ready: 409,
   backup_passphrase_missing: 400,
+  backup_settings_invalid: 400, backup_recipient_missing: 400, backup_recipient_invalid: 400,
 };
+
+const BackupSettingsView = Type.Object({
+  enabled: Type.Boolean(),
+  intervalHours: Type.Integer(),
+  retentionCount: Type.Integer(),
+  recipientPublicKey: Type.Union([Type.String(), Type.Null()]),
+});
+
+const BackupSettingsInput = Type.Object({
+  enabled: Type.Boolean(),
+  intervalHours: Type.Integer({ minimum: 1, maximum: 168, description: 'How often a scheduled backup runs, in hours' }),
+  retentionCount: Type.Integer({ minimum: 1, maximum: 365, description: 'How many scheduled runs to keep; manual runs are never deleted' }),
+  recipientPublicKey: Type.Optional(Type.String({ maxLength: 128, description: 'An age-style X25519 recipient (age1…) that scheduled backups encrypt to; required while enabled. Omit or send an empty string to clear.' })),
+});
 
 const BackupRunView = Type.Object({
   id: Type.String(),
@@ -46,6 +61,23 @@ export const backupRoutes: FastifyPluginAsyncTypebox<BackupRouteDeps> = async (s
   app.addHook('onRequest', requireAdmin);
   app.setErrorHandler(answerErrors(answers(BackupError, STATUS)));
   const errors = { 400: Problem, 404: Problem, 409: Problem };
+
+  app.get('/admin/backups/settings', {
+    schema: {
+      summary: 'The scheduled-backup setting (admins only)',
+      response: { 200: BackupSettingsView },
+    },
+  }, async () => backups.settings());
+
+  app.put('/admin/backups/settings', {
+    schema: {
+      summary: 'Schedule backups and set their retention (admins only)',
+      description: 'Scheduled backups encrypt to the operator-held X25519 recipient; the private key never reaches the server. '
+        + 'Retention keeps the newest scheduled runs and never deletes a manual run or the last successful run.',
+      body: BackupSettingsInput,
+      response: { 200: BackupSettingsView, ...errors },
+    },
+  }, async (request) => backups.saveSettings(request.body));
 
   app.post('/admin/backups', {
     schema: {
