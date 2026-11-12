@@ -60,6 +60,15 @@ describe('the backup manifest', () => {
     expect(() => verifyManifest({ ...manifest, parts: { ...manifest.parts, files: { ...manifest.parts.files, sha256: 'nope' } } }))
       .toThrow(/checksums/);
   });
+
+  it('refuses scrypt parameters that are not bounded and sane', () => {
+    const manifest = manifestFor(parts, key);
+    expect(manifest.encryption.kdf).toBe('scrypt');
+    const encryption = manifest.encryption as Extract<BackupManifest['encryption'], { kdf: 'scrypt' }>;
+    for (const bad of [{ n: 1 << 21 }, { n: 12_000 }, { r: 17 }, { p: 5 }]) {
+      expect(() => verifyManifest({ ...manifest, encryption: { ...encryption, ...bad } })).toThrow(/scrypt parameters/);
+    }
+  });
 });
 
 describe('the passphrase envelope', () => {
@@ -92,6 +101,25 @@ describe('the passphrase envelope', () => {
     const junk = join(dir, 'junk.bin');
     await writeFile(junk, randomBytes(128));
     await expect(decryptFile(junk, join(dir, 'y.bin'), 'a passphrase')).rejects.toThrow(/not a Dive Hub backup/);
+  });
+
+  it('refuses a crafted header with unbounded or unsane scrypt parameters', async () => {
+    const plain = join(dir, 'header-plain.bin');
+    const archive = join(dir, 'header.bin');
+    await writeFile(plain, 'x');
+    await encryptFile(plain, archive, 'a passphrase');
+    const original = await readFile(archive);
+    // MAGIC (15) + format version (1) + KDF id (1), then n, r and p as big-endian uint32s.
+    const nAt = 17;
+    for (const [n, r, p] of [[1 << 21, 8, 1], [12_000, 8, 1], [16_384, 17, 1], [16_384, 8, 5]]) {
+      const bytes = Buffer.from(original);
+      bytes.writeUInt32BE(n!, nAt);
+      bytes.writeUInt32BE(r!, nAt + 4);
+      bytes.writeUInt32BE(p!, nAt + 8);
+      const crafted = join(dir, 'crafted-header.bin');
+      await writeFile(crafted, bytes);
+      await expect(decryptFile(crafted, join(dir, 'header-out.bin'), 'a passphrase')).rejects.toThrow(/scrypt parameters/);
+    }
   });
 
   it('takes the salt the caller chose so the manifest can name it', async () => {

@@ -42,6 +42,20 @@ const X25519_HEADER_BYTES = HEADER_PREFIX_BYTES + PUBLIC_KEY_BYTES + SALT_BYTES 
 /** scrypt's default cost: about 16 MiB and a fraction of a second, enough for an operator-chosen passphrase. */
 const SCRYPT = { n: 16_384, r: 8, p: 1 };
 
+/** The largest scrypt parameters a reader accepts from a header or manifest before the GCM tag has been checked. */
+const MAX_SCRYPT_N = 1 << 20;
+const MAX_SCRYPT_R = 16;
+const MAX_SCRYPT_P = 4;
+
+/** Refuses parameters that would let an unauthenticated header make a restore allocate or compute without bound. */
+function checkScryptBounds(where: string, n: number, r: number, p: number): void {
+  if (!Number.isSafeInteger(n) || n < 2 || (n & (n - 1)) !== 0 || n > MAX_SCRYPT_N
+    || !Number.isSafeInteger(r) || r < 1 || r > MAX_SCRYPT_R
+    || !Number.isSafeInteger(p) || p < 1 || p > MAX_SCRYPT_P) {
+    throw new BackupArchiveError(`the ${where} has invalid scrypt parameters`);
+  }
+}
+
 /** X25519 keys are stored in the same bech32 form age uses, so operators can generate them with `age-keygen`. */
 const RECIPIENT_HRP = 'age';
 const RECIPIENT_SECRET_HRP = 'age-secret-key-';
@@ -139,9 +153,7 @@ export function verifyManifest(manifest: BackupManifest): BackupManifest {
   const encryption = manifest.encryption;
   if (encryption.scheme !== 'aes-256-gcm') throw new BackupArchiveError('unsupported backup encryption');
   if (encryption.kdf === 'scrypt') {
-    if (!Number.isSafeInteger(encryption.n) || !Number.isSafeInteger(encryption.r) || !Number.isSafeInteger(encryption.p)) {
-      throw new BackupArchiveError('the manifest has no valid backup key derivation');
-    }
+    checkScryptBounds('manifest', encryption.n, encryption.r, encryption.p);
   } else if (encryption.kdf === 'x25519') {
     if (typeof encryption.recipient !== 'string' || !isRecipient(encryption.recipient)
       || typeof encryption.ephemeralPublic !== 'string' || Buffer.from(encryption.ephemeralPublic, 'base64').length !== PUBLIC_KEY_BYTES
@@ -237,6 +249,8 @@ function parseHeader(header: Buffer): Header {
     at += 4;
     const p = header.readUInt32BE(at);
     at += 4;
+    // The header is unauthenticated until the GCM tag, so bound these before scrypt sees them.
+    checkScryptBounds('backup header', n, r, p);
     const salt = header.subarray(at, at + SALT_BYTES);
     at += SALT_BYTES;
     const iv = header.subarray(at, at + IV_BYTES);
