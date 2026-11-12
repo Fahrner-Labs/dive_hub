@@ -6,6 +6,7 @@ import type { FastifyRequest } from 'fastify';
 import { Type } from 'typebox';
 import { limitAttempts, type AttemptLimit } from '../http/attempt-limit.js';
 import { Problem, problem, type ProblemCode } from '../http/problems.js';
+import { whenResponseGone } from '../http/response-gone.js';
 import { DateTime } from '../http/schemas.js';
 import type { BlobStore, StoredBlob } from '../storage/blob-store.js';
 import type { SetupRestore, SetupRestoreFailure } from './setup-restore.js';
@@ -141,7 +142,8 @@ export const setupRestoreRoutes: FastifyPluginAsyncTypebox<SetupRestoreRouteDeps
       );
       // Remove the streamed upload before answering; the process goes away right after the answer.
       if (parts.stored) await blobs.delete(parts.stored.key).catch(() => {});
-      reply.raw.once('finish', () => onRestored?.());
+      // A client that disconnects after a successful restore still ends this process: `finish` alone need not fire.
+      whenResponseGone(reply.raw, () => onRestored?.());
       return reply.code(200).send({ restored: true, ...outcome.manifest });
     } catch (error) {
       parts.retry?.();
