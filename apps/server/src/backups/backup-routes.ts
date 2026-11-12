@@ -117,7 +117,7 @@ export const backupRoutes: FastifyPluginAsyncTypebox<BackupRouteDeps> = async (s
   });
 
   app.delete('/admin/backups/:id', {
-    schema: { summary: 'Delete a finished backup and its archive (admins only)', params: IdParams, response: { 204: Type.Null(), ...errors } },
+    schema: { summary: 'Delete a finished backup, or cancel a queued one, and its archive (admins only)', params: IdParams, response: { 204: Type.Null(), ...errors } },
   }, async (request, reply) => {
     await backups.remove(request.params.id);
     return reply.code(204).send(null);

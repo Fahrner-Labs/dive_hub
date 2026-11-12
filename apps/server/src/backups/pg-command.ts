@@ -38,6 +38,10 @@ export function redactPassword(text: string, databaseUrl?: string): string {
 /** A failure detail safe to store or log: the child's own message, last lines first, with any database password gone. */
 export function pgFailureMessage(error: unknown, databaseUrl: string): string {
   const stderr = (error as { stderr?: unknown }).stderr;
-  const detail = typeof stderr === 'string' && stderr.trim() !== '' ? stderr.trim() : errorMessage(error);
+  const cause = (error as { cause?: unknown }).cause;
+  // A driver or Drizzle wrapper repeats the query, not what the database said; its cause has the real message.
+  const detail = typeof stderr === 'string' && stderr.trim() !== ''
+    ? stderr.trim()
+    : cause !== undefined && cause !== null ? errorMessage(cause) : errorMessage(error);
   return redactPassword(detail, databaseUrl).slice(-2000);
 }

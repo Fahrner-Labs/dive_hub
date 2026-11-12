@@ -79,6 +79,8 @@ export interface BackupServiceDeps {
   log: BackupLog;
   /** The scheduler's clock (default: real time), so a test need not wait for an interval. */
   now?: (() => number) | undefined;
+  /** How long a queued manual run's passphrase waits for the worker (default 24 h); a run that finds none fails. */
+  passphraseTtlMs?: number | undefined;
 }
 
 const isUniqueViolation = (error: unknown): boolean => {
@@ -93,10 +95,18 @@ async function fileDigest(path: string): Promise<BackupPart> {
   return { sha256: hash.digest('hex'), bytes: (await stat(path)).size };
 }
 
-export function createBackupService({ db, blobs, dataDir, databaseUrl, migrationsFolder, appVersion, encryptionKey, log, now = Date.now }: BackupServiceDeps) {
+/** How long a manual run's passphrase is kept in memory while its job waits for the worker. */
+const DEFAULT_PASSPHRASE_TTL_MS = 24 * 60 * 60 * 1000;
+
+export function createBackupService({ db, blobs, dataDir, databaseUrl, migrationsFolder, appVersion, encryptionKey, log, now = Date.now, passphraseTtlMs = DEFAULT_PASSPHRASE_TTL_MS }: BackupServiceDeps) {
   // A manual backup's passphrase travels only in this process's memory, from the request to the in-process worker;
   // it is never written to a table, a job payload or a log, and a restart therefore fails the run instead of leaking it.
-  const passphrases = new Map<string, string>();
+  const passphrases = new Map<string, { passphrase: string; at: number }>();
+  /** Drops passphrases whose run never reached the worker, so a stuck queue does not keep them for the process's life. */
+  function prunePassphrases(): void {
+    const cutoff = now() - passphraseTtlMs;
+    for (const [id, entry] of passphrases) if (entry.at <= cutoff) passphrases.delete(id);
+  }
 
   // The setup screen's restore path (plan FAH-175 slice 3): the same core the operator CLI runs, with the app's logger.
   const restoreLog: RestoreLog = {
@@ -241,24 +251,28 @@ export function createBackupService({ db, blobs, dataDir, databaseUrl, migration
   return {
     async create(input: { kind: BackupRunRow['kind']; createdBy?: string | undefined; passphrase: string }): Promise<BackupRunRow> {
       if (input.passphrase.length === 0) throw new BackupError('backup_passphrase_missing');
-      let run: BackupRunRow | undefined;
+      prunePassphrases();
+      let queuedId: string | undefined;
       try {
-        run = await db.transaction(async (tx) => {
+        const run = await db.transaction(async (tx) => {
           const [row] = await tx.insert(backupRun).values({ kind: input.kind, createdBy: input.createdBy ?? null }).returning();
           // The passphrase is available before the job can run, and the row plus its job commit together (ADR 0004).
-          passphrases.set(row!.id, input.passphrase);
+          queuedId = row!.id;
+          passphrases.set(row!.id, { passphrase: input.passphrase, at: now() });
           await tx.execute(sql`select graphile_worker.add_job(
             ${BACKUP_RUN_TASK}, ${JSON.stringify({ backupRunId: row!.id })}::json, ${null}::text, ${null}::timestamptz,
             ${1}::integer, ${`backup-run:${row!.id}`}, ${0}::integer)`);
           return row!;
         });
+        log.info({ backupRunId: run.id, kind: run.kind }, 'backup queued');
+        return run;
       } catch (error) {
-        if (run) passphrases.delete(run.id);
+        // The transaction may have rolled back after the insert (the job failed to queue or the commit failed): the
+        // passphrase must not stay behind under an id nothing will ever run.
+        if (queuedId !== undefined) passphrases.delete(queuedId);
         if (isUniqueViolation(error)) throw new BackupError('backup_in_progress');
         throw error;
       }
-      log.info({ backupRunId: run.id, kind: run.kind }, 'backup queued');
-      return run;
     },
 
     /** The archives the operator placed in `/data/restore/`, for the setup screen's picker. */
@@ -322,50 +336,82 @@ export function createBackupService({ db, blobs, dataDir, databaseUrl, migration
       return blobs.pathOf(keyOfRun(id));
     },
 
+    /**
+     * Deletes a finished run, or cancels a queued one with its job. Only a running run is refused: leaving a queued row
+     * behind would keep every later run out through the one-in-flight index.
+     */
     async remove(id: string): Promise<void> {
       const row = await this.find(id);
       if (!row) throw new BackupError('backup_not_found');
-      if (row.status === 'queued' || row.status === 'running') throw new BackupError('backup_running');
-      await db.delete(backupRun).where(eq(backupRun.id, id));
+      if (row.status === 'running') throw new BackupError('backup_running');
+      if (row.status === 'queued') {
+        passphrases.delete(id);
+        // The row goes first: a job that still starts finds nothing to do, whether or not the removal below works.
+        await db.delete(backupRun).where(eq(backupRun.id, id));
+        await db.execute(sql`select graphile_worker.remove_job(${`backup-run:${id}`})`)
+          .catch((error) => log.warn({ err: error, backupRunId: id }, 'could not remove a cancelled backup job'));
+      } else {
+        await db.delete(backupRun).where(eq(backupRun.id, id));
+      }
       await blobs.delete(keyOfRun(id)).catch((error) => log.warn({ err: error, backupRunId: id }, 'could not remove a backup archive'));
     },
 
-    /** A run cut off by a stopped process: its temp files are gone and its passphrase with them. */
+    /**
+     * Runs cut off by a stopped process: a `running` one lost its temp files and passphrase, and a `queued` one whose
+     * job is gone can never start. Both are marked failed; a queued run whose job is still there is left for the worker.
+     */
     async reconcileOrphans(): Promise<number> {
-      const reconciled = await db.update(backupRun)
-        .set({ status: 'failed', error: 'the server stopped while this backup was running', updatedAt: new Date(), finishedAt: new Date() })
-        .where(inArray(backupRun.status, ['running']))
-        .returning({ id: backupRun.id });
+      const queued = await db.select({ id: backupRun.id }).from(backupRun).where(eq(backupRun.status, 'queued'));
+      const staleQueued: string[] = [];
+      if (queued.length > 0) {
+        const keys = queued.map((run) => `backup-run:${run.id}`);
+        const jobs = (await db.execute(sql`select key from graphile_worker.jobs where key in (${sql.join(keys.map((key) => sql`${key}`), sql`, `)})`)).rows as { key: string }[];
+        const live = new Set(jobs.map((job) => job.key));
+        for (const run of queued) if (!live.has(`backup-run:${run.id}`)) staleQueued.push(run.id);
+      }
+      const reconciled = [
+        ...(staleQueued.length > 0
+          ? await db.update(backupRun)
+            .set({ status: 'failed', error: 'the queued backup never started', updatedAt: new Date(), finishedAt: new Date() })
+            .where(inArray(backupRun.id, staleQueued)).returning({ id: backupRun.id })
+          : []),
+        ...await db.update(backupRun)
+          .set({ status: 'failed', error: 'the server stopped while this backup was running', updatedAt: new Date(), finishedAt: new Date() })
+          .where(inArray(backupRun.status, ['running'])).returning({ id: backupRun.id }),
+      ];
+      for (const id of staleQueued) passphrases.delete(id);
       if (reconciled.length > 0) log.warn({ backupRunIds: reconciled.map((r) => r.id) }, 'marked interrupted backups as failed');
       return reconciled.length;
     },
 
-    /** Writes one archive; the worker task calls this with the row it queued. */
+    /** Writes one archive; the worker task calls this with the row it queued. Any throw marks the row failed. */
     async run(id: string): Promise<void> {
-      const row = await db.select().from(backupRun).where(eq(backupRun.id, id)).then((rows) => rows[0]);
-      // A deleted row, or one already reconciled after a restart, has nothing to do.
-      if (!row || row.status !== 'queued') return;
-      let encryption: BackupEncryption;
-      if (row.kind === 'scheduled') {
-        const settings = await readSettings();
-        if (settings.recipientPublicKey === null) {
-          await fail(id, 'no recipient public key is configured for scheduled backups');
-          return;
-        }
-        encryption = recipientEncryption(settings.recipientPublicKey);
-      } else {
-        const passphrase = passphrases.get(id);
-        passphrases.delete(id);
-        if (passphrase === undefined) {
-          await fail(id, 'the passphrase was lost when the server restarted');
-          return;
-        }
-        encryption = passphraseEncryption(passphrase);
-      }
-      await db.update(backupRun).set({ status: 'running', startedAt: new Date(), updatedAt: new Date() }).where(eq(backupRun.id, id));
-      const workDir = join(dataDir, 'tmp', `backup-${id}`);
+      let workDir: string | undefined;
       try {
-        await mkdir(workDir, { recursive: true });
+        prunePassphrases();
+        const row = await db.select().from(backupRun).where(eq(backupRun.id, id)).then((rows) => rows[0]);
+        // A deleted row, or one already reconciled after a restart, has nothing to do.
+        if (!row || row.status !== 'queued') return;
+        let encryption: BackupEncryption;
+        if (row.kind === 'scheduled') {
+          const settings = await readSettings();
+          if (settings.recipientPublicKey === null) {
+            await fail(id, 'no recipient public key is configured for scheduled backups');
+            return;
+          }
+          encryption = recipientEncryption(settings.recipientPublicKey);
+        } else {
+          const entry = passphrases.get(id);
+          passphrases.delete(id);
+          if (entry === undefined) {
+            await fail(id, 'the passphrase was lost or expired before the backup started');
+            return;
+          }
+          encryption = passphraseEncryption(entry.passphrase);
+        }
+        await db.update(backupRun).set({ status: 'running', startedAt: new Date(), updatedAt: new Date() }).where(eq(backupRun.id, id));
+        workDir = join(dataDir, 'tmp', `backup-${id}`);
+        await mkdir(workDir, { recursive: true, mode: 0o700 });
         const databasePath = join(workDir, 'database.dump');
         // The password travels in PGPASSWORD, never in the URL on the command line (an execFile error repeats argv).
         const dump = pgCommand(databaseUrl);
@@ -393,12 +439,15 @@ export function createBackupService({ db, blobs, dataDir, databaseUrl, migration
           await sweepRetention().catch((error) => log.warn({ err: error, backupRunId: id }, 'could not sweep old scheduled backups'));
         }
       } catch (error) {
-        // The stored and logged detail is the child's own stderr with any database password redacted.
+        // A failure at or before the status transition must not leave the row queued: the in-flight index would keep
+        // every later run out. The stored and logged detail is the child's stderr with any database password redacted.
         const message = pgFailureMessage(error, databaseUrl);
         log.error({ backupRunId: id, error: message }, 'backup failed');
-        await fail(id, message);
+        await fail(id, message).catch((failError) => log.error(
+          { backupRunId: id, error: pgFailureMessage(failError, databaseUrl) }, 'could not mark a failed backup',
+        ));
       } finally {
-        await rm(workDir, { recursive: true, force: true }).catch(() => {});
+        if (workDir !== undefined) await rm(workDir, { recursive: true, force: true }).catch(() => {});
       }
     },
   };

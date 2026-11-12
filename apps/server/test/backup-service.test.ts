@@ -82,6 +82,95 @@ describe.skipIf(!(await databaseReachable()))('backup runs', () => {
     expect(await service.reconcileOrphans()).toBe(0);
   });
 
+  it('marks a queued row whose job is gone as failed, and leaves one whose job is still queued', async () => {
+    await t.pool.query('delete from graphile_worker._private_jobs');
+    await t.pool.query('delete from backup_runs');
+    // A queued row with no job can never start: the state a throw before the status transition used to leave behind.
+    const stale = (await t.pool.query<{ id: string }>(
+      "insert into backup_runs (kind, status) values ('manual', 'queued') returning id",
+    )).rows[0]!;
+    expect(await service.reconcileOrphans()).toBe(1);
+    expect(await service.find(stale.id)).toMatchObject({ status: 'failed', error: 'the queued backup never started' });
+
+    // A queued run whose job is still there is the worker's, not an orphan.
+    const live = await service.create({ kind: 'manual', passphrase: 'a queued passphrase' });
+    expect(await service.reconcileOrphans()).toBe(0);
+    expect(await service.find(live.id)).toMatchObject({ status: 'queued' });
+    await service.remove(live.id);
+  });
+
+  it('marks the row failed when the status transition throws, instead of leaving it queued', async () => {
+    await t.pool.query('delete from graphile_worker._private_jobs');
+    await t.pool.query('delete from backup_runs');
+    const run = await service.create({ kind: 'manual', createdBy: owner.id, passphrase: 'a transition passphrase' });
+    await t.pool.query(`
+      create function backup_runs_block_running() returns trigger as $$
+      begin
+        if new.status = 'running' and old.status = 'queued' then
+          raise exception 'the transition failed';
+        end if;
+        return new;
+      end;
+      $$ language plpgsql;
+      create trigger backup_runs_block_running before update on backup_runs
+        for each row execute function backup_runs_block_running();
+    `);
+    try {
+      await service.run(run.id);
+    } finally {
+      await t.pool.query('drop trigger if exists backup_runs_block_running on backup_runs');
+      await t.pool.query('drop function if exists backup_runs_block_running()');
+    }
+    const row = await service.find(run.id);
+    expect(row).toMatchObject({ status: 'failed' });
+    expect(row!.error).toMatch(/transition failed/);
+    // The in-flight slot is free: a queued row would have kept every later run out through the unique index.
+    const next = await service.create({ kind: 'manual', passphrase: 'after the failed transition' });
+    await service.remove(next.id);
+  });
+
+  it('fails a queued manual run whose passphrase outlived its lifetime', async () => {
+    await t.pool.query('delete from graphile_worker._private_jobs');
+    await t.pool.query('delete from backup_runs');
+    const clock = { now: 1_000 };
+    const expiring = createBackupService({
+      db: t.db, blobs, dataDir: t.dataDir, databaseUrl: t.pool.options.connectionString!,
+      migrationsFolder, appVersion: 'test', encryptionKey: TEST_ENCRYPTION_KEY, log: silent,
+      now: () => clock.now, passphraseTtlMs: 60_000,
+    });
+    const run = await expiring.create({ kind: 'manual', passphrase: 'a passphrase that waits too long' });
+    clock.now += 61_000;
+    await expiring.run(run.id);
+    const row = await expiring.find(run.id);
+    expect(row).toMatchObject({ status: 'failed' });
+    expect(row!.error).toMatch(/lost or expired/);
+    await t.pool.query('delete from graphile_worker._private_jobs where key = $1', [`backup-run:${run.id}`]);
+  });
+
+  it('rolls back the row and forgets the passphrase when its job cannot be queued', async () => {
+    await t.pool.query('delete from graphile_worker._private_jobs');
+    await t.pool.query('delete from backup_runs');
+    await t.pool.query(`
+      create function backup_jobs_block_queue() returns trigger as $$
+      begin
+        raise exception 'add_job failed';
+      end;
+      $$ language plpgsql;
+      create trigger backup_jobs_block_queue before insert on graphile_worker._private_jobs
+        for each row execute function backup_jobs_block_queue();
+    `);
+    try {
+      await expect(service.create({ kind: 'manual', passphrase: 'a passphrase with no job' })).rejects.toThrow();
+    } finally {
+      await t.pool.query('drop trigger if exists backup_jobs_block_queue on graphile_worker._private_jobs');
+      await t.pool.query('drop function if exists backup_jobs_block_queue()');
+    }
+    expect((await t.pool.query<{ n: number }>('select count(*)::int as n from backup_runs')).rows[0]!.n).toBe(0);
+    // With the map entry gone too, the next queued run owns the in-flight slot and can still be created.
+    const next = await service.create({ kind: 'manual', passphrase: 'the next passphrase' });
+    await service.remove(next.id);
+  });
+
   it('writes an encrypted archive whose manifest and dump verify', async () => {
     if (!(await dumpToolAvailable())) return;
     const passphrase = 'restore-me-with-this';
@@ -144,13 +233,23 @@ describe.skipIf(!(await databaseReachable()))('backup runs', () => {
     expect(temp).not.toContain(`backup-${run.id}`);
   });
 
-  it('refuses to delete a run that is still in flight, and deletes a finished one with its archive', async () => {
-    const run = await service.create({ kind: 'manual', createdBy: owner.id, passphrase: 'delete-me-passphrase' });
-    await expect(service.remove(run.id)).rejects.toBeInstanceOf(BackupError);
+  it('cancels a queued run with its job, refuses to delete a running one, and deletes a finished one with its archive', async () => {
+    const queued = await service.create({ kind: 'manual', createdBy: owner.id, passphrase: 'cancel-me-passphrase' });
+    await service.remove(queued.id);
+    await expect(service.find(queued.id)).resolves.toBeNull();
+    const jobs = await t.pool.query('select 1 from graphile_worker.jobs where key = $1', [`backup-run:${queued.id}`]);
+    expect(jobs.rowCount).toBe(0);
+
+    const running = await service.create({ kind: 'manual', createdBy: owner.id, passphrase: 'still running' });
+    await t.pool.query("update backup_runs set status = 'running' where id = $1", [running.id]);
+    await expect(service.remove(running.id)).rejects.toBeInstanceOf(BackupError);
+    await t.pool.query("update backup_runs set status = 'failed' where id = $1", [running.id]);
+
+    const done = await service.create({ kind: 'manual', createdBy: owner.id, passphrase: 'delete-me-passphrase' });
     if (!(await dumpToolAvailable())) return;
-    await service.run(run.id);
-    await service.remove(run.id);
-    await expect(service.find(run.id)).resolves.toBeNull();
+    await service.run(done.id);
+    await service.remove(done.id);
+    await expect(service.find(done.id)).resolves.toBeNull();
   });
 });
 
