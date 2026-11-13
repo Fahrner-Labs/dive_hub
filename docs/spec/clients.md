@@ -950,7 +950,7 @@ dives, all off until the User turns them on. *Web:* `ProviderAutomation.tsx` (se
   site. Never show the source's Recording, notes, suit, weighting, cylinders, lead or Overrides.
 - **Offer the invited Diver's overlapping Dives in the preview** (`overlaps`, earliest first): each with its id, start
   and offset, duration, max depth and site. They are the Dives that meet the suggested time window with the same
-  tolerance Recording matching uses. Offer **link one of these** or **create a new Dive**; when several overlap, let the
+  tolerance and unknown-UTC-offset alignment Recording matching uses. Offer **link one of these** or **create a new Dive**; when several overlap, let the
   User pick one.
 - **Accept with no body (`POST /api/buddy-suggestions/{id}/accept`, 200)** answers `{ id, status: 'accepted',
   resolvedAt, diveId, jointDiveId }`: the server created a Recording-less Dive in the invited Diver's logbook with the

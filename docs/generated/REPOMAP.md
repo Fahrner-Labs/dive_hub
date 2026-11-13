@@ -4,7 +4,7 @@
 > `pnpm check` fails when this map is stale. Symbols are ranked by how widely the code references them;
 > each module shows its most-referenced ones (exported symbols rank higher). Search here before walking the tree.
 
-Files: 374 · symbols: 3448 · shown: 257
+Files: 374 · symbols: 3449 · shown: 257
 
 ### server/(root)
 apps/server/src/vocabulary.ts:13 type SiteWaterType
@@ -95,8 +95,9 @@ apps/server/src/dives/time-zone.ts:11 iface Position
 apps/server/src/dives/cylinders.ts:52 fn cylindersOf
 apps/server/src/dives/dive-service.ts:187 fn participantsOf
 apps/server/src/dives/cylinders.ts:9 iface ProviderCylinder
-apps/server/src/dives/weighting.ts:17 fn leadOf
 apps/server/src/dives/matching.ts:83 const MAX_OFFSET_MS
+apps/server/src/dives/weighting.ts:17 fn leadOf
+apps/server/src/dives/matching.ts:81 const DAY_MS
 apps/server/src/dives/waiting-push-view.ts:20 const WaitingPushView
 apps/server/src/dives/checks/logbook-check-rules.ts:201 fn probablyNoDive
 apps/server/src/dives/assessment-refresh.ts:7 iface AssessmentRefresh
@@ -104,18 +105,17 @@ apps/server/src/dives/provider-port.ts:32 iface DivePushes
 apps/server/src/dives/provider-port.ts:39 iface DiveWaitingPushes
 apps/server/src/dives/recording-units.ts:9 const isUnit
 apps/server/src/dives/weighting.ts:23 const leadTotalKg
-apps/server/src/dives/matching.ts:81 const DAY_MS
 apps/server/src/dives/logbook-service.ts:274 type LogbookService
 apps/server/src/dives/dive-values.ts:6 iface DiveValues
 apps/server/src/dives/dive-service.ts:87 const nextVersion
 apps/server/src/dives/weighting.ts:96 iface Suit
-apps/server/src/dives/weighting.ts:106 const suitOf
+apps/server/src/dives/matching.ts:34 const OVERLAP_TOLERANCE_SECONDS
 … 286 more symbols in this module
 
 ### server/equipment
+apps/server/src/equipment/due.ts:59 const DAY_MS
 apps/server/src/equipment/usage.ts:37 fn usageMap
 apps/server/src/equipment/equipment-error.ts:2 class EquipmentError
-apps/server/src/equipment/due.ts:59 const DAY_MS
 apps/server/src/equipment/usage.ts:16 iface Usage
 apps/server/src/equipment/due.ts:36 iface ScheduleDue
 apps/server/src/equipment/due.ts:86 const round
@@ -254,12 +254,12 @@ apps/server/src/sites/site-ids.ts:105 fn storeId
 
 ### server/social
 apps/server/src/social/suggestion-service.ts:16 class SuggestionError
-apps/server/src/social/suggestion-service.ts:174 fn createSuggestionService
+apps/server/src/social/suggestion-service.ts:190 fn createSuggestionService
 apps/server/src/social/routes.ts:17 const STATUS
 apps/server/src/social/suggestion-view.ts:9 const SiteRef
-apps/server/src/social/suggestion-service.ts:97 fn emitSuggestionHints
+apps/server/src/social/suggestion-service.ts:113 fn emitSuggestionHints
 apps/server/src/social/suggestion-changes.ts:9 fn withSuggestionChanges
-… 18 more symbols in this module
+… 19 more symbols in this module
 
 ### server/storage
 apps/server/src/storage/blob-store.ts:26 iface BlobStore

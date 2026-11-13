@@ -206,7 +206,7 @@ as plain own values, the people on the source Dive as Divers), joins it and the 
 marks the suggestion `accepted` with a system Revision. A later Recording attaches through the ordinary matching
 pipeline, and the Dive takes part in Duplicate candidates and the logbook checks like any other.
 *Implemented (ADR 0070, accept branch B and decline):* the preview lists the invited Diver's `overlaps` (own Dives that
-meet the suggested time window, with the tolerance of Recording matching) and accepting with `{ diveId }` links one of
+meet the suggested time window, with the tolerance and offset alignment of Recording matching) and accepting with `{ diveId }` links one of
 them instead: both Dives join one `joint_dive`, nothing is copied, and no Diver's data is merged into another's. A Dive
 belongs to at most one Joint dive, so an existing one is reused and two different ones are refused. `POST
 /api/buddy-suggestions/{id}/decline` marks the one suggestion row `declined` for every User who manages the invited

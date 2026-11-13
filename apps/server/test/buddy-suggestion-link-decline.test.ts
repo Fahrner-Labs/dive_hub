@@ -51,9 +51,10 @@ describe.skipIf(!(await databaseReachable()))('Buddy suggestions: link an existi
     (await ctx.db.select().from(buddySuggestion)
       .where(and(eq(buddySuggestion.diveId, diveId), eq(buddySuggestion.diverId, diverId))))[0];
 
-  const makeSource = async (start: Date, notes: string | null = null) =>
-    (await ctx.db.insert(dive).values({ diverId: timDiver, startsAt: start, durationSeconds: DURATION, maxDepthM: 24, avgDepthM: 16, notes })
-      .returning({ id: dive.id }))[0]!.id;
+  const makeSource = async (start: Date, notes: string | null = null, utcOffsetSeconds: number | null = null) =>
+    (await ctx.db.insert(dive).values({
+      diverId: timDiver, startsAt: start, utcOffsetSeconds, durationSeconds: DURATION, maxDepthM: 24, avgDepthM: 16, notes,
+    }).returning({ id: dive.id }))[0]!.id;
   const makeDive = async (diverId: string, values: Partial<typeof dive.$inferInsert>) =>
     (await ctx.db.insert(dive).values({ diverId, startsAt: START, durationSeconds: DURATION, ...values }).returning({ id: dive.id }))[0]!.id;
   const manage = (userId: string, diverId: string) =>
@@ -87,17 +88,22 @@ describe.skipIf(!(await databaseReachable()))('Buddy suggestions: link an existi
   });
 
   it('previews every one of the invited Diver\'s Dives that overlaps the suggested time window, and only those', async () => {
-    const source = await makeSource(START);
+    // Tim's source is at local 11:00 (+02:00); one invitee Dive keeps an unknown offset, so its wall-clock time is what
+    // matching compares (ADR 0030): stored as 11:00Z, two hours after the source's instant, it still overlaps.
+    const source = await makeSource(START, null, 2 * 3600);
     const kid = await json<{ id: string }>('POST', '/api/divers', tim, { name: 'Kid Overlaps' });
     const near = await makeDive(kid.id, { startsAt: new Date(START.getTime() + 5 * 60_000), durationSeconds: 20 * 60, maxDepthM: 18 });
     // A long Dive that starts before the window but is still going when it opens.
     const edge = await makeDive(kid.id, { startsAt: new Date(START.getTime() - 40 * 60_000), durationSeconds: 80 * 60, maxDepthM: 30 });
+    const sameWallClock = await makeDive(kid.id, {
+      startsAt: new Date(START.getTime() + 2 * 3600_000), utcOffsetSeconds: null, utcOffsetSource: 'unknown', durationSeconds: DURATION, maxDepthM: 20,
+    });
     const far = await makeDive(kid.id, { startsAt: new Date(START.getTime() + 3 * 3600_000), durationSeconds: DURATION });
     await makeDive(kid.id, { startsAt: new Date(START.getTime() + 2 * 60_000), durationSeconds: DURATION, deletedAt: new Date() });
     const suggestion = await invite(source, kid.id);
 
     const preview = await json<PreviewView>('GET', `/api/buddy-suggestions/${suggestion.id}`, tim);
-    expect(preview.overlaps.map((o) => o.id)).toEqual([edge, near]);
+    expect(preview.overlaps.map((o) => o.id)).toEqual([edge, sameWallClock, near]);
     expect(preview.overlaps[0]).toMatchObject({
       id: edge, startsAt: new Date(START.getTime() - 40 * 60_000).toISOString(), utcOffsetSeconds: null, durationSeconds: 80 * 60, maxDepthM: 30, site: null,
     });
@@ -159,6 +165,40 @@ describe.skipIf(!(await databaseReachable()))('Buddy suggestions: link an existi
     expect((await setParticipants(source, [])).statusCode).toBe(200);
     expect((await pendingFor(source, annaDiver))!.status).toBe('accepted');
     expect((await ctx.db.select({ jointDiveId: dive.jointDiveId }).from(dive).where(eq(dive.id, annaDive)))[0]!.jointDiveId).toBe(body.jointDiveId);
+  });
+
+  it('reuses a Joint dive the suggested Dive is already in', async () => {
+    const source = await makeSource(new Date('2026-04-06T09:00:00Z'));
+    const kid = await json<{ id: string }>('POST', '/api/divers', tim, { name: 'Kid Shared Joint' });
+    const overlapping = await makeDive(kid.id, { startsAt: new Date('2026-04-06T09:02:00Z'), durationSeconds: 25 * 60 });
+    const [joint] = await ctx.db.insert(jointDive).values({}).returning({ id: jointDive.id });
+    await ctx.db.update(dive).set({ jointDiveId: joint!.id }).where(eq(dive.id, source));
+    const jointsBefore = await jointCount();
+    const suggestion = await invite(source, kid.id);
+
+    const response = await accept(suggestion.id, tim, { diveId: overlapping });
+    expect(response.statusCode).toBe(200);
+    expect((response.json() as Accepted).jointDiveId).toBe(joint!.id);
+    expect((await ctx.db.select({ jointDiveId: dive.jointDiveId }).from(dive).where(eq(dive.id, overlapping)))[0]!.jointDiveId).toBe(joint!.id);
+    expect(await jointCount()).toBe(jointsBefore);
+  });
+
+  it('refuses to join two Dives that are already in different Joint dives', async () => {
+    const source = await makeSource(new Date('2026-04-07T09:00:00Z'));
+    const kid = await json<{ id: string }>('POST', '/api/divers', tim, { name: 'Kid Two Joints' });
+    const overlapping = await makeDive(kid.id, { startsAt: new Date('2026-04-07T09:02:00Z'), durationSeconds: 25 * 60 });
+    const [sourceJoint] = await ctx.db.insert(jointDive).values({}).returning({ id: jointDive.id });
+    const [diveJoint] = await ctx.db.insert(jointDive).values({}).returning({ id: jointDive.id });
+    await ctx.db.update(dive).set({ jointDiveId: sourceJoint!.id }).where(eq(dive.id, source));
+    await ctx.db.update(dive).set({ jointDiveId: diveJoint!.id }).where(eq(dive.id, overlapping));
+    const suggestion = await invite(source, kid.id);
+
+    const response = await accept(suggestion.id, tim, { diveId: overlapping });
+    expect(response.statusCode).toBe(409);
+    expect(response.json()).toMatchObject({ code: 'suggestion_link_conflict' });
+    expect((await pendingFor(source, kid.id))!.status).toBe('pending');
+    expect((await ctx.db.select({ jointDiveId: dive.jointDiveId }).from(dive).where(eq(dive.id, source)))[0]!.jointDiveId).toBe(sourceJoint!.id);
+    expect((await ctx.db.select({ jointDiveId: dive.jointDiveId }).from(dive).where(eq(dive.id, overlapping)))[0]!.jointDiveId).toBe(diveJoint!.id);
   });
 
   it('declines without creating anything, keeps the Participant, and is pending again after a re-add', async () => {

@@ -2,7 +2,7 @@
 // pending suggestion for the invited Diver; removing the Participant or soft-deleting the Dive cancels a pending one;
 // a declined or cancelled one becomes pending again when the Participant is added back. The audience is never stored:
 // every read and every hint asks diver_management who manages the Diver now, so claiming or merging re-targets it.
-import { and, desc, eq, inArray, isNull, lt, sql } from 'drizzle-orm';
+import { and, desc, eq, gte, inArray, isNull, lte } from 'drizzle-orm';
 import type { Db, Queryable, Tx } from '../db/client.js';
 import {
   PARTICIPANT_ROLES, buddySuggestion, dive, diveCentre, diveCentreSite, diveSite, diver, diverManagement, jointDive, participant,
@@ -10,7 +10,7 @@ import {
 import { audienceOfDiver, emitHint } from '../live/emit.js';
 import { managementOf } from '../divers/management.js';
 import { renumber } from '../divers/dive-numbers.js';
-import { OVERLAP_TOLERANCE_SECONDS, overlapWindow, overlaps } from '../dives/matching.js';
+import { DAY_MS, MAX_OFFSET_MS, OVERLAP_TOLERANCE_SECONDS, alignedForMatching, overlapWindow, overlaps } from '../dives/matching.js';
 import { writeRevision, type Actor } from '../revisions/revisions.js';
 
 export class SuggestionError extends Error {
@@ -24,28 +24,42 @@ export class SuggestionError extends Error {
   }
 }
 
+type Span = {
+  startsAt: Date; durationSeconds: number; maxDepthM: number | null;
+  utcOffsetSeconds: number | null; utcOffsetSource: string;
+};
+
 /** The time span the suggestion shares, with the Dive's depth treated as unknown for matching. */
-const spanOf = (row: { startsAt: Date; durationSeconds: number; maxDepthM: number | null }) =>
-  ({ startsAt: row.startsAt, durationSeconds: row.durationSeconds, maxDepthM: row.maxDepthM ?? undefined });
+const spanOf = (row: Span) => ({
+  startsAt: row.startsAt, durationSeconds: row.durationSeconds, maxDepthM: row.maxDepthM ?? undefined,
+  utcOffsetSeconds: row.utcOffsetSeconds, utcOffsetSource: row.utcOffsetSource,
+});
 
 /**
- * The invited Diver's Dives that meet the suggested Dive's window, with the same tolerance Recording matching uses
- * (`OVERLAP_TOLERANCE_SECONDS`). The SQL narrows by start and end; the ordered rows are what the preview offers to link.
+ * The invited Diver's Dives that meet the suggested Dive's window, with the same tolerance and the same alignment for
+ * unknown UTC offsets as Recording matching (`overlaps`, `alignedForMatching`, `OVERLAP_TOLERANCE_SECONDS`). The SQL
+ * narrows by instant and widens for an unknown offset, as `imports/placement.ts` does; the ordered rows are what the
+ * preview offers to link.
  */
-async function overlappingDives(q: Queryable, diverId: string, span: { startsAt: Date; durationSeconds: number; maxDepthM: number | null }) {
+async function overlappingDives(q: Queryable, diverId: string, span: Span) {
   const window = overlapWindow(spanOf(span));
-  return q.select({
-    id: dive.id, startsAt: dive.startsAt, utcOffsetSeconds: dive.utcOffsetSeconds, durationSeconds: dive.durationSeconds,
-    maxDepthM: dive.maxDepthM, jointDiveId: dive.jointDiveId, siteId: diveSite.id, siteName: diveSite.name,
+  const rows = await q.select({
+    id: dive.id, startsAt: dive.startsAt, utcOffsetSeconds: dive.utcOffsetSeconds, utcOffsetSource: dive.utcOffsetSource,
+    durationSeconds: dive.durationSeconds, maxDepthM: dive.maxDepthM, jointDiveId: dive.jointDiveId,
+    siteId: diveSite.id, siteName: diveSite.name,
   }).from(dive)
     .leftJoin(diveSite, eq(diveSite.id, dive.siteId))
     .where(and(
       eq(dive.diverId, diverId),
       isNull(dive.deletedAt),
-      lt(dive.startsAt, window.to),
-      sql`${dive.startsAt} + ${dive.durationSeconds} * interval '1 second' > ${window.from}`,
+      lte(dive.startsAt, new Date(window.to.getTime() + MAX_OFFSET_MS)),
+      gte(dive.startsAt, new Date(window.from.getTime() - DAY_MS - MAX_OFFSET_MS)),
     ))
     .orderBy(dive.startsAt, dive.id);
+  const mine = spanOf(span);
+  return alignedForMatching(mine, rows)
+    .filter((row) => overlaps(mine, spanOf(row), OVERLAP_TOLERANCE_SECONDS))
+    .sort((a, b) => a.startsAt.getTime() - b.startsAt.getTime() || a.id.localeCompare(b.id));
 }
 
 const overlapView = (row: Awaited<ReturnType<typeof overlappingDives>>[number]) => ({
@@ -67,12 +81,14 @@ async function acceptLinked(tx: Tx, args: {
 }) {
   const { suggestion, source } = args;
   const [target] = await tx.select({
-    id: dive.id, startsAt: dive.startsAt, durationSeconds: dive.durationSeconds, maxDepthM: dive.maxDepthM, jointDiveId: dive.jointDiveId,
+    id: dive.id, startsAt: dive.startsAt, durationSeconds: dive.durationSeconds, maxDepthM: dive.maxDepthM,
+    utcOffsetSeconds: dive.utcOffsetSeconds, utcOffsetSource: dive.utcOffsetSource, jointDiveId: dive.jointDiveId,
   }).from(dive).where(and(eq(dive.id, args.chosenDiveId), eq(dive.diverId, suggestion.diverId), isNull(dive.deletedAt)))
     // Lock the Dive we link: another acceptance could otherwise pick the same Dive for a different Joint dive.
     .for('update');
   if (!target) throw new SuggestionError('suggestion_dive_not_found');
-  if (!overlaps(spanOf(source), spanOf(target), OVERLAP_TOLERANCE_SECONDS)) throw new SuggestionError('suggestion_dive_not_overlapping');
+  const [aligned] = alignedForMatching(spanOf(source), [target]);
+  if (!overlaps(spanOf(source), spanOf(aligned!), OVERLAP_TOLERANCE_SECONDS)) throw new SuggestionError('suggestion_dive_not_overlapping');
   if (source.jointDiveId && target.jointDiveId && source.jointDiveId !== target.jointDiveId) {
     throw new SuggestionError('suggestion_link_conflict');
   }
