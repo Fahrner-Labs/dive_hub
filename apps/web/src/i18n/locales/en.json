@@ -907,7 +907,8 @@
       "restore": "Restored",
       "fill": "Filled in from a dive at a service",
       "continuation": "Later dive appended",
-      "continuation-undo": "Appending undone"
+      "continuation-undo": "Appending undone",
+      "buddy-accept": "Copied from a buddy's dive"
     },
     "field": {
       "number": "Dive number",

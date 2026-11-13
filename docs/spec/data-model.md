@@ -199,7 +199,13 @@ Revision (`participants`).
 *Implemented (ADR 0070, first Buddy slice):* `buddy_suggestion` and `joint_dive`; adding a Participant whose Diver is not
 the Dive's own raises a `pending` suggestion, removing them or soft-deleting the Dive cancels it, and the Users managing
 the Diver see it in `GET /api/buddy-suggestions` and its shared facts in `GET /api/buddy-suggestions/{id}`, with a
-`buddySuggestion` live hint. Accepting, declining and linking or copying the Dive into a Joint dive come in later slices.
+`buddySuggestion` live hint.
+*Implemented (ADR 0070, accept branch A):* `POST /api/buddy-suggestions/{id}/accept` creates a Recording-less Dive for
+the invited Diver from the shared facts only (site, start and UTC offset, duration, max/avg depth as plain own values,
+the people on the source Dive as Divers), joins it and the suggested Dive to one `joint_dive`, and marks the suggestion
+`accepted` with a system Revision. A later Recording attaches through the ordinary matching pipeline, and the Dive takes
+part in Duplicate candidates and the logbook checks like any other. Accepting with an overlapping Dive (branch B),
+declining and the Joint dive's visibility come in later slices.
 
 **Recording** — data from one Device for one Dive.
 - Device, Import, Original(s) plus position within the Original (one file can hold many dives).

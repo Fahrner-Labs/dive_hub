@@ -54,6 +54,7 @@ export const PROBLEMS = {
   diver_external_id_connected: 'A connection uses this account; disconnect it first',
   participant_invalid: 'A diver is on the list twice, or is the dive\'s own diver',
   suggestion_not_found: 'No such Buddy suggestion for a Diver you manage',
+  suggestion_not_pending: 'This Buddy suggestion is no longer pending',
   merge_not_possible: 'Only two different dives of one diver can be merged',
   check_not_found: 'These two dives are not at the same time (anymore)',
   continuation_not_possible: 'Only later dives of the same diver, each with one recording of the same computer and none between, can be appended',

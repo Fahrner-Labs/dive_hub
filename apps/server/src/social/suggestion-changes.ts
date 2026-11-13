@@ -11,11 +11,12 @@ export function withSuggestionChanges(inner: ChangeListener): ChangeListener {
     async diveChanged(tx: Tx, diveId, cause, at, actor, changes) {
       await inner.diveChanged(tx, diveId, cause, at, actor);
       // `participants` means the list was written; a tombstone means the Dive left every list. A restore (to null)
-      // leaves cancelled suggestions cancelled until the Participant is added again.
+      // leaves cancelled suggestions cancelled until the Participant is added again. Accepting a Buddy suggestion copies
+      // the source Dive's people onto the copy, which must not raise suggestions back to them.
       const participants = changes?.participants !== undefined;
       const tombstone = changes?.deletedAt;
       const deleted = typeof tombstone === 'object' && tombstone !== null && tombstone.to !== null && tombstone.to !== undefined;
-      if (participants || deleted) await syncSuggestions(tx, diveId);
+      if (cause !== 'buddy-accept' && (participants || deleted)) await syncSuggestions(tx, diveId);
     },
     async siteRevisionWritten(tx: Tx, siteId, cause, at) {
       await inner.siteRevisionWritten(tx, siteId, cause, at);
