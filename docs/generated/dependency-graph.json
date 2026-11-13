@@ -29888,6 +29888,7 @@
         "apps/web/src/lib/equipment.ts",
         "apps/web/src/EquipmentPage.tsx",
         "apps/web/src/ImportPanel.tsx",
+        "apps/web/src/BuddySuggestions.tsx",
         "apps/web/src/Decisions.tsx",
         "apps/web/src/GoneDives.tsx",
         "apps/web/src/LogbookChecks.tsx",
@@ -29986,8 +29987,9 @@
         "apps/web/src/EquipmentDue.tsx",
         "apps/web/src/EquipmentPage.tsx",
         "apps/web/src/ImportPanel.tsx",
-        "apps/web/src/Decisions.tsx",
+        "apps/web/src/BuddySuggestions.tsx",
         "apps/web/src/ReviewRows.tsx",
+        "apps/web/src/Decisions.tsx",
         "apps/web/src/GoneDives.tsx",
         "apps/web/src/LogbookChecks.tsx",
         "apps/web/src/ProviderConflictsSection.tsx",
@@ -30076,6 +30078,7 @@
         "apps/web/src/EquipmentPage.tsx",
         "apps/web/src/ImportPanel.tsx",
         "apps/web/src/ReviewPage.tsx",
+        "apps/web/src/BuddySuggestions.tsx",
         "apps/web/src/Decisions.tsx",
         "apps/web/src/GoneDives.tsx",
         "apps/web/src/LogbookChecks.tsx",
@@ -30291,6 +30294,7 @@
         "apps/web/src/lib/equipment.ts",
         "apps/web/src/EquipmentPage.tsx",
         "apps/web/src/ImportPanel.tsx",
+        "apps/web/src/BuddySuggestions.tsx",
         "apps/web/src/Decisions.tsx",
         "apps/web/src/GoneDives.tsx",
         "apps/web/src/LogbookChecks.tsx",
@@ -30828,6 +30832,7 @@
         "apps/web/src/DiversPage.tsx",
         "apps/web/src/EquipmentPage.tsx",
         "apps/web/src/ImportPanel.tsx",
+        "apps/web/src/BuddySuggestions.tsx",
         "apps/web/src/Decisions.tsx",
         "apps/web/src/GoneDives.tsx",
         "apps/web/src/LogbookChecks.tsx",
@@ -30917,6 +30922,7 @@
         "apps/web/src/DiverPage.tsx",
         "apps/web/src/DiversPage.tsx",
         "apps/web/src/EquipmentDue.tsx",
+        "apps/web/src/BuddySuggestions.tsx",
         "apps/web/src/Decisions.tsx",
         "apps/web/src/LogbookChecks.tsx",
         "apps/web/src/SitesPage.tsx"
@@ -31743,6 +31749,7 @@
         "apps/web/src/EquipmentPage.tsx",
         "apps/web/src/ImportPanel.tsx",
         "apps/web/src/ReviewPage.tsx",
+        "apps/web/src/BuddySuggestions.tsx",
         "apps/web/src/Decisions.tsx",
         "apps/web/src/GoneDives.tsx",
         "apps/web/src/LogbookChecks.tsx",
@@ -33332,6 +33339,7 @@
         "apps/web/src/SiteForm.tsx",
         "apps/web/src/Certifications.tsx",
         "apps/web/src/ImportPanel.tsx",
+        "apps/web/src/BuddySuggestions.tsx",
         "apps/web/src/GoneDives.tsx",
         "apps/web/src/LogbookChecks.tsx",
         "apps/web/src/ReviewStrip.tsx",
@@ -41556,6 +41564,23 @@
       "dependencies": [
         {
           "dynamic": false,
+          "module": "./BuddySuggestions.tsx",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/web/src/BuddySuggestions.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./Decisions.tsx",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -41727,6 +41752,200 @@
       ],
       "dependents": [
         "apps/web/src/App.tsx"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/web/src/BuddySuggestions.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./api.ts",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/web/src/api.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./lib/display.ts",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/web/src/lib/display.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./lib/focus.ts",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/web/src/lib/focus.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./lib/providers.ts",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/web/src/lib/providers.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./ReviewRows.tsx",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/web/src/ReviewRows.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./ui/index.ts",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/web/src/ui/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@tanstack/react-query",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "npm",
+            "import"
+          ],
+          "resolved": "apps/web/node_modules/@tanstack/react-query/build/legacy/index.cjs",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": true,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "react",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "npm",
+            "import"
+          ],
+          "resolved": "apps/web/node_modules/react/index.js",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": true,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "react-i18next",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "npm",
+            "import"
+          ],
+          "resolved": "apps/web/node_modules/react-i18next/dist/commonjs/index.js",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": true,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/web/src/ReviewPage.tsx"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/web/src/ReviewRows.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "react",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "npm",
+            "import"
+          ],
+          "resolved": "apps/web/node_modules/react/index.js",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": true,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/web/src/BuddySuggestions.tsx",
+        "apps/web/src/Decisions.tsx",
+        "apps/web/src/GoneDives.tsx",
+        "apps/web/src/LogbookChecks.tsx",
+        "apps/web/src/ProviderConflictsSection.tsx"
       ],
       "orphan": false,
       "valid": true
@@ -41907,36 +42126,6 @@
       ],
       "dependents": [
         "apps/web/src/ReviewPage.tsx"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "apps/web/src/ReviewRows.tsx",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "react",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "npm",
-            "import"
-          ],
-          "resolved": "apps/web/node_modules/react/index.js",
-          "coreModule": false,
-          "followable": false,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": true,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "apps/web/src/Decisions.tsx",
-        "apps/web/src/GoneDives.tsx",
-        "apps/web/src/LogbookChecks.tsx",
-        "apps/web/src/ProviderConflictsSection.tsx"
       ],
       "orphan": false,
       "valid": true
@@ -46065,8 +46254,8 @@
     "baselineSize": 0,
     "baselineStale": 0,
     "advisedExitCode": 0,
-    "totalCruised": 436,
-    "totalDependenciesCruised": 2297,
+    "totalCruised": 437,
+    "totalDependenciesCruised": 2307,
     "optionsUsed": {
       "baseDir": "/home/runner/work/dive_hub/dive_hub",
       "combinedDependencies": false,
