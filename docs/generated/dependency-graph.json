@@ -7545,6 +7545,7 @@
         "apps/server/src/imports/placement.ts",
         "apps/server/src/dives/time-zone.ts",
         "apps/server/src/providers/dive-import/dive-import.ts",
+        "apps/server/src/social/suggestion-service.ts",
         "apps/server/src/dives/candidates/candidate-routes.ts"
       ],
       "orphan": false,
@@ -17794,6 +17795,23 @@
             "import"
           ],
           "resolved": "apps/server/src/divers/management.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../dives/matching.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/dives/matching.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -46048,7 +46066,7 @@
     "baselineStale": 0,
     "advisedExitCode": 0,
     "totalCruised": 436,
-    "totalDependenciesCruised": 2296,
+    "totalDependenciesCruised": 2297,
     "optionsUsed": {
       "baseDir": "/home/runner/work/dive_hub/dive_hub",
       "combinedDependencies": false,
@@ -46273,12 +46291,12 @@
         {
           "name": "module-imports-social",
           "severity": "error",
-          "comment": "social/ may import only these domain modules: divers, live, revisions (MODULE_IMPORTS in .dependency-cruiser.cjs, ADR 0053).",
+          "comment": "social/ may import only these domain modules: dives, divers, live, revisions (MODULE_IMPORTS in .dependency-cruiser.cjs, ADR 0053).",
           "from": {
             "path": "^apps/server/src/social/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|backups|centres|certifications|dives|equipment|imports|lead|mcp|planning|providers|sites|users)/"
+            "path": "^apps/server/src/(assessment|backups|centres|certifications|equipment|imports|lead|mcp|planning|providers|sites|users)/"
           },
           "scope": "module"
         },
@@ -46438,7 +46456,7 @@
       "version": "18.7.0",
       "nodeVersionSupported": "^22||^24||>=26",
       "nodeVersionFound": "v24.22.2",
-      "osVersionFound": "x64 linux@7.0.0-1016-aws",
+      "osVersionFound": "x64 linux@7.0.0-1019-azure",
       "transpilersFound": [
         {
           "name": "javascript",
