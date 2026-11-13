@@ -44,9 +44,10 @@ export const suggestionRoutes: FastifyPluginAsyncTypebox<SuggestionRouteDeps> = 
 
   app.get('/buddy-suggestions/:id', {
     schema: {
-      summary: 'The shared facts of a suggested Dive, for the Review inbox',
+      summary: 'The shared facts of a pending Buddy suggestion, for the Review inbox',
       description: 'Site, start time with its UTC offset, duration, max and average depth as starting values, the Dive\'s own Diver, its Participants by name and any centre responsible for the site. '
-        + 'Never a Recording, notes, suit, weighting, cylinders, lead or an overridden value. 404 `suggestion_not_found` unless the User manages the invited Diver.',
+        + 'Never a Recording, notes, suit, weighting, cylinders, lead or an overridden value. Only a pending invitation is readable: once accepted, declined or cancelled it answers 404 `suggestion_not_found` like another User\'s suggestion. '
+        + '404 `suggestion_not_found` unless the User manages the invited Diver.',
       params: IdParams,
       response: { 200: SuggestionPreviewView, 404: Problem },
     },

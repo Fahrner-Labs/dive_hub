@@ -208,4 +208,19 @@ describe.skipIf(!(await databaseReachable()))('Buddy suggestions on claim and me
     const listed = (await json<SuggestionView[]>('GET', '/api/buddy-suggestions', anna)).filter((s) => s.dive.id === diveThree);
     expect(listed.map((s) => s.id)).toEqual([annaOnThree.id]);
   });
+
+  it('cancels a pending suggestion when the Diver it follows becomes the Dive\'s own', async () => {
+    const ownDive = await upload('2026-01-19T09:00:00Z', 115);
+    const erik = (await json<{ id: string }>('POST', '/api/external-divers', tim, { name: 'Erik Voss' })).id;
+    expect((await setParticipants(ownDive, [{ diverId: erik, role: 'buddy' }])).statusCode).toBe(200);
+    const pending = (await rowsOf(erik)).find((s) => s.diveId === ownDive)!;
+    expect(pending).toMatchObject({ status: 'pending' });
+
+    // Claimed as Tim himself: the Dive is Tim's own Diver's, so the invitation cannot name that Diver.
+    expect((await call('POST', `/api/admin/divers/${erik}/merge`, admin, { into: timDiver })).statusCode).toBe(200);
+
+    expect(await rowsOf(erik)).toContainEqual(expect.objectContaining({ id: pending.id, status: 'cancelled', diveId: ownDive }));
+    expect((await rowsOf(timDiver)).find((s) => s.id === pending.id)).toBeUndefined();
+    expect((await json<SuggestionView[]>('GET', '/api/buddy-suggestions', tim)).map((s) => s.id)).not.toContain(pending.id);
+  });
 });

@@ -948,7 +948,9 @@ dives, all off until the User turns them on. *Web:* `ProviderAutomation.tsx` (se
 - **Show the suggestions of the Divers the User manages now,** each with the invited Diver and enough of the suggested
   Dive to recognise it (start, offset, duration, max depth, site), and its shared facts in a preview: site, start with
   offset, duration, max and average depth, the source Dive's owner and Participants, and the centre responsible for the
-  site. Never show the source's Recording, notes, suit, weighting, cylinders, lead or Overrides.
+  site. Never show the source's Recording, notes, suit, weighting, cylinders, lead or Overrides. Only a pending
+  suggestion is readable: once it was accepted, declined or cancelled, `GET /api/buddy-suggestions/{id}` answers 404
+  `suggestion_not_found` like another User's suggestion, so a removed Participant revokes the source Dive's facts.
 - **Offer the invited Diver's overlapping Dives in the preview** (`overlaps`, earliest first): each with its id, start
   and offset, duration, max depth and site. They are the Dives that meet the suggested time window with the same
   tolerance and unknown-UTC-offset alignment Recording matching uses. Offer **link one of these** or **create a new Dive**; when several overlap, let the

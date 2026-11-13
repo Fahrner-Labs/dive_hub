@@ -219,8 +219,16 @@ export function createMergingService(db: Db, checks: LogbookCheckService, { curr
         const actor = userActor(userId);
         const linked = [...byProvider(await pushesOf(tx, [diveId]), diveId).values()].some((rows) => currentRemote(rows));
         if (!linked) {
+          const before = await participantsOf(tx, diveId);
           await tx.update(dive).set({ diverId, ...nextVersion() }).where(eq(dive.id, diveId));
-          await writeRevision(tx, 'dive', diveId, actor, 'move', { diverId: { from: current.diverId, to: diverId } });
+          // The new own Diver is not a Participant of its own Dive (ADR 0028); the Provider-copy branch filters it too.
+          const hadOwn = before.some((p) => p.diverId === diverId);
+          if (hadOwn) await tx.delete(participant).where(and(eq(participant.diveId, diveId), eq(participant.diverId, diverId)));
+          await writeRevision(tx, 'dive', diveId, actor, 'move', {
+            diverId: { from: current.diverId, to: diverId },
+            // Removing it is part of the move's history; the suggestion listener also syncs on `diverId`.
+            ...(hadOwn && { participants: { from: before, to: await participantsOf(tx, diveId) } }),
+          });
           await renumber(tx, [current.diverId, diverId]);
           return diveId;
         }
