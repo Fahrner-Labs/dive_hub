@@ -124,9 +124,13 @@ async function emitSuggestionHints(q: Queryable, changed: { id: string; diverId:
 /**
  * Raises, re-raises and cancels the Dive's Buddy suggestions from its Participants as they are now. Runs in the caller's
  * transaction, right after the Participants (or the Dive's deletion) were written; idempotent, so every path that writes
- * Participants can rely on the Revision's change listener to call it.
+ * Participants can rely on the Revision's change listener to call it. A move passes `reRaise: false`: moving a Dive
+ * changes its own Diver and may remove that Diver from the Participants, but only adding a Participant revives a
+ * declined or cancelled invitation (ADR 0070).
  */
-export async function syncSuggestions(q: Queryable, diveId: string): Promise<void> {
+export async function syncSuggestions(
+  q: Queryable, diveId: string, { reRaise = true }: { reRaise?: boolean } = {},
+): Promise<void> {
   const [current] = await q.select({ diverId: dive.diverId, deletedAt: dive.deletedAt })
     .from(dive).where(eq(dive.id, diveId));
   if (!current) return;
@@ -152,7 +156,7 @@ export async function syncSuggestions(q: Queryable, diveId: string): Promise<voi
       const [created] = await q.insert(buddySuggestion).values({ diveId, diverId }).onConflictDoNothing()
         .returning({ id: buddySuggestion.id, diverId: buddySuggestion.diverId });
       if (created) await emitSuggestionHints(q, [created]);
-    } else if (row.status === 'declined' || row.status === 'cancelled') {
+    } else if (reRaise && (row.status === 'declined' || row.status === 'cancelled')) {
       const [raised] = await q.update(buddySuggestion).set({ status: 'pending', resolvedAt: null })
         .where(and(eq(buddySuggestion.id, row.id), inArray(buddySuggestion.status, ['declined', 'cancelled'])))
         .returning({ id: buddySuggestion.id, diverId: buddySuggestion.diverId });

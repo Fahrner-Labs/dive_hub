@@ -294,4 +294,21 @@ describe.skipIf(!(await databaseReachable()))('Buddy suggestions: link an existi
     // The new own Diver is not left as a Participant (setParticipants would refuse that).
     expect((await getDive(source, tim)).participants).toEqual([]);
   });
+
+  it('keeps a declined suggestion declined when the Dive moves to another Diver', async () => {
+    const source = await makeSource(new Date('2026-04-09T09:00:00Z'));
+    const suggestion = await invite(source, annaDiver);
+    expect((await decline(suggestion.id, anna)).statusCode).toBe(200);
+    expect((await pendingFor(source, annaDiver))!.status).toBe('declined');
+
+    const kid = await json<{ id: string }>('POST', '/api/divers', tim, { name: 'Kid Move' });
+    const moved = await call('POST', `/api/dives/${source}/move`, tim, { diverId: kid.id, version: await versionOf(source) });
+    expect(moved.statusCode).toBe(200);
+    expect(moved.json()).toMatchObject({ id: source, diverId: kid.id });
+
+    // Moving the Dive is not adding the Participant again: her decline stands (ADR 0070).
+    expect((await pendingFor(source, annaDiver))!.status).toBe('declined');
+    expect((await list(anna)).map((s) => s.id)).not.toContain(suggestion.id);
+    expect((await getDive(source, tim)).participants).toContainEqual(expect.objectContaining({ diverId: annaDiver }));
+  });
 });

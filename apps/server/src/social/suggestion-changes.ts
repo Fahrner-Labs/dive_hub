@@ -12,14 +12,18 @@ export function withSuggestionChanges(inner: ChangeListener): ChangeListener {
     async diveChanged(tx: Tx, diveId, cause, at, actor, changes) {
       await inner.diveChanged(tx, diveId, cause, at, actor);
       // `participants` means the list was written; a tombstone means the Dive left every list; `diverId` means the Dive
-      // moved to another Diver, which changes who its own Diver is. A restore (to null) leaves cancelled suggestions
-      // cancelled until the Participant is added again. Accepting a Buddy suggestion copies the source Dive's people onto
-      // the copy, which must not raise suggestions back to them.
+      // moved to another Diver, which changes who its own Diver is. Only adding a Participant raises a declined or
+      // cancelled row again (ADR 0070), so a move cancels but never revives: it also removes the new own Diver from the
+      // Participant list. A restore (to null) leaves cancelled suggestions cancelled until the Participant is added again.
+      // Accepting a Buddy suggestion copies the source Dive's people onto the copy, which must not raise suggestions
+      // back to them.
       const participants = changes?.participants !== undefined;
       const tombstone = changes?.deletedAt;
       const deleted = typeof tombstone === 'object' && tombstone !== null && tombstone.to !== null && tombstone.to !== undefined;
       const moved = changes?.diverId !== undefined;
-      if (cause !== 'buddy-accept' && (participants || deleted || moved)) await syncSuggestions(tx, diveId);
+      if (cause !== 'buddy-accept' && (participants || deleted || moved)) {
+        await syncSuggestions(tx, diveId, { reRaise: cause !== 'move' });
+      }
     },
     async siteRevisionWritten(tx: Tx, siteId, cause, at) {
       await inner.siteRevisionWritten(tx, siteId, cause, at);
