@@ -967,7 +967,8 @@ dives, all off until the User turns them on. *Web:* `ProviderAutomation.tsx` (se
   Nothing is created and the inviter's Participant stays; the inviter gets no negative signal. Declining is per
   suggestion, so it resolves for every User who manages the invited Diver now. Adding the Participant again raises it
   as pending once more. The same 404 and `suggestion_not_pending` refusals as accepting apply.
-- **Changing the Participants or deleting the suggested Dive** changes the list; the `buddySuggestion` live hint names
+- **Changing the Participants or deleting the suggested Dive** changes the list; a claim or merge that gives a pending
+  suggestion its first audience (ADR 0028) makes it appear for the new managers. The `buddySuggestion` live hint names
   the suggestion to refetch (accepting and declining emit it too), as every hint does. *Web:* `ReviewPage.tsx` (a later
   slice).
 

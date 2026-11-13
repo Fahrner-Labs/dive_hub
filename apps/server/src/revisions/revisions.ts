@@ -34,9 +34,9 @@ export type RevisionCause = (typeof REVISION_CAUSES)[number];
 export type Changes = Record<string, { from: unknown; to: unknown }>;
 
 /**
- * Who hears, inside the change's transaction, that a Dive or a dive site changed: the Waiting push queue (ADR 0056),
- * wrapped by compose.ts to also hint open pages (ADR 0066). revisions/ owns this interface and providers/ implements
- * it, so writing a Revision doesn't call the providers' queue (ADR 0053's seam for revisions and providers).
+ * Who hears, inside the change's transaction, that a Dive, a dive site or a Diver changed: the Waiting push queue
+ * (ADR 0056), wrapped by compose.ts to also hint open pages (ADR 0066). revisions/ owns this interface and providers/
+ * implements it, so writing a Revision doesn't call the providers' queue (ADR 0053's seam for revisions and providers).
  * createProviderLayer sets it; every process that writes Revisions builds one.
  */
 export interface ChangeListener {
@@ -46,6 +46,8 @@ export interface ChangeListener {
   siteRevisionWritten(tx: Tx, siteId: string, cause: RevisionCause, at: Date): Promise<void>;
   /** A dive site's name or position changed: it reaches the Dives there. */
   siteChanged(tx: Tx, siteId: string, at: Date): Promise<void>;
+  /** A Diver was merged away into another (ADR 0028): what hung on it follows to the surviving Diver (ADR 0070). */
+  diverMerged?(tx: Tx, fromId: string, intoId: string): Promise<void>;
 }
 
 let listener: ChangeListener | null = null;

@@ -1,7 +1,8 @@
 // Buddy suggestions (ADR 0070): the row's life on its own, without a Request. A Participant added to a Dive raises a
 // pending suggestion for the invited Diver; removing the Participant or soft-deleting the Dive cancels a pending one;
 // a declined or cancelled one becomes pending again when the Participant is added back. The audience is never stored:
-// every read and every hint asks diver_management who manages the Diver now, so claiming or merging re-targets it.
+// every read and every hint asks diver_management who manages the Diver now, so claiming or merging re-targets it. A
+// claim is a merge (ADR 0028): the pending suggestions of the Diver merged away follow it to the surviving one.
 import { and, desc, eq, gte, inArray, isNull, lte } from 'drizzle-orm';
 import type { Db, Queryable, Tx } from '../db/client.js';
 import {
@@ -165,6 +166,36 @@ export async function syncSuggestions(q: Queryable, diveId: string): Promise<voi
       .where(and(eq(buddySuggestion.diveId, diveId), eq(buddySuggestion.status, 'pending'), inArray(buddySuggestion.diverId, gone)))
       .returning({ id: buddySuggestion.id, diverId: buddySuggestion.diverId });
     await emitSuggestionHints(q, cancelled);
+  }
+}
+
+/**
+ * A Diver merged away into another (ADR 0028, amended): its pending suggestions follow to the surviving Diver, whose
+ * managers see them now. Each moved row gains its first audience here, so it also gets the hint. A Dive the surviving
+ * Diver already has a suggestion for keeps that row — one suggestion per Dive and Diver — and the merged-away one is
+ * cancelled rather than duplicated. Accepted and declined rows stay on the Diver that was merged away.
+ */
+export async function followMergedDiver(q: Queryable, fromId: string, intoId: string): Promise<void> {
+  const pending = await q.select({ id: buddySuggestion.id, diveId: buddySuggestion.diveId }).from(buddySuggestion)
+    .where(and(eq(buddySuggestion.diverId, fromId), eq(buddySuggestion.status, 'pending')));
+  if (pending.length === 0) return;
+  const taken = new Set((await q.select({ diveId: buddySuggestion.diveId }).from(buddySuggestion)
+    .where(and(eq(buddySuggestion.diverId, intoId), inArray(buddySuggestion.diveId, pending.map((s) => s.diveId)))))
+    .map((s) => s.diveId));
+  const followed = pending.filter((s) => !taken.has(s.diveId));
+  const dropped = pending.filter((s) => taken.has(s.diveId));
+
+  if (followed.length > 0) {
+    const moved = await q.update(buddySuggestion).set({ diverId: intoId })
+      .where(and(inArray(buddySuggestion.id, followed.map((s) => s.id)), eq(buddySuggestion.status, 'pending')))
+      .returning({ id: buddySuggestion.id, diverId: buddySuggestion.diverId });
+    await emitSuggestionHints(q, moved);
+  }
+  // Cancelled, not deleted: the row is still the surviving Diver's invitation to that Dive, and a later Participant
+  // write raises it again if the Dive still lists them.
+  if (dropped.length > 0) {
+    await q.update(buddySuggestion).set({ status: 'cancelled', resolvedAt: new Date() })
+      .where(and(inArray(buddySuggestion.id, dropped.map((s) => s.id)), eq(buddySuggestion.status, 'pending')));
   }
 }
 
