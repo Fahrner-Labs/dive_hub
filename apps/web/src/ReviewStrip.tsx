@@ -9,10 +9,11 @@ import { ActionMenu } from './ui/index.ts';
  */
 export function ReviewStrip() {
   const { t, i18n } = useTranslation();
-  const { recordings, pairs, surfaceBreaks, shortDives, goneAt, conflicts, exists, total } = useToDecideCounts();
+  const { recordings, pairs, surfaceBreaks, shortDives, goneAt, conflicts, exists, suggestions, total } = useToDecideCounts();
   const providers = useProviders();
   if (total === 0) return null;
   const parts = [
+    ...(suggestions > 0 ? [t('review.strip.suggestions', { count: suggestions })] : []),
     ...(recordings > 0 ? [t('review.strip.recordings', { count: recordings })] : []),
     ...(pairs > 0 ? [t('review.strip.pairs', { count: pairs })] : []),
     ...(surfaceBreaks > 0 ? [t('review.strip.surfaceBreaks', { count: surfaceBreaks })] : []),

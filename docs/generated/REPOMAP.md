@@ -4,7 +4,7 @@
 > `pnpm check` fails when this map is stale. Symbols are ranked by how widely the code references them;
 > each module shows its most-referenced ones (exported symbols rank higher). Search here before walking the tree.
 
-Files: 374 · symbols: 3450 · shown: 257
+Files: 375 · symbols: 3459 · shown: 257
 
 ### server/(root)
 apps/server/src/vocabulary.ts:13 type SiteWaterType
@@ -277,30 +277,30 @@ apps/server/src/users/tokens.ts:4 const newToken
 … 58 more symbols in this module
 
 ### web/(root)
-apps/web/src/api.ts:224 fn unwrap
+apps/web/src/api.ts:232 fn unwrap
 apps/web/src/api.ts:10 const api
-apps/web/src/api.ts:136 const keys
+apps/web/src/api.ts:141 const keys
 apps/web/src/api.ts:35 class ApiError
 apps/web/src/ToolsLead.tsx:45 fn Panel
 apps/web/src/api.ts:15 type Problem
-apps/web/src/api.ts:305 const diversQuery
+apps/web/src/api.ts:313 const diversQuery
 apps/web/src/api.ts:70 type DiveView
-apps/web/src/api.ts:105 type ProviderView
-apps/web/src/PushRun.tsx:21 const named
+apps/web/src/api.ts:110 type ProviderView
 apps/web/src/ReviewRows.tsx:35 fn Candidates
-apps/web/src/CodeScanner.tsx:106 fn CodeScanner
+apps/web/src/PushRun.tsx:21 const named
 apps/web/src/ReviewRows.tsx:4 iface Fact
+apps/web/src/CodeScanner.tsx:106 fn CodeScanner
 apps/web/src/ReviewRows.tsx:25 fn CandidateRow
+apps/web/src/DivePage.tsx:232 fn Fact
 apps/web/src/ProviderDiveImport.tsx:18 const DIVE_KINDS
 apps/web/src/DiveCodes.tsx:10 fn CodeFigure
-apps/web/src/DivePage.tsx:232 fn Fact
 apps/web/src/ProfilePlot.tsx:11 const token
 apps/web/src/Cylinders.tsx:18 fn useCylinderText
 apps/web/src/DeleteDive.tsx:21 fn DeleteDiveDialog
 apps/web/src/ProviderConflicts.tsx:14 fn useConflictValueText
 apps/web/src/WaitingPush.tsx:117 fn WaitingPushState
 apps/web/src/ImportPanel.tsx:39 const ImportContext
-… 673 more symbols in this module
+… 682 more symbols in this module
 
 ### web/i18n
 apps/web/src/i18n/languages.ts:6 fn pickLanguage
@@ -317,8 +317,8 @@ apps/web/src/lib/providers.ts:70 fn useProviderText
 apps/web/src/lib/providers.ts:47 fn useProviders
 apps/web/src/lib/page.ts:8 fn usePageTitle
 apps/web/src/lib/providers.ts:87 fn useJoinNames
-apps/web/src/lib/settings.ts:13 fn settingsHref
 apps/web/src/lib/focus.ts:28 fn refocusAfterRemoval
+apps/web/src/lib/settings.ts:13 fn settingsHref
 apps/web/src/lib/geo.ts:4 iface Position
 apps/web/src/lib/focus.ts:16 fn focusHeading
 apps/web/src/lib/units.ts:20 const depthIn

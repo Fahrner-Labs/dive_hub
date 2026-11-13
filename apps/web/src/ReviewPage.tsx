@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import { BuddySuggestions } from './BuddySuggestions.tsx';
 import { DeletedDives } from './DeletedDives.tsx';
 import { DiscardedRecordings, RecordingDecisions } from './Decisions.tsx';
 import { GoneDivesSections } from './GoneDives.tsx';
@@ -42,6 +43,7 @@ function ToDecide() {
   const { total } = useToDecideCounts();
   return (
     <>
+      <BuddySuggestions />
       <PairDecisions />
       <ShortDiveDecisions />
       <RecordingDecisions />

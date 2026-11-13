@@ -35,7 +35,7 @@ const AREAS = [
   [/^apps\/web\/src\/lib\/address-search\.ts$/, ['@sites', '@dives']],
   // Equipment items and their service schedules (ADR 0034): the page and its forms, the logbook's due notice and a Dive's gear.
   [/^apps\/web\/src\/(EquipmentPage|EquipmentDue|DiveGear)\.tsx$|^apps\/web\/src\/lib\/equipment\.ts$/, ['@equipment', '@dives']],
-  [/^apps\/web\/src\/(DivePage|DiveEditForm|DiveHistory|DiveList|ProfileSketch|DepthProfile|ProfilePlot|Decisions|ReviewPage|ReviewStrip|ReviewRows|ImportPanel|DeleteDive|DeletedDives|MergeDive|AppendDive|LogbookChecks|Participants|Assessment|Cylinders|Weighting|LeadHint|PushRun).tsx$|^apps\/web\/src\/lib\/(dive-values|history|profile|tanks|cylinders|weighting|answer|sketch|logbook|review|devices|importable|deletion|assessment|waiting-push)\.ts$/, ['@dives']],
+  [/^apps\/web\/src\/(DivePage|DiveEditForm|DiveHistory|DiveList|ProfileSketch|DepthProfile|ProfilePlot|Decisions|ReviewPage|ReviewStrip|ReviewRows|BuddySuggestions|ImportPanel|DeleteDive|DeletedDives|MergeDive|AppendDive|LogbookChecks|Participants|Assessment|Cylinders|Weighting|LeadHint|PushRun).tsx$|^apps\/web\/src\/lib\/(dive-values|history|profile|tanks|cylinders|weighting|answer|sketch|logbook|review|devices|importable|deletion|assessment|waiting-push)\.ts$/, ['@dives']],
   // A Diver's codes and details, and taking a scanned code (ADR 0043): on the divers page; the codes also show on a Dive.
   [/^apps\/web\/src\/DiverCodes\.tsx$/, ['@divers', '@dives']],
   [/^apps\/web\/src\/DiversPage\.tsx$|^apps\/web\/src\/DiverPage\.tsx$|^apps\/web\/src\/lib\/divers\.ts$/, ['@divers']],

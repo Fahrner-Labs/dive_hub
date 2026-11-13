@@ -142,7 +142,8 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   one `text/event-stream` per signed-in User with the session cookie; the browser's `EventSource` sends it
   same-origin. The stream carries only `event: hint` frames whose `data` is `{ v: 1, kind, id }` — never data
   or the audience. Kinds: `dive`, `site`, `waitingPush`, `import`, `siteImport`, `pushRun`, `certification`,
-  `connection`. On a hint, refetch the matching queries through the normal API (the web client invalidates their
+  `connection`, `buddySuggestion` (the Review inbox's suggestions: refetch `['buddy-suggestions']` and each card's
+  preview). On a hint, refetch the matching queries through the normal API (the web client invalidates their
   query keys); a client may batch hints that arrive within ~250 ms into one refetch. **On every reconnect after
   the first**, refetch what is on screen (`invalidateQueries` with `refetchType: 'active'` in TanStack Query):
   hints are not replayed, so a gap is covered only that way. Polling remains fully valid: a client that ignores
@@ -951,7 +952,9 @@ dives, all off until the User turns them on. *Web:* `ProviderAutomation.tsx` (se
 - **Offer the invited Diver's overlapping Dives in the preview** (`overlaps`, earliest first): each with its id, start
   and offset, duration, max depth and site. They are the Dives that meet the suggested time window with the same
   tolerance and unknown-UTC-offset alignment Recording matching uses. Offer **link one of these** or **create a new Dive**; when several overlap, let the
-  User pick one.
+  User pick one. With no overlap, say that accepting creates a new Dive.
+- **Accepting opens the Dive it made or linked** and refreshes the logbook. The Review page's card and its accept dialog
+  show only the shared facts above and the two answers; the dialog asks before anything is copied or linked.
 - **Accept with no body (`POST /api/buddy-suggestions/{id}/accept`, 200)** answers `{ id, status: 'accepted',
   resolvedAt, diveId, jointDiveId }`: the server created a Recording-less Dive in the invited Diver's logbook with the
   shared facts only and linked both Dives to one Joint dive. Open or refresh that Dive; its depths are own values, so a
@@ -969,8 +972,8 @@ dives, all off until the User turns them on. *Web:* `ProviderAutomation.tsx` (se
   as pending once more. The same 404 and `suggestion_not_pending` refusals as accepting apply.
 - **Changing the Participants or deleting the suggested Dive** changes the list; a claim or merge that gives a pending
   suggestion its first audience (ADR 0028) makes it appear for the new managers. The `buddySuggestion` live hint names
-  the suggestion to refetch (accepting and declining emit it too), as every hint does. *Web:* `ReviewPage.tsx` (a later
-  slice).
+  the suggestion to refetch (accepting and declining emit it too), as every hint does. *Web:* `BuddySuggestions.tsx`
+  (the Review page's "To decide" part); its count joins the Review strip and the navigation's "to decide" count.
 
 ### Duplicate candidates
 - **Show them where the User decides,** on a page of their own ("Review", reached from one line on the logbook and a count
