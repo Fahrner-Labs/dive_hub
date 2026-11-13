@@ -167,7 +167,7 @@ export function rankSymbols(root) {
 }
 
 /** How many symbols a module shows: small modules keep their few, large ones get a deeper slice. */
-export const perModuleLimit = (count) => Math.max(6, Math.min(24, Math.ceil(count / 15)));
+export const perModuleLimit = (count) => Math.max(6, Math.min(23, Math.ceil(count / 15)));
 
 /**
  * The module's top symbols. The first pass keeps any file to about a third of the places (at least three), so a large

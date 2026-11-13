@@ -195,8 +195,11 @@ member Dives. Created when a Buddy suggestion is accepted, or by hand.
 suggestion** is raised. Nothing appears in that User's logbook until they accept.
 *Implemented (ADR 0028, slice 14):* `participant` with roles `buddy`, `guide`, `instructor`; one role per Diver and
 Dive, never the Dive's own Diver; set as one list (`PUT /api/dives/{id}/participants`) with the Dive's version and a
-Revision (`participants`). Buddy suggestions and Joint dives are not built: another User's Diver can be put on a Dive,
-and nothing reaches that User.
+Revision (`participants`).
+*Implemented (ADR 0070, first Buddy slice):* `buddy_suggestion` and `joint_dive`; adding a Participant whose Diver is not
+the Dive's own raises a `pending` suggestion, removing them or soft-deleting the Dive cancels it, and the Users managing
+the Diver see it in `GET /api/buddy-suggestions` and its shared facts in `GET /api/buddy-suggestions/{id}`, with a
+`buddySuggestion` live hint. Accepting, declining and linking or copying the Dive into a Joint dive come in later slices.
 
 **Recording** — data from one Device for one Dive.
 - Device, Import, Original(s) plus position within the Original (one file can hold many dives).
