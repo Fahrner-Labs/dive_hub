@@ -39,7 +39,7 @@ export type Changes = Record<string, { from: unknown; to: unknown }>;
  */
 export interface ChangeListener {
   /** A Dive changed, at its Revision's time and for its cause (a merge tells it `delete` for the merged Dive). */
-  diveChanged(tx: Tx, diveId: string, cause: RevisionCause, at: Date, actor?: Actor): Promise<void>;
+  diveChanged(tx: Tx, diveId: string, cause: RevisionCause, at: Date, actor?: Actor, changes?: Changes): Promise<void>;
   /** Any dive site Revision was written: created, deleted, merged, adopted, imported or edited. */
   siteRevisionWritten(tx: Tx, siteId: string, cause: RevisionCause, at: Date): Promise<void>;
   /** A dive site's name or position changed: it reaches the Dives there. */
@@ -65,7 +65,7 @@ export async function writeRevision(
   const [written] = await tx.insert(revision).values({ entityType, entityId, actorType: actor.type, actorId: actor.id, cause, changes }).returning({ at: revision.at });
   // Every change to a Dive may need to go to a Provider by itself (ADR 0056): the listener hears it, at the Revision's time.
   // Every dive site Revision tells open pages (ADR 0066), so no site write can forget to announce itself.
-  if (entityType === 'dive') await changeListener().diveChanged(tx, entityId, cause, written!.at, actor);
+  if (entityType === 'dive') await changeListener().diveChanged(tx, entityId, cause, written!.at, actor, changes);
   else if (entityType === 'dive_site') await changeListener().siteRevisionWritten(tx, entityId, cause, written!.at);
   return { at: written!.at };
 }

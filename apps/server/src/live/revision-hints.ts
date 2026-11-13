@@ -7,8 +7,8 @@ import { audienceOfDive, emitHint } from './emit.js';
 /** Wraps the process's existing listener (the Waiting push queue) so every Revision also notifies open pages. */
 export function withRevisionHints(inner: ChangeListener): ChangeListener {
   return {
-    async diveChanged(tx: Tx, diveId, cause, at, actor) {
-      await inner.diveChanged(tx, diveId, cause, at, actor);
+    async diveChanged(tx: Tx, diveId, cause, at, actor, changes) {
+      await inner.diveChanged(tx, diveId, cause, at, actor, changes);
       await emitHint(tx, { kind: 'dive', id: diveId, audience: await audienceOfDive(tx, diveId) });
     },
     async siteRevisionWritten(tx: Tx, siteId, cause, at) {

@@ -232,6 +232,8 @@ export function createMergingService(db: Db, checks: LogbookCheckService, { curr
         if (others.length > 0) await tx.insert(participant).values(others.map((p) => ({ diveId: copy!.id, diverId: p.diverId, role: p.role })));
         await writeRevision(tx, 'dive', copy!.id, actor, 'move', {
           diverId: { from: current.diverId, to: diverId }, movedFrom: { from: null, to: diveId },
+          // The copy brings its Participants along: a Buddy suggestion follows from the Revision like any other add.
+          ...(others.length > 0 && { participants: { from: [], to: await participantsOf(tx, copy!.id) } }),
         });
         await deleteLeftBehind(tx, diveId, actor, 'move', { movedTo: { from: null, to: copy!.id } });
         await renumber(tx, [current.diverId, diverId]);

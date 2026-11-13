@@ -564,6 +564,7 @@
     "diver_external_id_taken": "Another diver already has this account.",
     "diver_external_id_connected": "A connection uses this account. Disconnect it first.",
     "participant_invalid": "Someone is on the list twice, or is the dive’s own diver.",
+    "suggestion_not_found": "This Buddy suggestion is not for a Diver you manage (anymore).",
     "merge_not_possible": "Only two different dives of the same Diver can be merged.",
     "continuation_not_possible": "Only later dives of the same Diver, each with one recording of the same computer and no dive between them, can be appended.",
     "recording_is_part": "This recording is part of an appended dive: it can’t be made primary or split off on its own.",

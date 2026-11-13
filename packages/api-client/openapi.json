@@ -400,6 +400,7 @@
               "diver_external_id_taken",
               "diver_external_id_connected",
               "participant_invalid",
+              "suggestion_not_found",
               "merge_not_possible",
               "check_not_found",
               "continuation_not_possible",
@@ -3302,6 +3303,7 @@
                   "diver_external_id_taken",
                   "diver_external_id_connected",
                   "participant_invalid",
+                  "suggestion_not_found",
                   "merge_not_possible",
                   "check_not_found",
                   "continuation_not_possible",
@@ -3516,6 +3518,7 @@
                   "diver_external_id_taken",
                   "diver_external_id_connected",
                   "participant_invalid",
+                  "suggestion_not_found",
                   "merge_not_possible",
                   "check_not_found",
                   "continuation_not_possible",
@@ -4337,6 +4340,7 @@
                         "diver_external_id_taken",
                         "diver_external_id_connected",
                         "participant_invalid",
+                        "suggestion_not_found",
                         "merge_not_possible",
                         "check_not_found",
                         "continuation_not_possible",
@@ -21690,6 +21694,392 @@
             }
           },
           "400": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/buddy-suggestions": {
+      "get": {
+        "summary": "Pending Buddy suggestions for the Divers the User manages now, newest first",
+        "description": "The audience is read from which Users manage the invited Diver at this moment; a Diver no User manages has no audience and appears for none. Another User's suggestion is not listed, and its preview answers 404 `suggestion_not_found`.",
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "status",
+                      "createdAt",
+                      "resolvedAt",
+                      "diver",
+                      "dive"
+                    ],
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "status": {
+                        "enum": [
+                          "pending",
+                          "accepted",
+                          "declined",
+                          "cancelled"
+                        ],
+                        "description": "pending until the invited Diver accepts or declines; cancelled when the Participant or the Dive goes"
+                      },
+                      "createdAt": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "resolvedAt": {
+                        "anyOf": [
+                          {
+                            "type": "null"
+                          },
+                          {
+                            "type": "string",
+                            "format": "date-time"
+                          }
+                        ],
+                        "description": "When it was accepted, declined or cancelled; null while pending"
+                      },
+                      "diver": {
+                        "type": "object",
+                        "required": [
+                          "id",
+                          "name"
+                        ],
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "dive": {
+                        "type": "object",
+                        "required": [
+                          "id",
+                          "startsAt",
+                          "utcOffsetSeconds",
+                          "durationSeconds",
+                          "maxDepthM",
+                          "site"
+                        ],
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "startsAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "utcOffsetSeconds": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "integer",
+                                "minimum": -43200,
+                                "maximum": 50400
+                              }
+                            ]
+                          },
+                          "durationSeconds": {
+                            "type": "number"
+                          },
+                          "maxDepthM": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "number"
+                              }
+                            ]
+                          },
+                          "site": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "object",
+                                "required": [
+                                  "id",
+                                  "name"
+                                ],
+                                "properties": {
+                                  "id": {
+                                    "type": "string"
+                                  },
+                                  "name": {
+                                    "type": "string"
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    },
+                    "description": "A pending Buddy suggestion for a Diver the signed-in User manages"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/buddy-suggestions/{id}": {
+      "get": {
+        "summary": "The shared facts of a suggested Dive, for the Review inbox",
+        "description": "Site, start time with its UTC offset, duration, max and average depth as starting values, the Dive's own Diver, its Participants by name and any centre responsible for the site. Never a Recording, notes, suit, weighting, cylinders, lead or an overridden value. 404 `suggestion_not_found` unless the User manages the invited Diver.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The shared facts of a suggested Dive: site, time, duration, depths, Participants and centre, and nothing of the Recording or its owner's private values",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "status",
+                    "createdAt",
+                    "resolvedAt",
+                    "diver",
+                    "dive"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "enum": [
+                        "pending",
+                        "accepted",
+                        "declined",
+                        "cancelled"
+                      ],
+                      "description": "pending until the invited Diver accepts or declines; cancelled when the Participant or the Dive goes"
+                    },
+                    "createdAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "resolvedAt": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      ]
+                    },
+                    "diver": {
+                      "type": "object",
+                      "required": [
+                        "id",
+                        "name"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "dive": {
+                      "type": "object",
+                      "required": [
+                        "id",
+                        "startsAt",
+                        "utcOffsetSeconds",
+                        "durationSeconds",
+                        "maxDepthM",
+                        "avgDepthM",
+                        "site",
+                        "owner",
+                        "centres",
+                        "participants"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "startsAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "utcOffsetSeconds": {
+                          "anyOf": [
+                            {
+                              "type": "null"
+                            },
+                            {
+                              "type": "integer",
+                              "minimum": -43200,
+                              "maximum": 50400
+                            }
+                          ]
+                        },
+                        "durationSeconds": {
+                          "type": "number"
+                        },
+                        "maxDepthM": {
+                          "anyOf": [
+                            {
+                              "type": "null"
+                            },
+                            {
+                              "type": "number"
+                            }
+                          ]
+                        },
+                        "avgDepthM": {
+                          "anyOf": [
+                            {
+                              "type": "null"
+                            },
+                            {
+                              "type": "number"
+                            }
+                          ]
+                        },
+                        "site": {
+                          "anyOf": [
+                            {
+                              "type": "null"
+                            },
+                            {
+                              "type": "object",
+                              "required": [
+                                "id",
+                                "name"
+                              ],
+                              "properties": {
+                                "id": {
+                                  "type": "string"
+                                },
+                                "name": {
+                                  "type": "string"
+                                }
+                              }
+                            }
+                          ]
+                        },
+                        "owner": {
+                          "type": "object",
+                          "required": [
+                            "id",
+                            "name"
+                          ],
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "name": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "centres": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "required": [
+                              "id",
+                              "name"
+                            ],
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "name": {
+                                "type": "string"
+                              }
+                            }
+                          },
+                          "description": "The Dive centres responsible for the site, if any (ADR 0043): the operator a copy may show"
+                        },
+                        "participants": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "required": [
+                              "diverId",
+                              "name",
+                              "role"
+                            ],
+                            "properties": {
+                              "diverId": {
+                                "type": "string"
+                              },
+                              "name": {
+                                "type": "string"
+                              },
+                              "role": {
+                                "enum": [
+                                  "buddy",
+                                  "guide",
+                                  "instructor"
+                                ]
+                              }
+                            }
+                          },
+                          "description": "The Divers on the Dive besides its own Diver, by name only (ADR 0028)"
+                        }
+                      }
+                    }
+                  },
+                  "description": "The shared facts of a suggested Dive: site, time, duration, depths, Participants and centre, and nothing of the Recording or its owner's private values"
+                }
+              }
+            }
+          },
+          "404": {
             "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
             "content": {
               "application/json": {

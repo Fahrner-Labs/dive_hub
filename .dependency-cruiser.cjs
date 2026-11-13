@@ -23,6 +23,8 @@ const MODULE_IMPORTS = {
   planning: ['divers', 'dives'],
   providers: ['certifications', 'divers', 'dives', 'imports', 'live', 'revisions', 'sites'],
   sites: ['live', 'revisions'],
+  // Buddy suggestions (ADR 0070) read the shared facts, use the one place for Diver management and ask the live layer for a hint's audience.
+  social: ['divers', 'live', 'revisions:type'],
   // Live hints (ADR 0066) read Dive and site Revisions only through revisions/revisions.ts's type.
   live: ['revisions:type'],
   users: ['divers'],

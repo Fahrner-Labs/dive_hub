@@ -564,6 +564,7 @@
     "diver_external_id_taken": "Ein anderer Taucher hat dieses Konto schon.",
     "diver_external_id_connected": "Eine Verbindung nutzt dieses Konto. Trenne sie zuerst.",
     "participant_invalid": "Jemand steht doppelt auf der Liste oder ist der Taucher dieses Tauchgangs selbst.",
+    "suggestion_not_found": "Diese Buddy-Empfehlung gehört nicht (mehr) zu einem Taucher, den du führst.",
     "merge_not_possible": "Nur zwei verschiedene Tauchgänge desselben Tauchers lassen sich zusammenführen.",
     "continuation_not_possible": "Anhängen lässt sich nur ein späterer Tauchgang desselben Tauchers mit genau einer Aufzeichnung desselben Computers, ohne Tauchgang dazwischen.",
     "recording_is_part": "Diese Aufzeichnung ist Teil eines angehängten Tauchgangs: Sie lässt sich nicht allein zur primären machen oder abtrennen.",

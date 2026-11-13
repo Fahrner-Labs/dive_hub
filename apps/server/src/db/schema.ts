@@ -646,6 +646,15 @@ export type SuitUndergarment = (typeof SUIT_UNDERGARMENTS)[number];
 export const suitUndergarment = pgEnum('suit_undergarment', [...SUIT_UNDERGARMENTS]);
 
 /**
+ * The shared facts of one descent and the member Dives of several Divers (ADR 0070). It exists before anything is
+ * linked into it: accepting a Buddy suggestion creates or links the Diver's own Dive here in a later slice.
+ */
+export const jointDive = pgTable('joint_dive', {
+  id: id(),
+  createdAt: createdAt(),
+});
+
+/**
  * One Diver's logbook entry. The recording-derived columns hold the value in effect: the User's
  * Override for the fields listed in `overrides`, the Primary recording's value for all others.
  */
@@ -689,6 +698,8 @@ export const dive = pgTable(
      * entry's until a Recording attaches and becomes primary.
      */
     fromProvider: text('from_provider'),
+    /** The Joint dive this Dive is a member of (ADR 0070); at most one, and null until a Buddy suggestion is accepted. */
+    jointDiveId: uuid('joint_dive_id').references(() => jointDive.id),
     /** Increases with every change; edits name the version they started from (optimistic locking). */
     version: integer('version').notNull().default(1),
     createdAt: createdAt(),
@@ -712,6 +723,33 @@ export const participant = pgTable(
     createdAt: createdAt(),
   },
   (t) => [primaryKey({ columns: [t.diveId, t.diverId] }), index('participant_diver_idx').on(t.diverId)],
+);
+
+export const SUGGESTION_STATUSES = ['pending', 'accepted', 'declined', 'cancelled'] as const;
+export type SuggestionStatus = (typeof SUGGESTION_STATUSES)[number];
+export const suggestionStatus = pgEnum('suggestion_status', [...SUGGESTION_STATUSES]);
+
+/**
+ * A proposal that a Diver was a Participant on someone else's Dive (ADR 0070), raised when that Participant is added and
+ * read by the Users who manage the invited Diver at that moment. `diverId` is never the Dive's own Diver; the audience is
+ * never stored, so claiming or merging the Diver re-targets it for free.
+ */
+export const buddySuggestion = pgTable(
+  'buddy_suggestion',
+  {
+    id: id(),
+    diveId: uuid('dive_id').notNull().references(() => dive.id, { onDelete: 'cascade' }),
+    /** The invited Diver, never the Dive's own Diver. */
+    diverId: uuid('diver_id').notNull().references(() => diver.id),
+    status: suggestionStatus('status').notNull().default('pending'),
+    createdAt: createdAt(),
+    /** When the suggestion was accepted, declined or cancelled; null while pending. */
+    resolvedAt: timestamp('resolved_at', { withTimezone: true }),
+  },
+  (t) => [
+    uniqueIndex('buddy_suggestion_dive_diver_uq').on(t.diveId, t.diverId),
+    index('buddy_suggestion_diver_idx').on(t.diverId),
+  ],
 );
 
 /** A Device's own summary of a Recording, in our vocabulary (ADR 0015). */

@@ -73,6 +73,8 @@ const AREAS = [
   [/^apps\/server\/src\/equipment\//, ['@equipment', '@dives']],
   // The change journal (ADR 0053, tiers T1): every domain writes through it, so its own changes reach every area's tests.
   [/^apps\/server\/src\/revisions\//, ['@dives', '@divers', '@sites', '@account', '@admin', '@live']],
+  // Buddy suggestions and Joint dives (ADR 0070): raised from Participants, read from the Review inbox, hinted live.
+  [/^apps\/server\/src\/social\//, ['@dives', '@divers', '@live']],
   // Live hints (ADR 0066): the stream, its fan-out and the browser channel behind every page.
   [/^apps\/server\/src\/live\/|^apps\/web\/src\/lib\/live(-arrivals)?\.ts$/, ['@dives', '@account', '@live']],
   // Divers reach further than their page: a Dive shows its Participants and their codes, the account page imports buddies.

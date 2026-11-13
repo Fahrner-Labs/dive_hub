@@ -39,6 +39,8 @@ import { createSiteImportService } from './sites/import/site-import-service.js';
 import type { SiteSourceAdapter } from './sites/import/site-source.js';
 import { createSiteService } from './sites/site-service.js';
 import type { ImportSource } from './sites/sources.js';
+import { createSuggestionService } from './social/suggestion-service.js';
+import { withSuggestionChanges } from './social/suggestion-changes.js';
 import type { BlobStore } from './storage/blob-store.js';
 import { createInvitationService } from './users/invitation-service.js';
 import { createPasswordResetService } from './users/password-reset-service.js';
@@ -86,7 +88,8 @@ export function createServices({
   });
   const providers = createProviderLayer({ db, blobs, secrets, adapters, ...(clock && { clock }), ...(log && { log }) });
   // Dive and site Revisions also tell open pages (ADR 0066), through the same listener seam as the Waiting pushes.
-  listenToChanges(withRevisionHints(providers.noteChanges));
+  // Buddy suggestions hang off the same seam (ADR 0070): the listener runs inside every Participant write's transaction.
+  listenToChanges(withSuggestionChanges(withRevisionHints(providers.noteChanges)));
   const live = createLive({ ...(liveSettings && { connectionString: liveSettings.connectionString }), ...(log && { log }) });
   // Imports of a Provider's dives run in the worker like uploads (ADR 0030).
   const imports = createImportService({ db, blobs, providerImports: providers.diveImports, afterImport: (userId) => assessments.refreshUser(userId) });
@@ -110,6 +113,7 @@ export function createServices({
     sessions: createSessionService(db),
     userAdmin: createUserAdminService(db, blobs),
     logbook, dives, checks, merging,
+    suggestions: createSuggestionService(db),
     divers: createDiverService(db),
     equipment: createEquipmentService(db),
     centres: createCentreService(db, { ssi: ssiCentreDisplayName }),
