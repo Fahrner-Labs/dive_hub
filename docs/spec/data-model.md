@@ -187,8 +187,8 @@ coverage, validity; B5), **Medical exam** (date, result, valid until, examiner),
   candidates, overlap matching) and can be **restored** with the Recordings deleted with it (`restore`; a site deleted
   meanwhile becomes the one it was merged into, else none). Only Users who manage the Diver delete or restore.
 
-**Joint dive** — the shared facts of one descent (site, time window, Operator) and its
-member Dives. Created when a Buddy suggestion is accepted, or by hand.
+**Joint dive** — the link between the Dives of Divers who made the same descent together. Created when a Buddy
+suggestion is accepted; nothing is copied or merged into it. The Joint dive's own visibility comes in a later slice.
 
 **Participant** — `(Dive, Diver, role)`, with roles `buddy`, `guide`, `instructor`,
 `student`, `team member` (B7). If the Diver is managed by another User, a **Buddy
@@ -580,13 +580,16 @@ Edge cases:
 ### 2. Buddy who is a User, buddy who isn't
 
 **Anna is a User.** Tim adds Anna's own Diver as Participant `buddy` on D1, which raises
-a Buddy suggestion to Anna. *As built (slice 14):* Tim can add Anna's Diver (he sees her name); the suggestion and
-everything after it come later.
-- Anna already has an overlapping Dive A1 from her Garmin. Accepting links D1 and A1 into
-  a Joint dive. Each keeps its own notes, gear and Recordings.
-- Anna has no Dive (no computer). Accepting creates A1 with the shared facts (site,
-  time, Operator, Participants) but no Recording. *Open:* may A1 show Tim's Recording?
-- Anna declines. Tim still sees Anna as his buddy, but nothing is created for her.
+a Buddy suggestion to Anna. *As built (ADR 0070):* Tim can add Anna's Diver (he sees her name); Anna's Review
+inbox lists the suggestion with the shared facts only — site, start time and UTC offset, duration, max and average
+depth, the people, and any centre — with Accept and Decline.
+- Anna already has an overlapping Dive A1 from her Garmin. Accepting with "Link to your dive" links D1 and A1 into
+  one Joint dive: nothing is copied or merged, and each keeps its own notes, gear and Recording.
+- Anna has no Dive (no computer). Accepting with "Create a new dive" creates A1 with the shared facts (site, time,
+  duration, depths and the people) but no Recording, notes or gear. Its depths are plain own values, so a later
+  Recording from her computer wins through the ordinary matching pipeline.
+- Anna declines. The suggestion is resolved, nothing is created for her, and Tim's Participant stays; adding Anna
+  again raises it once more.
 
 **Bob is not a User.** Tim creates an external Diver "Bob" (every User sees the name; ADR 0028), and
 adds him as Participant, which raises a pending Buddy suggestion with no audience yet; Bob's signature on
