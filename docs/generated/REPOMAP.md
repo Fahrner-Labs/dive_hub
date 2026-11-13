@@ -4,7 +4,7 @@
 > `pnpm check` fails when this map is stale. Symbols are ranked by how widely the code references them;
 > each module shows its most-referenced ones (exported symbols rank higher). Search here before walking the tree.
 
-Files: 374 · symbols: 3439 · shown: 257
+Files: 374 · symbols: 3448 · shown: 257
 
 ### server/(root)
 apps/server/src/vocabulary.ts:13 type SiteWaterType
@@ -68,8 +68,8 @@ apps/server/src/certifications/certification-service.ts:119 fn createCertificati
 ### server/db
 apps/server/src/db/client.ts:5 type Db
 apps/server/src/db/schema.ts:661 const dive
-apps/server/src/db/client.ts:8 type Queryable
 apps/server/src/db/client.ts:6 type Tx
+apps/server/src/db/client.ts:8 type Queryable
 apps/server/src/db/schema.ts:454 const diveSite
 apps/server/src/db/schema.ts:795 const recording
 apps/server/src/db/schema.ts:75 const diverManagement
@@ -126,9 +126,9 @@ apps/server/src/equipment/equipment-view.ts:22 const ServiceScheduleViewSchema
 apps/server/src/http/schemas.ts:10 const Nullable
 apps/server/src/http/schemas.ts:5 const DateTime
 apps/server/src/http/schemas.ts:4 const IdParams
-apps/server/src/http/problems.ts:185 const Problem
-apps/server/src/http/problems.ts:188 const problem
-apps/server/src/http/problems.ts:212 const answerErrors
+apps/server/src/http/problems.ts:188 const Problem
+apps/server/src/http/problems.ts:191 const problem
+apps/server/src/http/problems.ts:215 const answerErrors
 … 24 more symbols in this module
 
 ### server/imports
@@ -253,13 +253,13 @@ apps/server/src/sites/site-ids.ts:105 fn storeId
 … 163 more symbols in this module
 
 ### server/social
-apps/server/src/social/suggestion-service.ts:15 class SuggestionError
-apps/server/src/social/suggestion-service.ts:99 fn createSuggestionService
-apps/server/src/social/suggestion-view.ts:8 const SiteRef
+apps/server/src/social/suggestion-service.ts:16 class SuggestionError
+apps/server/src/social/suggestion-service.ts:174 fn createSuggestionService
+apps/server/src/social/routes.ts:17 const STATUS
+apps/server/src/social/suggestion-view.ts:9 const SiteRef
+apps/server/src/social/suggestion-service.ts:97 fn emitSuggestionHints
 apps/server/src/social/suggestion-changes.ts:9 fn withSuggestionChanges
-apps/server/src/social/suggestion-service.ts:35 fn syncSuggestions
-apps/server/src/social/suggestion-view.ts:9 const Status
-… 9 more symbols in this module
+… 18 more symbols in this module
 
 ### server/storage
 apps/server/src/storage/blob-store.ts:26 iface BlobStore

@@ -200,12 +200,17 @@ Revision (`participants`).
 the Dive's own raises a `pending` suggestion, removing them or soft-deleting the Dive cancels it, and the Users managing
 the Diver see it in `GET /api/buddy-suggestions` and its shared facts in `GET /api/buddy-suggestions/{id}`, with a
 `buddySuggestion` live hint.
-*Implemented (ADR 0070, accept branch A):* `POST /api/buddy-suggestions/{id}/accept` creates a Recording-less Dive for
-the invited Diver from the shared facts only (site, start and UTC offset, duration, max/avg depth as plain own values,
-the people on the source Dive as Divers), joins it and the suggested Dive to one `joint_dive`, and marks the suggestion
-`accepted` with a system Revision. A later Recording attaches through the ordinary matching pipeline, and the Dive takes
-part in Duplicate candidates and the logbook checks like any other. Accepting with an overlapping Dive (branch B),
-declining and the Joint dive's visibility come in later slices.
+*Implemented (ADR 0070, accept branch A):* `POST /api/buddy-suggestions/{id}/accept` without a body creates a
+Recording-less Dive for the invited Diver from the shared facts only (site, start and UTC offset, duration, max/avg depth
+as plain own values, the people on the source Dive as Divers), joins it and the suggested Dive to one `joint_dive`, and
+marks the suggestion `accepted` with a system Revision. A later Recording attaches through the ordinary matching
+pipeline, and the Dive takes part in Duplicate candidates and the logbook checks like any other.
+*Implemented (ADR 0070, accept branch B and decline):* the preview lists the invited Diver's `overlaps` (own Dives that
+meet the suggested time window, with the tolerance of Recording matching) and accepting with `{ diveId }` links one of
+them instead: both Dives join one `joint_dive`, nothing is copied, and no Diver's data is merged into another's. A Dive
+belongs to at most one Joint dive, so an existing one is reused and two different ones are refused. `POST
+/api/buddy-suggestions/{id}/decline` marks the one suggestion row `declined` for every User who manages the invited
+Diver now, creates nothing and keeps the inviter's Participant. The Joint dive's own visibility comes in a later slice.
 
 **Recording** — data from one Device for one Dive.
 - Device, Import, Original(s) plus position within the Original (one file can hold many dives).
