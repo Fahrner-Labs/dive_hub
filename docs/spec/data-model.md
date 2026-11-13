@@ -198,8 +198,8 @@ Dive, never the Dive's own Diver; set as one list (`PUT /api/dives/{id}/particip
 Revision (`participants`).
 *Implemented (ADR 0070, first Buddy slice):* `buddy_suggestion` and `joint_dive`; adding a Participant whose Diver is not
 the Dive's own raises a `pending` suggestion, removing them or soft-deleting the Dive cancels it, and the Users managing
-the Diver see it in `GET /api/buddy-suggestions` and its shared facts in `GET /api/buddy-suggestions/{id}`, with a
-`buddySuggestion` live hint.
+the Diver see it in `GET /api/buddy-suggestions` and, while it is pending, its shared facts in
+`GET /api/buddy-suggestions/{id}`, with a `buddySuggestion` live hint.
 *Implemented (ADR 0070, accept branch A):* `POST /api/buddy-suggestions/{id}/accept` without a body creates a
 Recording-less Dive for the invited Diver from the shared facts only (site, start and UTC offset, duration, max/avg depth
 as plain own values, the people on the source Dive as Divers), joins it and the suggested Dive to one `joint_dive`, and
@@ -596,7 +596,8 @@ adds him as Participant, which raises a pending Buddy suggestion with no audienc
 Tim's phone stays external. Later Bob signs up and claims his external Diver through a Provider account
 (or an admin merges it), so it merges into his own Diver (`merged into`). Tim's Participants now point to
 Bob's Diver, and Bob's pending suggestions follow the merge to his Diver: its Users see them and hear the
-`buddySuggestion` hint. Accepted and declined suggestions stay as they are.
+`buddySuggestion` hint. A suggestion on the Dive Bob's own Diver owns is cancelled instead, since a Dive never
+suggests its own Diver. Accepted and declined suggestions stay as they are.
 
 ### 3. Re-import of a dive edited elsewhere
 

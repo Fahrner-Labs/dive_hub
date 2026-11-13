@@ -173,17 +173,21 @@ export async function syncSuggestions(q: Queryable, diveId: string): Promise<voi
  * A Diver merged away into another (ADR 0028, amended): its pending suggestions follow to the surviving Diver, whose
  * managers see them now. Each moved row gains its first audience here, so it also gets the hint. A Dive the surviving
  * Diver already has a suggestion for keeps that row — one suggestion per Dive and Diver — and the merged-away one is
- * cancelled rather than duplicated. Accepted and declined rows stay on the Diver that was merged away.
+ * cancelled rather than duplicated. A suggestion is never for the Dive's own Diver: where the merge makes the surviving
+ * Diver the Dive's own (the merged-away Participant is dropped, ADR 0028), its pending row is cancelled too. Accepted
+ * and declined rows stay on the Diver that was merged away.
  */
 export async function followMergedDiver(q: Queryable, fromId: string, intoId: string): Promise<void> {
-  const pending = await q.select({ id: buddySuggestion.id, diveId: buddySuggestion.diveId }).from(buddySuggestion)
+  const pending = await q.select({ id: buddySuggestion.id, diveId: buddySuggestion.diveId, ownDiverId: dive.diverId })
+    .from(buddySuggestion)
+    .innerJoin(dive, eq(dive.id, buddySuggestion.diveId))
     .where(and(eq(buddySuggestion.diverId, fromId), eq(buddySuggestion.status, 'pending')));
   if (pending.length === 0) return;
   const taken = new Set((await q.select({ diveId: buddySuggestion.diveId }).from(buddySuggestion)
     .where(and(eq(buddySuggestion.diverId, intoId), inArray(buddySuggestion.diveId, pending.map((s) => s.diveId)))))
     .map((s) => s.diveId));
-  const followed = pending.filter((s) => !taken.has(s.diveId));
-  const dropped = pending.filter((s) => taken.has(s.diveId));
+  const followed = pending.filter((s) => !taken.has(s.diveId) && s.ownDiverId !== intoId);
+  const dropped = pending.filter((s) => taken.has(s.diveId) || s.ownDiverId === intoId);
 
   if (followed.length > 0) {
     const moved = await q.update(buddySuggestion).set({ diverId: intoId })
@@ -191,8 +195,9 @@ export async function followMergedDiver(q: Queryable, fromId: string, intoId: st
       .returning({ id: buddySuggestion.id, diverId: buddySuggestion.diverId });
     await emitSuggestionHints(q, moved);
   }
-  // Cancelled, not deleted: the row is still the surviving Diver's invitation to that Dive, and a later Participant
-  // write raises it again if the Dive still lists them.
+  // Cancelled, not deleted: a duplicate row is still the surviving Diver's invitation to that Dive, and a later
+  // Participant write raises it again if the Dive still lists them. A row on the surviving Diver's own Dive stays
+  // cancelled, since that Dive can never invite its own Diver.
   if (dropped.length > 0) {
     await q.update(buddySuggestion).set({ status: 'cancelled', resolvedAt: new Date() })
       .where(and(inArray(buddySuggestion.id, dropped.map((s) => s.id)), eq(buddySuggestion.status, 'pending')));
@@ -239,7 +244,11 @@ export function createSuggestionService(db: Db) {
       return rows.map(summaryOf);
     },
 
-    /** One suggestion with the facts a later slice may copy or show: never a Recording, notes, suit or anything under overrides. */
+    /**
+     * One pending suggestion with the facts a later slice may copy or show: never a Recording, notes, suit or anything
+     * under overrides. Only a pending invitation is readable: once accepted, declined or cancelled the source Dive's
+     * facts are no longer exposed, so the row answers `suggestion_not_found`.
+     */
     async preview(userId: string, id: string) {
       const [row] = await db.select({
         suggestion: buddySuggestion, dive, owner: { id: diver.id, name: diver.name },
@@ -247,7 +256,7 @@ export function createSuggestionService(db: Db) {
         .innerJoin(dive, and(eq(dive.id, buddySuggestion.diveId), isNull(dive.deletedAt)))
         .innerJoin(diver, eq(diver.id, dive.diverId))
         .where(eq(buddySuggestion.id, id));
-      if (!row) throw new SuggestionError('suggestion_not_found');
+      if (!row || row.suggestion.status !== 'pending') throw new SuggestionError('suggestion_not_found');
       if (!(await managementOf(db, userId, row.suggestion.diverId))) throw new SuggestionError('suggestion_not_found');
 
       const [invited] = await db.select({ name: diver.name }).from(diver)

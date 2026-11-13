@@ -254,7 +254,7 @@ apps/server/src/sites/site-ids.ts:105 fn storeId
 
 ### server/social
 apps/server/src/social/suggestion-service.ts:17 class SuggestionError
-apps/server/src/social/suggestion-service.ts:223 fn createSuggestionService
+apps/server/src/social/suggestion-service.ts:228 fn createSuggestionService
 apps/server/src/social/routes.ts:17 const STATUS
 apps/server/src/social/suggestion-view.ts:9 const SiteRef
 apps/server/src/social/suggestion-service.ts:116 fn emitSuggestionHints

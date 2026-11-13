@@ -129,9 +129,10 @@ describe.skipIf(!(await databaseReachable()))('Buddy suggestions', () => {
     expect(await suggestionFor(annaDiver)).toMatchObject({ status: 'pending', resolvedAt: null });
     expect(await suggestionFor(bob.diverId)).toMatchObject({ status: 'cancelled', resolvedAt: expect.any(Date) });
 
-    // Removing her cancels the pending one.
+    // Removing her cancels the pending one, and the preview goes with the invitation.
     await setParticipants([]);
     expect(await suggestionFor(annaDiver)).toMatchObject({ status: 'cancelled' });
+    expect((await call('GET', `/api/buddy-suggestions/${annas.id}`, anna)).statusCode).toBe(404);
 
     // A cancelled one comes back as pending when she is added again.
     await setParticipants([{ diverId: annaDiver, role: 'buddy' }]);

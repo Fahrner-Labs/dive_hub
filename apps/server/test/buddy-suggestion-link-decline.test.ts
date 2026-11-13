@@ -30,6 +30,7 @@ describe.skipIf(!(await databaseReachable()))('Buddy suggestions: link an existi
   let ctx: Awaited<ReturnType<typeof createTestApp>>;
   let tim: string;
   let anna: string;
+  let timUserId: string;
   let annaUserId: string;
   let timDiver: string;
   let annaDiver: string;
@@ -75,7 +76,7 @@ describe.skipIf(!(await databaseReachable()))('Buddy suggestions: link an existi
   beforeAll(async () => {
     t = await createTestDatabase();
     ctx = await createTestApp(t);
-    await createUser(ctx.auth, 'tim@example.com');
+    timUserId = (await createUser(ctx.auth, 'tim@example.com')).id;
     annaUserId = (await createUser(ctx.auth, 'anna@example.com')).id;
     tim = await signIn(ctx.app, 'tim@example.com');
     anna = await signIn(ctx.app, 'anna@example.com');
@@ -161,6 +162,8 @@ describe.skipIf(!(await databaseReachable()))('Buddy suggestions: link an existi
 
     // Accepted once: a second answer is a clean conflict, not a second link.
     expect((await accept(suggestion.id, anna, { diveId: annaDive })).statusCode).toBe(409);
+    // Only a pending suggestion is a readable invitation; an accepted one answers as if it did not exist.
+    expect((await call('GET', `/api/buddy-suggestions/${suggestion.id}`, anna)).statusCode).toBe(404);
     // Removing the Participant afterwards leaves the acceptance and the Joint dive as they are.
     expect((await setParticipants(source, [])).statusCode).toBe(200);
     expect((await pendingFor(source, annaDiver))!.status).toBe('accepted');
@@ -224,6 +227,8 @@ describe.skipIf(!(await databaseReachable()))('Buddy suggestions: link an existi
     // A second answer on the same suggestion is a clean conflict.
     expect((await decline(suggestion.id, anna)).statusCode).toBe(409);
     expect((await accept(suggestion.id, anna)).statusCode).toBe(409);
+    // Declined revokes the invitation as well: a manager holding the id can no longer preview the source Dive.
+    expect((await call('GET', `/api/buddy-suggestions/${suggestion.id}`, anna)).statusCode).toBe(404);
 
     // Removing the Participant leaves the decline; adding her again raises hers anew (slice 1 behaviour).
     expect((await setParticipants(source, [])).statusCode).toBe(200);
@@ -270,5 +275,23 @@ describe.skipIf(!(await databaseReachable()))('Buddy suggestions: link an existi
     expect((await accept(suggestion.id, anna)).statusCode).toBe(409);
     expect((await decline(suggestion.id, anna)).statusCode).toBe(409);
     expect(await ctx.db.select({ id: dive.id }).from(dive).where(eq(dive.diverId, kid.id))).toHaveLength(0);
+  });
+
+  it('moves a Dive onto one of its Participants without leaving a suggestion for the new own Diver', async () => {
+    const source = await makeSource(new Date('2026-04-08T09:00:00Z'));
+    // Tim manages both Divers, so he may file his Dive under Anna's.
+    await manage(timUserId, annaDiver);
+    const suggestion = await invite(source, annaDiver);
+    expect((await list(tim)).map((s) => s.id)).toContain(suggestion.id);
+
+    const moved = await call('POST', `/api/dives/${source}/move`, tim, { diverId: annaDiver, version: await versionOf(source) });
+    expect(moved.statusCode).toBe(200);
+    expect(moved.json()).toMatchObject({ id: source, diverId: annaDiver });
+
+    // The Dive's own Diver is never invited to its own Dive: the pending suggestion is cancelled, not kept.
+    expect(await pendingFor(source, annaDiver)).toMatchObject({ status: 'cancelled' });
+    expect((await list(tim)).map((s) => s.id)).not.toContain(suggestion.id);
+    // The new own Diver is not left as a Participant (setParticipants would refuse that).
+    expect((await getDive(source, tim)).participants).toEqual([]);
   });
 });
