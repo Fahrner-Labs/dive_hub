@@ -107,7 +107,7 @@ _Avoid_: Trash, archived dive, removed dive
 _German_: gelöschter Tauchgang
 
 **Joint dive**:
-The link between the Dives of Divers who made the same descent together.
+The link between the Dives of Divers who made the same descent together. Accepting a Buddy suggestion links an existing overlapping Dive or creates one from the shared facts; the member Dives keep their own Recordings, notes and gear. ([ADR 0070](decisions/0070-buddy-suggestions-and-joint-dives.md))
 _Avoid_: Group dive, shared dive
 _German_: gemeinsamer Tauchgang
 
@@ -157,7 +157,7 @@ _Avoid_: Edit, correction
 _German_: manueller Wert
 
 **Buddy suggestion**:
-A proposal to a User that a Diver they manage was a Buddy on someone else's Dive; accepting it links or creates that Diver's own Dive in the Joint dive.
+A proposal to a User that a Diver they manage was a Buddy on someone else's Dive; accepting it links an existing overlapping Dive or creates that Diver's own Dive in the Joint dive, and declining creates nothing. ([ADR 0070](decisions/0070-buddy-suggestions-and-joint-dives.md))
 _Avoid_: Invitation, tag
 _German_: Buddy-Vorschlag
 
