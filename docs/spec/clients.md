@@ -943,18 +943,33 @@ dives, all off until the User turns them on. *Web:* `ProviderAutomation.tsx` (se
 
 ### Buddy suggestions
 ([ADR 0070](../decisions/0070-buddy-suggestions-and-joint-dives.md); `GET /api/buddy-suggestions`,
-`GET /api/buddy-suggestions/{id}`, `POST /api/buddy-suggestions/{id}/accept`)
+`GET /api/buddy-suggestions/{id}`, `POST /api/buddy-suggestions/{id}/accept`, `POST /api/buddy-suggestions/{id}/decline`)
 - **Show the suggestions of the Divers the User manages now,** each with the invited Diver and enough of the suggested
   Dive to recognise it (start, offset, duration, max depth, site), and its shared facts in a preview: site, start with
   offset, duration, max and average depth, the source Dive's owner and Participants, and the centre responsible for the
   site. Never show the source's Recording, notes, suit, weighting, cylinders, lead or Overrides.
-- **Accept (`POST /api/buddy-suggestions/{id}/accept`, 200)** answers `{ id, status: 'accepted', resolvedAt, diveId,
-  jointDiveId }`: the server created a Recording-less Dive in the invited Diver's logbook with the shared facts only and
-  linked both Dives to one Joint dive. Open or refresh that Dive; its depths are own values, so a later Recording takes
-  them over. 404 `suggestion_not_found` when the User does not manage the invited Diver; 409 `suggestion_not_pending`
-  when someone accepted first or it was declined or cancelled: read the inbox again.
+- **Offer the invited Diver's overlapping Dives in the preview** (`overlaps`, earliest first): each with its id, start
+  and offset, duration, max depth and site. They are the Dives that meet the suggested time window with the same
+  tolerance and unknown-UTC-offset alignment Recording matching uses. Offer **link one of these** or **create a new Dive**; when several overlap, let the
+  User pick one.
+- **Accept with no body (`POST /api/buddy-suggestions/{id}/accept`, 200)** answers `{ id, status: 'accepted',
+  resolvedAt, diveId, jointDiveId }`: the server created a Recording-less Dive in the invited Diver's logbook with the
+  shared facts only and linked both Dives to one Joint dive. Open or refresh that Dive; its depths are own values, so a
+  later Recording takes them over.
+- **Accept with `{ diveId }`** (one of the preview's `overlaps`) answers the same shape, but `diveId` is that existing
+  Dive: the server only linked it and the suggested Dive into one Joint dive, copying and merging nothing. Both keep
+  their own Recording, notes, gear and depths. 404 `suggestion_not_found` when the User does not manage the invited
+  Diver; 409 `suggestion_not_pending` when someone accepted or declined first, or it was cancelled: read the inbox
+  again. 404 `suggestion_dive_not_found` when the id is not the invited Diver's Dive; 409
+  `suggestion_dive_not_overlapping` when it no longer overlaps; 409 `suggestion_link_conflict` when both Dives are
+  already in different Joint dives (a Dive belongs to at most one).
+- **Decline (`POST /api/buddy-suggestions/{id}/decline`, 200)** answers `{ id, status: 'declined', resolvedAt }`.
+  Nothing is created and the inviter's Participant stays; the inviter gets no negative signal. Declining is per
+  suggestion, so it resolves for every User who manages the invited Diver now. Adding the Participant again raises it
+  as pending once more. The same 404 and `suggestion_not_pending` refusals as accepting apply.
 - **Changing the Participants or deleting the suggested Dive** changes the list; the `buddySuggestion` live hint names
-  the suggestion to refetch, as every hint does. *Web:* `ReviewPage.tsx` (a later slice).
+  the suggestion to refetch (accepting and declining emit it too), as every hint does. *Web:* `ReviewPage.tsx` (a later
+  slice).
 
 ### Duplicate candidates
 - **Show them where the User decides,** on a page of their own ("Review", reached from one line on the logbook and a count
