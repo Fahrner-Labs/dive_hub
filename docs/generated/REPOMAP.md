@@ -254,10 +254,10 @@ apps/server/src/sites/site-ids.ts:105 fn storeId
 
 ### server/social
 apps/server/src/social/suggestion-service.ts:16 class SuggestionError
-apps/server/src/social/suggestion-service.ts:190 fn createSuggestionService
+apps/server/src/social/suggestion-service.ts:192 fn createSuggestionService
 apps/server/src/social/routes.ts:17 const STATUS
 apps/server/src/social/suggestion-view.ts:9 const SiteRef
-apps/server/src/social/suggestion-service.ts:113 fn emitSuggestionHints
+apps/server/src/social/suggestion-service.ts:115 fn emitSuggestionHints
 apps/server/src/social/suggestion-changes.ts:9 fn withSuggestionChanges
 … 19 more symbols in this module
 

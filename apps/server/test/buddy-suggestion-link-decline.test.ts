@@ -103,7 +103,7 @@ describe.skipIf(!(await databaseReachable()))('Buddy suggestions: link an existi
     const suggestion = await invite(source, kid.id);
 
     const preview = await json<PreviewView>('GET', `/api/buddy-suggestions/${suggestion.id}`, tim);
-    expect(preview.overlaps.map((o) => o.id)).toEqual([edge, sameWallClock, near]);
+    expect(preview.overlaps.map((o) => o.id)).toEqual([edge, near, sameWallClock]);
     expect(preview.overlaps[0]).toMatchObject({
       id: edge, startsAt: new Date(START.getTime() - 40 * 60_000).toISOString(), utcOffsetSeconds: null, durationSeconds: 80 * 60, maxDepthM: 30, site: null,
     });

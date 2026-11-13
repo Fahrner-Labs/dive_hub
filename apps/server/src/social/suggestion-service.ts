@@ -57,8 +57,10 @@ async function overlappingDives(q: Queryable, diverId: string, span: Span) {
     ))
     .orderBy(dive.startsAt, dive.id);
   const mine = spanOf(span);
-  return alignedForMatching(mine, rows)
-    .filter((row) => overlaps(mine, spanOf(row), OVERLAP_TOLERANCE_SECONDS))
+  const aligned = alignedForMatching(mine, rows);
+  // Filter on the aligned start, but keep the Dive's own start for the view: its offset is its own, not the source's.
+  return rows
+    .filter((_, index) => overlaps(mine, spanOf(aligned[index]!), OVERLAP_TOLERANCE_SECONDS))
     .sort((a, b) => a.startsAt.getTime() - b.startsAt.getTime() || a.id.localeCompare(b.id));
 }
 
