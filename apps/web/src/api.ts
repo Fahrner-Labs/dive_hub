@@ -75,6 +75,11 @@ export type RecordingSummary = DiveView['recordings'][number]['summary'];
 export type DiverView = Ok<'/api/divers'>[number];
 export type DeviceView = Ok<'/api/devices'>[number];
 export type CandidateView = Ok<'/api/duplicate-candidates'>[number];
+/** A pending Buddy suggestion in the Review inbox, and the shared facts its preview shows (ADR 0070). */
+export type BuddySuggestionView = Ok<'/api/buddy-suggestions'>[number];
+export type BuddySuggestionPreviewView = Ok<'/api/buddy-suggestions/{id}'>;
+export type BuddySuggestionOverlapView = BuddySuggestionPreviewView['overlaps'][number];
+export type AcceptedBuddySuggestionView = Ok<'/api/buddy-suggestions/{id}/accept', 'post'>;
 type AnyLogbookCheck = Ok<'/api/logbook-checks'>[number];
 /** A logbook check about two Dives (ADR 0038). */
 export type LogbookCheckView = AnyLogbookCheck & { rule: Exclude<AnyLogbookCheck['rule'], 'short_shallow_dive'>; other: NonNullable<AnyLogbookCheck['other']> };
@@ -168,6 +173,9 @@ export const keys = {
   equipmentItem: (id: string) => ['equipment', id] as const,
   diveGear: (diveId: string) => ['dives', diveId, 'equipment'] as const,
   candidates: (status: 'open' | 'discarded') => ['candidates', status] as const,
+  /** Buddy suggestions (ADR 0070); a preview sits under the list, so accepting or declining refreshes both. */
+  buddySuggestions: ['buddy-suggestions'] as const,
+  buddySuggestion: (id: string) => ['buddy-suggestions', id] as const,
   samples: (recordingId: string) => ['recordings', recordingId, 'samples'] as const,
   sites: ['sites'] as const,
   site: (id: string) => ['sites', id] as const,
@@ -326,6 +334,12 @@ export const diveGearQuery = (diveId: string) => queryOptions({
 });
 export const candidatesQuery = (status: 'open' | 'discarded') =>
   queryOptions({ queryKey: keys.candidates(status), queryFn: async () => unwrap(await api.GET('/api/duplicate-candidates', { params: { query: { status } } })) });
+/** Pending Buddy suggestions for the Divers the User manages now (ADR 0070). */
+export const buddySuggestionsQuery = () =>
+  queryOptions({ queryKey: keys.buddySuggestions, queryFn: async () => unwrap(await api.GET('/api/buddy-suggestions')) });
+/** One suggestion's shared facts and the invited Diver's overlapping Dives, for the Review card and its accept dialog. */
+export const buddySuggestionQuery = (id: string) =>
+  queryOptions({ queryKey: keys.buddySuggestion(id), queryFn: async () => unwrap(await api.GET('/api/buddy-suggestions/{id}', { params: { path: { id } } })) });
 
 /**
  * The logbook's list pages (`['dives', { …params }]`), not a Dive's own queries: for what changes how a row looks (a

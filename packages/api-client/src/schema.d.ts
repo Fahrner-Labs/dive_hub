@@ -3505,7 +3505,7 @@ export interface paths {
                                 name: null | string;
                             };
                             /** @enum {unknown} */
-                            cause: "import-create" | "auto-attach" | "reimport" | "edit" | "primary-change" | "attach" | "detach" | "create" | "move" | "assign-device" | "delete" | "auto-site" | "update" | "link" | "merge" | "site-merge" | "adopt" | "restore" | "fill" | "continuation" | "continuation-undo";
+                            cause: "import-create" | "auto-attach" | "reimport" | "edit" | "primary-change" | "attach" | "detach" | "create" | "move" | "assign-device" | "delete" | "auto-site" | "update" | "link" | "merge" | "site-merge" | "adopt" | "restore" | "fill" | "continuation" | "continuation-undo" | "buddy-accept";
                             /** @description Field → { from, to }; a field not named here has a value of any shape */
                             changes: {
                                 overrides?: {
@@ -8319,7 +8319,7 @@ export interface paths {
                                 name: null | string;
                             };
                             /** @enum {unknown} */
-                            cause: "import-create" | "auto-attach" | "reimport" | "edit" | "primary-change" | "attach" | "detach" | "create" | "move" | "assign-device" | "delete" | "auto-site" | "update" | "link" | "merge" | "site-merge" | "adopt" | "restore" | "fill" | "continuation" | "continuation-undo";
+                            cause: "import-create" | "auto-attach" | "reimport" | "edit" | "primary-change" | "attach" | "detach" | "create" | "move" | "assign-device" | "delete" | "auto-site" | "update" | "link" | "merge" | "site-merge" | "adopt" | "restore" | "fill" | "continuation" | "continuation-undo" | "buddy-accept";
                             /** @description Field → { from, to }; a field not named here has a value of any shape */
                             changes: {
                                 position?: {
@@ -9174,6 +9174,19 @@ export interface paths {
                                     role: "buddy" | "guide" | "instructor";
                                 }[];
                             };
+                            /** @description The invited Diver's existing Dives that meet the suggested time window, earliest first: pick one to link instead of creating a new Dive */
+                            overlaps: {
+                                id: string;
+                                /** Format: date-time */
+                                startsAt: string;
+                                utcOffsetSeconds: null | number;
+                                durationSeconds: number;
+                                maxDepthM: null | number;
+                                site: null | {
+                                    id: string;
+                                    name: string;
+                                };
+                            }[];
                         };
                     };
                 };
@@ -9190,6 +9203,150 @@ export interface paths {
         };
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/buddy-suggestions/{id}/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Accept a Buddy suggestion: link an existing overlapping Dive, or copy the shared facts into a new one
+         * @description With `diveId`, link that existing Dive of the invited Diver into one Joint dive with the suggested one: nothing is copied and no Diver's data is merged into another's. That Dive must be one of the preview's `overlaps` and still overlap; a Dive already in a different Joint dive is refused. Without `diveId`, create a Dive for the invited Diver with the site, start time and UTC offset, duration and max/average depth as plain own values, and the people on the source Dive (its own Diver and its Participants) as Divers; no Recording, notes, suit, weighting, cylinders, lead or Override. Both Dives join one Joint dive (an existing one if either already has it). 404 `suggestion_not_found` unless the User manages the invited Diver; 409 `suggestion_not_pending` once it was accepted, declined or cancelled; 404 `suggestion_dive_not_found` and 409 `suggestion_dive_not_overlapping` for a chosen Dive that is not the invited Diver's or no longer overlaps; 409 `suggestion_link_conflict` when both Dives are in different Joint dives.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /**
+                         * Format: uuid
+                         * @description One of the preview's overlaps: link that existing Dive instead of creating a new one. It must still overlap the suggested Dive.
+                         */
+                        diveId?: string;
+                    } | null;
+                };
+            };
+            responses: {
+                /** @description A Buddy suggestion accepted, by linking an existing Dive or by copying its shared facts into a new one */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            id: string;
+                            /** @enum {string} */
+                            status: "accepted";
+                            /** Format: date-time */
+                            resolvedAt: string;
+                            /** @description The Dive in the invited Diver's logbook: the linked existing Dive (branch B), or the new one made from the shared facts (branch A) */
+                            diveId: string;
+                            /** @description The Joint dive both this Dive and the suggested one are members of */
+                            jointDiveId: string;
+                        };
+                    };
+                };
+                /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/buddy-suggestions/{id}/decline": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Decline a Buddy suggestion
+         * @description Marks the one suggestion row declined for every User who manages the invited Diver now. Nothing is created and the inviter's Participant stays; adding the Participant again raises it as pending once more. 404 `suggestion_not_found` unless the User manages the invited Diver; 409 `suggestion_not_pending` once it was accepted, declined or cancelled.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description A Buddy suggestion declined by a User who manages the invited Diver; nothing was created */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            id: string;
+                            /** @enum {string} */
+                            status: "declined";
+                            /** Format: date-time */
+                            resolvedAt: string;
+                        };
+                    };
+                };
+                /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+            };
+        };
         delete?: never;
         options?: never;
         head?: never;
@@ -13411,7 +13568,7 @@ export interface components {
              * @description Stable, machine-readable reason; clients translate it
              * @enum {unknown}
              */
-            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "too_many_attempts" | "too_many_live_streams" | "live_unavailable" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "suggestion_not_found" | "merge_not_possible" | "check_not_found" | "continuation_not_possible" | "recording_is_part" | "device_not_found" | "equipment_not_found" | "equipment_changed" | "equipment_in_use" | "equipment_use_mismatch" | "schedule_not_found" | "schedule_interval_required" | "record_not_found" | "equipment_item_not_cylinder" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "backup_not_found" | "backup_in_progress" | "backup_running" | "backup_not_ready" | "backup_file_missing" | "backup_passphrase_missing" | "backup_settings_invalid" | "backup_recipient_missing" | "backup_recipient_invalid" | "setup_restore_source_missing" | "setup_restore_archive_missing" | "setup_restore_key_missing" | "setup_restore_decrypt_failed" | "setup_restore_key_mismatch" | "setup_restore_schema_newer" | "setup_restore_failed" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "fetch_interval_too_short" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "waiting_push_not_found" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "provider_site_unknown" | "provider_buddy_not_found" | "provider_site_data_not_confirmed";
+            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "too_many_attempts" | "too_many_live_streams" | "live_unavailable" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "suggestion_not_found" | "suggestion_not_pending" | "suggestion_dive_not_found" | "suggestion_dive_not_overlapping" | "suggestion_link_conflict" | "merge_not_possible" | "check_not_found" | "continuation_not_possible" | "recording_is_part" | "device_not_found" | "equipment_not_found" | "equipment_changed" | "equipment_in_use" | "equipment_use_mismatch" | "schedule_not_found" | "schedule_interval_required" | "record_not_found" | "equipment_item_not_cylinder" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "backup_not_found" | "backup_in_progress" | "backup_running" | "backup_not_ready" | "backup_file_missing" | "backup_passphrase_missing" | "backup_settings_invalid" | "backup_recipient_missing" | "backup_recipient_invalid" | "setup_restore_source_missing" | "setup_restore_archive_missing" | "setup_restore_key_missing" | "setup_restore_decrypt_failed" | "setup_restore_key_mismatch" | "setup_restore_schema_newer" | "setup_restore_failed" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "fetch_interval_too_short" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "waiting_push_not_found" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "provider_site_unknown" | "provider_buddy_not_found" | "provider_site_data_not_confirmed";
             /** @description English description, for logs and scripts */
             error: string;
             /** @description The Provider a provider_* code is about (ADR 0027) */
@@ -13993,7 +14150,7 @@ export interface components {
                 source: "osm" | "wikidata" | "ssi";
             })[];
             /** @description Why it failed (a problem code) */
-            failureCode: null | ("sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "too_many_attempts" | "too_many_live_streams" | "live_unavailable" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "suggestion_not_found" | "merge_not_possible" | "check_not_found" | "continuation_not_possible" | "recording_is_part" | "device_not_found" | "equipment_not_found" | "equipment_changed" | "equipment_in_use" | "equipment_use_mismatch" | "schedule_not_found" | "schedule_interval_required" | "record_not_found" | "equipment_item_not_cylinder" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "backup_not_found" | "backup_in_progress" | "backup_running" | "backup_not_ready" | "backup_file_missing" | "backup_passphrase_missing" | "backup_settings_invalid" | "backup_recipient_missing" | "backup_recipient_invalid" | "setup_restore_source_missing" | "setup_restore_archive_missing" | "setup_restore_key_missing" | "setup_restore_decrypt_failed" | "setup_restore_key_mismatch" | "setup_restore_schema_newer" | "setup_restore_failed" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "fetch_interval_too_short" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "waiting_push_not_found" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "provider_site_unknown" | "provider_buddy_not_found" | "provider_site_data_not_confirmed");
+            failureCode: null | ("sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "too_many_attempts" | "too_many_live_streams" | "live_unavailable" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "suggestion_not_found" | "suggestion_not_pending" | "suggestion_dive_not_found" | "suggestion_dive_not_overlapping" | "suggestion_link_conflict" | "merge_not_possible" | "check_not_found" | "continuation_not_possible" | "recording_is_part" | "device_not_found" | "equipment_not_found" | "equipment_changed" | "equipment_in_use" | "equipment_use_mismatch" | "schedule_not_found" | "schedule_interval_required" | "record_not_found" | "equipment_item_not_cylinder" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "backup_not_found" | "backup_in_progress" | "backup_running" | "backup_not_ready" | "backup_file_missing" | "backup_passphrase_missing" | "backup_settings_invalid" | "backup_recipient_missing" | "backup_recipient_invalid" | "setup_restore_source_missing" | "setup_restore_archive_missing" | "setup_restore_key_missing" | "setup_restore_decrypt_failed" | "setup_restore_key_mismatch" | "setup_restore_schema_newer" | "setup_restore_failed" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "fetch_interval_too_short" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "waiting_push_not_found" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "provider_site_unknown" | "provider_buddy_not_found" | "provider_site_data_not_confirmed");
             /** Format: date-time */
             createdAt: string;
             finishedAt: null | string;
@@ -14005,7 +14162,7 @@ export interface components {
             diverId: string;
             /** @enum {unknown} */
             status: "queued" | "running" | "done" | "cancelled" | "stopped";
-            stopCode: null | ("sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "too_many_attempts" | "too_many_live_streams" | "live_unavailable" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "suggestion_not_found" | "merge_not_possible" | "check_not_found" | "continuation_not_possible" | "recording_is_part" | "device_not_found" | "equipment_not_found" | "equipment_changed" | "equipment_in_use" | "equipment_use_mismatch" | "schedule_not_found" | "schedule_interval_required" | "record_not_found" | "equipment_item_not_cylinder" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "backup_not_found" | "backup_in_progress" | "backup_running" | "backup_not_ready" | "backup_file_missing" | "backup_passphrase_missing" | "backup_settings_invalid" | "backup_recipient_missing" | "backup_recipient_invalid" | "setup_restore_source_missing" | "setup_restore_archive_missing" | "setup_restore_key_missing" | "setup_restore_decrypt_failed" | "setup_restore_key_mismatch" | "setup_restore_schema_newer" | "setup_restore_failed" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "fetch_interval_too_short" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "waiting_push_not_found" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "provider_site_unknown" | "provider_buddy_not_found" | "provider_site_data_not_confirmed");
+            stopCode: null | ("sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "too_many_attempts" | "too_many_live_streams" | "live_unavailable" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "suggestion_not_found" | "suggestion_not_pending" | "suggestion_dive_not_found" | "suggestion_dive_not_overlapping" | "suggestion_link_conflict" | "merge_not_possible" | "check_not_found" | "continuation_not_possible" | "recording_is_part" | "device_not_found" | "equipment_not_found" | "equipment_changed" | "equipment_in_use" | "equipment_use_mismatch" | "schedule_not_found" | "schedule_interval_required" | "record_not_found" | "equipment_item_not_cylinder" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "backup_not_found" | "backup_in_progress" | "backup_running" | "backup_not_ready" | "backup_file_missing" | "backup_passphrase_missing" | "backup_settings_invalid" | "backup_recipient_missing" | "backup_recipient_invalid" | "setup_restore_source_missing" | "setup_restore_archive_missing" | "setup_restore_key_missing" | "setup_restore_decrypt_failed" | "setup_restore_key_mismatch" | "setup_restore_schema_newer" | "setup_restore_failed" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "fetch_interval_too_short" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "waiting_push_not_found" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "provider_site_unknown" | "provider_buddy_not_found" | "provider_site_data_not_confirmed");
             updates: boolean;
             updatesRemovingVerification: boolean;
             numbers: boolean;
@@ -14172,7 +14329,7 @@ export interface components {
                 remoteNumber: null | number;
                 /** @description The remote dive was found deleted at the Provider */
                 remoteGone: boolean;
-                failureCode: null | ("sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "too_many_attempts" | "too_many_live_streams" | "live_unavailable" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "suggestion_not_found" | "merge_not_possible" | "check_not_found" | "continuation_not_possible" | "recording_is_part" | "device_not_found" | "equipment_not_found" | "equipment_changed" | "equipment_in_use" | "equipment_use_mismatch" | "schedule_not_found" | "schedule_interval_required" | "record_not_found" | "equipment_item_not_cylinder" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "backup_not_found" | "backup_in_progress" | "backup_running" | "backup_not_ready" | "backup_file_missing" | "backup_passphrase_missing" | "backup_settings_invalid" | "backup_recipient_missing" | "backup_recipient_invalid" | "setup_restore_source_missing" | "setup_restore_archive_missing" | "setup_restore_key_missing" | "setup_restore_decrypt_failed" | "setup_restore_key_mismatch" | "setup_restore_schema_newer" | "setup_restore_failed" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "fetch_interval_too_short" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "waiting_push_not_found" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "provider_site_unknown" | "provider_buddy_not_found" | "provider_site_data_not_confirmed");
+                failureCode: null | ("sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "too_many_attempts" | "too_many_live_streams" | "live_unavailable" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "suggestion_not_found" | "suggestion_not_pending" | "suggestion_dive_not_found" | "suggestion_dive_not_overlapping" | "suggestion_link_conflict" | "merge_not_possible" | "check_not_found" | "continuation_not_possible" | "recording_is_part" | "device_not_found" | "equipment_not_found" | "equipment_changed" | "equipment_in_use" | "equipment_use_mismatch" | "schedule_not_found" | "schedule_interval_required" | "record_not_found" | "equipment_item_not_cylinder" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "backup_not_found" | "backup_in_progress" | "backup_running" | "backup_not_ready" | "backup_file_missing" | "backup_passphrase_missing" | "backup_settings_invalid" | "backup_recipient_missing" | "backup_recipient_invalid" | "setup_restore_source_missing" | "setup_restore_archive_missing" | "setup_restore_key_missing" | "setup_restore_decrypt_failed" | "setup_restore_key_mismatch" | "setup_restore_schema_newer" | "setup_restore_failed" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "fetch_interval_too_short" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "waiting_push_not_found" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "provider_site_unknown" | "provider_buddy_not_found" | "provider_site_data_not_confirmed");
                 leftOut: null | {
                     diverId: string;
                     name: string;

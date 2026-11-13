@@ -1,7 +1,7 @@
 // The Review page (UI redesign 4): what waits for the User, in the logbook's one line and the navigation's count, and
 // the page's parts, kept in the address like the logbook's settings (ADR 0017).
 import { useQuery } from '@tanstack/react-query';
-import { candidatesQuery, deletedDivesQuery, goneDivesQuery, isPairCheck, logbookChecksQuery, providerConflictsQuery } from '../api.ts';
+import { buddySuggestionsQuery, candidatesQuery, deletedDivesQuery, goneDivesQuery, isPairCheck, logbookChecksQuery, providerConflictsQuery } from '../api.ts';
 
 export const REVIEW_TABS = ['decide', 'imports', 'decided', 'deleted'] as const;
 export type ReviewTab = (typeof REVIEW_TABS)[number];
@@ -16,11 +16,13 @@ export function reviewHref(tab: ReviewTab): string {
 }
 
 /**
- * What waits for a decision: Recordings that don't clearly belong to a Dive (ADR 0016), pairs of Dives at the same time and
- * Dives that are probably no dive (ADR 0038), Dives cut by a surface break (ADR 0063), Dives gone at a Provider (ADR 0051), counted per Provider, and Dives a run
- * left with values changed in both places, or that the Provider already has a dive for (ADR 0056).
+ * What waits for a decision: Buddy suggestions over a shared Dive (ADR 0070), Recordings that don't clearly belong to a
+ * Dive (ADR 0016), pairs of Dives at the same time and Dives that are probably no dive (ADR 0038), Dives cut by a
+ * surface break (ADR 0063), Dives gone at a Provider (ADR 0051), counted per Provider, and Dives a run left with values
+ * changed in both places, or that the Provider already has a dive for (ADR 0056).
  */
 export function useToDecideCounts() {
+  const suggestions = useQuery(buddySuggestionsQuery()).data?.length ?? 0;
   const recordings = useQuery(candidatesQuery('open')).data?.length ?? 0;
   const checks = useQuery(logbookChecksQuery('open')).data ?? [];
   const surfaceBreaks = checks.filter((c) => c.rule === 'surface_break').length;
@@ -33,7 +35,10 @@ export function useToDecideCounts() {
   const conflicts = entries.filter((e) => e.kind === 'conflict').length;
   // Dives the Provider already has a dive for: the send waits for the User's choice.
   const exists = entries.length - conflicts;
-  return { recordings, pairs, surfaceBreaks, shortDives, goneAt, gone, conflicts, exists, total: recordings + checks.length + gone + conflicts + exists };
+  return {
+    suggestions, recordings, pairs, surfaceBreaks, shortDives, goneAt, gone, conflicts, exists,
+    total: suggestions + recordings + checks.length + gone + conflicts + exists,
+  };
 }
 
 /** Counts that go into the tabs and the links under the logbook: what was decided and what was deleted. */

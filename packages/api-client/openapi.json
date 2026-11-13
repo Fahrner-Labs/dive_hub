@@ -401,6 +401,10 @@
               "diver_external_id_connected",
               "participant_invalid",
               "suggestion_not_found",
+              "suggestion_not_pending",
+              "suggestion_dive_not_found",
+              "suggestion_dive_not_overlapping",
+              "suggestion_link_conflict",
               "merge_not_possible",
               "check_not_found",
               "continuation_not_possible",
@@ -3304,6 +3308,10 @@
                   "diver_external_id_connected",
                   "participant_invalid",
                   "suggestion_not_found",
+                  "suggestion_not_pending",
+                  "suggestion_dive_not_found",
+                  "suggestion_dive_not_overlapping",
+                  "suggestion_link_conflict",
                   "merge_not_possible",
                   "check_not_found",
                   "continuation_not_possible",
@@ -3519,6 +3527,10 @@
                   "diver_external_id_connected",
                   "participant_invalid",
                   "suggestion_not_found",
+                  "suggestion_not_pending",
+                  "suggestion_dive_not_found",
+                  "suggestion_dive_not_overlapping",
+                  "suggestion_link_conflict",
                   "merge_not_possible",
                   "check_not_found",
                   "continuation_not_possible",
@@ -4341,6 +4353,10 @@
                         "diver_external_id_connected",
                         "participant_invalid",
                         "suggestion_not_found",
+                        "suggestion_not_pending",
+                        "suggestion_dive_not_found",
+                        "suggestion_dive_not_overlapping",
+                        "suggestion_link_conflict",
                         "merge_not_possible",
                         "check_not_found",
                         "continuation_not_possible",
@@ -11564,7 +11580,8 @@
                           "restore",
                           "fill",
                           "continuation",
-                          "continuation-undo"
+                          "continuation-undo",
+                          "buddy-accept"
                         ]
                       },
                       "changes": {
@@ -20538,7 +20555,8 @@
                           "restore",
                           "fill",
                           "continuation",
-                          "continuation-undo"
+                          "continuation-undo",
+                          "buddy-accept"
                         ]
                       },
                       "changes": {
@@ -21886,7 +21904,8 @@
                     "createdAt",
                     "resolvedAt",
                     "diver",
-                    "dive"
+                    "dive",
+                    "overlaps"
                   ],
                   "properties": {
                     "id": {
@@ -22072,6 +22091,77 @@
                           "description": "The Divers on the Dive besides its own Diver, by name only (ADR 0028)"
                         }
                       }
+                    },
+                    "overlaps": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "id",
+                          "startsAt",
+                          "utcOffsetSeconds",
+                          "durationSeconds",
+                          "maxDepthM",
+                          "site"
+                        ],
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "startsAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "utcOffsetSeconds": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "integer",
+                                "minimum": -43200,
+                                "maximum": 50400
+                              }
+                            ]
+                          },
+                          "durationSeconds": {
+                            "type": "number"
+                          },
+                          "maxDepthM": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "number"
+                              }
+                            ]
+                          },
+                          "site": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "object",
+                                "required": [
+                                  "id",
+                                  "name"
+                                ],
+                                "properties": {
+                                  "id": {
+                                    "type": "string"
+                                  },
+                                  "name": {
+                                    "type": "string"
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "description": "The invited Diver's existing Dives that meet the suggested time window, earliest first: pick one to link instead of creating a new Dive"
                     }
                   },
                   "description": "The shared facts of a suggested Dive: site, time, duration, depths, Participants and centre, and nothing of the Recording or its owner's private values"
@@ -22080,6 +22170,181 @@
             }
           },
           "404": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/buddy-suggestions/{id}/accept": {
+      "post": {
+        "summary": "Accept a Buddy suggestion: link an existing overlapping Dive, or copy the shared facts into a new one",
+        "description": "With `diveId`, link that existing Dive of the invited Diver into one Joint dive with the suggested one: nothing is copied and no Diver's data is merged into another's. That Dive must be one of the preview's `overlaps` and still overlap; a Dive already in a different Joint dive is refused. Without `diveId`, create a Dive for the invited Diver with the site, start time and UTC offset, duration and max/average depth as plain own values, and the people on the source Dive (its own Diver and its Participants) as Divers; no Recording, notes, suit, weighting, cylinders, lead or Override. Both Dives join one Joint dive (an existing one if either already has it). 404 `suggestion_not_found` unless the User manages the invited Diver; 409 `suggestion_not_pending` once it was accepted, declined or cancelled; 404 `suggestion_dive_not_found` and 409 `suggestion_dive_not_overlapping` for a chosen Dive that is not the invited Diver's or no longer overlaps; 409 `suggestion_link_conflict` when both Dives are in different Joint dives.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "diveId": {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "One of the preview's overlaps: link that existing Dive instead of creating a new one. It must still overlap the suggested Dive."
+                      }
+                    },
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A Buddy suggestion accepted, by linking an existing Dive or by copying its shared facts into a new one",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "status",
+                    "resolvedAt",
+                    "diveId",
+                    "jointDiveId"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "accepted"
+                      ]
+                    },
+                    "resolvedAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "diveId": {
+                      "type": "string",
+                      "description": "The Dive in the invited Diver's logbook: the linked existing Dive (branch B), or the new one made from the shared facts (branch A)"
+                    },
+                    "jointDiveId": {
+                      "type": "string",
+                      "description": "The Joint dive both this Dive and the suggested one are members of"
+                    }
+                  },
+                  "description": "A Buddy suggestion accepted, by linking an existing Dive or by copying its shared facts into a new one"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/buddy-suggestions/{id}/decline": {
+      "post": {
+        "summary": "Decline a Buddy suggestion",
+        "description": "Marks the one suggestion row declined for every User who manages the invited Diver now. Nothing is created and the inviter's Participant stays; adding the Participant again raises it as pending once more. 404 `suggestion_not_found` unless the User manages the invited Diver; 409 `suggestion_not_pending` once it was accepted, declined or cancelled.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A Buddy suggestion declined by a User who manages the invited Diver; nothing was created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "status",
+                    "resolvedAt"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "declined"
+                      ]
+                    },
+                    "resolvedAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  },
+                  "description": "A Buddy suggestion declined by a User who manages the invited Diver; nothing was created"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
             "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
             "content": {
               "application/json": {

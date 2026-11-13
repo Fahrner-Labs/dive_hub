@@ -565,6 +565,10 @@
     "diver_external_id_connected": "A connection uses this account. Disconnect it first.",
     "participant_invalid": "Someone is on the list twice, or is the dive’s own diver.",
     "suggestion_not_found": "This Buddy suggestion is not for a Diver you manage (anymore).",
+    "suggestion_not_pending": "This suggestion was already accepted or declined, or it was cancelled. The list is up to date.",
+    "suggestion_dive_not_found": "That dive is not in the invited Diver’s logbook.",
+    "suggestion_dive_not_overlapping": "That dive no longer overlaps the suggested one.",
+    "suggestion_link_conflict": "Both dives already belong to different joint dives, so they cannot be linked.",
     "merge_not_possible": "Only two different dives of the same Diver can be merged.",
     "continuation_not_possible": "Only later dives of the same Diver, each with one recording of the same computer and no dive between them, can be appended.",
     "recording_is_part": "This recording is part of an appended dive: it can’t be made primary or split off on its own.",
@@ -1116,6 +1120,8 @@
     "strip": {
       "things_one": "One thing needs your decision: {{parts}}.",
       "things_other": "{{count}} things need your decision: {{parts}}.",
+      "suggestions_one": "{{count}} dive suggestion",
+      "suggestions_other": "{{count}} dive suggestions",
       "recordings_one": "{{count}} recording",
       "recordings_other": "{{count}} recordings",
       "pairs_one": "{{count}} pair of dives at the same time",
@@ -1132,6 +1138,25 @@
       "exists_other": "{{count}} dives that are already at a Provider",
       "go": "Review them"
     }
+  },
+  "suggestions": {
+    "title": "Dive suggestions ({{count}})",
+    "intro": "A buddy logged a dive with a Diver you manage. Accept it to add the shared facts to the logbook, or decline if it is not yours.",
+    "from": "{{owner}} shared this dive with {{diver}}.",
+    "suggestedDive": "Suggested dive",
+    "people": "On the dive: {{names}}",
+    "avgDepth": "{{depth}} average",
+    "centre": "Dive centre: {{names}}",
+    "accept": "Accept",
+    "decline": "Decline",
+    "acceptTitle": "Accept this dive",
+    "acceptIntro": "The shared facts go into {{diver}}’s logbook. Link one of your existing dives from this time, or create a new dive.",
+    "acceptWhat": "Only the shared facts are copied: site, start time, duration, depths and the people on the dive. No recording, notes or gear.",
+    "overlapIntro": "You already have a dive at this time:",
+    "noOverlaps": "You have no dive at this time in your logbook. Accepting creates a new dive from the shared facts.",
+    "yourDive": "Your dive",
+    "link": "Link to your dive",
+    "create": "Create a new dive"
   },
   "deleted": {
     "notice": "{{name}} deleted.",

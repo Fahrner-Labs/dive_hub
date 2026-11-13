@@ -565,6 +565,10 @@
     "diver_external_id_connected": "Eine Verbindung nutzt dieses Konto. Trenne sie zuerst.",
     "participant_invalid": "Jemand steht doppelt auf der Liste oder ist der Taucher dieses Tauchgangs selbst.",
     "suggestion_not_found": "Diese Buddy-Empfehlung gehört nicht (mehr) zu einem Taucher, den du führst.",
+    "suggestion_not_pending": "Diese Empfehlung wurde bereits angenommen oder abgelehnt oder ist entfallen. Die Liste ist auf dem neuesten Stand.",
+    "suggestion_dive_not_found": "Dieser Tauchgang gehört nicht zum Logbuch des eingeladenen Tauchers.",
+    "suggestion_dive_not_overlapping": "Dieser Tauchgang überschneidet sich nicht mehr mit dem empfohlenen.",
+    "suggestion_link_conflict": "Beide Tauchgänge gehören bereits zu unterschiedlichen gemeinsamen Tauchgängen und lassen sich daher nicht verknüpfen.",
     "merge_not_possible": "Nur zwei verschiedene Tauchgänge desselben Tauchers lassen sich zusammenführen.",
     "continuation_not_possible": "Anhängen lässt sich nur ein späterer Tauchgang desselben Tauchers mit genau einer Aufzeichnung desselben Computers, ohne Tauchgang dazwischen.",
     "recording_is_part": "Diese Aufzeichnung ist Teil eines angehängten Tauchgangs: Sie lässt sich nicht allein zur primären machen oder abtrennen.",
@@ -1116,6 +1120,8 @@
     "strip": {
       "things_one": "Eine Sache braucht deine Entscheidung: {{parts}}.",
       "things_other": "{{count}} Dinge brauchen deine Entscheidung: {{parts}}.",
+      "suggestions_one": "{{count}} Tauchgangs-Empfehlung",
+      "suggestions_other": "{{count}} Tauchgangs-Empfehlungen",
       "recordings_one": "{{count}} Aufzeichnung",
       "recordings_other": "{{count}} Aufzeichnungen",
       "pairs_one": "{{count}} Paar Tauchgänge zur selben Zeit",
@@ -1132,6 +1138,25 @@
       "exists_other": "{{count}} Tauchgänge, die es schon bei einem Anbieter gibt",
       "go": "Durchsehen"
     }
+  },
+  "suggestions": {
+    "title": "Tauchgangs-Empfehlungen ({{count}})",
+    "intro": "Ein Buddy hat einen Tauchgang mit einem Taucher geloggt, den du führst. Nimm ihn an, um die geteilten Angaben ins Logbuch zu übernehmen, oder lehne ab, wenn er nicht zu dir gehört.",
+    "from": "{{owner}} hat diesen Tauchgang mit {{diver}} geteilt.",
+    "suggestedDive": "Empfohlener Tauchgang",
+    "people": "Dabei: {{names}}",
+    "avgDepth": "{{depth}} im Schnitt",
+    "centre": "Tauchzentrum: {{names}}",
+    "accept": "Annehmen",
+    "decline": "Ablehnen",
+    "acceptTitle": "Diesen Tauchgang annehmen",
+    "acceptIntro": "Die geteilten Angaben kommen in {{diver}}s Logbuch. Verknüpfe einen deiner Tauchgänge aus dieser Zeit oder lege einen neuen Tauchgang an.",
+    "acceptWhat": "Kopiert werden nur die geteilten Angaben: Tauchplatz, Startzeit, Dauer, Tiefen und die Personen auf dem Tauchgang. Keine Aufzeichnung, Notizen oder Ausrüstung.",
+    "overlapIntro": "Du hast bereits einen Tauchgang aus dieser Zeit:",
+    "noOverlaps": "Du hast zu dieser Zeit keinen Tauchgang im Logbuch. Beim Annehmen wird aus den geteilten Angaben ein neuer Tauchgang.",
+    "yourDive": "Dein Tauchgang",
+    "link": "Mit deinem Tauchgang verknüpfen",
+    "create": "Neuen Tauchgang anlegen"
   },
   "deleted": {
     "notice": "{{name}} gelöscht.",
