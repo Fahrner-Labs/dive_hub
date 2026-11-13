@@ -1,9 +1,10 @@
 // Buddy suggestions follow the Dive's Revisions (ADR 0070): every path that writes Participants writes one, and every
 // soft delete does too. The listener runs inside that transaction, so a web edit, an Import, a merge, a continuation and
-// an MCP call all raise and cancel the same way, and a rolled-back write leaves no suggestion behind.
+// an MCP call all raise and cancel the same way, and a rolled-back write leaves no suggestion behind. A Diver merged
+// away takes its pending suggestions to the surviving Diver the same way, in the merge's transaction.
 import type { ChangeListener } from '../revisions/revisions.js';
 import type { Tx } from '../db/client.js';
-import { syncSuggestions } from './suggestion-service.js';
+import { followMergedDiver, syncSuggestions } from './suggestion-service.js';
 
 /** Wraps the process's existing listener so Participant changes and soft deletes also keep the suggestions current. */
 export function withSuggestionChanges(inner: ChangeListener): ChangeListener {
@@ -23,6 +24,10 @@ export function withSuggestionChanges(inner: ChangeListener): ChangeListener {
     },
     async siteChanged(tx: Tx, siteId, at) {
       await inner.siteChanged(tx, siteId, at);
+    },
+    async diverMerged(tx: Tx, fromId, intoId) {
+      await inner.diverMerged?.(tx, fromId, intoId);
+      await followMergedDiver(tx, fromId, intoId);
     },
   };
 }

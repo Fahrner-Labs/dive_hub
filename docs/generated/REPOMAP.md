@@ -4,7 +4,7 @@
 > `pnpm check` fails when this map is stale. Symbols are ranked by how widely the code references them;
 > each module shows its most-referenced ones (exported symbols rank higher). Search here before walking the tree.
 
-Files: 374 · symbols: 3449 · shown: 257
+Files: 374 · symbols: 3450 · shown: 257
 
 ### server/(root)
 apps/server/src/vocabulary.ts:13 type SiteWaterType
@@ -214,10 +214,10 @@ apps/server/src/providers/dive-import/three-way.ts:61 fn sameAtProvider
 … 477 more symbols in this module
 
 ### server/revisions
-apps/server/src/revisions/revisions.ts:64 fn writeRevision
+apps/server/src/revisions/revisions.ts:66 fn writeRevision
 apps/server/src/revisions/revisions.ts:5 type Actor
 apps/server/src/revisions/revisions.ts:34 type Changes
-apps/server/src/revisions/revisions.ts:59 fn changeListener
+apps/server/src/revisions/revisions.ts:61 fn changeListener
 apps/server/src/revisions/revisions.ts:8 const userActor
 apps/server/src/revisions/revisions.ts:32 type RevisionCause
 … 4 more symbols in this module
@@ -253,13 +253,13 @@ apps/server/src/sites/site-ids.ts:105 fn storeId
 … 163 more symbols in this module
 
 ### server/social
-apps/server/src/social/suggestion-service.ts:16 class SuggestionError
-apps/server/src/social/suggestion-service.ts:192 fn createSuggestionService
+apps/server/src/social/suggestion-service.ts:17 class SuggestionError
+apps/server/src/social/suggestion-service.ts:223 fn createSuggestionService
 apps/server/src/social/routes.ts:17 const STATUS
 apps/server/src/social/suggestion-view.ts:9 const SiteRef
-apps/server/src/social/suggestion-service.ts:115 fn emitSuggestionHints
-apps/server/src/social/suggestion-changes.ts:9 fn withSuggestionChanges
-… 19 more symbols in this module
+apps/server/src/social/suggestion-service.ts:116 fn emitSuggestionHints
+apps/server/src/social/suggestion-changes.ts:10 fn withSuggestionChanges
+… 20 more symbols in this module
 
 ### server/storage
 apps/server/src/storage/blob-store.ts:26 iface BlobStore

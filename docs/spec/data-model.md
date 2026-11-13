@@ -589,10 +589,11 @@ everything after it come later.
 - Anna declines. Tim still sees Anna as his buddy, but nothing is created for her.
 
 **Bob is not a User.** Tim creates an external Diver "Bob" (every User sees the name; ADR 0028), and
-adds him as Participant. Bob signs D1 on Tim's phone, which creates an external Signature.
-Later Bob signs up. Tim **links** his "Bob" to Bob's own Diver (`merged into`).
-Tim's Participants now point to Bob's Diver, which raises Buddy suggestions for the past
-dives (as one batch). Signatures stay unchanged.
+adds him as Participant, which raises a pending Buddy suggestion with no audience yet; Bob's signature on
+Tim's phone stays external. Later Bob signs up and claims his external Diver through a Provider account
+(or an admin merges it), so it merges into his own Diver (`merged into`). Tim's Participants now point to
+Bob's Diver, and Bob's pending suggestions follow the merge to his Diver: its Users see them and hear the
+`buddySuggestion` hint. Accepted and declined suggestions stay as they are.
 
 ### 3. Re-import of a dive edited elsewhere
 

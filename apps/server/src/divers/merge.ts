@@ -4,7 +4,7 @@
 import { and, eq, inArray, isNull, sql } from 'drizzle-orm';
 import type { Tx } from '../db/client.js';
 import { device, dive, diver, diverExternalId, diverManagement, participant } from '../db/schema.js';
-import { writeRevision, type Actor } from '../revisions/revisions.js';
+import { writeRevision, changeListener, type Actor } from '../revisions/revisions.js';
 import { DiverError } from './diver-error.js';
 
 /** An external Diver: live, and no User keeps it. Null otherwise. */
@@ -68,5 +68,8 @@ export async function mergeExternalDiver(tx: Tx, fromId: string, intoId: string,
   await tx.update(diver).set({ deletedAt: at, mergedInto: intoId, updatedAt: at, firstName: null, lastName: null, email: null, leaderNumber: null }).where(eq(diver.id, fromId));
   await writeRevision(tx, 'diver', fromId, actor, 'merge', { mergedInto: { from: null, to: { id: into.id, name: into.name } } });
   await writeRevision(tx, 'diver', intoId, actor, 'merge', { merged: { from: { id: from.id, name: from.name }, to: null }, dives: { from: null, to: dives } });
+  // What waited on the merged-away Diver follows to the survivor (ADR 0070): its pending Buddy suggestions become the
+  // survivor's managers', with a hint now that they have an audience.
+  await changeListener().diverMerged?.(tx, fromId, intoId);
   return { dives };
 }
