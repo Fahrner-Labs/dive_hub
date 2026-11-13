@@ -688,6 +688,23 @@
         },
         {
           "dynamic": false,
+          "module": "./social/routes.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/social/routes.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./users/account-routes.js",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -988,6 +1005,7 @@
         "apps/server/src/providers/push/push-run-routes.ts",
         "apps/server/src/sites/import/site-import-routes.ts",
         "apps/server/src/sites/routes.ts",
+        "apps/server/src/social/routes.ts",
         "apps/server/src/users/account-routes.ts",
         "apps/server/src/users/admin-routes.ts",
         "apps/server/src/users/routes.ts",
@@ -1064,6 +1082,7 @@
         "apps/server/src/providers/site-pick.ts",
         "apps/server/src/providers/waiting-push/waiting-push-service.ts",
         "apps/server/src/sites/import/site-import-service.ts",
+        "apps/server/src/social/suggestion-service.ts",
         "apps/server/src/users/invitation-service.ts",
         "apps/server/src/users/password-reset-service.ts",
         "apps/server/src/users/profile-service.ts",
@@ -1362,6 +1381,8 @@
         "apps/server/src/sites/import/site-import-view.ts",
         "apps/server/src/sites/routes.ts",
         "apps/server/src/sites/site-view.ts",
+        "apps/server/src/social/routes.ts",
+        "apps/server/src/social/suggestion-view.ts",
         "apps/server/src/users/account-routes.ts",
         "apps/server/src/users/views.ts",
         "apps/server/src/users/admin-routes.ts",
@@ -1563,6 +1584,7 @@
         "apps/server/src/providers/routes.ts",
         "apps/server/src/sites/import/site-import-routes.ts",
         "apps/server/src/sites/routes.ts",
+        "apps/server/src/social/routes.ts",
         "apps/server/src/users/account-routes.ts",
         "apps/server/src/users/admin-routes.ts",
         "apps/server/src/users/routes.ts",
@@ -1802,6 +1824,8 @@
         "apps/server/src/providers/site-pick.ts",
         "apps/server/src/providers/waiting-push/waiting-push-service.ts",
         "apps/server/src/sites/import/site-import-service.ts",
+        "apps/server/src/social/suggestion-changes.ts",
+        "apps/server/src/social/suggestion-service.ts",
         "apps/server/src/users/invitation-service.ts",
         "apps/server/src/users/password-reset-service.ts",
         "apps/server/src/users/profile-service.ts",
@@ -2018,6 +2042,7 @@
         "apps/server/src/providers/site-pick.ts",
         "apps/server/src/providers/waiting-push/waiting-push-service.ts",
         "apps/server/src/sites/import/site-import-service.ts",
+        "apps/server/src/social/suggestion-service.ts",
         "apps/server/src/users/invitation-service.ts",
         "apps/server/src/users/password-reset-service.ts",
         "apps/server/src/users/profile-service.ts",
@@ -2044,6 +2069,7 @@
         "apps/server/src/providers/connection-routes.ts",
         "apps/server/src/providers/dive-import/dive-import-routes.ts",
         "apps/server/src/sites/import/site-import-view.ts",
+        "apps/server/src/social/suggestion-view.ts",
         "apps/server/src/users/views.ts",
         "apps/server/src/auth/cli-config.ts"
       ],
@@ -2335,6 +2361,7 @@
         "apps/server/src/providers/push/push-run-routes.ts",
         "apps/server/src/sites/import/site-import-routes.ts",
         "apps/server/src/sites/routes.ts",
+        "apps/server/src/social/routes.ts",
         "apps/server/src/users/account-routes.ts",
         "apps/server/src/users/admin-routes.ts",
         "apps/server/src/users/routes.ts"
@@ -2451,6 +2478,7 @@
         "apps/server/src/sites/import/site-import-routes.ts",
         "apps/server/src/sites/import/site-import-view.ts",
         "apps/server/src/sites/routes.ts",
+        "apps/server/src/social/routes.ts",
         "apps/server/src/users/account-routes.ts",
         "apps/server/src/users/views.ts",
         "apps/server/src/users/admin-routes.ts",
@@ -2521,6 +2549,8 @@
         "apps/server/src/sites/import/site-import-view.ts",
         "apps/server/src/sites/routes.ts",
         "apps/server/src/sites/site-view.ts",
+        "apps/server/src/social/routes.ts",
+        "apps/server/src/social/suggestion-view.ts",
         "apps/server/src/users/account-routes.ts",
         "apps/server/src/users/views.ts",
         "apps/server/src/users/admin-routes.ts",
@@ -2790,6 +2820,7 @@
         "apps/server/src/providers/push/outgoing-dive.ts",
         "apps/server/src/providers/push/push-run-service.ts",
         "apps/server/src/providers/waiting-push/waiting-push-service.ts",
+        "apps/server/src/social/suggestion-service.ts",
         "apps/server/src/mcp/tool.ts"
       ],
       "orphan": false,
@@ -4531,6 +4562,7 @@
         "apps/server/src/providers/dive-import/dive-import.ts",
         "apps/server/src/providers/push/site-for-send.ts",
         "apps/server/src/sites/import/site-import-service.ts",
+        "apps/server/src/social/suggestion-changes.ts",
         "apps/server/src/dives/routes.ts",
         "apps/server/src/sites/routes.ts"
       ],
@@ -6292,7 +6324,8 @@
         "apps/server/src/providers/connection-service.ts",
         "apps/server/src/providers/push/push-run-service.ts",
         "apps/server/src/providers/waiting-push/waiting-push-service.ts",
-        "apps/server/src/sites/import/site-import-service.ts"
+        "apps/server/src/sites/import/site-import-service.ts",
+        "apps/server/src/social/suggestion-service.ts"
       ],
       "orphan": false,
       "valid": true
@@ -6907,6 +6940,40 @@
             "import"
           ],
           "resolved": "apps/server/src/sites/sources.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./social/suggestion-changes.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/social/suggestion-changes.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./social/suggestion-service.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/social/suggestion-service.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -17598,6 +17665,167 @@
       "valid": true
     },
     {
+      "source": "apps/server/src/social/suggestion-changes.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../db/client.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/db/client.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../revisions/revisions.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/revisions/revisions.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./suggestion-service.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/social/suggestion-service.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/server/src/compose.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/server/src/social/suggestion-service.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../db/client.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/db/client.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../db/schema.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/db/schema.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../divers/management.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/divers/management.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../live/emit.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/live/emit.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "drizzle-orm",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "npm",
+            "import"
+          ],
+          "resolved": "apps/server/node_modules/drizzle-orm/index.cjs",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": true,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/server/src/compose.ts",
+        "apps/server/src/social/suggestion-changes.ts",
+        "apps/server/src/social/routes.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "apps/server/src/users/invitation-service.ts",
       "dependencies": [
         {
@@ -25837,6 +26065,213 @@
       "dependents": [
         "apps/server/src/app.ts",
         "apps/server/src/sites/routes.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/server/src/social/routes.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../auth/auth.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/auth/auth.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../auth/fastify.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/auth/fastify.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../http/problems.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/http/problems.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../http/schemas.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/http/schemas.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./suggestion-service.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/social/suggestion-service.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./suggestion-view.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/social/suggestion-view.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@fastify/type-provider-typebox",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "npm",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/node_modules/@fastify/type-provider-typebox/dist/cjs/index.js",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": true,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "typebox",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "unknown"
+          ],
+          "resolved": "typebox",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": true,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/server/src/app.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/server/src/social/suggestion-view.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../db/schema.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/db/schema.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../http/schemas.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/http/schemas.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "typebox",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "unknown"
+          ],
+          "resolved": "typebox",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": true,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/server/src/social/routes.ts"
       ],
       "orphan": false,
       "valid": true
@@ -45576,8 +46011,8 @@
     "baselineSize": 0,
     "baselineStale": 0,
     "advisedExitCode": 0,
-    "totalCruised": 432,
-    "totalDependenciesCruised": 2272,
+    "totalCruised": 436,
+    "totalDependenciesCruised": 2294,
     "optionsUsed": {
       "baseDir": "/home/runner/work/dive_hub/dive_hub",
       "combinedDependencies": false,
@@ -45639,7 +46074,7 @@
             "path": "^apps/server/src/revisions/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|backups|centres|certifications|divers|dives|equipment|imports|lead|mcp|planning|providers|sites|live|users)/"
+            "path": "^apps/server/src/(assessment|backups|centres|certifications|divers|dives|equipment|imports|lead|mcp|planning|providers|sites|social|live|users)/"
           },
           "scope": "module"
         },
@@ -45651,7 +46086,7 @@
             "path": "^apps/server/src/assessment/"
           },
           "to": {
-            "path": "^apps/server/src/(revisions|backups|centres|certifications|dives|equipment|lead|mcp|planning|providers|sites|live|users)/"
+            "path": "^apps/server/src/(revisions|backups|centres|certifications|dives|equipment|lead|mcp|planning|providers|sites|social|live|users)/"
           },
           "scope": "module"
         },
@@ -45663,7 +46098,7 @@
             "path": "^apps/server/src/backups/"
           },
           "to": {
-            "path": "^apps/server/src/(revisions|assessment|centres|certifications|divers|dives|equipment|imports|lead|mcp|planning|providers|sites|live|users)/"
+            "path": "^apps/server/src/(revisions|assessment|centres|certifications|divers|dives|equipment|imports|lead|mcp|planning|providers|sites|social|live|users)/"
           },
           "scope": "module"
         },
@@ -45675,7 +46110,7 @@
             "path": "^apps/server/src/centres/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|backups|certifications|dives|equipment|imports|lead|mcp|planning|providers|live|users)/"
+            "path": "^apps/server/src/(assessment|backups|certifications|dives|equipment|imports|lead|mcp|planning|providers|social|live|users)/"
           },
           "scope": "module"
         },
@@ -45687,7 +46122,7 @@
             "path": "^apps/server/src/certifications/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|backups|centres|equipment|imports|lead|mcp|planning|providers|sites|users)/"
+            "path": "^apps/server/src/(assessment|backups|centres|equipment|imports|lead|mcp|planning|providers|sites|social|users)/"
           },
           "scope": "module"
         },
@@ -45699,7 +46134,7 @@
             "path": "^apps/server/src/divers/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|backups|centres|certifications|dives|equipment|imports|lead|mcp|planning|providers|sites|live|users)/"
+            "path": "^apps/server/src/(assessment|backups|centres|certifications|dives|equipment|imports|lead|mcp|planning|providers|sites|social|live|users)/"
           },
           "scope": "module"
         },
@@ -45711,7 +46146,7 @@
             "path": "^apps/server/src/dives/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|backups|certifications|equipment|imports|lead|mcp|planning|providers|live|users)/"
+            "path": "^apps/server/src/(assessment|backups|certifications|equipment|imports|lead|mcp|planning|providers|social|live|users)/"
           },
           "scope": "module"
         },
@@ -45723,7 +46158,7 @@
             "path": "^apps/server/src/equipment/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|backups|centres|certifications|dives|imports|lead|mcp|planning|providers|sites|live|users)/"
+            "path": "^apps/server/src/(assessment|backups|centres|certifications|dives|imports|lead|mcp|planning|providers|sites|social|live|users)/"
           },
           "scope": "module"
         },
@@ -45735,7 +46170,7 @@
             "path": "^apps/server/src/imports/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|backups|centres|certifications|lead|mcp|planning|providers|users)/"
+            "path": "^apps/server/src/(assessment|backups|centres|certifications|lead|mcp|planning|providers|social|users)/"
           },
           "scope": "module"
         },
@@ -45747,7 +46182,7 @@
             "path": "^apps/server/src/lead/"
           },
           "to": {
-            "path": "^apps/server/src/(revisions|assessment|backups|centres|certifications|equipment|imports|mcp|planning|providers|sites|live|users)/"
+            "path": "^apps/server/src/(revisions|assessment|backups|centres|certifications|equipment|imports|mcp|planning|providers|sites|social|live|users)/"
           },
           "scope": "module"
         },
@@ -45759,7 +46194,7 @@
             "path": "^apps/server/src/mcp/"
           },
           "to": {
-            "path": "^apps/server/src/(revisions|backups|centres|certifications|imports|lead|providers|live|users)/"
+            "path": "^apps/server/src/(revisions|backups|centres|certifications|imports|lead|providers|social|live|users)/"
           },
           "scope": "module"
         },
@@ -45771,7 +46206,7 @@
             "path": "^apps/server/src/planning/"
           },
           "to": {
-            "path": "^apps/server/src/(revisions|assessment|backups|centres|certifications|equipment|imports|lead|mcp|providers|sites|live|users)/"
+            "path": "^apps/server/src/(revisions|assessment|backups|centres|certifications|equipment|imports|lead|mcp|providers|sites|social|live|users)/"
           },
           "scope": "module"
         },
@@ -45783,7 +46218,7 @@
             "path": "^apps/server/src/providers/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|backups|centres|equipment|lead|mcp|planning|users)/"
+            "path": "^apps/server/src/(assessment|backups|centres|equipment|lead|mcp|planning|social|users)/"
           },
           "scope": "module"
         },
@@ -45795,7 +46230,34 @@
             "path": "^apps/server/src/sites/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|backups|centres|certifications|divers|dives|equipment|imports|lead|mcp|planning|providers|users)/"
+            "path": "^apps/server/src/(assessment|backups|centres|certifications|divers|dives|equipment|imports|lead|mcp|planning|providers|social|users)/"
+          },
+          "scope": "module"
+        },
+        {
+          "name": "module-imports-social",
+          "severity": "error",
+          "comment": "social/ may import only these domain modules: divers, live, revisions:type (MODULE_IMPORTS in .dependency-cruiser.cjs, ADR 0053).",
+          "from": {
+            "path": "^apps/server/src/social/"
+          },
+          "to": {
+            "path": "^apps/server/src/(assessment|backups|centres|certifications|dives|equipment|imports|lead|mcp|planning|providers|sites|users)/"
+          },
+          "scope": "module"
+        },
+        {
+          "name": "module-imports-social-types-only",
+          "severity": "error",
+          "comment": "social/ may import only types from revisions (ADR 0053).",
+          "from": {
+            "path": "^apps/server/src/social/"
+          },
+          "to": {
+            "path": "^apps/server/src/(revisions)/",
+            "dependencyTypesNot": [
+              "type-only"
+            ]
           },
           "scope": "module"
         },
@@ -45807,7 +46269,7 @@
             "path": "^apps/server/src/live/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|backups|centres|certifications|divers|dives|equipment|imports|lead|mcp|planning|providers|sites|users)/"
+            "path": "^apps/server/src/(assessment|backups|centres|certifications|divers|dives|equipment|imports|lead|mcp|planning|providers|sites|social|users)/"
           },
           "scope": "module"
         },
@@ -45834,7 +46296,7 @@
             "path": "^apps/server/src/users/"
           },
           "to": {
-            "path": "^apps/server/src/(revisions|assessment|backups|centres|certifications|dives|equipment|imports|lead|mcp|planning|providers|sites|live)/"
+            "path": "^apps/server/src/(revisions|assessment|backups|centres|certifications|dives|equipment|imports|lead|mcp|planning|providers|sites|social|live)/"
           },
           "scope": "module"
         },
