@@ -47,3 +47,11 @@ export const SuggestionPreviewView = Type.Object({
     }), { description: 'The Divers on the Dive besides its own Diver, by name only (ADR 0028)' }),
   }),
 }, { description: 'The shared facts of a suggested Dive: site, time, duration, depths, Participants and centre, and nothing of the Recording or its owner\'s private values' });
+
+export const SuggestionAcceptView = Type.Object({
+  id: Type.String(),
+  status: Type.Literal('accepted'),
+  resolvedAt: DateTime,
+  diveId: Type.String({ description: 'The new Dive in the invited Diver\'s logbook, made from the shared facts only' }),
+  jointDiveId: Type.String({ description: 'The Joint dive both this Dive and the suggested one are members of' }),
+}, { description: 'A Buddy suggestion accepted by copying its shared facts into a new Dive (branch A)' });

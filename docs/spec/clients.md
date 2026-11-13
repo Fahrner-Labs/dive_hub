@@ -941,6 +941,21 @@ dives, all off until the User turns them on. *Web:* `ProviderAutomation.tsx` (se
 - The checks change with every import, edit, merge, move and delete: read them again then. *Web:* `LogbookChecks.tsx`,
   `Decisions.tsx` (their query sits under the dives'). Count both kinds where the client says how much waits.
 
+### Buddy suggestions
+([ADR 0070](../decisions/0070-buddy-suggestions-and-joint-dives.md); `GET /api/buddy-suggestions`,
+`GET /api/buddy-suggestions/{id}`, `POST /api/buddy-suggestions/{id}/accept`)
+- **Show the suggestions of the Divers the User manages now,** each with the invited Diver and enough of the suggested
+  Dive to recognise it (start, offset, duration, max depth, site), and its shared facts in a preview: site, start with
+  offset, duration, max and average depth, the source Dive's owner and Participants, and the centre responsible for the
+  site. Never show the source's Recording, notes, suit, weighting, cylinders, lead or Overrides.
+- **Accept (`POST /api/buddy-suggestions/{id}/accept`, 200)** answers `{ id, status: 'accepted', resolvedAt, diveId,
+  jointDiveId }`: the server created a Recording-less Dive in the invited Diver's logbook with the shared facts only and
+  linked both Dives to one Joint dive. Open or refresh that Dive; its depths are own values, so a later Recording takes
+  them over. 404 `suggestion_not_found` when the User does not manage the invited Diver; 409 `suggestion_not_pending`
+  when someone accepted first or it was declined or cancelled: read the inbox again.
+- **Changing the Participants or deleting the suggested Dive** changes the list; the `buddySuggestion` live hint names
+  the suggestion to refetch, as every hint does. *Web:* `ReviewPage.tsx` (a later slice).
+
 ### Duplicate candidates
 - **Show them where the User decides,** on a page of their own ("Review", reached from one line on the logbook and a count
   in the navigation), with the Recording (time, depth, duration, Device), why it waits (`reason`) and the Dives it might

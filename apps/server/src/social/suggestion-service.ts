@@ -5,13 +5,15 @@
 import { and, desc, eq, inArray, isNull } from 'drizzle-orm';
 import type { Db, Queryable } from '../db/client.js';
 import {
-  PARTICIPANT_ROLES, buddySuggestion, dive, diveCentre, diveCentreSite, diveSite, diver, diverManagement, participant,
+  PARTICIPANT_ROLES, buddySuggestion, dive, diveCentre, diveCentreSite, diveSite, diver, diverManagement, jointDive, participant,
 } from '../db/schema.js';
 import { audienceOfDiver, emitHint } from '../live/emit.js';
 import { managementOf } from '../divers/management.js';
+import { renumber } from '../divers/dive-numbers.js';
+import { writeRevision, type Actor } from '../revisions/revisions.js';
 
 export class SuggestionError extends Error {
-  constructor(readonly code: 'suggestion_not_found') {
+  constructor(readonly code: 'suggestion_not_found' | 'suggestion_not_pending') {
     super(code);
   }
 }
@@ -163,6 +165,80 @@ export function createSuggestionService(db: Db) {
           participants: people,
         },
       };
+    },
+
+    /**
+     * Branch A of accepting (ADR 0070): copy the shared facts into a new Dive for the invited Diver and put it and the
+     * suggested Dive into one Joint dive. No overlap is looked for here; that is branch B. The copy is an ordinary,
+     * Recording-less Dive like a Provider entry: its depths are plain own values (never Overrides), so a later Recording
+     * wins through the existing `followPrimary` path.
+     */
+    async accept(userId: string, id: string) {
+      return db.transaction(async (tx) => {
+        const [row] = await tx.select({ suggestion: buddySuggestion, source: dive })
+          .from(buddySuggestion)
+          .innerJoin(dive, and(eq(dive.id, buddySuggestion.diveId), isNull(dive.deletedAt)))
+          .where(eq(buddySuggestion.id, id))
+          .for('update', { of: [buddySuggestion, dive] });
+        if (!row || !(await managementOf(tx, userId, row.suggestion.diverId))) throw new SuggestionError('suggestion_not_found');
+        if (row.suggestion.status !== 'pending') throw new SuggestionError('suggestion_not_pending');
+        const [invited] = await tx.select({ id: diver.id }).from(diver)
+          .where(and(eq(diver.id, row.suggestion.diverId), isNull(diver.deletedAt)));
+        if (!invited) throw new SuggestionError('suggestion_not_found');
+
+        // Claim the pending row before writing anything: a second manager's accept waits on this lock, then finds it taken.
+        const at = new Date();
+        const [made] = await tx.update(buddySuggestion).set({ status: 'accepted', resolvedAt: at })
+          .where(and(eq(buddySuggestion.id, id), eq(buddySuggestion.status, 'pending')))
+          .returning({ id: buddySuggestion.id });
+        if (!made) throw new SuggestionError('suggestion_not_pending');
+
+        // A Dive belongs to at most one Joint dive: a second acceptance on the same source joins the one already there.
+        const jointDiveId = row.source.jointDiveId
+          ?? (await tx.insert(jointDive).values({}).returning({ id: jointDive.id }))[0]!.id;
+        if (!row.source.jointDiveId) await tx.update(dive).set({ jointDiveId }).where(eq(dive.id, row.source.id));
+
+        const [created] = await tx.insert(dive).values({
+          diverId: row.suggestion.diverId,
+          startsAt: row.source.startsAt,
+          utcOffsetSeconds: row.source.utcOffsetSeconds,
+          utcOffsetSource: row.source.utcOffsetSource,
+          durationSeconds: row.source.durationSeconds,
+          maxDepthM: row.source.maxDepthM,
+          avgDepthM: row.source.avgDepthM,
+          siteId: row.source.siteId,
+          jointDiveId,
+        }).returning({ id: dive.id });
+
+        // Everyone on the source Dive becomes a Participant of the copy, its own Diver included (on the copy they are all
+        // just Divers); the invited Diver is the copy's own and stays out.
+        const sourcePeople = await tx.select({ diverId: participant.diverId, role: participant.role })
+          .from(participant).where(eq(participant.diveId, row.source.id));
+        const people = new Map<string, { diverId: string; role: (typeof PARTICIPANT_ROLES)[number] }>();
+        if (row.source.diverId !== row.suggestion.diverId) {
+          people.set(row.source.diverId, { diverId: row.source.diverId, role: 'buddy' });
+        }
+        for (const person of sourcePeople) if (person.diverId !== row.suggestion.diverId) people.set(person.diverId, person);
+        if (people.size > 0) {
+          await tx.insert(participant).values([...people.values()].map((person) => ({ diveId: created!.id, ...person })));
+        }
+        const names = people.size === 0 ? [] : await tx.select({ id: diver.id, name: diver.name }).from(diver)
+          .where(inArray(diver.id, [...people.keys()]));
+
+        // The acceptance is the hub's, not a User's (docs/spec/data-model.md): the shared facts were copied, not typed.
+        const actor: Actor = { type: 'system', id: 'buddy-suggestion-acceptance' };
+        await writeRevision(tx, 'dive', created!.id, actor, 'buddy-accept', {
+          ...(people.size > 0 && {
+            participants: {
+              from: [],
+              to: [...people.values()].map((person) => ({ ...person, name: names.find((n) => n.id === person.diverId)!.name })),
+            },
+          }),
+        });
+        await renumber(tx, [row.suggestion.diverId]);
+
+        return { id, status: 'accepted' as const, resolvedAt: at.toISOString(), diveId: created!.id, jointDiveId };
+      });
     },
   };
 }

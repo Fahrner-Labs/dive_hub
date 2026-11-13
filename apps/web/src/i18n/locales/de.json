@@ -907,7 +907,8 @@
       "restore": "Wiederhergestellt",
       "fill": "Aus einem Tauchgang bei einem Dienst ergänzt",
       "continuation": "Späteren Tauchgang angehängt",
-      "continuation-undo": "Anhängen rückgängig gemacht"
+      "continuation-undo": "Anhängen rückgängig gemacht",
+      "buddy-accept": "Von einem Buddy-Tauchgang übernommen"
     },
     "field": {
       "number": "Tauchgangsnummer",

@@ -6,7 +6,7 @@ import type { Auth } from '../auth/auth.js';
 import { requireUser, userOf } from '../auth/fastify.js';
 import { answerErrors, Problem, answers } from '../http/problems.js';
 import { IdParams } from '../http/schemas.js';
-import { SuggestionView, SuggestionPreviewView } from './suggestion-view.js';
+import { SuggestionView, SuggestionPreviewView, SuggestionAcceptView } from './suggestion-view.js';
 import { SuggestionError, type SuggestionService } from './suggestion-service.js';
 
 export interface SuggestionRouteDeps {
@@ -16,7 +16,7 @@ export interface SuggestionRouteDeps {
 
 export const suggestionRoutes: FastifyPluginAsyncTypebox<SuggestionRouteDeps> = async (app, { auth, suggestions }) => {
   app.addHook('onRequest', requireUser(auth));
-  app.setErrorHandler(answerErrors(answers(SuggestionError, { suggestion_not_found: 404 })));
+  app.setErrorHandler(answerErrors(answers(SuggestionError, { suggestion_not_found: 404, suggestion_not_pending: 409 })));
 
   app.get('/buddy-suggestions', {
     schema: {
@@ -36,4 +36,17 @@ export const suggestionRoutes: FastifyPluginAsyncTypebox<SuggestionRouteDeps> = 
       response: { 200: SuggestionPreviewView, 404: Problem },
     },
   }, async (request) => suggestions.preview(userOf(request).id, request.params.id));
+
+  app.post('/buddy-suggestions/:id/accept', {
+    schema: {
+      summary: 'Accept a Buddy suggestion by copying its shared facts into a new Dive (branch A)',
+      description: 'Creates a Dive for the invited Diver with the site, start time and UTC offset, duration and max/average depth as plain own '
+        + 'values, and the people on the source Dive (its own Diver and its Participants) as Divers; no Recording, notes, suit, '
+        + 'weighting, cylinders, lead or Override. '
+        + 'Both Dives join one Joint dive (an existing one if the source already has it). The acceptance is a system Revision. '
+        + '404 `suggestion_not_found` unless the User manages the invited Diver; 409 `suggestion_not_pending` once it was accepted, declined or cancelled.',
+      params: IdParams,
+      response: { 200: SuggestionAcceptView, 404: Problem, 409: Problem },
+    },
+  }, async (request) => suggestions.accept(userOf(request).id, request.params.id));
 };

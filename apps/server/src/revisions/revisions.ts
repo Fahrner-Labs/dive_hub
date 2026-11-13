@@ -26,6 +26,8 @@ export const REVISION_CAUSES = [
   'fill',
   // Appending a later Dive to the earlier one, on the kept Dive and the one deleted, and undoing it (ADR 0063).
   'continuation', 'continuation-undo',
+  // Accepting a Buddy suggestion copies the shared facts into the invited Diver's logbook (ADR 0070).
+  'buddy-accept',
 ] as const;
 export type RevisionCause = (typeof REVISION_CAUSES)[number];
 

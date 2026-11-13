@@ -4,7 +4,7 @@
 > `pnpm check` fails when this map is stale. Symbols are ranked by how widely the code references them;
 > each module shows its most-referenced ones (exported symbols rank higher). Search here before walking the tree.
 
-Files: 374 · symbols: 3438 · shown: 257
+Files: 374 · symbols: 3439 · shown: 257
 
 ### server/(root)
 apps/server/src/vocabulary.ts:13 type SiteWaterType
@@ -126,9 +126,9 @@ apps/server/src/equipment/equipment-view.ts:22 const ServiceScheduleViewSchema
 apps/server/src/http/schemas.ts:10 const Nullable
 apps/server/src/http/schemas.ts:5 const DateTime
 apps/server/src/http/schemas.ts:4 const IdParams
-apps/server/src/http/problems.ts:184 const Problem
-apps/server/src/http/problems.ts:187 const problem
-apps/server/src/http/problems.ts:211 const answerErrors
+apps/server/src/http/problems.ts:185 const Problem
+apps/server/src/http/problems.ts:188 const problem
+apps/server/src/http/problems.ts:212 const answerErrors
 … 24 more symbols in this module
 
 ### server/imports
@@ -214,12 +214,12 @@ apps/server/src/providers/dive-import/three-way.ts:61 fn sameAtProvider
 … 477 more symbols in this module
 
 ### server/revisions
-apps/server/src/revisions/revisions.ts:62 fn writeRevision
+apps/server/src/revisions/revisions.ts:64 fn writeRevision
 apps/server/src/revisions/revisions.ts:5 type Actor
-apps/server/src/revisions/revisions.ts:32 type Changes
-apps/server/src/revisions/revisions.ts:57 fn changeListener
+apps/server/src/revisions/revisions.ts:34 type Changes
+apps/server/src/revisions/revisions.ts:59 fn changeListener
 apps/server/src/revisions/revisions.ts:8 const userActor
-apps/server/src/revisions/revisions.ts:30 type RevisionCause
+apps/server/src/revisions/revisions.ts:32 type RevisionCause
 … 4 more symbols in this module
 
 ### server/scripts
@@ -253,13 +253,13 @@ apps/server/src/sites/site-ids.ts:105 fn storeId
 … 163 more symbols in this module
 
 ### server/social
-apps/server/src/social/suggestion-service.ts:13 class SuggestionError
-apps/server/src/social/suggestion-service.ts:97 fn createSuggestionService
+apps/server/src/social/suggestion-service.ts:15 class SuggestionError
+apps/server/src/social/suggestion-service.ts:99 fn createSuggestionService
 apps/server/src/social/suggestion-view.ts:8 const SiteRef
 apps/server/src/social/suggestion-changes.ts:9 fn withSuggestionChanges
-apps/server/src/social/suggestion-service.ts:33 fn syncSuggestions
+apps/server/src/social/suggestion-service.ts:35 fn syncSuggestions
 apps/server/src/social/suggestion-view.ts:9 const Status
-… 8 more symbols in this module
+… 9 more symbols in this module
 
 ### server/storage
 apps/server/src/storage/blob-store.ts:26 iface BlobStore
