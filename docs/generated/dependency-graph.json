@@ -4563,6 +4563,7 @@
         "apps/server/src/providers/push/site-for-send.ts",
         "apps/server/src/sites/import/site-import-service.ts",
         "apps/server/src/social/suggestion-changes.ts",
+        "apps/server/src/social/suggestion-service.ts",
         "apps/server/src/dives/routes.ts",
         "apps/server/src/sites/routes.ts"
       ],
@@ -5663,6 +5664,7 @@
         "apps/server/src/dives/merging-service.ts",
         "apps/server/src/providers/dive-import/dive-changes.ts",
         "apps/server/src/providers/dive-import/dive-import.ts",
+        "apps/server/src/social/suggestion-service.ts",
         "apps/server/src/users/user-admin-service.ts"
       ],
       "orphan": false,
@@ -17767,6 +17769,23 @@
         },
         {
           "dynamic": false,
+          "module": "../divers/dive-numbers.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/divers/dive-numbers.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "../divers/management.js",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -17792,6 +17811,23 @@
             "import"
           ],
           "resolved": "apps/server/src/live/emit.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../revisions/revisions.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/revisions/revisions.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -46012,7 +46048,7 @@
     "baselineStale": 0,
     "advisedExitCode": 0,
     "totalCruised": 436,
-    "totalDependenciesCruised": 2294,
+    "totalDependenciesCruised": 2296,
     "optionsUsed": {
       "baseDir": "/home/runner/work/dive_hub/dive_hub",
       "combinedDependencies": false,
@@ -46237,27 +46273,12 @@
         {
           "name": "module-imports-social",
           "severity": "error",
-          "comment": "social/ may import only these domain modules: divers, live, revisions:type (MODULE_IMPORTS in .dependency-cruiser.cjs, ADR 0053).",
+          "comment": "social/ may import only these domain modules: divers, live, revisions (MODULE_IMPORTS in .dependency-cruiser.cjs, ADR 0053).",
           "from": {
             "path": "^apps/server/src/social/"
           },
           "to": {
             "path": "^apps/server/src/(assessment|backups|centres|certifications|dives|equipment|imports|lead|mcp|planning|providers|sites|users)/"
-          },
-          "scope": "module"
-        },
-        {
-          "name": "module-imports-social-types-only",
-          "severity": "error",
-          "comment": "social/ may import only types from revisions (ADR 0053).",
-          "from": {
-            "path": "^apps/server/src/social/"
-          },
-          "to": {
-            "path": "^apps/server/src/(revisions)/",
-            "dependencyTypesNot": [
-              "type-only"
-            ]
           },
           "scope": "module"
         },
@@ -46417,7 +46438,7 @@
       "version": "18.7.0",
       "nodeVersionSupported": "^22||^24||>=26",
       "nodeVersionFound": "v24.22.2",
-      "osVersionFound": "x64 linux@7.0.0-1019-azure",
+      "osVersionFound": "x64 linux@7.0.0-1016-aws",
       "transpilersFound": [
         {
           "name": "javascript",
