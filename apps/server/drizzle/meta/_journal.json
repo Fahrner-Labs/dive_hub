@@ -414,6 +414,13 @@
       "when": 1794533290868,
       "tag": "0058_orange_butterfly",
       "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "7",
+      "when": 1794623571794,
+      "tag": "0059_outgoing_mercury",
+      "breakpoints": true
     }
   ]
 }

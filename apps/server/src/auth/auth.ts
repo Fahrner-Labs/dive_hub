@@ -5,6 +5,7 @@ import { createAuthMiddleware } from 'better-auth/api';
 import { admin } from 'better-auth/plugins/admin';
 import { adminAc, defaultAc, userAc } from 'better-auth/plugins/admin/access';
 import { openAPI } from 'better-auth/plugins';
+import { twoFactor } from 'better-auth/plugins/two-factor';
 import { apiKey } from '@better-auth/api-key';
 import type { Db } from '../db/client.js';
 import { diver, diverManagement } from '../db/schema.js';
@@ -14,8 +15,14 @@ import { hashPassword, MAX_PASSWORD_LENGTH, MIN_PASSWORD_LENGTH, verifyPassword 
  * The only Better Auth endpoints reachable over HTTP (ADR 0013). Everything else, including the admin
  * plugin's endpoints, sign-up and session listing (which returns session tokens), answers 404; admin
  * actions go through our own routes, which keep at least one admin and clean up stored files.
+ *
+ * Enabling and signing in with 2FA use Better Auth's endpoints; disabling is our own route
+ * (POST /api/me/two-factor/disable), because it also asks for a current second factor.
  */
-export const PUBLIC_AUTH_PATHS = ['/sign-in/email', '/sign-out', '/get-session', '/change-password'] as const;
+export const PUBLIC_AUTH_PATHS = [
+  '/sign-in/email', '/sign-out', '/get-session', '/change-password',
+  '/two-factor/enable', '/two-factor/verify-totp', '/two-factor/verify-backup-code',
+] as const;
 
 /** Fastify resolves the client IP (honouring DIVEHUB_TRUSTED_PROXIES) and hands it over in this header. */
 export const CLIENT_IP_HEADER = 'x-divehub-client-ip';
@@ -96,6 +103,10 @@ export function createAuth({ db, baseUrl, secret, trustedOrigins = [], rateLimit
     },
     plugins: [
       admin({ roles: { admin: adminRole, user: userAc }, defaultRole: 'user' }),
+      // TOTP and single-use backup codes (ADR 0012's later slice). The plugin blocks the password
+      // sign-in with a challenge until a second factor is verified; it also locks an account after
+      // repeated wrong codes.
+      twoFactor({ issuer: 'Dive Hub' }),
       // Only for describing PUBLIC_AUTH_PATHS in our OpenAPI document; its own pages stay off.
       openAPI({ disableDefaultReference: true }),
       apiKey({

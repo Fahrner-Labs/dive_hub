@@ -4,7 +4,7 @@
 > `pnpm check` fails when this map is stale. Symbols are ranked by how widely the code references them;
 > each module shows its most-referenced ones (exported symbols rank higher). Search here before walking the tree.
 
-Files: 375 · symbols: 3459 · shown: 257
+Files: 375 · symbols: 3461 · shown: 257
 
 ### server/(root)
 apps/server/src/vocabulary.ts:13 type SiteWaterType
@@ -26,10 +26,10 @@ apps/server/src/assessment/assessment-service.ts:18 class AssessmentError
 
 ### server/auth
 apps/server/src/auth/fastify.ts:76 fn userOf
-apps/server/src/auth/auth.ts:134 type Auth
+apps/server/src/auth/auth.ts:145 type Auth
 apps/server/src/auth/fastify.ts:63 fn requireUser
 apps/server/src/auth/fastify.ts:94 fn requireAdmin
-apps/server/src/auth/auth.ts:52 fn createAuth
+apps/server/src/auth/auth.ts:59 fn createAuth
 apps/server/src/auth/password.ts:11 const MIN_PASSWORD_LENGTH
 … 23 more symbols in this module
 
@@ -76,8 +76,8 @@ apps/server/src/db/schema.ts:75 const diverManagement
 apps/server/src/db/auth-schema.ts:20 const user
 apps/server/src/db/import-types.ts:12 iface ImportedValues
 apps/server/src/db/import-types.ts:6 type ImportArea
-apps/server/src/db/auth-schema.ts:39 const session
-… 149 more symbols in this module
+apps/server/src/db/auth-schema.ts:40 const session
+… 150 more symbols in this module
 
 ### server/divers
 apps/server/src/divers/management.ts:8 fn managedDiverIds
@@ -126,9 +126,9 @@ apps/server/src/equipment/equipment-view.ts:22 const ServiceScheduleViewSchema
 apps/server/src/http/schemas.ts:10 const Nullable
 apps/server/src/http/schemas.ts:5 const DateTime
 apps/server/src/http/schemas.ts:4 const IdParams
-apps/server/src/http/problems.ts:188 const Problem
-apps/server/src/http/problems.ts:191 const problem
-apps/server/src/http/problems.ts:215 const answerErrors
+apps/server/src/http/problems.ts:191 const Problem
+apps/server/src/http/problems.ts:194 const problem
+apps/server/src/http/problems.ts:218 const answerErrors
 … 24 more symbols in this module
 
 ### server/imports
@@ -270,11 +270,11 @@ apps/server/src/storage/blob-store.ts:39 fn createLocalBlobStore
 ### server/users
 apps/server/src/users/views.ts:23 const UserView
 apps/server/src/users/invitation-service.ts:8 type Role
+apps/server/src/users/views.ts:51 const toUserView
 apps/server/src/users/tokens.ts:5 const sha256
-apps/server/src/users/views.ts:43 const toUserView
 apps/server/src/users/user-admin-service.ts:10 class UserAdminError
 apps/server/src/users/tokens.ts:4 const newToken
-… 58 more symbols in this module
+… 59 more symbols in this module
 
 ### web/(root)
 apps/web/src/api.ts:232 fn unwrap

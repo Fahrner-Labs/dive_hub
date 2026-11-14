@@ -2,13 +2,14 @@
 // Changing one's own password is Better Auth's POST /api/auth/change-password.
 import type { FastifyPluginAsyncTypebox, TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import { Type } from 'typebox';
+import { APIError } from 'better-auth/api';
 import type { Auth } from '../auth/auth.js';
 import { authHeaders, forwardCookies, requireUser, sessionIdOf, userOf } from '../auth/fastify.js';
 import { limitAttempts, type AttemptLimit } from '../http/attempt-limit.js';
 import { problem } from '../http/problems.js';
 import type { PasswordResetService } from './password-reset-service.js';
 import type { SessionService } from './session-service.js';
-import { Password, Problem, Token, UserView, toUserView } from './views.js';
+import { Password, Problem, Token, TwoFactorChallengeView, UserView, toUserView } from './views.js';
 import { DateTime, IdParams, Nullable } from '../http/schemas.js';
 
 export interface AccountRouteDeps {
@@ -48,9 +49,9 @@ export const accountRoutes: FastifyPluginAsyncTypebox<AccountRouteDeps> = async 
   app.post('/password-resets/complete', {
     onRequest: limited,
     schema: {
-      summary: 'Set a new password with a reset link; signs out everywhere, then signs in here',
+      summary: 'Set a new password with a reset link; signs out everywhere, then signs in here (or asks for the second factor)',
       body: Type.Object({ token: Token, password: Password }),
-      response: { 200: UserView, 404: Problem, 429: Problem },
+      response: { 200: Type.Union([UserView, TwoFactorChallengeView]), 404: Problem, 429: Problem },
     },
   }, async (request, reply) => {
     const email = await passwordResets.complete(request.body.token, request.body.password);
@@ -59,7 +60,11 @@ export const accountRoutes: FastifyPluginAsyncTypebox<AccountRouteDeps> = async 
       body: { email, password: request.body.password }, headers: authHeaders(request), returnHeaders: true,
     });
     forwardCookies(headers, reply);
-    return toUserView(response.user);
+    // A User with 2FA gets Better Auth's challenge instead of a session; the reset page passes it on like sign-in.
+    const result = response as { twoFactorRedirect?: true; twoFactorMethods?: string[]; user?: Parameters<typeof toUserView>[0] };
+    if (result.twoFactorRedirect) return reply.code(200).send({ twoFactorRedirect: true, twoFactorMethods: result.twoFactorMethods ?? [] });
+    if (!result.user) throw new Error('password reset sign-in returned neither a User nor a two-factor challenge');
+    return toUserView(result.user);
   });
 
   // --- Signed in: own sessions ---------------------------------------------------------------------
@@ -84,6 +89,44 @@ export const accountRoutes: FastifyPluginAsyncTypebox<AccountRouteDeps> = async 
     }, async (request, reply) => {
       await sessions.endOthers(userOf(request).id, sessionIdOf(request));
       return reply.code(204).send(null);
+    });
+
+    // --- Signed in: own two-factor authentication -------------------------------------------------
+
+    signedIn.post('/me/two-factor/disable', {
+      schema: {
+        summary: 'Turn off two-factor authentication; needs the password and a current code (authenticator or backup)',
+        body: Type.Object({
+          password: Password,
+          code: Type.String({
+            minLength: 6, maxLength: 11, pattern: '^(?:[0-9]{6}|[A-Za-z0-9]{5}-[A-Za-z0-9]{5})$',
+            description: 'A 6-digit authenticator code, or one backup code in its XXXXX-XXXXX form',
+          }),
+        }),
+        response: { 200: Type.Object({ status: Type.Boolean() }), 400: Problem, 401: Problem, 409: Problem },
+      },
+    }, async (request, reply) => {
+      const headers = authHeaders(request);
+      const { password, code } = request.body;
+      try {
+        await auth.api.verifyPassword({ body: { password }, headers });
+      } catch (error) {
+        if (error instanceof APIError && error.statusCode === 400) return reply.code(400).send(problem('two_factor_password_invalid'));
+        throw error;
+      }
+      try {
+        if (code.includes('-')) await auth.api.verifyBackupCode({ body: { code }, headers });
+        else await auth.api.verifyTOTP({ body: { code }, headers });
+      } catch (error) {
+        if (error instanceof APIError && error.statusCode === 401) return reply.code(401).send(problem('two_factor_code_invalid'));
+        if (error instanceof APIError && error.statusCode === 400) return reply.code(409).send(problem('two_factor_not_enabled'));
+        throw error;
+      }
+      const { headers: responseHeaders, response } = await auth.api.disableTwoFactor({
+        body: { password }, headers, returnHeaders: true,
+      });
+      forwardCookies(responseHeaders, reply);
+      return reply.code(200).send({ status: response.status });
     });
   });
 };

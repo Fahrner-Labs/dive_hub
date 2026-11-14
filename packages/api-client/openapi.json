@@ -365,6 +365,9 @@
               "invitation_not_found",
               "email_taken",
               "reset_link_invalid",
+              "two_factor_password_invalid",
+              "two_factor_code_invalid",
+              "two_factor_not_enabled",
               "too_many_attempts",
               "too_many_live_streams",
               "live_unavailable",
@@ -3272,6 +3275,9 @@
                   "invitation_not_found",
                   "email_taken",
                   "reset_link_invalid",
+                  "two_factor_password_invalid",
+                  "two_factor_code_invalid",
+                  "two_factor_not_enabled",
                   "too_many_attempts",
                   "too_many_live_streams",
                   "live_unavailable",
@@ -3491,6 +3497,9 @@
                   "invitation_not_found",
                   "email_taken",
                   "reset_link_invalid",
+                  "two_factor_password_invalid",
+                  "two_factor_code_invalid",
+                  "two_factor_not_enabled",
                   "too_many_attempts",
                   "too_many_live_streams",
                   "live_unavailable",
@@ -4317,6 +4326,9 @@
                         "invitation_not_found",
                         "email_taken",
                         "reset_link_invalid",
+                        "two_factor_password_invalid",
+                        "two_factor_code_invalid",
+                        "two_factor_not_enabled",
                         "too_many_attempts",
                         "too_many_live_streams",
                         "live_unavailable",
@@ -5647,6 +5659,11 @@
             "type": "string",
             "format": "date-time",
             "readOnly": true
+          },
+          "twoFactorEnabled": {
+            "type": "boolean",
+            "default": false,
+            "readOnly": true
           }
         },
         "required": [
@@ -6354,7 +6371,7 @@
     },
     "/api/password-resets/complete": {
       "post": {
-        "summary": "Set a new password with a reset link; signs out everywhere, then signs in here",
+        "summary": "Set a new password with a reset link; signs out everywhere, then signs in here (or asks for the second factor)",
         "requestBody": {
           "required": true,
           "content": {
@@ -6388,7 +6405,33 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UserView"
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/UserView"
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "twoFactorRedirect",
+                        "twoFactorMethods"
+                      ],
+                      "properties": {
+                        "twoFactorRedirect": {
+                          "type": "boolean",
+                          "enum": [
+                            true
+                          ]
+                        },
+                        "twoFactorMethods": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          },
+                          "description": "Second factors this account can use; \"totp\" is the built-in authenticator app"
+                        }
+                      }
+                    }
+                  ]
                 }
               }
             }
@@ -6521,6 +6564,90 @@
             "description": "Default Response"
           },
           "404": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/me/two-factor/disable": {
+      "post": {
+        "summary": "Turn off two-factor authentication; needs the password and a current code (authenticator or backup)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "password",
+                  "code"
+                ],
+                "properties": {
+                  "password": {
+                    "type": "string",
+                    "minLength": 15,
+                    "maxLength": 128,
+                    "description": "At least 15 characters"
+                  },
+                  "code": {
+                    "type": "string",
+                    "minLength": 6,
+                    "maxLength": 11,
+                    "pattern": "^(?:[0-9]{6}|[A-Za-z0-9]{5}-[A-Za-z0-9]{5})$",
+                    "description": "A 6-digit authenticator code, or one backup code in its XXXXX-XXXXX form"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status"
+                  ],
+                  "properties": {
+                    "status": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
             "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
             "content": {
               "application/json": {
@@ -21878,8 +22005,8 @@
     },
     "/api/buddy-suggestions/{id}": {
       "get": {
-        "summary": "The shared facts of a suggested Dive, for the Review inbox",
-        "description": "Site, start time with its UTC offset, duration, max and average depth as starting values, the Dive's own Diver, its Participants by name and any centre responsible for the site. Never a Recording, notes, suit, weighting, cylinders, lead or an overridden value. 404 `suggestion_not_found` unless the User manages the invited Diver.",
+        "summary": "The shared facts of a pending Buddy suggestion, for the Review inbox",
+        "description": "Site, start time with its UTC offset, duration, max and average depth as starting values, the Dive's own Diver, its Participants by name and any centre responsible for the site. Never a Recording, notes, suit, weighting, cylinders, lead or an overridden value. Only a pending invitation is readable: once accepted, declined or cancelled it answers 404 `suggestion_not_found` like another User's suggestion. 404 `suggestion_not_found` unless the User manages the invited Diver.",
         "parameters": [
           {
             "schema": {
@@ -30053,6 +30180,554 @@
                   },
                   "required": [
                     "user"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "message"
+                  ]
+                }
+              }
+            },
+            "description": "Bad Request. Usually due to missing parameters, or invalid parameters."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "message"
+                  ]
+                }
+              }
+            },
+            "description": "Unauthorized. Due to missing or invalid authentication."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Forbidden. You do not have permission to access this resource or to perform this action."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Not Found. The requested resource was not found."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Too Many Requests. You have exceeded the rate limit. Try again later."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Internal Server Error. This is a problem with the server that you cannot fix."
+          }
+        }
+      }
+    },
+    "/api/auth/two-factor/enable": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "description": "Enable two factor authentication. Pass method 'totp' (default) to set up an authenticator app (returns TOTP URI and backup codes), or 'otp' to enable email/SMS-based codes immediately.",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "password": {
+                    "type": "string",
+                    "description": "User password"
+                  },
+                  "method": {
+                    "type": "string",
+                    "enum": [
+                      "otp",
+                      "totp"
+                    ]
+                  },
+                  "issuer": {
+                    "type": "string",
+                    "description": "Custom issuer for the TOTP URI"
+                  }
+                },
+                "required": [
+                  "password"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "method": {
+                      "type": "string",
+                      "enum": [
+                        "otp",
+                        "totp"
+                      ],
+                      "description": "The 2FA method that was enabled."
+                    },
+                    "totpURI": {
+                      "type": "string",
+                      "description": "TOTP URI for authenticator app setup. Only present when method is 'totp'."
+                    },
+                    "backupCodes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "description": "Recovery backup codes. Only present when method is 'totp'."
+                    }
+                  },
+                  "required": [
+                    "method"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "message"
+                  ]
+                }
+              }
+            },
+            "description": "Bad Request. Usually due to missing parameters, or invalid parameters."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "message"
+                  ]
+                }
+              }
+            },
+            "description": "Unauthorized. Due to missing or invalid authentication."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Forbidden. You do not have permission to access this resource or to perform this action."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Not Found. The requested resource was not found."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Too Many Requests. You have exceeded the rate limit. Try again later."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Internal Server Error. This is a problem with the server that you cannot fix."
+          }
+        }
+      }
+    },
+    "/api/auth/two-factor/verify-totp": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "description": "Verify two factor TOTP",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "description": "The otp code to verify. Eg: \"012345\""
+                  },
+                  "trustDevice": {
+                    "type": "boolean",
+                    "description": "If true, the device will be trusted for 30 days. It'll be refreshed on every sign in request within this time. Eg: true"
+                  }
+                },
+                "required": [
+                  "code"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "message"
+                  ]
+                }
+              }
+            },
+            "description": "Bad Request. Usually due to missing parameters, or invalid parameters."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "message"
+                  ]
+                }
+              }
+            },
+            "description": "Unauthorized. Due to missing or invalid authentication."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Forbidden. You do not have permission to access this resource or to perform this action."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Not Found. The requested resource was not found."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Too Many Requests. You have exceeded the rate limit. Try again later."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Internal Server Error. This is a problem with the server that you cannot fix."
+          }
+        }
+      }
+    },
+    "/api/auth/two-factor/verify-backup-code": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "description": "Verify a backup code for two-factor authentication",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "description": "A backup code to verify. Eg: \"123456\""
+                  },
+                  "disableSession": {
+                    "type": "boolean",
+                    "description": "If true, the session cookie will not be set."
+                  },
+                  "trustDevice": {
+                    "type": "boolean",
+                    "description": "If true, the device will be trusted for 30 days. It'll be refreshed on every sign in request within this time. Eg: true"
+                  }
+                },
+                "required": [
+                  "code"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Backup code verified successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "user": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "description": "Unique identifier of the user"
+                        },
+                        "email": {
+                          "type": "string",
+                          "format": "email",
+                          "nullable": true,
+                          "description": "User's email address"
+                        },
+                        "emailVerified": {
+                          "type": "boolean",
+                          "nullable": true,
+                          "description": "Whether the email is verified"
+                        },
+                        "name": {
+                          "type": "string",
+                          "nullable": true,
+                          "description": "User's name"
+                        },
+                        "image": {
+                          "type": "string",
+                          "format": "uri",
+                          "nullable": true,
+                          "description": "User's profile image URL"
+                        },
+                        "twoFactorEnabled": {
+                          "type": "boolean",
+                          "description": "Whether two-factor authentication is enabled for the user"
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "description": "Timestamp when the user was created"
+                        },
+                        "updatedAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "description": "Timestamp when the user was last updated"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "twoFactorEnabled",
+                        "createdAt",
+                        "updatedAt"
+                      ],
+                      "description": "The authenticated user object with two-factor details"
+                    },
+                    "session": {
+                      "type": "object",
+                      "properties": {
+                        "token": {
+                          "type": "string",
+                          "description": "Session token"
+                        },
+                        "userId": {
+                          "type": "string",
+                          "description": "ID of the user associated with the session"
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "description": "Timestamp when the session was created"
+                        },
+                        "expiresAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "description": "Timestamp when the session expires"
+                        }
+                      },
+                      "required": [
+                        "token",
+                        "userId",
+                        "createdAt",
+                        "expiresAt"
+                      ],
+                      "description": "The current session object, included unless disableSession is true"
+                    }
+                  },
+                  "required": [
+                    "user",
+                    "session"
                   ]
                 }
               }
