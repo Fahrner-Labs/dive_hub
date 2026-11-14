@@ -1,14 +1,14 @@
 // First-start restore (plan FAH-175 slice 3): a fresh instance is provisioned from a backup through the setup route,
 // the setup token protects it, uploads stream in without the app's upload cap, and the worker is held until setup.
 import { execFile } from 'node:child_process';
-import { createHash } from 'node:crypto';
+import { createHash, randomBytes } from 'node:crypto';
 import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
-import { encryptFile, generateRecipientKeyPair, openArchive, packContainer } from '../src/backups/backup-archive.js';
+import { buildManifest, encryptFile, generateRecipientKeyPair, openArchive, packContainer } from '../src/backups/backup-archive.js';
 import { createBackupService } from '../src/backups/backup-service.js';
 import { createLocalBlobStore } from '../src/storage/blob-store.js';
 import {
@@ -65,6 +65,34 @@ async function archiveWithBrokenDatabase(archive: Buffer): Promise<Buffer> {
     const output = join(dir, 'broken.divehub-backup');
     await encryptFile(container, output, PASSPHRASE);
     return await readFile(output);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+}
+
+/** A grammar-valid archive whose manifest records which DIVEHUB_ENCRYPTION_KEY made it; the key refusals stop before its parts are read. */
+async function archiveMadeWith(encryptionKey: Buffer | undefined): Promise<Buffer> {
+  const dir = await mkdtemp(join(tmpdir(), 'divehub-manifest-backup-'));
+  try {
+    const database = join(dir, 'database.dump');
+    const files = join(dir, 'files.tar.gz');
+    await writeFile(database, 'a dump the refusal happens before pg_restore reads');
+    await writeFile(files, 'a file archive the refusal happens before tar reads');
+    const part = async (path: string) => {
+      const bytes = await readFile(path);
+      return { sha256: createHash('sha256').update(bytes).digest('hex'), bytes: bytes.byteLength };
+    };
+    const salt = randomBytes(16);
+    const manifest = buildManifest({
+      appVersion: 'test', migrationHead: null, createdAt: new Date('2026-11-12T10:00:00Z'),
+      tableCounts: {}, files: { sha256: 'a'.repeat(64), count: 0 },
+      parts: { database: await part(database), files: await part(files) },
+      encryptionKey, salt,
+    });
+    const container = await packContainer(dir, manifest);
+    const archive = join(dir, 'manifest.divehub-backup');
+    await encryptFile(container, archive, PASSPHRASE, { salt });
+    return await readFile(archive);
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
@@ -312,6 +340,27 @@ describe.skipIf(!(await databaseReachable()))('first-start restore', () => {
 
       // Every refusal put the one token back, so the operator can correct the form and try again.
       expect((await ctx.app.inject({ method: 'GET', url: '/api/setup' })).json()).toEqual({ needed: true });
+    } finally {
+      await ctx.app.close();
+      await target.drop();
+    }
+  });
+
+  it.each([
+    ['required', TEST_ENCRYPTION_KEY, null, 'setup_restore_key_required'],
+    ['unexpected', undefined, TEST_ENCRYPTION_KEY, 'setup_restore_key_unexpected'],
+    ['differs', Buffer.alloc(32, 9), TEST_ENCRYPTION_KEY, 'setup_restore_key_differs'],
+  ] as const)('names the DIVEHUB_ENCRYPTION_KEY mismatch when the backup key is %s', async (_case, archiveKey, targetKey, code) => {
+    const target = await createTestDatabase();
+    const ctx = await createTestApp(target, { encryptionKey: targetKey });
+    try {
+      const token = await ctx.setup.issue();
+      const response = await ctx.app.inject({
+        method: 'POST', url: '/api/setup/restore',
+        ...multipart({ token: token!, passphrase: PASSPHRASE }, { field: 'file', name: 'backup.divehub-backup', data: await archiveMadeWith(archiveKey) }),
+      });
+      expect(response.statusCode).toBe(400);
+      expect(response.json()).toMatchObject({ code });
     } finally {
       await ctx.app.close();
       await target.drop();
