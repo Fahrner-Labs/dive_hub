@@ -10,7 +10,7 @@ import pg from 'pg';
 import {
   BACKUP_SKIPPED_DIRS, BackupArchiveError, encryptionKeyFingerprint, openArchiveStreamingWith, type BackupDecryptionKey, type BackupManifest,
 } from './backup-archive.js';
-import { pgCommand, pgFailureMessage } from './pg-command.js';
+import { assertPgTool, pgCommand, pgFailureMessage, pgToolFailure } from './pg-command.js';
 
 const execFileAsync = promisify(execFile);
 
@@ -142,6 +142,13 @@ export function createRestoreService({ dataDir, databaseUrl, migrationsFolder, e
   async function restore(input: RestoreInput): Promise<RestoreResult> {
     const workDir = join(dataDir, 'tmp', `restore-${randomUUID()}`);
     try {
+      // Probe before anything is opened or replaced: a host without the client tool refuses with install guidance,
+      // and a failure leaves the instance's database and files untouched.
+      try {
+        await assertPgTool('pg_restore');
+      } catch (error) {
+        throw new RestoreError('backup_restore_failed', pgToolFailure('pg_restore', error, databaseUrl), { cause: error });
+      }
       let opened;
       try {
         opened = await openArchiveStreamingWith(input.archivePath, decryptionKeyOf(input), workDir);
@@ -181,7 +188,7 @@ export function createRestoreService({ dataDir, databaseUrl, migrationsFolder, e
           '--no-owner', '--no-privileges', '--single-transaction', '-d', restore.url, databasePath,
         ], { maxBuffer: 1 << 20, env: restore.env });
       } catch (error) {
-        throw new RestoreError('backup_restore_failed', `the database could not be restored: ${pgFailureMessage(error, databaseUrl)}`, { cause: error });
+        throw new RestoreError('backup_restore_failed', `the database could not be restored: ${pgToolFailure('pg_restore', error, databaseUrl)}`, { cause: error });
       }
 
       log.info(`restore finished: ${manifest.files.count} file(s), schema ${manifest.migrationHead ?? 'none'}`);

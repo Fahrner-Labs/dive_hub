@@ -1,12 +1,13 @@
 // Backup runs against real PostgreSQL (ADR 0069): the row and its job commit together, a run writes a readable
 // encrypted archive whose dump restores, and a failure marks the row failed and cleans its temp files.
 import { execFile } from 'node:child_process';
-import { readdir, rm } from 'node:fs/promises';
+import { mkdtemp, readdir, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import pg from 'pg';
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { generateRecipientKeyPair, openArchive, openArchiveWith } from '../src/backups/backup-archive.js';
 import { BackupError, createBackupService, type BackupService } from '../src/backups/backup-service.js';
 import { createLocalBlobStore } from '../src/storage/blob-store.js';
@@ -232,6 +233,26 @@ describe.skipIf(!(await databaseReachable()))('backup runs', () => {
     expect(logged.join('\n')).not.toContain(password);
     const temp = await readdir(join(t.dataDir, 'tmp')).catch(() => []);
     expect(temp).not.toContain(`backup-${run.id}`);
+  });
+
+  it('marks a run failed with install guidance when pg_dump is missing from PATH', async () => {
+    const run = await service.create({ kind: 'manual', createdBy: owner.id, passphrase: 'a missing-tool passphrase' });
+    const empty = await mkdtemp(join(tmpdir(), 'no-pg-tools-'));
+    try {
+      vi.stubEnv('PATH', empty);
+      await service.run(run.id);
+    } finally {
+      vi.unstubAllEnvs();
+      await rm(empty, { recursive: true, force: true });
+    }
+    const row = await service.find(run.id);
+    expect(row).toMatchObject({ status: 'failed' });
+    expect(row!.error).toContain('pg_dump');
+    expect(row!.error).toContain('PostgreSQL 18');
+    expect(row!.error).toContain('PATH');
+    expect(row!.error).not.toContain('ENOENT');
+    await t.pool.query('delete from graphile_worker._private_jobs where key = $1', [`backup-run:${run.id}`]);
+    await t.pool.query('delete from backup_runs where id = $1', [run.id]);
   });
 
   it('cancels a queued run with its job, refuses to delete a running one, and deletes a finished one with its archive', async () => {

@@ -15,7 +15,7 @@ import {
   BACKUP_EXTENSION, BACKUP_SKIPPED_DIRS, BackupArchiveError, buildManifest, encryptionKeyFingerprint, fileTreeChecksum, isRecipient,
   packContainer, passphraseEncryption, recipientEncryption, tarDirectory, type BackupEncryption, type BackupPart,
 } from './backup-archive.js';
-import { pgCommand, pgFailureMessage } from './pg-command.js';
+import { assertPgTool, pgCommand, pgFailureMessage, pgToolFailure } from './pg-command.js';
 import { createRestoreService, RestoreError, type RestoreLog } from './restore-service.js';
 
 const execFileAsync = promisify(execFile);
@@ -392,6 +392,9 @@ export function createBackupService({ db, blobs, dataDir, databaseUrl, migration
         const row = await db.select().from(backupRun).where(eq(backupRun.id, id)).then((rows) => rows[0]);
         // A deleted row, or one already reconciled after a restart, has nothing to do.
         if (!row || row.status !== 'queued') return;
+        // Probe before the status transition: a host without the client tool fails with the install guidance, and
+        // the row is released instead of staying queued behind a run that can never start.
+        await assertPgTool('pg_dump');
         let encryption: BackupEncryption;
         if (row.kind === 'scheduled') {
           const settings = await readSettings();
@@ -443,7 +446,7 @@ export function createBackupService({ db, blobs, dataDir, databaseUrl, migration
       } catch (error) {
         // A failure at or before the status transition must not leave the row queued: the in-flight index would keep
         // every later run out. The stored and logged detail is the child's stderr with any database password redacted.
-        const message = pgFailureMessage(error, databaseUrl);
+        const message = pgToolFailure('pg_dump', error, databaseUrl);
         log.error({ backupRunId: id, error: message }, 'backup failed');
         await fail(id, message).catch((failError) => log.error(
           { backupRunId: id, error: pgFailureMessage(failError, databaseUrl) }, 'could not mark a failed backup',

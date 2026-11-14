@@ -9,7 +9,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import pg from 'pg';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { APP_LOCK_STALE_MS, acquireAppLock, appLockPath, probeAppLock } from '../src/backups/app-lock.js';
 import { buildManifest, encryptFile, packContainer, type BackupManifest } from '../src/backups/backup-archive.js';
 import { createBackupService, type BackupService } from '../src/backups/backup-service.js';
@@ -237,6 +237,37 @@ describe.skipIf(!(await databaseReachable()))('restoring a backup', () => {
       expect(await stat(join(targetDir, 'stale-file.txt')).catch(() => null)).toBeNull();
     } finally {
       await rm(targetDir, { recursive: true, force: true });
+    }
+  });
+
+  it('refuses with install guidance when pg_restore is missing, before replacing the files', async () => {
+    if (!(await restoreToolsAvailable())) return;
+    const passphrase = 'missing-restore-tool-passphrase';
+    const run = await backups.create({ kind: 'manual', createdBy: owner.id, passphrase });
+    await backups.run(run.id);
+    expect(await backups.find(run.id)).toMatchObject({ status: 'ready' });
+
+    const targetDir = await mkdtemp(join(tmpdir(), 'divehub-restore-target-'));
+    await writeFile(join(targetDir, 'stale-file.txt'), 'not in the backup');
+    const empty = await mkdtemp(join(tmpdir(), 'no-pg-tools-'));
+    try {
+      vi.stubEnv('PATH', empty);
+      const restore = createRestoreService({
+        dataDir: targetDir, databaseUrl: 'postgres://divehub:nowhere@127.0.0.1:1/never',
+        migrationsFolder, encryptionKey: TEST_ENCRYPTION_KEY, log: silent,
+      });
+      const failure = await restore.restore({ archivePath: backups.archivePath(run.id), passphrase }).catch((error: unknown) => error);
+      expect(failure).toMatchObject({ name: 'RestoreError', code: 'backup_restore_failed' });
+      expect((failure as Error).message).toContain('pg_restore');
+      expect((failure as Error).message).toContain('PostgreSQL 18');
+      expect((failure as Error).message).not.toContain('ENOENT');
+      // The probe runs first, so the file replacement never starts.
+      expect(await readFile(join(targetDir, 'stale-file.txt'), 'utf8')).toBe('not in the backup');
+    } finally {
+      vi.unstubAllEnvs();
+      await rm(empty, { recursive: true, force: true });
+      await rm(targetDir, { recursive: true, force: true });
+      await t.pool.query('delete from graphile_worker._private_jobs where key = $1', [`backup-run:${run.id}`]);
     }
   });
 
