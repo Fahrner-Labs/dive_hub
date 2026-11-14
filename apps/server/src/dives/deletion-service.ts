@@ -3,10 +3,11 @@ import type { DivePushes, DiveRemoval, DiveWaitingPushes } from './provider-port
 import { DiveError, type DiveService } from './dive-service.js';
 import { diveSummaryOf, providersOf } from './dive-summary-view.js';
 import type { LogbookService } from './logbook-service.js';
+import { encodeDeletedCursor, type DeletedDiveCursor } from './deletion-view.js';
 
 export interface DeletionDeps {
   dives: Pick<DiveService, 'remove'>;
-  logbook: Pick<LogbookService, 'findManagedDive' | 'deletedDives'>;
+  logbook: Pick<LogbookService, 'findManagedDive' | 'deletedDives' | 'deletedDiveIds'>;
   pushes: Pick<DivePushes, 'currentOf' | 'removeAt'>;
   waitingPushes: Pick<DiveWaitingPushes, 'deletingItself' | 'waitingOf'>;
 }
@@ -38,17 +39,33 @@ export function createDeletionService({ dives, logbook, pushes, waitingPushes }:
       return { providers, failure };
     },
 
-    /** The User's deleted Dives, most recently deleted first, with the Providers each is still at and what waits to go there. */
-    async deleted(userId: string, limit: number) {
-      const rows = await logbook.deletedDives(userId, limit);
-      const remote = await pushes.currentOf(rows.map((r) => r.d.id));
-      const waiting = await waitingPushes.waitingOf(rows.map((r) => r.d.id));
-      return rows.map(({ d, siteName, mergedInto, movedTo, continuedInto, appendedWith }) => ({
-        id: d.id, diverId: d.diverId, version: d.version, ...diveSummaryOf(d, siteName),
-        deletedAt: d.deletedAt!.toISOString(), mergedInto, movedTo, continuedInto, appendedWith,
-        stillAt: providersOf(remote, d.id),
-        waiting: waiting.get(d.id) ?? [],
-      }));
+    /**
+     * One page of the User's deleted Dives, most recently deleted first, with the Providers each is still at and what
+     * waits to go there. `stillAt` covers every deleted Dive, not only this page, so a client reminds about all of them
+     * without loading every page.
+     */
+    async deleted(userId: string, limit: number, cursor?: DeletedDiveCursor) {
+      const [{ rows, total, hasMore }, allIds] = await Promise.all([
+        logbook.deletedDives(userId, limit, cursor),
+        logbook.deletedDiveIds(userId),
+      ]);
+      const [remote, waiting, stillRemote] = await Promise.all([
+        pushes.currentOf(rows.map((r) => r.d.id)),
+        waitingPushes.waitingOf(rows.map((r) => r.d.id)),
+        pushes.currentOf(allIds),
+      ]);
+      const last = rows.at(-1);
+      return {
+        dives: rows.map(({ d, siteName, mergedInto, movedTo, continuedInto, appendedWith }) => ({
+          id: d.id, diverId: d.diverId, version: d.version, ...diveSummaryOf(d, siteName),
+          deletedAt: d.deletedAt!.toISOString(), mergedInto, movedTo, continuedInto, appendedWith,
+          stillAt: providersOf(remote, d.id),
+          waiting: waiting.get(d.id) ?? [],
+        })),
+        total,
+        ...(hasMore && last ? { nextCursor: encodeDeletedCursor({ deletedAt: last.d.deletedAt!, id: last.d.id }) } : {}),
+        stillAt: allIds.flatMap((id) => providersOf(stillRemote, id).map((copy) => ({ diveId: id, ...copy }))),
+      };
     },
   };
 }

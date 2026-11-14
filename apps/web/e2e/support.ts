@@ -371,7 +371,7 @@ export async function diveNumber(api: APIRequestContext, id: string): Promise<nu
 export async function deletableDive(api: APIRequestContext): Promise<string> {
   let id = (await livedAt(api, FIXTURE_START.deletable))[0]?.id;
   if (!id) {
-    const deleted = (await (await api.get('/api/dives/deleted')).json() as DeletedDive[]).find(startsWith(FIXTURE_START.deletable));
+    const deleted = (await (await api.get('/api/dives/deleted?limit=200')).json() as { dives: DeletedDive[] }).dives.find(startsWith(FIXTURE_START.deletable));
     if (deleted) {
       await api.post(`/api/dives/${deleted.id}/restore`, { data: { version: deleted.version }, headers });
       id = deleted.id;
@@ -399,7 +399,7 @@ export async function mergeablePair(api: APIRequestContext): Promise<{ kept: str
   type Shown = { id: string; version: number; recordings: { id: string; device: { serialNumber: string } | null }[] };
   const find = async () => (await livedAt(api, FIXTURE_START.mergeable)).map((d) => d.id);
   const shown = async (id: string) => await (await api.get(`/api/dives/${id}`)).json() as Shown;
-  const merged = async (into: string) => (await (await api.get('/api/dives/deleted')).json() as (DeletedDive & { mergedInto: string | null })[])
+  const merged = async (into: string) => (await (await api.get('/api/dives/deleted?limit=200')).json() as { dives: (DeletedDive & { mergedInto: string | null })[] }).dives
     .find((d) => startsWith(FIXTURE_START.mergeable)(d) && d.mergedInto === into);
   let ids = await find();
   if (ids.length === 0) {
@@ -449,7 +449,7 @@ export async function surfaceBreakPair(api: APIRequestContext): Promise<{ first:
   const [firstStart, secondStart] = ['2026-10-26T06:05', '2026-10-26T06:29'];
   const live = async (prefix: string) => (await livedAt(api, prefix))[0]?.id;
   if (!(await live(secondStart))) {
-    const deleted = (await (await api.get('/api/dives/deleted')).json() as DeletedDive[]).find(startsWith(secondStart));
+    const deleted = (await (await api.get('/api/dives/deleted?limit=200')).json() as { dives: DeletedDive[] }).dives.find(startsWith(secondStart));
     if (deleted) await api.post(`/api/dives/${deleted.id}/restore`, { data: { version: deleted.version }, headers });
   }
   if (!(await live(firstStart))) {
@@ -476,7 +476,7 @@ async function findFalseStart(api: APIRequestContext): Promise<{ live?: string; 
     const found = checks.find((c) => c.rule === 'short_shallow_dive' && c.dive.startsAt.startsWith(FALSE_START_DAY));
     if (found) return { live: found.dive.id };
   }
-  const dives = await (await api.get('/api/dives/deleted')).json() as DatedDive[];
+  const dives = (await (await api.get('/api/dives/deleted?limit=200')).json() as { dives: DatedDive[] }).dives;
   const deleted = dives.find((d) => d.startsAt.startsWith(FALSE_START_DAY));
   return deleted ? { deleted } : {};
 }

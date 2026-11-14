@@ -1,7 +1,9 @@
 // The Review page (UI redesign 4): what waits for the User, in the logbook's one line and the navigation's count, and
 // the page's parts, kept in the address like the logbook's settings (ADR 0017).
-import { useQuery } from '@tanstack/react-query';
-import { buddySuggestionsQuery, candidatesQuery, deletedDivesQuery, goneDivesQuery, isPairCheck, logbookChecksQuery, providerConflictsQuery } from '../api.ts';
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
+import {
+  buddySuggestionsQuery, candidatesQuery, deletedDivesQuery, deletedDivesTotal, goneDivesQuery, isPairCheck, logbookChecksQuery, providerConflictsQuery,
+} from '../api.ts';
 
 export const REVIEW_TABS = ['decide', 'imports', 'decided', 'deleted'] as const;
 export type ReviewTab = (typeof REVIEW_TABS)[number];
@@ -44,7 +46,7 @@ export function useToDecideCounts() {
 /** Counts that go into the tabs and the links under the logbook: what was decided and what was deleted. */
 export function useReviewCounts() {
   const decided = (useQuery(candidatesQuery('discarded')).data?.length ?? 0) + (useQuery(logbookChecksQuery('answered')).data?.length ?? 0);
-  const deleted = useQuery(deletedDivesQuery()).data?.length ?? 0;
+  const deleted = deletedDivesTotal(useInfiniteQuery(deletedDivesQuery()).data);
   return { decided, deleted };
 }
 

@@ -34,7 +34,7 @@ describe.skipIf(!(await databaseReachable()))('deleting a Dive', () => {
     (await call(method, url, cookie, payload)).json() as T;
   const version = async (id: string) => (await json<{ version: number }>('GET', `/api/dives/${id}`)).version;
   const remove = async (id: string, body: object = {}, cookie = tim) => call('DELETE', `/api/dives/${id}`, cookie, { version: await version(id), ...body });
-  const deleted = () => json<DeletedDive[]>('GET', '/api/dives/deleted');
+  const deleted = async () => (await json<{ dives: DeletedDive[] }>('GET', '/api/dives/deleted')).dives;
 
   async function upload(fileName: string, data: Uint8Array, cookie = tim): Promise<Outcome> {
     const { payload, headers } = multipartFile(fileName, data);
@@ -104,7 +104,11 @@ describe.skipIf(!(await databaseReachable()))('deleting a Dive', () => {
 
     it('lists deleted Dives to their Users only', async () => {
       expect((await deleted())).toEqual([expect.objectContaining({ id: gone, site: { id: siteId, name: 'Hausreef' }, stillAt: [] })]);
-      expect((await json<unknown[]>('GET', '/api/dives/deleted', other))).toEqual([]);
+      expect((await json<{ dives: unknown[] }>('GET', '/api/dives/deleted', other)).dives).toEqual([]);
+      const page = await json<{ dives: DeletedDive[]; total: number; nextCursor?: string }>('GET', '/api/dives/deleted?limit=1');
+      expect(page).toMatchObject({ total: 1, dives: [{ id: gone }] });
+      expect(page.nextCursor).toBeUndefined();
+      expect((await call('GET', '/api/dives/deleted?cursor=not-a-cursor')).statusCode).toBe(400);
     });
 
     it('skips the same file, a re-export of it, and doesn\'t create the Dive again', async () => {
@@ -209,6 +213,9 @@ describe.skipIf(!(await databaseReachable()))('deleting a Dive', () => {
       expect(ssiDive(remoteId).odin_user_log_deleted).not.toBe(1);
       const entry = (await deleted()).find((d) => d.id === id)!;
       expect(entry.stillAt).toEqual([{ provider: 'ssi', remoteNumber: expect.any(Number) }]);
+      // The page carries every still-at copy, for the reminder, whatever page a Dive is on.
+      const page = await json<{ stillAt: { diveId: string; provider: string; remoteNumber: number | null }[] }>('GET', '/api/dives/deleted?limit=1');
+      expect(page.stillAt).toEqual([{ diveId: id, provider: 'ssi', remoteNumber: expect.any(Number) }]);
       // Still not sendable while deleted, but deletable there.
       expect((await call('POST', `/api/dives/${id}/providers/ssi`, tim, {})).statusCode).toBe(404);
       expect((await call('DELETE', `/api/dives/${id}/providers/ssi`, other)).statusCode).toBe(404);
@@ -328,7 +335,7 @@ describe.skipIf(!(await databaseReachable()))('deleting a Dive', () => {
     };
     const removeIt = async (id: string, body: object = { alsoAt: ['ledger'] }) =>
       call('DELETE', `/api/dives/${id}`, ann, { version: (await json<{ version: number }>('GET', `/api/dives/${id}`, ann)).version, ...body });
-    const deletedOf = async (id: string) => (await json<DeletedDive[]>('GET', '/api/dives/deleted', ann)).find((d) => d.id === id)!;
+    const deletedOf = async (id: string) => (await json<{ dives: DeletedDive[] }>('GET', '/api/dives/deleted', ann)).dives.find((d) => d.id === id)!;
     const restore = async (id: string) => call('POST', `/api/dives/${id}/restore`, ann, { version: (await deletedOf(id)).version });
     /** Moves the clock to the entry's due time; an entry the clock has already passed (queued at the database's time) is due as it is. */
     const untilDue = async () => {

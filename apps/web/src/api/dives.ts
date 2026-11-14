@@ -1,4 +1,4 @@
-import { keepPreviousData, queryOptions } from '@tanstack/react-query';
+import { infiniteQueryOptions, keepPreviousData, queryOptions, type InfiniteData } from '@tanstack/react-query';
 import { neighbourParams, type LogbookParams } from '../lib/logbook.ts';
 import { liveHealthy } from '../lib/live.ts';
 import { pollUntilDue } from '../lib/waiting-push.ts';
@@ -29,7 +29,10 @@ export const isDiveCheck = (c: AnyLogbookCheck): c is DiveCheckView => c.other =
 export type MergeCandidateView = Ok<'/api/dives/{id}/merge-candidates'>[number];
 /** The Dive before this one it may be appended to as its continuation (ADR 0063). */
 export type ContinuationCandidateView = NonNullable<Ok<'/api/dives/{id}/continuation-candidate'>>;
-export type DeletedDiveView = Ok<'/api/dives/deleted'>[number];
+export type DeletedDivesPageView = Ok<'/api/dives/deleted'>;
+export type DeletedDiveView = DeletedDivesPageView['dives'][number];
+/** A deleted Dive still at a Provider, across every page: the reminder counts these. */
+export type StillAtProviderView = DeletedDivesPageView['stillAt'][number];
 export type ParticipantView = DiveView['participants'][number];
 export type ParticipantRole = ParticipantView['role'];
 export type UtcOffsetSource = DiveView['utcOffsetSource'];
@@ -61,13 +64,24 @@ export const diveListPages = { queryKey: keys.dives, predicate: (q: { queryKey: 
 export const allButDive = (...ids: string[]) => ({ predicate: (q: { queryKey: readonly unknown[] }) => !(q.queryKey[0] === keys.dives[0] && ids.includes(q.queryKey[1] as string)) });
 
 /**
- * The User's deleted Dives, to restore them, and which Providers they are still at (ADR 0026, 0027); a delete at a
- * Provider that waits is asked about again when it is due (ADR 0056).
+ * The User's deleted Dives, a page at a time, to restore them, and which Providers they are still at (ADR 0026, 0027); a
+ * delete at a Provider that waits is asked about again when it is due (ADR 0056). `stillAt` is the whole set on every
+ * page, for the reminder.
  */
-export const deletedDivesQuery = () => queryOptions({
-  queryKey: keys.deletedDives, queryFn: async () => request(api.GET('/api/dives/deleted')),
-  refetchInterval: (q) => (liveHealthy() ? false : pollUntilDue(q.state.data?.flatMap((d) => d.waiting), Date.now())),
+export const deletedDivesQuery = () => infiniteQueryOptions({
+  queryKey: keys.deletedDives,
+  queryFn: async ({ pageParam }) => request(api.GET('/api/dives/deleted', {
+    params: { query: pageParam === undefined ? {} : { cursor: pageParam } },
+  })),
+  initialPageParam: undefined as string | undefined,
+  getNextPageParam: (last) => last.nextCursor,
+  refetchInterval: (q) => (liveHealthy() ? false : pollUntilDue(q.state.data?.pages.flatMap((p) => p.dives.flatMap((d) => d.waiting)), Date.now())),
 });
+
+/** The deleted Dives loaded so far; empty before the first answer. */
+export const deletedDivesOn = (data: InfiniteData<DeletedDivesPageView> | undefined) => data?.pages.flatMap((p) => p.dives) ?? [];
+/** How many deleted Dives there are in all, also the ones not loaded yet. */
+export const deletedDivesTotal = (data: InfiniteData<DeletedDivesPageView> | undefined) => data?.pages[0]?.total ?? 0;
 
 /** Pairs of Dives that can't both be right as they stand, or those the User said are two dives (ADR 0038). */
 export const logbookChecksQuery = (status: 'open' | 'answered') =>
