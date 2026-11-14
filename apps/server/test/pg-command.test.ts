@@ -60,6 +60,7 @@ describe('running a PostgreSQL client command', () => {
     const message = pgToolFailure('pg_dump', Object.assign(new Error('spawn pg_dump ENOENT'), { code: 'ENOENT' }), '');
     expect(message).toContain('pg_dump');
     expect(message).toContain('PostgreSQL 18');
+    expect(message).toContain('winget install -e --id PostgreSQL.PostgreSQL.18');
     expect(message).toContain('PATH');
     expect(message).not.toContain('ENOENT');
   });

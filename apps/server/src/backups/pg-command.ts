@@ -72,7 +72,7 @@ function pgErrorDetail(error: unknown): { code: string | undefined; stderr: stri
 export function pgToolFailure(tool: PgTool, error: unknown, databaseUrl: string): string {
   const { code, stderr } = pgErrorDetail(error);
   if (code === 'ENOENT') {
-    return `Backups need ${tool}, but it was not found on this host. The Dive Hub image ships the PostgreSQL client tools; a host that runs the server directly (the development flow) must install them: PostgreSQL 18 client tools — \`apk add postgresql18-client\`, \`apt install postgresql-client-18\`, or \`brew install libpq\` (and put its bin directory on PATH). Then try again.`;
+    return `Backups need ${tool}, but it was not found on this host. The Dive Hub image ships the PostgreSQL client tools; a host that runs the server directly (the development flow) must install them: PostgreSQL 18 client tools — \`apk add postgresql18-client\`, \`apt install postgresql-client-18\`, \`brew install libpq\`, or on Windows \`winget install -e --id PostgreSQL.PostgreSQL.18\` (the EnterpriseDB PostgreSQL 18 installer works too) — and put the PostgreSQL bin directory on PATH. Then try again.`;
   }
   if (stderr !== undefined && stderr.includes('server version mismatch')) {
     return `${tool} refused: the installed client is older than the database server. Install the PostgreSQL client tools whose major version matches the server (PostgreSQL 18 in the development setup) and try again.\n\n${redactPassword(stderr.trim(), databaseUrl)}`;
