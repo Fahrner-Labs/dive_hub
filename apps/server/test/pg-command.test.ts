@@ -1,6 +1,25 @@
 // pg_dump/pg_restore run through helpers that keep the database password out of argv and out of stored errors.
-import { describe, expect, it } from 'vitest';
-import { pgCommand, pgFailureMessage, redactPassword } from '../src/backups/pg-command.js';
+import { execFile } from 'node:child_process';
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { promisify } from 'node:util';
+import { describe, expect, it, vi } from 'vitest';
+import { assertPgTool, pgCommand, pgFailureMessage, pgToolFailure, redactPassword } from '../src/backups/pg-command.js';
+
+const execFileAsync = promisify(execFile);
+
+/** Whether pg_dump is here; CI installs the PostgreSQL 18 client, and a missing one must not look like a pass. */
+async function dumpToolAvailable(): Promise<boolean> {
+  try {
+    await execFileAsync('pg_dump', ['--version']);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+const pgDumpAvailable = await dumpToolAvailable();
 
 describe('running a PostgreSQL client command', () => {
   it('takes the password out of the URL and passes it as PGPASSWORD', () => {
@@ -35,5 +54,36 @@ describe('running a PostgreSQL client command', () => {
     const message = pgFailureMessage(error, 'postgres://u:hunter2@db/dive');
     expect(message).toContain('connection to');
     expect(message).not.toContain('hunter2');
+  });
+
+  it('names the missing tool and how to install it, without the raw spawn error', () => {
+    const message = pgToolFailure('pg_dump', Object.assign(new Error('spawn pg_dump ENOENT'), { code: 'ENOENT' }), '');
+    expect(message).toContain('pg_dump');
+    expect(message).toContain('PostgreSQL 18');
+    expect(message).toContain('PATH');
+    expect(message).not.toContain('ENOENT');
+  });
+
+  it('leads a version mismatch with the fix and keeps the redacted stderr detail', () => {
+    const error = Object.assign(new Error('Command failed: pg_dump postgres://u:hunter2@db/dive'), {
+      stderr: 'pg_dump: error: aborting because of server version mismatch\nconnection postgres://u:hunter2@db/dive refused',
+    });
+    const message = pgToolFailure('pg_dump', error, 'postgres://u:hunter2@db/dive');
+    expect(message).toContain('older than the database server');
+    expect(message).toContain('PostgreSQL 18');
+    expect(message).toContain('server version mismatch');
+    expect(message).not.toContain('hunter2');
+  });
+
+  it.skipIf(!pgDumpAvailable)('probes the tool and rejects when PATH cannot find it', async () => {
+    await expect(assertPgTool('pg_dump')).resolves.toBeUndefined();
+    const empty = await mkdtemp(join(tmpdir(), 'no-pg-tools-'));
+    try {
+      vi.stubEnv('PATH', empty);
+      await expect(assertPgTool('pg_dump')).rejects.toThrow(/pg_dump.*not found/);
+    } finally {
+      vi.unstubAllEnvs();
+      await rm(empty, { recursive: true, force: true });
+    }
   });
 });
