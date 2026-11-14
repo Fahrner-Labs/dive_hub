@@ -2,7 +2,7 @@
 // from src/auth/cli-config.ts, then adjusted to our conventions. Re-apply after regenerating:
 // - timestamps with time zone
 // - ids default to uuidv7(), like our own tables
-// - index names in snake_case (session_user_idx, account_user_idx, apikey_reference_idx, apikey_key_idx)
+// - index names in snake_case (session_user_idx, account_user_idx, apikey_reference_idx, apikey_key_idx, two_factor_secret_idx, two_factor_user_idx)
 // - apikey: no index on config_id (one configuration)
 // Migrations come from drizzle-kit as usual; never drizzle-kit push.
 import { relations, sql } from "drizzle-orm";
@@ -34,6 +34,7 @@ export const user = pgTable("user", {
   banned: boolean("banned").default(false),
   banReason: text("ban_reason"),
   banExpires: timestamp("ban_expires", { withTimezone: true }),
+  twoFactorEnabled: boolean("two_factor_enabled").default(false),
 });
 
 export const session = pgTable(
@@ -100,6 +101,31 @@ export const verification = pgTable(
       .notNull(),
   },
   (table) => [index("verification_identifier_idx").on(table.identifier)],
+);
+
+/**
+ * Two-factor authentication (ADR 0012's later slice): the TOTP secret and the backup codes, both encrypted with the
+ * auth secret. The plugin writes `user.two_factor_enabled` only after the first TOTP code is verified.
+ */
+export const twoFactor = pgTable(
+  "two_factor",
+  {
+    id: uuid("id")
+      .default(sql`uuidv7()`)
+      .primaryKey(),
+    secret: text("secret").notNull(),
+    backupCodes: text("backup_codes").notNull(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    verified: boolean("verified").default(true),
+    failedVerificationCount: integer("failed_verification_count").default(0),
+    lockedUntil: timestamp("locked_until", { withTimezone: true }),
+  },
+  (table) => [
+    index("two_factor_secret_idx").on(table.secret),
+    index("two_factor_user_idx").on(table.userId),
+  ],
 );
 
 /**
