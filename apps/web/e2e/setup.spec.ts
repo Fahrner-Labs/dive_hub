@@ -23,6 +23,9 @@ test('offers starting fresh or restoring, and the fresh form is unchanged', { ta
   await expect(page.getByRole('textbox', { name: 'Backup passphrase' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Choose archive' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Restore this instance' })).toBeVisible();
+  await expect(page.locator('code').filter({ hasText: /^\.divehub-backup$/ })).toBeVisible();
+  await expect(page.locator('code').filter({ hasText: /^\/data\/restore\/$/ })).toBeVisible();
+  await expect(page.getByText(/<\/?code>/)).toHaveCount(0);
 
   await page.getByText('Start fresh', { exact: true }).click();
   await expect(page.getByLabel('Name')).toBeVisible();
