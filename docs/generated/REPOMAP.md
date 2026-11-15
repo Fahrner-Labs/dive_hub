@@ -4,7 +4,7 @@
 > `pnpm check` fails when this map is stale. Symbols are ranked by how widely the code references them;
 > each module shows its most-referenced ones (exported symbols rank higher). Search here before walking the tree.
 
-Files: 375 · symbols: 3461 · shown: 257
+Files: 375 · symbols: 3463 · shown: 257
 
 ### server/(root)
 apps/server/src/vocabulary.ts:13 type SiteWaterType
