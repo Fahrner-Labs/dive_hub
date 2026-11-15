@@ -1050,7 +1050,8 @@
     "gap": "{{duration}} Abstand",
     "summaryBar": "{{label}}: {{start}} bis {{end}}, {{duration}}.",
     "summaryGap": "{{duration}} Abstand.",
-    "summaryBreak": "{{duration}} Oberflächenaufenthalt."
+    "summaryBreak": "{{duration}} Oberflächenaufenthalt.",
+    "summaryOverlap": "{{duration}} Überschneidung."
   },
   "merge": {
     "hint": "In diesem Logbuch gibt es einen weiteren Tauchgang zur selben Zeit: {{facts}}. Wenn beide derselbe Tauchgang sind, kannst du sie zusammenführen.",

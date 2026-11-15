@@ -1050,7 +1050,8 @@
     "gap": "{{duration}} gap",
     "summaryBar": "{{label}}: {{start}} to {{end}}, {{duration}}.",
     "summaryGap": "{{duration}} gap.",
-    "summaryBreak": "{{duration}} surface break."
+    "summaryBreak": "{{duration}} surface break.",
+    "summaryOverlap": "{{duration}} overlap."
   },
   "merge": {
     "hint": "Another dive in this logbook was at the same time: {{facts}}. If both are the same dive, you can merge them into one.",

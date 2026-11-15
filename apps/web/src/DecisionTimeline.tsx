@@ -40,6 +40,7 @@ export function DecisionTimeline({ lanes, gapKind = 'gap' }: DecisionTimelinePro
     ...geometry.gaps.map((gap) => t(gapKind === 'break' ? 'timeline.summaryBreak' : 'timeline.summaryGap', {
       duration: display.duration(gap.seconds),
     })),
+    ...geometry.overlaps.map((overlap) => t('timeline.summaryOverlap', { duration: display.duration(overlap.seconds) })),
   ].join(' ');
   return (
     <div className="timeline-figure">

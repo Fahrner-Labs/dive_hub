@@ -40,6 +40,8 @@ test('a recording that doesn\'t clearly fit is put aside, brought back and added
   await expect(panel.locator('.timeline')).toBeVisible();
   await expect(panel.locator('.timeline-bar')).toHaveCount(2);
   await expect(panel.locator('.timeline-time')).toHaveCount(4);
+  // The shared stretch is in the hidden summary too, not only in the lined-up lanes.
+  await expect(panel.locator('.timeline-figure')).toContainText(/overlap\./);
   await expect(panel.getByRole('columnheader', { name: 'Recording' })).toBeVisible();
   await expect(panel.getByRole('rowheader', { name: 'Max depth' })).toBeVisible();
   await expect(panel.getByRole('rowheader', { name: 'Device' })).toHaveCount(0);
