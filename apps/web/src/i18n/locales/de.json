@@ -1007,10 +1007,6 @@
       "consequence": "Beim Zusammenführen bleibt ein Tauchgang mit den Werten, die du wählst; der andere wird gelöscht."
     },
     "rule": {
-      "recording_beside_entry": "Ein Tauchgang ohne Aufzeichnung und einer mit Aufzeichnung liegen zur selben Zeit",
-      "overlapping_dives": "Zwei Tauchgänge überschneiden sich zeitlich",
-      "entry_apart_from_recording": "Wahrscheinlich derselbe Tauchgang mit anderer Startzeit: die Starts liegen {{difference}} auseinander, Tiefe und Dauer stimmen überein",
-      "short_shallow_dive": "Eine Aufzeichnung, so kurz und flach, dass sie wahrscheinlich kein Tauchgang ist",
       "surface_break": "Wahrscheinlich ein Tauchgang, an der Oberfläche unterbrochen."
     },
     "how": "Gleicher Tauchgang: zusammenführen. Sonst getrennt lassen.",

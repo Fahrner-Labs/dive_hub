@@ -907,8 +907,11 @@ dives, all off until the User turns them on. *Web:* `ProviderAutomation.tsx` (se
   same depth sketch the logbook rows carry ([ADR 0041](../decisions/0041-logbook-profile-sketch.md)), for drawing
   its card; `null` when the Dive has no current assessment (no Recording, or an assessment of a Recording it no longer
   has as Primary).
-- **Show the rule's text on every pair of `entry_apart_from_recording`,** also when it is the only kind in the list (the
-  list's heading says "at the same time", which isn't so here), with both local start times and how far apart they are.
+- **Draw every pair's card as a timeline** (`DecisionTimeline.tsx`): both Dives on one wall-clock axis with their
+  local start times (and end times), and the space between the two bars labeled with how far apart they are; a
+  visually-hidden summary carries the same in text. For `entry_apart_from_recording` this replaces the rule's text, also
+  when it is the only kind in the list (the list's heading says "at the same time", which isn't so here); the rule's text
+  is shown only on a `surface_break` panel.
   Such a pair is never `obvious`: it is merged only by the User's own click on that pair. **A pair's `other.deletesItself`**
   (a subset of `other.bothAt`) lists the Providers where the Connection of the Dive not kept deletes by itself after the
   merge: a merge from a check doesn't ask about them (as in the dialog under Dives; leave them out of `alsoAt`). After a merge the kept Dive may be
