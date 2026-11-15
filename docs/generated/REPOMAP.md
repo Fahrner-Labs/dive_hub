@@ -4,7 +4,7 @@
 > `pnpm check` fails when this map is stale. Symbols are ranked by how widely the code references them;
 > each module shows its most-referenced ones (exported symbols rank higher). Search here before walking the tree.
 
-Files: 394 · symbols: 3541 · shown: 251
+Files: 394 · symbols: 3555 · shown: 252
 
 ### server/(root)
 apps/server/src/vocabulary.ts:13 type SiteWaterType
@@ -102,10 +102,10 @@ apps/server/src/dives/provider-port.ts:39 iface DiveWaitingPushes
 apps/server/src/dives/recording-units.ts:9 const isUnit
 apps/server/src/dives/weighting.ts:23 const leadTotalKg
 apps/server/src/dives/matching.ts:81 const DAY_MS
-apps/server/src/dives/logbook-service.ts:268 type LogbookService
+apps/server/src/dives/logbook-service.ts:296 type LogbookService
 apps/server/src/dives/dive-values.ts:6 iface DiveValues
 apps/server/src/dives/dive-service.ts:87 const nextVersion
-… 291 more symbols in this module
+… 295 more symbols in this module
 
 ### server/equipment
 apps/server/src/equipment/usage.ts:37 fn usageMap
@@ -300,7 +300,8 @@ apps/web/src/api/providers.ts:7 type ProviderView
 apps/web/src/api/dives.ts:15 type RecordingSummary
 apps/web/src/api/sites.ts:8 type Position
 apps/web/src/api/providers.ts:8 type ConnectionView
-… 174 more symbols in this module
+apps/web/src/api/account.ts:17 const meQuery
+… 177 more symbols in this module
 
 ### web/i18n
 apps/web/src/i18n/languages.ts:6 fn pickLanguage
@@ -327,10 +328,10 @@ apps/web/src/lib/providers.ts:9 type SyncedField
 apps/web/src/lib/tools.ts:49 iface ToolsParams
 apps/web/src/lib/form.ts:4 const formValues
 apps/web/src/lib/devices.ts:18 const deviceName
-apps/web/src/lib/review.ts:14 fn reviewHref
+apps/web/src/lib/review.ts:16 fn reviewHref
 apps/web/src/lib/providers.ts:55 fn useProviderOf
 apps/web/src/lib/providers.ts:52 type ProviderRef
-… 355 more symbols in this module
+… 361 more symbols in this module
 
 ### web/ui
 apps/web/src/ui/Layout.tsx:85 fn Notice
