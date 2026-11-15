@@ -1,18 +1,21 @@
 // A decision card's comparison (FAH-225): one column per candidate, and each value cell says which candidate it
-// belongs to so a phone can stack the table without losing the column header.
+// belongs to so a phone can stack the table without losing the column header. Its header row keeps a candidate's
+// name and badge together, and the table and its scrolling wrapper are named (FAH-227).
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { Comparison, type CompareFact, type CompareSubject } from '../src/ReviewRows.tsx';
 
+const label = 'Where does this recording belong?';
+
 const subjects: CompareSubject[] = [
-  { key: 'recording', label: 'Recording', title: 'Recording', badge: <span>the max depth differs</span> },
+  { key: 'recording', label: 'Recording', title: 'Recording', badge: <span>the max depth differs</span>, note: 'unknown device' },
   { key: 'dive', label: 'Dive 42', title: <a href="#/dives/42">Dive 42</a> },
 ];
 const facts: CompareFact[] = [{ key: 'depth', label: 'Max depth', values: ['18 m', '20 m'] }];
 
 describe('the comparison table', () => {
   it('marks a multi-candidate comparison and names every value cell for its column', () => {
-    render(<Comparison subjects={subjects} facts={facts} />);
+    render(<Comparison label={label} subjects={subjects} facts={facts} />);
     const table = screen.getByRole('table');
     expect(table.className).toContain('compare-multi');
     expect(screen.getByRole('columnheader', { name: /^Recording/ })).toBeTruthy();
@@ -25,16 +28,39 @@ describe('the comparison table', () => {
   });
 
   it('keeps a single-candidate comparison plain: no multi marker', () => {
-    render(<Comparison subjects={[subjects[0]!]} facts={facts} />);
+    render(<Comparison label={label} subjects={[subjects[0]!]} facts={facts} />);
     const table = screen.getByRole('table');
     expect(table.className).not.toContain('compare-multi');
     expect(screen.getByText('18 m').closest('td')!.dataset.subject).toBe('Recording');
   });
 
   it('keeps the table roles when CSS lays the rows out as blocks', () => {
-    render(<Comparison subjects={subjects} facts={facts} />);
+    render(<Comparison label={label} subjects={subjects} facts={facts} />);
     expect(screen.getByRole('table')).toBeTruthy();
     expect(screen.getAllByRole('rowgroup')).toHaveLength(2);
     expect(screen.getAllByRole('row').length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('puts a candidate name and badge in one flexible header row, the note beneath', () => {
+    render(<Comparison label={label} subjects={subjects} facts={facts} />);
+    const header = screen.getByRole('columnheader', { name: /^Recording/ });
+    const head = header.querySelector('.compare-head');
+    expect(head).not.toBeNull();
+    expect(head!.querySelector('.compare-title')?.textContent).toBe('Recording');
+    expect(head!.contains(screen.getByText('the max depth differs'))).toBe(true);
+    const note = header.querySelector('.compare-note');
+    expect(note?.textContent).toBe('unknown device');
+    expect(head!.contains(note)).toBe(false);
+  });
+
+  it('names the table and its scrollable region', () => {
+    const { container } = render(<Comparison label={label} subjects={subjects} facts={facts} />);
+    const caption = container.querySelector('caption');
+    expect(caption?.textContent).toBe(label);
+    expect(caption?.className).toBe('visually-hidden');
+    expect(screen.getByRole('table', { name: label })).toBeTruthy();
+    const region = screen.getByRole('region', { name: label });
+    expect(region).toBe(container.querySelector('.compare-wrap'));
+    expect(region.tabIndex).toBe(0);
   });
 });

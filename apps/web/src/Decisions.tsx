@@ -170,7 +170,7 @@ function Decision({ candidate: c, list, index, count, onDiscarded }: {
     <li className="decision">
       <h3 className="decision-question">{t('decisions.question')}</h3>
       <DecisionTimeline lanes={lanes} />
-      <Comparison subjects={subjects} facts={facts} />
+      <Comparison label={t('decisions.question')} subjects={subjects} facts={facts} />
       {/* The Dives it might belong to were deleted (ADR 0026): what's left is a Dive of its own, or discarding it. */}
       {c.dives.length === 0 && <p className="muted">{t('decisions.divesGone')}</p>}
       <p className="muted">{t('decisions.consequence')}</p>

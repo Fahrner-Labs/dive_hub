@@ -75,6 +75,7 @@ function PairComparison({ check: c, showDiver, stays }: { check: LogbookCheckVie
   const nameOf = useDiveName();
   const values = useDiveValues();
   const labels = useFactLabels();
+  const label = t('checks.pairCard.question');
   if (c.chain) return <ChainComparison chain={c.chain} />;
   const first = values(c.dive);
   const second = values(c.other);
@@ -99,7 +100,7 @@ function PairComparison({ check: c, showDiver, stays }: { check: LogbookCheckVie
   return (
     <>
       <DecisionTimeline lanes={[lane(c.dive, first.depth), lane(c.other, second.depth)]} />
-      <Comparison subjects={[subject(c.dive), subject(c.other)]} facts={facts} />
+      <Comparison label={label} subjects={[subject(c.dive), subject(c.other)]} facts={facts} />
     </>
   );
 }
@@ -110,6 +111,7 @@ function ChainComparison({ chain }: { chain: NonNullable<LogbookCheckView['chain
   const nameOf = useDiveName();
   const values = useDiveValues();
   const labels = useFactLabels();
+  const label = t('checks.surface.question', { count: chain.length });
   const parts: TimelineLane = {
     key: 'parts',
     label: t('checks.surface.parts', { count: chain.length }),
@@ -122,6 +124,7 @@ function ChainComparison({ chain }: { chain: NonNullable<LogbookCheckView['chain
     <>
       <DecisionTimeline gapKind="break" lanes={[parts]} />
       <Comparison
+        label={label}
         subjects={chain.map((d) => ({ key: d.id, label: nameOf(d), title: <DiveTitle dive={d} /> }))}
         facts={[
           { key: 'duration', label: labels.duration, values: chain.map((d) => values(d).duration) },
@@ -135,9 +138,11 @@ function ChainComparison({ chain }: { chain: NonNullable<LogbookCheckView['chain
 
 /** A short Dive at the blip it is: one sketch on a 40 m scale, then its facts as one of a pair shows them. */
 function DiveComparison({ check: c }: { check: DiveCheckView }) {
+  const { t } = useTranslation();
   const nameOf = useDiveName();
   const values = useDiveValues()(c.dive);
   const labels = useFactLabels();
+  const label = t('checks.short.question');
   const scaleM = 40;
   return (
     <>
@@ -146,6 +151,7 @@ function DiveComparison({ check: c }: { check: DiveCheckView }) {
         <SketchScale scaleM={scaleM} />
       </div>
       <Comparison
+        label={label}
         subjects={[{ key: c.dive.id, label: nameOf(c.dive), title: <DiveTitle dive={c.dive} /> }]}
         facts={[
           { key: 'time', label: labels.time, values: [values.time] },

@@ -94,11 +94,14 @@ function Suggestion({ suggestion: s, list, index, count }: {
     ? [...new Set([preview.data.dive.owner.name, ...preview.data.dive.participants.map((p) => p.name)])]
     : [];
   const item = display.diveTime(d.startsAt, d.utcOffsetSeconds);
+  const question = preview.data
+    ? t('suggestions.question', { owner: preview.data.dive.owner.name, diver: s.diver.name })
+    : t('suggestions.suggestedDive');
   const scaleM = Math.max(40, preview.data?.dive.maxDepthM ?? 0);
   return (
     <li className="decision">
       {preview.data && (
-        <h3 className="decision-question">{t('suggestions.question', { owner: preview.data.dive.owner.name, diver: s.diver.name })}</h3>
+        <h3 className="decision-question">{question}</h3>
       )}
       {preview.data && (
         <div className="decision-visual">
@@ -109,7 +112,7 @@ function Suggestion({ suggestion: s, list, index, count }: {
           <SketchScale scaleM={scaleM} />
         </div>
       )}
-      <Comparison subjects={[{ key: d.id, label: t('suggestions.suggestedDive'), title: t('suggestions.suggestedDive') }]} facts={facts} />
+      <Comparison label={question} subjects={[{ key: d.id, label: t('suggestions.suggestedDive'), title: t('suggestions.suggestedDive') }]} facts={facts} />
       {people.length > 0 && <p>{t('suggestions.people', { names: joinNames(people) })}</p>}
       <p className="muted">{t('suggestions.consequence')}</p>
       <div className="form-actions">
@@ -169,6 +172,7 @@ export function SuggestionAcceptDialog({ preview, onClose, onAccept, isPending =
       { key: 'site', label: t('suggestions.fact.site'), values: [suggested.site, mine.site] },
     ];
   };
+  const label = t('suggestions.question', { owner: preview.dive.owner.name, diver: preview.diver.name });
   return (
     <Dialog title={t('suggestions.acceptTitle')} isOpen onOpenChange={(open) => !open && !isPending && onClose()}>
       <p>{t('suggestions.acceptIntro', { diver: preview.diver.name })}</p>
@@ -200,6 +204,7 @@ export function SuggestionAcceptDialog({ preview, onClose, onAccept, isPending =
                   },
                 ]} />
                 <Comparison
+                  label={label}
                   subjects={[
                     { key: preview.dive.id, label: t('suggestions.suggestedDive'), title: t('suggestions.suggestedDive') },
                     { key: o.id, label: t('suggestions.yourDive'), title: t('suggestions.yourDive') },
