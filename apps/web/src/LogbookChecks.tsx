@@ -7,7 +7,6 @@ import { DecisionTimeline } from './DecisionTimeline.tsx';
 import { DeleteDiveDialog } from './DeleteDive.tsx';
 import { MergeDialog } from './MergeDive.tsx';
 import { ProfileSketch } from './ProfileSketch.tsx';
-import { valuesAgree } from './lib/review.ts';
 import { Comparison, type CompareFact } from './ReviewRows.tsx';
 import { announce } from './lib/announce.ts';
 import { useJoinNames } from './lib/providers.ts';
@@ -79,14 +78,13 @@ function PairComparison({ check: c, showDiver, stays }: { check: LogbookCheckVie
   if (c.chain) return <ChainComparison chain={c.chain} />;
   const first = values(c.dive);
   const second = values(c.other);
-  // The timeline carries the times and durations; only the facts that tell the Dives apart stay beneath it.
+  // The timeline carries the times and durations; beneath it the facts, with equal ones collapsing to one value.
   const facts: CompareFact[] = [
     { key: 'depth', label: labels.depth, values: [first.depth, second.depth] },
     { key: 'site', label: labels.site, values: [first.site, second.site] },
   ];
-  if (!valuesAgree([first.recording, second.recording])) {
-    facts.push({ key: 'recording', label: labels.recording, values: [first.recording, second.recording] });
-  }
+  // Always the row: equal facts collapse to one value in the comparison (docs/spec/clients.md).
+  facts.push({ key: 'recording', label: labels.recording, values: [first.recording, second.recording] });
   if (showDiver) facts.push({ key: 'diver', label: labels.diver, values: [showDiver, showDiver] });
   const subject = (d: Paired) => ({
     key: d.id, title: <DiveTitle dive={d} />,
