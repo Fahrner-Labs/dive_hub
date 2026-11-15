@@ -4,7 +4,7 @@
 > `pnpm check` fails when this map is stale. Symbols are ranked by how widely the code references them;
 > each module shows its most-referenced ones (exported symbols rank higher). Search here before walking the tree.
 
-Files: 375 · symbols: 3459 · shown: 257
+Files: 375 · symbols: 3461 · shown: 257
 
 ### server/(root)
 apps/server/src/vocabulary.ts:13 type SiteWaterType
@@ -211,7 +211,7 @@ apps/server/src/providers/dive-import/three-way.ts:10 const SYNCED_FIELDS
 apps/server/src/providers/provider.ts:85 iface Capabilities
 apps/server/src/providers/dive-import/dive-changes.ts:29 iface ProviderContext
 apps/server/src/providers/dive-import/three-way.ts:61 fn sameAtProvider
-… 477 more symbols in this module
+… 479 more symbols in this module
 
 ### server/revisions
 apps/server/src/revisions/revisions.ts:66 fn writeRevision
