@@ -985,9 +985,7 @@ dives, all off until the User turns them on. *Web:* `ProviderAutomation.tsx` (se
 ### Duplicate candidates
 - **Show them where the User decides,** on a page of their own ("Review", reached from one line on the logbook and a count
   in the navigation), with the Recording (time, depth, duration, Device), why it waits (`reason`) and the Dives it might
-  belong to side by side, the values that differ marked (ADR 0016; UI redesign 4). Each candidate Dive carries `profile`,
-  the same depth sketch the logbook rows carry ([ADR 0041](../decisions/0041-logbook-profile-sketch.md)); `null` when it
-  has no current assessment. Reasons: `overlaps_several_dives`,
+  belong to side by side, the values that differ marked (ADR 0016; UI redesign 4). Reasons: `overlaps_several_dives`,
   `max_depth_differs`, and `probably_no_dive` (ADR 0030, amended): a Recording under 2 minutes above 3 m is never
   added to a Dive by itself, so it waits beside every Dive in reach, even one whose values agree. Show every reason in
   words; the same value is an Import outcome's `reason`.

@@ -1,17 +1,12 @@
 // Deciding about Recordings and Divers through the HTTP API (ADR 0016): Duplicate candidates,
 // splitting a Recording off, managed Divers, Devices and moving Dives between Divers.
-import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { diveAssessment } from '../src/db/schema.js';
 import { makeSyntheticDive } from './fixtures/synthetic-dive.js';
 import {
   BASE_URL, createTestApp, createTestDatabase, createUser, databaseReachable, multipartFile, signIn, type TestDatabase,
 } from './support.js';
 
-type Candidate = {
-  id: string; reason: string; recording: { id: string; device: { serialNumber: string } | null };
-  dives: { id: string; profile: { depthsM: number[]; spanSeconds: number; ascentBands: [number, number, number][] } | null }[];
-};
+type Candidate = { id: string; reason: string; recording: { id: string; device: { serialNumber: string } | null }; dives: { id: string }[] };
 type Dive = { id: string; diverId: string; version: number; values: { durationSeconds: number }; recordings: { id: string; isPrimary: boolean }[] };
 type Diver = { id: string; name: string; isOwn: boolean; diveCount: number; deviceCount: number };
 type Device = { id: string; serialNumber: string; diverId: string; recordingCount: number; lastUsedAt: string | null };
@@ -68,18 +63,6 @@ describe.skipIf(!(await databaseReachable()))('deciding about Recordings and Div
       candidate = open[0]!;
       expect(candidate).toMatchObject({ reason: 'max_depth_differs', recording: { device: { serialNumber: '999' } } });
       expect(candidate.dives.map((d) => d.id)).toEqual([morning]);
-      // Each candidate Dive's card draws the sketch of its current assessment.
-      const drawn = candidate.dives[0]!.profile!;
-      expect(drawn.depthsM.length).toBeGreaterThan(0);
-      expect(drawn.depthsM.every((d) => typeof d === 'number')).toBe(true);
-      expect(drawn.spanSeconds).toBeGreaterThan(0);
-      expect(drawn.ascentBands).toEqual(expect.any(Array));
-      // An assessment of a Recording that is no longer the Primary is no sketch.
-      await t.db.update(diveAssessment).set({ recordingId: candidate.recording.id }).where(eq(diveAssessment.diveId, morning));
-      // The candidate's Recording is not the Dive's: stale, so no profile rather than another recording's shape.
-      expect((await json<Candidate[]>('GET', '/api/duplicate-candidates'))[0]!.dives[0]!.profile).toBeNull();
-      await ctx.assessments.refreshAll();
-      expect((await json<Candidate[]>('GET', '/api/duplicate-candidates'))[0]!.dives[0]!.profile).not.toBeNull();
     });
 
     it('are not shown to other Users, and can\'t be decided by them', async () => {

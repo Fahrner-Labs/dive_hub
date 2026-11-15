@@ -12681,8 +12681,7 @@
                             "utcOffsetSeconds",
                             "utcOffsetSource",
                             "durationSeconds",
-                            "maxDepthM",
-                            "profile"
+                            "maxDepthM"
                           ],
                           "properties": {
                             "id": {
@@ -12730,16 +12729,6 @@
                                 },
                                 {
                                   "type": "number"
-                                }
-                              ]
-                            },
-                            "profile": {
-                              "anyOf": [
-                                {
-                                  "type": "null"
-                                },
-                                {
-                                  "$ref": "#/components/schemas/DiveProfileView"
                                 }
                               ]
                             }

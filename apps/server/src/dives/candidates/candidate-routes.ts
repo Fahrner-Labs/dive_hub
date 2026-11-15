@@ -8,7 +8,6 @@ import { UTC_OFFSET_SOURCES } from '../../db/schema.js';
 import { answerErrors, answers, Problem } from '../../http/problems.js';
 import type { DuplicateReason } from '../matching.js';
 import { CandidateError, type CandidateService } from './candidate-service.js';
-import { DiveProfileView } from '../profile-view.js';
 import { DateTime, IdParams, Nullable } from '../../http/schemas.js';
 
 export interface CandidateRouteDeps {
@@ -30,7 +29,6 @@ const DiveBrief = Type.Object({
   utcOffsetSource: OffsetSource,
   durationSeconds: Type.Number(),
   maxDepthM: Nullable(Type.Number()),
-  profile: DiveProfileView,
 });
 
 const CandidateView = Type.Object({
@@ -81,7 +79,7 @@ export const candidateRoutes: FastifyPluginAsyncTypebox<CandidateRouteDeps> = as
       },
       dives: dives.map((v) => ({
         id: v.id, number: v.number, startsAt: v.startsAt.toISOString(), utcOffsetSeconds: v.utcOffsetSeconds, utcOffsetSource: v.utcOffsetSource,
-        durationSeconds: v.durationSeconds, maxDepthM: v.maxDepthM, profile: v.profile,
+        durationSeconds: v.durationSeconds, maxDepthM: v.maxDepthM,
       })),
     }));
   });

@@ -4,7 +4,7 @@
 > `pnpm check` fails when this map is stale. Symbols are ranked by how widely the code references them;
 > each module shows its most-referenced ones (exported symbols rank higher). Search here before walking the tree.
 
-Files: 376 · symbols: 3468 · shown: 257
+Files: 376 · symbols: 3467 · shown: 257
 
 ### server/(root)
 apps/server/src/vocabulary.ts:13 type SiteWaterType
@@ -287,20 +287,20 @@ apps/web/src/api.ts:313 const diversQuery
 apps/web/src/api.ts:70 type DiveView
 apps/web/src/api.ts:110 type ProviderView
 apps/web/src/PushRun.tsx:21 const named
-apps/web/src/ReviewRows.tsx:37 fn Candidates
 apps/web/src/CodeScanner.tsx:106 fn CodeScanner
-apps/web/src/ReviewRows.tsx:6 iface Fact
-apps/web/src/ReviewRows.tsx:27 fn CandidateRow
+apps/web/src/ReviewRows.tsx:50 iface CompareFact
 apps/web/src/ProviderDiveImport.tsx:18 const DIVE_KINDS
 apps/web/src/DiveCodes.tsx:10 fn CodeFigure
-apps/web/src/DivePage.tsx:232 fn Fact
+apps/web/src/ReviewRows.tsx:61 fn Comparison
 apps/web/src/ProfilePlot.tsx:11 const token
 apps/web/src/Cylinders.tsx:18 fn useCylinderText
 apps/web/src/DeleteDive.tsx:21 fn DeleteDiveDialog
 apps/web/src/ProviderConflicts.tsx:14 fn useConflictValueText
 apps/web/src/WaitingPush.tsx:117 fn WaitingPushState
 apps/web/src/ImportPanel.tsx:39 const ImportContext
-… 688 more symbols in this module
+apps/web/src/ToolsLead.tsx:54 fn Conditions
+apps/web/src/ReviewRows.tsx:6 iface Fact
+… 687 more symbols in this module
 
 ### web/i18n
 apps/web/src/i18n/languages.ts:6 fn pickLanguage

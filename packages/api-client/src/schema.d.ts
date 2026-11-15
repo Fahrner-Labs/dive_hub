@@ -3740,7 +3740,6 @@ export interface paths {
                                 utcOffsetSource: "device" | "position" | "nearby" | "unknown";
                                 durationSeconds: number;
                                 maxDepthM: null | number;
-                                profile: null | components["schemas"]["DiveProfileView"];
                             }[];
                         }[];
                     };
