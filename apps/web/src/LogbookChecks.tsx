@@ -148,7 +148,7 @@ function DiveComparison({ check: c }: { check: DiveCheckView }) {
     <>
       <div className="decision-visual">
         <ProfileSketch profile={c.dive.profile} hasRecording={c.dive.recordings > 0} scaleM={scaleM} />
-        <SketchScale scaleM={scaleM} />
+        <SketchScale profile={c.dive.profile} scaleM={scaleM} />
       </div>
       <Comparison
         label={label}

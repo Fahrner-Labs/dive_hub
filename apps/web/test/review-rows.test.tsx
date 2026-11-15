@@ -1,7 +1,9 @@
 // A decision card's comparison (FAH-225): one column per candidate, and each value cell says which candidate it
 // belongs to so a phone can stack the table without losing the column header. Its header row keeps a candidate's
-// name and badge together, and the table and its scrolling wrapper are named (FAH-227).
+// name and badge together, and the table and its scrolling wrapper are named (FAH-227). The wrapper is a group, not a
+// region: two cards over one question would otherwise be two landmarks with the same name (FAH-231).
 import { render, screen } from '@testing-library/react';
+import axe from 'axe-core';
 import { describe, expect, it } from 'vitest';
 import { Comparison, type CompareFact, type CompareSubject } from '../src/ReviewRows.tsx';
 
@@ -53,14 +55,27 @@ describe('the comparison table', () => {
     expect(head!.contains(note)).toBe(false);
   });
 
-  it('names the table and its scrollable region', () => {
+  it('names the table and its scrollable group', () => {
     const { container } = render(<Comparison label={label} subjects={subjects} facts={facts} />);
     const caption = container.querySelector('caption');
     expect(caption?.textContent).toBe(label);
     expect(caption?.className).toBe('visually-hidden');
     expect(screen.getByRole('table', { name: label })).toBeTruthy();
-    const region = screen.getByRole('region', { name: label });
-    expect(region).toBe(container.querySelector('.compare-wrap'));
-    expect(region.tabIndex).toBe(0);
+    const group = screen.getByRole('group', { name: label });
+    expect(group).toBe(container.querySelector('.compare-wrap'));
+    expect(group.tabIndex).toBe(0);
+  });
+
+  it('keeps two cards over one question from claiming the same landmark name', async () => {
+    const { container } = render(
+      <>
+        <Comparison label={label} subjects={subjects} facts={facts} />
+        <Comparison label={label} subjects={subjects} facts={facts} />
+      </>,
+    );
+    const { violations } = await axe.run(container, { runOnly: { type: 'rule', values: ['landmark-unique'] } });
+    expect(violations).toEqual([]);
+    expect(screen.queryAllByRole('region', { name: label })).toHaveLength(0);
+    expect(screen.getAllByRole('group', { name: label })).toHaveLength(2);
   });
 });

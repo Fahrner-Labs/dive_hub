@@ -58,14 +58,15 @@ export interface CompareFact {
 /**
  * The candidates of a decision compared fact by fact, as a table (UI redesign 4.5): one column per candidate and one
  * labeled row per fact. Rows every candidate agrees on collapse to one muted value; differing rows are highlighted
- * whole, and a row appears only when at least one candidate has a value.
+ * whole, and a row appears only when at least one candidate has a value. Its wrapper is a named group, not a region:
+ * two cards over one question would otherwise be two landmarks with the same name (FAH-231).
  */
 export function Comparison({ label, subjects, facts }: { label: string; subjects: CompareSubject[]; facts: CompareFact[] }) {
   const { t } = useTranslation();
   const multi = subjects.length > 1;
   const shown = facts.filter((fact) => fact.values.some((value) => value));
   return (
-    <div className="compare-wrap" role="region" aria-label={label} tabIndex={0}>
+    <div className="compare-wrap" role="group" aria-label={label} tabIndex={0}>
       {/* Explicit roles keep the table a table when its own width (not the window's) lays the rows out as blocks. */}
       <table className={multi ? 'compare compare-multi' : 'compare'} role="table">
         <caption className="visually-hidden">{label}</caption>

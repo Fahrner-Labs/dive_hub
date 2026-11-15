@@ -29,9 +29,10 @@ export function ProfileSketch({ profile, hasRecording, scaleM }: { profile: Dive
   );
 }
 
-/** The depth scale a decision card's sketch is drawn on, "0–40 m"; a logbook row shares the sketch without it. */
-export function SketchScale({ scaleM }: { scaleM: number }) {
+/** The depth scale a decision card's sketch is drawn on, "0–40 m"; a logbook row shares the sketch without it, and an empty slot has no scale. */
+export function SketchScale({ profile, scaleM }: { profile: DiveSummary['profile']; scaleM: number }) {
   const { t } = useTranslation();
   const display = useDisplay();
+  if (!profile) return null;
   return <p className="meta sketch-scale">{t('sketch.scale', { depth: display.depth(scaleM) })}</p>;
 }

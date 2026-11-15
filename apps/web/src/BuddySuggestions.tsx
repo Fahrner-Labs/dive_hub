@@ -109,7 +109,7 @@ function Suggestion({ suggestion: s, list, index, count }: {
             profile={preview.data.dive.profile} hasRecording={preview.data.dive.hasRecording}
             scaleM={scaleM}
           />
-          <SketchScale scaleM={scaleM} />
+          <SketchScale profile={preview.data.dive.profile} scaleM={scaleM} />
         </div>
       )}
       <Comparison label={question} subjects={[{ key: d.id, label: t('suggestions.suggestedDive'), title: t('suggestions.suggestedDive') }]} facts={facts} />
