@@ -65,6 +65,14 @@ describe('the suggestion accept dialog', () => {
     expect(screen.getByRole('button', { name: 'Create a new dive' })).toBeTruthy();
   });
 
+  it('compares the suggested dive with the overlapping one, fact by fact', () => {
+    renderDialog({ preview: preview([overlap('dive-9', '2026-04-02T08:15:00Z')]) });
+    expect(screen.getByRole('columnheader', { name: 'Suggested dive' })).toBeTruthy();
+    expect(screen.getByRole('columnheader', { name: 'Your dive' })).toBeTruthy();
+    expect(screen.getByRole('rowheader', { name: 'Max depth' })).toBeTruthy();
+    expect(screen.getByText('Linking marks your dive as the same dive; creating adds a copy.')).toBeTruthy();
+  });
+
   it('offers every overlapping Dive, each named by its own time', () => {
     renderDialog({ preview: preview([overlap('dive-9', '2026-04-02T08:15:00Z'), overlap('dive-10', '2026-04-02T09:30:00Z')]) });
     expect(screen.getAllByRole('button', { name: /link to your dive/i })).toHaveLength(2);

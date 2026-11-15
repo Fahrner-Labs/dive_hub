@@ -2,18 +2,11 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState, type RefObject } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api, candidatesQuery, keys, unwrap, type CandidateView } from './api.ts';
-import { Candidates, CandidateRow, type Fact } from './ReviewRows.tsx';
-import { valuesAgree } from './lib/review.ts';
+import { Comparison, type CompareFact } from './ReviewRows.tsx';
 import { deviceName } from './lib/devices.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
 import { refocusAfterRemoval } from './lib/focus.ts';
 import { Badge, Button, Notice, Panel } from './ui/index.ts';
-
-/** The facts whose formatted text differs between two rows; the old row renderer's mark (Comparison replaces it in FAH-212). */
-function differingKeys(a: Record<string, string | undefined>, b: Record<string, string | undefined>): Set<string> {
-  const keys = new Set([...Object.keys(a), ...Object.keys(b)]);
-  return new Set([...keys].filter((key) => !valuesAgree([a[key], b[key]])));
-}
 
 /**
  * Duplicate candidates on the Review page (ADR 0016): Recordings that don't clearly belong to one Dive, each beside the
@@ -139,37 +132,36 @@ function Decision({ candidate: c, list, index, count, onDiscarded }: {
   // Several Recordings may wait at once; their buttons say which one they decide about.
   const recordingName = display.diveTime(c.recording.startsAt, c.recording.utcOffsetSeconds, c.recording.utcOffsetSource);
   const r = c.recording;
-  const recording = {
-    time: recordingName, depth: display.depth(r.maxDepthM), duration: display.duration(r.durationSeconds),
-  };
   const device = r.device
     ? t('decisions.device', { name: deviceName(r.device.manufacturer, r.device.product), serial: r.device.serialNumber })
     : t('decisions.unknownDevice');
   const diveName = (d: CandidateView['dives'][number]) => (d.number !== null ? t('dive.title', { number: d.number }) : display.diveTime(d.startsAt, d.utcOffsetSeconds, d.utcOffsetSource));
-  const valuesOf = (d: CandidateView['dives'][number]) => ({
-    time: display.diveTime(d.startsAt, d.utcOffsetSeconds, d.utcOffsetSource), depth: display.depth(d.maxDepthM), duration: display.duration(d.durationSeconds),
+  const valuesOf = (v: CandidateView['dives'][number] | CandidateView['recording']) => ({
+    time: display.diveTime(v.startsAt, v.utcOffsetSeconds, v.utcOffsetSource), depth: display.depth(v.maxDepthM), duration: display.duration(v.durationSeconds),
   });
-  const factsOf = (values: Record<string, string | undefined>): Fact[] => Object.entries(values).map(([key, text]) => ({ key, text }));
-  // The Recording's values differ from any of its Dives; each Dive's from the Recording.
-  const markedRecording = new Set(c.dives.flatMap((d) => [...differingKeys(recording, valuesOf(d))]));
+  const recordingValues = valuesOf(r);
+  const diveValues = c.dives.map(valuesOf);
+  const facts: CompareFact[] = [
+    { key: 'time', label: t('decisions.fact.time'), values: [recordingValues.time, ...diveValues.map((v) => v.time)] },
+    { key: 'duration', label: t('decisions.fact.duration'), values: [recordingValues.duration, ...diveValues.map((v) => v.duration)] },
+    { key: 'depth', label: t('decisions.fact.maxDepth'), values: [recordingValues.depth, ...diveValues.map((v) => v.depth)] },
+    // Only the Recording has a Device; the Dives it might belong to have none.
+    { key: 'device', label: t('decisions.fact.device'), values: [device, ...c.dives.map(() => undefined)] },
+  ];
+  const subjects = [
+    { key: 'recording', title: t('decisions.recording'), badge: <Badge>{t(`import.reason.${c.reason}`)}</Badge> },
+    ...c.dives.map((d) => ({
+      key: d.id,
+      title: <a className="candidate-title" href={`#/dives/${d.id}`}>{d.number !== null ? t('dive.title', { number: d.number }) : t('dive.titleNoNumber')}</a>,
+    })),
+  ];
   return (
     <li className="decision">
-      <Candidates>
-        <CandidateRow
-          title={<span className="candidate-title">{t('decisions.recording')}</span>} marked={markedRecording}
-          // Why it wasn't added: a badge, in words the User knows (UI redesign 4.5).
-          badge={<Badge>{t(`import.reason.${c.reason}`)}</Badge>}
-          facts={[...factsOf(recording), { key: 'device', text: device }]}
-        />
-        {c.dives.map((d) => (
-          <CandidateRow
-            key={d.id} title={<a className="candidate-title" href={`#/dives/${d.id}`}>{d.number !== null ? t('dive.title', { number: d.number }) : t('dive.titleNoNumber')}</a>}
-            marked={differingKeys(recording, valuesOf(d))} facts={factsOf(valuesOf(d))}
-          />
-        ))}
-      </Candidates>
+      <h3 className="decision-question">{t('decisions.question')}</h3>
+      <Comparison subjects={subjects} facts={facts} />
       {/* The Dives it might belong to were deleted (ADR 0026): what's left is a Dive of its own, or discarding it. */}
       {c.dives.length === 0 && <p className="muted">{t('decisions.divesGone')}</p>}
+      <p className="muted">{t('decisions.consequence')}</p>
       <div className="form-actions">
         {c.dives.map((d) => (
           <Button

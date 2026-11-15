@@ -985,7 +985,15 @@
     "discarded": "Verworfene Aufzeichnungen",
     "reopen": "Neu entscheiden",
     "discardedNotice": "Aufzeichnung vom {{time}} verworfen.",
-    "divesGone": "Die Tauchgänge, zu denen sie gehören könnte, sind nicht mehr in deinem Logbuch."
+    "divesGone": "Die Tauchgänge, zu denen sie gehören könnte, sind nicht mehr in deinem Logbuch.",
+    "question": "Wohin gehört diese Aufzeichnung?",
+    "consequence": "Beim Hinzufügen wird die Aufzeichnung an diesen Tauchgang gehängt. Ein eigener Tauchgang entsteht daraus; Verwerfen legt sie beiseite (rückgängig machbar).",
+    "fact": {
+      "time": "Zeit",
+      "duration": "Dauer",
+      "maxDepth": "Max. Tiefe",
+      "device": "Gerät"
+    }
   },
   "checks": {
     "title": "Tauchgänge zur selben Zeit",
@@ -1164,11 +1172,8 @@
   "suggestions": {
     "title": "Tauchgangs-Empfehlungen ({{count}})",
     "intro": "Ein Buddy hat einen Tauchgang mit einem Taucher geloggt, den du führst. Nimm ihn an, um die geteilten Angaben ins Logbuch zu übernehmen, oder lehne ab, wenn er nicht zu dir gehört.",
-    "from": "{{owner}} hat diesen Tauchgang mit {{diver}} geteilt.",
     "suggestedDive": "Empfohlener Tauchgang",
     "people": "Dabei: {{names}}",
-    "avgDepth": "{{depth}} im Schnitt",
-    "centre": "Tauchzentrum: {{names}}",
     "accept": "Annehmen",
     "decline": "Ablehnen",
     "acceptTitle": "Diesen Tauchgang annehmen",
@@ -1178,7 +1183,18 @@
     "noOverlaps": "Du hast zu dieser Zeit keinen Tauchgang im Logbuch. Beim Annehmen wird aus den geteilten Angaben ein neuer Tauchgang.",
     "yourDive": "Dein Tauchgang",
     "link": "Mit deinem Tauchgang verknüpfen",
-    "create": "Neuen Tauchgang anlegen"
+    "create": "Neuen Tauchgang anlegen",
+    "question": "{{owner}} hat diesen Tauchgang mit deinem Taucher {{diver}} geloggt",
+    "consequence": "Beim Annehmen kommt der Tauchgang in dein Logbuch; Ablehnen entfernt die Empfehlung. Es wird nichts zurückgesendet.",
+    "acceptConsequence": "Beim Verknüpfen wird dein Tauchgang als derselbe markiert; Anlegen fügt eine Kopie hinzu.",
+    "fact": {
+      "time": "Zeit",
+      "duration": "Dauer",
+      "maxDepth": "Max. Tiefe",
+      "site": "Tauchplatz",
+      "avgDepth": "Durchschnittstiefe",
+      "centre": "Tauchzentrum"
+    }
   },
   "deleted": {
     "notice": "{{name}} gelöscht.",

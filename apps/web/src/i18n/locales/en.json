@@ -985,7 +985,15 @@
     "discarded": "Discarded recordings",
     "reopen": "Decide again",
     "discardedNotice": "Discarded the recording from {{time}}.",
-    "divesGone": "The dives it might have belonged to are no longer in your logbook."
+    "divesGone": "The dives it might have belonged to are no longer in your logbook.",
+    "question": "Where does this recording belong?",
+    "consequence": "Adding attaches the recording to that dive. A new dive creates one from it; discarding sets it aside (undoable).",
+    "fact": {
+      "time": "Time",
+      "duration": "Duration",
+      "maxDepth": "Max depth",
+      "device": "Device"
+    }
   },
   "checks": {
     "title": "Dives at the same time",
@@ -1164,11 +1172,8 @@
   "suggestions": {
     "title": "Dive suggestions ({{count}})",
     "intro": "A buddy logged a dive with a Diver you manage. Accept it to add the shared facts to the logbook, or decline if it is not yours.",
-    "from": "{{owner}} shared this dive with {{diver}}.",
     "suggestedDive": "Suggested dive",
     "people": "On the dive: {{names}}",
-    "avgDepth": "{{depth}} average",
-    "centre": "Dive centre: {{names}}",
     "accept": "Accept",
     "decline": "Decline",
     "acceptTitle": "Accept this dive",
@@ -1178,7 +1183,18 @@
     "noOverlaps": "You have no dive at this time in your logbook. Accepting creates a new dive from the shared facts.",
     "yourDive": "Your dive",
     "link": "Link to your dive",
-    "create": "Create a new dive"
+    "create": "Create a new dive",
+    "question": "{{owner}} logged this dive with your diver {{diver}}",
+    "consequence": "Accepting adds the dive to your logbook; declining removes the suggestion. Nothing is sent back.",
+    "acceptConsequence": "Linking marks your dive as the same dive; creating adds a copy.",
+    "fact": {
+      "time": "Time",
+      "duration": "Duration",
+      "maxDepth": "Max depth",
+      "site": "Site",
+      "avgDepth": "Average depth",
+      "centre": "Dive centre"
+    }
   },
   "deleted": {
     "notice": "{{name}} deleted.",
