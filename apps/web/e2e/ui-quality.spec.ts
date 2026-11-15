@@ -1039,7 +1039,8 @@ for (const v of variants) {
       await expect(panel.getByRole('heading', { name: v.english ? 'Where does this recording belong?' : 'Wohin gehört diese Aufzeichnung?', level: 3 })).toBeVisible();
       await expect(panel.getByRole('columnheader', { name: /Garmin Descent Mk3 \(8803\)/ })).toBeVisible();
       await expect(panel.getByRole('rowheader', { name: v.english ? 'Max depth' : 'Max. Tiefe' })).toBeVisible();
-      await goodPage(page, title('Review'), v);
+      // axe here, on the card: the discard below clears it before the afterEach run.
+      await expectGoodPage(page, title('Review'), v);
       // A discarded candidate stays out of the way of the other specs on this server; the next run reopens or uploads it.
       await panel.getByRole('button', { name: v.english ? /^Discard:/ : /^Verwerfen:/ }).click();
       await expect(panel).toHaveCount(0);
@@ -1227,7 +1228,8 @@ for (const v of variants) {
         })).toBeVisible();
         await expect(panel.getByRole('columnheader', { name: v.english ? 'Suggested dive' : 'Empfohlener Tauchgang' })).toBeVisible();
         await expect(panel.locator('.sketch')).toBeVisible();
-        await goodPage(page, title('Review'), v);
+        // axe here, on the card: removing the Participant below clears it before the afterEach run.
+        await expectGoodPage(page, title('Review'), v);
       } finally {
         await clearParticipants(request, dive.id);
         await request.delete(`/api/divers/${diver.id}`, { headers });
