@@ -78,10 +78,13 @@ test('lists two dives at the same time on the logbook, keeps them apart when tol
     await page.getByRole('link', { name: 'Review them' }).click();
     await expect(main.getByRole('heading', { name: 'Dives at the same time', level: 2 })).toBeVisible();
     await expect(main.getByRole('button', { name: /^They are two dives: Dive \d+ and Dive \d+$/ })).toBeVisible();
-    // The pair is a comparison: one labeled row per fact, one column per dive, and the kept dive badged.
+    // The pair is a timeline over a comparison of the facts that tell them apart.
     const card = main.getByRole('listitem').filter({ has: main.getByRole('heading', { name: 'Same dive logged twice?', level: 3 }) });
+    await expect(card.locator('.timeline')).toBeVisible();
+    await expect(card.locator('.timeline-bar')).toHaveCount(2);
+    await expect(card.locator('.timeline-time')).toHaveCount(4);
     await expect(card.getByRole('columnheader', { name: /^Dive \d+\s*stays when merged$/ })).toHaveCount(1);
-    await expect(card.getByRole('rowheader', { name: 'Time' })).toBeVisible();
+    await expect(card.getByRole('rowheader', { name: 'Max depth' })).toBeVisible();
     await expect(card.getByRole('rowheader', { name: 'Recording' })).toBeVisible();
     await expect(card.getByRole('cell', { name: 'with a recording' })).toBeVisible();
     await expect(card.getByRole('cell', { name: 'without a recording' })).toBeVisible();
@@ -131,9 +134,11 @@ test('offers a short and shallow dive for deleting, keeps it when told so, and d
     await expect(main.getByText('One thing needs your decision: 1 dive that is probably no dive.')).toBeVisible();
     await page.getByRole('link', { name: 'Review them' }).click();
     await expect(main.getByRole('heading', { name: 'Probably not dives', level: 2 })).toBeVisible();
-    await expect(main.getByText('A recording shorter than 2 min that stayed above 3 m is usually a dive computer that got wet, or a false start.')).toBeVisible();
+    await expect(main.getByText('Shorter than 2 min and shallower than 3 m: usually a computer that got wet or a false start.')).toBeVisible();
     await expect(main.getByRole('heading', { name: 'Probably not a real dive?', level: 3 })).toBeVisible();
-    await expect(main.getByRole('rowheader', { name: 'Max depth' })).toBeVisible();
+    const shortCard = main.getByRole('listitem').filter({ has: main.getByRole('heading', { name: 'Probably not a real dive?', level: 3 }) });
+    await expect(shortCard.locator('.sketch')).toBeVisible();
+    await expect(shortCard.getByRole('rowheader', { name: 'Max depth' })).toBeVisible();
     await expect(main.getByText('Deleting moves it to Deleted dives (restorable); keeping stops asking.')).toBeVisible();
 
     // "Keep it": the dive leaves the list, with a way back that has the focus.

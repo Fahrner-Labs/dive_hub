@@ -34,8 +34,11 @@ test('a recording that doesn\'t clearly fit is put aside, brought back and added
   const panel = page.locator('section.panel').filter({ has: page.getByRole('heading', { name: 'Recordings without a dive' }) });
   await expect(panel).toContainText('Garmin Descent Mk3 (777)');
   await expect(panel).toContainText('the max depth differs too much');
-  // The recording and the dive are compared fact by fact; the button names its target.
+  // The recording and its candidate dive are drawn on one timeline; the comparison keeps depth and device.
   await expect(panel.getByRole('heading', { name: 'Where does this recording belong?', level: 3 })).toBeVisible();
+  await expect(panel.locator('.timeline')).toBeVisible();
+  await expect(panel.locator('.timeline-bar')).toHaveCount(2);
+  await expect(panel.locator('.timeline-time')).toHaveCount(4);
   await expect(panel.getByRole('columnheader', { name: 'Recording' })).toBeVisible();
   await expect(panel.getByRole('rowheader', { name: 'Max depth' })).toBeVisible();
   await expect(panel.getByRole('rowheader', { name: 'Device' })).toBeVisible();

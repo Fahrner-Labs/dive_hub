@@ -973,8 +973,8 @@
   },
   "decisions": {
     "title": "Recordings without a dive",
-    "intro_one": "This recording doesn’t clearly belong to a dive. Is it one of these?",
-    "intro_other": "These {{count}} recordings don’t clearly belong to a dive. Are they one of these?",
+    "intro_one": "This recording doesn’t clearly belong to a dive.",
+    "intro_other": "These {{count}} recordings don’t clearly belong to a dive.",
     "recording": "Recording",
     "device": "{{name}} ({{serial}})",
     "unknownDevice": "unknown device",
@@ -989,8 +989,6 @@
     "question": "Where does this recording belong?",
     "consequence": "Adding attaches the recording to that dive. A new dive creates one from it; discarding sets it aside (undoable).",
     "fact": {
-      "time": "Time",
-      "duration": "Duration",
       "maxDepth": "Max depth",
       "device": "Device"
     }
@@ -998,7 +996,6 @@
   "checks": {
     "title": "Dives at the same time",
     "fact": {
-      "time": "Time",
       "duration": "Duration",
       "maxDepth": "Max depth",
       "site": "Site",
@@ -1007,9 +1004,6 @@
     },
     "pairCard": {
       "question": "Same dive logged twice?",
-      "startedApart": "Started {{gap}} apart",
-      "sameSite": "same site",
-      "differentSites": "different sites",
       "consequence": "Merging keeps one dive with the values you pick; the other is deleted."
     },
     "rule": {
@@ -1017,9 +1011,9 @@
       "overlapping_dives": "Two dives overlap in time",
       "entry_apart_from_recording": "Probably the same dive with another start time: the starts are {{difference}} apart, depth and duration agree",
       "short_shallow_dive": "A recording so short and shallow that it is probably no dive",
-      "surface_break": "Probably one dive with a surface break: the same computer, at most 10 minutes apart"
+      "surface_break": "Probably one dive cut by time at the surface."
     },
-    "how": "If they are the same dive, merge them. If a time is wrong or one belongs to another Diver, open that dive and correct it there.",
+    "how": "Same dive: merge them. Otherwise keep them apart.",
     "pair": "{{first}} and {{second}}",
     "merge": "Merge the two…",
     "stays": "stays when merged",
@@ -1036,14 +1030,15 @@
     "surface": {
       "title": "Dives cut by a surface break",
       "question": "One dive in {{count}} parts?",
-      "breakBefore": "{{duration}} surface break before",
+      "parts": "{{count}} parts",
+      "break": "{{duration}} surface break",
       "consequence": "Appending joins the parts into the first dive.",
       "append": "Append…"
     },
     "short": {
       "title": "Probably not dives",
       "question": "Probably not a real dive?",
-      "how": "A recording shorter than {{duration}} that stayed above {{depth}} is usually a dive computer that got wet, or a false start. If it was no dive, delete it: it goes to “Deleted dives” and can be restored.",
+      "how": "Shorter than {{duration}} and shallower than {{depth}}: usually a computer that got wet or a false start.",
       "delete": "Delete…",
       "keep": "Keep it",
       "consequence": "Deleting moves it to Deleted dives (restorable); keeping stops asking.",
@@ -1055,6 +1050,12 @@
   "comparison": {
     "both": "Both: {{value}}",
     "all": "All: {{value}}"
+  },
+  "timeline": {
+    "gap": "{{duration}} gap",
+    "summaryBar": "{{label}}: {{start}} to {{end}}, {{duration}}.",
+    "summaryGap": "{{duration}} gap.",
+    "summaryBreak": "{{duration}} surface break."
   },
   "merge": {
     "hint": "Another dive in this logbook was at the same time: {{facts}}. If both are the same dive, you can merge them into one.",
@@ -1171,14 +1172,14 @@
   },
   "suggestions": {
     "title": "Dive suggestions ({{count}})",
-    "intro": "A buddy logged a dive with a Diver you manage. Accept it to add the shared facts to the logbook, or decline if it is not yours.",
+    "intro": "A buddy logged a dive with a Diver you manage.",
     "suggestedDive": "Suggested dive",
     "people": "On the dive: {{names}}",
     "accept": "Accept",
     "decline": "Decline",
     "acceptTitle": "Accept this dive",
     "acceptIntro": "The shared facts go into {{diver}}’s logbook. Link one of your existing dives from this time, or create a new dive.",
-    "acceptWhat": "Only the shared facts are copied: site, start time, duration, depths and the people on the dive. No recording, notes or gear.",
+    "acceptWhat": "Only the shared facts: site, start time, duration, depths and the people.",
     "overlapIntro": "You already have a dive at this time:",
     "noOverlaps": "You have no dive at this time in your logbook. Accepting creates a new dive from the shared facts.",
     "yourDive": "Your dive",

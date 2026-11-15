@@ -973,8 +973,8 @@
   },
   "decisions": {
     "title": "Aufzeichnungen ohne Tauchgang",
-    "intro_one": "Diese Aufzeichnung gehört nicht eindeutig zu einem Tauchgang. Ist es einer von diesen?",
-    "intro_other": "Diese {{count}} Aufzeichnungen gehören nicht eindeutig zu einem Tauchgang. Sind es welche von diesen?",
+    "intro_one": "Diese Aufzeichnung gehört nicht eindeutig zu einem Tauchgang.",
+    "intro_other": "Diese {{count}} Aufzeichnungen gehören nicht eindeutig zu einem Tauchgang.",
     "recording": "Aufzeichnung",
     "device": "{{name}} ({{serial}})",
     "unknownDevice": "unbekanntes Gerät",
@@ -989,8 +989,6 @@
     "question": "Wohin gehört diese Aufzeichnung?",
     "consequence": "Beim Hinzufügen wird die Aufzeichnung an diesen Tauchgang gehängt. Ein eigener Tauchgang entsteht daraus; Verwerfen legt sie beiseite (rückgängig machbar).",
     "fact": {
-      "time": "Zeit",
-      "duration": "Dauer",
       "maxDepth": "Max. Tiefe",
       "device": "Gerät"
     }
@@ -998,7 +996,6 @@
   "checks": {
     "title": "Tauchgänge zur selben Zeit",
     "fact": {
-      "time": "Zeit",
       "duration": "Dauer",
       "maxDepth": "Max. Tiefe",
       "site": "Tauchplatz",
@@ -1007,9 +1004,6 @@
     },
     "pairCard": {
       "question": "Zweimal derselbe Tauchgang?",
-      "startedApart": "Start {{gap}} auseinander",
-      "sameSite": "gleicher Tauchplatz",
-      "differentSites": "verschiedene Tauchplätze",
       "consequence": "Beim Zusammenführen bleibt ein Tauchgang mit den Werten, die du wählst; der andere wird gelöscht."
     },
     "rule": {
@@ -1017,9 +1011,9 @@
       "overlapping_dives": "Zwei Tauchgänge überschneiden sich zeitlich",
       "entry_apart_from_recording": "Wahrscheinlich derselbe Tauchgang mit anderer Startzeit: die Starts liegen {{difference}} auseinander, Tiefe und Dauer stimmen überein",
       "short_shallow_dive": "Eine Aufzeichnung, so kurz und flach, dass sie wahrscheinlich kein Tauchgang ist",
-      "surface_break": "Wahrscheinlich ein Tauchgang mit Oberflächenaufenthalt: derselbe Computer, höchstens 10 Minuten dazwischen"
+      "surface_break": "Wahrscheinlich ein Tauchgang, an der Oberfläche unterbrochen."
     },
-    "how": "Wenn es derselbe Tauchgang ist, führe sie zusammen. Wenn eine Zeit falsch ist oder einer zu einem anderen Taucher gehört, öffne diesen Tauchgang und korrigiere es dort.",
+    "how": "Gleicher Tauchgang: zusammenführen. Sonst getrennt lassen.",
     "pair": "{{first}} und {{second}}",
     "merge": "Beide zusammenführen …",
     "stays": "bleibt beim Zusammenführen",
@@ -1036,14 +1030,15 @@
     "surface": {
       "title": "Tauchgänge mit Oberflächenaufenthalt dazwischen",
       "question": "Ein Tauchgang in {{count}} Teilen?",
-      "breakBefore": "{{duration}} Oberflächenaufenthalt davor",
+      "parts": "{{count}} Teile",
+      "break": "{{duration}} Oberflächenaufenthalt",
       "consequence": "Beim Anhängen werden die Teile zum ersten Tauchgang.",
       "append": "Anhängen …"
     },
     "short": {
       "title": "Wahrscheinlich keine Tauchgänge",
       "question": "Wahrscheinlich kein echter Tauchgang?",
-      "how": "Eine Aufzeichnung kürzer als {{duration}}, die über {{depth}} geblieben ist, ist meist ein nass gewordener Tauchcomputer oder ein Fehlstart. War es kein Tauchgang, lösche ihn: er kommt zu den „Gelöschten Tauchgängen“ und lässt sich wiederherstellen.",
+      "how": "Kürzer als {{duration}} und flacher als {{depth}}: meist ein nass gewordener Computer oder ein Fehlstart.",
       "delete": "Löschen …",
       "keep": "Behalten",
       "consequence": "Beim Löschen kommt er zu den „Gelöschten Tauchgängen“ (wiederherstellbar); beim Behalten wird nicht mehr gefragt.",
@@ -1055,6 +1050,12 @@
   "comparison": {
     "both": "Beide: {{value}}",
     "all": "Alle: {{value}}"
+  },
+  "timeline": {
+    "gap": "{{duration}} Abstand",
+    "summaryBar": "{{label}}: {{start}} bis {{end}}, {{duration}}.",
+    "summaryGap": "{{duration}} Abstand.",
+    "summaryBreak": "{{duration}} Oberflächenaufenthalt."
   },
   "merge": {
     "hint": "In diesem Logbuch gibt es einen weiteren Tauchgang zur selben Zeit: {{facts}}. Wenn beide derselbe Tauchgang sind, kannst du sie zusammenführen.",
@@ -1171,14 +1172,14 @@
   },
   "suggestions": {
     "title": "Tauchgangs-Empfehlungen ({{count}})",
-    "intro": "Ein Buddy hat einen Tauchgang mit einem Taucher geloggt, den du führst. Nimm ihn an, um die geteilten Angaben ins Logbuch zu übernehmen, oder lehne ab, wenn er nicht zu dir gehört.",
+    "intro": "Ein Buddy hat einen Tauchgang mit einem Taucher von dir geloggt.",
     "suggestedDive": "Empfohlener Tauchgang",
     "people": "Dabei: {{names}}",
     "accept": "Annehmen",
     "decline": "Ablehnen",
     "acceptTitle": "Diesen Tauchgang annehmen",
     "acceptIntro": "Die geteilten Angaben kommen in {{diver}}s Logbuch. Verknüpfe einen deiner Tauchgänge aus dieser Zeit oder lege einen neuen Tauchgang an.",
-    "acceptWhat": "Kopiert werden nur die geteilten Angaben: Tauchplatz, Startzeit, Dauer, Tiefen und die Personen auf dem Tauchgang. Keine Aufzeichnung, Notizen oder Ausrüstung.",
+    "acceptWhat": "Nur die geteilten Angaben: Tauchplatz, Startzeit, Dauer, Tiefen und die Personen.",
     "overlapIntro": "Du hast bereits einen Tauchgang aus dieser Zeit:",
     "noOverlaps": "Du hast zu dieser Zeit keinen Tauchgang im Logbuch. Beim Annehmen wird aus den geteilten Angaben ein neuer Tauchgang.",
     "yourDive": "Dein Tauchgang",

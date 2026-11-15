@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { ApiError, meQuery, NetworkError, type ProblemCode } from '../api.ts';
 import { countryName, formatDistance, formatPosition, type Position } from './geo.ts';
 import {
-  formatDate, formatDateTime, formatDepth, formatDiveDay, formatDiveTime, formatDuration, formatGasRate, formatMonth, formatPressure, formatPressureRate, formatTemperature, formatMass, formatThickness, formatVolume, pickUnits, unitLabel,
+  formatClock, formatDate, formatDateTime, formatDepth, formatDiveDay, formatDiveTime, formatDuration, formatGasRate, formatMonth, formatPressure, formatPressureRate, formatTemperature, formatMass, formatThickness, formatVolume, pickUnits, unitLabel,
 } from './units.ts';
 
 /** Formatting in the UI language and the User's unit system (ADR 0014). */
@@ -18,6 +18,8 @@ export function useDisplay() {
     depth: (metres: number | null) => formatDepth(metres, units, locale),
     temperature: (celsius: number | null) => formatTemperature(celsius, units, locale),
     duration: (seconds: number) => formatDuration(seconds, locale),
+    /** The time of day at the dive site, "11:00 AM"; `source` unknown as `diveTime`. */
+    clock: (iso: string, offsetSeconds: number | null, source?: string) => formatClock(iso, offsetSeconds, locale, source === 'unknown'),
     /** `source` unknown: the time as it was logged, without a time zone (ADR 0030). */
     diveTime: (iso: string, offsetSeconds: number | null, source?: string) => formatDiveTime(iso, offsetSeconds, locale, source === 'unknown'),
     /** A logbook row's day, "Thu 2 Apr, 10:00"; `year` where no month heading says it. */

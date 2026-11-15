@@ -73,6 +73,7 @@ test('a Participant another User keeps raises a suggestion in that User\'s Revie
     const panel = suggestionPanel(theirs);
     await expect(panel.getByRole('heading', { name: `Erika logged this dive with your diver ${diverName}`, level: 3 })).toBeVisible();
     await expect(panel.getByText('Suggested dive')).toBeVisible();
+    await expect(panel.locator('.sketch')).toBeVisible();
     await expect(panel.getByRole('button', { name: /^Accept/ })).toBeVisible();
     await expect(panel.getByRole('button', { name: /^Decline/ })).toBeVisible();
 
@@ -158,10 +159,13 @@ test('accepting "Link to your dive" joins the overlapping dives without copying 
     const dialog = page.getByRole('dialog', { name: 'Accept this dive' });
     // The other User's own overlapping Dive is offered to link.
     await expect(dialog).toContainText('You already have a dive at this time');
-    // The overlap compares the suggested dive with the User's own: one labeled row per fact, one column per dive.
+    // The overlap draws both dives on one timeline; the comparison keeps the facts that may differ.
     await expect(dialog.getByRole('columnheader', { name: 'Suggested dive' })).toBeVisible();
     await expect(dialog.getByRole('columnheader', { name: 'Your dive' })).toBeVisible();
-    await expect(dialog.getByRole('rowheader', { name: 'Time' })).toBeVisible();
+    await expect(dialog.locator('.timeline')).toBeVisible();
+    await expect(dialog.locator('.timeline-bar')).toHaveCount(2);
+    await expect(dialog.locator('.timeline-time')).toHaveCount(4);
+    await expect(dialog.getByRole('rowheader', { name: 'Max depth' })).toBeVisible();
     await expect(dialog.getByText('Linking marks your dive as the same dive; creating adds a copy.')).toBeVisible();
     const answered = page.waitForResponse((r) => r.request().method() === 'POST' && r.url().endsWith('/accept'));
     await dialog.getByRole('button', { name: /Link to your dive/ }).click();

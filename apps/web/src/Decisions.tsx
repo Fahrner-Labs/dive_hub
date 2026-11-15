@@ -2,10 +2,12 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState, type RefObject } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api, candidatesQuery, keys, unwrap, type CandidateView } from './api.ts';
+import { DecisionTimeline } from './DecisionTimeline.tsx';
 import { Comparison, type CompareFact } from './ReviewRows.tsx';
 import { deviceName } from './lib/devices.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
 import { refocusAfterRemoval } from './lib/focus.ts';
+import type { TimelineLane } from './lib/timeline.ts';
 import { Badge, Button, Notice, Panel } from './ui/index.ts';
 
 /**
@@ -142,11 +144,23 @@ function Decision({ candidate: c, list, index, count, onDiscarded }: {
   const recordingValues = valuesOf(r);
   const diveValues = c.dives.map(valuesOf);
   const facts: CompareFact[] = [
-    { key: 'time', label: t('decisions.fact.time'), values: [recordingValues.time, ...diveValues.map((v) => v.time)] },
-    { key: 'duration', label: t('decisions.fact.duration'), values: [recordingValues.duration, ...diveValues.map((v) => v.duration)] },
     { key: 'depth', label: t('decisions.fact.maxDepth'), values: [recordingValues.depth, ...diveValues.map((v) => v.depth)] },
     // Only the Recording has a Device; the Dives it might belong to have none.
     { key: 'device', label: t('decisions.fact.device'), values: [device, ...c.dives.map(() => undefined)] },
+  ];
+  const lanes: TimelineLane[] = [
+    {
+      key: 'recording',
+      label: t('decisions.recording'),
+      ...(recordingValues.depth !== undefined && { meta: recordingValues.depth }),
+      bars: [{ key: 'recording', startsAt: r.startsAt, utcOffsetSeconds: r.utcOffsetSeconds, utcOffsetSource: r.utcOffsetSource, durationSeconds: r.durationSeconds }],
+    },
+    ...c.dives.map((d, i) => ({
+      key: d.id,
+      label: diveName(d),
+      ...(diveValues[i]!.depth !== undefined && { meta: diveValues[i]!.depth }),
+      bars: [{ key: d.id, startsAt: d.startsAt, utcOffsetSeconds: d.utcOffsetSeconds, utcOffsetSource: d.utcOffsetSource, durationSeconds: d.durationSeconds }],
+    })),
   ];
   const subjects = [
     { key: 'recording', title: t('decisions.recording'), badge: <Badge>{t(`import.reason.${c.reason}`)}</Badge> },
@@ -158,6 +172,7 @@ function Decision({ candidate: c, list, index, count, onDiscarded }: {
   return (
     <li className="decision">
       <h3 className="decision-question">{t('decisions.question')}</h3>
+      <DecisionTimeline lanes={lanes} />
       <Comparison subjects={subjects} facts={facts} />
       {/* The Dives it might belong to were deleted (ADR 0026): what's left is a Dive of its own, or discarding it. */}
       {c.dives.length === 0 && <p className="muted">{t('decisions.divesGone')}</p>}

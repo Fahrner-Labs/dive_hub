@@ -4,7 +4,7 @@
 > `pnpm check` fails when this map is stale. Symbols are ranked by how widely the code references them;
 > each module shows its most-referenced ones (exported symbols rank higher). Search here before walking the tree.
 
-Files: 376 · symbols: 3467 · shown: 257
+Files: 378 · symbols: 3479 · shown: 257
 
 ### server/(root)
 apps/server/src/vocabulary.ts:13 type SiteWaterType
@@ -292,15 +292,15 @@ apps/web/src/ReviewRows.tsx:50 iface CompareFact
 apps/web/src/ProviderDiveImport.tsx:18 const DIVE_KINDS
 apps/web/src/DiveCodes.tsx:10 fn CodeFigure
 apps/web/src/ReviewRows.tsx:61 fn Comparison
+apps/web/src/DecisionTimeline.tsx:20 fn DecisionTimeline
 apps/web/src/ProfilePlot.tsx:11 const token
 apps/web/src/Cylinders.tsx:18 fn useCylinderText
 apps/web/src/DeleteDive.tsx:21 fn DeleteDiveDialog
+apps/web/src/ProfileSketch.tsx:10 fn ProfileSketch
 apps/web/src/ProviderConflicts.tsx:14 fn useConflictValueText
 apps/web/src/WaitingPush.tsx:117 fn WaitingPushState
 apps/web/src/ImportPanel.tsx:39 const ImportContext
-apps/web/src/ToolsLead.tsx:54 fn Conditions
-apps/web/src/ReviewRows.tsx:6 iface Fact
-… 687 more symbols in this module
+… 688 more symbols in this module
 
 ### web/i18n
 apps/web/src/i18n/languages.ts:6 fn pickLanguage
@@ -310,7 +310,7 @@ apps/web/src/i18n/languages.ts:3 type Language
 apps/web/src/i18n/index.ts:8 const resources
 
 ### web/lib
-apps/web/src/lib/display.ts:63 fn useErrorText
+apps/web/src/lib/display.ts:65 fn useErrorText
 apps/web/src/lib/display.ts:10 fn useDisplay
 apps/web/src/lib/announce.ts:9 fn announce
 apps/web/src/lib/providers.ts:70 fn useProviderText
@@ -333,7 +333,7 @@ apps/web/src/lib/logbook.ts:11 iface LogbookParams
 apps/web/src/lib/units.ts:4 type UnitSystem
 apps/web/src/lib/units.ts:22 const pressureIn
 apps/web/src/lib/logbook.ts:39 fn logbookHref
-… 333 more symbols in this module
+… 344 more symbols in this module
 
 ### web/ui
 apps/web/src/ui/Layout.tsx:85 fn Notice

@@ -7,6 +7,8 @@ import {
   api, buddySuggestionQuery, buddySuggestionsQuery, keys, unwrap,
   type AcceptedBuddySuggestionView, type BuddySuggestionOverlapView, type BuddySuggestionPreviewView, type BuddySuggestionView,
 } from './api.ts';
+import { DecisionTimeline } from './DecisionTimeline.tsx';
+import { ProfileSketch } from './ProfileSketch.tsx';
 import { useDisplay, useErrorText } from './lib/display.ts';
 import { refocusAfterRemoval } from './lib/focus.ts';
 import { useJoinNames } from './lib/providers.ts';
@@ -97,6 +99,13 @@ function Suggestion({ suggestion: s, list, index, count }: {
       {preview.data && (
         <h3 className="decision-question">{t('suggestions.question', { owner: preview.data.dive.owner.name, diver: s.diver.name })}</h3>
       )}
+      {preview.data && (
+        <div className="decision-visual">
+          <ProfileSketch
+            profile={preview.data.dive.profile} hasRecording scaleM={Math.max(40, preview.data.dive.maxDepthM ?? 0)}
+          />
+        </div>
+      )}
       <Comparison subjects={[{ key: d.id, title: t('suggestions.suggestedDive') }]} facts={facts} />
       {people.length > 0 && <p>{t('suggestions.people', { names: joinNames(people) })}</p>}
       <p className="muted">{t('suggestions.consequence')}</p>
@@ -151,9 +160,8 @@ export function SuggestionAcceptDialog({ preview, onClose, onAccept, isPending =
   const compare = (a: BuddySuggestionPreviewView['dive'], b: BuddySuggestionOverlapView): CompareFact[] => {
     const suggested = valuesOf(a);
     const mine = valuesOf(b);
+    // The timeline carries the times and durations; only the facts that may differ stay beneath it.
     return [
-      { key: 'time', label: t('suggestions.fact.time'), values: [suggested.time, mine.time] },
-      { key: 'duration', label: t('suggestions.fact.duration'), values: [suggested.duration, mine.duration] },
       { key: 'depth', label: t('suggestions.fact.maxDepth'), values: [suggested.depth, mine.depth] },
       { key: 'site', label: t('suggestions.fact.site'), values: [suggested.site, mine.site] },
     ];
@@ -171,6 +179,23 @@ export function SuggestionAcceptDialog({ preview, onClose, onAccept, isPending =
             const linking = isPending && pendingDiveId === o.id;
             return (
               <div key={o.id} className="decision">
+                <DecisionTimeline lanes={[
+                  {
+                    key: preview.dive.id,
+                    label: t('suggestions.suggestedDive'),
+                    ...(preview.dive.maxDepthM !== null && { meta: display.depth(preview.dive.maxDepthM) }),
+                    bars: [{
+                      key: preview.dive.id, startsAt: preview.dive.startsAt, utcOffsetSeconds: preview.dive.utcOffsetSeconds,
+                      durationSeconds: preview.dive.durationSeconds,
+                    }],
+                  },
+                  {
+                    key: o.id,
+                    label: t('suggestions.yourDive'),
+                    ...(o.maxDepthM !== null && { meta: display.depth(o.maxDepthM) }),
+                    bars: [{ key: o.id, startsAt: o.startsAt, utcOffsetSeconds: o.utcOffsetSeconds, durationSeconds: o.durationSeconds }],
+                  },
+                ]} />
                 <Comparison
                   subjects={[
                     { key: preview.dive.id, title: t('suggestions.suggestedDive') },

@@ -3,22 +3,20 @@ import { useEffect, useRef, useState, type RefObject } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api, diversQuery, isDiveCheck, isPairCheck, keys, logbookChecksQuery, unwrap, type DiveCheckView, type LogbookCheckView } from './api.ts';
 import { AppendDialog } from './AppendDive.tsx';
+import { DecisionTimeline } from './DecisionTimeline.tsx';
 import { DeleteDiveDialog } from './DeleteDive.tsx';
 import { MergeDialog } from './MergeDive.tsx';
+import { ProfileSketch } from './ProfileSketch.tsx';
 import { valuesAgree } from './lib/review.ts';
 import { Comparison, type CompareFact } from './ReviewRows.tsx';
 import { announce } from './lib/announce.ts';
 import { useJoinNames } from './lib/providers.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
 import { refocusAfterRemoval } from './lib/focus.ts';
+import type { TimelineLane } from './lib/timeline.ts';
 import { Badge, Button, ConfirmButton, Muted, Notice, Panel } from './ui/index.ts';
 
 type Paired = LogbookCheckView['dive'];
-/** How far apart the two Dives start on the wall clock, each by its own offset, in seconds. */
-const startsApartSeconds = (c: LogbookCheckView) => {
-  const local = (d: Paired) => Date.parse(d.startsAt) + (d.utcOffsetSeconds ?? 0) * 1000;
-  return Math.round(Math.abs(local(c.dive) - local(c.other)) / 1000);
-};
 /** Probably one dive cut by a surface break (ADR 0063): resolved by Appending, in a group of its own. */
 const BREAK = 'surface_break';
 const keyOf = (c: LogbookCheckView) => `${c.dive.id}:${c.other.id}`;
@@ -67,35 +65,22 @@ function useDiveValues() {
 function useFactLabels() {
   const { t } = useTranslation();
   return {
-    time: t('checks.fact.time'), duration: t('checks.fact.duration'), depth: t('checks.fact.maxDepth'),
+    duration: t('checks.fact.duration'), depth: t('checks.fact.maxDepth'),
     site: t('checks.fact.site'), recording: t('checks.fact.recording'), diver: t('checks.fact.diver'),
-  };
-}
-
-/** How a pair is related: how far apart the starts are, and whether the sites match. */
-function usePairRelationship() {
-  const { t } = useTranslation();
-  const display = useDisplay();
-  return (c: LogbookCheckView) => {
-    const started = t('checks.pairCard.startedApart', { gap: display.duration(startsApartSeconds(c)) });
-    const first = c.dive.site?.name;
-    const second = c.other.site?.name;
-    if (!first && !second) return started;
-    return `${started} · ${first === second ? t('checks.pairCard.sameSite') : t('checks.pairCard.differentSites')}`;
   };
 }
 
 /** The two Dives of a pair compared; `stays` marks the one a merge keeps (ADR 0038). */
 function PairComparison({ check: c, showDiver, stays }: { check: LogbookCheckView; showDiver: string | undefined; stays: boolean }) {
   const { t } = useTranslation();
+  const nameOf = useDiveName();
   const values = useDiveValues();
   const labels = useFactLabels();
   if (c.chain) return <ChainComparison chain={c.chain} />;
   const first = values(c.dive);
   const second = values(c.other);
+  // The timeline carries the times and durations; only the facts that tell the Dives apart stay beneath it.
   const facts: CompareFact[] = [
-    { key: 'time', label: labels.time, values: [first.time, second.time] },
-    { key: 'duration', label: labels.duration, values: [first.duration, second.duration] },
     { key: 'depth', label: labels.depth, values: [first.depth, second.depth] },
     { key: 'site', label: labels.site, values: [first.site, second.site] },
   ];
@@ -107,44 +92,66 @@ function PairComparison({ check: c, showDiver, stays }: { check: LogbookCheckVie
     key: d.id, title: <DiveTitle dive={d} />,
     badge: stays && c.other.keeps === d.id ? <Badge>{t('checks.stays')}</Badge> : undefined,
   });
-  return <Comparison subjects={[subject(c.dive), subject(c.other)]} facts={facts} />;
-}
-
-/** The Dives of a `surface_break` check in order, each later one with the surface break before it (ADR 0063). */
-function ChainComparison({ chain }: { chain: NonNullable<LogbookCheckView['chain']> }) {
-  const { t } = useTranslation();
-  const display = useDisplay();
-  const values = useDiveValues();
-  const labels = useFactLabels();
+  const lane = (d: Paired, meta: string | undefined): TimelineLane => ({
+    key: d.id,
+    label: nameOf(d),
+    ...(meta !== undefined && { meta }),
+    bars: [{ key: d.id, startsAt: d.startsAt, utcOffsetSeconds: d.utcOffsetSeconds, utcOffsetSource: d.utcOffsetSource, durationSeconds: d.durationSeconds }],
+  });
   return (
-    <Comparison
-      subjects={chain.map((d) => ({
-        key: d.id, title: <DiveTitle dive={d} />,
-        note: d.surfaceBreakSeconds !== null ? t('checks.surface.breakBefore', { duration: display.duration(d.surfaceBreakSeconds) }) : undefined,
-      }))}
-      facts={[
-        { key: 'time', label: labels.time, values: chain.map((d) => values(d).time) },
-        { key: 'duration', label: labels.duration, values: chain.map((d) => values(d).duration) },
-        { key: 'depth', label: labels.depth, values: chain.map((d) => values(d).depth) },
-        { key: 'site', label: labels.site, values: chain.map((d) => values(d).site) },
-      ]}
-    />
+    <>
+      <DecisionTimeline lanes={[lane(c.dive, first.depth), lane(c.other, second.depth)]} />
+      <Comparison subjects={[subject(c.dive), subject(c.other)]} facts={facts} />
+    </>
   );
 }
 
-/** The one Dive of a short-dive check, compared on the facts that made it a check. */
+/** The parts of a `surface_break` check in order, the breaks between them drawn as gaps (ADR 0063). */
+function ChainComparison({ chain }: { chain: NonNullable<LogbookCheckView['chain']> }) {
+  const { t } = useTranslation();
+  const nameOf = useDiveName();
+  const values = useDiveValues();
+  const labels = useFactLabels();
+  const parts: TimelineLane = {
+    key: 'parts',
+    label: t('checks.surface.parts', { count: chain.length }),
+    bars: chain.map((d) => ({
+      key: d.id, label: nameOf(d), startsAt: d.startsAt, utcOffsetSeconds: d.utcOffsetSeconds, utcOffsetSource: d.utcOffsetSource,
+      durationSeconds: d.durationSeconds,
+    })),
+  };
+  return (
+    <>
+      <DecisionTimeline gapKind="break" lanes={[parts]} />
+      <Comparison
+        subjects={chain.map((d) => ({ key: d.id, title: <DiveTitle dive={d} /> }))}
+        facts={[
+          { key: 'duration', label: labels.duration, values: chain.map((d) => values(d).duration) },
+          { key: 'depth', label: labels.depth, values: chain.map((d) => values(d).depth) },
+          { key: 'site', label: labels.site, values: chain.map((d) => values(d).site) },
+        ]}
+      />
+    </>
+  );
+}
+
+/** A short Dive at the blip it is: one sketch on a 40 m scale, then the two facts that made it a check. */
 function DiveComparison({ check: c }: { check: DiveCheckView }) {
   const values = useDiveValues()(c.dive);
   const labels = useFactLabels();
   return (
-    <Comparison
-      subjects={[{ key: c.dive.id, title: <DiveTitle dive={c.dive} /> }]}
-      facts={[
-        { key: 'time', label: labels.time, values: [values.time] },
-        { key: 'duration', label: labels.duration, values: [values.duration] },
-        { key: 'depth', label: labels.depth, values: [values.depth] },
-      ]}
-    />
+    <>
+      <div className="decision-visual">
+        <ProfileSketch profile={c.dive.profile} hasRecording={c.dive.recordings > 0} scaleM={40} />
+      </div>
+      <Comparison
+        subjects={[{ key: c.dive.id, title: <DiveTitle dive={c.dive} /> }]}
+        facts={[
+          { key: 'duration', label: labels.duration, values: [values.duration] },
+          { key: 'depth', label: labels.depth, values: [values.depth] },
+        ]}
+      />
+    </>
   );
 }
 
@@ -196,7 +203,6 @@ function Check({ check: c, list, index, count, onAnswered }: {
   const errorText = useErrorText();
   const divers = useQuery(diversQuery());
   const nameOf = useDiveName();
-  const relationship = usePairRelationship();
   const [merging, setMerging] = useState(false);
   const answer = useAnswer(onAnswered);
   const diver = (divers.data?.length ?? 0) > 1 ? divers.data?.find((v) => v.id === c.diverId)?.name : undefined;
@@ -205,7 +211,6 @@ function Check({ check: c, list, index, count, onAnswered }: {
   return (
     <li className="decision">
       <h3 className="decision-question">{t('checks.pairCard.question')}</h3>
-      <p className="muted">{relationship(c)}</p>
       <PairComparison check={c} showDiver={diver} stays />
       <p className="muted">{t('checks.pairCard.consequence')}</p>
       <div className="form-actions">
