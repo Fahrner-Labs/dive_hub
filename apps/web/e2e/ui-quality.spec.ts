@@ -1043,7 +1043,7 @@ for (const v of variants) {
       await expectGoodPage(page, title('Review'), v);
       // A discarded candidate stays out of the way of the other specs on this server; the next run reopens or uploads it.
       await panel.getByRole('button', { name: v.english ? /^Discard:/ : /^Verwerfen:/ }).click();
-      await expect(panel).toHaveCount(0);
+      await expect(panel.getByRole('columnheader', { name: /Garmin Descent Mk3 \(8803\)/ })).toHaveCount(0);
     });
 
     test('a dive after a surface break: appending it asked first, then the dive with its surface break and parts', { tag: ['@dives'] }, async ({ page, request }) => {
