@@ -4,7 +4,7 @@
 > `pnpm check` fails when this map is stale. Symbols are ranked by how widely the code references them;
 > each module shows its most-referenced ones (exported symbols rank higher). Search here before walking the tree.
 
-Files: 383 · symbols: 3540 · shown: 256
+Files: 394 · symbols: 3541 · shown: 251
 
 ### server/(root)
 apps/server/src/vocabulary.ts:13 type SiteWaterType
@@ -43,9 +43,7 @@ apps/server/src/backups/backup-service.ts:86 const isUniqueViolation
 apps/server/src/backups/backup-service.ts:458 type BackupService
 apps/server/src/backups/pg-command.ts:42 fn pgFailureMessage
 apps/server/src/backups/backup-archive.ts:96 iface BackupManifest
-apps/server/src/backups/backup-archive.ts:321 fn passphraseEncryption
-apps/server/src/backups/backup-service.ts:101 fn createBackupService
-… 142 more symbols in this module
+… 144 more symbols in this module
 
 ### server/centres
 apps/server/src/centres/centre-view.ts:24 const CentreView
@@ -76,8 +74,7 @@ apps/server/src/db/schema.ts:75 const diverManagement
 apps/server/src/db/auth-schema.ts:20 const user
 apps/server/src/db/import-types.ts:12 iface ImportedValues
 apps/server/src/db/import-types.ts:6 type ImportArea
-apps/server/src/db/auth-schema.ts:40 const session
-… 150 more symbols in this module
+… 151 more symbols in this module
 
 ### server/divers
 apps/server/src/divers/management.ts:8 fn managedDiverIds
@@ -108,9 +105,7 @@ apps/server/src/dives/matching.ts:81 const DAY_MS
 apps/server/src/dives/logbook-service.ts:268 type LogbookService
 apps/server/src/dives/dive-values.ts:6 iface DiveValues
 apps/server/src/dives/dive-service.ts:87 const nextVersion
-apps/server/src/dives/weighting.ts:96 iface Suit
-apps/server/src/dives/matching.ts:34 const OVERLAP_TOLERANCE_SECONDS
-… 289 more symbols in this module
+… 291 more symbols in this module
 
 ### server/equipment
 apps/server/src/equipment/usage.ts:37 fn usageMap
@@ -119,8 +114,7 @@ apps/server/src/equipment/due.ts:59 const DAY_MS
 apps/server/src/equipment/usage.ts:16 iface Usage
 apps/server/src/equipment/due.ts:36 iface ScheduleDue
 apps/server/src/equipment/due.ts:86 const round
-apps/server/src/equipment/equipment-view.ts:22 const ServiceScheduleViewSchema
-… 92 more symbols in this module
+… 93 more symbols in this module
 
 ### server/http
 apps/server/src/http/schemas.ts:10 const Nullable
@@ -142,8 +136,7 @@ apps/server/src/imports/formats/uddf/uddf.ts:38 const round
 apps/server/src/imports/formats.ts:8 iface FileFormat
 apps/server/src/imports/import-service.ts:16 const PROCESS_IMPORT_TASK
 apps/server/src/imports/formats/uddf/xml.ts:141 const child
-apps/server/src/imports/formats/uddf/xml.ts:9 iface XmlElement
-… 146 more symbols in this module
+… 147 more symbols in this module
 
 ### server/lead
 apps/server/src/lead/types.ts:16 iface EstimateDive
@@ -174,8 +167,7 @@ apps/server/src/mcp/tool.ts:85 fn offsetOf
 apps/server/src/mcp/read-service.ts:25 const count
 apps/server/src/mcp/profile.ts:5 iface Series
 apps/server/src/mcp/access-service.ts:36 iface VerifiedAccess
-apps/server/src/mcp/read-service.ts:44 type DiveRow
-… 154 more symbols in this module
+… 155 more symbols in this module
 
 ### server/planning
 apps/server/src/planning/planning-error.ts:3 class PlanningError
@@ -186,8 +178,7 @@ apps/server/src/planning/gas-plan.ts:21 type GasRule
 apps/server/src/planning/loadings-service.ts:17 const DAY_MS
 apps/server/src/planning/bottom-time-service.ts:22 const round
 apps/server/src/planning/gas-numbers.ts:9 const round
-apps/server/src/planning/gas-plan-service.ts:32 const round
-… 126 more symbols in this module
+… 127 more symbols in this module
 
 ### server/providers
 apps/server/src/providers/registry.ts:70 class ProviderServiceError
@@ -210,9 +201,7 @@ apps/server/src/providers/current-remote.ts:5 type PushRow
 apps/server/src/providers/provider.ts:83 type DiveField
 apps/server/src/providers/push/outgoing-dive.ts:64 fn loadOutgoingDive
 apps/server/src/providers/dive-import/three-way.ts:10 const SYNCED_FIELDS
-apps/server/src/providers/provider.ts:85 iface Capabilities
-apps/server/src/providers/dive-import/dive-changes.ts:29 iface ProviderContext
-… 480 more symbols in this module
+… 482 more symbols in this module
 
 ### server/revisions
 apps/server/src/revisions/revisions.ts:66 fn writeRevision
@@ -250,8 +239,7 @@ apps/server/src/sites/sources.ts:10 const SITE_SOURCES
 apps/server/src/sites/sources.ts:33 const SOURCE_INFO
 apps/server/src/sites/sources.ts:14 const IMPORT_SOURCES
 apps/server/src/sites/site-ids.ts:26 fn accountOf
-apps/server/src/sites/site-ids.ts:105 fn storeId
-… 163 more symbols in this module
+… 164 more symbols in this module
 
 ### server/social
 apps/server/src/social/suggestion-service.ts:18 class SuggestionError
@@ -278,15 +266,7 @@ apps/server/src/users/tokens.ts:4 const newToken
 … 59 more symbols in this module
 
 ### web/(root)
-apps/web/src/api.ts:236 fn unwrap
-apps/web/src/api.ts:10 const api
-apps/web/src/api.ts:143 const keys
-apps/web/src/api.ts:35 class ApiError
 apps/web/src/ToolsLead.tsx:45 fn Panel
-apps/web/src/api.ts:15 type Problem
-apps/web/src/api.ts:317 const diversQuery
-apps/web/src/api.ts:70 type DiveView
-apps/web/src/api.ts:112 type ProviderView
 apps/web/src/PushRun.tsx:21 const named
 apps/web/src/CodeScanner.tsx:106 fn CodeScanner
 apps/web/src/ToolsLead.tsx:54 fn Conditions
@@ -300,7 +280,27 @@ apps/web/src/Cylinders.tsx:18 fn useCylinderText
 apps/web/src/DeleteDive.tsx:21 fn DeleteDiveDialog
 apps/web/src/ProfileSketch.tsx:12 fn ProfileSketch
 apps/web/src/ProviderConflicts.tsx:14 fn useConflictValueText
-… 693 more symbols in this module
+apps/web/src/WaitingPush.tsx:117 fn WaitingPushState
+apps/web/src/ImportPanel.tsx:39 const ImportContext
+apps/web/src/ReviewRows.tsx:6 iface Fact
+apps/web/src/SignedOut.tsx:20 fn useUserChanged
+apps/web/src/ProfilePlot.tsx:14 fn withAlpha
+apps/web/src/ReviewRows.tsx:37 fn Candidates
+… 511 more symbols in this module
+
+### web/api
+apps/web/src/api/request.ts:59 fn unwrap
+apps/web/src/api/request.ts:3 const api
+apps/web/src/api/keys.ts:2 const keys
+apps/web/src/api/request.ts:28 class ApiError
+apps/web/src/api/request.ts:6 type Problem
+apps/web/src/api/divers.ts:18 const diversQuery
+apps/web/src/api/dives.ts:11 type DiveView
+apps/web/src/api/providers.ts:7 type ProviderView
+apps/web/src/api/dives.ts:15 type RecordingSummary
+apps/web/src/api/sites.ts:8 type Position
+apps/web/src/api/providers.ts:8 type ConnectionView
+… 174 more symbols in this module
 
 ### web/i18n
 apps/web/src/i18n/languages.ts:6 fn pickLanguage
@@ -322,6 +322,7 @@ apps/web/src/lib/settings.ts:13 fn settingsHref
 apps/web/src/lib/geo.ts:4 iface Position
 apps/web/src/lib/focus.ts:16 fn focusHeading
 apps/web/src/lib/units.ts:20 const depthIn
+apps/web/src/lib/live.ts:111 const liveHealthy
 apps/web/src/lib/providers.ts:9 type SyncedField
 apps/web/src/lib/tools.ts:49 iface ToolsParams
 apps/web/src/lib/form.ts:4 const formValues
@@ -329,10 +330,7 @@ apps/web/src/lib/devices.ts:18 const deviceName
 apps/web/src/lib/review.ts:14 fn reviewHref
 apps/web/src/lib/providers.ts:55 fn useProviderOf
 apps/web/src/lib/providers.ts:52 type ProviderRef
-apps/web/src/lib/logbook.ts:11 iface LogbookParams
-apps/web/src/lib/units.ts:4 type UnitSystem
-apps/web/src/lib/units.ts:22 const pressureIn
-… 353 more symbols in this module
+… 355 more symbols in this module
 
 ### web/ui
 apps/web/src/ui/Layout.tsx:85 fn Notice
