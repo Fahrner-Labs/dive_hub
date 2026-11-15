@@ -21996,6 +21996,7 @@
                         "maxDepthM",
                         "avgDepthM",
                         "profile",
+                        "hasRecording",
                         "site",
                         "owner",
                         "centres",
@@ -22053,6 +22054,10 @@
                               "$ref": "#/components/schemas/DiveProfileView"
                             }
                           ]
+                        },
+                        "hasRecording": {
+                          "type": "boolean",
+                          "description": "Whether the suggested Dive has a Recording; without one the card draws an empty sketch slot"
                         },
                         "site": {
                           "anyOf": [

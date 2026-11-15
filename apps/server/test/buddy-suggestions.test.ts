@@ -24,6 +24,7 @@ type PreviewView = SuggestionView & {
     centres: { id: string; name: string }[];
     participants: { diverId: string; name: string; role: string }[];
     profile: { depthsM: number[]; spanSeconds: number; ascentBands: [number, number, number][] } | null;
+    hasRecording: boolean;
   };
 };
 
@@ -153,8 +154,9 @@ describe.skipIf(!(await databaseReachable()))('Buddy suggestions', () => {
     });
     // The facts a copy may take, and nothing of the Recording, notes, suit, weighting, cylinders, lead or overrides.
     expect(Object.keys(preview.dive).sort()).toEqual([
-      'avgDepthM', 'centres', 'durationSeconds', 'id', 'maxDepthM', 'owner', 'participants', 'profile', 'site', 'startsAt', 'utcOffsetSeconds',
+      'avgDepthM', 'centres', 'durationSeconds', 'hasRecording', 'id', 'maxDepthM', 'owner', 'participants', 'profile', 'site', 'startsAt', 'utcOffsetSeconds',
     ]);
+    expect(preview.dive.hasRecording).toBe(true);
     expect(preview.dive.owner).toEqual({ id: timDiver, name: 'tim' });
     // The sketch the card draws, from the Dive's current assessment.
     expect(preview.dive.profile).toMatchObject({ spanSeconds: expect.any(Number), ascentBands: expect.any(Array) });

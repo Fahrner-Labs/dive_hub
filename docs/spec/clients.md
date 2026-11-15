@@ -956,7 +956,8 @@ dives, all off until the User turns them on. *Web:* `ProviderAutomation.tsx` (se
   offset, duration, max and average depth, the source Dive's owner and Participants, and the centre responsible for the
   site. The preview's `dive.profile` is the same depth sketch the logbook rows carry
   ([ADR 0041](../decisions/0041-logbook-profile-sketch.md)), for drawing the card; `null` when the suggested Dive has no
-  current assessment. Never show the source's Recording, notes, suit, weighting, cylinders, lead or Overrides. Only a pending
+  current assessment. `dive.hasRecording` says whether it has a Recording at all, so the card can draw an empty sketch
+  slot for a Dive typed by hand instead of leaving a gap. Never show the source's Recording, notes, suit, weighting, cylinders, lead or Overrides. Only a pending
   suggestion is readable: once it was accepted, declined or cancelled, `GET /api/buddy-suggestions/{id}` answers 404
   `suggestion_not_found` like another User's suggestion, so a removed Participant revokes the source Dive's facts.
 - **Offer the invited Diver's overlapping Dives in the preview** (`overlaps`, earliest first): each with its id, start

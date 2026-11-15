@@ -26,6 +26,7 @@ const preview = (overlaps: BuddySuggestionPreviewView['overlaps']): BuddySuggest
     maxDepthM: 18,
     avgDepthM: 14,
     profile: null,
+    hasRecording: true,
     site: { id: 'site-1', name: 'Hausreef' },
     owner: { id: 'diver-owner', name: 'Tim' },
     centres: [],

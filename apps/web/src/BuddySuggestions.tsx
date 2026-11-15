@@ -102,7 +102,8 @@ function Suggestion({ suggestion: s, list, index, count }: {
       {preview.data && (
         <div className="decision-visual">
           <ProfileSketch
-            profile={preview.data.dive.profile} hasRecording scaleM={Math.max(40, preview.data.dive.maxDepthM ?? 0)}
+            profile={preview.data.dive.profile} hasRecording={preview.data.dive.hasRecording}
+            scaleM={Math.max(40, preview.data.dive.maxDepthM ?? 0)}
           />
         </div>
       )}

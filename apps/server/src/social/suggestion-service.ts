@@ -301,6 +301,7 @@ export function createSuggestionService(db: Db) {
           maxDepthM: row.dive.maxDepthM,
           avgDepthM: row.dive.avgDepthM,
           profile: profileOf(row.dive, row.assessment),
+          hasRecording: row.dive.primaryRecordingId !== null,
           site: site ?? null,
           owner: row.owner,
           centres,

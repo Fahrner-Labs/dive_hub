@@ -51,6 +51,7 @@ export const SuggestionPreviewView = Type.Object({
     maxDepthM: Nullable(Type.Number()),
     avgDepthM: Nullable(Type.Number()),
     profile: DiveProfileView,
+    hasRecording: Type.Boolean({ description: 'Whether the suggested Dive has a Recording; without one the card draws an empty sketch slot' }),
     site: SiteRef,
     owner: DiverRef,
     centres: Type.Array(Type.Object({ id: Type.String(), name: Type.String() }), {

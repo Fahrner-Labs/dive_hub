@@ -9146,6 +9146,8 @@ export interface paths {
                                 maxDepthM: null | number;
                                 avgDepthM: null | number;
                                 profile: null | components["schemas"]["DiveProfileView"];
+                                /** @description Whether the suggested Dive has a Recording; without one the card draws an empty sketch slot */
+                                hasRecording: boolean;
                                 site: null | {
                                     id: string;
                                     name: string;
