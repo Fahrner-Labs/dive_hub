@@ -57,6 +57,30 @@ describe('timeline geometry', () => {
     expect(gaps).toEqual([expect.objectContaining({ lane: 0, seconds: 4 * 60 })]);
   });
 
+  it('labels every break when a Dive has more than two parts', () => {
+    const { gaps } = timelineGeometry([
+      lane(
+        'parts',
+        bar('a', '2026-01-15T10:00:00Z', 30 * 60),
+        bar('b', '2026-01-15T10:34:00Z', 25 * 60),
+        bar('c', '2026-01-15T11:05:00Z', 20 * 60),
+      ),
+    ]);
+    expect(gaps).toEqual([
+      expect.objectContaining({ lane: 0, seconds: 4 * 60 }),
+      expect.objectContaining({ lane: 0, seconds: 6 * 60 }),
+    ]);
+  });
+
+  it('labels the gap when the reference starts after the candidate', () => {
+    const { gaps, overlaps } = timelineGeometry([
+      lane('recording', bar('r', '2026-01-15T10:10:00Z', 30 * 60)),
+      lane('dive', bar('d', '2026-01-15T10:00:00Z', 5 * 60)),
+    ]);
+    expect(overlaps).toEqual([]);
+    expect(gaps).toEqual([expect.objectContaining({ lane: 0, seconds: 5 * 60, left: 5 / 40, right: 10 / 40 })]);
+  });
+
   it('does not call the same space a gap twice', () => {
     const { gaps } = timelineGeometry([
       lane('dive', bar('a', '2026-01-15T10:00:00Z', 30 * 60)),
