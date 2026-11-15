@@ -45,7 +45,7 @@ function enumsOf(property: string): string[] {
 const english = flatten(en as Tree);
 
 // The logbook checks draw a timeline and word no rule code (FAH-210), except the surface-break panel; only they have
-// no text under `checks.rule.*`.
+// no text under `checks.rule.*`. Exempt them there only: `assessment.title` and `tools.rules` word their own codes.
 const UNWORDED_RULES = new Set(['recording_beside_entry', 'overlapping_dives', 'entry_apart_from_recording', 'short_shallow_dive']);
 
 describe.each([['de', de]])('%s translation', (_name, locale) => {
@@ -132,7 +132,7 @@ describe('codes from the API', () => {
     ['equipmentStatus', 'vocabulary.equipmentStatus'],
     ['use', 'vocabulary.equipmentUse'],
   ])('every %s has an English text under %s', (property, ...prefixes) => {
-    const codes = enumsOf(property).filter((code) => !UNWORDED_RULES.has(code));
+    const codes = enumsOf(property).filter((code) => !(prefixes.includes('checks.rule') && UNWORDED_RULES.has(code)));
     expect(codes.length).toBeGreaterThan(0);
     for (const code of codes) expect(prefixes.some((prefix) => english.has(`${prefix}.${code}`) || english.has(`${prefix}.${code}.name`)), `${prefixes.join(' or ')}.${code}`).toBe(true);
   });
