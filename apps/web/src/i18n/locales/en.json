@@ -995,6 +995,7 @@
   "checks": {
     "title": "Dives at the same time",
     "fact": {
+      "time": "Time",
       "duration": "Duration",
       "maxDepth": "Max depth",
       "site": "Site",

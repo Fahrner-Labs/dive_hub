@@ -64,7 +64,7 @@ function useDiveValues() {
 function useFactLabels() {
   const { t } = useTranslation();
   return {
-    duration: t('checks.fact.duration'), depth: t('checks.fact.maxDepth'),
+    time: t('checks.fact.time'), duration: t('checks.fact.duration'), depth: t('checks.fact.maxDepth'),
     site: t('checks.fact.site'), recording: t('checks.fact.recording'), diver: t('checks.fact.diver'),
   };
 }
@@ -133,7 +133,7 @@ function ChainComparison({ chain }: { chain: NonNullable<LogbookCheckView['chain
   );
 }
 
-/** A short Dive at the blip it is: one sketch on a 40 m scale, then the two facts that made it a check. */
+/** A short Dive at the blip it is: one sketch on a 40 m scale, then its facts as one of a pair shows them. */
 function DiveComparison({ check: c }: { check: DiveCheckView }) {
   const values = useDiveValues()(c.dive);
   const labels = useFactLabels();
@@ -145,8 +145,10 @@ function DiveComparison({ check: c }: { check: DiveCheckView }) {
       <Comparison
         subjects={[{ key: c.dive.id, title: <DiveTitle dive={c.dive} /> }]}
         facts={[
+          { key: 'time', label: labels.time, values: [values.time] },
           { key: 'duration', label: labels.duration, values: [values.duration] },
           { key: 'depth', label: labels.depth, values: [values.depth] },
+          { key: 'site', label: labels.site, values: [values.site] },
         ]}
       />
     </>

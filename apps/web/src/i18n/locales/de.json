@@ -995,6 +995,7 @@
   "checks": {
     "title": "Tauchgänge zur selben Zeit",
     "fact": {
+      "time": "Zeit",
       "duration": "Dauer",
       "maxDepth": "Max. Tiefe",
       "site": "Tauchplatz",
