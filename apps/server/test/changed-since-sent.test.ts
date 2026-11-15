@@ -3,7 +3,7 @@
 // number) differs from what was sent. Worked out when asked, over the list's Diver and search, like the other filters.
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { push } from '../src/db/schema.js';
+import { dive, push } from '../src/db/schema.js';
 import { createFakeLedger } from './fake-ledger-provider.js';
 import { makeSyntheticDive } from './fixtures/synthetic-dive.js';
 import {
@@ -154,5 +154,22 @@ describe.skipIf(!(await databaseReachable()))('the logbook list: "changed since 
     await t.db.update(push).set({ state: 'failed' }).where(eq(push.diveId, id));
     await edit(id, 'Turtle');
     expect((await list()).counts.changedSinceSent).toBe(0);
+  });
+
+  it('works out a large confirmed push set, not only the Dives of the page', async () => {
+    const count = 60;
+    const made = await t.db.insert(dive).values(Array.from({ length: count }, (_, i) => ({
+      diverId, number: i + 1, startsAt: new Date(Date.UTC(year, 5, 1, 0, i)), durationSeconds: 2400,
+    }))).returning({ id: dive.id });
+    await t.db.insert(push).values(made.map((d, i) => ({
+      diveId: d.id, connectionId, provider: 'ledger', mode: 'api' as const, action: 'create' as const,
+      state: 'confirmed' as const, remoteId: `L-fake-${i}`, diveVersion: 1, fingerprint: `stale-${i}`,
+    })));
+    const page = await list();
+    expect(page.counts.changedSinceSent).toBe(count);
+    expect(page.dives).toHaveLength(25);
+    const all = await list(`?only=changed-since-sent&limit=${count}`);
+    expect(all.total).toBe(count);
+    expect(new Set(ids(all))).toEqual(new Set(made.map((d) => d.id)));
   });
 });

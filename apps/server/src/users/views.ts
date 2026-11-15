@@ -32,6 +32,14 @@ export const PreferencesView = Type.Object({
   }),
 });
 
+/** A password sign-in that still needs a second factor (ADR 0011): the server set the challenge cookie, no session. */
+export const TwoFactorChallengeView = Type.Object({
+  twoFactorRedirect: Type.Literal(true),
+  twoFactorMethods: Type.Array(Type.String(), {
+    description: "Second factors this account can use; \"totp\" is the built-in authenticator app",
+  }),
+});
+
 /** A link shown once to the admin, who passes it on (Invitations, password reset links). */
 export const LinkView = Type.Object({
   url: Type.String({ description: 'Shown only now: only a hash of its token is stored.' }),
