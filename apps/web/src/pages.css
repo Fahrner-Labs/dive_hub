@@ -536,7 +536,7 @@ th[aria-sort='ascending'], th[aria-sort='descending'] { color: var(--color-text)
    visually hidden summary carry the same values as text. */
 .timeline-figure { min-width: 0; }
 .timeline { margin: 0; display: grid; gap: var(--space-1); container-type: inline-size; }
-.timeline-lane, .timeline-gap { display: grid; grid-template-columns: minmax(3.5rem, max-content) minmax(0, 1fr); align-items: center; gap: var(--space-2); }
+.timeline-lane, .timeline-gap { display: grid; grid-template-columns: minmax(3.5rem, 6rem) minmax(0, 1fr); align-items: center; gap: var(--space-2); }
 .timeline-label { display: grid; min-width: 0; font-size: var(--text-sm); line-height: 1.2; }
 .timeline-name { font-weight: var(--weight-semibold); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .timeline-meta { color: var(--color-text-muted); font-size: var(--text-xs); font-variant-numeric: tabular-nums; }
@@ -553,7 +553,7 @@ th[aria-sort='ascending'], th[aria-sort='descending'] { color: var(--color-text)
 .decision-visual { display: grid; justify-items: start; }
 .decision-visual .sketch { width: min(100%, 18rem); height: 5rem; }
 @container (max-width: 20rem) {
-  .timeline-lane, .timeline-gap { grid-template-columns: minmax(2.75rem, max-content) minmax(0, 1fr); }
+  .timeline-lane, .timeline-gap { grid-template-columns: minmax(2.75rem, 5rem) minmax(0, 1fr); }
   .timeline-label { font-size: var(--text-xs); }
 }
 
