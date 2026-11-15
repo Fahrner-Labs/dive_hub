@@ -17,7 +17,7 @@ export const DiveProfileViewSchema = Type.Object({
   }),
 }, {
   $id: 'DiveProfileView',
-  description: 'The Primary recording’s depth, reduced to draw a sketch of the dive (ADR 0041); null without a Recording or while the Dive waits to be assessed',
+  description: 'The Primary recording’s depth, reduced to draw a sketch of the dive (ADR 0041); null without a Recording, while the Dive waits to be assessed, or when its assessment is of a Recording it no longer has as Primary',
 });
 export const DiveProfileView = Nullable(refTo(DiveProfileViewSchema));
 
