@@ -8,7 +8,7 @@ import {
   type AcceptedBuddySuggestionView, type BuddySuggestionOverlapView, type BuddySuggestionPreviewView, type BuddySuggestionView,
 } from './api.ts';
 import { DecisionTimeline } from './DecisionTimeline.tsx';
-import { ProfileSketch } from './ProfileSketch.tsx';
+import { ProfileSketch, SketchScale } from './ProfileSketch.tsx';
 import { useDisplay, useErrorText } from './lib/display.ts';
 import { refocusAfterRemoval } from './lib/focus.ts';
 import { useJoinNames } from './lib/providers.ts';
@@ -94,6 +94,7 @@ function Suggestion({ suggestion: s, list, index, count }: {
     ? [...new Set([preview.data.dive.owner.name, ...preview.data.dive.participants.map((p) => p.name)])]
     : [];
   const item = display.diveTime(d.startsAt, d.utcOffsetSeconds);
+  const scaleM = Math.max(40, preview.data?.dive.maxDepthM ?? 0);
   return (
     <li className="decision">
       {preview.data && (
@@ -103,8 +104,9 @@ function Suggestion({ suggestion: s, list, index, count }: {
         <div className="decision-visual">
           <ProfileSketch
             profile={preview.data.dive.profile} hasRecording={preview.data.dive.hasRecording}
-            scaleM={Math.max(40, preview.data.dive.maxDepthM ?? 0)}
+            scaleM={scaleM}
           />
+          <SketchScale scaleM={scaleM} />
         </div>
       )}
       <Comparison subjects={[{ key: d.id, label: t('suggestions.suggestedDive'), title: t('suggestions.suggestedDive') }]} facts={facts} />

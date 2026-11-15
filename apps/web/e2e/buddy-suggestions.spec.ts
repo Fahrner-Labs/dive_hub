@@ -74,6 +74,8 @@ test('a Participant another User keeps raises a suggestion in that User\'s Revie
     await expect(panel.getByRole('heading', { name: `Erika logged this dive with your diver ${diverName}`, level: 3 })).toBeVisible();
     await expect(panel.getByText('Suggested dive')).toBeVisible();
     await expect(panel.locator('.sketch').first()).toBeVisible();
+    // The caption names the scale the suggestion's sketch is drawn on (never below 40 m).
+    await expect(panel.locator('.sketch-scale')).toHaveText('0–40 m');
     await expect(panel.getByRole('button', { name: /^Accept/ })).toBeVisible();
     await expect(panel.getByRole('button', { name: /^Decline/ })).toBeVisible();
 

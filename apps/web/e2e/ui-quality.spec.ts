@@ -1228,6 +1228,7 @@ for (const v of variants) {
         })).toBeVisible();
         await expect(panel.getByRole('columnheader', { name: v.english ? 'Suggested dive' : 'Empfohlener Tauchgang' })).toBeVisible();
         await expect(panel.locator('.sketch')).toBeVisible();
+        await expect(panel.locator('.sketch-scale')).toHaveText(/^0–\d+(?:[.,]\d+)? m$/);
         // axe here, on the card: removing the Participant below clears it before the afterEach run.
         await expectGoodPage(page, title('Review'), v);
       } finally {

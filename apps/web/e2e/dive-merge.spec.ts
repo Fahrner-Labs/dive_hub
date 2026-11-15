@@ -138,6 +138,8 @@ test('offers a short and shallow dive for deleting, keeps it when told so, and d
     await expect(main.getByRole('heading', { name: 'Probably not a real dive?', level: 3 })).toBeVisible();
     const shortCard = main.getByRole('listitem').filter({ has: page.getByRole('heading', { name: 'Probably not a real dive?', level: 3 }) });
     await expect(shortCard.locator('.sketch')).toBeVisible();
+    // The sketch names its fixed depth scale, so a shallow wedge still says what the axis means.
+    await expect(shortCard.locator('.sketch-scale')).toHaveText('0–40 m');
     await expect(shortCard.getByRole('rowheader', { name: 'Time' })).toBeVisible();
     await expect(shortCard.getByRole('rowheader', { name: 'Duration' })).toBeVisible();
     await expect(shortCard.getByRole('rowheader', { name: 'Max depth' })).toBeVisible();

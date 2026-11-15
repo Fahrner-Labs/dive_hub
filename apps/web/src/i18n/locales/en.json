@@ -1055,6 +1055,9 @@
     "summaryBreak": "{{duration}} surface break.",
     "summaryOverlap": "{{duration}} overlap."
   },
+  "sketch": {
+    "scale": "0–{{depth}}"
+  },
   "merge": {
     "hint": "Another dive in this logbook was at the same time: {{facts}}. If both are the same dive, you can merge them into one.",
     "withRecording": "with a recording",

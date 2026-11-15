@@ -6,7 +6,7 @@ import { AppendDialog } from './AppendDive.tsx';
 import { DecisionTimeline } from './DecisionTimeline.tsx';
 import { DeleteDiveDialog } from './DeleteDive.tsx';
 import { MergeDialog } from './MergeDive.tsx';
-import { ProfileSketch } from './ProfileSketch.tsx';
+import { ProfileSketch, SketchScale } from './ProfileSketch.tsx';
 import { Comparison, type CompareFact } from './ReviewRows.tsx';
 import { announce } from './lib/announce.ts';
 import { useJoinNames } from './lib/providers.ts';
@@ -138,10 +138,12 @@ function DiveComparison({ check: c }: { check: DiveCheckView }) {
   const nameOf = useDiveName();
   const values = useDiveValues()(c.dive);
   const labels = useFactLabels();
+  const scaleM = 40;
   return (
     <>
       <div className="decision-visual">
-        <ProfileSketch profile={c.dive.profile} hasRecording={c.dive.recordings > 0} scaleM={40} />
+        <ProfileSketch profile={c.dive.profile} hasRecording={c.dive.recordings > 0} scaleM={scaleM} />
+        <SketchScale scaleM={scaleM} />
       </div>
       <Comparison
         subjects={[{ key: c.dive.id, label: nameOf(c.dive), title: <DiveTitle dive={c.dive} /> }]}

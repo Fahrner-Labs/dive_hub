@@ -1,5 +1,7 @@
 import { useId } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { DiveSummary } from './api.ts';
+import { useDisplay } from './lib/display.ts';
 import { SKETCH_HEIGHT, SKETCH_WIDTH, sketchPaths } from './lib/sketch.ts';
 
 /**
@@ -25,4 +27,11 @@ export function ProfileSketch({ profile, hasRecording, scaleM }: { profile: Dive
       {bands.map((b, i) => <path key={i} d={b.d} className="sketch-ascent" data-band={b.band} vectorEffect="non-scaling-stroke" />)}
     </svg>
   );
+}
+
+/** The depth scale a decision card's sketch is drawn on, "0–40 m"; a logbook row shares the sketch without it. */
+export function SketchScale({ scaleM }: { scaleM: number }) {
+  const { t } = useTranslation();
+  const display = useDisplay();
+  return <p className="meta sketch-scale">{t('sketch.scale', { depth: display.depth(scaleM) })}</p>;
 }
