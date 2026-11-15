@@ -79,7 +79,7 @@ test('lists two dives at the same time on the logbook, keeps them apart when tol
     await expect(main.getByRole('heading', { name: 'Dives at the same time', level: 2 })).toBeVisible();
     await expect(main.getByRole('button', { name: /^They are two dives: Dive \d+ and Dive \d+$/ })).toBeVisible();
     // The pair is a timeline over a comparison of the facts that tell them apart.
-    const card = main.getByRole('listitem').filter({ has: main.getByRole('heading', { name: 'Same dive logged twice?', level: 3 }) });
+    const card = main.getByRole('listitem').filter({ has: page.getByRole('heading', { name: 'Same dive logged twice?', level: 3 }) });
     await expect(card.locator('.timeline')).toBeVisible();
     await expect(card.locator('.timeline-bar')).toHaveCount(2);
     await expect(card.locator('.timeline-time')).toHaveCount(4);
@@ -136,7 +136,7 @@ test('offers a short and shallow dive for deleting, keeps it when told so, and d
     await expect(main.getByRole('heading', { name: 'Probably not dives', level: 2 })).toBeVisible();
     await expect(main.getByText('Shorter than 2 min and shallower than 3 m: usually a computer that got wet or a false start.')).toBeVisible();
     await expect(main.getByRole('heading', { name: 'Probably not a real dive?', level: 3 })).toBeVisible();
-    const shortCard = main.getByRole('listitem').filter({ has: main.getByRole('heading', { name: 'Probably not a real dive?', level: 3 }) });
+    const shortCard = main.getByRole('listitem').filter({ has: page.getByRole('heading', { name: 'Probably not a real dive?', level: 3 }) });
     await expect(shortCard.locator('.sketch')).toBeVisible();
     await expect(shortCard.getByRole('rowheader', { name: 'Max depth' })).toBeVisible();
     await expect(main.getByText('Deleting moves it to Deleted dives (restorable); keeping stops asking.')).toBeVisible();
