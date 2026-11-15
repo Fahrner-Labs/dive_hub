@@ -288,10 +288,10 @@ apps/web/src/api.ts:70 type DiveView
 apps/web/src/api.ts:110 type ProviderView
 apps/web/src/PushRun.tsx:21 const named
 apps/web/src/CodeScanner.tsx:106 fn CodeScanner
-apps/web/src/ReviewRows.tsx:50 iface CompareFact
+apps/web/src/ReviewRows.tsx:52 iface CompareFact
 apps/web/src/ProviderDiveImport.tsx:18 const DIVE_KINDS
 apps/web/src/DiveCodes.tsx:10 fn CodeFigure
-apps/web/src/ReviewRows.tsx:61 fn Comparison
+apps/web/src/ReviewRows.tsx:63 fn Comparison
 apps/web/src/DecisionTimeline.tsx:20 fn DecisionTimeline
 apps/web/src/ProfilePlot.tsx:11 const token
 apps/web/src/Cylinders.tsx:18 fn useCylinderText

@@ -87,7 +87,7 @@ function PairComparison({ check: c, showDiver, stays }: { check: LogbookCheckVie
   facts.push({ key: 'recording', label: labels.recording, values: [first.recording, second.recording] });
   if (showDiver) facts.push({ key: 'diver', label: labels.diver, values: [showDiver, showDiver] });
   const subject = (d: Paired) => ({
-    key: d.id, title: <DiveTitle dive={d} />,
+    key: d.id, label: nameOf(d), title: <DiveTitle dive={d} />,
     badge: stays && c.other.keeps === d.id ? <Badge>{t('checks.stays')}</Badge> : undefined,
   });
   const lane = (d: Paired, meta: string | undefined): TimelineLane => ({
@@ -122,7 +122,7 @@ function ChainComparison({ chain }: { chain: NonNullable<LogbookCheckView['chain
     <>
       <DecisionTimeline gapKind="break" lanes={[parts]} />
       <Comparison
-        subjects={chain.map((d) => ({ key: d.id, title: <DiveTitle dive={d} /> }))}
+        subjects={chain.map((d) => ({ key: d.id, label: nameOf(d), title: <DiveTitle dive={d} /> }))}
         facts={[
           { key: 'duration', label: labels.duration, values: chain.map((d) => values(d).duration) },
           { key: 'depth', label: labels.depth, values: chain.map((d) => values(d).depth) },
@@ -135,6 +135,7 @@ function ChainComparison({ chain }: { chain: NonNullable<LogbookCheckView['chain
 
 /** A short Dive at the blip it is: one sketch on a 40 m scale, then its facts as one of a pair shows them. */
 function DiveComparison({ check: c }: { check: DiveCheckView }) {
+  const nameOf = useDiveName();
   const values = useDiveValues()(c.dive);
   const labels = useFactLabels();
   return (
@@ -143,7 +144,7 @@ function DiveComparison({ check: c }: { check: DiveCheckView }) {
         <ProfileSketch profile={c.dive.profile} hasRecording={c.dive.recordings > 0} scaleM={40} />
       </div>
       <Comparison
-        subjects={[{ key: c.dive.id, title: <DiveTitle dive={c.dive} /> }]}
+        subjects={[{ key: c.dive.id, label: nameOf(c.dive), title: <DiveTitle dive={c.dive} /> }]}
         facts={[
           { key: 'time', label: labels.time, values: [values.time] },
           { key: 'duration', label: labels.duration, values: [values.duration] },

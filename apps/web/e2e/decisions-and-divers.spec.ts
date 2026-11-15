@@ -47,6 +47,16 @@ test('a recording that doesn\'t clearly fit is put aside, brought back and added
   await expect(panel.getByRole('rowheader', { name: 'Device' })).toHaveCount(0);
   await expect(panel.getByRole('columnheader', { name: /Garmin Descent Mk3 \(777\)/ })).toBeVisible();
   await expect(panel.getByText(/^Adding attaches the recording to that dive\./)).toBeVisible();
+  // With more than one candidate the comparison stacks on a phone instead of squeezing a column until it breaks:
+  // no sideways scroll, the header block stays, and each value names the candidate it belongs to.
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(panel.locator('.compare')).toHaveClass(/compare-multi/);
+  await expect(panel.locator('.compare tbody td[data-subject]').first()).toHaveAttribute('data-subject', 'Recording');
+  const rows = await panel.locator('.compare tbody tr').evaluateAll((all) => all.map((row) => getComputedStyle(row).display));
+  expect(rows.every((display) => display === 'block')).toBe(true);
+  const compareWidth = await panel.locator('.compare-wrap').evaluate((wrap) => ({ scroll: wrap.scrollWidth, client: wrap.clientWidth }));
+  expect(compareWidth.scroll).toBe(compareWidth.client);
+  await page.setViewportSize({ width: 1280, height: 720 });
   await expect(panel.getByRole('button', { name: /^Add to Dive \d+:/ })).toBeVisible();
   await expectGoodPage(page, 'Review');
 

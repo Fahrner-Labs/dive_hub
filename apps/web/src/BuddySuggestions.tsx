@@ -107,7 +107,7 @@ function Suggestion({ suggestion: s, list, index, count }: {
           />
         </div>
       )}
-      <Comparison subjects={[{ key: d.id, title: t('suggestions.suggestedDive') }]} facts={facts} />
+      <Comparison subjects={[{ key: d.id, label: t('suggestions.suggestedDive'), title: t('suggestions.suggestedDive') }]} facts={facts} />
       {people.length > 0 && <p>{t('suggestions.people', { names: joinNames(people) })}</p>}
       <p className="muted">{t('suggestions.consequence')}</p>
       <div className="form-actions">
@@ -199,8 +199,8 @@ export function SuggestionAcceptDialog({ preview, onClose, onAccept, isPending =
                 ]} />
                 <Comparison
                   subjects={[
-                    { key: preview.dive.id, title: t('suggestions.suggestedDive') },
-                    { key: o.id, title: t('suggestions.yourDive') },
+                    { key: preview.dive.id, label: t('suggestions.suggestedDive'), title: t('suggestions.suggestedDive') },
+                    { key: o.id, label: t('suggestions.yourDive'), title: t('suggestions.yourDive') },
                   ]}
                   facts={compare(preview.dive, o)}
                 />

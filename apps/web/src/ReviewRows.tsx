@@ -41,6 +41,8 @@ export function Candidates({ children }: { children: ReactNode }) {
 /** One candidate column of a comparison: its title, a badge for what to know about it, and an optional note under it. */
 export interface CompareSubject {
   key?: string;
+  /** The column's plain name, for the stacked table on a phone where the column header is out of sight. */
+  label: string;
   title: ReactNode;
   badge?: ReactNode;
   note?: ReactNode;
@@ -60,15 +62,17 @@ export interface CompareFact {
  */
 export function Comparison({ subjects, facts }: { subjects: CompareSubject[]; facts: CompareFact[] }) {
   const { t } = useTranslation();
+  const multi = subjects.length > 1;
   const shown = facts.filter((fact) => fact.values.some((value) => value));
   return (
     <div className="compare-wrap">
-      <table className="compare">
-        <thead>
-          <tr>
-            <td className="compare-corner" />
+      {/* Explicit roles keep the table a table when its own width (not the window's) lays the rows out as blocks. */}
+      <table className={multi ? 'compare compare-multi' : 'compare'} role="table">
+        <thead role="rowgroup">
+          <tr role="row">
+            <td className="compare-corner" role="cell" />
             {subjects.map((subject, i) => (
-              <th key={subject.key ?? i} scope="col">
+              <th key={subject.key ?? i} scope="col" role="columnheader">
                 <span className="compare-title">{subject.title}</span>
                 {subject.badge}
                 {subject.note && <span className="compare-note">{subject.note}</span>}
@@ -76,19 +80,19 @@ export function Comparison({ subjects, facts }: { subjects: CompareSubject[]; fa
             ))}
           </tr>
         </thead>
-        <tbody>
+        <tbody role="rowgroup">
           {shown.map((fact) => {
             const same = valuesAgree(fact.values);
             return (
-              <tr key={fact.key} className={same ? undefined : 'compare-differs'}>
-                <th scope="row">{fact.label}</th>
-                {same && subjects.length > 1 ? (
-                  <td className="compare-same" colSpan={subjects.length}>
+              <tr key={fact.key} role="row" className={same ? undefined : 'compare-differs'}>
+                <th scope="row" role="rowheader">{fact.label}</th>
+                {same && multi ? (
+                  <td className="compare-same" role="cell" colSpan={subjects.length}>
                     {t(subjects.length === 2 ? 'comparison.both' : 'comparison.all', { value: fact.values[0] })}
                   </td>
                 ) : (
                   fact.values.map((value, i) => (
-                    <td key={i} className={value ? undefined : 'compare-missing'}>{value ?? t('common.none')}</td>
+                    <td key={i} role="cell" data-subject={subjects[i]?.label} className={value ? undefined : 'compare-missing'}>{value ?? t('common.none')}</td>
                   ))
                 )}
               </tr>

@@ -162,10 +162,9 @@ function Decision({ candidate: c, list, index, count, onDiscarded }: {
   ];
   const subjects = [
     // The Device belongs to the Recording, so it sits on that subject rather than in a row no Dive can fill.
-    { key: 'recording', title: t('decisions.recording'), badge: <Badge>{t(`import.reason.${c.reason}`)}</Badge>, note: device },
+    { key: 'recording', label: t('decisions.recording'), title: t('decisions.recording'), badge: <Badge>{t(`import.reason.${c.reason}`)}</Badge>, note: device },
     ...c.dives.map((d) => ({
-      key: d.id,
-      title: <a className="candidate-title" href={`#/dives/${d.id}`}>{d.number !== null ? t('dive.title', { number: d.number }) : t('dive.titleNoNumber')}</a>,
+      key: d.id, label: diveName(d), title: <a className="candidate-title" href={`#/dives/${d.id}`}>{d.number !== null ? t('dive.title', { number: d.number }) : t('dive.titleNoNumber')}</a>,
     })),
   ];
   return (
@@ -179,7 +178,7 @@ function Decision({ candidate: c, list, index, count, onDiscarded }: {
       <div className="form-actions">
         {c.dives.map((d) => (
           <Button
-            key={d.id} icon="merge" aria-label={t('common.forItem', { action: t('decisions.addTo', { name: diveName(d) }), item: recordingName })}
+            key={d.id} icon="link" aria-label={t('common.forItem', { action: t('decisions.addTo', { name: diveName(d) }), item: recordingName })}
             isPending={decide.isPending && decide.variables.kind === 'attach' && decide.variables.diveId === d.id}
             isDisabled={decide.isPending}
             onPress={() => decide.mutate({ kind: 'attach', diveId: d.id })}

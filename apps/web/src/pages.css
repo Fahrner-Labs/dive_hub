@@ -161,13 +161,13 @@
 .site-import-findings { margin: var(--space-1) 0 0; padding-left: var(--space-5); font-size: var(--text-sm); }
 
 /* Decisions, Divers, Devices (ADR 0016) */
-.decisions { list-style: none; margin: 0 0 var(--space-3); padding: 0; }
-/* A decision: what, why, then the choices (visual refresh 4). */
-.decision { display: grid; gap: var(--space-4); padding: var(--space-4) 0; border-top: 1px solid var(--color-border-strong); }
+.decisions { list-style: none; margin: var(--space-2) 0 var(--space-3); padding: 0; container: decisions / inline-size; }
+/* A decision: what, why, then the choices (visual refresh 4). The timeline and the comparison share one label gutter. */
+.decision { --decision-label: 6rem; display: grid; gap: var(--space-4); padding: var(--space-4) 0; border-top: 1px solid var(--color-border); }
 .decision:first-child { border-top: none; padding-top: 0; }
 .decision:last-child { padding-bottom: 0; }
 .decision > * { margin: 0; }
-.decision-question { font-size: var(--text-lg); }
+.decision-question { font-size: var(--text-md); }
 .decision-recording { display: grid; gap: var(--space-1); }
 .decision-recording > p { margin: 0; }
 .decision-subtitle { font-size: var(--text-md); margin: 0 0 var(--space-2); }
@@ -516,27 +516,49 @@ th[aria-sort='ascending'], th[aria-sort='descending'] { color: var(--color-text)
 .candidate-facts { margin: 0; font-size: var(--text-sm); color: var(--color-text-muted); overflow-wrap: anywhere; }
 .diff { background: var(--color-accent-soft); color: var(--color-text); border-radius: var(--radius-sm); padding-inline: var(--space-1); font-weight: var(--weight-semibold); }
 /* A decision card's facts as a table (UI redesign 4.5): one column per candidate, one labeled row per fact; a row the
-   candidates agree on is one muted value, a row they differ on is tinted whole and its values set in semibold. */
-.compare-wrap { overflow-x: auto; }
-.compare { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
-.compare th, .compare td { padding: var(--space-2); text-align: left; vertical-align: baseline; }
-.compare thead th { border-bottom: 1px solid var(--color-border); font-size: var(--text-md); font-weight: var(--weight-semibold); }
+   candidates agree on is one muted value, a row they differ on is tinted whole and its values set in semibold. The
+   first column is the same label gutter as the timeline's, and the columns size to their content instead of stretching
+   across the card (FAH-224). */
+.compare-wrap { container: compare / inline-size; overflow-x: auto; }
+.compare { width: auto; max-width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
+.compare th, .compare td { padding: var(--space-2) var(--space-4) var(--space-2) var(--space-2); text-align: left; vertical-align: baseline; }
+.compare th:first-child, .compare td:first-child { width: var(--decision-label); padding-inline: 0; }
+.compare thead th { padding-top: 0; border-bottom: 1px solid var(--color-border); font-size: var(--text-md); font-weight: var(--weight-semibold); }
 .compare-title { display: block; }
 .compare-note { display: block; font-size: var(--text-sm); font-weight: var(--weight-regular); color: var(--color-text-muted); }
 .compare tbody tr + tr { border-top: 1px solid var(--color-border); }
+.compare tbody tr:last-child > * { padding-bottom: 0; }
 .compare tbody th { color: var(--color-text-muted); font-weight: var(--weight-regular); white-space: nowrap; }
 .compare tbody td { overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
 .compare-differs { background: var(--color-accent-soft); }
 .compare-differs td { font-weight: var(--weight-semibold); }
 .compare-same, .compare-missing { color: var(--color-text-muted); }
 .compare-corner { padding: 0; }
+.panel-attention .compare-differs { background: var(--color-surface); }
+/* On a phone a comparison with more than one candidate stacks: no column is squeezed until its values break, and each
+   value carries its candidate's name (FAH-224). A single candidate keeps the two-column table it needs. */
+@container compare (max-width: 30rem) {
+  .compare-multi, .compare-multi tbody, .compare-multi tr,
+  .compare-multi th, .compare-multi td { display: block; }
+  .compare-multi thead { display: grid; gap: var(--space-1); padding-bottom: var(--space-2); }
+  .compare-multi thead tr { display: grid; gap: var(--space-1); }
+  .compare-multi thead .compare-corner { display: none; }
+  .compare-multi thead th { padding: 0; border-bottom: 0; }
+  .compare-multi thead .badge { white-space: normal; }
+  .compare-multi tbody tr { border-top: 1px solid var(--color-border); padding: var(--space-2) 0; }
+  .compare-multi tbody tr:last-child { padding-bottom: 0; }
+  .compare-multi tbody th { width: auto; padding: 0 0 var(--space-1); }
+  .compare-multi tbody td { display: grid; grid-template-columns: minmax(6rem, 36%) minmax(0, 1fr); gap: var(--space-2); padding: 0 0 var(--space-1); }
+  .compare-multi tbody td:not(:only-of-type)::before { content: attr(data-subject); color: var(--color-text-muted); }
+  .compare-multi tbody td:only-of-type { grid-template-columns: 1fr; }
+}
 
 /* A decision card's timeline (FAH-214): one wall-clock axis and a lane per Recording, Dive or part; the times sit at
    the bar ends, the duration on the bar, and a gap between bars is labeled. Decoration: the comparison and the
    visually hidden summary carry the same values as text. */
 .timeline-figure { min-width: 0; }
-.timeline { margin: 0; display: grid; gap: var(--space-1); container-type: inline-size; }
-.timeline-lane, .timeline-gap { display: grid; grid-template-columns: minmax(3.5rem, 6rem) minmax(0, 1fr); align-items: center; gap: var(--space-2); }
+.timeline { margin: 0; display: grid; gap: var(--space-1); padding-inline-end: var(--space-4); container-type: inline-size; }
+.timeline-lane, .timeline-gap { display: grid; grid-template-columns: minmax(3.5rem, var(--decision-label)) minmax(0, 1fr); align-items: center; gap: var(--space-2); }
 .timeline-label { display: grid; min-width: 0; font-size: var(--text-sm); line-height: 1.2; }
 .timeline-name { font-weight: var(--weight-semibold); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .timeline-meta { color: var(--color-text-muted); font-size: var(--text-xs); font-variant-numeric: tabular-nums; }
@@ -549,9 +571,22 @@ th[aria-sort='ascending'], th[aria-sort='descending'] { color: var(--color-text)
 .timeline-duration { position: absolute; top: 40%; color: var(--color-text); font-size: var(--text-xs); font-weight: var(--weight-semibold); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .timeline-gap-line { position: relative; align-self: center; border-top: 1px dashed var(--color-border-strong); height: 0; }
 .timeline-gap-label { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); padding: 0 var(--space-1); background: var(--color-surface); color: var(--color-text-muted); font-size: var(--text-xs); white-space: nowrap; }
+.panel-attention .timeline-gap-label { background: var(--color-accent-soft); }
 /* A sketch in a decision card is larger than a logbook row's, and fits a phone's width. */
 .decision-visual { display: grid; justify-items: start; }
 .decision-visual .sketch { width: min(100%, 18rem); height: 5rem; }
+/* With room for two columns, a sketch sits beside the facts it belongs to instead of leaving the card's right side
+   empty (FAH-224). Below this width the card stacks exactly as before. */
+@container decisions (min-width: 44rem) {
+  .decision:has(> .decision-visual) { grid-template-columns: minmax(0, 18rem) minmax(0, 1fr); column-gap: var(--space-5); }
+  .decision:has(> .decision-visual) > .decision-question,
+  .decision:has(> .decision-visual) > .muted,
+  .decision:has(> .decision-visual) > .form-actions,
+  .decision:has(> .decision-visual) > .notice { grid-column: 1 / -1; }
+  .decision:has(> .decision-visual) > .decision-visual { grid-column: 1; align-self: center; }
+  .decision:has(> .decision-visual) > .compare-wrap { grid-column: 2; align-self: start; }
+  .decision:has(> .decision-visual) > p:not(.muted) { grid-column: 2; }
+}
 @container (max-width: 20rem) {
   .timeline-lane, .timeline-gap { grid-template-columns: minmax(2.75rem, 5rem) minmax(0, 1fr); }
   .timeline-label { font-size: var(--text-xs); }
