@@ -6,7 +6,7 @@ import { Type, type Static } from 'typebox';
 import type { Auth } from '../auth/auth.js';
 import { requireAdmin, requireUser, userOf } from '../auth/fastify.js';
 import { answerErrors, answers, Problem } from '../http/problems.js';
-import { DateTime, IdParams } from '../http/schemas.js';
+import { DateTime, IdParams, Nullable } from '../http/schemas.js';
 import { BACKUP_EXTENSION } from './backup-archive.js';
 import { BackupError, type BackupRunRow, type BackupService } from './backup-service.js';
 
@@ -26,7 +26,7 @@ const BackupSettingsView = Type.Object({
   enabled: Type.Boolean(),
   intervalHours: Type.Integer(),
   retentionCount: Type.Integer(),
-  recipientPublicKey: Type.Union([Type.String(), Type.Null()]),
+  recipientPublicKey: Nullable(Type.String()),
 });
 
 const BackupSettingsInput = Type.Object({
@@ -40,12 +40,12 @@ const BackupRunView = Type.Object({
   id: Type.String(),
   kind: Type.Union([Type.Literal('manual'), Type.Literal('scheduled')]),
   status: Type.Union([Type.Literal('queued'), Type.Literal('running'), Type.Literal('ready'), Type.Literal('failed')]),
-  bytes: Type.Union([Type.Integer(), Type.Null()]),
-  sha256: Type.Union([Type.String(), Type.Null()]),
-  error: Type.Union([Type.String(), Type.Null()]),
+  bytes: Nullable(Type.Integer()),
+  sha256: Nullable(Type.String()),
+  error: Nullable(Type.String()),
   createdAt: DateTime,
-  startedAt: Type.Union([DateTime, Type.Null()]),
-  finishedAt: Type.Union([DateTime, Type.Null()]),
+  startedAt: Nullable(DateTime),
+  finishedAt: Nullable(DateTime),
 });
 
 const toView = (run: BackupRunRow): Static<typeof BackupRunView> => ({

@@ -6222,10 +6222,10 @@
                     "migrationHead": {
                       "anyOf": [
                         {
-                          "type": "string"
+                          "type": "null"
                         },
                         {
-                          "type": "null"
+                          "type": "string"
                         }
                       ]
                     }
@@ -7208,10 +7208,10 @@
                     "recipientPublicKey": {
                       "anyOf": [
                         {
-                          "type": "string"
+                          "type": "null"
                         },
                         {
-                          "type": "null"
+                          "type": "string"
                         }
                       ]
                     }
@@ -7288,10 +7288,10 @@
                     "recipientPublicKey": {
                       "anyOf": [
                         {
-                          "type": "string"
+                          "type": "null"
                         },
                         {
-                          "type": "null"
+                          "type": "string"
                         }
                       ]
                     }
@@ -7427,30 +7427,30 @@
                     "bytes": {
                       "anyOf": [
                         {
-                          "type": "integer"
+                          "type": "null"
                         },
                         {
-                          "type": "null"
+                          "type": "integer"
                         }
                       ]
                     },
                     "sha256": {
                       "anyOf": [
                         {
-                          "type": "string"
+                          "type": "null"
                         },
                         {
-                          "type": "null"
+                          "type": "string"
                         }
                       ]
                     },
                     "error": {
                       "anyOf": [
                         {
-                          "type": "string"
+                          "type": "null"
                         },
                         {
-                          "type": "null"
+                          "type": "string"
                         }
                       ]
                     },
@@ -7461,22 +7461,22 @@
                     "startedAt": {
                       "anyOf": [
                         {
-                          "type": "string",
-                          "format": "date-time"
+                          "type": "null"
                         },
                         {
-                          "type": "null"
+                          "type": "string",
+                          "format": "date-time"
                         }
                       ]
                     },
                     "finishedAt": {
                       "anyOf": [
                         {
-                          "type": "string",
-                          "format": "date-time"
+                          "type": "null"
                         },
                         {
-                          "type": "null"
+                          "type": "string",
+                          "format": "date-time"
                         }
                       ]
                     }
@@ -7590,30 +7590,30 @@
                       "bytes": {
                         "anyOf": [
                           {
-                            "type": "integer"
+                            "type": "null"
                           },
                           {
-                            "type": "null"
+                            "type": "integer"
                           }
                         ]
                       },
                       "sha256": {
                         "anyOf": [
                           {
-                            "type": "string"
+                            "type": "null"
                           },
                           {
-                            "type": "null"
+                            "type": "string"
                           }
                         ]
                       },
                       "error": {
                         "anyOf": [
                           {
-                            "type": "string"
+                            "type": "null"
                           },
                           {
-                            "type": "null"
+                            "type": "string"
                           }
                         ]
                       },
@@ -7624,22 +7624,22 @@
                       "startedAt": {
                         "anyOf": [
                           {
-                            "type": "string",
-                            "format": "date-time"
+                            "type": "null"
                           },
                           {
-                            "type": "null"
+                            "type": "string",
+                            "format": "date-time"
                           }
                         ]
                       },
                       "finishedAt": {
                         "anyOf": [
                           {
-                            "type": "string",
-                            "format": "date-time"
+                            "type": "null"
                           },
                           {
-                            "type": "null"
+                            "type": "string",
+                            "format": "date-time"
                           }
                         ]
                       }
@@ -21878,8 +21878,8 @@
     },
     "/api/buddy-suggestions/{id}": {
       "get": {
-        "summary": "The shared facts of a suggested Dive, for the Review inbox",
-        "description": "Site, start time with its UTC offset, duration, max and average depth as starting values, the Dive's own Diver, its Participants by name and any centre responsible for the site. Never a Recording, notes, suit, weighting, cylinders, lead or an overridden value. 404 `suggestion_not_found` unless the User manages the invited Diver.",
+        "summary": "The shared facts of a pending Buddy suggestion, for the Review inbox",
+        "description": "Site, start time with its UTC offset, duration, max and average depth as starting values, the Dive's own Diver, its Participants by name and any centre responsible for the site. Never a Recording, notes, suit, weighting, cylinders, lead or an overridden value. Only a pending invitation is readable: once accepted, declined or cancelled it answers 404 `suggestion_not_found` like another User's suggestion. 404 `suggestion_not_found` unless the User manages the invited Diver.",
         "parameters": [
           {
             "schema": {
@@ -22193,6 +22193,9 @@
               "schema": {
                 "anyOf": [
                   {
+                    "type": "null"
+                  },
+                  {
                     "type": "object",
                     "properties": {
                       "diveId": {
@@ -22202,9 +22205,6 @@
                       }
                     },
                     "additionalProperties": false
-                  },
-                  {
-                    "type": "null"
                   }
                 ]
               }

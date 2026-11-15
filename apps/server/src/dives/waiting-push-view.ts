@@ -5,15 +5,15 @@ import { and, asc, inArray } from 'drizzle-orm';
 import { Type, type Static } from 'typebox';
 import type { Queryable } from '../db/client.js';
 import { waitingPush } from '../db/schema.js';
-import { refTo } from '../http/schemas.js';
+import { Nullable, refTo } from '../http/schemas.js';
 
 export const WaitingPushViewSchema = Type.Object({
   provider: Type.String(),
   action: Type.Enum(['send', 'delete']),
   state: Type.Enum(['waiting', 'held', 'stopped'], { description: 'waiting: goes out at `dueAt`; held: needs the User; stopped: failed for good (Retry)' }),
-  reason: Type.Union([Type.Null(), Type.String({
+  reason: Nullable(Type.String({
     description: 'Why it is held (sign_in, requirements, exists, removes_verification) or the problem code of why it stopped',
-  })]),
+  })),
   dueAt: Type.String({ format: 'date-time', description: 'When it goes out, for a waiting entry' }),
 }, { $id: 'WaitingPushView' });
 /** What routes and other views answer: a reference to WaitingPushViewSchema, registered with app.addSchema. */

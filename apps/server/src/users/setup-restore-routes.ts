@@ -7,7 +7,7 @@ import { Type } from 'typebox';
 import { limitAttempts, type AttemptLimit } from '../http/attempt-limit.js';
 import { Problem, problem, type ProblemCode } from '../http/problems.js';
 import { whenResponseGone } from '../http/response-gone.js';
-import { DateTime } from '../http/schemas.js';
+import { DateTime, Nullable } from '../http/schemas.js';
 import type { BlobStore, StoredBlob } from '../storage/blob-store.js';
 import type { SetupRestore, SetupRestoreFailure } from './setup-restore.js';
 import type { SetupService } from './setup-service.js';
@@ -25,7 +25,7 @@ export interface SetupRestoreRouteDeps {
 const RestoreResult = Type.Object({
   restored: Type.Literal(true),
   createdAt: DateTime,
-  migrationHead: Type.Union([Type.String(), Type.Null()]),
+  migrationHead: Nullable(Type.String()),
 });
 
 const PlacedArchive = Type.Object({
