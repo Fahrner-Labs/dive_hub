@@ -78,9 +78,14 @@ test('lists two dives at the same time on the logbook, keeps them apart when tol
     await page.getByRole('link', { name: 'Review them' }).click();
     await expect(main.getByRole('heading', { name: 'Dives at the same time', level: 2 })).toBeVisible();
     await expect(main.getByRole('button', { name: /^They are two dives: Dive \d+ and Dive \d+$/ })).toBeVisible();
-    // The pair says which of the two a merge keeps.
-    await expect(main.getByRole('listitem').filter({ hasText: /^Dive \d+ ?stays when merged.* with a recording · Erika$/ })).toHaveCount(1);
-    await expect(main.getByRole('listitem').filter({ hasText: /^Dive \d+ ?stays when merged.* without a recording · Erika$/ })).toHaveCount(0);
+    // The pair is a comparison: one labeled row per fact, one column per dive, and the kept dive badged.
+    const card = main.getByRole('listitem').filter({ has: main.getByRole('heading', { name: 'Same dive logged twice?', level: 3 }) });
+    await expect(card.getByRole('columnheader', { name: /^Dive \d+\s*stays when merged$/ })).toHaveCount(1);
+    await expect(card.getByRole('rowheader', { name: 'Time' })).toBeVisible();
+    await expect(card.getByRole('rowheader', { name: 'Recording' })).toBeVisible();
+    await expect(card.getByRole('cell', { name: 'with a recording' })).toBeVisible();
+    await expect(card.getByRole('cell', { name: 'without a recording' })).toBeVisible();
+    await expect(card.getByText('Merging keeps one dive with the values you pick; the other is deleted.')).toBeVisible();
 
     // "They are two dives": the pair leaves, with a way back that has the focus.
     await page.getByRole('button', { name: /^They are two dives: Dive \d+ and Dive \d+$/ }).click();
@@ -127,6 +132,9 @@ test('offers a short and shallow dive for deleting, keeps it when told so, and d
     await page.getByRole('link', { name: 'Review them' }).click();
     await expect(main.getByRole('heading', { name: 'Probably not dives', level: 2 })).toBeVisible();
     await expect(main.getByText('A recording shorter than 2 min that stayed above 3 m is usually a dive computer that got wet, or a false start.')).toBeVisible();
+    await expect(main.getByRole('heading', { name: 'Probably not a real dive?', level: 3 })).toBeVisible();
+    await expect(main.getByRole('rowheader', { name: 'Max depth' })).toBeVisible();
+    await expect(main.getByText('Deleting moves it to Deleted dives (restorable); keeping stops asking.')).toBeVisible();
 
     // "Keep it": the dive leaves the list, with a way back that has the focus.
     await main.getByRole('button', { name: /^Keep it: / }).click();

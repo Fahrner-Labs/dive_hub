@@ -989,6 +989,21 @@
   },
   "checks": {
     "title": "Tauchgänge zur selben Zeit",
+    "fact": {
+      "time": "Zeit",
+      "duration": "Dauer",
+      "maxDepth": "Max. Tiefe",
+      "site": "Tauchplatz",
+      "recording": "Aufzeichnung",
+      "diver": "Taucher"
+    },
+    "pairCard": {
+      "question": "Zweimal derselbe Tauchgang?",
+      "startedApart": "Start {{gap}} auseinander",
+      "sameSite": "gleicher Tauchplatz",
+      "differentSites": "verschiedene Tauchplätze",
+      "consequence": "Beim Zusammenführen bleibt ein Tauchgang mit den Werten, die du wählst; der andere wird gelöscht."
+    },
     "rule": {
       "recording_beside_entry": "Ein Tauchgang ohne Aufzeichnung und einer mit Aufzeichnung liegen zur selben Zeit",
       "overlapping_dives": "Zwei Tauchgänge überschneiden sich zeitlich",
@@ -1012,19 +1027,26 @@
     "askAgain": "Wieder fragen",
     "surface": {
       "title": "Tauchgänge mit Oberflächenaufenthalt dazwischen",
-      "how_one": "Angehängt sind sie ein Tauchgang mit einem Profil. Der spätere kommt zu den „Gelöschten Tauchgängen“, wo du ihn wiederherstellen kannst.",
-      "how_other": "Mach diese {{dives}} Tauchgänge zu einem: Angehängt sind sie ein Tauchgang mit einem Profil. Die späteren kommen zu den „Gelöschten Tauchgängen“, wo du sie wiederherstellen kannst.",
+      "question": "Ein Tauchgang in {{count}} Teilen?",
+      "breakBefore": "{{duration}} Oberflächenaufenthalt davor",
+      "consequence": "Beim Anhängen werden die Teile zum ersten Tauchgang.",
       "append": "Anhängen …"
     },
     "short": {
       "title": "Wahrscheinlich keine Tauchgänge",
+      "question": "Wahrscheinlich kein echter Tauchgang?",
       "how": "Eine Aufzeichnung kürzer als {{duration}}, die über {{depth}} geblieben ist, ist meist ein nass gewordener Tauchcomputer oder ein Fehlstart. War es kein Tauchgang, lösche ihn: er kommt zu den „Gelöschten Tauchgängen“ und lässt sich wiederherstellen.",
       "delete": "Löschen …",
       "keep": "Behalten",
+      "consequence": "Beim Löschen kommt er zu den „Gelöschten Tauchgängen“ (wiederherstellbar); beim Behalten wird nicht mehr gefragt.",
       "kept": "Bleibt. Du wirst wieder gefragt, wenn sich seine Dauer oder Tiefe ändert.",
       "answered": "Kurze Tauchgänge, die bleiben",
       "answeredIntro": "Kurze, flache Aufzeichnungen, von denen du gesagt hast, dass sie bleiben."
     }
+  },
+  "comparison": {
+    "both": "Beide: {{value}}",
+    "all": "Alle: {{value}}"
   },
   "merge": {
     "hint": "In diesem Logbuch gibt es einen weiteren Tauchgang zur selben Zeit: {{facts}}. Wenn beide derselbe Tauchgang sind, kannst du sie zusammenführen.",

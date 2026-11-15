@@ -167,6 +167,7 @@
 .decision:first-child { border-top: none; padding-top: 0; }
 .decision:last-child { padding-bottom: 0; }
 .decision > * { margin: 0; }
+.decision-question { font-size: var(--text-lg); }
 .decision-recording { display: grid; gap: var(--space-1); }
 .decision-recording > p { margin: 0; }
 .decision-subtitle { font-size: var(--text-md); margin: 0 0 var(--space-2); }
@@ -514,6 +515,21 @@ th[aria-sort='ascending'], th[aria-sort='descending'] { color: var(--color-text)
 .candidate-title { font-weight: var(--weight-semibold); font-size: var(--text-md); }
 .candidate-facts { margin: 0; font-size: var(--text-sm); color: var(--color-text-muted); overflow-wrap: anywhere; }
 .diff { background: var(--color-accent-soft); color: var(--color-text); border-radius: var(--radius-sm); padding-inline: var(--space-1); font-weight: var(--weight-semibold); }
+/* A decision card's facts as a table (UI redesign 4.5): one column per candidate, one labeled row per fact; a row the
+   candidates agree on is one muted value, a row they differ on is tinted whole and its values set in semibold. */
+.compare-wrap { overflow-x: auto; }
+.compare { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
+.compare th, .compare td { padding: var(--space-2); text-align: left; vertical-align: baseline; }
+.compare thead th { border-bottom: 1px solid var(--color-border); font-size: var(--text-md); font-weight: var(--weight-semibold); }
+.compare-title { display: block; }
+.compare-note { display: block; font-size: var(--text-sm); font-weight: var(--weight-regular); color: var(--color-text-muted); }
+.compare tbody tr + tr { border-top: 1px solid var(--color-border); }
+.compare tbody th { color: var(--color-text-muted); font-weight: var(--weight-regular); white-space: nowrap; }
+.compare tbody td { overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+.compare-differs { background: var(--color-accent-soft); }
+.compare-differs td { font-weight: var(--weight-semibold); }
+.compare-same, .compare-missing { color: var(--color-text-muted); }
+.compare-corner { padding: 0; }
 
 /* A verification code (ADR 0043). The code itself is black on white in both themes: a scanner needs that contrast. */
 .code-figures { display: flex; flex-wrap: wrap; gap: var(--space-5); margin-bottom: var(--space-4); }

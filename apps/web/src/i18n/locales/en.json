@@ -989,6 +989,21 @@
   },
   "checks": {
     "title": "Dives at the same time",
+    "fact": {
+      "time": "Time",
+      "duration": "Duration",
+      "maxDepth": "Max depth",
+      "site": "Site",
+      "recording": "Recording",
+      "diver": "Diver"
+    },
+    "pairCard": {
+      "question": "Same dive logged twice?",
+      "startedApart": "Started {{gap}} apart",
+      "sameSite": "same site",
+      "differentSites": "different sites",
+      "consequence": "Merging keeps one dive with the values you pick; the other is deleted."
+    },
     "rule": {
       "recording_beside_entry": "A dive without a recording and a dive with one are at the same time",
       "overlapping_dives": "Two dives overlap in time",
@@ -1012,19 +1027,26 @@
     "askAgain": "Ask again",
     "surface": {
       "title": "Dives cut by a surface break",
-      "how_one": "Appended, they are one dive with one profile. The later one goes to “Deleted dives”, where you can restore it.",
-      "how_other": "Make these {{dives}} dives one: appended, they are one dive with one profile. The later ones go to “Deleted dives”, where you can restore them.",
+      "question": "One dive in {{count}} parts?",
+      "breakBefore": "{{duration}} surface break before",
+      "consequence": "Appending joins the parts into the first dive.",
       "append": "Append…"
     },
     "short": {
       "title": "Probably not dives",
+      "question": "Probably not a real dive?",
       "how": "A recording shorter than {{duration}} that stayed above {{depth}} is usually a dive computer that got wet, or a false start. If it was no dive, delete it: it goes to “Deleted dives” and can be restored.",
       "delete": "Delete…",
       "keep": "Keep it",
+      "consequence": "Deleting moves it to Deleted dives (restorable); keeping stops asking.",
       "kept": "Kept. You are asked again if its duration or depth changes.",
       "answered": "Short dives you kept",
       "answeredIntro": "Short, shallow recordings that you said to keep."
     }
+  },
+  "comparison": {
+    "both": "Both: {{value}}",
+    "all": "All: {{value}}"
   },
   "merge": {
     "hint": "Another dive in this logbook was at the same time: {{facts}}. If both are the same dive, you can merge them into one.",

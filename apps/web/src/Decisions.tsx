@@ -3,11 +3,17 @@ import { useEffect, useRef, useState, type RefObject } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api, candidatesQuery, keys, unwrap, type CandidateView } from './api.ts';
 import { Candidates, CandidateRow, type Fact } from './ReviewRows.tsx';
-import { differingFacts } from './lib/review.ts';
+import { valuesAgree } from './lib/review.ts';
 import { deviceName } from './lib/devices.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
 import { refocusAfterRemoval } from './lib/focus.ts';
 import { Badge, Button, Notice, Panel } from './ui/index.ts';
+
+/** The facts whose formatted text differs between two rows; the old row renderer's mark (Comparison replaces it in FAH-212). */
+function differingKeys(a: Record<string, string | undefined>, b: Record<string, string | undefined>): Set<string> {
+  const keys = new Set([...Object.keys(a), ...Object.keys(b)]);
+  return new Set([...keys].filter((key) => !valuesAgree([a[key], b[key]])));
+}
 
 /**
  * Duplicate candidates on the Review page (ADR 0016): Recordings that don't clearly belong to one Dive, each beside the
@@ -145,7 +151,7 @@ function Decision({ candidate: c, list, index, count, onDiscarded }: {
   });
   const factsOf = (values: Record<string, string | undefined>): Fact[] => Object.entries(values).map(([key, text]) => ({ key, text }));
   // The Recording's values differ from any of its Dives; each Dive's from the Recording.
-  const markedRecording = new Set(c.dives.flatMap((d) => [...differingFacts(recording, valuesOf(d))]));
+  const markedRecording = new Set(c.dives.flatMap((d) => [...differingKeys(recording, valuesOf(d))]));
   return (
     <li className="decision">
       <Candidates>
@@ -158,7 +164,7 @@ function Decision({ candidate: c, list, index, count, onDiscarded }: {
         {c.dives.map((d) => (
           <CandidateRow
             key={d.id} title={<a className="candidate-title" href={`#/dives/${d.id}`}>{d.number !== null ? t('dive.title', { number: d.number }) : t('dive.titleNoNumber')}</a>}
-            marked={differingFacts(recording, valuesOf(d))} facts={factsOf(valuesOf(d))}
+            marked={differingKeys(recording, valuesOf(d))} facts={factsOf(valuesOf(d))}
           />
         ))}
       </Candidates>
