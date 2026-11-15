@@ -9,6 +9,7 @@ import { Problem, problem } from '../http/problems.js';
 import { DateTime, IdParams, Nullable } from '../http/schemas.js';
 import type { DivePushes, DiveWaitingPushes } from './provider-port.js';
 import { WaitingPushView } from './waiting-push-view.js';
+import { DiveProfileView } from './profile-view.js';
 import { diveSummaryOf } from './dive-summary-view.js';
 import { downsampleMinMax } from './calc/downsample.js';
 import { asksFor, DIVE_ONLY_PATTERN } from './list-filter.js';
@@ -71,13 +72,7 @@ const DiveSummaryView = Type.Object({
   waiting: Type.Array(WaitingPushView, {
     description: 'The Dive\'s entries in the queue of Waiting pushes, one per Provider (ADR 0056): a small icon for waiting, a warning for held, an error with Retry for stopped (docs/spec/clients.md)',
   }),
-  profile: Nullable(Type.Object({
-    depthsM: Type.Array(Type.Number(), { description: 'Depth in metres, evenly spread over `spanSeconds`; the deepest sample of each stretch' }),
-    spanSeconds: Type.Number({ description: 'Seconds from the first to the last depth sample of the Primary recording' }),
-    ascentBands: Type.Array(Type.Tuple([Type.Number(), Type.Number(), Type.Integer({ minimum: 1, maximum: 3 })]), {
-      description: 'Stretches of the ascent that were fast, [start s, end s, band 1–3 for brisk, quick, very quick], in seconds from the first sample (ADR 0036)',
-    }),
-  }, { description: 'The Primary recording’s depth, reduced to draw a sketch of the dive (ADR 0041); null without a Recording or while the Dive waits to be assessed' })),
+  profile: DiveProfileView,
 });
 
 const DiveListView = Type.Object({

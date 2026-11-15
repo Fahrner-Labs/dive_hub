@@ -14,6 +14,7 @@ import { participantsOf, participantsOfDives, type Participant } from './dive-se
 import { managedDiverIds, managesDiveDiver } from '../divers/management.js';
 import { diveListFilter, FINDINGS_SHOWN } from './list-filter.js';
 import { leadOf } from './weighting.js';
+import { profileOf, type DiveProfile } from './profile-view.js';
 
 export const DIVE_SORTS = ['startsAt', 'number', 'maxDepth', 'duration'] as const;
 export type DiveSort = (typeof DIVE_SORTS)[number];
@@ -39,15 +40,8 @@ export interface RowExtras {
   gases: { o2: number; he: number }[];
   surfaceIntervalSeconds: number | null;
   participants: Participant[];
-  profile: { depthsM: number[]; spanSeconds: number; ascentBands: [number, number, 1 | 2 | 3][] } | null;
+  profile: DiveProfile | null;
 }
-
-/** The stored sketch, only while it is of the Dive's current Primary recording (a change is assessed again shortly). */
-const sketchOfDive = (
-  d: typeof dive.$inferSelect,
-  a: { recordingId: string | null; profile: { depthsM: number[]; spanSeconds: number } | null; ascentBands: [number, number, 1 | 2 | 3][] } | undefined,
-): RowExtras['profile'] =>
-  a?.profile && a.recordingId === d.primaryRecordingId ? { ...a.profile, ascentBands: a.ascentBands } : null;
 
 export function createLogbookService(db: Db) {
   /** The Divers the User manages: every logbook read is scoped to them. */
@@ -117,7 +111,7 @@ export function createLogbookService(db: Db) {
           gases: (primary(r.d)?.gases ?? []).map(({ o2, he }) => ({ o2, he })),
           surfaceIntervalSeconds: primary(r.d)?.surfaceIntervalSeconds ?? null,
           participants: peopleOf.get(r.d.id) ?? [],
-          profile: sketchOfDive(r.d, assessmentOf.get(r.d.id)),
+          profile: profileOf(r.d, assessmentOf.get(r.d.id)),
         } satisfies RowExtras,
       })),
       total: counted?.n ?? 0,

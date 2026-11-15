@@ -12,6 +12,7 @@ import { withAuthEndpoints } from './auth/openapi.js';
 import { problem, ProblemSchema, useProblemErrors } from './http/problems.js';
 import { DeleteProblemSchema } from './dives/deletion-view.js';
 import { DiveViewSchema } from './dives/dive-view.js';
+import { DiveProfileViewSchema } from './dives/profile-view.js';
 import { WaitingPushViewSchema } from './dives/waiting-push-view.js';
 import { UnmetViewSchema } from './providers/unmet-view.js';
 import { ConflictFieldViewSchema } from './providers/conflicts/conflict-view.js';
@@ -94,7 +95,7 @@ export async function buildApp(deps: AppDeps, app: Server = createServer()) {
   for (const schema of [
     UnmetViewSchema, ConflictFieldViewSchema, WaitingPushViewSchema,
     ProblemSchema, ProviderProblemSchema, DeleteProblemSchema,
-    UserViewSchema, ImportViewSchema, DiveViewSchema, DiverViewSchema, DiverDetailsViewSchema, ExternalDiverViewSchema, CertificationViewSchema,
+    UserViewSchema, ImportViewSchema, DiveViewSchema, DiveProfileViewSchema, DiverViewSchema, DiverDetailsViewSchema, ExternalDiverViewSchema, CertificationViewSchema,
     SiteViewSchema, CentreViewSchema, SiteImportViewSchema, PushRunViewSchema, ConnectionViewSchema, DiveProviderStatusSchema,
     ServiceScheduleViewSchema, ServiceRecordViewSchema, DiveGearItemViewSchema, EquipmentItemViewSchema, EquipmentDetailViewSchema,
     EquipmentDueViewSchema, DiveGearViewSchema,

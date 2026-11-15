@@ -903,7 +903,10 @@ dives, all off until the User turns them on. *Web:* `ProviderAutomation.tsx` (se
   `recording_beside_entry`, a Dive without a Recording beside one with a Recording; `overlapping_dives`;
   `entry_apart_from_recording`, an entry and a Recording's Dive on the same local day that don't overlap but agree in
   depth and duration). Show both Dives (time, depth, duration, site, with or without a recording, the Diver when the User
-  keeps several) and link to them.
+  keeps several) and link to them. **Every listed Dive** (`dive`, `other` and each `chain` entry) carries `profile`: the
+  same depth sketch the logbook rows carry ([ADR 0041](../decisions/0041-logbook-profile-sketch.md)), for drawing
+  its card; `null` when the Dive has no current assessment (no Recording, or an assessment of a Recording it no longer
+  has as Primary).
 - **Show the rule's text on every pair of `entry_apart_from_recording`,** also when it is the only kind in the list (the
   list's heading says "at the same time", which isn't so here), with both local start times and how far apart they are.
   Such a pair is never `obvious`: it is merged only by the User's own click on that pair. **A pair's `other.deletesItself`**
@@ -948,7 +951,9 @@ dives, all off until the User turns them on. *Web:* `ProviderAutomation.tsx` (se
 - **Show the suggestions of the Divers the User manages now,** each with the invited Diver and enough of the suggested
   Dive to recognise it (start, offset, duration, max depth, site), and its shared facts in a preview: site, start with
   offset, duration, max and average depth, the source Dive's owner and Participants, and the centre responsible for the
-  site. Never show the source's Recording, notes, suit, weighting, cylinders, lead or Overrides. Only a pending
+  site. The preview's `dive.profile` is the same depth sketch the logbook rows carry
+  ([ADR 0041](../decisions/0041-logbook-profile-sketch.md)), for drawing the card; `null` when the suggested Dive has no
+  current assessment. Never show the source's Recording, notes, suit, weighting, cylinders, lead or Overrides. Only a pending
   suggestion is readable: once it was accepted, declined or cancelled, `GET /api/buddy-suggestions/{id}` answers 404
   `suggestion_not_found` like another User's suggestion, so a removed Participant revokes the source Dive's facts.
 - **Offer the invited Diver's overlapping Dives in the preview** (`overlaps`, earliest first): each with its id, start
@@ -980,7 +985,9 @@ dives, all off until the User turns them on. *Web:* `ProviderAutomation.tsx` (se
 ### Duplicate candidates
 - **Show them where the User decides,** on a page of their own ("Review", reached from one line on the logbook and a count
   in the navigation), with the Recording (time, depth, duration, Device), why it waits (`reason`) and the Dives it might
-  belong to side by side, the values that differ marked (ADR 0016; UI redesign 4). Reasons: `overlaps_several_dives`,
+  belong to side by side, the values that differ marked (ADR 0016; UI redesign 4). Each candidate Dive carries `profile`,
+  the same depth sketch the logbook rows carry ([ADR 0041](../decisions/0041-logbook-profile-sketch.md)); `null` when it
+  has no current assessment. Reasons: `overlaps_several_dives`,
   `max_depth_differs`, and `probably_no_dive` (ADR 0030, amended): a Recording under 2 minutes above 3 m is never
   added to a Dive by itself, so it waits beside every Dive in reach, even one whose values agree. Show every reason in
   words; the same value is an Import outcome's `reason`.

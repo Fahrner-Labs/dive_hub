@@ -2011,6 +2011,50 @@
           }
         }
       },
+      "DiveProfileView": {
+        "type": "object",
+        "required": [
+          "depthsM",
+          "spanSeconds",
+          "ascentBands"
+        ],
+        "properties": {
+          "depthsM": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "description": "Depth in metres, evenly spread over `spanSeconds`; the deepest sample of each stretch"
+          },
+          "spanSeconds": {
+            "type": "number",
+            "description": "Seconds from the first to the last depth sample of the Primary recording"
+          },
+          "ascentBands": {
+            "type": "array",
+            "items": {
+              "type": "array",
+              "additionalItems": false,
+              "items": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 3
+                }
+              ],
+              "minItems": 3
+            },
+            "description": "Stretches of the ascent that were fast, [start s, end s, band 1–3 for brisk, quick, very quick], in seconds from the first sample (ADR 0036)"
+          }
+        },
+        "description": "The Primary recording’s depth, reduced to draw a sketch of the dive (ADR 0041); null without a Recording or while the Dive waits to be assessed"
+      },
       "DiverView": {
         "type": "object",
         "required": [
@@ -8225,48 +8269,7 @@
                                 "type": "null"
                               },
                               {
-                                "type": "object",
-                                "required": [
-                                  "depthsM",
-                                  "spanSeconds",
-                                  "ascentBands"
-                                ],
-                                "properties": {
-                                  "depthsM": {
-                                    "type": "array",
-                                    "items": {
-                                      "type": "number"
-                                    },
-                                    "description": "Depth in metres, evenly spread over `spanSeconds`; the deepest sample of each stretch"
-                                  },
-                                  "spanSeconds": {
-                                    "type": "number",
-                                    "description": "Seconds from the first to the last depth sample of the Primary recording"
-                                  },
-                                  "ascentBands": {
-                                    "type": "array",
-                                    "items": {
-                                      "type": "array",
-                                      "additionalItems": false,
-                                      "items": [
-                                        {
-                                          "type": "number"
-                                        },
-                                        {
-                                          "type": "number"
-                                        },
-                                        {
-                                          "type": "integer",
-                                          "minimum": 1,
-                                          "maximum": 3
-                                        }
-                                      ],
-                                      "minItems": 3
-                                    },
-                                    "description": "Stretches of the ascent that were fast, [start s, end s, band 1–3 for brisk, quick, very quick], in seconds from the first sample (ADR 0036)"
-                                  }
-                                },
-                                "description": "The Primary recording’s depth, reduced to draw a sketch of the dive (ADR 0041); null without a Recording or while the Dive waits to be assessed"
+                                "$ref": "#/components/schemas/DiveProfileView"
                               }
                             ]
                           }
@@ -10153,7 +10156,8 @@
                           "site",
                           "fromProvider",
                           "recordings",
-                          "at"
+                          "at",
+                          "profile"
                         ],
                         "properties": {
                           "id": {
@@ -10269,9 +10273,19 @@
                                 }
                               }
                             }
+                          },
+                          "profile": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "$ref": "#/components/schemas/DiveProfileView"
+                              }
+                            ]
                           }
                         },
-                        "description": "The earlier of the two Dives; the Dive, when the check is about one (short_shallow_dive: `other` is null)"
+                        "description": "The earlier of the two Dives; the Dive, when the check is about one (short_shallow_dive: `other` is null). `profile` is the sketch its card draws; null without a current assessment"
                       },
                       "other": {
                         "anyOf": [
@@ -10293,6 +10307,7 @@
                               "fromProvider",
                               "recordings",
                               "at",
+                              "profile",
                               "keeps",
                               "bothAt",
                               "deletesItself"
@@ -10412,6 +10427,16 @@
                                   }
                                 }
                               },
+                              "profile": {
+                                "anyOf": [
+                                  {
+                                    "type": "null"
+                                  },
+                                  {
+                                    "$ref": "#/components/schemas/DiveProfileView"
+                                  }
+                                ]
+                              },
                               "keeps": {
                                 "type": "string",
                                 "description": "Which of the two a merge keeps"
@@ -10456,6 +10481,7 @@
                                 "fromProvider",
                                 "recordings",
                                 "at",
+                                "profile",
                                 "surfaceBreakSeconds"
                               ],
                               "properties": {
@@ -10572,6 +10598,16 @@
                                       }
                                     }
                                   }
+                                },
+                                "profile": {
+                                  "anyOf": [
+                                    {
+                                      "type": "null"
+                                    },
+                                    {
+                                      "$ref": "#/components/schemas/DiveProfileView"
+                                    }
+                                  ]
                                 },
                                 "surfaceBreakSeconds": {
                                   "anyOf": [
@@ -12645,7 +12681,8 @@
                             "utcOffsetSeconds",
                             "utcOffsetSource",
                             "durationSeconds",
-                            "maxDepthM"
+                            "maxDepthM",
+                            "profile"
                           ],
                           "properties": {
                             "id": {
@@ -12693,6 +12730,16 @@
                                 },
                                 {
                                   "type": "number"
+                                }
+                              ]
+                            },
+                            "profile": {
+                              "anyOf": [
+                                {
+                                  "type": "null"
+                                },
+                                {
+                                  "$ref": "#/components/schemas/DiveProfileView"
                                 }
                               ]
                             }
@@ -21878,8 +21925,8 @@
     },
     "/api/buddy-suggestions/{id}": {
       "get": {
-        "summary": "The shared facts of a suggested Dive, for the Review inbox",
-        "description": "Site, start time with its UTC offset, duration, max and average depth as starting values, the Dive's own Diver, its Participants by name and any centre responsible for the site. Never a Recording, notes, suit, weighting, cylinders, lead or an overridden value. 404 `suggestion_not_found` unless the User manages the invited Diver.",
+        "summary": "The shared facts of a pending Buddy suggestion, for the Review inbox",
+        "description": "Site, start time with its UTC offset, duration, max and average depth as starting values, the Dive's own Diver, its Participants by name and any centre responsible for the site. Never a Recording, notes, suit, weighting, cylinders, lead or an overridden value. Only a pending invitation is readable: once accepted, declined or cancelled it answers 404 `suggestion_not_found` like another User's suggestion. 404 `suggestion_not_found` unless the User manages the invited Diver.",
         "parameters": [
           {
             "schema": {
@@ -21959,6 +22006,7 @@
                         "durationSeconds",
                         "maxDepthM",
                         "avgDepthM",
+                        "profile",
                         "site",
                         "owner",
                         "centres",
@@ -22004,6 +22052,16 @@
                             },
                             {
                               "type": "number"
+                            }
+                          ]
+                        },
+                        "profile": {
+                          "anyOf": [
+                            {
+                              "type": "null"
+                            },
+                            {
+                              "$ref": "#/components/schemas/DiveProfileView"
                             }
                           ]
                         },

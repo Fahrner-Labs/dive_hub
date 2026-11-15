@@ -4,9 +4,10 @@
 // stay. The pair rules use the import's own matching, so a check never disagrees with what a fresh import would have done.
 import { and, eq, inArray, isNull, or } from 'drizzle-orm';
 import type { Db } from '../../db/client.js';
-import { dive, diveSite, logbookCheckAnswer, logbookCheckDiveAnswer } from '../../db/schema.js';
+import { dive, diveAssessment, diveSite, logbookCheckAnswer, logbookCheckDiveAnswer } from '../../db/schema.js';
 import { DiveError } from '../dive-service.js';
 import { unitsOf } from '../recording-units.js';
+import { profileOf } from '../profile-view.js';
 import { managedDiverIds } from '../../divers/management.js';
 import { keepDive } from './logbook-check-answers.js';
 import {
@@ -19,13 +20,18 @@ export { LOGBOOK_CHECK_RULES } from './logbook-check-rules.js';
 type AtProvider = (diveIds: string[]) => Promise<Set<string>>;
 
 export function createLogbookCheckService(db: Db) {
-  /** The live Dives of these Divers as the rules see them, with their sites' names. */
+  /** The live Dives of these Divers as the rules see them, with their sites' names and the sketch of their assessment. */
   async function divesOf(diverIds: string[]) {
     if (diverIds.length === 0) return [];
-    const rows = await db.select({ d: dive, siteName: diveSite.name }).from(dive).leftJoin(diveSite, eq(diveSite.id, dive.siteId))
+    const rows = await db.select({
+      d: dive, siteName: diveSite.name,
+      assessment: { recordingId: diveAssessment.recordingId, profile: diveAssessment.profile, ascentBands: diveAssessment.ascentBands },
+    }).from(dive).leftJoin(diveSite, eq(diveSite.id, dive.siteId)).leftJoin(diveAssessment, eq(diveAssessment.diveId, dive.id))
       .where(and(inArray(dive.diverId, diverIds), isNull(dive.deletedAt)));
     const units = await unitsOf(db, rows.map(({ d }) => d.id));
-    return rows.map(({ d, siteName }) => ({ ...d, siteName, ...units(d.id) }));
+    return rows.map(({ d, siteName, assessment }) => ({
+      ...d, siteName, ...units(d.id), profile: profileOf(d, assessment),
+    }));
   }
   type Row = Awaited<ReturnType<typeof divesOf>>[number];
 

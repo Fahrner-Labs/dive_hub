@@ -2,8 +2,9 @@
 // or discard (the Recording stays, detached, so a re-import doesn't ask again), and reopen.
 import { and, desc, eq, inArray, isNull } from 'drizzle-orm';
 import type { Db, Tx } from '../../db/client.js';
-import { device, dive, diverManagement, duplicateCandidate, original, recording } from '../../db/schema.js';
+import { device, dive, diveAssessment, diverManagement, duplicateCandidate, original, recording } from '../../db/schema.js';
 import { attachRecording, createDiveFromRecording } from '../dive-service.js';
+import { profileOf } from '../profile-view.js';
 import { managedDiverIds, managesDiveDiver } from '../../divers/management.js';
 import { keepApart } from '../checks/logbook-check-answers.js';
 import type { Actor } from '../../revisions/revisions.js';
@@ -55,9 +56,12 @@ export function createCandidateService(db: Db) {
         .orderBy(desc(duplicateCandidate.createdAt)).limit(100);
       const diveIds = [...new Set(rows.flatMap(({ c }) => c.candidateDiveIds))];
       const managed = await managedDiverIds(db, userId);
-      const dives = diveIds.length === 0 ? [] : await db.select().from(dive)
+      const dives = diveIds.length === 0 ? [] : await db.select({
+        d: dive, assessment: { recordingId: diveAssessment.recordingId, profile: diveAssessment.profile, ascentBands: diveAssessment.ascentBands },
+      }).from(dive).leftJoin(diveAssessment, eq(diveAssessment.diveId, dive.id))
         .where(and(inArray(dive.id, diveIds), isNull(dive.deletedAt)));
-      const visible = new Map(dives.filter((d) => managed.has(d.diverId)).map((d) => [d.id, d]));
+      const visible = new Map(dives.filter(({ d }) => managed.has(d.diverId))
+        .map(({ d, assessment }) => [d.id, { ...d, profile: profileOf(d, assessment) }]));
       return rows.map(({ c, r, d }) => ({
         candidate: c, recording: r, device: d,
         dives: c.candidateDiveIds.flatMap((id) => (visible.has(id) ? [visible.get(id)!] : [])),
