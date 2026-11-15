@@ -976,8 +976,6 @@
   },
   "decisions": {
     "title": "Aufzeichnungen ohne Tauchgang",
-    "intro_one": "Diese Aufzeichnung gehört nicht eindeutig zu einem Tauchgang.",
-    "intro_other": "Diese {{count}} Aufzeichnungen gehören nicht eindeutig zu einem Tauchgang.",
     "recording": "Aufzeichnung",
     "device": "{{name}} ({{serial}})",
     "unknownDevice": "unbekanntes Gerät",

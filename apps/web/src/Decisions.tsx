@@ -29,7 +29,6 @@ export function RecordingDecisions() {
       {undoable && <UndoDiscard key={undoable.id} candidate={undoable} onDone={() => setUndo(undefined)} />}
       {count > 0 && (
         <Panel title={t('decisions.title')} attention>
-          <p className="muted">{t('decisions.intro', { count })}</p>
           <ul className="decisions" ref={list}>
             {open.data?.map((c, index) => (
               <Decision key={c.id} candidate={c} list={list} index={index} count={count} onDiscarded={() => setUndo(c)} />

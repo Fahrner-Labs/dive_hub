@@ -976,8 +976,6 @@
   },
   "decisions": {
     "title": "Recordings without a dive",
-    "intro_one": "This recording doesn’t clearly belong to a dive.",
-    "intro_other": "These {{count}} recordings don’t clearly belong to a dive.",
     "recording": "Recording",
     "device": "{{name}} ({{serial}})",
     "unknownDevice": "unknown device",
