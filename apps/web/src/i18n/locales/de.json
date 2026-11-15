@@ -989,8 +989,7 @@
     "question": "Wohin gehört diese Aufzeichnung?",
     "consequence": "Beim Hinzufügen wird die Aufzeichnung an diesen Tauchgang gehängt. Ein eigener Tauchgang entsteht daraus; Verwerfen legt sie beiseite (rückgängig machbar).",
     "fact": {
-      "maxDepth": "Max. Tiefe",
-      "device": "Gerät"
+      "maxDepth": "Max. Tiefe"
     }
   },
   "checks": {

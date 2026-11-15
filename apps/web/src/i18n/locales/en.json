@@ -989,8 +989,7 @@
     "question": "Where does this recording belong?",
     "consequence": "Adding attaches the recording to that dive. A new dive creates one from it; discarding sets it aside (undoable).",
     "fact": {
-      "maxDepth": "Max depth",
-      "device": "Device"
+      "maxDepth": "Max depth"
     }
   },
   "checks": {

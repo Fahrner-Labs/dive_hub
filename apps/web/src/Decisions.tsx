@@ -145,8 +145,6 @@ function Decision({ candidate: c, list, index, count, onDiscarded }: {
   const diveValues = c.dives.map(valuesOf);
   const facts: CompareFact[] = [
     { key: 'depth', label: t('decisions.fact.maxDepth'), values: [recordingValues.depth, ...diveValues.map((v) => v.depth)] },
-    // Only the Recording has a Device; the Dives it might belong to have none.
-    { key: 'device', label: t('decisions.fact.device'), values: [device, ...c.dives.map(() => undefined)] },
   ];
   const lanes: TimelineLane[] = [
     {
@@ -163,7 +161,8 @@ function Decision({ candidate: c, list, index, count, onDiscarded }: {
     })),
   ];
   const subjects = [
-    { key: 'recording', title: t('decisions.recording'), badge: <Badge>{t(`import.reason.${c.reason}`)}</Badge> },
+    // The Device belongs to the Recording, so it sits on that subject rather than in a row no Dive can fill.
+    { key: 'recording', title: t('decisions.recording'), badge: <Badge>{t(`import.reason.${c.reason}`)}</Badge>, note: device },
     ...c.dives.map((d) => ({
       key: d.id,
       title: <a className="candidate-title" href={`#/dives/${d.id}`}>{d.number !== null ? t('dive.title', { number: d.number }) : t('dive.titleNoNumber')}</a>,
