@@ -1078,6 +1078,7 @@
         "apps/server/src/lead/lead-service.ts",
         "apps/server/src/mcp/access-service.ts",
         "apps/server/src/planning/bottom-time-service.ts",
+        "apps/server/src/planning/loading-dives.ts",
         "apps/server/src/planning/logbook-inputs.ts",
         "apps/server/src/planning/loadings-service.ts",
         "apps/server/src/providers/buddies/buddy-service.ts",
@@ -1853,6 +1854,7 @@
         "apps/server/src/mcp/access-service.ts",
         "apps/server/src/planning/planning-service.ts",
         "apps/server/src/planning/bottom-time-service.ts",
+        "apps/server/src/planning/loading-dives.ts",
         "apps/server/src/planning/logbook-inputs.ts",
         "apps/server/src/planning/gas-plan-service.ts",
         "apps/server/src/planning/loadings-service.ts",
@@ -2071,6 +2073,7 @@
         "apps/server/src/lead/types.ts",
         "apps/server/src/mcp/access-service.ts",
         "apps/server/src/planning/bottom-time-service.ts",
+        "apps/server/src/planning/loading-dives.ts",
         "apps/server/src/planning/logbook-inputs.ts",
         "apps/server/src/planning/loadings-service.ts",
         "apps/server/src/providers/buddies/buddy-service.ts",
@@ -12052,6 +12055,40 @@
         },
         {
           "dynamic": false,
+          "module": "./loading-dives.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/planning/loading-dives.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./loadings.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/planning/loadings.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./logbook-inputs.js",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -12289,9 +12326,9 @@
         "apps/server/src/planning/ndl.ts",
         "apps/server/src/planning/tissues.ts",
         "apps/server/src/planning/gas-numbers.ts",
-        "apps/server/src/planning/gas-plan-service.ts",
-        "apps/server/src/planning/loadings-service.ts",
+        "apps/server/src/planning/loading-dives.ts",
         "apps/server/src/planning/loadings.ts",
+        "apps/server/src/planning/gas-plan-service.ts",
         "apps/server/src/mcp/tools-planning-gas-plan.ts",
         "apps/server/src/mcp/tools-planning.ts",
         "apps/server/src/planning/routes.ts"
@@ -12440,6 +12477,151 @@
         "apps/server/src/planning/loadings-service.ts",
         "apps/server/src/mcp/tools-planning.ts",
         "apps/server/src/planning/routes.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/server/src/planning/loading-dives.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../db/client.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/db/client.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../db/schema.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/db/schema.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./gas.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/planning/gas.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./loadings.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/planning/loadings.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "drizzle-orm",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "npm",
+            "import"
+          ],
+          "resolved": "apps/server/node_modules/drizzle-orm/index.cjs",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": true,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/server/src/planning/bottom-time-service.ts",
+        "apps/server/src/planning/loadings-service.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/server/src/planning/loadings.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./gas.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/planning/gas.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./tissues.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/planning/tissues.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/server/src/planning/bottom-time-service.ts",
+        "apps/server/src/planning/loading-dives.ts",
+        "apps/server/src/planning/loadings-service.ts"
       ],
       "orphan": false,
       "valid": true
@@ -12840,15 +13022,14 @@
         },
         {
           "dynamic": false,
-          "module": "./gas.js",
+          "module": "./loading-dives.js",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
-            "type-only",
             "import"
           ],
-          "resolved": "apps/server/src/planning/gas.ts",
+          "resolved": "apps/server/src/planning/loading-dives.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -12911,51 +13092,6 @@
       "dependents": [
         "apps/server/src/planning/planning-service.ts",
         "apps/server/src/mcp/tools-planning.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "apps/server/src/planning/loadings.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./gas.js",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "import"
-          ],
-          "resolved": "apps/server/src/planning/gas.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./tissues.js",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "apps/server/src/planning/tissues.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "apps/server/src/planning/loadings-service.ts"
       ],
       "orphan": false,
       "valid": true
@@ -47026,8 +47162,8 @@
     "baselineSize": 0,
     "baselineStale": 0,
     "advisedExitCode": 0,
-    "totalCruised": 444,
-    "totalDependenciesCruised": 2346,
+    "totalCruised": 445,
+    "totalDependenciesCruised": 2353,
     "optionsUsed": {
       "baseDir": "/home/runner/work/dive_hub/dive_hub",
       "combinedDependencies": false,
