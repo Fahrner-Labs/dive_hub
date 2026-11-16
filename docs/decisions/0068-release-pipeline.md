@@ -33,28 +33,34 @@ Two existing decisions constrain the shape:
 ## Decision
 
 ### D1 — The git tag is the single source of truth
-Releases are SemVer tags `vX.Y.Z`. No `version` field is added to any `package.json`: nothing consumes it, and
-bump commits would add churn without authority. The first release is `v0.1.0`; the project stays on `0.x` while the
-API and data model still move.
+Releases are SemVer tags `vX.Y.Z`; a release candidate is the same tag with an `-rcN` suffix (`vX.Y.Z-rcN`, N ≥ 1,
+no leading zeros), used to test an upgrade before the final release. The accepted grammar is
+`^v[0-9]+\.[0-9]+\.[0-9]+(-rc[1-9][0-9]*)?$`; every other form fails `verify`. No `version` field is added to any
+`package.json`: nothing consumes it, and bump commits would add churn without authority. The first release is
+`v0.1.0`; the project stays on `0.x` while the API and data model still move.
 
 ### D2 — ghcr.io only
 Images live at `ghcr.io/fahrner-labs/dive_hub`. The repository is public, so the registry is free, needs no extra
-account, and the workflow's built-in `GITHUB_TOKEN` covers it. Each release publishes four tags:
+account, and the workflow's built-in `GITHUB_TOKEN` covers it. Each stable release publishes four tags:
 
 | Tag | Use |
 |---|---|
 | `vX.Y.Z` | exact version; what production operators pin |
 | `X.Y` | latest patch of a minor line |
 | `X` | latest minor and patch of a major line |
-| `latest` | newest release; convenient, not for production |
+| `latest` | newest stable release; convenient, not for production |
+
+A release candidate publishes **only** its exact `vX.Y.Z-rcN` tag. The floating `X.Y`, `X` and `latest` tags, and
+the GitHub Release's `latest` flag, are stable-only; an rc is a non-latest prerelease.
 
 ### D3 — A tag on main triggers the release
 Pushing a `v*` tag runs [`.github/workflows/release.yml`](../../.github/workflows/release.yml). The `verify` job
-requires the tag to match `^v\d+\.\d+\.\d+$` and its commit to be an ancestor of `origin/main`; otherwise it fails
-before anything is built. Tags are cut only on main after the owner merges (the PR-per-task convention). Because
-that ancestor passed CI on main, the full PR gate is deliberately **not** re-run on the tag.
-`workflow_dispatch` with a `version` input re-runs or repairs an existing tag and checks out the tag, not the
-branch.
+requires the tag to match `^v[0-9]+\.[0-9]+\.[0-9]+(-rc[1-9][0-9]*)?$` and its commit to be an ancestor of
+`origin/main`; otherwise it fails before anything is built. Stable tags and release candidates alike are cut only on
+main after the owner merges (the PR-per-task convention). An `-rcN` tag whose final `vX.Y.Z` tag already exists
+fails verify ("rc after final release") and publishes nothing. Because that ancestor passed CI on main, the full PR
+gate is deliberately **not** re-run on the tag. `workflow_dispatch` with a `version` input re-runs or repairs an
+existing tag (including an rc) and checks out the tag, not the branch.
 
 The build job builds both `linux/amd64` and `linux/arm64` with GHA layer cache, then loads the amd64 image and
 smoke-tests it against `postgres:18.0-alpine`:
