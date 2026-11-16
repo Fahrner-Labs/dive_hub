@@ -4,7 +4,7 @@
 > `pnpm check` fails when this map is stale. Symbols are ranked by how widely the code references them;
 > each module shows its most-referenced ones (exported symbols rank higher). Search here before walking the tree.
 
-Files: 378 · symbols: 3487 · shown: 257
+Files: 380 · symbols: 3510 · shown: 258
 
 ### server/(root)
 apps/server/src/vocabulary.ts:13 type SiteWaterType
@@ -180,12 +180,13 @@ apps/server/src/mcp/access-service.ts:24 class AiAccessError
 ### server/planning
 apps/server/src/planning/planning-error.ts:3 class PlanningError
 apps/server/src/planning/gas.ts:44 fn ambientPressureBar
-apps/server/src/planning/gas.ts:15 iface Conditions
 apps/server/src/planning/gas.ts:5 iface GasMix
+apps/server/src/planning/gas.ts:15 iface Conditions
 apps/server/src/planning/gas-plan.ts:21 type GasRule
 apps/server/src/planning/bottom-time-service.ts:20 const round
 apps/server/src/planning/gas-numbers.ts:9 const round
-… 85 more symbols in this module
+apps/server/src/planning/gas-plan-service.ts:32 const round
+… 107 more symbols in this module
 
 ### server/providers
 apps/server/src/providers/registry.ts:70 class ProviderServiceError
@@ -288,6 +289,7 @@ apps/web/src/api.ts:70 type DiveView
 apps/web/src/api.ts:110 type ProviderView
 apps/web/src/PushRun.tsx:21 const named
 apps/web/src/CodeScanner.tsx:106 fn CodeScanner
+apps/web/src/ToolsLead.tsx:54 fn Conditions
 apps/web/src/ReviewRows.tsx:52 iface CompareFact
 apps/web/src/ProviderDiveImport.tsx:18 const DIVE_KINDS
 apps/web/src/DiveCodes.tsx:10 fn CodeFigure
@@ -299,7 +301,6 @@ apps/web/src/DeleteDive.tsx:21 fn DeleteDiveDialog
 apps/web/src/ProfileSketch.tsx:12 fn ProfileSketch
 apps/web/src/ProviderConflicts.tsx:14 fn useConflictValueText
 apps/web/src/WaitingPush.tsx:117 fn WaitingPushState
-apps/web/src/ImportPanel.tsx:39 const ImportContext
 … 689 more symbols in this module
 
 ### web/i18n
