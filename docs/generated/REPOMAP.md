@@ -4,7 +4,7 @@
 > `pnpm check` fails when this map is stale. Symbols are ranked by how widely the code references them;
 > each module shows its most-referenced ones (exported symbols rank higher). Search here before walking the tree.
 
-Files: 380 · symbols: 3510 · shown: 258
+Files: 381 · symbols: 3528 · shown: 259
 
 ### server/(root)
 apps/server/src/vocabulary.ts:13 type SiteWaterType
@@ -21,7 +21,7 @@ apps/server/src/assessment/rules.ts:58 type RuleId
 apps/server/src/assessment/signals.ts:10 const round
 apps/server/src/assessment/signals.ts:5 iface Series
 apps/server/src/assessment/rules.ts:62 const LIMITS
-apps/server/src/assessment/assessment-service.ts:18 class AssessmentError
+apps/server/src/assessment/series-rules.ts:6 iface SeriesDive
 … 80 more symbols in this module
 
 ### server/auth
@@ -68,8 +68,8 @@ apps/server/src/certifications/certification-service.ts:119 fn createCertificati
 ### server/db
 apps/server/src/db/client.ts:5 type Db
 apps/server/src/db/schema.ts:661 const dive
-apps/server/src/db/client.ts:6 type Tx
 apps/server/src/db/client.ts:8 type Queryable
+apps/server/src/db/client.ts:6 type Tx
 apps/server/src/db/schema.ts:454 const diveSite
 apps/server/src/db/schema.ts:795 const recording
 apps/server/src/db/schema.ts:75 const diverManagement
@@ -97,7 +97,6 @@ apps/server/src/dives/dive-service.ts:187 fn participantsOf
 apps/server/src/dives/cylinders.ts:9 iface ProviderCylinder
 apps/server/src/dives/matching.ts:83 const MAX_OFFSET_MS
 apps/server/src/dives/weighting.ts:17 fn leadOf
-apps/server/src/dives/matching.ts:81 const DAY_MS
 apps/server/src/dives/waiting-push-view.ts:20 const WaitingPushView
 apps/server/src/dives/checks/logbook-check-rules.ts:201 fn probablyNoDive
 apps/server/src/dives/assessment-refresh.ts:7 iface AssessmentRefresh
@@ -105,6 +104,7 @@ apps/server/src/dives/provider-port.ts:32 iface DivePushes
 apps/server/src/dives/provider-port.ts:39 iface DiveWaitingPushes
 apps/server/src/dives/recording-units.ts:9 const isUnit
 apps/server/src/dives/weighting.ts:23 const leadTotalKg
+apps/server/src/dives/matching.ts:81 const DAY_MS
 apps/server/src/dives/logbook-service.ts:268 type LogbookService
 apps/server/src/dives/dive-values.ts:6 iface DiveValues
 apps/server/src/dives/dive-service.ts:87 const nextVersion
@@ -113,9 +113,9 @@ apps/server/src/dives/matching.ts:34 const OVERLAP_TOLERANCE_SECONDS
 … 289 more symbols in this module
 
 ### server/equipment
-apps/server/src/equipment/due.ts:59 const DAY_MS
 apps/server/src/equipment/usage.ts:37 fn usageMap
 apps/server/src/equipment/equipment-error.ts:2 class EquipmentError
+apps/server/src/equipment/due.ts:59 const DAY_MS
 apps/server/src/equipment/usage.ts:16 iface Usage
 apps/server/src/equipment/due.ts:36 iface ScheduleDue
 apps/server/src/equipment/due.ts:86 const round
@@ -175,18 +175,19 @@ apps/server/src/mcp/read-service.ts:25 const count
 apps/server/src/mcp/profile.ts:5 iface Series
 apps/server/src/mcp/access-service.ts:36 iface VerifiedAccess
 apps/server/src/mcp/access-service.ts:24 class AiAccessError
-… 152 more symbols in this module
+… 154 more symbols in this module
 
 ### server/planning
 apps/server/src/planning/planning-error.ts:3 class PlanningError
-apps/server/src/planning/gas.ts:44 fn ambientPressureBar
 apps/server/src/planning/gas.ts:5 iface GasMix
+apps/server/src/planning/gas.ts:44 fn ambientPressureBar
 apps/server/src/planning/gas.ts:15 iface Conditions
 apps/server/src/planning/gas-plan.ts:21 type GasRule
+apps/server/src/planning/loadings-service.ts:17 const DAY_MS
 apps/server/src/planning/bottom-time-service.ts:20 const round
 apps/server/src/planning/gas-numbers.ts:9 const round
 apps/server/src/planning/gas-plan-service.ts:32 const round
-… 107 more symbols in this module
+… 122 more symbols in this module
 
 ### server/providers
 apps/server/src/providers/registry.ts:70 class ProviderServiceError

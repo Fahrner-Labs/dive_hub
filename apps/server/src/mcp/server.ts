@@ -8,7 +8,7 @@ import { getDiveAssessment } from './tools-assessment.js';
 import { buddies, listDivers } from './tools-divers.js';
 import { listEquipment } from './tools-equipment.js';
 import { getDive, searchDives, stats } from './tools-logbook.js';
-import { planGasAndBottomTime } from './tools-planning.js';
+import { planGasAndBottomTime, getDiverLoadings } from './tools-planning.js';
 import { planGasPlanTool } from './tools-planning-gas-plan.js';
 import { getSite, searchSites } from './tools-sites.js';
 
@@ -18,7 +18,7 @@ export const MCP_SERVER_INFO = { name: 'dive-hub', title: 'Dive Hub', version: '
  * Every tool of the endpoint. Each later slice adds its own here and names it in INSTRUCTIONS (ADR 0035). defineTool
  * checks each against its own input; the list widens them to ToolDefinition, which their `run` method allows.
  */
-export const TOOLS: ToolDefinition[] = [searchDives, getDive, getDiveAssessment, stats, searchSites, getSite, buddies, listDivers, listEquipment, planGasAndBottomTime, planGasPlanTool];
+export const TOOLS: ToolDefinition[] = [searchDives, getDive, getDiveAssessment, stats, searchSites, getSite, buddies, listDivers, listEquipment, planGasAndBottomTime, planGasPlanTool, getDiverLoadings];
 
 /** What a client's model is told about the server before it uses a tool. */
 export const INSTRUCTIONS = `Dive Hub is the user's dive logbook. These tools read it; none of them changes anything.
@@ -29,6 +29,7 @@ export const INSTRUCTIONS = `Dive Hub is the user's dive logbook. These tools re
 - Buddies' names are other people's personal data: use them for the user's question, not beyond it.
 - Depths are metres, temperatures °C, durations minutes. Times are local to where the dive was when start_local is set.
 - planning_gas_and_bottom_time computes gas numbers (MOD, best mix, EAD, END) and a bottom time for a planned dive from the inputs it echoes back. planning_gas_plan plans the gas of a dive with one or more levels for one Diver or a group: litres, rock bottom and the pressure to start up at. Pass their notice and assumptions on with every number: they are estimates from the Diver's own settings, not advice.
+- planning_diver_loadings estimates what a Diver's logged dives leave in them now (residual N₂, CNS and OTU) with the dives it used and, beside them, DAN's no-fly time. It is an estimate from the Diver's own logbook, not advice: pass the basis on, and a null (nothing to estimate from) is not a zero.
 - Dive Hub records dives; it is not a dive computer. Do not present its numbers as advice on whether a dive is safe.`;
 
 /**
