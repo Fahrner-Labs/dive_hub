@@ -8,6 +8,7 @@
 import { describe, expect, it } from 'vitest';
 import { bottomTime } from '../src/planning/bottom-time.js';
 import type { GasRule } from '../src/planning/gas-plan.js';
+import { surfaceSaturatedTissues } from '../src/planning/tissues.js';
 
 const SEA = { water: 'salt', altitudeM: 0 } as const;
 const al80 = { volumeL: 11.1, startPressureBar: 201 };
@@ -83,6 +84,17 @@ describe('bottom time', () => {
     const r = bottomTime(plan({ depthM: 36 }));
     if (r.status !== 'ok') throw new Error('expected a bottom time');
     expect(r.ppO2AboveWorking).toBe(true);
+  });
+
+  it('starts the NDL from residual tissue pressures, which shorten it', () => {
+    const clean = bottomTime(plan({ cylinder: null }));
+    if (clean.status !== 'ok') throw new Error('expected a bottom time');
+    const loaded = surfaceSaturatedTissues(SEA).map((pressure) => pressure + 0.3);
+    const seeded = bottomTime(plan({ cylinder: null, initialTissues: loaded }));
+    if (seeded.status !== 'ok') throw new Error('expected a bottom time');
+    expect(seeded.limits.ndl).toBeLessThan(clean.limits.ndl);
+    expect(seeded.minutes).toBe(seeded.limits.ndl);
+    expect(seeded.binding).toEqual(['ndl']);
   });
 });
 

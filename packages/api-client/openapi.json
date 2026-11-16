@@ -17852,7 +17852,7 @@
     "/api/tools/bottom-time": {
       "get": {
         "summary": "Bottom time for a planned dive: the shortest of the no-decompression, oxygen and gas limits, and which binds (ADR 0032)",
-        "description": "An estimate from the Diver's own input and settings, not advice; the dive computer and training govern. Air and nitrox 21-40 % only, no-stop only, at most 40 m; otherwise status `outside_limits`.",
+        "description": "An estimate from the Diver's own input and settings, not advice; the dive computer and training govern. Air and nitrox 21-40 % only, no-stop only, at most 40 m; otherwise status `outside_limits`. With `diverId`, a Dive within 48 hours seeds the no-decompression limit with the Diver's residual N₂ and the answer says so in `residualN2`.",
         "parameters": [
           {
             "schema": {
@@ -18002,7 +18002,7 @@
             "in": "query",
             "name": "diverId",
             "required": false,
-            "description": "Start from this Diver's computer GF, SAC and last Dive"
+            "description": "Start from this Diver's computer GF, SAC, residual N₂ and last Dive"
           },
           {
             "schema": {
@@ -18027,7 +18027,8 @@
                     "used",
                     "gas",
                     "depthM",
-                    "recentDiveEndedAt"
+                    "recentDiveEndedAt",
+                    "residualN2"
                   ],
                   "properties": {
                     "status": {
@@ -18320,7 +18321,38 @@
                           "type": "string"
                         }
                       ],
-                      "description": "When the Diver's Dive within the last 48 hours ended; the real limit is then shorter than shown"
+                      "description": "When the Diver's latest Dive within the last 48 hours ended; `residualN2` says whether its profile seeded the limit, else the real limit is likely shorter than shown"
+                    },
+                    "residualN2": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "worstCompartmentPercent",
+                            "basedOnDives",
+                            "lastDiveEndedAt"
+                          ],
+                          "properties": {
+                            "worstCompartmentPercent": {
+                              "type": "number",
+                              "description": "The Diver's worst compartment at now, as a percent of its tolerated pressure at the surface and GF high; the NDL starts from these tissues"
+                            },
+                            "basedOnDives": {
+                              "type": "integer",
+                              "description": "How many logged Dives the tissue state rests on"
+                            },
+                            "lastDiveEndedAt": {
+                              "type": "string",
+                              "format": "date-time",
+                              "description": "When the latest Dive the tissue state rests on ended"
+                            }
+                          }
+                        }
+                      ],
+                      "description": "The residual nitrogen the no-decompression limit was seeded with; null without a Dive in the last 48 hours or without a profile"
                     }
                   }
                 }

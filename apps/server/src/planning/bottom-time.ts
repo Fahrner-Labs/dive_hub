@@ -21,6 +21,8 @@ export interface BottomTimeInput {
   /** Where the gas ends: the ascent pressure of this rule (ADR 0033). */
   rule: GasRule;
   ppO2: { working: number; contingency: number };
+  /** The Diver's residual tissue pressures at the start; default clean tissues (ADR 0071, FAH-241). */
+  initialTissues?: readonly number[] | undefined;
 }
 
 export type BottomTime =
@@ -51,7 +53,10 @@ export function bottomTime(input: BottomTimeInput): BottomTime {
   const ambientBar = ambientPressureBar(depthM, conditions);
   const ppO2AtDepth = (gas.o2 / 100) * ambientBar;
 
-  const ndl = ndlMinutes({ gas, depthM, gfHigh: input.gfHigh, conditions });
+  const ndl = ndlMinutes({
+    gas, depthM, gfHigh: input.gfHigh, conditions,
+    ...(input.initialTissues ? { initialTissues: input.initialTissues } : {}),
+  });
   const oxygen = oxygenLimitMinutes(ppO2AtDepth);
 
   // The gas limit is the minute to leave the depth by in a plan of one Diver at this depth (ADR 0033).

@@ -2756,6 +2756,8 @@
       "aboveWorking": "At this depth the ppO₂ is {{ppo2}} bar, above your working limit.",
       "otu": "About {{otu}} OTU of oxygen exposure.",
       "recent": "You dived within the last 48 hours (the last dive ended {{when}}). The real limit is shorter than shown.",
+      "residual_one": "You dived within the last 48 hours (the last dive ended {{when}}). The no-decompression limit starts from the residual nitrogen of {{count}} logged dive.",
+      "residual_other": "You dived within the last 48 hours (the last dive ended {{when}}). The no-decompression limit starts from the residual nitrogen of {{count}} logged dives.",
       "assumptions": "What this assumes",
       "ascentAt": "The gas limit ends at {{pressure}}, where you start up."
     },
