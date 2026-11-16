@@ -1,6 +1,6 @@
 ---
 title: "ADR 0068: Release pipeline — tag as truth, ghcr images, GitHub Releases"
-summary: A vX.Y.Z tag on main is the only release input; a GitHub Actions workflow proves the tag is on main, builds and smoke-tests a multi-arch image, pushes it to ghcr under four tags and writes the GitHub Release notes. Signing, SBOM/SLSA and mirrors are phase 2.
+summary: A vX.Y.Z or vX.Y.Z-rcN tag on main is the only release input; a GitHub Actions workflow proves the tag is on main, builds and smoke-tests a multi-arch image, pushes it to ghcr (four tags for a stable release, only the exact tag for an rc) and writes the GitHub Release notes. Signing, SBOM/SLSA and mirrors are phase 2.
 status: proposed
 date: 2026-11-09
 ---
@@ -60,7 +60,7 @@ requires the tag to match `^v[0-9]+\.[0-9]+\.[0-9]+(-rc[1-9][0-9]*)?$` and its c
 main after the owner merges (the PR-per-task convention). An `-rcN` tag whose final `vX.Y.Z` tag already exists
 fails verify ("rc after final release") and publishes nothing. Because that ancestor passed CI on main, the full PR
 gate is deliberately **not** re-run on the tag. `workflow_dispatch` with a `version` input re-runs or repairs an
-existing tag (including an rc) and checks out the tag, not the branch.
+existing tag (including an rc, unless its final release already exists) and checks out the tag, not the branch.
 
 The build job builds both `linux/amd64` and `linux/arm64` with GHA layer cache, then loads the amd64 image and
 smoke-tests it against `postgres:18.0-alpine`:
@@ -70,8 +70,8 @@ smoke-tests it against `postgres:18.0-alpine`:
 - `/app/node_modules` contains no `@garmin/fitsdk`, so a dependency change cannot silently ship the licence
   problem ADR 0006 forbids.
 
-Only after the smoke test passes does `publish` log in to ghcr, push all four tags (a re-run overwrites them) and
-create the GitHub Release.
+Only after the smoke test passes does `publish` log in to ghcr, push the tags D2 lists (a re-run overwrites them)
+and create the GitHub Release.
 
 ### D4 — The version is built into the image
 The workflow passes `DIVEHUB_VERSION` (the tag) and `DIVEHUB_REVISION` (the tagged commit) as build args. The

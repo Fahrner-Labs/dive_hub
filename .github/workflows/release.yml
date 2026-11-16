@@ -15,7 +15,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Release tag to publish (vX.Y.Z)'
+        description: 'Release tag to publish (vX.Y.Z or vX.Y.Z-rcN)'
         required: true
         type: string
 
@@ -40,7 +40,6 @@ jobs:
     outputs:
       tag: ${{ steps.release.outputs.tag }}
       version: ${{ steps.release.outputs.version }}
-      baseVersion: ${{ steps.release.outputs.baseVersion }}
       major: ${{ steps.release.outputs.major }}
       minor: ${{ steps.release.outputs.minor }}
       prerelease: ${{ steps.release.outputs.prerelease }}
