@@ -162,11 +162,11 @@ const BottomTimeView = Type.Object({
   }),
   gas: Type.Object({ o2: Type.Number(), he: Type.Number() }),
   depthM: Type.Number(),
-  recentDiveEndedAt: Nullable(Type.String(), { description: 'When the Diver\'s Dive within the last 48 hours ended; the real limit is then shorter than shown' }),
+  recentDiveEndedAt: Nullable(Type.String(), { description: 'When the Diver\'s latest Dive within the last 48 hours ended; `residualN2` says whether its profile seeded the limit, else the real limit is likely shorter than shown' }),
   residualN2: Nullable(Type.Object({
     worstCompartmentPercent: Type.Number({ description: 'The Diver\'s worst compartment at now, as a percent of its tolerated pressure at the surface and GF high; the NDL starts from these tissues' }),
     basedOnDives: Type.Integer({ description: 'How many logged Dives the tissue state rests on' }),
-    lastDiveEndedAt: Nullable(Type.String({ format: 'date-time', description: 'When the latest Dive ended' })),
+    lastDiveEndedAt: Type.String({ format: 'date-time', description: 'When the latest Dive the tissue state rests on ended' }),
   }), { description: 'The residual nitrogen the no-decompression limit was seeded with; null without a Dive in the last 48 hours or without a profile' }),
 });
 

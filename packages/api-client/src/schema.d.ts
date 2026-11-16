@@ -7294,7 +7294,7 @@ export interface paths {
                                 he: number;
                             };
                             depthM: number;
-                            /** @description When the Diver's Dive within the last 48 hours ended; the real limit is then shorter than shown */
+                            /** @description When the Diver's latest Dive within the last 48 hours ended; `residualN2` says whether its profile seeded the limit, else the real limit is likely shorter than shown */
                             recentDiveEndedAt: null | string;
                             /** @description The residual nitrogen the no-decompression limit was seeded with; null without a Dive in the last 48 hours or without a profile */
                             residualN2: null | {
@@ -7302,7 +7302,11 @@ export interface paths {
                                 worstCompartmentPercent: number;
                                 /** @description How many logged Dives the tissue state rests on */
                                 basedOnDives: number;
-                                lastDiveEndedAt: null | string;
+                                /**
+                                 * Format: date-time
+                                 * @description When the latest Dive the tissue state rests on ended
+                                 */
+                                lastDiveEndedAt: string;
                             };
                         };
                     };

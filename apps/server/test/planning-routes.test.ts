@@ -1,6 +1,7 @@
 // The Tools page's gas numbers and bottom time over HTTP (ADR 0032, slice 21): computed on request, nothing stored.
 // The figures themselves are tested in planning-*.test.ts; here: what the routes take, default and say.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { dive } from '../src/db/schema.js';
 import { makeSyntheticDive } from './fixtures/synthetic-dive.js';
 import { BASE_URL, createTestApp, createTestDatabase, createUser, databaseReachable, multipartFile, signIn, type TestDatabase } from './support.js';
 
@@ -23,7 +24,7 @@ describe.skipIf(!(await databaseReachable()))('gas numbers and bottom time', () 
   beforeAll(async () => {
     t = await createTestDatabase();
     ctx = await createTestApp(t);
-    for (const who of ['tim', 'bob', 'resid', 'stale-n2']) {
+    for (const who of ['tim', 'bob', 'resid', 'stale-n2', 'mixed-n2']) {
       await createUser(ctx.auth, `${who}@example.com`);
       cookies[who] = await signIn(ctx.app, `${who}@example.com`);
       divers[who] = ((await (await get(who, '/api/divers')).json()) as { id: string; isOwn: boolean }[]).find((d) => d.isOwn)!.id;
@@ -177,6 +178,20 @@ describe.skipIf(!(await databaseReachable()))('gas numbers and bottom time', () 
       expect(stale.residualN2).toBeNull();
       expect(stale.recentDiveEndedAt).toBeNull();
       expect(stale.limits!.ndl).toBe(clean.limits!.ndl);
+    });
+
+    it('names the latest Dive the tissue state rests on, not a newer one it skipped', async () => {
+      const profiledStart = new Date(Math.floor((Date.now() - 3 * 3600_000) / 1000) * 1000);
+      await upload('mixed-n2', makeSyntheticDive({ serialNumber: 905, start: profiledStart, durationSeconds: 30 * 60 }));
+      const manualStart = new Date(Math.floor((Date.now() - 3600_000) / 1000) * 1000);
+      await t.db.insert(dive).values({
+        diverId: divers['mixed-n2']!, startsAt: manualStart, utcOffsetSeconds: 2 * 3600, durationSeconds: 30 * 60, maxDepthM: 12,
+      });
+
+      const r = await bottomTime('mixed-n2', `depth=18&o2=32&${al80}&diverId=${divers['mixed-n2']!}`);
+      expect(r.residualN2).toMatchObject({ basedOnDives: 1 });
+      expect(new Date(r.residualN2!.lastDiveEndedAt!).getTime()).toBe(profiledStart.getTime() + 30 * 60_000);
+      expect(r.recentDiveEndedAt).not.toBeNull();
     });
 
     it("uses the planned site's water, brackish counted as salt", async () => {

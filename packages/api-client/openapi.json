@@ -18321,7 +18321,7 @@
                           "type": "string"
                         }
                       ],
-                      "description": "When the Diver's Dive within the last 48 hours ended; the real limit is then shorter than shown"
+                      "description": "When the Diver's latest Dive within the last 48 hours ended; `residualN2` says whether its profile seeded the limit, else the real limit is likely shorter than shown"
                     },
                     "residualN2": {
                       "anyOf": [
@@ -18345,16 +18345,9 @@
                               "description": "How many logged Dives the tissue state rests on"
                             },
                             "lastDiveEndedAt": {
-                              "anyOf": [
-                                {
-                                  "type": "null"
-                                },
-                                {
-                                  "type": "string",
-                                  "format": "date-time",
-                                  "description": "When the latest Dive ended"
-                                }
-                              ]
+                              "type": "string",
+                              "format": "date-time",
+                              "description": "When the latest Dive the tissue state rests on ended"
                             }
                           }
                         }

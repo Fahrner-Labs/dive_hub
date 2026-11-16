@@ -62,10 +62,11 @@ async function residualSeedOf(reader: Queryable, diverId: string | undefined, gf
   const rows = await diverDiveRows(reader, diverId, nowMs);
   const window = await loadingDivesOf(reader, rows.windowDives);
   const n2 = tissuesAfterDives({ dives: loadingDivesForReplay(rows, window), nowMs, gfHigh });
-  const residualN2 = n2.tissues === null || n2.worstCompartmentPercent === null ? null : {
+  const usedEnds = window.filter((d) => d.samples.length > 0).map((d) => d.endMs);
+  const residualN2 = n2.tissues === null || n2.worstCompartmentPercent === null || usedEnds.length === 0 ? null : {
     worstCompartmentPercent: round(n2.worstCompartmentPercent, 1),
     basedOnDives: n2.basis.divesUsed,
-    lastDiveEndedAt: n2.basis.lastDiveEndedAt,
+    lastDiveEndedAt: new Date(Math.max(...usedEnds)).toISOString(),
   };
   return { initialTissues: n2.tissues ?? undefined, residualN2 };
 }

@@ -46,7 +46,7 @@ const Input = Type.Object({
   gas_rule: Type.Optional(Type.Enum([...BOTTOM_TIME_RULES], { description: 'Where the gas limit ends. Default rock_bottom: ascend at rock bottom, never below 50 bar. reserve: finish with rule_bar left. ascent_pressure: start the ascent at rule_bar' })),
   rule_bar: Type.Optional(Type.Number({ minimum: 0, maximum: 350, description: 'Bar for gas_rule reserve or ascent_pressure' })),
   gf_high: Type.Optional(Type.Number({ minimum: 20, maximum: 100, description: 'Gradient factor high. Default: from the Diver\'s latest Recording that has one, else 85' })),
-  diver_id: Type.Optional(Id('Start from this Diver\'s computer GF, SAC and last Dive (from divers_list)')),
+  diver_id: Type.Optional(Id('Start from this Diver\'s computer GF, SAC, residual N₂ and last Dive (from divers_list)')),
 }, { additionalProperties: false });
 
 const Used = (value: ReturnType<typeof Type.Number> | ReturnType<typeof Type.String> | ReturnType<typeof Type.Object>) => Type.Object({
@@ -94,11 +94,11 @@ Always pass on the notice and the assumptions with the numbers: this is an estim
         water: Used(Type.String()), altitude_m: Used(Type.Number()),
         gas_rule: Used(Type.Object({ kind: Type.Enum([...BOTTOM_TIME_RULES]), bar: Nullable(Type.Number()) })),
       }),
-      recent_dive_ended_at: Nullable(Type.String({ description: 'The Diver dived within 48 hours: the real limit is shorter than shown' })),
+      recent_dive_ended_at: Nullable(Type.String({ description: 'The Diver dived within 48 hours; residual_n2 says whether its profile seeded the limit, else the real limit is likely shorter than shown' })),
       residual_n2: Nullable(Type.Object({
         worst_compartment_percent: Type.Number({ description: 'The Diver\'s worst compartment at now, at the surface and GF high; the NDL starts from these tissues' }),
         based_on_dives: Type.Integer({ description: 'How many logged Dives the tissue state rests on' }),
-        last_dive_ended_at: Nullable(Type.String({ description: 'When the latest Dive ended' })),
+        last_dive_ended_at: Type.String({ description: 'When the latest Dive the tissue state rests on ended' }),
       }, { description: 'The residual nitrogen the no-decompression limit was seeded with; null without a Dive in the last 48 hours or without a profile' })),
     })),
     notice: Type.String(),
