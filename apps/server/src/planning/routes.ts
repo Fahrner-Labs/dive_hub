@@ -5,7 +5,7 @@ import { Type } from 'typebox';
 import type { Auth } from '../auth/auth.js';
 import { requireUser, userOf } from '../auth/fastify.js';
 import { answerErrors, answers, Problem } from '../http/problems.js';
-import { Nullable } from '../http/schemas.js';
+import { IdParams, Nullable } from '../http/schemas.js';
 import type { PlanningService } from './planning-service.js';
 import { BOTTOM_TIME_RULES } from './bottom-time-service.js';
 import { gasNumbers } from './gas-numbers.js';
@@ -165,6 +165,34 @@ const BottomTimeView = Type.Object({
   recentDiveEndedAt: Nullable(Type.String(), { description: 'When the Diver\'s Dive within the last 48 hours ended; the real limit is then shorter than shown' }),
 });
 
+const LoadingsView = Type.Object({
+  computedAt: Type.String({ format: 'date-time', description: 'When the estimate was computed' }),
+  basis: Type.Object({
+    windowHours: Type.Integer({ description: 'How far back the N₂ replay looks; the latest Dives decide the rest' }),
+    divesUsed: Type.Integer({ description: 'Dives in the window whose profiles were replayed' }),
+    divesSkippedNoProfile: Type.Integer({ description: 'Dives in the window without a depth profile: they contribute nothing' }),
+    lastDiveEndedAt: Nullable(Type.String({ format: 'date-time', description: 'When the Diver\'s latest Dive ended; null without one' })),
+  }, { description: 'What the estimate rests on: always shown with the numbers (ADR 0071)' }),
+  n2: Nullable(Type.Object({
+    worstCompartmentPercent: Type.Number({ description: 'The worst compartment as a percent of its tolerated pressure at the surface and GF high; 100 % is the decompression model\'s limit, not a verdict' }),
+    gfHigh: Type.Number(),
+  }), { description: 'Null when no usable Dive is in the 72 h window, the latest Dive ended over 48 h ago, or none has a profile' }),
+  cns: Nullable(Type.Object({
+    percentNow: Type.Number({ description: 'The latest Recording\'s CNS, decayed to now with the 90-minute surface half-life' }),
+    percentAtLastDiveEnd: Type.Number({ description: 'The computer\'s own CNS at the end of that Dive' }),
+    halfLifeMinutes: Type.Integer(),
+  }), { description: 'Null when no Recording carries CNS; a zero is a real zero' }),
+  otu: Nullable(Type.Object({
+    last24Hours: Type.Number({ description: 'The OTU of the Dives that ended within 24 h' }),
+  }), { description: 'Null when no Dive in the 24 h window carries OTU; a zero is a real zero' }),
+  noFly: Nullable(Type.Object({
+    hours: Type.Integer({ description: 'DAN\'s guideline: 12 after a single dive without stops, 18 after several dives or days of diving, 24 after decompression' }),
+    reason: Type.Enum(['single', 'several', 'decompression']),
+    until: Type.String({ format: 'date-time' }),
+    source: Type.Object({ title: Type.String(), url: Type.String() }),
+  }), { description: 'The no-fly time after the latest Dive, as on the Dive\'s assessment; information, not advice' }),
+});
+
 const STATUS: Record<PlanningError['code'], number> = {
   invalid_input: 400, gas_not_breathable: 400, diver_not_found: 404, site_not_found: 404,
 };
@@ -199,4 +227,17 @@ export const planningRoutes: FastifyPluginAsyncTypebox<PlanningRouteDeps> = asyn
       body: GasPlanBody, response: { 200: GasPlanView, 400: Problem, 404: Problem },
     },
   }, async (request) => deps.planning.gasPlan(userOf(request).id, request.body));
+
+  app.get('/divers/:id/loadings', {
+    schema: {
+      summary: 'The current N₂, CNS and OTU loadings from a Diver\'s logged dives, with the basis they rest on (ADR 0071)',
+      description: 'An estimate from the Diver\'s own logged dives, not advice; the dive computer and training govern. '
+        + 'N₂ replays the Dives that ended within 72 h and is null when the latest ended over 48 h ago; CNS is the latest '
+        + 'Recording\'s end value decayed with a 90-minute half-life; OTU sums the Dives that ended within 24 h; '
+        + '`noFly` is DAN\'s guideline beside them. `basis` counts the Dives used and skipped, always. Only for a User who '
+        + 'keeps the Diver\'s logbook; others get 404 `diver_not_found`. Nothing is stored.',
+      params: IdParams,
+      response: { 200: LoadingsView, 404: Problem },
+    },
+  }, async (request) => deps.planning.loadings(userOf(request).id, request.params.id));
 };

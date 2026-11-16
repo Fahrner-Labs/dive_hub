@@ -4,6 +4,7 @@ import { Type } from 'typebox';
 import { BOTTOM_TIME_RULES, planBottomTime } from '../planning/bottom-time-service.js';
 import { gasNumbers } from '../planning/gas-numbers.js';
 import { PLANNING_WATERS } from '../planning/gas.js';
+import { diverLoadings } from '../planning/loadings-service.js';
 import { PlanningError } from '../planning/planning-error.js';
 import { Id, Nullable, ToolError, defineTool } from './tool.js';
 
@@ -131,5 +132,64 @@ Always pass on the notice and the assumptions with the numbers: this is an estim
       bottom_time: bottomTime, notice: NOTICE,
     };
     return { output, rows: 0 };
+  },
+});
+
+const LoadingsInput = Type.Object({
+  diver_id: Id('The Diver whose logged dives to read (from divers_list)'),
+}, { additionalProperties: false });
+
+export const getDiverLoadings = defineTool({
+  name: 'planning_diver_loadings',
+  title: "Current loadings from a Diver's logged dives",
+  description: 'Estimates what the Diver\'s own logged dives leave in them now: the residual N₂ of the Dives that ended within 72 h replayed through the Bühlmann ZHL-16C compartments (null after 48 h without a Dive), the latest Recording\'s CNS decayed with the 90-minute half-life, the OTU of the Dives that ended within 24 h, and DAN\'s no-fly time. '
+    + 'Returns { computed_at, basis, n2, cns, otu, no_fly }. basis always says how many Dives were used, how many were skipped for having no profile, and when the latest Dive ended: the estimate rests on the Diver\'s own logbook, so an unlogged dive is missing from it. n2 is null when there is nothing usable to replay; cns and otu are null when no Recording carries them, while a zero is a real zero. '
+    + 'This is an estimate from the Diver\'s logged dives, not advice: pass the basis and the null-versus-zero distinction on with every number, and never call a value safe or unsafe. The dive computer and the Diver\'s training govern.',
+  scope: 'logbook:read',
+  input: LoadingsInput,
+  output: () => Type.Object({
+    computed_at: Type.String({ description: 'When the estimate was computed' }),
+    basis: Type.Object({
+      window_hours: Type.Integer({ description: 'How far back the N₂ replay looks' }),
+      dives_used: Type.Integer({ description: 'Dives in the window whose profiles were replayed' }),
+      dives_skipped_no_profile: Type.Integer({ description: 'Dives in the window without a depth profile' }),
+      last_dive_ended_at: Nullable(Type.String({ description: 'When the latest Dive ended; null without one' })),
+    }),
+    n2: Nullable(Type.Object({
+      worst_compartment_percent: Type.Number({ description: 'At the surface and GF high; 100 % is the model\'s limit, not a verdict' }),
+      gf_high: Type.Number(),
+    })),
+    cns: Nullable(Type.Object({
+      percent_now: Type.Number({ description: 'Decayed to now with the 90-minute surface half-life' }),
+      percent_at_last_dive_end: Type.Number({ description: 'The computer\'s own value at the end of that Dive' }),
+      half_life_minutes: Type.Integer(),
+    })),
+    otu: Nullable(Type.Object({ last_24_hours: Type.Number({ description: 'The OTU of the Dives that ended within 24 h' }) })),
+    no_fly: Nullable(Type.Object({
+      hours: Type.Integer({ description: 'DAN\'s guideline: 12 single, 18 several dives or days, 24 after decompression' }),
+      reason: Type.Enum(['single', 'several', 'decompression']),
+      until: Type.String({ description: 'From when the guideline is met' }),
+      source: Type.Object({ title: Type.String(), url: Type.String() }),
+    }, { description: 'The no-fly time after the latest Dive; information beside the numbers, not advice' })),
+  }),
+  async run(ctx, args) {
+    const loadings = await planning(() => diverLoadings(ctx.tx, ctx.diverIds, args.diver_id));
+    const output = {
+      computed_at: loadings.computedAt,
+      basis: {
+        window_hours: loadings.basis.windowHours,
+        dives_used: loadings.basis.divesUsed,
+        dives_skipped_no_profile: loadings.basis.divesSkippedNoProfile,
+        last_dive_ended_at: loadings.basis.lastDiveEndedAt,
+      },
+      n2: loadings.n2 && { worst_compartment_percent: loadings.n2.worstCompartmentPercent, gf_high: loadings.n2.gfHigh },
+      cns: loadings.cns && {
+        percent_now: loadings.cns.percentNow, percent_at_last_dive_end: loadings.cns.percentAtLastDiveEnd,
+        half_life_minutes: loadings.cns.halfLifeMinutes,
+      },
+      otu: loadings.otu && { last_24_hours: loadings.otu.last24Hours },
+      no_fly: loadings.noFly,
+    };
+    return { output, rows: loadings.basis.divesUsed };
   },
 });

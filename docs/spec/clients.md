@@ -1254,6 +1254,27 @@ else plans with the SAC sent or 20 L/min, and no logbook value of theirs is in t
   OpenAPI document declares both answers in full; a client takes their types from it.
 The MCP tool `planning_gas_plan` returns the same with `assumptions`, `controlling_diver` and the notice.
 
+#### Current loadings from the Diver's logged dives
+
+([ADR 0071](../decisions/0071-current-loadings-estimate.md).) `GET /api/divers/{id}/loadings` computes on request and stores
+nothing: residual N₂, CNS and OTU, and DAN's no-fly time. Only for a User who keeps the Diver's logbook; anyone else gets
+`diver_not_found` (404), as for bottom time and the lead estimate. The response is `{ computedAt, basis, n2, cns, otu, noFly }`.
+A client **must**:
+- **Show the basis with every number:** `basis` carries `windowHours`, `divesUsed`, `divesSkippedNoProfile` and
+  `lastDiveEndedAt`. Say it is an estimate from the Diver's own logged dives, never advice; the dive computer and training
+  govern. Name the Dives it rests on, and link the sources: [ADR 0071](../decisions/0071-current-loadings-estimate.md) for the
+  rules, Shearwater's "CNS oxygen clock" for the CNS half-life and Garmin's surface-interval note for OTU expiry.
+- **Tell a missing estimate from a zero.** `n2` is null when no usable Dive is in the 72 h window, the latest Dive ended
+  over 48 h ago, or none has a depth profile; `cns` is null when no Recording carries CNS; `otu` is null when none in the
+  24 h window carries OTU. A returned `0` is a real zero. Never show a missing value as 0.
+- **Say what each number is, not whether it is safe.** `n2` is the worst compartment as a percent of its tolerated pressure
+  at the surface and the Diver's GF high (`gfHigh`); 100 % is the decompression model's limit, not a verdict. `cns` is
+  `percentNow` and the computer's `percentAtLastDiveEnd` with the fixed `halfLifeMinutes`; `otu` is the last 24 hours.
+- **Show the no-fly time** (`noFly`, DAN's guideline after the latest Dive, with its source) beside the numbers, as on a
+  Dive's assessment: information, not a countdown and not advice.
+- The answer holds no gradient factor, decay or window setting to change: they are fixed in code (ADR 0071). Only whether
+  the section is shown is the Diver's choice, like a muted assessment rule.
+
 #### Lead estimate
 
 ([ADR 0031](../decisions/0031-lead-suit-cylinders-and-lead-estimate.md).) `GET /api/divers/{id}/lead-estimate` computes on request and
@@ -1308,8 +1329,10 @@ An LLM client is an API client Dive Hub can't make follow this contract, so the 
   model to name it when it passes the site's data on (see [Licenses](#licenses)).
 - **Tools** (names, descriptions and schemas are fixed in code, never built from data): `logbook_search_dives`,
   `logbook_get_dive`, `logbook_get_dive_assessment`, `logbook_stats`, `sites_search`, `sites_get`, `divers_buddies`,
-  `divers_list`, `planning_gas_and_bottom_time` (computed, not read from the logbook: gas numbers and bottom time with
-  their assumptions and a fixed notice that a client passes on with the numbers). Each has an output
+  `divers_list`, `planning_gas_and_bottom_time` and `planning_gas_plan` (computed, not read from the logbook: gas numbers,
+  bottom time and gas plans with their assumptions and a fixed notice that a client passes on with the numbers), and
+  `planning_diver_loadings` (the current N₂, CNS and OTU estimate from the Diver's logged dives, with its basis and DAN's
+  no-fly time). Each has an output
   schema; a result carries `structuredContent` and the same JSON as text.
 - **Units and times:** metres, °C, minutes. `start_local` is the wall-clock time where the dive was (null when the time
   zone is unknown), `start_utc` the instant (null when only the wall clock is known, [Dives](#dives)). A client that

@@ -20,7 +20,8 @@ const MODULE_IMPORTS = {
   imports: ['divers', 'dives', 'equipment', 'live', 'revisions', 'sites'],
   lead: ['divers', 'dives'],
   mcp: ['assessment', 'divers', 'dives', 'equipment', 'planning', 'sites'],
-  planning: ['divers', 'dives'],
+  // The loadings endpoint reuses DAN's no-fly rule (series-rules.ts) rather than copying it (ADR 0071).
+  planning: ['assessment', 'divers', 'dives'],
   providers: ['certifications', 'divers', 'dives', 'imports', 'live', 'revisions', 'sites'],
   sites: ['live', 'revisions'],
   // Buddy suggestions (ADR 0070) read the shared facts, reuse the time-window tolerance of dive matching for an

@@ -7603,6 +7603,104 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/divers/{id}/loadings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The current N₂, CNS and OTU loadings from a Diver's logged dives, with the basis they rest on (ADR 0071)
+         * @description An estimate from the Diver's own logged dives, not advice; the dive computer and training govern. N₂ replays the Dives that ended within 72 h and is null when the latest ended over 48 h ago; CNS is the latest Recording's end value decayed with a 90-minute half-life; OTU sums the Dives that ended within 24 h; `noFly` is DAN's guideline beside them. `basis` counts the Dives used and skipped, always. Only for a User who keeps the Diver's logbook; others get 404 `diver_not_found`. Nothing is stored.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /**
+                             * Format: date-time
+                             * @description When the estimate was computed
+                             */
+                            computedAt: string;
+                            /** @description What the estimate rests on: always shown with the numbers (ADR 0071) */
+                            basis: {
+                                /** @description How far back the N₂ replay looks; the latest Dives decide the rest */
+                                windowHours: number;
+                                /** @description Dives in the window whose profiles were replayed */
+                                divesUsed: number;
+                                /** @description Dives in the window without a depth profile: they contribute nothing */
+                                divesSkippedNoProfile: number;
+                                lastDiveEndedAt: null | string;
+                            };
+                            /** @description Null when no usable Dive is in the 72 h window, the latest Dive ended over 48 h ago, or none has a profile */
+                            n2: null | {
+                                /** @description The worst compartment as a percent of its tolerated pressure at the surface and GF high; 100 % is the decompression model's limit, not a verdict */
+                                worstCompartmentPercent: number;
+                                gfHigh: number;
+                            };
+                            /** @description Null when no Recording carries CNS; a zero is a real zero */
+                            cns: null | {
+                                /** @description The latest Recording's CNS, decayed to now with the 90-minute surface half-life */
+                                percentNow: number;
+                                /** @description The computer's own CNS at the end of that Dive */
+                                percentAtLastDiveEnd: number;
+                                halfLifeMinutes: number;
+                            };
+                            /** @description Null when no Dive in the 24 h window carries OTU; a zero is a real zero */
+                            otu: null | {
+                                /** @description The OTU of the Dives that ended within 24 h */
+                                last24Hours: number;
+                            };
+                            /** @description The no-fly time after the latest Dive, as on the Dive's assessment; information, not advice */
+                            noFly: null | {
+                                /** @description DAN's guideline: 12 after a single dive without stops, 18 after several dives or days of diving, 24 after decompression */
+                                hours: number;
+                                /** @enum {unknown} */
+                                reason: "single" | "several" | "decompression";
+                                /** Format: date-time */
+                                until: string;
+                                source: {
+                                    title: string;
+                                    url: string;
+                                };
+                            };
+                        };
+                    };
+                };
+                /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/divers/{id}/lead-estimate": {
         parameters: {
             query?: never;

@@ -19192,6 +19192,218 @@
         }
       }
     },
+    "/api/divers/{id}/loadings": {
+      "get": {
+        "summary": "The current N₂, CNS and OTU loadings from a Diver's logged dives, with the basis they rest on (ADR 0071)",
+        "description": "An estimate from the Diver's own logged dives, not advice; the dive computer and training govern. N₂ replays the Dives that ended within 72 h and is null when the latest ended over 48 h ago; CNS is the latest Recording's end value decayed with a 90-minute half-life; OTU sums the Dives that ended within 24 h; `noFly` is DAN's guideline beside them. `basis` counts the Dives used and skipped, always. Only for a User who keeps the Diver's logbook; others get 404 `diver_not_found`. Nothing is stored.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "computedAt",
+                    "basis",
+                    "n2",
+                    "cns",
+                    "otu",
+                    "noFly"
+                  ],
+                  "properties": {
+                    "computedAt": {
+                      "type": "string",
+                      "format": "date-time",
+                      "description": "When the estimate was computed"
+                    },
+                    "basis": {
+                      "type": "object",
+                      "required": [
+                        "windowHours",
+                        "divesUsed",
+                        "divesSkippedNoProfile",
+                        "lastDiveEndedAt"
+                      ],
+                      "properties": {
+                        "windowHours": {
+                          "type": "integer",
+                          "description": "How far back the N₂ replay looks; the latest Dives decide the rest"
+                        },
+                        "divesUsed": {
+                          "type": "integer",
+                          "description": "Dives in the window whose profiles were replayed"
+                        },
+                        "divesSkippedNoProfile": {
+                          "type": "integer",
+                          "description": "Dives in the window without a depth profile: they contribute nothing"
+                        },
+                        "lastDiveEndedAt": {
+                          "anyOf": [
+                            {
+                              "type": "null"
+                            },
+                            {
+                              "type": "string",
+                              "format": "date-time",
+                              "description": "When the Diver's latest Dive ended; null without one"
+                            }
+                          ]
+                        }
+                      },
+                      "description": "What the estimate rests on: always shown with the numbers (ADR 0071)"
+                    },
+                    "n2": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "worstCompartmentPercent",
+                            "gfHigh"
+                          ],
+                          "properties": {
+                            "worstCompartmentPercent": {
+                              "type": "number",
+                              "description": "The worst compartment as a percent of its tolerated pressure at the surface and GF high; 100 % is the decompression model's limit, not a verdict"
+                            },
+                            "gfHigh": {
+                              "type": "number"
+                            }
+                          }
+                        }
+                      ],
+                      "description": "Null when no usable Dive is in the 72 h window, the latest Dive ended over 48 h ago, or none has a profile"
+                    },
+                    "cns": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "percentNow",
+                            "percentAtLastDiveEnd",
+                            "halfLifeMinutes"
+                          ],
+                          "properties": {
+                            "percentNow": {
+                              "type": "number",
+                              "description": "The latest Recording's CNS, decayed to now with the 90-minute surface half-life"
+                            },
+                            "percentAtLastDiveEnd": {
+                              "type": "number",
+                              "description": "The computer's own CNS at the end of that Dive"
+                            },
+                            "halfLifeMinutes": {
+                              "type": "integer"
+                            }
+                          }
+                        }
+                      ],
+                      "description": "Null when no Recording carries CNS; a zero is a real zero"
+                    },
+                    "otu": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "last24Hours"
+                          ],
+                          "properties": {
+                            "last24Hours": {
+                              "type": "number",
+                              "description": "The OTU of the Dives that ended within 24 h"
+                            }
+                          }
+                        }
+                      ],
+                      "description": "Null when no Dive in the 24 h window carries OTU; a zero is a real zero"
+                    },
+                    "noFly": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "hours",
+                            "reason",
+                            "until",
+                            "source"
+                          ],
+                          "properties": {
+                            "hours": {
+                              "type": "integer",
+                              "description": "DAN's guideline: 12 after a single dive without stops, 18 after several dives or days of diving, 24 after decompression"
+                            },
+                            "reason": {
+                              "enum": [
+                                "single",
+                                "several",
+                                "decompression"
+                              ]
+                            },
+                            "until": {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            "source": {
+                              "type": "object",
+                              "required": [
+                                "title",
+                                "url"
+                              ],
+                              "properties": {
+                                "title": {
+                                  "type": "string"
+                                },
+                                "url": {
+                                  "type": "string"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      ],
+                      "description": "The no-fly time after the latest Dive, as on the Dive's assessment; information, not advice"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/divers/{id}/lead-estimate": {
       "get": {
         "summary": "How much lead a Diver should carry in planned conditions: a starting point with a range and its reasons (ADR 0031)",

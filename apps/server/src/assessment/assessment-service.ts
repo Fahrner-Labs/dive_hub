@@ -13,7 +13,7 @@ import type { ComputerEvent } from '../vocabulary.js';
 import { sketchOf } from './sketch.js';
 import { assessProfile } from './profile-rules.js';
 import { ENGINE_VERSION, RULES, RULE_IDS, type Finding, type RuleId } from './rules.js';
-import { assessSeries, noFlyAfter, type SeriesDive } from './series-rules.js';
+import { assessSeries, noFlyAfter, seriesDiveOf } from './series-rules.js';
 
 export class AssessmentError extends Error {
   constructor(readonly code: 'dive_not_found' | 'diver_not_found' | 'finding_not_found') {
@@ -25,15 +25,6 @@ export class AssessmentError extends Error {
 const CHANNELS = ['depth', 'ndl', 'nextStopDepth', 'ceiling', 'po2', 'cns'] as const;
 /** Dive modes the rules don't cover (ADR 0036): no findings, and they don't count for the dives around them. */
 const NOT_COVERED = ['apnea', 'ccr', 'scr'];
-
-/** A Dive as the rules across dives see it; its day is the local one where the offset is known. */
-function seriesDive(d: { id: string; startsAt: Date; utcOffsetSeconds: number | null; durationSeconds: number; maxDepthM: number | null }, enteredDeco: boolean): SeriesDive {
-  const local = new Date(d.startsAt.getTime() + (d.utcOffsetSeconds ?? 0) * 1000);
-  return {
-    id: d.id, startMs: d.startsAt.getTime(), endMs: d.startsAt.getTime() + d.durationSeconds * 1000,
-    day: local.toISOString().slice(0, 10), maxDepthM: d.maxDepthM, enteredDeco,
-  };
-}
 
 const isRule = (rule: string): rule is RuleId => (RULE_IDS as string[]).includes(rule);
 const same = (a: Pick<Finding, 'severity' | 'values'>, b: Pick<Finding, 'severity' | 'values'>) =>
@@ -87,7 +78,7 @@ export function createAssessmentService(db: Db) {
       }
 
       // The dives in relation to each other: cheap, so always computed, and written only where something differs.
-      const series = assessSeries(dives.filter((d) => covered.has(d.id)).map((d) => seriesDive(d, enteredDeco.get(d.id) ?? false)));
+      const series = assessSeries(dives.filter((d) => covered.has(d.id)).map((d) => seriesDiveOf(d, enteredDeco.get(d.id) ?? false)));
       for (const d of dives) {
         const now = series.get(d.id) ?? [];
         const before = stored.filter((f) => f.diveId === d.id && isRule(f.rule) && RULES[f.rule].scope === 'series');
@@ -192,7 +183,7 @@ export async function read(tx: Queryable, d: { id: string; diverId: string; prim
     .where(and(eq(dive.diverId, d.diverId), isNull(dive.deletedAt),
       sql`${dive.startsAt} between (select starts_at - interval '3 days' from dive where id = ${d.id}::uuid) and (select starts_at + interval '2 days' from dive where id = ${d.id}::uuid)`))
     : [];
-  const noFly = noFlyAfter(around.filter((x) => x.applies !== false).map((x) => seriesDive(x, x.enteredDeco ?? false)), d.id);
+  const noFly = noFlyAfter(around.filter((x) => x.applies !== false).map((x) => seriesDiveOf(x, x.enteredDeco ?? false)), d.id);
   const order = (f: { rule: string; startS: number | null }) => [f.startS ?? Number.MAX_SAFE_INTEGER, RULE_IDS.indexOf(f.rule as RuleId)] as const;
   return {
     engineVersion: assessment?.engineVersion ?? ENGINE_VERSION,

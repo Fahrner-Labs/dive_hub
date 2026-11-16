@@ -17,6 +17,18 @@ const HOUR = 3_600_000;
 const dayNumber = (day: string) => Math.round(Date.parse(`${day}T00:00:00Z`) / (24 * HOUR));
 
 /** What a series rule reads about one dive: the dive before it, the time between them, and the Diver's days. */
+/** A Dive as the series rules see it; its day is the local one where the offset is known. */
+export function seriesDiveOf(
+  d: { id: string; startsAt: Date; utcOffsetSeconds: number | null; durationSeconds: number; maxDepthM: number | null },
+  enteredDeco: boolean,
+): SeriesDive {
+  const local = new Date(d.startsAt.getTime() + (d.utcOffsetSeconds ?? 0) * 1000);
+  return {
+    id: d.id, startMs: d.startsAt.getTime(), endMs: d.startsAt.getTime() + d.durationSeconds * 1000,
+    day: local.toISOString().slice(0, 10), maxDepthM: d.maxDepthM, enteredDeco,
+  };
+}
+
 interface SeriesContext {
   dive: SeriesDive;
   previous: SeriesDive | undefined;
