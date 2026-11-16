@@ -261,6 +261,23 @@
         },
         {
           "dynamic": false,
+          "module": "./dives/profile-view.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/dives/profile-view.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./dives/provider-port.js",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -1339,6 +1356,7 @@
         "apps/server/src/centres/routes.ts",
         "apps/server/src/certifications/certification-view.ts",
         "apps/server/src/certifications/routes.ts",
+        "apps/server/src/dives/profile-view.ts",
         "apps/server/src/dives/waiting-push-view.ts",
         "apps/server/src/dives/dive-summary-view.ts",
         "apps/server/src/divers/diver-view.ts",
@@ -1560,6 +1578,22 @@
           "matchesDoNotFollow": false,
           "circular": false,
           "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "better-auth/plugins/two-factor",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "unknown"
+          ],
+          "resolved": "better-auth/plugins/two-factor",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": true,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
         }
       ],
       "dependents": [
@@ -1656,6 +1690,7 @@
       "dependencies": [],
       "dependents": [
         "apps/server/src/auth/auth.ts",
+        "apps/server/src/users/account-routes.ts",
         "apps/server/src/users/routes.ts"
       ],
       "orphan": false,
@@ -1695,6 +1730,22 @@
     },
     {
       "source": "better-auth/plugins/admin/access",
+      "followable": false,
+      "coreModule": false,
+      "couldNotResolve": true,
+      "matchesDoNotFollow": false,
+      "dependencyTypes": [
+        "unknown"
+      ],
+      "dependencies": [],
+      "dependents": [
+        "apps/server/src/auth/auth.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "better-auth/plugins/two-factor",
       "followable": false,
       "coreModule": false,
       "couldNotResolve": true,
@@ -2516,6 +2567,7 @@
         "apps/server/src/centres/routes.ts",
         "apps/server/src/certifications/certification-view.ts",
         "apps/server/src/certifications/routes.ts",
+        "apps/server/src/dives/profile-view.ts",
         "apps/server/src/dives/waiting-push-view.ts",
         "apps/server/src/dives/dive-summary-view.ts",
         "apps/server/src/divers/diver-view.ts",
@@ -8168,6 +8220,23 @@
         },
         {
           "dynamic": false,
+          "module": "../profile-view.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/dives/profile-view.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "../recording-units.js",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -8239,6 +8308,55 @@
         "apps/server/src/compose.ts",
         "apps/server/src/dives/merging-service.ts",
         "apps/server/src/dives/routes.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/server/src/dives/profile-view.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../http/schemas.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/http/schemas.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "typebox",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "unknown"
+          ],
+          "resolved": "typebox",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": true,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/server/src/app.ts",
+        "apps/server/src/dives/checks/logbook-check-service.ts",
+        "apps/server/src/dives/logbook-service.ts",
+        "apps/server/src/social/suggestion-service.ts",
+        "apps/server/src/dives/logbook-routes.ts",
+        "apps/server/src/dives/routes.ts",
+        "apps/server/src/social/suggestion-view.ts"
       ],
       "orphan": false,
       "valid": true
@@ -8424,6 +8542,23 @@
             "import"
           ],
           "resolved": "apps/server/src/dives/list-filter.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./profile-view.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/dives/profile-view.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -17821,6 +17956,23 @@
         },
         {
           "dynamic": false,
+          "module": "../dives/profile-view.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/dives/profile-view.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "../live/emit.js",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -19609,6 +19761,23 @@
         },
         {
           "dynamic": false,
+          "module": "./profile-view.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/dives/profile-view.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./provider-port.js",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -20193,6 +20362,23 @@
             "import"
           ],
           "resolved": "apps/server/src/dives/merging-service.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./profile-view.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/dives/profile-view.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -26292,6 +26478,23 @@
         },
         {
           "dynamic": false,
+          "module": "../dives/profile-view.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/dives/profile-view.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "../http/schemas.js",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -26487,6 +26690,22 @@
           "followable": false,
           "couldNotResolve": false,
           "matchesDoNotFollow": true,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "better-auth/api",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "unknown"
+          ],
+          "resolved": "better-auth/api",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": true,
+          "matchesDoNotFollow": false,
           "circular": false,
           "valid": true
         },
@@ -29988,6 +30207,7 @@
         "apps/web/src/EquipmentPage.tsx",
         "apps/web/src/ImportPanel.tsx",
         "apps/web/src/BuddySuggestions.tsx",
+        "apps/web/src/DecisionTimeline.tsx",
         "apps/web/src/ReviewRows.tsx",
         "apps/web/src/Decisions.tsx",
         "apps/web/src/GoneDives.tsx",
@@ -30046,6 +30266,7 @@
         "apps/web/src/DeletedDives.tsx",
         "apps/web/src/WaitingPush.tsx",
         "apps/web/src/DiveList.tsx",
+        "apps/web/src/ProfileSketch.tsx",
         "apps/web/src/PushRun.tsx",
         "apps/web/src/NumberChain.tsx",
         "apps/web/src/DivePage.tsx",
@@ -30079,6 +30300,8 @@
         "apps/web/src/ImportPanel.tsx",
         "apps/web/src/ReviewPage.tsx",
         "apps/web/src/BuddySuggestions.tsx",
+        "apps/web/src/DecisionTimeline.tsx",
+        "apps/web/src/ReviewRows.tsx",
         "apps/web/src/Decisions.tsx",
         "apps/web/src/GoneDives.tsx",
         "apps/web/src/LogbookChecks.tsx",
@@ -30803,6 +31026,7 @@
         "apps/web/src/DeletedDives.tsx",
         "apps/web/src/WaitingPush.tsx",
         "apps/web/src/DiveList.tsx",
+        "apps/web/src/ProfileSketch.tsx",
         "apps/web/src/PushRun.tsx",
         "apps/web/src/NumberChain.tsx",
         "apps/web/src/DivePage.tsx",
@@ -30833,6 +31057,7 @@
         "apps/web/src/EquipmentPage.tsx",
         "apps/web/src/ImportPanel.tsx",
         "apps/web/src/BuddySuggestions.tsx",
+        "apps/web/src/DecisionTimeline.tsx",
         "apps/web/src/Decisions.tsx",
         "apps/web/src/GoneDives.tsx",
         "apps/web/src/LogbookChecks.tsx",
@@ -35091,8 +35316,7 @@
         "apps/web/src/DeletedDives.tsx",
         "apps/web/src/PushRun.tsx",
         "apps/web/src/ReviewPage.tsx",
-        "apps/web/src/Decisions.tsx",
-        "apps/web/src/LogbookChecks.tsx",
+        "apps/web/src/ReviewRows.tsx",
         "apps/web/src/ReviewStrip.tsx",
         "apps/web/src/ProviderAutomation.tsx",
         "apps/web/src/ui/Shell.tsx"
@@ -35703,6 +35927,23 @@
         },
         {
           "dynamic": false,
+          "module": "./lib/display.ts",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/web/src/lib/display.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./lib/sketch.ts",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -35734,10 +35975,29 @@
           "matchesDoNotFollow": true,
           "circular": false,
           "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "react-i18next",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "npm",
+            "import"
+          ],
+          "resolved": "apps/web/node_modules/react-i18next/dist/commonjs/index.js",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": true,
+          "circular": false,
+          "valid": true
         }
       ],
       "dependents": [
-        "apps/web/src/DiveList.tsx"
+        "apps/web/src/DiveList.tsx",
+        "apps/web/src/BuddySuggestions.tsx",
+        "apps/web/src/LogbookChecks.tsx"
       ],
       "orphan": false,
       "valid": true
@@ -41778,6 +42038,23 @@
         },
         {
           "dynamic": false,
+          "module": "./DecisionTimeline.tsx",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/web/src/DecisionTimeline.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./lib/display.ts",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -41820,6 +42097,23 @@
             "import"
           ],
           "resolved": "apps/web/src/lib/providers.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./ProfileSketch.tsx",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/web/src/ProfileSketch.tsx",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -41920,8 +42214,42 @@
       "valid": true
     },
     {
-      "source": "apps/web/src/ReviewRows.tsx",
+      "source": "apps/web/src/DecisionTimeline.tsx",
       "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./lib/display.ts",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/web/src/lib/display.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./lib/timeline.ts",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/web/src/lib/timeline.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
         {
           "dynamic": false,
           "module": "react",
@@ -41932,6 +42260,97 @@
             "import"
           ],
           "resolved": "apps/web/node_modules/react/index.js",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": true,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "react-i18next",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "npm",
+            "import"
+          ],
+          "resolved": "apps/web/node_modules/react-i18next/dist/commonjs/index.js",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": true,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/web/src/BuddySuggestions.tsx",
+        "apps/web/src/Decisions.tsx",
+        "apps/web/src/LogbookChecks.tsx"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/web/src/lib/timeline.ts",
+      "dependencies": [],
+      "dependents": [
+        "apps/web/src/DecisionTimeline.tsx",
+        "apps/web/src/Decisions.tsx",
+        "apps/web/src/LogbookChecks.tsx"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/web/src/ReviewRows.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./lib/review.ts",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/web/src/lib/review.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "react",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "npm",
+            "import"
+          ],
+          "resolved": "apps/web/node_modules/react/index.js",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": true,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "react-i18next",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "npm",
+            "import"
+          ],
+          "resolved": "apps/web/node_modules/react-i18next/dist/commonjs/index.js",
           "coreModule": false,
           "followable": false,
           "couldNotResolve": false,
@@ -41963,6 +42382,23 @@
             "import"
           ],
           "resolved": "apps/web/src/api.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./DecisionTimeline.tsx",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/web/src/DecisionTimeline.tsx",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -42023,14 +42459,15 @@
         },
         {
           "dynamic": false,
-          "module": "./lib/review.ts",
+          "module": "./lib/timeline.ts",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
+            "type-only",
             "import"
           ],
-          "resolved": "apps/web/src/lib/review.ts",
+          "resolved": "apps/web/src/lib/timeline.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -42350,6 +42787,23 @@
         },
         {
           "dynamic": false,
+          "module": "./DecisionTimeline.tsx",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/web/src/DecisionTimeline.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./DeleteDive.tsx",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -42435,14 +42889,15 @@
         },
         {
           "dynamic": false,
-          "module": "./lib/review.ts",
+          "module": "./lib/timeline.ts",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
+            "type-only",
             "import"
           ],
-          "resolved": "apps/web/src/lib/review.ts",
+          "resolved": "apps/web/src/lib/timeline.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -42460,6 +42915,23 @@
             "import"
           ],
           "resolved": "apps/web/src/MergeDive.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./ProfileSketch.tsx",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/web/src/ProfileSketch.tsx",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -46254,8 +46726,8 @@
     "baselineSize": 0,
     "baselineStale": 0,
     "advisedExitCode": 0,
-    "totalCruised": 437,
-    "totalDependenciesCruised": 2307,
+    "totalCruised": 441,
+    "totalDependenciesCruised": 2331,
     "optionsUsed": {
       "baseDir": "/home/runner/work/dive_hub/dive_hub",
       "combinedDependencies": false,
