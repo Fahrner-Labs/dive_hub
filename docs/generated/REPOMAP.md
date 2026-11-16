@@ -4,7 +4,7 @@
 > `pnpm check` fails when this map is stale. Symbols are ranked by how widely the code references them;
 > each module shows its most-referenced ones (exported symbols rank higher). Search here before walking the tree.
 
-Files: 381 · symbols: 3527 · shown: 256
+Files: 382 · symbols: 3532 · shown: 256
 
 ### server/(root)
 apps/server/src/vocabulary.ts:13 type SiteWaterType
@@ -174,7 +174,7 @@ apps/server/src/mcp/tool.ts:85 fn offsetOf
 apps/server/src/mcp/read-service.ts:25 const count
 apps/server/src/mcp/profile.ts:5 iface Series
 apps/server/src/mcp/access-service.ts:36 iface VerifiedAccess
-apps/server/src/mcp/access-service.ts:24 class AiAccessError
+apps/server/src/mcp/read-service.ts:44 type DiveRow
 … 154 more symbols in this module
 
 ### server/planning
@@ -184,10 +184,10 @@ apps/server/src/planning/gas.ts:44 fn ambientPressureBar
 apps/server/src/planning/gas.ts:15 iface Conditions
 apps/server/src/planning/gas-plan.ts:21 type GasRule
 apps/server/src/planning/loadings-service.ts:17 const DAY_MS
-apps/server/src/planning/bottom-time-service.ts:20 const round
+apps/server/src/planning/bottom-time-service.ts:22 const round
 apps/server/src/planning/gas-numbers.ts:9 const round
 apps/server/src/planning/gas-plan-service.ts:32 const round
-… 121 more symbols in this module
+… 126 more symbols in this module
 
 ### server/providers
 apps/server/src/providers/registry.ts:70 class ProviderServiceError

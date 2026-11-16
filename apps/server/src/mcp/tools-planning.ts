@@ -57,9 +57,9 @@ const Used = (value: ReturnType<typeof Type.Number> | ReturnType<typeof Type.Str
 export const planGasAndBottomTime = defineTool({
   name: 'planning_gas_and_bottom_time',
   title: 'Gas numbers and bottom time for a planned dive',
-  description: `Computes limits for a planned dive from the inputs and the Diver's own settings: MOD of a gas mix at the working and the contingency ppO2, and for a depth the ppO2, best mix, EAD and END. With a depth, air or nitrox 21-40 %, no more than 40 m and within the MOD, also a bottom time: the shortest of the no-decompression limit (Bühlmann ZHL-16C with the gradient factor, clean tissues), the oxygen limit and the gas down to the ascent pressure of the gas rule (when a cylinder is given; by default rock bottom, never below 50 bar), and which limit binds.
+  description: `Computes limits for a planned dive from the inputs and the Diver's own settings: MOD of a gas mix at the working and the contingency ppO2, and for a depth the ppO2, best mix, EAD and END. With a depth, air or nitrox 21-40 %, no more than 40 m and within the MOD, also a bottom time: the shortest of the no-decompression limit (Bühlmann ZHL-16C with the gradient factor; clean tissues unless the managed Diver dived within 48 hours, whose residual N₂ then seeds it), the oxygen limit and the gas down to the ascent pressure of the gas rule (when a cylinder is given; by default rock bottom, never below 50 bar), and which limit binds.
 
-Returns { gas, hypoxic, ppo2_limits, mod_working_m, mod_contingency_m, at_depth, conditions, oxygen_narcotic, bottom_time, notice }. bottom_time is null without a depth. Its status is "ok" (minutes, binding, limits, otu, assumptions with where each value came from) or "outside_recreational_limits" (reason: depth, mod or gas; no number). When recent_dive_ended_at is set the Diver dived within 48 hours and the real limit is shorter than shown.
+Returns { gas, hypoxic, ppo2_limits, mod_working_m, mod_contingency_m, at_depth, conditions, oxygen_narcotic, bottom_time, notice }. bottom_time is null without a depth. Its status is "ok" (minutes, binding, limits, otu, assumptions with where each value came from) or "outside_recreational_limits" (reason: depth, mod or gas; no number). residual_n2 says when the limit was seeded from the Diver's residual nitrogen, how many Dives it rests on and when the last ended; recent_dive_ended_at stays as the 48-hour warning.
 
 Always pass on the notice and the assumptions with the numbers: this is an estimate, not advice, and the dive computer and training govern. Dive Hub plans no decompression dives.`,
   scope: 'logbook:read',
@@ -95,6 +95,11 @@ Always pass on the notice and the assumptions with the numbers: this is an estim
         gas_rule: Used(Type.Object({ kind: Type.Enum([...BOTTOM_TIME_RULES]), bar: Nullable(Type.Number()) })),
       }),
       recent_dive_ended_at: Nullable(Type.String({ description: 'The Diver dived within 48 hours: the real limit is shorter than shown' })),
+      residual_n2: Nullable(Type.Object({
+        worst_compartment_percent: Type.Number({ description: 'The Diver\'s worst compartment at now, at the surface and GF high; the NDL starts from these tissues' }),
+        based_on_dives: Type.Integer({ description: 'How many logged Dives the tissue state rests on' }),
+        last_dive_ended_at: Nullable(Type.String({ description: 'When the latest Dive ended' })),
+      }, { description: 'The residual nitrogen the no-decompression limit was seeded with; null without a Dive in the last 48 hours or without a profile' })),
     })),
     notice: Type.String(),
   }),
@@ -116,11 +121,17 @@ Always pass on the notice and the assumptions with the numbers: this is an estim
         sac_l_per_min: { value: v.used.sacLpm.value, source: v.used.sacLpm.source, ...(v.used.sacLpm.basedOn !== undefined && { based_on_dives: v.used.sacLpm.basedOn }) },
         water: v.used.water, altitude_m: v.used.altitudeM, gas_rule: v.used.gasRule,
       };
+      const residualN2 = v.residualN2 && {
+        worst_compartment_percent: v.residualN2.worstCompartmentPercent,
+        based_on_dives: v.residualN2.basedOnDives,
+        last_dive_ended_at: v.residualN2.lastDiveEndedAt,
+      };
       bottomTime = v.status === 'outside_limits'
-        ? { status: 'outside_recreational_limits' as const, reason: v.reason, mod_m: v.modM, assumptions, recent_dive_ended_at: v.recentDiveEndedAt }
+        ? { status: 'outside_recreational_limits' as const, reason: v.reason, mod_m: v.modM, assumptions, recent_dive_ended_at: v.recentDiveEndedAt, residual_n2: residualN2 }
         : {
           status: 'ok' as const, minutes: v.minutes, binding: v.binding, limits: v.limits, otu: v.otu, ppo2_at_depth: v.ppO2AtDepth,
-          ppo2_above_working: v.ppO2AboveWorking, ascent_pressure_bar: v.ascentPressureBar, assumptions, recent_dive_ended_at: v.recentDiveEndedAt,
+          ppo2_above_working: v.ppO2AboveWorking, ascent_pressure_bar: v.ascentPressureBar, assumptions,
+          recent_dive_ended_at: v.recentDiveEndedAt, residual_n2: residualN2,
         };
     }
     const output = {

@@ -60,7 +60,7 @@ const BottomTimeQuery = Type.Object({
   altitude: Type.Optional(Type.Number({ minimum: 0, maximum: 5000 })),
   ppo2Working: Type.Optional(Type.Number({ minimum: 1, maximum: 2 })),
   ppo2Contingency: Type.Optional(Type.Number({ minimum: 1, maximum: 2 })),
-  diverId: Type.Optional(Type.String({ format: 'uuid', description: 'Start from this Diver\'s computer GF, SAC and last Dive' })),
+  diverId: Type.Optional(Type.String({ format: 'uuid', description: 'Start from this Diver\'s computer GF, SAC, residual N₂ and last Dive' })),
   siteId: Type.Optional(Type.String({ format: 'uuid', description: 'Plan at this site: its water type' })),
 });
 
@@ -163,6 +163,11 @@ const BottomTimeView = Type.Object({
   gas: Type.Object({ o2: Type.Number(), he: Type.Number() }),
   depthM: Type.Number(),
   recentDiveEndedAt: Nullable(Type.String(), { description: 'When the Diver\'s Dive within the last 48 hours ended; the real limit is then shorter than shown' }),
+  residualN2: Nullable(Type.Object({
+    worstCompartmentPercent: Type.Number({ description: 'The Diver\'s worst compartment at now, as a percent of its tolerated pressure at the surface and GF high; the NDL starts from these tissues' }),
+    basedOnDives: Type.Integer({ description: 'How many logged Dives the tissue state rests on' }),
+    lastDiveEndedAt: Nullable(Type.String({ format: 'date-time', description: 'When the latest Dive ended' })),
+  }), { description: 'The residual nitrogen the no-decompression limit was seeded with; null without a Dive in the last 48 hours or without a profile' }),
 });
 
 const LoadingsView = Type.Object({
@@ -213,7 +218,8 @@ export const planningRoutes: FastifyPluginAsyncTypebox<PlanningRouteDeps> = asyn
     schema: {
       summary: 'Bottom time for a planned dive: the shortest of the no-decompression, oxygen and gas limits, and which binds (ADR 0032)',
       description: 'An estimate from the Diver\'s own input and settings, not advice; the dive computer and training govern. '
-        + 'Air and nitrox 21-40 % only, no-stop only, at most 40 m; otherwise status `outside_limits`.',
+        + 'Air and nitrox 21-40 % only, no-stop only, at most 40 m; otherwise status `outside_limits`. '
+        + 'With `diverId`, a Dive within 48 hours seeds the no-decompression limit with the Diver\'s residual N₂ and the answer says so in `residualN2`.',
       querystring: BottomTimeQuery, response: { 200: BottomTimeView, 400: Problem, 404: Problem },
     },
   }, async (request) => deps.planning.bottomTime(userOf(request).id, request.query));

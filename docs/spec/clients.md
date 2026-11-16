@@ -1216,7 +1216,11 @@ What a client **must** do, because these are limits from the Diver's own input a
   Cylinder for the gas).
 - **Never show a number when `status` is `outside_limits`:** show the `reason` (`depth` beyond 40 m, `mod` beyond the MOD at
   the contingency ppO₂, `gas` not air or nitrox 21–40 %) and the MOD. `ppO2AboveWorking` says the ppO₂ is above the working limit.
-- **Say when `recentDiveEndedAt` is set** (a Dive within 48 hours): the real limit is shorter than shown.
+- **Say when `residualN2` is set** (a Dive within 48 hours whose profile could be replayed): the no-decompression limit
+  already starts from the Diver's residual nitrogen. Name what it rests on (`basedOnDives`, `lastDiveEndedAt`), and show
+  `worstCompartmentPercent` as the model's load, never as a verdict.
+- **Say when `recentDiveEndedAt` is set without `residualN2`** (a Dive within 48 hours with no profile): the real limit is
+  likely shorter than shown and this one starts from clean tissues.
 - **Depths from the MOD are rounded down to 0.1 m:** a client must not round them up. A mix under 16 % oxygen answers
   `gas_not_breathable` (400); a client sends `volume` and `pressure` together or neither.
 - **The gas limit ends at the ascent pressure of the gas rule** (`rule`, `bar`; default `rock_bottom`, never below 50 bar;

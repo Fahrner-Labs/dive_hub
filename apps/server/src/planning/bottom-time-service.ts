@@ -7,6 +7,8 @@ import { bottomTime } from './bottom-time.js';
 import { DEFAULT_PPO2, floorTenth } from './gas-numbers.js';
 import { type GasRule } from './gas-plan.js';
 import type { PlanningWater } from './gas.js';
+import { diverDiveRows, loadingDivesForReplay, loadingDivesOf } from './loading-dives.js';
+import { tissuesAfterDives } from './loadings.js';
 import { diveSacs, recentDiveEnd, siteWaterOf } from './logbook-inputs.js';
 import { PlanningError } from './planning-error.js';
 import { DEFAULT_PLANNING_SAC_LPM, planningSac } from './planning-sac.js';
@@ -53,6 +55,21 @@ async function diverLogbook(reader: Queryable, managedIds: readonly string[], di
   };
 }
 
+/** The NDL's seed and the provenance shown; empty without a Diver, a recent Dive or a profile (ADR 0071, FAH-241). */
+async function residualSeedOf(reader: Queryable, diverId: string | undefined, gfHigh: number) {
+  if (diverId === undefined) return { initialTissues: undefined, residualN2: null };
+  const nowMs = Date.now();
+  const rows = await diverDiveRows(reader, diverId, nowMs);
+  const window = await loadingDivesOf(reader, rows.windowDives);
+  const n2 = tissuesAfterDives({ dives: loadingDivesForReplay(rows, window), nowMs, gfHigh });
+  const residualN2 = n2.tissues === null || n2.worstCompartmentPercent === null ? null : {
+    worstCompartmentPercent: round(n2.worstCompartmentPercent, 1),
+    basedOnDives: n2.basis.divesUsed,
+    lastDiveEndedAt: n2.basis.lastDiveEndedAt,
+  };
+  return { initialTissues: n2.tissues ?? undefined, residualN2 };
+}
+
 export async function planBottomTime(reader: Queryable, managedIds: readonly string[], query: BottomTimeQuery) {
   const gas = { o2: query.o2, he: query.he ?? 0 };
   if (gas.o2 + gas.he > 100) throw new PlanningError('invalid_input');
@@ -85,14 +102,21 @@ export async function planBottomTime(reader: Queryable, managedIds: readonly str
     })(),
   };
 
+  const { initialTissues, residualN2 } = await residualSeedOf(reader, query.diverId, used.gfHigh.value);
+
   const result = bottomTime({
     gas, depthM: query.depth, gfHigh: used.gfHigh.value,
     conditions: { water: used.water.value, altitudeM: used.altitudeM.value },
     cylinder: query.volume !== undefined ? { volumeL: query.volume, startPressureBar: query.pressure! } : null,
     sacLpm: used.sacLpm.value, rule: used.gasRule.value.kind === 'rock_bottom' ? { kind: 'rock_bottom' } : { kind: used.gasRule.value.kind, bar: used.gasRule.value.bar! } as GasRule,
     ppO2: { working: query.ppo2Working ?? DEFAULT_PPO2.working, contingency: query.ppo2Contingency ?? DEFAULT_PPO2.contingency },
+    initialTissues,
   });
-  const common = { used, gas, depthM: query.depth, recentDiveEndedAt: logbook?.recentDiveEndedAt?.toISOString() ?? null };
+  const common = {
+    used, gas, depthM: query.depth,
+    recentDiveEndedAt: logbook?.recentDiveEndedAt?.toISOString() ?? null,
+    residualN2,
+  };
   if (result.status === 'outside_limits') {
     return { status: result.status, reason: result.reason, modM: result.modM === null ? null : floorTenth(result.modM), ...common };
   }

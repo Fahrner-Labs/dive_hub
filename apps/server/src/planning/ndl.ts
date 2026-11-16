@@ -23,6 +23,8 @@ export interface NdlInput {
   /** Gradient factor high in percent (for a no-stop dive only this one matters). */
   gfHigh: number;
   conditions: Conditions;
+  /** The 16 compartment pressures to start from; default clean tissues saturated with air at the surface. */
+  initialTissues?: readonly number[] | undefined;
 }
 
 /** Whole minutes from leaving the surface until the first stop would be needed, less one; Infinity when it never is. */
@@ -33,8 +35,8 @@ export function ndlMinutes(input: NdlInput): number {
   const surface = surfacePressureBar(conditions.altitudeM);
   const barPerMetre = 1 / metresPerBar(conditions);
   const descentSeconds = (depthM / DESCENT_RATE_M_PER_MIN) * 60;
-  // Clean tissues: saturated with air at the surface.
-  let tissue = surfaceSaturatedTissues(conditions);
+  // The Diver's residual nitrogen when the planner seeds it, else clean tissues saturated with air at the surface.
+  let tissue = input.initialTissues ? [...input.initialTissues] : surfaceSaturatedTissues(conditions);
   const stepMinutes = STEP_SECONDS / 60;
   const rateBarPerMin = DESCENT_RATE_M_PER_MIN * barPerMetre;
 

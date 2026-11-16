@@ -10,6 +10,7 @@ describe.skipIf(!(await databaseReachable()))('gas numbers and bottom time', () 
   let t: TestDatabase;
   let ctx: Awaited<ReturnType<typeof createTestApp>>;
   const cookies: Record<string, string> = {};
+  const divers: Record<string, string> = {};
   let timDiver: string;
 
   const get = (who: string, url: string) => ctx.app.inject({ method: 'GET', url, headers: { cookie: cookies[who]!, origin: BASE_URL } });
@@ -22,11 +23,12 @@ describe.skipIf(!(await databaseReachable()))('gas numbers and bottom time', () 
   beforeAll(async () => {
     t = await createTestDatabase();
     ctx = await createTestApp(t);
-    for (const who of ['tim', 'bob']) {
+    for (const who of ['tim', 'bob', 'resid', 'stale-n2']) {
       await createUser(ctx.auth, `${who}@example.com`);
       cookies[who] = await signIn(ctx.app, `${who}@example.com`);
+      divers[who] = ((await (await get(who, '/api/divers')).json()) as { id: string; isOwn: boolean }[]).find((d) => d.isOwn)!.id;
     }
-    timDiver = ((await (await get('tim', '/api/divers')).json()) as { id: string; isOwn: boolean }[]).find((d) => d.isOwn)!.id;
+    timDiver = divers.tim!;
   });
   afterAll(async () => {
     await ctx?.app.close();
@@ -85,6 +87,7 @@ describe.skipIf(!(await databaseReachable()))('gas numbers and bottom time', () 
       };
       ascentPressureBar: number | null;
       recentDiveEndedAt: string | null;
+      residualN2: { worstCompartmentPercent: number; basedOnDives: number; lastDiveEndedAt: string | null } | null;
     };
     const bottomTime = async (who: string, query: string) => (await get(who, `/api/tools/bottom-time?${query}`)).json() as BottomTimeView;
 
@@ -99,6 +102,7 @@ describe.skipIf(!(await databaseReachable()))('gas numbers and bottom time', () 
       expect(r.ascentPressureBar).toBeGreaterThanOrEqual(50);
       expect(r.binding!.length).toBeGreaterThan(0);
       expect(r.recentDiveEndedAt).toBeNull();
+      expect(r.residualN2).toBeNull();
     });
 
     it('takes what the caller gives, and says so', async () => {
@@ -147,6 +151,32 @@ describe.skipIf(!(await databaseReachable()))('gas numbers and bottom time', () 
       await upload('tim', makeSyntheticDive({ serialNumber: 802, start: ago, durationSeconds: 30 * 60 }));
       const r = await bottomTime('tim', `depth=30&o2=32&${al80}&diverId=${timDiver}`);
       expect(Math.abs(new Date(r.recentDiveEndedAt!).getTime() - (ago.getTime() + 30 * 60_000))).toBeLessThan(5_000);
+    });
+
+    it('seeds the no-decompression limit from a Dive within 48 hours and names what it rests on', async () => {
+      const query = `depth=18&o2=32&${al80}&diverId=${divers.resid!}`;
+      const clean = await bottomTime('resid', query);
+      expect(clean.residualN2).toBeNull();
+
+      const started = new Date(Math.floor((Date.now() - 2 * 3600_000) / 1000) * 1000);
+      await upload('resid', makeSyntheticDive({ serialNumber: 903, start: started, durationSeconds: 30 * 60 }));
+      const loaded = await bottomTime('resid', query);
+      expect(loaded.residualN2).toMatchObject({ basedOnDives: 1 });
+      expect(new Date(loaded.residualN2!.lastDiveEndedAt!).getTime()).toBe(started.getTime() + 30 * 60_000);
+      expect(loaded.residualN2!.worstCompartmentPercent).toBeGreaterThan(0);
+      expect(loaded.limits!.ndl).toBeLessThan(clean.limits!.ndl);
+    });
+
+    it('keeps the clean-tissue limit when the last Dive ended over 48 hours ago', async () => {
+      const query = `depth=18&o2=32&${al80}&diverId=${divers['stale-n2']!}`;
+      const clean = await bottomTime('stale-n2', query);
+
+      const started = new Date(Math.floor((Date.now() - 49 * 3600_000) / 1000) * 1000);
+      await upload('stale-n2', makeSyntheticDive({ serialNumber: 904, start: started, durationSeconds: 30 * 60 }));
+      const stale = await bottomTime('stale-n2', query);
+      expect(stale.residualN2).toBeNull();
+      expect(stale.recentDiveEndedAt).toBeNull();
+      expect(stale.limits!.ndl).toBe(clean.limits!.ndl);
     });
 
     it("uses the planned site's water, brackish counted as salt", async () => {
