@@ -319,6 +319,8 @@ export const diversQuery = () => queryOptions({ queryKey: keys.divers, queryFn: 
 export const diverLoadingsQuery = (diverId: string) => queryOptions({
   queryKey: keys.loadings(diverId),
   queryFn: async () => unwrap(await api.GET('/api/divers/{id}/loadings', { params: { path: { id: diverId } } })),
+  // An estimate from the Dives changes with them: ask again whenever the Diver's page is opened.
+  staleTime: 0,
 });
 export const devicesQuery = () => queryOptions({ queryKey: keys.devices, queryFn: async () => unwrap(await api.GET('/api/devices')) });
 /** A Diver's Equipment items with their schedules and computed due (ADR 0034). */

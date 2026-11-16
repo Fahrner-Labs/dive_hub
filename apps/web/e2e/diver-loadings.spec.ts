@@ -86,3 +86,12 @@ test('a returned zero is a value; with every estimate missing the section is not
   await expect(page.getByRole('heading', { name: 'Current loadings' })).toHaveCount(0);
   await expectGoodPage(page, 'Erika');
 });
+
+test('an estimate the server cannot give is named, not hidden', { tag: ['@divers'] }, async ({ page, request }) => {
+  const id = await ownDiverId(request);
+  await page.route('**/api/divers/*/loadings', (route) => route.fulfill({ status: 500, json: { code: 'internal_error' } }));
+  await page.goto(`/#/divers/${id}`);
+  const section = page.locator('section.panel', { has: page.getByRole('heading', { name: 'Current loadings' }) });
+  await expect(section).toContainText('Something went wrong on the server. Try again later.');
+  await expectGoodPage(page, 'Erika');
+});

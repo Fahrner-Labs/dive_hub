@@ -116,7 +116,11 @@ function DiverDetails({ diver: d, all, open, back }: {
 function CurrentLoadings({ diver }: { diver: DiverView }) {
   const { t } = useTranslation();
   const display = useDisplay();
+  const errorText = useErrorText();
   const loadings = useQuery(diverLoadingsQuery(diver.id));
+  if (loadings.error) {
+    return <Panel title={t('loadings.title')}><Notice tone="danger">{errorText(loadings.error)}</Notice></Panel>;
+  }
   const data = loadings.data;
   if (!data || !showsLoadings(data)) return null;
   const { basis, n2, cns, otu, noFly } = data;
