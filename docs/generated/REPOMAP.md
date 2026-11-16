@@ -4,7 +4,7 @@
 > `pnpm check` fails when this map is stale. Symbols are ranked by how widely the code references them;
 > each module shows its most-referenced ones (exported symbols rank higher). Search here before walking the tree.
 
-Files: 381 · symbols: 3527 · shown: 259
+Files: 381 · symbols: 3527 · shown: 256
 
 ### server/(root)
 apps/server/src/vocabulary.ts:13 type SiteWaterType
@@ -212,8 +212,7 @@ apps/server/src/providers/push/outgoing-dive.ts:64 fn loadOutgoingDive
 apps/server/src/providers/dive-import/three-way.ts:10 const SYNCED_FIELDS
 apps/server/src/providers/provider.ts:85 iface Capabilities
 apps/server/src/providers/dive-import/dive-changes.ts:29 iface ProviderContext
-apps/server/src/providers/dive-import/three-way.ts:61 fn sameAtProvider
-… 479 more symbols in this module
+… 480 more symbols in this module
 
 ### server/revisions
 apps/server/src/revisions/revisions.ts:66 fn writeRevision
@@ -301,8 +300,7 @@ apps/web/src/Cylinders.tsx:18 fn useCylinderText
 apps/web/src/DeleteDive.tsx:21 fn DeleteDiveDialog
 apps/web/src/ProfileSketch.tsx:12 fn ProfileSketch
 apps/web/src/ProviderConflicts.tsx:14 fn useConflictValueText
-apps/web/src/WaitingPush.tsx:117 fn WaitingPushState
-… 689 more symbols in this module
+… 690 more symbols in this module
 
 ### web/i18n
 apps/web/src/i18n/languages.ts:6 fn pickLanguage
@@ -334,8 +332,7 @@ apps/web/src/lib/providers.ts:52 type ProviderRef
 apps/web/src/lib/logbook.ts:11 iface LogbookParams
 apps/web/src/lib/units.ts:4 type UnitSystem
 apps/web/src/lib/units.ts:22 const pressureIn
-apps/web/src/lib/logbook.ts:39 fn logbookHref
-… 347 more symbols in this module
+… 348 more symbols in this module
 
 ### web/ui
 apps/web/src/ui/Layout.tsx:85 fn Notice
