@@ -105,6 +105,23 @@ function relations(bars: TimelineBarGeometry[], laneCount: number, at: (ms: numb
   return { gaps: [...gaps.values()], overlaps: [...overlaps.values()] };
 }
 
+/** The share of the track a bar must span for its start and end times to fit inside it (FAH-233). */
+export const CAPSULE_MIN_SHARE = 0.45;
+const CAPSULE_MIN_PERCENT = Math.round(CAPSULE_MIN_SHARE * 100);
+
+/**
+ * Whether every bar in a lane has room for the capsule: its start and end times inside the bar, the duration in the
+ * middle. A lane with one shorter bar falls back as a whole to the caption under the bar, so one bar never squeezes
+ * three labels into a width made for a time.
+ */
+export function laneFitsCapsule(geometry: TimelineGeometry, laneIndex: number): boolean {
+  const bars = geometry.bars.filter((bar) => bar.lane === laneIndex);
+  const trackMs = geometry.endMs - geometry.startMs || 1;
+  // Compare in whole milliseconds: 45/100 of the track is not exact in floating point.
+  return bars.length > 0 && bars.every((bar) =>
+    (bar.localEndMs - bar.localStartMs) * 100 >= trackMs * CAPSULE_MIN_PERCENT);
+}
+
 /** Places every bar of every lane on one axis. */
 export function timelineGeometry(lanes: TimelineLane[]): TimelineGeometry {
   const flat = lanes.flatMap((lane, laneIndex) => lane.bars.map((bar) => ({ laneIndex, bar })));

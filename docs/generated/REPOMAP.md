@@ -4,7 +4,7 @@
 > `pnpm check` fails when this map is stale. Symbols are ranked by how widely the code references them;
 > each module shows its most-referenced ones (exported symbols rank higher). Search here before walking the tree.
 
-Files: 378 · symbols: 3484 · shown: 257
+Files: 378 · symbols: 3487 · shown: 257
 
 ### server/(root)
 apps/server/src/vocabulary.ts:13 type SiteWaterType
@@ -292,7 +292,7 @@ apps/web/src/ReviewRows.tsx:52 iface CompareFact
 apps/web/src/ProviderDiveImport.tsx:18 const DIVE_KINDS
 apps/web/src/DiveCodes.tsx:10 fn CodeFigure
 apps/web/src/ReviewRows.tsx:64 fn Comparison
-apps/web/src/DecisionTimeline.tsx:20 fn DecisionTimeline
+apps/web/src/DecisionTimeline.tsx:21 fn DecisionTimeline
 apps/web/src/ProfilePlot.tsx:11 const token
 apps/web/src/Cylinders.tsx:18 fn useCylinderText
 apps/web/src/DeleteDive.tsx:21 fn DeleteDiveDialog
@@ -333,7 +333,7 @@ apps/web/src/lib/logbook.ts:11 iface LogbookParams
 apps/web/src/lib/units.ts:4 type UnitSystem
 apps/web/src/lib/units.ts:22 const pressureIn
 apps/web/src/lib/logbook.ts:39 fn logbookHref
-… 344 more symbols in this module
+… 347 more symbols in this module
 
 ### web/ui
 apps/web/src/ui/Layout.tsx:85 fn Notice

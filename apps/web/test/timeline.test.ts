@@ -1,7 +1,7 @@
 // Timeline geometry for the Review decision cards (FAH-214): where a bar sits on the shared wall-clock axis, and which
 // stretches between bars are gaps or overlaps.
 import { describe, expect, it } from 'vitest';
-import { timelineGeometry, type TimelineLane } from '../src/lib/timeline.ts';
+import { laneFitsCapsule, timelineGeometry, type TimelineLane } from '../src/lib/timeline.ts';
 
 const bar = (key: string, startsAt: string, durationSeconds: number, utcOffsetSeconds: number | null = 0) =>
   ({ key, startsAt, utcOffsetSeconds, durationSeconds });
@@ -88,5 +88,48 @@ describe('timeline geometry', () => {
       lane('other', bar('c', '2026-01-15T10:40:00Z', 10 * 60)),
     ]);
     expect(gaps).toHaveLength(1);
+  });
+});
+
+describe('timeline capsule fit', () => {
+  it('carries the times inside a bar that spans at least 45% of the track', () => {
+    const geometry = timelineGeometry([
+      lane('recording', bar('r', '2026-01-15T10:00:00Z', 30 * 60)),
+      lane('dive', bar('d', '2026-01-15T10:05:00Z', 20 * 60)),
+    ]);
+    // The recording spans the whole axis and the dive 5/30 to 25/30 (67% of it): both fit the capsule.
+    expect(laneFitsCapsule(geometry, 0)).toBe(true);
+    expect(laneFitsCapsule(geometry, 1)).toBe(true);
+  });
+
+  it('accepts a bar at exactly 45% of the track', () => {
+    const geometry = timelineGeometry([
+      lane('recording', bar('r', '2026-01-15T10:00:00Z', 100 * 60)),
+      lane('dive', bar('d', '2026-01-15T10:55:00Z', 45 * 60)),
+    ]);
+    expect(laneFitsCapsule(geometry, 0)).toBe(true);
+    expect(laneFitsCapsule(geometry, 1)).toBe(true);
+  });
+
+  it('falls back to the caption under a bar shorter than 45% of the track', () => {
+    const geometry = timelineGeometry([
+      lane('recording', bar('r', '2026-01-15T10:00:00Z', 50 * 60)),
+      lane('dive', bar('d', '2026-01-15T10:35:00Z', 10 * 60)),
+    ]);
+    // The dive spans 10 of 50 minutes (20%): three labels would not fit inside it.
+    expect(laneFitsCapsule(geometry, 0)).toBe(true);
+    expect(laneFitsCapsule(geometry, 1)).toBe(false);
+  });
+
+  it('falls back for a whole part chain when one part is short', () => {
+    const geometry = timelineGeometry([
+      lane(
+        'parts',
+        bar('a', '2026-01-15T10:00:00Z', 20 * 60),
+        bar('b', '2026-01-15T10:25:00Z', 5 * 60),
+      ),
+    ]);
+    // The 5-minute part is 1/6 of the 30-minute axis: the lane keeps A's captions under every part.
+    expect(laneFitsCapsule(geometry, 0)).toBe(false);
   });
 });
