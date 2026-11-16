@@ -41,6 +41,8 @@ is stored — no schema change, no migration, no new module ([ADR 0053](0053-mod
 - Replay every non-deleted Dive that **ended within 72 h** (more than six half-times of the slowest 635-minute
   compartment) through the ZHL-16C compartments, using the Recording's depth samples and the Dive's first gas when
   there is no switch information. Surface intervals and the time up to now are spent on air at the surface.
+- **Salt water at sea level** is the default for this slice, as in the planner. The Recording's water and the site's
+  altitude are not read yet; a later slice can carry per-Dive conditions without changing these rules.
 - The displayed value is the **worst compartment as a percent of its tolerated tissue pressure** at the surface and
   the Diver's GF high: 100 % is the gradient-factor limit at which the NDL model would call for a stop. The GF high
   comes from the Diver's latest Recording that has one, else 85, as in the planner.

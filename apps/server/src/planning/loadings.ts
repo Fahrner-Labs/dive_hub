@@ -15,7 +15,10 @@ export const OTU_WINDOW_HOURS = 24;
 
 const HOUR_MS = 3_600_000;
 const AIR: GasMix = { o2: 21, he: 0 };
-/** Dives carry no water or altitude of their own; salt water at sea level is the planner's default. */
+/**
+ * This slice replays every Dive as salt water at sea level, the planner's default. Per-Dive water (on the Recording)
+ * and altitude (on the site) are a later refinement; ADR 0071 records the approximation.
+ */
 const DEFAULT_CONDITIONS: Conditions = { water: 'salt', altitudeM: 0 };
 
 /** A logged dive as the loadings functions see it; the service fills these from the Dive and its Recording. */
@@ -26,7 +29,6 @@ export interface LoadingDive {
   samples: readonly TissuePoint[];
   /** The first gas; air when the logbook has none. Switch information is not used yet. */
   gas?: GasMix | undefined;
-  cnsEnd?: number | undefined;
   otuStart?: number | undefined;
   otuEnd?: number | undefined;
 }
