@@ -5,7 +5,7 @@ import { and, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
 import type { Queryable } from '../db/client.js';
 import { cylinder, dive, diveAssessment, recording, sampleSeries, type RecordingSummary } from '../db/schema.js';
 import { SOURCES } from '../assessment/rules.js';
-import { noFlyAfter, type NoFly, type SeriesDive } from '../assessment/series-rules.js';
+import { noFlyAfter, seriesDiveOf, type NoFly } from '../assessment/series-rules.js';
 import { DEFAULT_GF_HIGH } from './bottom-time-service.js';
 import type { GasMix } from './gas.js';
 import {
@@ -24,10 +24,6 @@ type RecordingRow = { id: string; diveId: string | null; startsAt: Date; summary
 type DiveRow = { id: string; startsAt: Date; durationSeconds: number; primaryRecordingId: string | null };
 
 const endMsOf = (d: { startsAt: Date; durationSeconds: number }) => d.startsAt.getTime() + d.durationSeconds * 1000;
-
-/** The local calendar day a Dive started on, as the series rules count days (ADR 0036). */
-const localDay = (startsAt: Date, offsetSeconds: number | null) =>
-  new Date(startsAt.getTime() + (offsetSeconds ?? 0) * 1000).toISOString().slice(0, 10);
 
 const depthSamples = (row: { offsetsMs: number[]; values: number[] } | undefined) => (row
   ? row.offsetsMs.flatMap((ms, i) => (row.values[i] === undefined ? [] : [{ tSeconds: ms / 1000, depthM: row.values[i]! }]))
@@ -61,11 +57,12 @@ async function loadingDivesOf(reader: Queryable, windowDives: readonly DiveRow[]
   const depthByRecording = new Map(depthRows.map((r) => [r.recordingId, r]));
 
   const cylinders = await reader.select({
-    diveId: cylinder.diveId, o2: cylinder.o2, he: cylinder.he,
-  }).from(cylinder).where(inArray(cylinder.diveId, ids)).orderBy(cylinder.position);
+    diveId: cylinder.diveId, position: cylinder.position, o2: cylinder.o2, he: cylinder.he,
+  }).from(cylinder).where(inArray(cylinder.diveId, ids));
+  // The Dive's first gas is the Cylinder at position 0 (ADR 0071); an unknown one leaves the core's air default.
   const firstGas = new Map<string, GasMix>();
   for (const c of cylinders) {
-    if (!firstGas.has(c.diveId) && c.o2 !== null && c.he !== null) firstGas.set(c.diveId, { o2: c.o2, he: c.he });
+    if (c.position === 0 && c.o2 !== null && c.he !== null) firstGas.set(c.diveId, { o2: c.o2, he: c.he });
   }
 
   return windowDives.map((d) => {
@@ -102,10 +99,7 @@ async function noFlyOf(reader: Queryable, diverId: string, latest: DiveRow): Pro
   }).from(dive).leftJoin(diveAssessment, eq(diveAssessment.diveId, dive.id))
     .where(and(eq(dive.diverId, diverId), isNull(dive.deletedAt),
       sql`${dive.startsAt} between ${new Date(latest.startsAt.getTime() - 3 * DAY_MS)} and ${new Date(latest.startsAt.getTime() + 2 * DAY_MS)}`));
-  const series: SeriesDive[] = around.filter((d) => d.applies !== false).map((d) => ({
-    id: d.id, startMs: d.startsAt.getTime(), endMs: endMsOf(d), day: localDay(d.startsAt, d.utcOffsetSeconds),
-    maxDepthM: d.maxDepthM, enteredDeco: d.enteredDeco ?? false,
-  }));
+  const series = around.filter((d) => d.applies !== false).map((d) => seriesDiveOf(d, d.enteredDeco ?? false));
   const found = noFlyAfter(series, latest.id);
   return found && { ...found, source: SOURCES.dan_flying };
 }
