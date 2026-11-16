@@ -2780,6 +2780,8 @@
       "aboveWorking": "In dieser Tiefe beträgt der ppO₂ {{ppo2}} bar, über deiner Arbeitsgrenze.",
       "otu": "Etwa {{otu}} OTU Sauerstoffbelastung.",
       "recent": "Du bist in den letzten 48 Stunden getaucht (der letzte Tauchgang endete {{when}}). Die wirkliche Grenze ist kürzer als gezeigt.",
+      "residual_one": "Du bist in den letzten 48 Stunden getaucht (der letzte Tauchgang endete {{when}}). Die Nullzeitgrenze beginnt mit dem Reststickstoff aus {{count}} protokollierten Tauchgang.",
+      "residual_other": "Du bist in den letzten 48 Stunden getaucht (der letzte Tauchgang endete {{when}}). Die Nullzeitgrenze beginnt mit dem Reststickstoff aus {{count}} protokollierten Tauchgängen.",
       "assumptions": "Was angenommen wird",
       "ascentAt": "Das Gaslimit endet bei {{pressure}}, wo du den Aufstieg beginnst."
     },

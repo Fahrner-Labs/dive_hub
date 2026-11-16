@@ -7173,7 +7173,7 @@ export interface paths {
         };
         /**
          * Bottom time for a planned dive: the shortest of the no-decompression, oxygen and gas limits, and which binds (ADR 0032)
-         * @description An estimate from the Diver's own input and settings, not advice; the dive computer and training govern. Air and nitrox 21-40 % only, no-stop only, at most 40 m; otherwise status `outside_limits`.
+         * @description An estimate from the Diver's own input and settings, not advice; the dive computer and training govern. Air and nitrox 21-40 % only, no-stop only, at most 40 m; otherwise status `outside_limits`. With `diverId`, a Dive within 48 hours seeds the no-decompression limit with the Diver's residual N₂ and the answer says so in `residualN2`.
          */
         get: {
             parameters: {
@@ -7197,7 +7197,7 @@ export interface paths {
                     altitude?: number;
                     ppo2Working?: number;
                     ppo2Contingency?: number;
-                    /** @description Start from this Diver's computer GF, SAC and last Dive */
+                    /** @description Start from this Diver's computer GF, SAC, residual N₂ and last Dive */
                     diverId?: string;
                     /** @description Plan at this site: its water type */
                     siteId?: string;
@@ -7294,8 +7294,20 @@ export interface paths {
                                 he: number;
                             };
                             depthM: number;
-                            /** @description When the Diver's Dive within the last 48 hours ended; the real limit is then shorter than shown */
+                            /** @description When the Diver's latest Dive within the last 48 hours ended; `residualN2` says whether its profile seeded the limit, else the real limit is likely shorter than shown */
                             recentDiveEndedAt: null | string;
+                            /** @description The residual nitrogen the no-decompression limit was seeded with; null without a Dive in the last 48 hours or without a profile */
+                            residualN2: null | {
+                                /** @description The Diver's worst compartment at now, as a percent of its tolerated pressure at the surface and GF high; the NDL starts from these tissues */
+                                worstCompartmentPercent: number;
+                                /** @description How many logged Dives the tissue state rests on */
+                                basedOnDives: number;
+                                /**
+                                 * Format: date-time
+                                 * @description When the latest Dive the tissue state rests on ended
+                                 */
+                                lastDiveEndedAt: string;
+                            };
                         };
                     };
                 };
