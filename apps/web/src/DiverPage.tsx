@@ -1,17 +1,18 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { api, diversQuery, keys, unwrap, type DiverView } from './api.ts';
+import { api, diverLoadingsQuery, diversQuery, keys, unwrap, type DiverView } from './api.ts';
 import { BodyWeightDialog } from './BodyWeight.tsx';
 import { CertificationsSection } from './Certifications.tsx';
 import { DiverCodesDialog } from './DiverCodes.tsx';
 import { announce } from './lib/announce.ts';
-import { useErrorText } from './lib/display.ts';
+import { useDisplay, useErrorText } from './lib/display.ts';
 import { useSameName } from './lib/divers.ts';
 import { focusHeading } from './lib/focus.ts';
+import { loadingNumber, loadingPercent, LOADING_SOURCES, showsLoadings } from './lib/loadings.ts';
 import { usePageTitle } from './lib/page.ts';
 import {
-  ActionMenu, Button, Checkbox, ConfirmDialog, Disclosure, Form, NotFoundPage, Notice, NumberField, PageHeader, Panel, RowsSkeleton, TextField,
+  ActionMenu, Button, Checkbox, ConfirmDialog, Disclosure, Form, Muted, NotFoundPage, Notice, NumberField, PageHeader, Panel, RowsSkeleton, TextField,
 } from './ui/index.ts';
 
 /**
@@ -94,6 +95,7 @@ function DiverDetails({ diver: d, all, open, back }: {
         <DiveNumbers diver={d} />
         <MutedRules diver={d} />
       </Panel>
+      <CurrentLoadings diver={d} />
       {codes && <DiverCodesDialog diverId={d.id} name={d.name} onClose={() => setCodes(false)} />}
       {weight && <BodyWeightDialog diverId={d.id} name={d.name} onClose={() => setWeight(false)} />}
       <ConfirmDialog
@@ -103,6 +105,72 @@ function DiverDetails({ diver: d, all, open, back }: {
         onDone={() => { location.hash = '#/divers'; void queryClient.invalidateQueries({ queryKey: keys.divers }); }}
       />
     </>
+  );
+}
+
+/**
+ * What the Diver's logged dives leave in them now (ADR 0071): residual N₂, CNS and OTU beside DAN's no-fly time,
+ * with the Dives the estimate rests on and the sources. An estimate from the Diver's own logbook, never advice;
+ * the section is hidden when every value is missing, while a returned zero is a real zero.
+ */
+function CurrentLoadings({ diver }: { diver: DiverView }) {
+  const { t } = useTranslation();
+  const display = useDisplay();
+  const loadings = useQuery(diverLoadingsQuery(diver.id));
+  const data = loadings.data;
+  if (!data || !showsLoadings(data)) return null;
+  const { basis, n2, cns, otu, noFly } = data;
+  const last = basis.lastDiveEndedAt === null ? null : display.dateTime(basis.lastDiveEndedAt);
+  const basisText = last === null ? t('loadings.basisNoDive')
+    : basis.divesUsed === 0 ? t('loadings.basisNone', { window: basis.windowHours, last })
+      : t('loadings.basis', { count: basis.divesUsed, window: basis.windowHours, last });
+  return (
+    <Panel title={t('loadings.title')}>
+      <dl className="facts">
+        {n2 && (
+          <div>
+            <dt>{t('loadings.n2Label')}</dt>
+            <dd>{t('loadings.n2Value', { percent: loadingPercent(n2.worstCompartmentPercent, display.locale), gf: n2.gfHigh })}</dd>
+          </div>
+        )}
+        {cns && (
+          <div>
+            <dt>{t('loadings.cnsLabel')}</dt>
+            <dd>{t('loadings.cnsValue', {
+              now: loadingPercent(cns.percentNow, display.locale),
+              atEnd: loadingPercent(cns.percentAtLastDiveEnd, display.locale),
+            })}</dd>
+          </div>
+        )}
+        {otu && (
+          <div>
+            <dt>{t('loadings.otuLabel')}</dt>
+            <dd>{t('loadings.otuValue', { value: loadingNumber(otu.last24Hours, display.locale) })}</dd>
+          </div>
+        )}
+        {noFly && (
+          <div>
+            <dt>{t('loadings.noFlyLabel')}</dt>
+            <dd>
+              {t(`loadings.noFly.${noFly.reason}`, { hours: noFly.hours, until: display.dateTime(noFly.until) })}{' '}
+              <a href={noFly.source.url} target="_blank" rel="noopener noreferrer" lang="en" className="meta">{noFly.source.title}</a>
+            </dd>
+          </div>
+        )}
+      </dl>
+      {cns && <Muted>{t('loadings.cnsNote', { minutes: cns.halfLifeMinutes })}</Muted>}
+      <p className="loadings-basis meta">
+        {basisText}
+        {basis.divesSkippedNoProfile > 0 && <> {t('loadings.skipped', { count: basis.divesSkippedNoProfile })}</>}
+      </p>
+      <p className="loadings-note">{t('loadings.note')}</p>
+      <p className="loadings-sources meta">
+        {t('loadings.sources')}{' '}
+        {Object.entries(LOADING_SOURCES).map(([id, source], i) => (
+          <span key={id}>{i > 0 && ' · '}<a href={source.url} target="_blank" rel="noopener noreferrer" lang="en">{source.title}</a></span>
+        ))}
+      </p>
+    </Panel>
   );
 }
 

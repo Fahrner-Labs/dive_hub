@@ -98,6 +98,8 @@ export type CentreView = Ok<'/api/dive-centres/{id}'>;
 export type VerificationCodeView = NonNullable<CentreView['verificationCode']>;
 /** A Diver's details and codes as every User sees them (ADR 0043). */
 export type DiverDetailsView = Ok<'/api/divers/{id}/details'>;
+/** A Diver's current N₂, CNS and OTU estimate from their logged dives, with its basis (ADR 0071). */
+export type LoadingsView = NonNullable<Ok<'/api/divers/{id}/loadings'>>;
 /** What the server says a scanned or pasted code is. */
 export type ReadCodeView = paths['/api/verification-codes/read']['post']['responses'][200]['content']['application/json'];
 export type SiteRevisionView = Ok<'/api/dive-sites/{id}/revisions'>[number];
@@ -206,6 +208,8 @@ export const keys = {
   externalDivers: (q: string) => ['divers', 'external', q] as const,
   /** A Diver's details and codes (ADR 0043); under ['divers']. */
   diverDetails: (id: string) => ['divers', id, 'details'] as const,
+  /** A Diver's current loadings (ADR 0071); under ['dives'], so a change to the logbook asks again. */
+  loadings: (diverId: string) => ['dives', 'loadings', diverId] as const,
   /** A Diver's body weights (ADR 0031); only for the Users who keep the Diver. */
   bodyWeights: (id: string) => ['divers', id, 'body-weights'] as const,
   certifications: (id: string) => ['divers', id, 'certifications'] as const,
@@ -311,6 +315,11 @@ export const cylinderCatalogueQuery = () =>
 
 
 export const diversQuery = () => queryOptions({ queryKey: keys.divers, queryFn: async () => unwrap(await api.GET('/api/divers')) });
+/** What this Diver's logged dives leave in them now (ADR 0071): computed on request, nothing stored. */
+export const diverLoadingsQuery = (diverId: string) => queryOptions({
+  queryKey: keys.loadings(diverId),
+  queryFn: async () => unwrap(await api.GET('/api/divers/{id}/loadings', { params: { path: { id: diverId } } })),
+});
 export const devicesQuery = () => queryOptions({ queryKey: keys.devices, queryFn: async () => unwrap(await api.GET('/api/devices')) });
 /** A Diver's Equipment items with their schedules and computed due (ADR 0034). */
 export const equipmentOfDiverQuery = (diverId: string) => queryOptions({
