@@ -1,6 +1,6 @@
-// The Review page: its part is in the address, and the two candidates of a decision show what differs between them.
+// The Review page: its part is in the address, and a decision's comparison decides per row whether the candidates agree.
 import { describe, expect, it } from 'vitest';
-import { differingFacts, reviewHref, reviewTab } from '../src/lib/review.ts';
+import { reviewHref, reviewTab, valuesAgree } from '../src/lib/review.ts';
 
 describe('review address', () => {
   it('leaves the first part out', () => {
@@ -16,14 +16,16 @@ describe('review address', () => {
   });
 });
 
-describe('what differs between two candidates', () => {
-  it('names the facts whose text differs', () => {
-    const a = { depth: '16.4 m', duration: '30 min', site: undefined };
-    const b = { depth: '16.1 m', duration: '30 min', site: 'Lighthouse' };
-    expect(differingFacts(a, b)).toEqual(new Set(['depth', 'site']));
+describe('one comparison row', () => {
+  it('agrees when every candidate has the same formatted text', () => {
+    expect(valuesAgree(['16.4 m', '16.4 m'])).toBe(true);
+    expect(valuesAgree(['45 min', '45 min', '45 min'])).toBe(true);
+    expect(valuesAgree([undefined, undefined])).toBe(true);
   });
 
-  it('marks nothing when both are the same, or both lack a fact', () => {
-    expect(differingFacts({ depth: '16 m', site: undefined }, { depth: '16 m', site: undefined })).toEqual(new Set());
+  it('differs when the text is not equal, missing vs present included', () => {
+    expect(valuesAgree(['16.4 m', '16.1 m'])).toBe(false);
+    expect(valuesAgree(['45 min', undefined])).toBe(false);
+    expect(valuesAgree([undefined, '45 min', '45 min'])).toBe(false);
   });
 });

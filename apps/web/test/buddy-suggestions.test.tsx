@@ -25,6 +25,8 @@ const preview = (overlaps: BuddySuggestionPreviewView['overlaps']): BuddySuggest
     durationSeconds: 30 * 60,
     maxDepthM: 18,
     avgDepthM: 14,
+    profile: null,
+    hasRecording: true,
     site: { id: 'site-1', name: 'Hausreef' },
     owner: { id: 'diver-owner', name: 'Tim' },
     centres: [],
@@ -63,6 +65,14 @@ describe('the suggestion accept dialog', () => {
     await user.click(screen.getByRole('button', { name: /link to your dive/i }));
     expect(onAccept).toHaveBeenCalledWith('dive-9');
     expect(screen.getByRole('button', { name: 'Create a new dive' })).toBeTruthy();
+  });
+
+  it('compares the suggested dive with the overlapping one, fact by fact', () => {
+    renderDialog({ preview: preview([overlap('dive-9', '2026-04-02T08:15:00Z')]) });
+    expect(screen.getByRole('columnheader', { name: 'Suggested dive' })).toBeTruthy();
+    expect(screen.getByRole('columnheader', { name: 'Your dive' })).toBeTruthy();
+    expect(screen.getByRole('rowheader', { name: 'Max depth' })).toBeTruthy();
+    expect(screen.getByText('Linking marks your dive as the same dive; creating adds a copy.')).toBeTruthy();
   });
 
   it('offers every overlapping Dive, each named by its own time', () => {

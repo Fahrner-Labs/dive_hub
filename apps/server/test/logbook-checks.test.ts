@@ -1,7 +1,9 @@
 // Logbook checks through the API (ADR 0038), against PostgreSQL with hand-made dives: a logbook entry beside its
 // computer's file and two overlapping entries are found, the answer "these are two dives" is kept until a time changes,
 // and merging resolves a check. The rules themselves are in logbook-check-rules.test.ts.
+import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { diveAssessment } from '../src/db/schema.js';
 import { createFakeSsi, handTypedDive } from './fake-ssi.js';
 import { makeSuuntoJson } from './fixtures/suunto-dive.js';
 import { ownersDiveParts } from './fixtures/surface-break-dive.js';
@@ -14,11 +16,12 @@ const ERIKA = 5_012_047;
 const LAKE = 5120;
 
 type Outcome = { result: string; diveId?: string; remoteId?: string };
+type Profile = { depthsM: number[]; spanSeconds: number; ascentBands: [number, number, number][] } | null;
 type Check = {
   rule: string; obvious: boolean; diverId: string;
-  dive: { id: string; version: number; recordings: number };
-  other: { id: string; version: number; recordings: number; keeps: string; bothAt: string[] };
-  chain: { id: string; surfaceBreakSeconds: number | null }[] | null;
+  dive: { id: string; version: number; recordings: number; profile: Profile };
+  other: { id: string; version: number; recordings: number; keeps: string; bothAt: string[]; profile: Profile };
+  chain: { id: string; surfaceBreakSeconds: number | null; profile: Profile }[] | null;
 };
 type DiveCheck = Omit<Check, 'other'> & { other: null };
 
@@ -103,6 +106,20 @@ describe.skipIf(!(await databaseReachable()))('logbook checks', () => {
     expect(pairOf(found)).toEqual([fromEntry, fromFile].sort());
     expect(found).toMatchObject({ obvious: true, other: { keeps: fromFile, bothAt: [] } });
     expect(await checks()).toHaveLength(2);
+    // Both cards get the sketch of their own assessment: the file's Dive one, the typed entry (no Recording) none.
+    const pairOfRow = (check: Check, id: string) => (check.dive.id === id ? check.dive : check.other);
+    const drawn = pairOfRow(found, fromFile).profile!;
+    expect(drawn.depthsM.length).toBeGreaterThan(0);
+    expect(drawn.depthsM.every((d) => typeof d === 'number')).toBe(true);
+    expect(drawn.spanSeconds).toBeGreaterThan(0);
+    expect(drawn.ascentBands).toEqual(expect.any(Array));
+    expect(pairOfRow(found, fromEntry).profile).toBeNull();
+    // An assessment of a Recording the Dive no longer has as Primary is stale: no sketch rather than another's.
+    await t.db.update(diveAssessment).set({ recordingId: '00000000-0000-7000-8000-000000000000' }).where(eq(diveAssessment.diveId, fromFile));
+    const stale = (await checks()).find((c) => c.rule === 'recording_beside_entry')!;
+    expect(pairOfRow(stale, fromFile).profile).toBeNull();
+    await ctx.assessments.refreshAll();
+    expect(pairOfRow((await checks()).find((c) => c.rule === 'recording_beside_entry')!, fromFile).profile).not.toBeNull();
   });
 
   it('shows a User only the checks of the logbooks they keep, and lets no one else answer them', async () => {

@@ -4,7 +4,7 @@
 import { and, eq } from 'drizzle-orm';
 import pg from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { buddySuggestion, dive, participant } from '../src/db/schema.js';
+import { buddySuggestion, dive, diveAssessment, participant } from '../src/db/schema.js';
 import { parseHint } from '../src/live/emit.js';
 import { syncSuggestions } from '../src/social/suggestion-service.js';
 import { makeSyntheticDive } from './fixtures/synthetic-dive.js';
@@ -23,6 +23,8 @@ type PreviewView = SuggestionView & {
     owner: { id: string; name: string };
     centres: { id: string; name: string }[];
     participants: { diverId: string; name: string; role: string }[];
+    profile: { depthsM: number[]; spanSeconds: number; ascentBands: [number, number, number][] } | null;
+    hasRecording: boolean;
   };
 };
 
@@ -152,9 +154,19 @@ describe.skipIf(!(await databaseReachable()))('Buddy suggestions', () => {
     });
     // The facts a copy may take, and nothing of the Recording, notes, suit, weighting, cylinders, lead or overrides.
     expect(Object.keys(preview.dive).sort()).toEqual([
-      'avgDepthM', 'centres', 'durationSeconds', 'id', 'maxDepthM', 'owner', 'participants', 'site', 'startsAt', 'utcOffsetSeconds',
+      'avgDepthM', 'centres', 'durationSeconds', 'hasRecording', 'id', 'maxDepthM', 'owner', 'participants', 'profile', 'site', 'startsAt', 'utcOffsetSeconds',
     ]);
+    expect(preview.dive.hasRecording).toBe(true);
     expect(preview.dive.owner).toEqual({ id: timDiver, name: 'tim' });
+    // The sketch the card draws, from the Dive's current assessment.
+    expect(preview.dive.profile).toMatchObject({ spanSeconds: expect.any(Number), ascentBands: expect.any(Array) });
+    expect(preview.dive.profile!.depthsM.length).toBeGreaterThan(0);
+    expect(preview.dive.profile!.depthsM.every((d) => typeof d === 'number')).toBe(true);
+    // An assessment of a Recording that is no longer the Primary is no sketch: null rather than another dive's shape.
+    await ctx.db.update(diveAssessment).set({ recordingId: '00000000-0000-7000-8000-000000000000' }).where(eq(diveAssessment.diveId, diveId));
+    expect((await json<PreviewView>('GET', `/api/buddy-suggestions/${raised.id}`, anna)).dive.profile).toBeNull();
+    await ctx.assessments.refreshAll();
+    expect((await json<PreviewView>('GET', `/api/buddy-suggestions/${raised.id}`, anna)).dive.profile).not.toBeNull();
     // Tim manages neither Anna nor the suggestion, so it stays invisible to him.
     expect((await call('GET', `/api/buddy-suggestions/${raised.id}`, tim)).statusCode).toBe(404);
   });

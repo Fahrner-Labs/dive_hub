@@ -3,24 +3,19 @@ import { useEffect, useRef, useState, type RefObject } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api, diversQuery, isDiveCheck, isPairCheck, keys, logbookChecksQuery, unwrap, type DiveCheckView, type LogbookCheckView } from './api.ts';
 import { AppendDialog } from './AppendDive.tsx';
+import { DecisionTimeline } from './DecisionTimeline.tsx';
 import { DeleteDiveDialog } from './DeleteDive.tsx';
 import { MergeDialog } from './MergeDive.tsx';
-import { differingFacts } from './lib/review.ts';
-import { Candidates, CandidateRow, type Fact } from './ReviewRows.tsx';
+import { ProfileSketch, SketchScale } from './ProfileSketch.tsx';
+import { Comparison, type CompareFact } from './ReviewRows.tsx';
 import { announce } from './lib/announce.ts';
 import { useJoinNames } from './lib/providers.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
 import { refocusAfterRemoval } from './lib/focus.ts';
+import type { TimelineLane } from './lib/timeline.ts';
 import { Badge, Button, ConfirmButton, Muted, Notice, Panel } from './ui/index.ts';
 
 type Paired = LogbookCheckView['dive'];
-/** How far apart the two Dives start on the wall clock, each by its own offset, in seconds. */
-const startsApartSeconds = (c: LogbookCheckView) => {
-  const local = (d: Paired) => Date.parse(d.startsAt) + (d.utcOffsetSeconds ?? 0) * 1000;
-  return Math.round(Math.abs(local(c.dive) - local(c.other)) / 1000);
-};
-/** This rule's text says nothing the group's head does: a pair far apart on the clock is not "at the same time". */
-const APART = 'entry_apart_from_recording';
 /** Probably one dive cut by a surface break (ADR 0063): resolved by Appending, in a group of its own. */
 const BREAK = 'surface_break';
 const keyOf = (c: LogbookCheckView) => `${c.dive.id}:${c.other.id}`;
@@ -30,6 +25,12 @@ function useDiveName() {
   const { t } = useTranslation();
   const display = useDisplay();
   return (d: Paired) => (d.number !== null ? t('dive.title', { number: d.number }) : display.diveTime(d.startsAt, d.utcOffsetSeconds, d.utcOffsetSource));
+}
+
+/** A Dive's title as a link to it, as a comparison column shows it. */
+function DiveTitle({ dive: d }: { dive: Paired }) {
+  const { t } = useTranslation();
+  return <a className="candidate-title" href={`#/dives/${d.id}`}>{d.number !== null ? t('dive.title', { number: d.number }) : t('dive.titleNoNumber')}</a>;
 }
 
 /**
@@ -46,59 +47,120 @@ function useAnswer(onAnswered?: () => void) {
   });
 }
 
-/** What a Dive says on a row; the first four are compared with the other Dive of the pair. */
-function useDiveFacts() {
+/** The formatted values a Dive shows in a comparison. */
+function useDiveValues() {
   const { t } = useTranslation();
   const display = useDisplay();
-  return (d: Paired, showDiver?: string) => {
-    const values = {
-      time: display.diveTime(d.startsAt, d.utcOffsetSeconds, d.utcOffsetSource), depth: display.depth(d.maxDepthM),
-      duration: display.duration(d.durationSeconds), site: d.site?.name,
-    };
-    const facts: Fact[] = [
-      ...Object.entries(values).map(([key, text]) => ({ key, text })),
-      { key: 'recording', text: d.recordings > 0 ? t('merge.withRecording') : t('merge.withoutRecording') }, { key: 'diver', text: showDiver },
-    ];
-    return { values, facts };
+  return (d: Paired) => ({
+    time: display.diveTime(d.startsAt, d.utcOffsetSeconds, d.utcOffsetSource),
+    duration: display.duration(d.durationSeconds),
+    depth: display.depth(d.maxDepthM),
+    site: d.site?.name,
+    recording: d.recordings > 0 ? t('merge.withRecording') : t('merge.withoutRecording'),
+  });
+}
+
+/** The labels of the comparison rows these cards use. */
+function useFactLabels() {
+  const { t } = useTranslation();
+  return {
+    time: t('checks.fact.time'), duration: t('checks.fact.duration'), depth: t('checks.fact.maxDepth'),
+    site: t('checks.fact.site'), recording: t('checks.fact.recording'), diver: t('checks.fact.diver'),
   };
 }
 
-/** The two Dives of a pair side by side, what differs between them marked; `stays` marks the one a merge keeps (ADR 0038). */
-function PairRows({ check: c, showDiver, stays }: { check: LogbookCheckView; showDiver: string | undefined; stays: boolean }) {
+/** The two Dives of a pair compared; `stays` marks the one a merge keeps (ADR 0038). */
+function PairComparison({ check: c, showDiver, stays }: { check: LogbookCheckView; showDiver: string | undefined; stays: boolean }) {
   const { t } = useTranslation();
-  const diveFacts = useDiveFacts();
-  if (c.chain) return <ChainRows chain={c.chain} showDiver={showDiver} />;
-  const first = diveFacts(c.dive, showDiver);
-  const second = diveFacts(c.other, showDiver);
-  const marked = differingFacts(first.values, second.values);
-  const row = (d: Paired, facts: Fact[]) => (
-    <CandidateRow
-      key={d.id} facts={facts} marked={marked}
-      title={<a className="candidate-title" href={`#/dives/${d.id}`}>{d.number !== null ? t('dive.title', { number: d.number }) : t('dive.titleNoNumber')}</a>}
-      badge={stays && c.other.keeps === d.id ? <Badge>{t('checks.stays')}</Badge> : undefined}
-    />
+  const nameOf = useDiveName();
+  const values = useDiveValues();
+  const labels = useFactLabels();
+  const label = t('checks.pairCard.question');
+  if (c.chain) return <ChainComparison chain={c.chain} />;
+  const first = values(c.dive);
+  const second = values(c.other);
+  // The timeline carries the times and durations; beneath it the facts, with equal ones collapsing to one value.
+  const facts: CompareFact[] = [
+    { key: 'depth', label: labels.depth, values: [first.depth, second.depth] },
+    { key: 'site', label: labels.site, values: [first.site, second.site] },
+  ];
+  // Always the row: equal facts collapse to one value in the comparison (docs/spec/clients.md).
+  facts.push({ key: 'recording', label: labels.recording, values: [first.recording, second.recording] });
+  if (showDiver) facts.push({ key: 'diver', label: labels.diver, values: [showDiver, showDiver] });
+  const subject = (d: Paired) => ({
+    key: d.id, label: nameOf(d), title: <DiveTitle dive={d} />,
+    badge: stays && c.other.keeps === d.id ? <Badge>{t('checks.stays')}</Badge> : undefined,
+  });
+  const lane = (d: Paired, meta: string | undefined): TimelineLane => ({
+    key: d.id,
+    label: nameOf(d),
+    ...(meta !== undefined && { meta }),
+    bars: [{ key: d.id, startsAt: d.startsAt, utcOffsetSeconds: d.utcOffsetSeconds, utcOffsetSource: d.utcOffsetSource, durationSeconds: d.durationSeconds }],
+  });
+  return (
+    <>
+      <DecisionTimeline lanes={[lane(c.dive, first.depth), lane(c.other, second.depth)]} />
+      <Comparison label={label} subjects={[subject(c.dive), subject(c.other)]} facts={facts} />
+    </>
   );
-  return <Candidates>{row(c.dive, first.facts)}{row(c.other, second.facts)}</Candidates>;
 }
 
-/** The Dives of a `surface_break` check in order, each later one with the surface break before it (ADR 0063). */
-function ChainRows({ chain, showDiver }: { chain: NonNullable<LogbookCheckView['chain']>; showDiver: string | undefined }) {
+/** The parts of a `surface_break` check in order, the breaks between them drawn as gaps (ADR 0063). */
+function ChainComparison({ chain }: { chain: NonNullable<LogbookCheckView['chain']> }) {
   const { t } = useTranslation();
-  const display = useDisplay();
-  const diveFacts = useDiveFacts();
+  const nameOf = useDiveName();
+  const values = useDiveValues();
+  const labels = useFactLabels();
+  const label = t('checks.surface.question', { count: chain.length });
+  const parts: TimelineLane = {
+    key: 'parts',
+    label: t('checks.surface.parts', { count: chain.length }),
+    bars: chain.map((d) => ({
+      key: d.id, label: nameOf(d), startsAt: d.startsAt, utcOffsetSeconds: d.utcOffsetSeconds, utcOffsetSource: d.utcOffsetSource,
+      durationSeconds: d.durationSeconds,
+    })),
+  };
   return (
-    <Candidates>
-      {chain.map((d) => (
-        <CandidateRow
-          key={d.id} marked={new Set()}
-          facts={[
-            ...(d.surfaceBreakSeconds !== null ? [{ key: 'break', text: t('dive.surfaceBreak', { duration: display.duration(d.surfaceBreakSeconds) }) }] : []),
-            ...diveFacts(d, showDiver).facts,
-          ]}
-          title={<a className="candidate-title" href={`#/dives/${d.id}`}>{d.number !== null ? t('dive.title', { number: d.number }) : t('dive.titleNoNumber')}</a>}
-        />
-      ))}
-    </Candidates>
+    <>
+      <DecisionTimeline gapKind="break" lanes={[parts]} />
+      <Comparison
+        label={label}
+        subjects={chain.map((d) => ({ key: d.id, label: nameOf(d), title: <DiveTitle dive={d} /> }))}
+        facts={[
+          { key: 'duration', label: labels.duration, values: chain.map((d) => values(d).duration) },
+          { key: 'depth', label: labels.depth, values: chain.map((d) => values(d).depth) },
+          { key: 'site', label: labels.site, values: chain.map((d) => values(d).site) },
+        ]}
+      />
+    </>
+  );
+}
+
+/** A short Dive at the blip it is: one sketch on a 40 m scale, then its facts as one of a pair shows them. */
+function DiveComparison({ check: c }: { check: DiveCheckView }) {
+  const { t } = useTranslation();
+  const nameOf = useDiveName();
+  const values = useDiveValues()(c.dive);
+  const labels = useFactLabels();
+  const label = t('checks.short.question');
+  const scaleM = 40;
+  return (
+    <>
+      <div className="decision-visual">
+        <ProfileSketch profile={c.dive.profile} hasRecording={c.dive.recordings > 0} scaleM={scaleM} />
+        <SketchScale profile={c.dive.profile} scaleM={scaleM} />
+      </div>
+      <Comparison
+        label={label}
+        subjects={[{ key: c.dive.id, label: nameOf(c.dive), title: <DiveTitle dive={c.dive} /> }]}
+        facts={[
+          { key: 'time', label: labels.time, values: [values.time] },
+          { key: 'duration', label: labels.duration, values: [values.duration] },
+          { key: 'depth', label: labels.depth, values: [values.depth] },
+          { key: 'site', label: labels.site, values: [values.site] },
+        ]}
+      />
+    </>
   );
 }
 
@@ -135,7 +197,7 @@ export function PairDecisions() {
         <Panel title={t('checks.title')} attention actions={<MergeObvious checks={checks.filter((c) => c.obvious)} />}>
           <p className="muted">{t('checks.how')}</p>
           <ul className="decisions" ref={list}>
-            {checks.map((c, index) => <Check key={keyOf(c)} check={c} list={list} index={index} count={checks.length} onAnswered={() => setUndo(c)} ruleShown={new Set(checks.map((x) => x.rule)).size > 1} />)}
+            {checks.map((c, index) => <Check key={keyOf(c)} check={c} list={list} index={index} count={checks.length} onAnswered={() => setUndo(c)} />)}
           </ul>
         </Panel>
       )}
@@ -143,10 +205,8 @@ export function PairDecisions() {
   );
 }
 
-function Check({ check: c, list, index, count, onAnswered, ruleShown }: {
+function Check({ check: c, list, index, count, onAnswered }: {
   check: LogbookCheckView; list: RefObject<HTMLUListElement | null>; index: number; count: number; onAnswered: () => void;
-  /** The group holds different kinds of pairs: each says which it is, else the group's head says it for all. */
-  ruleShown: boolean;
 }) {
   const { t } = useTranslation();
   const errorText = useErrorText();
@@ -157,11 +217,11 @@ function Check({ check: c, list, index, count, onAnswered, ruleShown }: {
   const diver = (divers.data?.length ?? 0) > 1 ? divers.data?.find((v) => v.id === c.diverId)?.name : undefined;
   // Several pairs may wait at once; their buttons say which one they decide about.
   const pair = t('checks.pair', { first: nameOf(c.dive), second: nameOf(c.other) });
-  const display = useDisplay();
   return (
     <li className="decision">
-      {(ruleShown || c.rule === APART) && <p className="muted">{t(`checks.rule.${c.rule}`, { difference: display.duration(startsApartSeconds(c)) })}</p>}
-      <PairRows check={c} showDiver={diver} stays />
+      <h3 className="decision-question">{t('checks.pairCard.question')}</h3>
+      <PairComparison check={c} showDiver={diver} stays />
+      <p className="muted">{t('checks.pairCard.consequence')}</p>
       <div className="form-actions">
         <Button icon="merge" aria-label={t('common.forItem', { action: t('checks.merge'), item: pair })} isDisabled={answer.isPending} onPress={() => setMerging(true)}>
           {t('checks.merge')}
@@ -193,12 +253,10 @@ function SurfaceBreak({ check: c, list, index, count, onAnswered }: {
 }) {
   const { t } = useTranslation();
   const errorText = useErrorText();
-  const divers = useQuery(diversQuery());
   const nameOf = useDiveName();
   const joinNames = useJoinNames();
   const [appending, setAppending] = useState(false);
   const answer = useAnswer(onAnswered);
-  const diver = (divers.data?.length ?? 0) > 1 ? divers.data?.find((v) => v.id === c.diverId)?.name : undefined;
   const [kept, ...later] = c.chain ?? [];
   if (!kept) return null;
   // Several checks may wait at once; their buttons say which Dives they decide about.
@@ -207,8 +265,9 @@ function SurfaceBreak({ check: c, list, index, count, onAnswered }: {
   const bothAt = [...new Set(later.flatMap((d) => d.at.map((a) => a.provider)))].filter((p) => kept.at.some((a) => a.provider === p));
   return (
     <li className="decision">
-      <PairRows check={c} showDiver={diver} stays={false} />
-      <p>{t('checks.surface.how', { count: later.length, dives: later.length + 1 })}</p>
+      <h3 className="decision-question">{t('checks.surface.question', { count: later.length + 1 })}</h3>
+      <ChainComparison chain={[kept, ...later]} />
+      <p className="muted">{t('checks.surface.consequence')}</p>
       <div className="form-actions">
         <Button icon="append" aria-label={t('common.forItem', { action: t('checks.surface.append'), item })} isDisabled={answer.isPending} onPress={() => setAppending(true)}>
           {t('checks.surface.append')}
@@ -291,7 +350,7 @@ export function AnsweredChecks() {
           const pair = t('checks.pair', { first: nameOf(c.dive), second: nameOf(c.other) });
           return (
             <li key={keyOf(c)} className="decision">
-              <PairRows check={c} showDiver={undefined} stays={false} />
+              <PairComparison check={c} showDiver={undefined} stays={false} />
               <div className="form-actions">
                 <Button
                   variant="quiet" aria-label={t('common.forItem', { action: t('checks.askAgain'), item: pair })}
@@ -317,22 +376,6 @@ function useKeep(onAnswered?: () => void) {
     onSuccess: () => onAnswered?.(),
     onSettled: () => queryClient.invalidateQueries({ queryKey: keys.dives }),
   });
-}
-
-/** The Dive of a check about one Dive, as the pairs' rows show theirs. */
-function DiveRow({ check: c }: { check: DiveCheckView }) {
-  const { t } = useTranslation();
-  const divers = useQuery(diversQuery());
-  const diver = (divers.data?.length ?? 0) > 1 ? divers.data?.find((v) => v.id === c.diverId)?.name : undefined;
-  const { facts } = useDiveFacts()(c.dive, diver);
-  return (
-    <Candidates>
-      <CandidateRow
-        facts={facts} marked={new Set()}
-        title={<a className="candidate-title" href={`#/dives/${c.dive.id}`}>{c.dive.number !== null ? t('dive.title', { number: c.dive.number }) : t('dive.titleNoNumber')}</a>}
-      />
-    </Candidates>
-  );
 }
 
 /**
@@ -372,7 +415,9 @@ function ShortDive({ check: c, onKept }: { check: DiveCheckView; onKept: () => v
   const keep = useKeep(onKept);
   return (
     <li className="decision">
-      <DiveRow check={c} />
+      <h3 className="decision-question">{t('checks.short.question')}</h3>
+      <DiveComparison check={c} />
+      <p className="muted">{t('checks.short.consequence')}</p>
       <div className="form-actions">
         <Button icon="delete" aria-label={t('common.forItem', { action: t('checks.short.delete'), item: name })} isDisabled={keep.isPending} onPress={() => setDeleting(true)}>
           {t('checks.short.delete')}
@@ -420,7 +465,7 @@ export function KeptDives() {
       <ul className="decisions">
         {kept.map((c) => (
           <li key={c.dive.id} className="decision">
-            <DiveRow check={c} />
+            <DiveComparison check={c} />
             <div className="form-actions">
               <Button
                 variant="quiet" aria-label={t('common.forItem', { action: t('checks.askAgain'), item: nameOf(c.dive) })}

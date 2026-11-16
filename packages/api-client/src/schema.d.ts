@@ -1970,18 +1970,7 @@ export interface paths {
                                 }[];
                                 /** @description The Dive's entries in the queue of Waiting pushes, one per Provider (ADR 0056): a small icon for waiting, a warning for held, an error with Retry for stopped (docs/spec/clients.md) */
                                 waiting: components["schemas"]["WaitingPushView"][];
-                                profile: null | {
-                                    /** @description Depth in metres, evenly spread over `spanSeconds`; the deepest sample of each stretch */
-                                    depthsM: number[];
-                                    /** @description Seconds from the first to the last depth sample of the Primary recording */
-                                    spanSeconds: number;
-                                    /** @description Stretches of the ascent that were fast, [start s, end s, band 1–3 for brisk, quick, very quick], in seconds from the first sample (ADR 0036) */
-                                    ascentBands: [
-                                        number,
-                                        number,
-                                        number
-                                    ][];
-                                };
+                                profile: null | components["schemas"]["DiveProfileView"];
                             }[];
                             total: number;
                             /** @description How many Dives each filter would show for the Diver and the search, whatever filters are applied (ADR 0040) */
@@ -2872,7 +2861,7 @@ export interface paths {
                             /** @description An import would have put the two together by itself, and no dive is left over at a Provider: may be merged with others in one go */
                             obvious: boolean;
                             diverId: string;
-                            /** @description The earlier of the two Dives; the Dive, when the check is about one (short_shallow_dive: `other` is null) */
+                            /** @description The earlier of the two Dives; the Dive, when the check is about one (short_shallow_dive: `other` is null). `profile` is the sketch its card draws; null without a current assessment */
                             dive: {
                                 id: string;
                                 /** @description Send it when merging */
@@ -2896,6 +2885,7 @@ export interface paths {
                                     provider: string;
                                     remoteNumber: null | number;
                                 }[];
+                                profile: null | components["schemas"]["DiveProfileView"];
                             };
                             other: null | {
                                 id: string;
@@ -2920,6 +2910,7 @@ export interface paths {
                                     provider: string;
                                     remoteNumber: null | number;
                                 }[];
+                                profile: null | components["schemas"]["DiveProfileView"];
                                 /** @description Which of the two a merge keeps */
                                 keeps: string;
                                 /** @description Providers both Dives are at (see GET /dives/{id}/merge-candidates) */
@@ -2950,6 +2941,7 @@ export interface paths {
                                     provider: string;
                                     remoteNumber: null | number;
                                 }[];
+                                profile: null | components["schemas"]["DiveProfileView"];
                                 surfaceBreakSeconds: null | number;
                             }[];
                         }[];
@@ -9232,6 +9224,9 @@ export interface paths {
                                 durationSeconds: number;
                                 maxDepthM: null | number;
                                 avgDepthM: null | number;
+                                profile: null | components["schemas"]["DiveProfileView"];
+                                /** @description Whether the suggested Dive has a Recording; without one the card draws an empty sketch slot */
+                                hasRecording: boolean;
                                 site: null | {
                                     id: string;
                                     name: string;
@@ -14367,6 +14362,19 @@ export interface components {
                 /** @description Draw this text, unchanged, as a QR code; never build or parse it (docs/spec/clients.md) */
                 text: string;
             }[];
+        };
+        /** @description The Primary recording’s depth, reduced to draw a sketch of the dive (ADR 0041); null without a Recording, while the Dive waits to be assessed, or when its assessment is of a Recording it no longer has as Primary */
+        DiveProfileView: {
+            /** @description Depth in metres, evenly spread over `spanSeconds`; the deepest sample of each stretch */
+            depthsM: number[];
+            /** @description Seconds from the first to the last depth sample of the Primary recording */
+            spanSeconds: number;
+            /** @description Stretches of the ascent that were fast, [start s, end s, band 1–3 for brisk, quick, very quick], in seconds from the first sample (ADR 0036) */
+            ascentBands: [
+                number,
+                number,
+                number
+            ][];
         };
         DiverView: {
             id: string;

@@ -976,8 +976,6 @@
   },
   "decisions": {
     "title": "Recordings without a dive",
-    "intro_one": "This recording doesn’t clearly belong to a dive. Is it one of these?",
-    "intro_other": "These {{count}} recordings don’t clearly belong to a dive. Are they one of these?",
     "recording": "Recording",
     "device": "{{name}} ({{serial}})",
     "unknownDevice": "unknown device",
@@ -988,18 +986,31 @@
     "discarded": "Discarded recordings",
     "reopen": "Decide again",
     "discardedNotice": "Discarded the recording from {{time}}.",
-    "divesGone": "The dives it might have belonged to are no longer in your logbook."
+    "divesGone": "The dives it might have belonged to are no longer in your logbook.",
+    "question": "Where does this recording belong?",
+    "consequence": "Adding attaches the recording to that dive. A new dive creates one from it; discarding sets it aside (undoable).",
+    "fact": {
+      "maxDepth": "Max depth"
+    }
   },
   "checks": {
     "title": "Dives at the same time",
-    "rule": {
-      "recording_beside_entry": "A dive without a recording and a dive with one are at the same time",
-      "overlapping_dives": "Two dives overlap in time",
-      "entry_apart_from_recording": "Probably the same dive with another start time: the starts are {{difference}} apart, depth and duration agree",
-      "short_shallow_dive": "A recording so short and shallow that it is probably no dive",
-      "surface_break": "Probably one dive with a surface break: the same computer, at most 10 minutes apart"
+    "fact": {
+      "time": "Time",
+      "duration": "Duration",
+      "maxDepth": "Max depth",
+      "site": "Site",
+      "recording": "Recording",
+      "diver": "Diver"
     },
-    "how": "If they are the same dive, merge them. If a time is wrong or one belongs to another Diver, open that dive and correct it there.",
+    "pairCard": {
+      "question": "Same dive logged twice?",
+      "consequence": "Merging keeps one dive with the values you pick; the other is deleted."
+    },
+    "rule": {
+      "surface_break": "Probably one dive cut by time at the surface."
+    },
+    "how": "Same dive: merge them. Otherwise keep them apart.",
     "pair": "{{first}} and {{second}}",
     "merge": "Merge the two…",
     "stays": "stays when merged",
@@ -1015,19 +1026,37 @@
     "askAgain": "Ask again",
     "surface": {
       "title": "Dives cut by a surface break",
-      "how_one": "Appended, they are one dive with one profile. The later one goes to “Deleted dives”, where you can restore it.",
-      "how_other": "Make these {{dives}} dives one: appended, they are one dive with one profile. The later ones go to “Deleted dives”, where you can restore them.",
+      "question": "One dive in {{count}} parts?",
+      "parts": "{{count}} parts",
+      "break": "{{duration}} surface break",
+      "consequence": "Appending joins the parts into the first dive.",
       "append": "Append…"
     },
     "short": {
       "title": "Probably not dives",
-      "how": "A recording shorter than {{duration}} that stayed above {{depth}} is usually a dive computer that got wet, or a false start. If it was no dive, delete it: it goes to “Deleted dives” and can be restored.",
+      "question": "Probably not a real dive?",
+      "how": "Shorter than {{duration}} and shallower than {{depth}}: usually a computer that got wet or a false start.",
       "delete": "Delete…",
       "keep": "Keep it",
+      "consequence": "Deleting moves it to Deleted dives (restorable); keeping stops asking.",
       "kept": "Kept. You are asked again if its duration or depth changes.",
       "answered": "Short dives you kept",
       "answeredIntro": "Short, shallow recordings that you said to keep."
     }
+  },
+  "comparison": {
+    "both": "Both: {{value}}",
+    "all": "All: {{value}}"
+  },
+  "timeline": {
+    "gap": "{{duration}} gap",
+    "summaryBar": "{{label}}: {{start}} to {{end}}, {{duration}}.",
+    "summaryGap": "{{duration}} gap.",
+    "summaryBreak": "{{duration}} surface break.",
+    "summaryOverlap": "{{duration}} overlap."
+  },
+  "sketch": {
+    "scale": "0–{{depth}}"
   },
   "merge": {
     "hint": "Another dive in this logbook was at the same time: {{facts}}. If both are the same dive, you can merge them into one.",
@@ -1144,22 +1173,30 @@
   },
   "suggestions": {
     "title": "Dive suggestions ({{count}})",
-    "intro": "A buddy logged a dive with a Diver you manage. Accept it to add the shared facts to the logbook, or decline if it is not yours.",
-    "from": "{{owner}} shared this dive with {{diver}}.",
+    "intro": "A buddy logged a dive with a Diver you manage.",
     "suggestedDive": "Suggested dive",
     "people": "On the dive: {{names}}",
-    "avgDepth": "{{depth}} average",
-    "centre": "Dive centre: {{names}}",
     "accept": "Accept",
     "decline": "Decline",
     "acceptTitle": "Accept this dive",
     "acceptIntro": "The shared facts go into {{diver}}’s logbook. Link one of your existing dives from this time, or create a new dive.",
-    "acceptWhat": "Only the shared facts are copied: site, start time, duration, depths and the people on the dive. No recording, notes or gear.",
+    "acceptWhat": "Only the shared facts: site, start time, duration, depths and the people.",
     "overlapIntro": "You already have a dive at this time:",
     "noOverlaps": "You have no dive at this time in your logbook. Accepting creates a new dive from the shared facts.",
     "yourDive": "Your dive",
     "link": "Link to your dive",
-    "create": "Create a new dive"
+    "create": "Create a new dive",
+    "question": "{{owner}} logged this dive with your diver {{diver}}",
+    "consequence": "Accepting adds the dive to your logbook; declining removes the suggestion. Nothing is sent back.",
+    "acceptConsequence": "Linking marks your dive as the same dive; creating adds a copy.",
+    "fact": {
+      "time": "Time",
+      "duration": "Duration",
+      "maxDepth": "Max depth",
+      "site": "Site",
+      "avgDepth": "Average depth",
+      "centre": "Dive centre"
+    }
   },
   "deleted": {
     "notice": "{{name}} deleted.",

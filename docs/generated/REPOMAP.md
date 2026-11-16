@@ -4,7 +4,7 @@
 > `pnpm check` fails when this map is stale. Symbols are ranked by how widely the code references them;
 > each module shows its most-referenced ones (exported symbols rank higher). Search here before walking the tree.
 
-Files: 375 · symbols: 3463 · shown: 257
+Files: 378 · symbols: 3487 · shown: 257
 
 ### server/(root)
 apps/server/src/vocabulary.ts:13 type SiteWaterType
@@ -12,7 +12,7 @@ apps/server/src/errors.ts:2 const errorMessage
 apps/server/src/vocabulary.ts:12 const SITE_WATER_TYPES
 apps/server/src/vocabulary.ts:51 type ImportSource
 apps/server/src/compose.ts:75 fn createServices
-apps/server/src/app.ts:74 fn buildApp
+apps/server/src/app.ts:75 fn buildApp
 … 39 more symbols in this module
 
 ### server/assessment
@@ -105,12 +105,12 @@ apps/server/src/dives/provider-port.ts:32 iface DivePushes
 apps/server/src/dives/provider-port.ts:39 iface DiveWaitingPushes
 apps/server/src/dives/recording-units.ts:9 const isUnit
 apps/server/src/dives/weighting.ts:23 const leadTotalKg
-apps/server/src/dives/logbook-service.ts:274 type LogbookService
+apps/server/src/dives/logbook-service.ts:268 type LogbookService
 apps/server/src/dives/dive-values.ts:6 iface DiveValues
 apps/server/src/dives/dive-service.ts:87 const nextVersion
 apps/server/src/dives/weighting.ts:96 iface Suit
 apps/server/src/dives/matching.ts:34 const OVERLAP_TOLERANCE_SECONDS
-… 286 more symbols in this module
+… 289 more symbols in this module
 
 ### server/equipment
 apps/server/src/equipment/due.ts:59 const DAY_MS
@@ -253,11 +253,11 @@ apps/server/src/sites/site-ids.ts:105 fn storeId
 … 163 more symbols in this module
 
 ### server/social
-apps/server/src/social/suggestion-service.ts:17 class SuggestionError
-apps/server/src/social/suggestion-service.ts:232 fn createSuggestionService
+apps/server/src/social/suggestion-service.ts:18 class SuggestionError
+apps/server/src/social/suggestion-service.ts:233 fn createSuggestionService
 apps/server/src/social/routes.ts:17 const STATUS
-apps/server/src/social/suggestion-view.ts:9 const SiteRef
-apps/server/src/social/suggestion-service.ts:116 fn emitSuggestionHints
+apps/server/src/social/suggestion-view.ts:10 const SiteRef
+apps/server/src/social/suggestion-service.ts:117 fn emitSuggestionHints
 apps/server/src/social/suggestion-changes.ts:10 fn withSuggestionChanges
 … 20 more symbols in this module
 
@@ -286,21 +286,21 @@ apps/web/src/api.ts:15 type Problem
 apps/web/src/api.ts:313 const diversQuery
 apps/web/src/api.ts:70 type DiveView
 apps/web/src/api.ts:110 type ProviderView
-apps/web/src/ReviewRows.tsx:35 fn Candidates
 apps/web/src/PushRun.tsx:21 const named
-apps/web/src/ReviewRows.tsx:4 iface Fact
 apps/web/src/CodeScanner.tsx:106 fn CodeScanner
-apps/web/src/ReviewRows.tsx:25 fn CandidateRow
-apps/web/src/DivePage.tsx:232 fn Fact
+apps/web/src/ReviewRows.tsx:52 iface CompareFact
 apps/web/src/ProviderDiveImport.tsx:18 const DIVE_KINDS
 apps/web/src/DiveCodes.tsx:10 fn CodeFigure
+apps/web/src/ReviewRows.tsx:64 fn Comparison
+apps/web/src/DecisionTimeline.tsx:21 fn DecisionTimeline
 apps/web/src/ProfilePlot.tsx:11 const token
 apps/web/src/Cylinders.tsx:18 fn useCylinderText
 apps/web/src/DeleteDive.tsx:21 fn DeleteDiveDialog
+apps/web/src/ProfileSketch.tsx:12 fn ProfileSketch
 apps/web/src/ProviderConflicts.tsx:14 fn useConflictValueText
 apps/web/src/WaitingPush.tsx:117 fn WaitingPushState
 apps/web/src/ImportPanel.tsx:39 const ImportContext
-… 682 more symbols in this module
+… 689 more symbols in this module
 
 ### web/i18n
 apps/web/src/i18n/languages.ts:6 fn pickLanguage
@@ -310,7 +310,7 @@ apps/web/src/i18n/languages.ts:3 type Language
 apps/web/src/i18n/index.ts:8 const resources
 
 ### web/lib
-apps/web/src/lib/display.ts:63 fn useErrorText
+apps/web/src/lib/display.ts:65 fn useErrorText
 apps/web/src/lib/display.ts:10 fn useDisplay
 apps/web/src/lib/announce.ts:9 fn announce
 apps/web/src/lib/providers.ts:70 fn useProviderText
@@ -333,7 +333,7 @@ apps/web/src/lib/logbook.ts:11 iface LogbookParams
 apps/web/src/lib/units.ts:4 type UnitSystem
 apps/web/src/lib/units.ts:22 const pressureIn
 apps/web/src/lib/logbook.ts:39 fn logbookHref
-… 333 more symbols in this module
+… 347 more symbols in this module
 
 ### web/ui
 apps/web/src/ui/Layout.tsx:85 fn Notice

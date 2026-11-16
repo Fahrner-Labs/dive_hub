@@ -38,6 +38,7 @@ import type { CentreService } from '../centres/centre-service.js';
 import type { DiverService } from '../divers/diver-service.js';
 import { refreshAssessmentsAfterChange, type AssessmentRefresh } from './assessment-refresh.js';
 import { WaitingPushView } from './waiting-push-view.js';
+import { DiveProfileView } from './profile-view.js';
 import type { DiveProviderAnswers, DivePushes, DiveWaitingPushes } from './provider-port.js';
 import { Change, Changes, DateTime, historyRoute, IdParams, Made, Nullable, refTo } from '../http/schemas.js';
 
@@ -206,9 +207,10 @@ const CheckView = Type.Object({
   rule: Rule,
   obvious: Type.Boolean({ description: 'An import would have put the two together by itself, and no dive is left over at a Provider: may be merged with others in one go' }),
   diverId: Type.String(),
-  dive: Type.Object(PairedDive, { description: 'The earlier of the two Dives; the Dive, when the check is about one (short_shallow_dive: `other` is null)' }),
+  dive: Type.Object({ ...PairedDive, profile: DiveProfileView }, { description: 'The earlier of the two Dives; the Dive, when the check is about one (short_shallow_dive: `other` is null). `profile` is the sketch its card draws; null without a current assessment' }),
   other: Nullable(Type.Object({
     ...PairedDive,
+    profile: DiveProfileView,
     keeps: Type.String({ description: 'Which of the two a merge keeps' }),
     bothAt: Type.Array(Type.String(), { description: 'Providers both Dives are at (see GET /dives/{id}/merge-candidates)' }),
     deletesItself: Type.Array(Type.String(), {
@@ -218,6 +220,7 @@ const CheckView = Type.Object({
   })),
   chain: Nullable(Type.Array(Type.Object({
     ...PairedDive,
+    profile: DiveProfileView,
     surfaceBreakSeconds: Nullable(Type.Integer({ description: 'The Surface break before this Dive, in seconds; null for the first' })),
   }), { description: 'surface_break only, else null: every Dive to append, in order (`dive` and `other` are its first two; Appending keeps the first)' })),
 });
@@ -453,7 +456,7 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
     const at = (id: string) => providersOf(remote, id);
     const itself = await waitingPushes.deletingItself(ids);
     const paired = (d: (typeof list)[number]['dives'][number]) => ({
-      id: d.id, version: d.version, ...diveSummaryOf(d, d.siteName), fromProvider: d.fromProvider, recordings: d.recordings, at: at(d.id),
+      id: d.id, version: d.version, ...diveSummaryOf(d, d.siteName), fromProvider: d.fromProvider, recordings: d.recordings, at: at(d.id), profile: d.profile,
     });
     return [...list.map(({ rule, obvious, dives, surfaceBreaks }) => {
       const [a, b] = dives;

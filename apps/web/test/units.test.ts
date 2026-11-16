@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { pickLanguage } from '../src/i18n/languages.ts';
 import {
   depthFromDisplay, temperatureFromDisplay,
-  formatDepth, formatDiveTime, formatDuration, formatGasRate, formatPressure, formatPressureRate, formatTemperature, formatVolume, pickUnits, unitLabel,
+  formatClock, formatDepth, formatDiveTime, formatDuration, formatGasRate, formatPressure, formatPressureRate, formatTemperature, formatVolume, pickUnits, unitLabel,
 } from '../src/lib/units.ts';
 
 // Intl output uses narrow no-break spaces in places; compare with plain spaces.
@@ -87,6 +87,23 @@ describe('dive time', () => {
   it('shows the local time at the dive site with its UTC offset', () => {
     expect(plain(formatDiveTime('2026-01-15T09:00:00Z', 7200, 'en'))).toBe('Jan 15, 2026, 11:00 AM (UTC+2)');
     expect(plain(formatDiveTime('2026-01-15T09:00:00Z', -9000, 'de'))).toBe('15.01.2026, 06:30 (UTC-2,5)');
+  });
+});
+
+describe('clock time', () => {
+  it('shows the time of day at the dive site with its offset', () => {
+    expect(plain(formatClock('2026-01-15T09:00:00Z', 7200, 'en'))).toBe('11:00 AM');
+    expect(plain(formatClock('2026-01-15T22:30:00Z', -9000, 'de'))).toBe('20:00');
+  });
+
+  it('shows an unknown-offset time as logged when the wall clock is wanted', () => {
+    expect(plain(formatClock('2026-01-15T09:00:00Z', null, 'en', true))).toBe('9:00 AM');
+    expect(plain(formatClock('2026-01-15T09:00:00Z', null, 'de', true))).toBe('9:00');
+  });
+
+  it('shows an unknown-offset time in the browser\'s time zone otherwise', () => {
+    const expected = new Date('2026-01-15T09:00:00Z').toLocaleTimeString('en', { hour: 'numeric', minute: '2-digit' });
+    expect(plain(formatClock('2026-01-15T09:00:00Z', null, 'en'))).toBe(plain(expected));
   });
 });
 

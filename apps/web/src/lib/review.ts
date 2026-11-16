@@ -49,10 +49,9 @@ export function useReviewCounts() {
 }
 
 /**
- * The facts of two candidates that differ in text, so the page can mark them ("16.4 m" against "16.1 m"). A fact one
- * has and the other lacks counts; one both lack doesn't.
+ * Whether one comparison row agrees: every candidate's formatted text is the same. A value one candidate has and
+ * another lacks differs; when all lack it, the row isn't shown at all (UI redesign 4.5).
  */
-export function differingFacts(a: Record<string, string | undefined>, b: Record<string, string | undefined>): Set<string> {
-  const keys = new Set([...Object.keys(a), ...Object.keys(b)]);
-  return new Set([...keys].filter((k) => a[k] !== b[k]));
+export function valuesAgree(values: (string | undefined)[]): boolean {
+  return values.every((value) => value === values[0]);
 }

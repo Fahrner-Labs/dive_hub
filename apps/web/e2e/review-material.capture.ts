@@ -128,6 +128,17 @@ test('review material', async ({ page, request, browser }) => {
     await goToMore(page, 'Imports'); await page.getByRole('heading', { name: 'Imports', level: 2 }).waitFor();
     await capture(page, '01b-review-imports');
     await cancelWaitingImports(request);
+    // A Dive another User logged with one of the User's Divers (ADR 0070): the suggestion card, here in the User's own
+    // inbox because the invited Diver is one they manage.
+    const buddy = await (await request.post('/api/divers', { data: { name: 'Suggested Buddy' }, headers })).json() as { id: string };
+    await setBuddies(request, dive42, [buddy.id]);
+    await page.goto('/#/review'); await page.getByRole('heading', { name: /^Dive suggestions/ }).waitFor();
+    await capture(page, '01g-review-buddy-suggestion');
+    await page.setViewportSize({ width: 390, height: 844 });
+    await capture(page, '01h-review-buddy-suggestion-phone');
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await clearParticipants(request, dive42);
+    await request.delete(`/api/divers/${buddy.id}`, { headers });
     await page.goto(`/#/dives/${dive42}`); await page.getByRole('heading', { name: /Dive \d+/ }).waitFor();
     await capture(page, '02-dive');
     await tabOrder(page, '02-dive', 30);

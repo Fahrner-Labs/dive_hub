@@ -2,11 +2,12 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState, type RefObject } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api, candidatesQuery, keys, unwrap, type CandidateView } from './api.ts';
-import { Candidates, CandidateRow, type Fact } from './ReviewRows.tsx';
-import { differingFacts } from './lib/review.ts';
+import { DecisionTimeline } from './DecisionTimeline.tsx';
+import { Comparison, type CompareFact } from './ReviewRows.tsx';
 import { deviceName } from './lib/devices.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
 import { refocusAfterRemoval } from './lib/focus.ts';
+import type { TimelineLane } from './lib/timeline.ts';
 import { Badge, Button, Notice, Panel } from './ui/index.ts';
 
 /**
@@ -28,7 +29,6 @@ export function RecordingDecisions() {
       {undoable && <UndoDiscard key={undoable.id} candidate={undoable} onDone={() => setUndo(undefined)} />}
       {count > 0 && (
         <Panel title={t('decisions.title')} attention>
-          <p className="muted">{t('decisions.intro', { count })}</p>
           <ul className="decisions" ref={list}>
             {open.data?.map((c, index) => (
               <Decision key={c.id} candidate={c} list={list} index={index} count={count} onDiscarded={() => setUndo(c)} />
@@ -133,41 +133,51 @@ function Decision({ candidate: c, list, index, count, onDiscarded }: {
   // Several Recordings may wait at once; their buttons say which one they decide about.
   const recordingName = display.diveTime(c.recording.startsAt, c.recording.utcOffsetSeconds, c.recording.utcOffsetSource);
   const r = c.recording;
-  const recording = {
-    time: recordingName, depth: display.depth(r.maxDepthM), duration: display.duration(r.durationSeconds),
-  };
   const device = r.device
     ? t('decisions.device', { name: deviceName(r.device.manufacturer, r.device.product), serial: r.device.serialNumber })
     : t('decisions.unknownDevice');
   const diveName = (d: CandidateView['dives'][number]) => (d.number !== null ? t('dive.title', { number: d.number }) : display.diveTime(d.startsAt, d.utcOffsetSeconds, d.utcOffsetSource));
-  const valuesOf = (d: CandidateView['dives'][number]) => ({
-    time: display.diveTime(d.startsAt, d.utcOffsetSeconds, d.utcOffsetSource), depth: display.depth(d.maxDepthM), duration: display.duration(d.durationSeconds),
+  const valuesOf = (v: CandidateView['dives'][number] | CandidateView['recording']) => ({
+    time: display.diveTime(v.startsAt, v.utcOffsetSeconds, v.utcOffsetSource), depth: display.depth(v.maxDepthM), duration: display.duration(v.durationSeconds),
   });
-  const factsOf = (values: Record<string, string | undefined>): Fact[] => Object.entries(values).map(([key, text]) => ({ key, text }));
-  // The Recording's values differ from any of its Dives; each Dive's from the Recording.
-  const markedRecording = new Set(c.dives.flatMap((d) => [...differingFacts(recording, valuesOf(d))]));
+  const recordingValues = valuesOf(r);
+  const diveValues = c.dives.map(valuesOf);
+  const facts: CompareFact[] = [
+    { key: 'depth', label: t('decisions.fact.maxDepth'), values: [recordingValues.depth, ...diveValues.map((v) => v.depth)] },
+  ];
+  const lanes: TimelineLane[] = [
+    {
+      key: 'recording',
+      label: t('decisions.recording'),
+      ...(recordingValues.depth !== undefined && { meta: recordingValues.depth }),
+      bars: [{ key: 'recording', startsAt: r.startsAt, utcOffsetSeconds: r.utcOffsetSeconds, utcOffsetSource: r.utcOffsetSource, durationSeconds: r.durationSeconds }],
+    },
+    ...c.dives.map((d, i) => ({
+      key: d.id,
+      label: diveName(d),
+      ...(diveValues[i]!.depth !== undefined && { meta: diveValues[i]!.depth }),
+      bars: [{ key: d.id, startsAt: d.startsAt, utcOffsetSeconds: d.utcOffsetSeconds, utcOffsetSource: d.utcOffsetSource, durationSeconds: d.durationSeconds }],
+    })),
+  ];
+  const subjects = [
+    // The Device belongs to the Recording, so it sits on that subject rather than in a row no Dive can fill.
+    { key: 'recording', label: t('decisions.recording'), title: t('decisions.recording'), badge: <Badge>{t(`import.reason.${c.reason}`)}</Badge>, note: device },
+    ...c.dives.map((d) => ({
+      key: d.id, label: diveName(d), title: <a className="candidate-title" href={`#/dives/${d.id}`}>{d.number !== null ? t('dive.title', { number: d.number }) : t('dive.titleNoNumber')}</a>,
+    })),
+  ];
   return (
     <li className="decision">
-      <Candidates>
-        <CandidateRow
-          title={<span className="candidate-title">{t('decisions.recording')}</span>} marked={markedRecording}
-          // Why it wasn't added: a badge, in words the User knows (UI redesign 4.5).
-          badge={<Badge>{t(`import.reason.${c.reason}`)}</Badge>}
-          facts={[...factsOf(recording), { key: 'device', text: device }]}
-        />
-        {c.dives.map((d) => (
-          <CandidateRow
-            key={d.id} title={<a className="candidate-title" href={`#/dives/${d.id}`}>{d.number !== null ? t('dive.title', { number: d.number }) : t('dive.titleNoNumber')}</a>}
-            marked={differingFacts(recording, valuesOf(d))} facts={factsOf(valuesOf(d))}
-          />
-        ))}
-      </Candidates>
+      <h3 className="decision-question">{t('decisions.question')}</h3>
+      <DecisionTimeline lanes={lanes} />
+      <Comparison label={t('decisions.question')} subjects={subjects} facts={facts} />
       {/* The Dives it might belong to were deleted (ADR 0026): what's left is a Dive of its own, or discarding it. */}
       {c.dives.length === 0 && <p className="muted">{t('decisions.divesGone')}</p>}
+      <p className="muted">{t('decisions.consequence')}</p>
       <div className="form-actions">
         {c.dives.map((d) => (
           <Button
-            key={d.id} icon="merge" aria-label={t('common.forItem', { action: t('decisions.addTo', { name: diveName(d) }), item: recordingName })}
+            key={d.id} icon="link" aria-label={t('common.forItem', { action: t('decisions.addTo', { name: diveName(d) }), item: recordingName })}
             isPending={decide.isPending && decide.variables.kind === 'attach' && decide.variables.diveId === d.id}
             isDisabled={decide.isPending}
             onPress={() => decide.mutate({ kind: 'attach', diveId: d.id })}
