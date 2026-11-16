@@ -51,6 +51,9 @@ test('the current loadings, their basis and what they are not', { tag: ['@divers
   await expect(section.getByRole('link', { name: 'Shearwater: the CNS oxygen clock' })).toHaveAttribute('href', /shearwater\.com/);
   await expect(section.getByRole('link', { name: 'Garmin Descent: surface interval' })).toHaveAttribute('href', /garmin\.com/);
   await expectGoodPage(page, 'Erika');
+  // The source titles stay inside the page on the narrowest phone, where the longest one no longer fits on one line.
+  await page.setViewportSize({ width: 320, height: 700 });
+  await expectGoodPage(page, 'Erika');
 });
 
 test('a returned zero is a value; with every estimate missing the section is not there', { tag: ['@divers'] }, async ({ page, request }) => {
