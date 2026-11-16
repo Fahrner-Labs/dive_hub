@@ -66,7 +66,7 @@ export function SetupRestore() {
 
   return (
     <>
-      <p className="muted">{t('setup.restoreIntro')}</p>
+      <p className="muted"><Trans i18nKey="setup.restoreIntro" components={{ code: <code /> }} /></p>
       <Form className="form" onSubmit={submit}>
         <TextField label={t('setup.token')} name="token" isRequired autoComplete="off" autoCorrect="off" spellCheck="false" />
         <PasswordField label={t('setup.passphrase')} name="passphrase" isRequired autoComplete="off" />
