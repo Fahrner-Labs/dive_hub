@@ -166,7 +166,7 @@ test('accepting "Link to your dive" joins the overlapping dives without copying 
     await expect(dialog.getByRole('columnheader', { name: 'Your dive' })).toBeVisible();
     await expect(dialog.locator('.timeline')).toBeVisible();
     await expect(dialog.locator('.timeline-bar')).toHaveCount(2);
-    await expect(dialog.locator('.timeline-time')).toHaveCount(4);
+    await expect(dialog.locator('.timeline-bar-time')).toHaveCount(4);
     await expect(dialog.getByRole('rowheader', { name: 'Max depth' })).toBeVisible();
     await expect(dialog.getByText('Linking marks your dive as the same dive; creating adds a copy.')).toBeVisible();
     const answered = page.waitForResponse((r) => r.request().method() === 'POST' && r.url().endsWith('/accept'));

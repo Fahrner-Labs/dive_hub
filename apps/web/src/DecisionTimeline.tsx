@@ -1,7 +1,7 @@
 import { Fragment } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useDisplay } from './lib/display.ts';
-import { timelineGeometry, type TimelineBar, type TimelineLane } from './lib/timeline.ts';
+import { laneFitsCapsule, timelineGeometry, type TimelineBar, type TimelineLane } from './lib/timeline.ts';
 
 /** What a gap's label calls itself: a plain space, or the surface break between two parts of one Dive (ADR 0063). */
 export type GapKind = 'gap' | 'break';
@@ -13,9 +13,10 @@ export interface DecisionTimelineProps {
 }
 
 /**
- * The bars of a decision on one wall-clock axis (FAH-214): each Recording, Dive or part a bar, its start and end times
- * at the ends, its duration on the bar, and the space between bars labeled with its length. An overlap reads from the
- * lanes lining up. Decoration like `ProfileSketch`: the comparison below and the hidden summary carry the values as text.
+ * The bars of a decision on one wall-clock axis (FAH-214): each Recording, Dive or part a bar, its start and end times,
+ * its duration on the bar, and the space between bars labeled with its length. A wide bar carries its times at its ends
+ * (FAH-233); a short one, or a phone, uses the caption under the bar. An overlap reads from the lanes lining up.
+ * Decoration like `ProfileSketch`: the comparison below and the hidden summary carry the values as text.
  */
 export function DecisionTimeline({ lanes, gapKind = 'gap' }: DecisionTimelineProps) {
   const { t } = useTranslation();
@@ -48,7 +49,7 @@ export function DecisionTimeline({ lanes, gapKind = 'gap' }: DecisionTimelinePro
       <figure className="timeline" aria-hidden="true">
         {lanes.map((lane, laneIndex) => (
           <Fragment key={lane.key}>
-            <div className="timeline-lane">
+            <div className={`timeline-lane${laneFitsCapsule(geometry, laneIndex) ? ' timeline-lane-inside' : ''}`}>
               <span className="timeline-label">
                 <span className="timeline-name">{lane.label}</span>
                 {lane.meta && <span className="timeline-meta">{lane.meta}</span>}
@@ -57,19 +58,36 @@ export function DecisionTimeline({ lanes, gapKind = 'gap' }: DecisionTimelinePro
                 <svg className="timeline-bars" viewBox="0 0 100 100" preserveAspectRatio="none" focusable="false">
                   {lane.bars.map((bar) => {
                     const g = barAt(laneIndex, bar);
-                    return <rect key={bar.key} className="timeline-bar" x={g.left * 100} y="20" width={(g.right - g.left) * 100} height="60" vectorEffect="non-scaling-stroke" />;
+                    return <rect key={bar.key} className="timeline-bar" x={g.left * 100} y="0" width={(g.right - g.left) * 100} height="100" vectorEffect="non-scaling-stroke" />;
                   })}
                 </svg>
                 {lane.bars.map((bar) => {
                   const g = barAt(laneIndex, bar);
                   return (
-                    <Fragment key={bar.key}>
-                      <span className="timeline-time timeline-time-start" style={{ left: `${g.left * 100}%` }}>{clockOf(bar, g.startMs)}</span>
-                      <span className="timeline-time timeline-time-end" style={{ left: `${g.right * 100}%` }}>{clockOf(bar, g.endMs)}</span>
-                      <span className="timeline-duration" style={{ left: `${g.left * 100}%`, width: `${(g.right - g.left) * 100}%` }}>
-                        {display.duration(bar.durationSeconds)}
-                      </span>
-                    </Fragment>
+                    <span key={bar.key} className="timeline-duration" style={{ left: `${g.left * 100}%`, width: `${(g.right - g.left) * 100}%` }}>
+                      {display.duration(bar.durationSeconds)}
+                    </span>
+                  );
+                })}
+                {lane.bars.map((bar) => {
+                  const g = barAt(laneIndex, bar);
+                  return (
+                    <span key={bar.key} className="timeline-bar-tag" style={{ left: `${g.left * 100}%`, width: `${(g.right - g.left) * 100}%` }}>
+                      <span className="timeline-bar-time">{clockOf(bar, g.startMs)}</span>
+                      <span className="timeline-bar-time">{clockOf(bar, g.endMs)}</span>
+                    </span>
+                  );
+                })}
+              </span>
+              <span className="timeline-captions">
+                {lane.bars.map((bar) => {
+                  const g = barAt(laneIndex, bar);
+                  return (
+                    <span key={bar.key} className="timeline-caption" style={{ left: `${g.left * 100}%`, width: `${(g.right - g.left) * 100}%` }}>
+                      <span>{clockOf(bar, g.startMs)}</span>
+                      <span className="timeline-caption-dash" aria-hidden="true">–</span>
+                      <span>{clockOf(bar, g.endMs)}</span>
+                    </span>
                   );
                 })}
               </span>

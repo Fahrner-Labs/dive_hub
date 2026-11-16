@@ -82,7 +82,7 @@ test('lists two dives at the same time on the logbook, keeps them apart when tol
     const card = main.getByRole('listitem').filter({ has: page.getByRole('heading', { name: 'Same dive logged twice?', level: 3 }) });
     await expect(card.locator('.timeline')).toBeVisible();
     await expect(card.locator('.timeline-bar')).toHaveCount(2);
-    await expect(card.locator('.timeline-time')).toHaveCount(4);
+    await expect(card.locator('.timeline-bar-time')).toHaveCount(4);
     await expect(card.getByRole('columnheader', { name: /^Dive \d+\s*stays when merged$/ })).toHaveCount(1);
     await expect(card.getByRole('rowheader', { name: 'Max depth' })).toBeVisible();
     await expect(card.getByRole('rowheader', { name: 'Recording' })).toBeVisible();

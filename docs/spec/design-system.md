@@ -163,9 +163,12 @@ The Review page's decision cards share one anatomy: a question heading, one visu
 really about, only the facts that differ (equal facts collapse to one muted line), one consequence sentence and the
 actions. `Comparison` is the stats layer; `DecisionTimeline` (`apps/web/src/DecisionTimeline.tsx`) and `ProfileSketch`
 are decoration (`aria-hidden`), so the comparison below and a visually hidden summary carry the same values as text.
-The timeline has one wall-clock axis and a lane per candidate: start and end times at the bar ends, the duration on the
-bar, a gap between bars labeled, and an overlap read from the lanes lining up. It stays readable at 320 px; the times
-stay, secondary labels may compact.
+The timeline has one wall-clock axis and a lane per candidate. The bar is the data mark and fills the track, its
+duration optically centred inside. When every bar in a lane spans at least 45% of the track and the container is
+wider than 30rem, the bar also carries its start and end times inside its ends (the capsule). A lane with a shorter
+bar, or a container 30rem or narrower, falls back to one `start – end` caption under the bar. A gap between bars is
+labeled, and an overlap reads from the lanes lining up. It stays readable at 320 px; the times stay, secondary labels
+may compact.
 
 | Decision | What it is about | Visual |
 |---|---|---|

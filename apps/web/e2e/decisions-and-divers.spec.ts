@@ -39,7 +39,7 @@ test('a recording that doesn\'t clearly fit is put aside, brought back and added
   await expect(panel.getByRole('heading', { name: 'Where does this recording belong?', level: 3 })).toBeVisible();
   await expect(panel.locator('.timeline')).toBeVisible();
   await expect(panel.locator('.timeline-bar')).toHaveCount(2);
-  await expect(panel.locator('.timeline-time')).toHaveCount(4);
+  await expect(panel.locator('.timeline-bar-time')).toHaveCount(4);
   // The shared stretch is in the hidden summary too, not only in the lined-up lanes.
   await expect(panel.locator('.timeline-figure')).toContainText(/overlap\./);
   await expect(panel.getByRole('columnheader', { name: 'Recording' })).toBeVisible();
