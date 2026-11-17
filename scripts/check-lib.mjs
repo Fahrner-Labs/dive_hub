@@ -23,6 +23,17 @@ export function withoutRepoEnv(env = process.env) {
 
 /** Browser test areas (tags in apps/web/e2e) by source path; first match wins. */
 const AREAS = [
+  // The API layer split by domain (FAH-48): a domain module reaches that domain's pages. The shared client,
+  // keys and barrel stay shared code below, so a change there still runs every browser test.
+  [/^apps\/web\/src\/api\/account\.ts$/, ['@account', '@admin', '@dives', '@divers', '@sites', '@equipment', '@tools', '@live', '@layout']],
+  [/^apps\/web\/src\/api\/admin\.ts$/, ['@admin']],
+  [/^apps\/web\/src\/api\/dives\.ts$/, ['@dives']],
+  [/^apps\/web\/src\/api\/divers\.ts$/, ['@divers', '@dives', '@account']],
+  [/^apps\/web\/src\/api\/equipment\.ts$/, ['@equipment', '@dives', '@divers']],
+  [/^apps\/web\/src\/api\/imports\.ts$/, ['@dives', '@account']],
+  [/^apps\/web\/src\/api\/planning\.ts$/, ['@tools', '@dives']],
+  [/^apps\/web\/src\/api\/providers\.ts$/, ['@dives', '@account']],
+  [/^apps\/web\/src\/api\/sites\.ts$/, ['@sites', '@dives', '@admin']],
   [/^apps\/web\/src\/SiteImportPage\.tsx$/, ['@admin', '@sites']],
   [/^apps\/web\/src\/(SitesPage|SiteForm|SiteHistory)\.tsx$|^apps\/web\/src\/lib\/(site-origin|sites-list|geo)\.ts$/, ['@sites']],
   [/^apps\/web\/src\/SitePicker\.tsx$/, ['@sites', '@dives']],
