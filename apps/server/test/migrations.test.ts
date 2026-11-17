@@ -1,6 +1,9 @@
 // A migration that changes after a database applied it never runs again there, so the server
 // reports it at start (it happened in slice 5: a dev server applied 0004 before its data step was added).
 // Migrations that convert data get a test that stops before them, adds old data, then applies them.
+import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
+import { readFileSync } from 'node:fs';
 import { appendFile, cp, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -10,6 +13,50 @@ import { findChangedMigrations, migrateDatabase } from '../src/db/migrate.js';
 import { createTestDatabase, databaseReachable, type TestDatabase } from './support.js';
 
 const migrations = fileURLToPath(new URL('../drizzle', import.meta.url));
+let base: string | null | undefined;
+
+/**
+ * Released migrations are immutable (FAH-221): a database keeps the hash of the bytes it applied, so a file
+ * edited after it reached main makes every database that applied it report drift, and a backup carries that
+ * stale hash along. Compared with the merge base of this branch and CI's BASELINE_REF (a pull request's base,
+ * or the commit a push started from), else origin/main, else the newest release tag.
+ */
+describe.skipIf(releasedBase() === null)('released migrations', () => {
+  const root = fileURLToPath(new URL('../../../', import.meta.url));
+  it('keep the files and journal entries they were applied with', () => {
+    const base = releasedBase()!;
+    const git = (...args: string[]) => execFileSync('git', args, { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
+    // `git diff` compares the base with the working tree: a modified or deleted file that was already there is
+    // drift; an added file is a new migration. The journal may only grow at its end, which the prefix check does.
+    const drift = git('diff', '--name-status', '--no-renames', base, '--', 'apps/server/drizzle')
+      .split('\n').filter((line) => line && !line.startsWith('A\t') && !line.endsWith('\tapps/server/drizzle/meta/_journal.json'));
+    expect(drift, 'a migration file changed after it reached main; put the change in a new migration (docs/development.md)').toEqual([]);
+    const journalOf = (text: string) => (JSON.parse(text) as { entries: { tag: string }[] }).entries;
+    const wasReleased = journalOf(git('show', `${base}:apps/server/drizzle/meta/_journal.json`));
+    const isNow = journalOf(readFileSync(join(root, 'apps/server/drizzle/meta/_journal.json'), 'utf8'));
+    expect(isNow.slice(0, wasReleased.length), 'a released migration’s journal entry changed; put the change in a new migration').toEqual(wasReleased);
+  });
+});
+
+/** The commit released migrations are compared with, or null when there is no git history to compare with. */
+function releasedBase(): string | null {
+  if (base !== undefined) return base;
+  const root = fileURLToPath(new URL('../../../', import.meta.url));
+  const git = (...args: string[]) => execFileSync('git', args, { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
+  let tags: string[] = [];
+  try {
+    tags = git('tag', '--list', 'v*', '--sort=-v:refname').split('\n').filter(Boolean);
+  } catch { /* no repository, or no tags yet */ }
+  for (const ref of [process.env.BASELINE_REF, 'origin/main', tags[0]].filter((r): r is string => Boolean(r))) {
+    try {
+      base = git('merge-base', 'HEAD', git('rev-parse', '--verify', `${ref}^{commit}`));
+      return base;
+    } catch { /* not fetched here; try the next */ }
+  }
+  // Without history the check cannot run; CI always has it (check.yml fetches the full history).
+  process.stderr.write('\nNo released migration base (BASELINE_REF, origin/main or a release tag): the immutability check is SKIPPED.\n');
+  return (base = null);
+}
 
 describe.skipIf(!(await databaseReachable()))('applied migrations', () => {
   let t: TestDatabase;
@@ -88,6 +135,37 @@ async function migrationsBefore(tag: string) {
   await writeFile(journalPath, JSON.stringify(journal));
   return folder;
 }
+
+describe.skipIf(!(await databaseReachable()))('0060: the hashes of a restored backup (FAH-221)', () => {
+  let t: TestDatabase;
+  let before: string;
+  beforeAll(async () => {
+    before = await migrationsBefore('0060_reconcile_migration_hashes');
+    t = await createTestDatabase({ migrationsFolder: before });
+  });
+  afterAll(async () => {
+    await t?.drop();
+    if (before) await rm(before, { recursive: true, force: true });
+  });
+
+  it('replaces the hashes of an earlier draft of 0011 and 0038 with the released files’ hashes', async () => {
+    const tags = ['0011_site_water_type_ssi_import', '0038_freeing_dive_numbers'];
+    const journal = JSON.parse(await readFile(join(before, 'meta', '_journal.json'), 'utf8')) as { entries: { tag: string; when: number }[] };
+    const whens = tags.map((tag) => journal.entries.find((entry) => entry.tag === tag)!.when);
+    // What a restored backup from an instance that applied an earlier draft holds, and what the server reports at start.
+    for (const when of whens) await t.pool.query('update drizzle.__drizzle_migrations set hash = $1 where created_at = $2', [`draft-${when}`, when]);
+    expect(await findChangedMigrations(t.pool, before)).toEqual(tags);
+
+    await migrateDatabase(t.db, t.pool, migrations);
+
+    expect(await findChangedMigrations(t.pool, migrations)).toEqual([]);
+    const released = await Promise.all(tags.map(async (tag) => createHash('sha256').update(await readFile(join(migrations, `${tag}.sql`))).digest('hex')));
+    const { rows } = await t.pool.query<{ hash: string }>(
+      'select hash from drizzle.__drizzle_migrations where created_at = any($1::bigint[]) order by created_at', [whens],
+    );
+    expect(rows.map((row) => row.hash)).toEqual(released);
+  });
+});
 
 describe.skipIf(!(await databaseReachable()))('0011 and 0012: the water type moves from the Dive to its site (ADR 0025)', () => {
   let t: TestDatabase;
