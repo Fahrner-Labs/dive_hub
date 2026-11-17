@@ -1071,6 +1071,7 @@
         "apps/server/src/dives/continuation/continuation-service.ts",
         "apps/server/src/dives/merging-service.ts",
         "apps/server/src/dives/continuation/joined-recording.ts",
+        "apps/server/src/dives/purge-service.ts",
         "apps/server/src/equipment/equipment-service.ts",
         "apps/server/src/equipment/usage.ts",
         "apps/server/src/imports/import-service.ts",
@@ -1845,6 +1846,7 @@
         "apps/server/src/dives/continuation/continuation-service.ts",
         "apps/server/src/dives/merging-service.ts",
         "apps/server/src/dives/continuation/joined-recording.ts",
+        "apps/server/src/dives/purge-service.ts",
         "apps/server/src/equipment/equipment-service.ts",
         "apps/server/src/equipment/usage.ts",
         "apps/server/src/imports/import-service.ts",
@@ -2062,6 +2064,7 @@
         "apps/server/src/dives/continuation/joined-recording.ts",
         "apps/server/src/dives/continuation/join-parts.ts",
         "apps/server/src/dives/dive-summary-view.ts",
+        "apps/server/src/dives/purge-service.ts",
         "apps/server/src/equipment/equipment-service.ts",
         "apps/server/src/imports/import-service.ts",
         "apps/server/src/imports/formats/fit/fit-adapter.ts",
@@ -6665,6 +6668,23 @@
         },
         {
           "dynamic": false,
+          "module": "./dives/purge-service.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/dives/purge-service.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./equipment/equipment-service.js",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -8748,6 +8768,7 @@
         "apps/server/src/dives/merging-service.ts",
         "apps/server/src/dives/deletion-service.ts",
         "apps/server/src/dives/merge-service.ts",
+        "apps/server/src/dives/purge-service.ts",
         "apps/server/src/dives/logbook-routes.ts",
         "apps/server/src/dives/routes.ts"
       ],
@@ -9860,6 +9881,87 @@
       "dependents": [
         "apps/server/src/compose.ts",
         "apps/server/src/dives/routes.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/server/src/dives/purge-service.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../db/client.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/db/client.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../db/schema.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/db/schema.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./provider-port.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/dives/provider-port.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "drizzle-orm",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "npm",
+            "import"
+          ],
+          "resolved": "apps/server/node_modules/drizzle-orm/index.cjs",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": true,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/server/src/compose.ts",
+        "apps/server/src/worker.ts"
       ],
       "orphan": false,
       "valid": true
@@ -19146,6 +19248,24 @@
             "import"
           ],
           "resolved": "apps/server/src/certifications/certification-service.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./dives/purge-service.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/dives/purge-service.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -48079,8 +48199,8 @@
     "baselineSize": 0,
     "baselineStale": 0,
     "advisedExitCode": 0,
-    "totalCruised": 457,
-    "totalDependenciesCruised": 2398,
+    "totalCruised": 458,
+    "totalDependenciesCruised": 2404,
     "optionsUsed": {
       "baseDir": "/home/runner/work/dive_hub/dive_hub",
       "combinedDependencies": false,
