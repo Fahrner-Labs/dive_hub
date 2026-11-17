@@ -18,6 +18,7 @@ import { createDiveService } from './dives/dive-service.js';
 import { createLogbookService } from './dives/logbook-service.js';
 import { createMergeService } from './dives/merge-service.js';
 import { createMergingService } from './dives/merging-service.js';
+import { createPurgeService } from './dives/purge-service.js';
 import { createDiverService } from './divers/diver-service.js';
 import { createEquipmentService } from './equipment/equipment-service.js';
 import { createImportService } from './imports/import-service.js';
@@ -118,6 +119,7 @@ export function createServices({
     equipment: createEquipmentService(db),
     centres: createCentreService(db, { ssi: ssiCentreDisplayName }),
     deletion: createDeletionService({ dives, logbook, pushes, waitingPushes }),
+    purge: createPurgeService(db, { pushes }),
     merge: createMergeService({ merging, logbook, pushes }),
     continuation,
     append: createAppendService({ continuation, logbook, pushes, waitingPushes }),
@@ -134,5 +136,6 @@ export type Services = ReturnType<typeof createServices>;
 /** What the worker's tasks use, from the services. */
 export const workerDeps = (s: Services, log: FastifyBaseLogger): WorkerDeps => ({
   backups: s.backups, imports: s.imports, siteImports: s.siteImports, aiAccesses: s.aiAccesses, assessments: s.assessments, pushRuns: s.providers.pushRuns,
-  waitingPushes: s.providers.waitingPushes, scheduledFetch: s.providers.scheduledFetch, certifications: s.providers.certifications, log,
+  waitingPushes: s.providers.waitingPushes, scheduledFetch: s.providers.scheduledFetch, certifications: s.providers.certifications,
+  purges: s.purge, log,
 });

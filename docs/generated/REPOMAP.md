@@ -4,16 +4,16 @@
 > `pnpm check` fails when this map is stale. Symbols are ranked by how widely the code references them;
 > each module shows its most-referenced ones (exported symbols rank higher). Search here before walking the tree.
 
-Files: 394 · symbols: 3560 · shown: 253
+Files: 395 · symbols: 3565 · shown: 253
 
 ### server/(root)
 apps/server/src/vocabulary.ts:13 type SiteWaterType
 apps/server/src/errors.ts:2 const errorMessage
 apps/server/src/vocabulary.ts:12 const SITE_WATER_TYPES
 apps/server/src/vocabulary.ts:51 type ImportSource
-apps/server/src/compose.ts:75 fn createServices
+apps/server/src/compose.ts:76 fn createServices
 apps/server/src/app.ts:75 fn buildApp
-… 39 more symbols in this module
+… 40 more symbols in this module
 
 ### server/assessment
 apps/server/src/assessment/rules.ts:42 const RULES
@@ -95,10 +95,10 @@ apps/server/src/dives/dive-service.ts:187 fn participantsOf
 apps/server/src/dives/cylinders.ts:9 iface ProviderCylinder
 apps/server/src/dives/matching.ts:83 const MAX_OFFSET_MS
 apps/server/src/dives/weighting.ts:17 fn leadOf
+apps/server/src/dives/provider-port.ts:32 iface DivePushes
 apps/server/src/dives/waiting-push-view.ts:20 const WaitingPushView
 apps/server/src/dives/checks/logbook-check-rules.ts:201 fn probablyNoDive
 apps/server/src/dives/assessment-refresh.ts:7 iface AssessmentRefresh
-apps/server/src/dives/provider-port.ts:32 iface DivePushes
 apps/server/src/dives/provider-port.ts:39 iface DiveWaitingPushes
 apps/server/src/dives/recording-units.ts:9 const isUnit
 apps/server/src/dives/weighting.ts:23 const leadTotalKg
@@ -106,7 +106,7 @@ apps/server/src/dives/matching.ts:81 const DAY_MS
 apps/server/src/dives/logbook-service.ts:296 type LogbookService
 apps/server/src/dives/dive-values.ts:6 iface DiveValues
 apps/server/src/dives/dive-service.ts:87 const nextVersion
-… 295 more symbols in this module
+… 299 more symbols in this module
 
 ### server/equipment
 apps/server/src/equipment/usage.ts:37 fn usageMap
