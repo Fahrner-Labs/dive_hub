@@ -4,7 +4,7 @@
 > `pnpm check` fails when this map is stale. Symbols are ranked by how widely the code references them;
 > each module shows its most-referenced ones (exported symbols rank higher). Search here before walking the tree.
 
-Files: 382 · symbols: 3532 · shown: 256
+Files: 383 · symbols: 3540 · shown: 256
 
 ### server/(root)
 apps/server/src/vocabulary.ts:13 type SiteWaterType
@@ -278,15 +278,15 @@ apps/server/src/users/tokens.ts:4 const newToken
 … 59 more symbols in this module
 
 ### web/(root)
-apps/web/src/api.ts:232 fn unwrap
+apps/web/src/api.ts:236 fn unwrap
 apps/web/src/api.ts:10 const api
-apps/web/src/api.ts:141 const keys
+apps/web/src/api.ts:143 const keys
 apps/web/src/api.ts:35 class ApiError
 apps/web/src/ToolsLead.tsx:45 fn Panel
 apps/web/src/api.ts:15 type Problem
-apps/web/src/api.ts:313 const diversQuery
+apps/web/src/api.ts:317 const diversQuery
 apps/web/src/api.ts:70 type DiveView
-apps/web/src/api.ts:110 type ProviderView
+apps/web/src/api.ts:112 type ProviderView
 apps/web/src/PushRun.tsx:21 const named
 apps/web/src/CodeScanner.tsx:106 fn CodeScanner
 apps/web/src/ToolsLead.tsx:54 fn Conditions
@@ -300,7 +300,7 @@ apps/web/src/Cylinders.tsx:18 fn useCylinderText
 apps/web/src/DeleteDive.tsx:21 fn DeleteDiveDialog
 apps/web/src/ProfileSketch.tsx:12 fn ProfileSketch
 apps/web/src/ProviderConflicts.tsx:14 fn useConflictValueText
-… 690 more symbols in this module
+… 693 more symbols in this module
 
 ### web/i18n
 apps/web/src/i18n/languages.ts:6 fn pickLanguage
@@ -332,7 +332,7 @@ apps/web/src/lib/providers.ts:52 type ProviderRef
 apps/web/src/lib/logbook.ts:11 iface LogbookParams
 apps/web/src/lib/units.ts:4 type UnitSystem
 apps/web/src/lib/units.ts:22 const pressureIn
-… 348 more symbols in this module
+… 353 more symbols in this module
 
 ### web/ui
 apps/web/src/ui/Layout.tsx:85 fn Notice

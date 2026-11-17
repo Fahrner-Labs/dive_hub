@@ -2642,6 +2642,30 @@
       "not_at_provider": "{{level}}: no longer in the account; kept here."
     }
   },
+  "loadings": {
+    "title": "Current loadings",
+    "n2Label": "Residual nitrogen",
+    "n2Value": "{{percent}} of the limit at GF {{gf}}",
+    "cnsLabel": "Oxygen clock (CNS)",
+    "cnsValue": "{{now}} now · {{atEnd}} at the end of the last dive",
+    "cnsNote": "CNS decays on the surface with a {{minutes}}-minute half-life. OTU expire 24 hours after a dive.",
+    "otuLabel": "OTU, last 24 hours",
+    "otuValue": "{{value}}",
+    "noFlyLabel": "Flying after the last dive",
+    "noFly": {
+      "single": "Not before {{until}} ({{hours}} hours after a single dive without decompression stops).",
+      "several": "Not before {{until}} ({{hours}} hours after several dives or days of diving).",
+      "decompression": "Not before {{until}} ({{hours}} hours; after decompression stops DAN says well over 18)."
+    },
+    "basis_one": "From {{count}} logged dive in the last {{window}} hours; the last ended {{last}}.",
+    "basis_other": "From {{count}} logged dives in the last {{window}} hours; the last ended {{last}}.",
+    "basisNone": "No logged dive in the last {{window}} hours could be replayed; the last ended {{last}}.",
+    "basisNoDive": "No logged dive yet.",
+    "skipped_one": "{{count}} dive without a depth profile contributes nothing.",
+    "skipped_other": "{{count}} dives without a depth profile contribute nothing.",
+    "note": "An estimate from the Diver’s own logged dives, not advice: the dive computer and training govern.",
+    "sources": "Sources:"
+  },
   "diverCodes": {
     "open": "Codes",
     "title": "{{name}}: codes and details",
