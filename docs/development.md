@@ -13,6 +13,12 @@ date: 2026-10-05
 - pnpm 12 (`packageManager` in `package.json`). Corepack < 0.34 can't start pnpm 12 (a Rust
   rewrite); install pnpm 12 directly or run it as `npx pnpm@12.8.1 …`.
 - Docker with Compose, for PostgreSQL.
+- PostgreSQL 18 client tools (`pg_dump`, `pg_restore`) on PATH when the server runs on the host: backups
+  and restores need them (the image ships them). The major version tracks the `compose.dev.yaml` image
+  (currently 18). Install them with `apk add postgresql18-client`, `apt install postgresql-client-18`, or
+  `brew install libpq` (then put its bin directory on PATH); on Windows use
+  `winget install -e --id PostgreSQL.PostgreSQL.18` or the EnterpriseDB PostgreSQL 18 installer, then add
+  `C:\Program Files\PostgreSQL\18\bin` to PATH.
 
 ## First run
 
