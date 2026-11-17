@@ -30948,6 +30948,7 @@
         "apps/web/src/Certifications.tsx",
         "apps/web/src/DiverCodes.tsx",
         "apps/web/src/lib/divers.ts",
+        "apps/web/src/lib/loadings.ts",
         "apps/web/src/DiversPage.tsx",
         "apps/web/src/EquipmentDue.tsx",
         "apps/web/src/lib/equipment.ts",
@@ -40920,6 +40921,23 @@
         },
         {
           "dynamic": false,
+          "module": "./lib/loadings.ts",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/web/src/lib/loadings.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./lib/page.ts",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -41508,6 +41526,34 @@
       "dependents": [
         "apps/web/src/DiverPage.tsx",
         "apps/web/src/DiversPage.tsx"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/web/src/lib/loadings.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../api.ts",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/web/src/api.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/web/src/DiverPage.tsx"
       ],
       "orphan": false,
       "valid": true
@@ -47162,8 +47208,8 @@
     "baselineSize": 0,
     "baselineStale": 0,
     "advisedExitCode": 0,
-    "totalCruised": 445,
-    "totalDependenciesCruised": 2353,
+    "totalCruised": 446,
+    "totalDependenciesCruised": 2355,
     "optionsUsed": {
       "baseDir": "/home/runner/work/dive_hub/dive_hub",
       "combinedDependencies": false,
