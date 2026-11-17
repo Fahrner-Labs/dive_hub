@@ -24,6 +24,12 @@ const KEPT_RUNS = 5;
 const FAILURES_IN_A_ROW = 2;
 export const MAX_IDS = 500;
 
+/** Every counter at zero; also fills the counters a row written by an older release does not have. */
+const EMPTY_LEFT_OUT: PushRunLeftOut = {
+  upToDate: 0, requirementsUnmet: 0, updateNotChosen: 0, removesVerification: 0, updateUnsupported: 0,
+  beyondCeiling: 0, notFound: 0, numberNotChosen: 0, numberTaken: 0, numberHeldAtProvider: 0,
+};
+
 export interface PushRunRequest {
   /** What to send: the logbook's list (Dives of the Connection's Diver), or Dive ids. Exactly one. */
   list?: { siteId?: string | undefined; q?: string | undefined; only?: string | undefined } | undefined;
@@ -205,7 +211,7 @@ export function createPushRunService(deps: { db: Db; registry: ProviderRegistry;
       id: row.id, connectionId: row.connectionId, provider: row.provider, diverId: row.diverId, status: row.status, stopCode: row.stopCode,
       updates: row.updates, updatesRemovingVerification: row.updatesRemovingVerification, numbers: row.numbers,
       numbersRemovingVerification: row.numbersRemovingVerification,
-      cancelRequested: row.cancelRequestedAt !== null, counts, conflicts, leftOut: row.leftOut, pauseMs,
+      cancelRequested: row.cancelRequestedAt !== null, counts, conflicts, leftOut: { ...EMPTY_LEFT_OUT, ...row.leftOut }, pauseMs,
       createdAt: row.createdAt, startedAt: row.startedAt, finishedAt: row.finishedAt, dismissedAt: row.dismissedAt,
     };
   }
