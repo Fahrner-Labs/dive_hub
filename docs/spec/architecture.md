@@ -463,9 +463,14 @@ Implemented:
 Found in the screenshot review and fixed: with the list of deleted dives open, the SSI reminder stayed above it with
 only "Dismiss" left. It now hides while the list is open, which names each dive still in SSI.
 
+Later (2026-11-17): **purging** ([ADR 0072](../decisions/0072-purging-deleted-dives.md),
+[FAH-59](/FAH/issues/FAH-59)): the daily worker task `purge-deleted-dives` (03:37 UTC) hard-deletes a deleted Dive older
+than 30 days whose Provider copies are all gone, with the rows the schema cascades. Its Recordings stay, detached, so a
+re-import is still skipped as `deleted_earlier`; its Originals stay because another Dive can share them. A Dive a
+Continuation uses as a part or as the kept side is kept.
+
 Deliberate simplifications, to revisit:
 - **The SSI delete runs in the request**, like sending (slice 10).
-- **Deleted Dives stay forever** (with their Originals); there is no purge.
 - **"Keep it in SSI" is kept on the client** (`localStorage`, like the equipment reminder's dismissal), not on the
   account: another browser shows the reminder again. The server keeps listing the copy as still at the Provider.
 - **An Import's outcome** still links to a Dive deleted since; the dive page then says it wasn't found.

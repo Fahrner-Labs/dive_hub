@@ -463,6 +463,9 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   - **Must show `waiting`** (the queue of Waiting pushes): a `delete` that waits goes out at `dueAt` ("Will be deleted in
     {{provider}} in {{minutes}} min"); a `held` one says why (`reason`), a `stopped` one "Couldn't delete it in {{provider}}:
     {{reason}}" (the problem code's text).
+  - **A Dive may disappear:** 30 days after its last Provider copy is gone it is purged
+    ([ADR 0072](../decisions/0072-purging-deleted-dives.md)). The list simply no longer names it and it can't be restored;
+    no request changes. *Web:* `DeletedDives.tsx`.
 - **History:** a restored Dive's history shows "Deleted" and "Restored" (causes `delete`, `restore`; their change
   `deletedAt` needs no line of its own). *Web:* `DiveHistory.tsx`.
 - **History:** an import from a Provider writes `fill` (what a Dive lacked, from the Provider's dive: `site`,
