@@ -1360,11 +1360,11 @@
         "apps/server/src/certifications/routes.ts",
         "apps/server/src/dives/profile-view.ts",
         "apps/server/src/dives/waiting-push-view.ts",
+        "apps/server/src/dives/deletion-view.ts",
         "apps/server/src/dives/dive-summary-view.ts",
         "apps/server/src/divers/diver-view.ts",
         "apps/server/src/divers/routes.ts",
         "apps/server/src/dives/candidates/candidate-routes.ts",
-        "apps/server/src/dives/deletion-view.ts",
         "apps/server/src/dives/dive-view.ts",
         "apps/server/src/sites/position-view.ts",
         "apps/server/src/dives/logbook-routes.ts",
@@ -2506,6 +2506,7 @@
         "apps/server/src/centres/routes.ts",
         "apps/server/src/certifications/routes.ts",
         "apps/server/src/certifications/certification-answers.ts",
+        "apps/server/src/dives/deletion-view.ts",
         "apps/server/src/http/attempt-limit.ts",
         "apps/server/src/providers/push/push-run-service.ts",
         "apps/server/src/providers/push/push-run-plan.ts",
@@ -2514,7 +2515,6 @@
         "apps/server/src/divers/routes.ts",
         "apps/server/src/divers/diver-answers.ts",
         "apps/server/src/dives/candidates/candidate-routes.ts",
-        "apps/server/src/dives/deletion-view.ts",
         "apps/server/src/dives/logbook-routes.ts",
         "apps/server/src/dives/routes.ts",
         "apps/server/src/equipment/routes.ts",
@@ -9577,6 +9577,23 @@
       "dependencies": [
         {
           "dynamic": false,
+          "module": "./deletion-view.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/dives/deletion-view.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./dive-service.js",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -9648,6 +9665,51 @@
       ],
       "dependents": [
         "apps/server/src/compose.ts",
+        "apps/server/src/dives/routes.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/server/src/dives/deletion-view.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../http/problems.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/http/problems.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "typebox",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "unknown"
+          ],
+          "resolved": "typebox",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": true,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/server/src/app.ts",
+        "apps/server/src/dives/deletion-service.ts",
         "apps/server/src/dives/routes.ts"
       ],
       "orphan": false,
@@ -19816,50 +19878,6 @@
         "apps/server/src/dives/routes.ts",
         "apps/server/src/providers/routes.ts",
         "apps/server/src/providers/dive-provider-routes.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "apps/server/src/dives/deletion-view.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../http/problems.js",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "apps/server/src/http/problems.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "typebox",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "unknown"
-          ],
-          "resolved": "typebox",
-          "coreModule": false,
-          "followable": false,
-          "couldNotResolve": true,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "apps/server/src/app.ts",
-        "apps/server/src/dives/routes.ts"
       ],
       "orphan": false,
       "valid": true
@@ -48062,7 +48080,7 @@
     "baselineStale": 0,
     "advisedExitCode": 0,
     "totalCruised": 457,
-    "totalDependenciesCruised": 2397,
+    "totalDependenciesCruised": 2398,
     "optionsUsed": {
       "baseDir": "/home/runner/work/dive_hub/dive_hub",
       "combinedDependencies": false,
