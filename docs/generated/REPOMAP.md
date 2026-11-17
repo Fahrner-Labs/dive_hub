@@ -4,7 +4,7 @@
 > `pnpm check` fails when this map is stale. Symbols are ranked by how widely the code references them;
 > each module shows its most-referenced ones (exported symbols rank higher). Search here before walking the tree.
 
-Files: 396 · symbols: 3569 · shown: 253
+Files: 396 · symbols: 3572 · shown: 253
 
 ### server/(root)
 apps/server/src/vocabulary.ts:13 type SiteWaterType
@@ -75,7 +75,7 @@ apps/server/src/db/schema.ts:75 const diverManagement
 apps/server/src/db/auth-schema.ts:20 const user
 apps/server/src/db/import-types.ts:12 iface ImportedValues
 apps/server/src/db/import-types.ts:6 type ImportArea
-… 151 more symbols in this module
+… 152 more symbols in this module
 
 ### server/divers
 apps/server/src/divers/management.ts:8 fn managedDiverIds
@@ -202,7 +202,7 @@ apps/server/src/providers/current-remote.ts:5 type PushRow
 apps/server/src/providers/provider.ts:83 type DiveField
 apps/server/src/providers/push/outgoing-dive.ts:64 fn loadOutgoingDive
 apps/server/src/providers/dive-import/three-way.ts:10 const SYNCED_FIELDS
-… 482 more symbols in this module
+… 483 more symbols in this module
 
 ### server/revisions
 apps/server/src/revisions/revisions.ts:66 fn writeRevision
@@ -240,7 +240,7 @@ apps/server/src/sites/sources.ts:10 const SITE_SOURCES
 apps/server/src/sites/sources.ts:33 const SOURCE_INFO
 apps/server/src/sites/sources.ts:14 const IMPORT_SOURCES
 apps/server/src/sites/site-ids.ts:26 fn accountOf
-… 164 more symbols in this module
+… 165 more symbols in this module
 
 ### server/social
 apps/server/src/social/suggestion-service.ts:18 class SuggestionError

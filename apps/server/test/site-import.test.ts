@@ -141,6 +141,33 @@ describe.skipIf(!(await databaseReachable()))('Site import and external site IDs
     });
   });
 
+  describe('reading old Site imports', () => {
+    it('fills counters that releases before them left out, so the list and the one import answer 200', async () => {
+      // A row as releases before skippedMerged, skippedNew, offered and gone wrote it.
+      const { rows } = await t.pool.query<{ id: string }>(
+        `insert into site_import (sources, area, language, status, progress, counts, findings, finished_at)
+         values ('["osm"]'::jsonb, '{"kind":"world"}'::jsonb, 'en', 'done',
+                 '{"step":"saving","done":1,"total":1}'::jsonb,
+                 '{"created":2,"updated":1,"unchanged":3,"kept":4,"linked":5,"skippedNoName":6,"skippedDeleted":7}'::jsonb,
+                 '[]'::jsonb, now())
+         returning id`,
+      );
+      const legacy = rows[0]!.id;
+      const counts = {
+        created: 2, updated: 1, unchanged: 3, kept: 4, linked: 5, skippedNoName: 6, skippedDeleted: 7,
+        skippedMerged: 0, skippedNew: 0, offered: 0, gone: 0,
+      };
+
+      const list = await call('GET', '/api/admin/site-imports', admin);
+      expect(list.statusCode).toBe(200);
+      expect((list.json() as SiteImport[]).find((r) => r.id === legacy)!.counts).toEqual(counts);
+
+      const detail = await call('GET', `/api/admin/site-imports/${legacy}`, admin);
+      expect(detail.statusCode).toBe(200);
+      expect((detail.json() as SiteImport).counts).toEqual(counts);
+    });
+  });
+
   describe('what an import creates', () => {
     it('creates sites from the Sources, each showing where it comes from', async () => {
       osm.answers([{ id: 'node/101', v: { name: 'Canyon', position: metresNorth(5000), maxDepthM: 52, description: 'Swim through the canyon' } }]);

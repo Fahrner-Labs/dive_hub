@@ -4,7 +4,7 @@
 // only while it still equals what the import last brought, so whatever a User changed stays.
 // Hand-made sites are never changed: they get the ID as a reference, and the Source's values are kept
 // beside it so the site page can offer them ("Use SSI's data").
-import type { SiteImportCounts } from '../../db/import-types.js';
+import { EMPTY_SITE_IMPORT_COUNTS, type SiteImportCounts } from '../../db/import-types.js';
 import type { Position } from '../../vocabulary.js';
 import { IMPORT_SOURCES, type ImportSource, type SiteSource } from '../sources.js';
 import { FIELD_PRECEDENCE, IMPORTED_FIELDS, inBox, type ImportArea, type ImportedValues, type SourceSite } from './site-source.js';
@@ -207,10 +207,7 @@ export function planSiteImport(input: {
   /** False: only match and fill sites already in the hub (ADR 0025). Default true. */
   createSites?: boolean;
 }): SiteImportPlan {
-  const counts: SiteImportCounts = {
-    created: 0, updated: 0, unchanged: 0, kept: 0, linked: 0,
-    skippedNoName: 0, skippedDeleted: 0, skippedMerged: 0, skippedNew: 0, offered: 0, gone: 0,
-  };
+  const counts: SiteImportCounts = { ...EMPTY_SITE_IMPORT_COUNTS };
   const createSites = input.createSites ?? true;
   const byId = new Map<string, ExistingSite>();
   for (const site of input.existing) for (const e of site.externalIds) byId.set(`${e.source}:${e.externalId}`, site);
