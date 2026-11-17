@@ -2272,7 +2272,8 @@
       "dependents": [
         "apps/server/src/db/schema.ts",
         "apps/server/src/sites/import/site-source.ts",
-        "apps/server/src/sites/import/import-plan.ts"
+        "apps/server/src/sites/import/import-plan.ts",
+        "apps/server/src/sites/import/site-import-view.ts"
       ],
       "orphan": false,
       "valid": true
@@ -5199,7 +5200,6 @@
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
-            "type-only",
             "import"
           ],
           "resolved": "apps/server/src/db/import-types.ts",
@@ -26484,6 +26484,23 @@
     {
       "source": "apps/server/src/sites/import/site-import-view.ts",
       "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../../db/import-types.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/db/import-types.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
         {
           "dynamic": false,
           "module": "../../db/schema.js",
@@ -48238,7 +48255,7 @@
     "baselineStale": 0,
     "advisedExitCode": 0,
     "totalCruised": 458,
-    "totalDependenciesCruised": 2406,
+    "totalDependenciesCruised": 2407,
     "optionsUsed": {
       "baseDir": "/home/runner/work/dive_hub/dive_hub",
       "combinedDependencies": false,
