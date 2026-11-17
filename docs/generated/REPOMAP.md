@@ -4,7 +4,7 @@
 > `pnpm check` fails when this map is stale. Symbols are ranked by how widely the code references them;
 > each module shows its most-referenced ones (exported symbols rank higher). Search here before walking the tree.
 
-Files: 394 · symbols: 3555 · shown: 252
+Files: 394 · symbols: 3560 · shown: 253
 
 ### server/(root)
 apps/server/src/vocabulary.ts:13 type SiteWaterType
@@ -36,14 +36,15 @@ apps/server/src/auth/password.ts:11 const MIN_PASSWORD_LENGTH
 ### server/backups
 apps/server/src/backups/backup-archive.ts:65 class BackupArchiveError
 apps/server/src/backups/restore-service.ts:25 class RestoreError
+apps/server/src/backups/pg-command.ts:72 fn pgToolFailure
+apps/server/src/backups/pg-command.ts:49 fn pgFailureMessage
 apps/server/src/backups/restore-service.ts:141 fn createRestoreService
 apps/server/src/backups/backup-service.ts:48 class BackupError
 apps/server/src/backups/backup-archive.ts:145 const encryptionKeyFingerprint
 apps/server/src/backups/backup-service.ts:86 const isUniqueViolation
-apps/server/src/backups/backup-service.ts:458 type BackupService
-apps/server/src/backups/pg-command.ts:42 fn pgFailureMessage
+apps/server/src/backups/backup-service.ts:461 type BackupService
 apps/server/src/backups/backup-archive.ts:96 iface BackupManifest
-… 144 more symbols in this module
+… 148 more symbols in this module
 
 ### server/centres
 apps/server/src/centres/centre-view.ts:24 const CentreView
