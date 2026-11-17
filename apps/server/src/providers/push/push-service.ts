@@ -87,6 +87,22 @@ interface Exchange {
 }
 
 const SUGGESTIONS = 20;
+/** How many Dives "changed since sent" reads at once: enough to hide the round trips; the pool queues the rest. */
+const CHANGED_SINCE_SENT_AT_ONCE = 8;
+
+async function mapAtMost<T, R>(items: readonly T[], atMost: number, fn: (item: T) => Promise<R>): Promise<R[]> {
+  const results = new Array<R>(items.length);
+  let next = 0;
+  const worker = async () => {
+    while (next < items.length) {
+      const index = next++;
+      results[index] = await fn(items[index]!);
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(atMost, items.length) }, () => worker()));
+  return results;
+}
+
 /** Left to `withAccess`, which signs in again and retries the action; not a failed Push. */
 const signedOut = (error: unknown) => error instanceof ProviderError && error.reason === 'signed_out';
 /** A Push as recorded; the Provider and its mode come from the adapter. */
@@ -451,18 +467,15 @@ export function createPushService(deps: { db: Db; blobs: BlobStore; registry: Pr
         .innerJoin(push, and(eq(push.diveId, dive.id), eq(push.state, 'confirmed'), isNotNull(push.remoteId), inArray(push.provider, providers)))
         .innerJoin(connection, and(eq(connection.userId, userId), eq(connection.diverId, dive.diverId), eq(connection.provider, push.provider)))
         .where(and(inArray(dive.diverId, diverIds), isNull(dive.deletedAt)));
-      const changed: string[] = [];
-      for (const { id } of candidates) {
+      const changed = await mapAtMost(candidates, CHANGED_SINCE_SENT_AT_ONCE, async ({ id }) => {
         const loaded = await loadOutgoingDive(db, userId, id);
         for (const provider of providers) {
           const { connection: conn, current } = await statusAt(userId, provider, loaded, { conflicts: false });
-          if (conn && current && (!current.upToDate || (current.number?.differs && current.number.canSet))) {
-            changed.push(id);
-            break;
-          }
+          if (conn && current && (!current.upToDate || (current.number?.differs && current.number.canSet))) return id;
         }
-      }
-      return changed;
+        return null;
+      });
+      return changed.filter((id): id is string => id !== null);
     },
 
     /** The Provider's dive sites near the Dive, nearest first (to pick its site ID from). */

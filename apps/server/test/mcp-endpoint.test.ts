@@ -25,6 +25,7 @@ describe.skipIf(!(await databaseReachable()))('the MCP endpoint', () => {
   let anna: string;
   let admin: string;
   let timDiver: string;
+  let annaDiver: string;
   let kid: string;
   let bob: string;
   let site: string;
@@ -93,6 +94,7 @@ describe.skipIf(!(await databaseReachable()))('the MCP endpoint', () => {
     anna = await signIn(ctx.app, 'anna@example.com');
     admin = await signIn(ctx.app, 'admin@example.com');
     timDiver = (await json<{ id: string; isOwn: boolean }[]>('GET', '/api/divers', tim)).find((d) => d.isOwn)!.id;
+    annaDiver = (await json<{ id: string; isOwn: boolean }[]>('GET', '/api/divers', anna)).find((d) => d.isOwn)!.id;
     kid = (await json<{ id: string }>('POST', '/api/divers', tim, { name: 'Lena' })).id;
     // Anna, another User, writes a site's texts and adds an external Diver: both are untrusted for Tim's LLM.
     site = (await json<{ id: string }>('POST', '/api/dive-sites', anna, {
@@ -213,7 +215,7 @@ describe.skipIf(!(await databaseReachable()))('the MCP endpoint', () => {
       const { tools } = await client.listTools();
       expect(tools.map((x) => x.name)).toEqual([
         'logbook_search_dives', 'logbook_get_dive', 'logbook_get_dive_assessment', 'logbook_stats', 'sites_search', 'sites_get', 'divers_buddies', 'divers_list',
-        'equipment_list', 'planning_gas_and_bottom_time', 'planning_gas_plan',
+        'equipment_list', 'planning_gas_and_bottom_time', 'planning_gas_plan', 'planning_diver_loadings',
       ]);
       for (const listed of tools) {
         expect(listed.annotations).toMatchObject({ readOnlyHint: true, destructiveHint: false });
@@ -397,6 +399,23 @@ describe.skipIf(!(await databaseReachable()))('the MCP endpoint', () => {
       })).structuredContent as { divers: { sac_l_per_min: unknown; recent_dive_ended_at: unknown; pressures_bar: number[] }[]; segments: unknown[] };
       expect(other.divers[0]).toMatchObject({ sac_l_per_min: { value: 20, source: 'default' }, recent_dive_ended_at: null });
       expect(other.divers[0]!.pressures_bar).toHaveLength(other.segments.length + 1);
+    });
+
+    it('gives the current loadings with the basis they rest on, and refuses a Diver the access cannot read', async () => {
+      // Anna's own key: the many calls above use Tim's, and this file stays under that access's rate limit.
+      const client = await connect(annasKey);
+      // Anna's latest Dive is from 2026-03-14: outside the 72 h N₂ window, so there is no estimate to replay.
+      const current = (await tool(client, 'planning_diver_loadings', { diver_id: annaDiver })).structuredContent!;
+      expect(current).toMatchObject({
+        basis: { window_hours: 72, dives_used: 0, dives_skipped_no_profile: 0, last_dive_ended_at: '2026-03-14T07:30:00.000Z' },
+        n2: null, otu: null,
+      });
+      // The Recording carries CNS 5: an old value decays, but it is still a value rather than a missing one.
+      expect(current.cns.percent_at_last_dive_end).toBe(5);
+      expect(current.no_fly).toMatchObject({ hours: 12, reason: 'single' });
+      const schema = TOOLS.find((x) => x.name === 'planning_diver_loadings')!.output(false);
+      expect([...Value.Errors(schema, current)].slice(0, 3)).toEqual([]);
+      expect(text(await tool(client, 'planning_diver_loadings', { diver_id: '00000000-0000-7000-8000-000000000000' }))).toContain('divers_list');
     });
 
     it('marks what other Users wrote: site texts and other Divers\' names', async () => {

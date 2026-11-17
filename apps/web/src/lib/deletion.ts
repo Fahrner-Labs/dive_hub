@@ -59,13 +59,53 @@ export function deletedNotice(copies: JustDeleted['copies']) {
 
 interface State {
   justDeleted: JustDeleted | undefined;
-  /** The reminder about deleted dives still at a Provider, dismissed for this visit (it comes back on reload). */
+  /** The reminder about deleted dives still at a Provider, dismissed for this visit; it comes back on reload. */
   reminderDismissed: boolean;
+  /**
+   * The deleted Dives' Provider copies the User chose to keep there ("Keep it in SSI"), as `diveId:provider`. Kept on this
+   * client (localStorage), so the reminder stays away across visits; the server still lists the copy as still there.
+   */
+  kept: Set<string>;
 }
 
+const KEPT_KEY = 'divehub.deleted-kept-at-provider';
+
+/** The key of one kept copy. */
+export const copyKey = (c: { diveId: string; provider: string }) => `${c.diveId}:${c.provider}`;
+
+/** The kept copies from their stored form; an unreadable value keeps none. */
+export function parseKeptCopies(raw: string | null | undefined): Set<string> {
+  if (!raw) return new Set();
+  try {
+    const value: unknown = JSON.parse(raw);
+    return new Set(Array.isArray(value) ? value.filter((v): v is string => typeof v === 'string') : []);
+  } catch {
+    return new Set();
+  }
+}
+
+function readKept(): Set<string> {
+  try {
+    return parseKeptCopies(localStorage.getItem(KEPT_KEY));
+  } catch {
+    return new Set();
+  }
+}
+
+function writeKept(kept: Set<string>) {
+  try {
+    localStorage.setItem(KEPT_KEY, JSON.stringify([...kept]));
+  } catch {
+    // A browser that keeps no storage shows the reminder again on the next visit; nothing else depends on it.
+  }
+}
+
+/** The copies still worth reminding about: those the User did not say to keep at the Provider. */
+export const stillToShow = <T extends { diveId: string; provider: string }>(still: readonly T[], kept: ReadonlySet<string>) =>
+  still.filter((c) => !kept.has(copyKey(c)));
+
 // Shared by the dive page (which deletes and leaves) and the logbook (which shows the outcome): the page changes in between.
-const empty: State = { justDeleted: undefined, reminderDismissed: false };
-let state = empty;
+let state: State = { justDeleted: undefined, reminderDismissed: false, kept: readKept() };
 const listeners = new Set<() => void>();
 
 export function updateDeletion(change: Partial<State>) {
@@ -73,8 +113,19 @@ export function updateDeletion(change: Partial<State>) {
   for (const listener of listeners) listener();
 }
 
-/** Another User signs in (or nobody): the last one's deleted Dive and dismissed reminder aren't theirs. */
-export const resetDeletion = () => updateDeletion(empty);
+/** "Keep it in SSI": stop reminding about these copies on this client, also on later visits. */
+export function keepCopies(copies: readonly { diveId: string; provider: string }[]) {
+  const kept = new Set(state.kept);
+  for (const c of copies) kept.add(copyKey(c));
+  writeKept(kept);
+  updateDeletion({ kept });
+}
+
+/** Another User signs in (or nobody): neither the last one's deleted Dive nor its kept copies are theirs. */
+export const resetDeletion = () => {
+  writeKept(new Set());
+  updateDeletion({ justDeleted: undefined, reminderDismissed: false, kept: new Set() });
+};
 
 export const deletionState = (): State => state;
 

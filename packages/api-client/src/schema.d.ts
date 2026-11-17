@@ -408,7 +408,7 @@ export interface paths {
                             restored: true;
                             /** Format: date-time */
                             createdAt: string;
-                            migrationHead: string | null;
+                            migrationHead: null | string;
                         };
                     };
                 };
@@ -536,7 +536,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Set a new password with a reset link; signs out everywhere, then signs in here */
+        /** Set a new password with a reset link; signs out everywhere, then signs in here (or asks for the second factor) */
         post: {
             parameters: {
                 query?: never;
@@ -560,7 +560,12 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["UserView"];
+                        "application/json": components["schemas"]["UserView"] | {
+                            /** @enum {boolean} */
+                            twoFactorRedirect: true;
+                            /** @description Second factors this account can use; "totp" is the built-in authenticator app */
+                            twoFactorMethods: string[];
+                        };
                     };
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
@@ -695,6 +700,80 @@ export interface paths {
                 };
             };
         };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/me/two-factor/disable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Turn off two-factor authentication; needs the password and a current code (authenticator or backup) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @description At least 15 characters */
+                        password: string;
+                        /** @description A 6-digit authenticator code, or one backup code in its XXXXX-XXXXX form */
+                        code: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            status: boolean;
+                        };
+                    };
+                };
+                /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+            };
+        };
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -1299,7 +1378,7 @@ export interface paths {
                             enabled: boolean;
                             intervalHours: number;
                             retentionCount: number;
-                            recipientPublicKey: string | null;
+                            recipientPublicKey: null | string;
                         };
                     };
                 };
@@ -1340,7 +1419,7 @@ export interface paths {
                             enabled: boolean;
                             intervalHours: number;
                             retentionCount: number;
-                            recipientPublicKey: string | null;
+                            recipientPublicKey: null | string;
                         };
                     };
                 };
@@ -1407,13 +1486,13 @@ export interface paths {
                             id: string;
                             kind: "manual" | "scheduled";
                             status: "queued" | "running" | "ready" | "failed";
-                            bytes: number | null;
-                            sha256: string | null;
-                            error: string | null;
+                            bytes: null | number;
+                            sha256: null | string;
+                            error: null | string;
                             /** Format: date-time */
                             createdAt: string;
-                            startedAt: string | null;
-                            finishedAt: string | null;
+                            startedAt: null | string;
+                            finishedAt: null | string;
                         }[];
                     };
                 };
@@ -1450,13 +1529,13 @@ export interface paths {
                             id: string;
                             kind: "manual" | "scheduled";
                             status: "queued" | "running" | "ready" | "failed";
-                            bytes: number | null;
-                            sha256: string | null;
-                            error: string | null;
+                            bytes: null | number;
+                            sha256: null | string;
+                            error: null | string;
                             /** Format: date-time */
                             createdAt: string;
-                            startedAt: string | null;
-                            finishedAt: string | null;
+                            startedAt: null | string;
+                            finishedAt: null | string;
                         };
                     };
                 };
@@ -1891,18 +1970,7 @@ export interface paths {
                                 }[];
                                 /** @description The Dive's entries in the queue of Waiting pushes, one per Provider (ADR 0056): a small icon for waiting, a warning for held, an error with Retry for stopped (docs/spec/clients.md) */
                                 waiting: components["schemas"]["WaitingPushView"][];
-                                profile: null | {
-                                    /** @description Depth in metres, evenly spread over `spanSeconds`; the deepest sample of each stretch */
-                                    depthsM: number[];
-                                    /** @description Seconds from the first to the last depth sample of the Primary recording */
-                                    spanSeconds: number;
-                                    /** @description Stretches of the ascent that were fast, [start s, end s, band 1–3 for brisk, quick, very quick], in seconds from the first sample (ADR 0036) */
-                                    ascentBands: [
-                                        number,
-                                        number,
-                                        number
-                                    ][];
-                                };
+                                profile: null | components["schemas"]["DiveProfileView"];
                             }[];
                             total: number;
                             /** @description How many Dives each filter would show for the Diver and the search, whatever filters are applied (ADR 0040) */
@@ -2793,7 +2861,7 @@ export interface paths {
                             /** @description An import would have put the two together by itself, and no dive is left over at a Provider: may be merged with others in one go */
                             obvious: boolean;
                             diverId: string;
-                            /** @description The earlier of the two Dives; the Dive, when the check is about one (short_shallow_dive: `other` is null) */
+                            /** @description The earlier of the two Dives; the Dive, when the check is about one (short_shallow_dive: `other` is null). `profile` is the sketch its card draws; null without a current assessment */
                             dive: {
                                 id: string;
                                 /** @description Send it when merging */
@@ -2817,6 +2885,7 @@ export interface paths {
                                     provider: string;
                                     remoteNumber: null | number;
                                 }[];
+                                profile: null | components["schemas"]["DiveProfileView"];
                             };
                             other: null | {
                                 id: string;
@@ -2841,6 +2910,7 @@ export interface paths {
                                     provider: string;
                                     remoteNumber: null | number;
                                 }[];
+                                profile: null | components["schemas"]["DiveProfileView"];
                                 /** @description Which of the two a merge keeps */
                                 keeps: string;
                                 /** @description Providers both Dives are at (see GET /dives/{id}/merge-candidates) */
@@ -2871,6 +2941,7 @@ export interface paths {
                                     provider: string;
                                     remoteNumber: null | number;
                                 }[];
+                                profile: null | components["schemas"]["DiveProfileView"];
                                 surfaceBreakSeconds: null | number;
                             }[];
                         }[];
@@ -3291,10 +3362,18 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** The User's deleted Dives, most recently deleted first (at most 100), to restore them; which Providers they are still at */
+        /**
+         * A page of the User's deleted Dives, newest first (limit 1–200, default 25), to restore them; where each is still at a Provider
+         * @description Pass `nextCursor` back as `cursor` for the next page. `stillAt` covers every deleted Dive, not only this page, for the reminder (docs/spec/clients.md). ADR 0026, 0027.
+         */
         get: {
             parameters: {
-                query?: never;
+                query?: {
+                    /** @description Dives per page */
+                    limit?: number;
+                    /** @description nextCursor of the previous answer; leave out for the first page */
+                    cursor?: string;
+                };
                 header?: never;
                 path?: never;
                 cookie?: never;
@@ -3308,37 +3387,58 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
-                            id: string;
-                            diverId: string;
-                            /** @description Send it back to restore the Dive */
-                            version: number;
-                            number: null | number;
-                            /** Format: date-time */
-                            startsAt: string;
-                            utcOffsetSeconds: null | number;
-                            /** @enum {unknown} */
-                            utcOffsetSource: "device" | "position" | "nearby" | "unknown";
-                            durationSeconds: number;
-                            maxDepthM: null | number;
-                            site: null | {
+                            dives: {
                                 id: string;
-                                name: string;
-                            };
-                            /** Format: date-time */
-                            deletedAt: string;
-                            mergedInto: null | string;
-                            movedTo: null | string;
-                            continuedInto: null | string;
-                            /** @description The other Dives appended in the same append, in start order: clients list them as one entry, which one restore brings back */
-                            appendedWith: string[];
-                            /** @description Providers the dive is still at: clients remind the User and offer to delete it there (docs/spec/clients.md) */
+                                diverId: string;
+                                /** @description Send it back to restore the Dive */
+                                version: number;
+                                number: null | number;
+                                /** Format: date-time */
+                                startsAt: string;
+                                utcOffsetSeconds: null | number;
+                                /** @enum {unknown} */
+                                utcOffsetSource: "device" | "position" | "nearby" | "unknown";
+                                durationSeconds: number;
+                                maxDepthM: null | number;
+                                site: null | {
+                                    id: string;
+                                    name: string;
+                                };
+                                /** Format: date-time */
+                                deletedAt: string;
+                                mergedInto: null | string;
+                                movedTo: null | string;
+                                continuedInto: null | string;
+                                /** @description The other Dives appended in the same append, in start order: clients list them as one entry, which one restore brings back */
+                                appendedWith: string[];
+                                /** @description Providers the dive is still at: clients remind the User and offer to delete it there (docs/spec/clients.md) */
+                                stillAt: {
+                                    provider: string;
+                                    remoteNumber: null | number;
+                                }[];
+                                /** @description The Dive's entries in the queue of Waiting pushes: a delete at a Provider that goes out 5 minutes after deleting here (Undo cancels it), or one that is held or stopped, with its reason */
+                                waiting: components["schemas"]["WaitingPushView"][];
+                            }[];
+                            /** @description Every deleted Dive of the Divers the User manages */
+                            total: number;
+                            /** @description Pass as `cursor` to get the next page; absent on the last page */
+                            nextCursor?: string;
+                            /** @description Every deleted Dive still at a Provider, across all pages (not only this one): clients remind the User and let it keep the copy there without loading every page */
                             stillAt: {
+                                diveId: string;
                                 provider: string;
                                 remoteNumber: null | number;
                             }[];
-                            /** @description The Dive's entries in the queue of Waiting pushes: a delete at a Provider that goes out 5 minutes after deleting here (Undo cancels it), or one that is held or stopped, with its reason */
-                            waiting: components["schemas"]["WaitingPushView"][];
-                        }[];
+                        };
+                    };
+                };
+                /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
                     };
                 };
             };
@@ -7102,7 +7202,7 @@ export interface paths {
         };
         /**
          * Bottom time for a planned dive: the shortest of the no-decompression, oxygen and gas limits, and which binds (ADR 0032)
-         * @description An estimate from the Diver's own input and settings, not advice; the dive computer and training govern. Air and nitrox 21-40 % only, no-stop only, at most 40 m; otherwise status `outside_limits`.
+         * @description An estimate from the Diver's own input and settings, not advice; the dive computer and training govern. Air and nitrox 21-40 % only, no-stop only, at most 40 m; otherwise status `outside_limits`. With `diverId`, a Dive within 48 hours seeds the no-decompression limit with the Diver's residual N₂ and the answer says so in `residualN2`.
          */
         get: {
             parameters: {
@@ -7126,7 +7226,7 @@ export interface paths {
                     altitude?: number;
                     ppo2Working?: number;
                     ppo2Contingency?: number;
-                    /** @description Start from this Diver's computer GF, SAC and last Dive */
+                    /** @description Start from this Diver's computer GF, SAC, residual N₂ and last Dive */
                     diverId?: string;
                     /** @description Plan at this site: its water type */
                     siteId?: string;
@@ -7223,8 +7323,20 @@ export interface paths {
                                 he: number;
                             };
                             depthM: number;
-                            /** @description When the Diver's Dive within the last 48 hours ended; the real limit is then shorter than shown */
+                            /** @description When the Diver's latest Dive within the last 48 hours ended; `residualN2` says whether its profile seeded the limit, else the real limit is likely shorter than shown */
                             recentDiveEndedAt: null | string;
+                            /** @description The residual nitrogen the no-decompression limit was seeded with; null without a Dive in the last 48 hours or without a profile */
+                            residualN2: null | {
+                                /** @description The Diver's worst compartment at now, as a percent of its tolerated pressure at the surface and GF high; the NDL starts from these tissues */
+                                worstCompartmentPercent: number;
+                                /** @description How many logged Dives the tissue state rests on */
+                                basedOnDives: number;
+                                /**
+                                 * Format: date-time
+                                 * @description When the latest Dive the tissue state rests on ended
+                                 */
+                                lastDiveEndedAt: string;
+                            };
                         };
                     };
                 };
@@ -7526,6 +7638,104 @@ export interface paths {
                 };
             };
         };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/divers/{id}/loadings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The current N₂, CNS and OTU loadings from a Diver's logged dives, with the basis they rest on (ADR 0071)
+         * @description An estimate from the Diver's own logged dives, not advice; the dive computer and training govern. N₂ replays the Dives that ended within 72 h and is null when the latest ended over 48 h ago; CNS is the latest Recording's end value decayed with a 90-minute half-life; OTU sums the Dives that ended within 24 h; `noFly` is DAN's guideline beside them. `basis` counts the Dives used and skipped, always. Only for a User who keeps the Diver's logbook; others get 404 `diver_not_found`. Nothing is stored.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /**
+                             * Format: date-time
+                             * @description When the estimate was computed
+                             */
+                            computedAt: string;
+                            /** @description What the estimate rests on: always shown with the numbers (ADR 0071) */
+                            basis: {
+                                /** @description How far back the N₂ replay looks; the latest Dives decide the rest */
+                                windowHours: number;
+                                /** @description Dives in the window whose profiles were replayed */
+                                divesUsed: number;
+                                /** @description Dives in the window without a depth profile: they contribute nothing */
+                                divesSkippedNoProfile: number;
+                                lastDiveEndedAt: null | string;
+                            };
+                            /** @description Null when no usable Dive is in the 72 h window, the latest Dive ended over 48 h ago, or none has a profile */
+                            n2: null | {
+                                /** @description The worst compartment as a percent of its tolerated pressure at the surface and GF high; 100 % is the decompression model's limit, not a verdict */
+                                worstCompartmentPercent: number;
+                                gfHigh: number;
+                            };
+                            /** @description Null when no Recording carries CNS; a zero is a real zero */
+                            cns: null | {
+                                /** @description The latest Recording's CNS, decayed to now with the 90-minute surface half-life */
+                                percentNow: number;
+                                /** @description The computer's own CNS at the end of that Dive */
+                                percentAtLastDiveEnd: number;
+                                halfLifeMinutes: number;
+                            };
+                            /** @description Null when no Dive in the 24 h window carries OTU; a zero is a real zero */
+                            otu: null | {
+                                /** @description The OTU of the Dives that ended within 24 h */
+                                last24Hours: number;
+                            };
+                            /** @description The no-fly time after the latest Dive, as on the Dive's assessment; information, not advice */
+                            noFly: null | {
+                                /** @description DAN's guideline: 12 after a single dive without stops, 18 after several dives or days of diving, 24 after decompression */
+                                hours: number;
+                                /** @enum {unknown} */
+                                reason: "single" | "several" | "decompression";
+                                /** Format: date-time */
+                                until: string;
+                                source: {
+                                    title: string;
+                                    url: string;
+                                };
+                            };
+                        };
+                    };
+                };
+                /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -9153,6 +9363,9 @@ export interface paths {
                                 durationSeconds: number;
                                 maxDepthM: null | number;
                                 avgDepthM: null | number;
+                                profile: null | components["schemas"]["DiveProfileView"];
+                                /** @description Whether the suggested Dive has a Recording; without one the card draws an empty sketch slot */
+                                hasRecording: boolean;
                                 site: null | {
                                     id: string;
                                     name: string;
@@ -9233,13 +9446,13 @@ export interface paths {
             };
             requestBody: {
                 content: {
-                    "application/json": {
+                    "application/json": null | {
                         /**
                          * Format: uuid
                          * @description One of the preview's overlaps: link that existing Dive instead of creating a new one. It must still overlap the suggested Dive.
                          */
                         diveId?: string;
-                    } | null;
+                    };
                 };
             };
             responses: {
@@ -13497,6 +13710,404 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/auth/two-factor/enable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Enable two factor authentication. Pass method 'totp' (default) to set up an authenticator app (returns TOTP URI and backup codes), or 'otp' to enable email/SMS-based codes immediately. */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @description User password */
+                        password: string;
+                        /** @enum {string} */
+                        method?: "otp" | "totp";
+                        /** @description Custom issuer for the TOTP URI */
+                        issuer?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Successful response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /**
+                             * @description The 2FA method that was enabled.
+                             * @enum {string}
+                             */
+                            method: "otp" | "totp";
+                            /** @description TOTP URI for authenticator app setup. Only present when method is 'totp'. */
+                            totpURI?: string;
+                            /** @description Recovery backup codes. Only present when method is 'totp'. */
+                            backupCodes?: string[];
+                        };
+                    };
+                };
+                /** @description Bad Request. Usually due to missing parameters, or invalid parameters. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                        };
+                    };
+                };
+                /** @description Unauthorized. Due to missing or invalid authentication. */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                        };
+                    };
+                };
+                /** @description Forbidden. You do not have permission to access this resource or to perform this action. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message?: string;
+                        };
+                    };
+                };
+                /** @description Not Found. The requested resource was not found. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message?: string;
+                        };
+                    };
+                };
+                /** @description Too Many Requests. You have exceeded the rate limit. Try again later. */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message?: string;
+                        };
+                    };
+                };
+                /** @description Internal Server Error. This is a problem with the server that you cannot fix. */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message?: string;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/two-factor/verify-totp": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Verify two factor TOTP */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @description The otp code to verify. Eg: "012345" */
+                        code: string;
+                        /** @description If true, the device will be trusted for 30 days. It'll be refreshed on every sign in request within this time. Eg: true */
+                        trustDevice?: boolean;
+                    };
+                };
+            };
+            responses: {
+                /** @description Successful response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            status?: boolean;
+                        };
+                    };
+                };
+                /** @description Bad Request. Usually due to missing parameters, or invalid parameters. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                        };
+                    };
+                };
+                /** @description Unauthorized. Due to missing or invalid authentication. */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                        };
+                    };
+                };
+                /** @description Forbidden. You do not have permission to access this resource or to perform this action. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message?: string;
+                        };
+                    };
+                };
+                /** @description Not Found. The requested resource was not found. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message?: string;
+                        };
+                    };
+                };
+                /** @description Too Many Requests. You have exceeded the rate limit. Try again later. */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message?: string;
+                        };
+                    };
+                };
+                /** @description Internal Server Error. This is a problem with the server that you cannot fix. */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message?: string;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/two-factor/verify-backup-code": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Verify a backup code for two-factor authentication */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @description A backup code to verify. Eg: "123456" */
+                        code: string;
+                        /** @description If true, the session cookie will not be set. */
+                        disableSession?: boolean;
+                        /** @description If true, the device will be trusted for 30 days. It'll be refreshed on every sign in request within this time. Eg: true */
+                        trustDevice?: boolean;
+                    };
+                };
+            };
+            responses: {
+                /** @description Backup code verified successfully */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @description The authenticated user object with two-factor details */
+                            user: {
+                                /** @description Unique identifier of the user */
+                                id: string;
+                                /**
+                                 * Format: email
+                                 * @description User's email address
+                                 */
+                                email?: string | null;
+                                /** @description Whether the email is verified */
+                                emailVerified?: boolean | null;
+                                /** @description User's name */
+                                name?: string | null;
+                                /**
+                                 * Format: uri
+                                 * @description User's profile image URL
+                                 */
+                                image?: string | null;
+                                /** @description Whether two-factor authentication is enabled for the user */
+                                twoFactorEnabled: boolean;
+                                /**
+                                 * Format: date-time
+                                 * @description Timestamp when the user was created
+                                 */
+                                createdAt: string;
+                                /**
+                                 * Format: date-time
+                                 * @description Timestamp when the user was last updated
+                                 */
+                                updatedAt: string;
+                            };
+                            /** @description The current session object, included unless disableSession is true */
+                            session: {
+                                /** @description Session token */
+                                token: string;
+                                /** @description ID of the user associated with the session */
+                                userId: string;
+                                /**
+                                 * Format: date-time
+                                 * @description Timestamp when the session was created
+                                 */
+                                createdAt: string;
+                                /**
+                                 * Format: date-time
+                                 * @description Timestamp when the session expires
+                                 */
+                                expiresAt: string;
+                            };
+                        };
+                    };
+                };
+                /** @description Bad Request. Usually due to missing parameters, or invalid parameters. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                        };
+                    };
+                };
+                /** @description Unauthorized. Due to missing or invalid authentication. */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                        };
+                    };
+                };
+                /** @description Forbidden. You do not have permission to access this resource or to perform this action. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message?: string;
+                        };
+                    };
+                };
+                /** @description Not Found. The requested resource was not found. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message?: string;
+                        };
+                    };
+                };
+                /** @description Too Many Requests. You have exceeded the rate limit. Try again later. */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message?: string;
+                        };
+                    };
+                };
+                /** @description Internal Server Error. This is a problem with the server that you cannot fix. */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message?: string;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -13568,7 +14179,7 @@ export interface components {
              * @description Stable, machine-readable reason; clients translate it
              * @enum {unknown}
              */
-            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "too_many_attempts" | "too_many_live_streams" | "live_unavailable" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "suggestion_not_found" | "suggestion_not_pending" | "suggestion_dive_not_found" | "suggestion_dive_not_overlapping" | "suggestion_link_conflict" | "merge_not_possible" | "check_not_found" | "continuation_not_possible" | "recording_is_part" | "device_not_found" | "equipment_not_found" | "equipment_changed" | "equipment_in_use" | "equipment_use_mismatch" | "schedule_not_found" | "schedule_interval_required" | "record_not_found" | "equipment_item_not_cylinder" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "backup_not_found" | "backup_in_progress" | "backup_running" | "backup_not_ready" | "backup_file_missing" | "backup_passphrase_missing" | "backup_settings_invalid" | "backup_recipient_missing" | "backup_recipient_invalid" | "setup_restore_source_missing" | "setup_restore_archive_missing" | "setup_restore_key_missing" | "setup_restore_decrypt_failed" | "setup_restore_key_mismatch" | "setup_restore_schema_newer" | "setup_restore_failed" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "fetch_interval_too_short" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "waiting_push_not_found" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "provider_site_unknown" | "provider_buddy_not_found" | "provider_site_data_not_confirmed";
+            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "two_factor_password_invalid" | "two_factor_code_invalid" | "two_factor_not_enabled" | "too_many_attempts" | "too_many_live_streams" | "live_unavailable" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "suggestion_not_found" | "suggestion_not_pending" | "suggestion_dive_not_found" | "suggestion_dive_not_overlapping" | "suggestion_link_conflict" | "merge_not_possible" | "check_not_found" | "continuation_not_possible" | "recording_is_part" | "device_not_found" | "equipment_not_found" | "equipment_changed" | "equipment_in_use" | "equipment_use_mismatch" | "schedule_not_found" | "schedule_interval_required" | "record_not_found" | "equipment_item_not_cylinder" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "backup_not_found" | "backup_in_progress" | "backup_running" | "backup_not_ready" | "backup_file_missing" | "backup_passphrase_missing" | "backup_settings_invalid" | "backup_recipient_missing" | "backup_recipient_invalid" | "setup_restore_source_missing" | "setup_restore_archive_missing" | "setup_restore_key_missing" | "setup_restore_decrypt_failed" | "setup_restore_key_required" | "setup_restore_key_unexpected" | "setup_restore_key_differs" | "setup_restore_schema_newer" | "setup_restore_failed" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "fetch_interval_too_short" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "waiting_push_not_found" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "provider_site_unknown" | "provider_buddy_not_found" | "provider_site_data_not_confirmed";
             /** @description English description, for logs and scripts */
             error: string;
             /** @description The Provider a provider_* code is about (ADR 0027) */
@@ -13903,6 +14514,19 @@ export interface components {
                 text: string;
             }[];
         };
+        /** @description The Primary recording’s depth, reduced to draw a sketch of the dive (ADR 0041); null without a Recording, while the Dive waits to be assessed, or when its assessment is of a Recording it no longer has as Primary */
+        DiveProfileView: {
+            /** @description Depth in metres, evenly spread over `spanSeconds`; the deepest sample of each stretch */
+            depthsM: number[];
+            /** @description Seconds from the first to the last depth sample of the Primary recording */
+            spanSeconds: number;
+            /** @description Stretches of the ascent that were fast, [start s, end s, band 1–3 for brisk, quick, very quick], in seconds from the first sample (ADR 0036) */
+            ascentBands: [
+                number,
+                number,
+                number
+            ][];
+        };
         DiverView: {
             id: string;
             name: string;
@@ -14162,7 +14786,7 @@ export interface components {
                 source: "osm" | "wikidata" | "ssi";
             })[];
             /** @description Why it failed (a problem code) */
-            failureCode: null | ("sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "too_many_attempts" | "too_many_live_streams" | "live_unavailable" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "suggestion_not_found" | "suggestion_not_pending" | "suggestion_dive_not_found" | "suggestion_dive_not_overlapping" | "suggestion_link_conflict" | "merge_not_possible" | "check_not_found" | "continuation_not_possible" | "recording_is_part" | "device_not_found" | "equipment_not_found" | "equipment_changed" | "equipment_in_use" | "equipment_use_mismatch" | "schedule_not_found" | "schedule_interval_required" | "record_not_found" | "equipment_item_not_cylinder" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "backup_not_found" | "backup_in_progress" | "backup_running" | "backup_not_ready" | "backup_file_missing" | "backup_passphrase_missing" | "backup_settings_invalid" | "backup_recipient_missing" | "backup_recipient_invalid" | "setup_restore_source_missing" | "setup_restore_archive_missing" | "setup_restore_key_missing" | "setup_restore_decrypt_failed" | "setup_restore_key_mismatch" | "setup_restore_schema_newer" | "setup_restore_failed" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "fetch_interval_too_short" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "waiting_push_not_found" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "provider_site_unknown" | "provider_buddy_not_found" | "provider_site_data_not_confirmed");
+            failureCode: null | ("sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "two_factor_password_invalid" | "two_factor_code_invalid" | "two_factor_not_enabled" | "too_many_attempts" | "too_many_live_streams" | "live_unavailable" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "suggestion_not_found" | "suggestion_not_pending" | "suggestion_dive_not_found" | "suggestion_dive_not_overlapping" | "suggestion_link_conflict" | "merge_not_possible" | "check_not_found" | "continuation_not_possible" | "recording_is_part" | "device_not_found" | "equipment_not_found" | "equipment_changed" | "equipment_in_use" | "equipment_use_mismatch" | "schedule_not_found" | "schedule_interval_required" | "record_not_found" | "equipment_item_not_cylinder" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "backup_not_found" | "backup_in_progress" | "backup_running" | "backup_not_ready" | "backup_file_missing" | "backup_passphrase_missing" | "backup_settings_invalid" | "backup_recipient_missing" | "backup_recipient_invalid" | "setup_restore_source_missing" | "setup_restore_archive_missing" | "setup_restore_key_missing" | "setup_restore_decrypt_failed" | "setup_restore_key_required" | "setup_restore_key_unexpected" | "setup_restore_key_differs" | "setup_restore_schema_newer" | "setup_restore_failed" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "fetch_interval_too_short" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "waiting_push_not_found" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "provider_site_unknown" | "provider_buddy_not_found" | "provider_site_data_not_confirmed");
             /** Format: date-time */
             createdAt: string;
             finishedAt: null | string;
@@ -14174,7 +14798,7 @@ export interface components {
             diverId: string;
             /** @enum {unknown} */
             status: "queued" | "running" | "done" | "cancelled" | "stopped";
-            stopCode: null | ("sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "too_many_attempts" | "too_many_live_streams" | "live_unavailable" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "suggestion_not_found" | "suggestion_not_pending" | "suggestion_dive_not_found" | "suggestion_dive_not_overlapping" | "suggestion_link_conflict" | "merge_not_possible" | "check_not_found" | "continuation_not_possible" | "recording_is_part" | "device_not_found" | "equipment_not_found" | "equipment_changed" | "equipment_in_use" | "equipment_use_mismatch" | "schedule_not_found" | "schedule_interval_required" | "record_not_found" | "equipment_item_not_cylinder" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "backup_not_found" | "backup_in_progress" | "backup_running" | "backup_not_ready" | "backup_file_missing" | "backup_passphrase_missing" | "backup_settings_invalid" | "backup_recipient_missing" | "backup_recipient_invalid" | "setup_restore_source_missing" | "setup_restore_archive_missing" | "setup_restore_key_missing" | "setup_restore_decrypt_failed" | "setup_restore_key_mismatch" | "setup_restore_schema_newer" | "setup_restore_failed" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "fetch_interval_too_short" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "waiting_push_not_found" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "provider_site_unknown" | "provider_buddy_not_found" | "provider_site_data_not_confirmed");
+            stopCode: null | ("sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "two_factor_password_invalid" | "two_factor_code_invalid" | "two_factor_not_enabled" | "too_many_attempts" | "too_many_live_streams" | "live_unavailable" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "suggestion_not_found" | "suggestion_not_pending" | "suggestion_dive_not_found" | "suggestion_dive_not_overlapping" | "suggestion_link_conflict" | "merge_not_possible" | "check_not_found" | "continuation_not_possible" | "recording_is_part" | "device_not_found" | "equipment_not_found" | "equipment_changed" | "equipment_in_use" | "equipment_use_mismatch" | "schedule_not_found" | "schedule_interval_required" | "record_not_found" | "equipment_item_not_cylinder" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "backup_not_found" | "backup_in_progress" | "backup_running" | "backup_not_ready" | "backup_file_missing" | "backup_passphrase_missing" | "backup_settings_invalid" | "backup_recipient_missing" | "backup_recipient_invalid" | "setup_restore_source_missing" | "setup_restore_archive_missing" | "setup_restore_key_missing" | "setup_restore_decrypt_failed" | "setup_restore_key_required" | "setup_restore_key_unexpected" | "setup_restore_key_differs" | "setup_restore_schema_newer" | "setup_restore_failed" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "fetch_interval_too_short" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "waiting_push_not_found" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "provider_site_unknown" | "provider_buddy_not_found" | "provider_site_data_not_confirmed");
             updates: boolean;
             updatesRemovingVerification: boolean;
             numbers: boolean;
@@ -14341,7 +14965,7 @@ export interface components {
                 remoteNumber: null | number;
                 /** @description The remote dive was found deleted at the Provider */
                 remoteGone: boolean;
-                failureCode: null | ("sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "too_many_attempts" | "too_many_live_streams" | "live_unavailable" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "suggestion_not_found" | "suggestion_not_pending" | "suggestion_dive_not_found" | "suggestion_dive_not_overlapping" | "suggestion_link_conflict" | "merge_not_possible" | "check_not_found" | "continuation_not_possible" | "recording_is_part" | "device_not_found" | "equipment_not_found" | "equipment_changed" | "equipment_in_use" | "equipment_use_mismatch" | "schedule_not_found" | "schedule_interval_required" | "record_not_found" | "equipment_item_not_cylinder" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "backup_not_found" | "backup_in_progress" | "backup_running" | "backup_not_ready" | "backup_file_missing" | "backup_passphrase_missing" | "backup_settings_invalid" | "backup_recipient_missing" | "backup_recipient_invalid" | "setup_restore_source_missing" | "setup_restore_archive_missing" | "setup_restore_key_missing" | "setup_restore_decrypt_failed" | "setup_restore_key_mismatch" | "setup_restore_schema_newer" | "setup_restore_failed" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "fetch_interval_too_short" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "waiting_push_not_found" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "provider_site_unknown" | "provider_buddy_not_found" | "provider_site_data_not_confirmed");
+                failureCode: null | ("sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "two_factor_password_invalid" | "two_factor_code_invalid" | "two_factor_not_enabled" | "too_many_attempts" | "too_many_live_streams" | "live_unavailable" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "suggestion_not_found" | "suggestion_not_pending" | "suggestion_dive_not_found" | "suggestion_dive_not_overlapping" | "suggestion_link_conflict" | "merge_not_possible" | "check_not_found" | "continuation_not_possible" | "recording_is_part" | "device_not_found" | "equipment_not_found" | "equipment_changed" | "equipment_in_use" | "equipment_use_mismatch" | "schedule_not_found" | "schedule_interval_required" | "record_not_found" | "equipment_item_not_cylinder" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "backup_not_found" | "backup_in_progress" | "backup_running" | "backup_not_ready" | "backup_file_missing" | "backup_passphrase_missing" | "backup_settings_invalid" | "backup_recipient_missing" | "backup_recipient_invalid" | "setup_restore_source_missing" | "setup_restore_archive_missing" | "setup_restore_key_missing" | "setup_restore_decrypt_failed" | "setup_restore_key_required" | "setup_restore_key_unexpected" | "setup_restore_key_differs" | "setup_restore_schema_newer" | "setup_restore_failed" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "fetch_interval_too_short" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "waiting_push_not_found" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "provider_site_unknown" | "provider_buddy_not_found" | "provider_site_data_not_confirmed");
                 leftOut: null | {
                     diverId: string;
                     name: string;
@@ -14594,6 +15218,8 @@ export interface components {
             readonly banReason?: string;
             /** Format: date-time */
             readonly banExpires?: string;
+            /** @default false */
+            readonly twoFactorEnabled: boolean;
         };
         Session: {
             readonly id: string;

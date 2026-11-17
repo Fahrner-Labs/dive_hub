@@ -10,13 +10,15 @@ import pg from 'pg';
 import {
   BACKUP_SKIPPED_DIRS, BackupArchiveError, encryptionKeyFingerprint, openArchiveStreamingWith, type BackupDecryptionKey, type BackupManifest,
 } from './backup-archive.js';
-import { pgCommand, pgFailureMessage } from './pg-command.js';
+import { assertPgTool, pgCommand, pgFailureMessage, pgToolFailure } from './pg-command.js';
 
 const execFileAsync = promisify(execFile);
 
 /** Why a restore refused: the code the CLI and the setup route report, without leaking any secret. */
 export type RestoreRefusalCode =
-  | 'backup_key_mismatch'
+  | 'backup_key_required'
+  | 'backup_key_unexpected'
+  | 'backup_key_differs'
   | 'backup_schema_newer'
   | 'backup_decrypt_failed'
   | 'backup_restore_failed'
@@ -92,16 +94,18 @@ export async function verifySchemaHead(manifestHead: string | null, migrationsFo
   }
 }
 
-/** Refuses when the backup was made with a different DIVEHUB_ENCRYPTION_KEY; the stored secrets would not decrypt. */
+/** Refuses when the backup's DIVEHUB_ENCRYPTION_KEY use does not match this instance's; the stored secrets would not decrypt. */
 export function verifyEncryptionKey(manifest: BackupManifest, encryptionKey: Buffer | undefined): void {
   const wanted = manifest.encryptionKeySha256 ?? null;
   const present = encryptionKeyFingerprint(encryptionKey);
   if (wanted === present) return;
-  throw new RestoreError('backup_key_mismatch', wanted === null
-    ? 'this backup was made without DIVEHUB_ENCRYPTION_KEY; unset it before restoring (its credentials are plain text)'
-    : present === null
-      ? 'this backup needs the DIVEHUB_ENCRYPTION_KEY it was made with; set it before restoring'
-      : 'DIVEHUB_ENCRYPTION_KEY differs from the one this backup was made with; the stored credentials would be undecryptable');
+  if (wanted === null) {
+    throw new RestoreError('backup_key_unexpected', 'this backup was made without DIVEHUB_ENCRYPTION_KEY; unset it before restoring (its credentials are plain text)');
+  }
+  if (present === null) {
+    throw new RestoreError('backup_key_required', 'this backup needs the DIVEHUB_ENCRYPTION_KEY it was made with; set it before restoring');
+  }
+  throw new RestoreError('backup_key_differs', 'DIVEHUB_ENCRYPTION_KEY differs from the one this backup was made with; the stored credentials would be undecryptable');
 }
 
 /** Directories a restore must leave in place: the same ones the backup leaves out. */
@@ -142,6 +146,13 @@ export function createRestoreService({ dataDir, databaseUrl, migrationsFolder, e
   async function restore(input: RestoreInput): Promise<RestoreResult> {
     const workDir = join(dataDir, 'tmp', `restore-${randomUUID()}`);
     try {
+      // Probe before anything is opened or replaced: a host without the client tool refuses with install guidance,
+      // and a failure leaves the instance's database and files untouched.
+      try {
+        await assertPgTool('pg_restore');
+      } catch (error) {
+        throw new RestoreError('backup_restore_failed', pgToolFailure('pg_restore', error, databaseUrl), { cause: error });
+      }
       let opened;
       try {
         opened = await openArchiveStreamingWith(input.archivePath, decryptionKeyOf(input), workDir);
@@ -181,7 +192,7 @@ export function createRestoreService({ dataDir, databaseUrl, migrationsFolder, e
           '--no-owner', '--no-privileges', '--single-transaction', '-d', restore.url, databasePath,
         ], { maxBuffer: 1 << 20, env: restore.env });
       } catch (error) {
-        throw new RestoreError('backup_restore_failed', `the database could not be restored: ${pgFailureMessage(error, databaseUrl)}`, { cause: error });
+        throw new RestoreError('backup_restore_failed', `the database could not be restored: ${pgToolFailure('pg_restore', error, databaseUrl)}`, { cause: error });
       }
 
       log.info(`restore finished: ${manifest.files.count} file(s), schema ${manifest.migrationHead ?? 'none'}`);

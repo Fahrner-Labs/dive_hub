@@ -7,10 +7,12 @@ import {
   api, buddySuggestionQuery, buddySuggestionsQuery, keys, unwrap,
   type AcceptedBuddySuggestionView, type BuddySuggestionOverlapView, type BuddySuggestionPreviewView, type BuddySuggestionView,
 } from './api.ts';
+import { DecisionTimeline } from './DecisionTimeline.tsx';
+import { ProfileSketch, SketchScale } from './ProfileSketch.tsx';
 import { useDisplay, useErrorText } from './lib/display.ts';
 import { refocusAfterRemoval } from './lib/focus.ts';
 import { useJoinNames } from './lib/providers.ts';
-import { Candidates, CandidateRow, type Fact } from './ReviewRows.tsx';
+import { Comparison, type CompareFact } from './ReviewRows.tsx';
 import { Button, Dialog, Muted, Notice, Panel } from './ui/index.ts';
 
 /**
@@ -75,16 +77,16 @@ function Suggestion({ suggestion: s, list, index, count }: {
 
   // The list's summary already has the Dive; the preview adds the average depth, centre and people.
   const d = preview.data?.dive ?? s.dive;
-  const facts: Fact[] = [
-    { key: 'time', text: display.diveTime(d.startsAt, d.utcOffsetSeconds) },
-    { key: 'duration', text: display.duration(d.durationSeconds) },
-    { key: 'depth', text: display.depth(d.maxDepthM) },
+  const facts: CompareFact[] = [
+    { key: 'time', label: t('suggestions.fact.time'), values: [display.diveTime(d.startsAt, d.utcOffsetSeconds)] },
+    { key: 'duration', label: t('suggestions.fact.duration'), values: [display.duration(d.durationSeconds)] },
+    { key: 'depth', label: t('suggestions.fact.maxDepth'), values: [display.depth(d.maxDepthM)] },
+    { key: 'site', label: t('suggestions.fact.site'), values: [d.site?.name] },
     ...(preview.data?.dive.avgDepthM != null
-      ? [{ key: 'avgDepth', text: t('suggestions.avgDepth', { depth: display.depth(preview.data.dive.avgDepthM) }) }]
+      ? [{ key: 'avgDepth', label: t('suggestions.fact.avgDepth'), values: [display.depth(preview.data.dive.avgDepthM)] }]
       : []),
-    { key: 'site', text: d.site?.name },
     ...(preview.data && preview.data.dive.centres.length > 0
-      ? [{ key: 'centres', text: t('suggestions.centre', { names: joinNames(preview.data.dive.centres.map((c) => c.name)) }) }]
+      ? [{ key: 'centres', label: t('suggestions.fact.centre'), values: [joinNames(preview.data.dive.centres.map((c) => c.name))] }]
       : []),
   ];
   // The Dive's own Diver and its Participants: the people the copy would list as Divers.
@@ -92,13 +94,27 @@ function Suggestion({ suggestion: s, list, index, count }: {
     ? [...new Set([preview.data.dive.owner.name, ...preview.data.dive.participants.map((p) => p.name)])]
     : [];
   const item = display.diveTime(d.startsAt, d.utcOffsetSeconds);
+  const question = preview.data
+    ? t('suggestions.question', { owner: preview.data.dive.owner.name, diver: s.diver.name })
+    : t('suggestions.suggestedDive');
+  const scaleM = Math.max(40, preview.data?.dive.maxDepthM ?? 0);
   return (
     <li className="decision">
-      {preview.data && <p className="muted">{t('suggestions.from', { owner: preview.data.dive.owner.name, diver: s.diver.name })}</p>}
-      <Candidates>
-        <CandidateRow title={<span className="candidate-title">{t('suggestions.suggestedDive')}</span>} facts={facts} marked={new Set()} />
-      </Candidates>
+      {preview.data && (
+        <h3 className="decision-question">{question}</h3>
+      )}
+      {preview.data && (
+        <div className="decision-visual">
+          <ProfileSketch
+            profile={preview.data.dive.profile} hasRecording={preview.data.dive.hasRecording}
+            scaleM={scaleM}
+          />
+          <SketchScale profile={preview.data.dive.profile} scaleM={scaleM} />
+        </div>
+      )}
+      <Comparison label={question} subjects={[{ key: d.id, label: t('suggestions.suggestedDive'), title: t('suggestions.suggestedDive') }]} facts={facts} />
       {people.length > 0 && <p>{t('suggestions.people', { names: joinNames(people) })}</p>}
+      <p className="muted">{t('suggestions.consequence')}</p>
       <div className="form-actions">
         <Button
           icon="add" isDisabled={!preview.data} aria-label={t('common.forItem', { action: t('suggestions.accept'), item })}
@@ -141,12 +157,22 @@ export function SuggestionAcceptDialog({ preview, onClose, onAccept, isPending =
   const { t } = useTranslation();
   const display = useDisplay();
   const errorText = useErrorText();
-  const overlapFacts = (o: BuddySuggestionOverlapView): Fact[] => [
-    { key: 'time', text: display.diveTime(o.startsAt, o.utcOffsetSeconds) },
-    { key: 'duration', text: display.duration(o.durationSeconds) },
-    { key: 'depth', text: display.depth(o.maxDepthM) },
-    { key: 'site', text: o.site?.name },
-  ];
+  const valuesOf = (a: BuddySuggestionPreviewView['dive'] | BuddySuggestionOverlapView) => ({
+    time: display.diveTime(a.startsAt, a.utcOffsetSeconds),
+    duration: display.duration(a.durationSeconds),
+    depth: display.depth(a.maxDepthM),
+    site: a.site?.name,
+  });
+  const compare = (a: BuddySuggestionPreviewView['dive'], b: BuddySuggestionOverlapView): CompareFact[] => {
+    const suggested = valuesOf(a);
+    const mine = valuesOf(b);
+    // The timeline carries the times and durations; only the facts that may differ stay beneath it.
+    return [
+      { key: 'depth', label: t('suggestions.fact.maxDepth'), values: [suggested.depth, mine.depth] },
+      { key: 'site', label: t('suggestions.fact.site'), values: [suggested.site, mine.site] },
+    ];
+  };
+  const label = t('suggestions.question', { owner: preview.dive.owner.name, diver: preview.diver.name });
   return (
     <Dialog title={t('suggestions.acceptTitle')} isOpen onOpenChange={(open) => !open && !isPending && onClose()}>
       <p>{t('suggestions.acceptIntro', { diver: preview.diver.name })}</p>
@@ -154,14 +180,37 @@ export function SuggestionAcceptDialog({ preview, onClose, onAccept, isPending =
       {preview.overlaps.length === 0 ? <Muted>{t('suggestions.noOverlaps')}</Muted> : (
         <>
           <p>{t('suggestions.overlapIntro')}</p>
+          <p className="muted">{t('suggestions.acceptConsequence')}</p>
           {preview.overlaps.map((o) => {
             const item = display.diveTime(o.startsAt, o.utcOffsetSeconds);
             const linking = isPending && pendingDiveId === o.id;
             return (
               <div key={o.id} className="decision">
-                <Candidates>
-                  <CandidateRow title={<span className="candidate-title">{t('suggestions.yourDive')}</span>} facts={overlapFacts(o)} marked={new Set()} />
-                </Candidates>
+                <DecisionTimeline lanes={[
+                  {
+                    key: preview.dive.id,
+                    label: t('suggestions.suggestedDive'),
+                    ...(preview.dive.maxDepthM !== null && { meta: display.depth(preview.dive.maxDepthM) }),
+                    bars: [{
+                      key: preview.dive.id, startsAt: preview.dive.startsAt, utcOffsetSeconds: preview.dive.utcOffsetSeconds,
+                      durationSeconds: preview.dive.durationSeconds,
+                    }],
+                  },
+                  {
+                    key: o.id,
+                    label: t('suggestions.yourDive'),
+                    ...(o.maxDepthM !== null && { meta: display.depth(o.maxDepthM) }),
+                    bars: [{ key: o.id, startsAt: o.startsAt, utcOffsetSeconds: o.utcOffsetSeconds, durationSeconds: o.durationSeconds }],
+                  },
+                ]} />
+                <Comparison
+                  label={label}
+                  subjects={[
+                    { key: preview.dive.id, label: t('suggestions.suggestedDive'), title: t('suggestions.suggestedDive') },
+                    { key: o.id, label: t('suggestions.yourDive'), title: t('suggestions.yourDive') },
+                  ]}
+                  facts={compare(preview.dive, o)}
+                />
                 <Button
                   icon="link" isPending={linking} isDisabled={isPending && !linking}
                   aria-label={t('common.forItem', { action: t('suggestions.link'), item })} onPress={() => onAccept(o.id)}

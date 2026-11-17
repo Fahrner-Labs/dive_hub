@@ -107,6 +107,15 @@ export function formatDiveTime(isoUtc: string, offsetSeconds: number | null, loc
   return `${text} (UTC${offset})`;
 }
 
+/** The time of day at the dive site, "11:00 AM" or "11:00" (the timeline's bar ends). */
+export function formatClock(isoUtc: string, offsetSeconds: number | null, locale: string, wallClock = false): string {
+  const utc = new Date(isoUtc);
+  const style = { hour: 'numeric', minute: '2-digit' } as const;
+  // A time logged without a time zone (ADR 0030) is shown as it was logged, without a conversion.
+  if (offsetSeconds === null) return utc.toLocaleTimeString(locale, { ...style, ...(wallClock && { timeZone: 'UTC' }) });
+  return new Date(utc.getTime() + offsetSeconds * 1000).toLocaleTimeString(locale, { ...style, timeZone: 'UTC' });
+}
+
 /**
  * A dive's day in a logbook row: weekday, day and the local time at the dive site, as formatDiveTime reads them. The
  * year only where no month heading says it; the offset is left to the dive page.

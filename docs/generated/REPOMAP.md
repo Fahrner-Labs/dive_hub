@@ -4,16 +4,16 @@
 > `pnpm check` fails when this map is stale. Symbols are ranked by how widely the code references them;
 > each module shows its most-referenced ones (exported symbols rank higher). Search here before walking the tree.
 
-Files: 375 · symbols: 3459 · shown: 257
+Files: 396 · symbols: 3569 · shown: 253
 
 ### server/(root)
 apps/server/src/vocabulary.ts:13 type SiteWaterType
 apps/server/src/errors.ts:2 const errorMessage
 apps/server/src/vocabulary.ts:12 const SITE_WATER_TYPES
 apps/server/src/vocabulary.ts:51 type ImportSource
-apps/server/src/compose.ts:75 fn createServices
-apps/server/src/app.ts:74 fn buildApp
-… 39 more symbols in this module
+apps/server/src/compose.ts:76 fn createServices
+apps/server/src/app.ts:75 fn buildApp
+… 40 more symbols in this module
 
 ### server/assessment
 apps/server/src/assessment/rules.ts:42 const RULES
@@ -21,31 +21,30 @@ apps/server/src/assessment/rules.ts:58 type RuleId
 apps/server/src/assessment/signals.ts:10 const round
 apps/server/src/assessment/signals.ts:5 iface Series
 apps/server/src/assessment/rules.ts:62 const LIMITS
-apps/server/src/assessment/assessment-service.ts:18 class AssessmentError
+apps/server/src/assessment/series-rules.ts:113 iface NoFly
 … 80 more symbols in this module
 
 ### server/auth
 apps/server/src/auth/fastify.ts:76 fn userOf
-apps/server/src/auth/auth.ts:134 type Auth
+apps/server/src/auth/auth.ts:145 type Auth
 apps/server/src/auth/fastify.ts:63 fn requireUser
 apps/server/src/auth/fastify.ts:94 fn requireAdmin
-apps/server/src/auth/auth.ts:52 fn createAuth
+apps/server/src/auth/auth.ts:59 fn createAuth
 apps/server/src/auth/password.ts:11 const MIN_PASSWORD_LENGTH
 … 23 more symbols in this module
 
 ### server/backups
 apps/server/src/backups/backup-archive.ts:65 class BackupArchiveError
-apps/server/src/backups/restore-service.ts:25 class RestoreError
-apps/server/src/backups/restore-service.ts:141 fn createRestoreService
+apps/server/src/backups/restore-service.ts:27 class RestoreError
+apps/server/src/backups/pg-command.ts:72 fn pgToolFailure
+apps/server/src/backups/pg-command.ts:49 fn pgFailureMessage
+apps/server/src/backups/restore-service.ts:145 fn createRestoreService
 apps/server/src/backups/backup-service.ts:48 class BackupError
 apps/server/src/backups/backup-archive.ts:145 const encryptionKeyFingerprint
 apps/server/src/backups/backup-service.ts:86 const isUniqueViolation
-apps/server/src/backups/backup-service.ts:458 type BackupService
-apps/server/src/backups/pg-command.ts:42 fn pgFailureMessage
+apps/server/src/backups/backup-service.ts:461 type BackupService
 apps/server/src/backups/backup-archive.ts:96 iface BackupManifest
-apps/server/src/backups/backup-archive.ts:321 fn passphraseEncryption
-apps/server/src/backups/backup-service.ts:101 fn createBackupService
-… 142 more symbols in this module
+… 148 more symbols in this module
 
 ### server/centres
 apps/server/src/centres/centre-view.ts:24 const CentreView
@@ -57,27 +56,26 @@ apps/server/src/centres/routes.ts:61 const errors
 … 24 more symbols in this module
 
 ### server/certifications
-apps/server/src/certifications/certification-service.ts:423 type CertificationService
-apps/server/src/certifications/certification-service.ts:36 class CertificationError
+apps/server/src/certifications/certification-service.ts:457 type CertificationService
+apps/server/src/certifications/certification-service.ts:37 class CertificationError
 apps/server/src/certifications/certification-providers.ts:7 iface RemoteCertification
 apps/server/src/certifications/routes.ts:38 const errors
 apps/server/src/certifications/routes.ts:19 const Text
-apps/server/src/certifications/certification-service.ts:119 fn createCertificationService
+apps/server/src/certifications/certification-service.ts:120 fn createCertificationService
 … 26 more symbols in this module
 
 ### server/db
 apps/server/src/db/client.ts:5 type Db
 apps/server/src/db/schema.ts:661 const dive
-apps/server/src/db/client.ts:6 type Tx
 apps/server/src/db/client.ts:8 type Queryable
+apps/server/src/db/client.ts:6 type Tx
 apps/server/src/db/schema.ts:454 const diveSite
 apps/server/src/db/schema.ts:795 const recording
 apps/server/src/db/schema.ts:75 const diverManagement
 apps/server/src/db/auth-schema.ts:20 const user
 apps/server/src/db/import-types.ts:12 iface ImportedValues
 apps/server/src/db/import-types.ts:6 type ImportArea
-apps/server/src/db/auth-schema.ts:39 const session
-… 149 more symbols in this module
+… 151 more symbols in this module
 
 ### server/divers
 apps/server/src/divers/management.ts:8 fn managedDiverIds
@@ -89,7 +87,7 @@ apps/server/src/divers/management.ts:25 const managesDiveDiver
 … 51 more symbols in this module
 
 ### server/dives
-apps/server/src/dives/dive-view.ts:203 const DiveView
+apps/server/src/dives/dive-view.ts:215 const DiveView
 apps/server/src/dives/dive-service.ts:20 class DiveError
 apps/server/src/dives/time-zone.ts:11 iface Position
 apps/server/src/dives/cylinders.ts:52 fn cylindersOf
@@ -97,38 +95,35 @@ apps/server/src/dives/dive-service.ts:187 fn participantsOf
 apps/server/src/dives/cylinders.ts:9 iface ProviderCylinder
 apps/server/src/dives/matching.ts:83 const MAX_OFFSET_MS
 apps/server/src/dives/weighting.ts:17 fn leadOf
-apps/server/src/dives/matching.ts:81 const DAY_MS
+apps/server/src/dives/provider-port.ts:32 iface DivePushes
 apps/server/src/dives/waiting-push-view.ts:20 const WaitingPushView
 apps/server/src/dives/checks/logbook-check-rules.ts:201 fn probablyNoDive
 apps/server/src/dives/assessment-refresh.ts:7 iface AssessmentRefresh
-apps/server/src/dives/provider-port.ts:32 iface DivePushes
 apps/server/src/dives/provider-port.ts:39 iface DiveWaitingPushes
 apps/server/src/dives/recording-units.ts:9 const isUnit
 apps/server/src/dives/weighting.ts:23 const leadTotalKg
-apps/server/src/dives/logbook-service.ts:274 type LogbookService
+apps/server/src/dives/matching.ts:81 const DAY_MS
+apps/server/src/dives/logbook-service.ts:296 type LogbookService
 apps/server/src/dives/dive-values.ts:6 iface DiveValues
 apps/server/src/dives/dive-service.ts:87 const nextVersion
-apps/server/src/dives/weighting.ts:96 iface Suit
-apps/server/src/dives/matching.ts:34 const OVERLAP_TOLERANCE_SECONDS
-… 286 more symbols in this module
+… 303 more symbols in this module
 
 ### server/equipment
-apps/server/src/equipment/due.ts:59 const DAY_MS
 apps/server/src/equipment/usage.ts:37 fn usageMap
 apps/server/src/equipment/equipment-error.ts:2 class EquipmentError
+apps/server/src/equipment/due.ts:59 const DAY_MS
 apps/server/src/equipment/usage.ts:16 iface Usage
 apps/server/src/equipment/due.ts:36 iface ScheduleDue
 apps/server/src/equipment/due.ts:86 const round
-apps/server/src/equipment/equipment-view.ts:22 const ServiceScheduleViewSchema
-… 92 more symbols in this module
+… 93 more symbols in this module
 
 ### server/http
 apps/server/src/http/schemas.ts:10 const Nullable
 apps/server/src/http/schemas.ts:5 const DateTime
 apps/server/src/http/schemas.ts:4 const IdParams
-apps/server/src/http/problems.ts:188 const Problem
-apps/server/src/http/problems.ts:191 const problem
-apps/server/src/http/problems.ts:215 const answerErrors
+apps/server/src/http/problems.ts:193 const Problem
+apps/server/src/http/problems.ts:196 const problem
+apps/server/src/http/problems.ts:220 const answerErrors
 … 24 more symbols in this module
 
 ### server/imports
@@ -142,8 +137,7 @@ apps/server/src/imports/formats/uddf/uddf.ts:38 const round
 apps/server/src/imports/formats.ts:8 iface FileFormat
 apps/server/src/imports/import-service.ts:16 const PROCESS_IMPORT_TASK
 apps/server/src/imports/formats/uddf/xml.ts:141 const child
-apps/server/src/imports/formats/uddf/xml.ts:9 iface XmlElement
-… 146 more symbols in this module
+… 147 more symbols in this module
 
 ### server/lead
 apps/server/src/lead/types.ts:16 iface EstimateDive
@@ -174,18 +168,18 @@ apps/server/src/mcp/tool.ts:85 fn offsetOf
 apps/server/src/mcp/read-service.ts:25 const count
 apps/server/src/mcp/profile.ts:5 iface Series
 apps/server/src/mcp/access-service.ts:36 iface VerifiedAccess
-apps/server/src/mcp/access-service.ts:24 class AiAccessError
-… 152 more symbols in this module
+… 155 more symbols in this module
 
 ### server/planning
 apps/server/src/planning/planning-error.ts:3 class PlanningError
+apps/server/src/planning/gas.ts:5 iface GasMix
 apps/server/src/planning/gas.ts:44 fn ambientPressureBar
 apps/server/src/planning/gas.ts:15 iface Conditions
-apps/server/src/planning/gas.ts:5 iface GasMix
 apps/server/src/planning/gas-plan.ts:21 type GasRule
-apps/server/src/planning/bottom-time-service.ts:20 const round
+apps/server/src/planning/loadings-service.ts:17 const DAY_MS
+apps/server/src/planning/bottom-time-service.ts:22 const round
 apps/server/src/planning/gas-numbers.ts:9 const round
-… 85 more symbols in this module
+… 127 more symbols in this module
 
 ### server/providers
 apps/server/src/providers/registry.ts:70 class ProviderServiceError
@@ -208,10 +202,7 @@ apps/server/src/providers/current-remote.ts:5 type PushRow
 apps/server/src/providers/provider.ts:83 type DiveField
 apps/server/src/providers/push/outgoing-dive.ts:64 fn loadOutgoingDive
 apps/server/src/providers/dive-import/three-way.ts:10 const SYNCED_FIELDS
-apps/server/src/providers/provider.ts:85 iface Capabilities
-apps/server/src/providers/dive-import/dive-changes.ts:29 iface ProviderContext
-apps/server/src/providers/dive-import/three-way.ts:61 fn sameAtProvider
-… 477 more symbols in this module
+… 482 more symbols in this module
 
 ### server/revisions
 apps/server/src/revisions/revisions.ts:66 fn writeRevision
@@ -249,15 +240,14 @@ apps/server/src/sites/sources.ts:10 const SITE_SOURCES
 apps/server/src/sites/sources.ts:33 const SOURCE_INFO
 apps/server/src/sites/sources.ts:14 const IMPORT_SOURCES
 apps/server/src/sites/site-ids.ts:26 fn accountOf
-apps/server/src/sites/site-ids.ts:105 fn storeId
-… 163 more symbols in this module
+… 164 more symbols in this module
 
 ### server/social
-apps/server/src/social/suggestion-service.ts:17 class SuggestionError
-apps/server/src/social/suggestion-service.ts:232 fn createSuggestionService
+apps/server/src/social/suggestion-service.ts:18 class SuggestionError
+apps/server/src/social/suggestion-service.ts:233 fn createSuggestionService
 apps/server/src/social/routes.ts:17 const STATUS
-apps/server/src/social/suggestion-view.ts:9 const SiteRef
-apps/server/src/social/suggestion-service.ts:116 fn emitSuggestionHints
+apps/server/src/social/suggestion-view.ts:10 const SiteRef
+apps/server/src/social/suggestion-service.ts:117 fn emitSuggestionHints
 apps/server/src/social/suggestion-changes.ts:10 fn withSuggestionChanges
 … 20 more symbols in this module
 
@@ -270,37 +260,49 @@ apps/server/src/storage/blob-store.ts:39 fn createLocalBlobStore
 ### server/users
 apps/server/src/users/views.ts:23 const UserView
 apps/server/src/users/invitation-service.ts:8 type Role
+apps/server/src/users/views.ts:51 const toUserView
 apps/server/src/users/tokens.ts:5 const sha256
-apps/server/src/users/views.ts:43 const toUserView
 apps/server/src/users/user-admin-service.ts:10 class UserAdminError
 apps/server/src/users/tokens.ts:4 const newToken
-… 58 more symbols in this module
+… 59 more symbols in this module
 
 ### web/(root)
-apps/web/src/api.ts:232 fn unwrap
-apps/web/src/api.ts:10 const api
-apps/web/src/api.ts:141 const keys
-apps/web/src/api.ts:35 class ApiError
 apps/web/src/ToolsLead.tsx:45 fn Panel
-apps/web/src/api.ts:15 type Problem
-apps/web/src/api.ts:313 const diversQuery
-apps/web/src/api.ts:70 type DiveView
-apps/web/src/api.ts:110 type ProviderView
-apps/web/src/ReviewRows.tsx:35 fn Candidates
 apps/web/src/PushRun.tsx:21 const named
-apps/web/src/ReviewRows.tsx:4 iface Fact
 apps/web/src/CodeScanner.tsx:106 fn CodeScanner
-apps/web/src/ReviewRows.tsx:25 fn CandidateRow
-apps/web/src/DivePage.tsx:232 fn Fact
+apps/web/src/ToolsLead.tsx:54 fn Conditions
+apps/web/src/ReviewRows.tsx:52 iface CompareFact
 apps/web/src/ProviderDiveImport.tsx:18 const DIVE_KINDS
 apps/web/src/DiveCodes.tsx:10 fn CodeFigure
+apps/web/src/ReviewRows.tsx:64 fn Comparison
+apps/web/src/DecisionTimeline.tsx:21 fn DecisionTimeline
 apps/web/src/ProfilePlot.tsx:11 const token
 apps/web/src/Cylinders.tsx:18 fn useCylinderText
 apps/web/src/DeleteDive.tsx:21 fn DeleteDiveDialog
+apps/web/src/ProfileSketch.tsx:12 fn ProfileSketch
 apps/web/src/ProviderConflicts.tsx:14 fn useConflictValueText
 apps/web/src/WaitingPush.tsx:117 fn WaitingPushState
 apps/web/src/ImportPanel.tsx:39 const ImportContext
-… 682 more symbols in this module
+apps/web/src/ReviewRows.tsx:6 iface Fact
+apps/web/src/SignedOut.tsx:20 fn useUserChanged
+apps/web/src/ProfilePlot.tsx:14 fn withAlpha
+apps/web/src/ReviewRows.tsx:37 fn Candidates
+… 511 more symbols in this module
+
+### web/api
+apps/web/src/api/request.ts:59 fn unwrap
+apps/web/src/api/request.ts:3 const api
+apps/web/src/api/keys.ts:2 const keys
+apps/web/src/api/request.ts:28 class ApiError
+apps/web/src/api/request.ts:6 type Problem
+apps/web/src/api/divers.ts:18 const diversQuery
+apps/web/src/api/dives.ts:11 type DiveView
+apps/web/src/api/providers.ts:7 type ProviderView
+apps/web/src/api/dives.ts:15 type RecordingSummary
+apps/web/src/api/sites.ts:8 type Position
+apps/web/src/api/providers.ts:8 type ConnectionView
+apps/web/src/api/account.ts:17 const meQuery
+… 177 more symbols in this module
 
 ### web/i18n
 apps/web/src/i18n/languages.ts:6 fn pickLanguage
@@ -310,7 +312,7 @@ apps/web/src/i18n/languages.ts:3 type Language
 apps/web/src/i18n/index.ts:8 const resources
 
 ### web/lib
-apps/web/src/lib/display.ts:63 fn useErrorText
+apps/web/src/lib/display.ts:65 fn useErrorText
 apps/web/src/lib/display.ts:10 fn useDisplay
 apps/web/src/lib/announce.ts:9 fn announce
 apps/web/src/lib/providers.ts:70 fn useProviderText
@@ -322,18 +324,15 @@ apps/web/src/lib/settings.ts:13 fn settingsHref
 apps/web/src/lib/geo.ts:4 iface Position
 apps/web/src/lib/focus.ts:16 fn focusHeading
 apps/web/src/lib/units.ts:20 const depthIn
+apps/web/src/lib/live.ts:115 const liveHealthy
 apps/web/src/lib/providers.ts:9 type SyncedField
 apps/web/src/lib/tools.ts:49 iface ToolsParams
 apps/web/src/lib/form.ts:4 const formValues
 apps/web/src/lib/devices.ts:18 const deviceName
-apps/web/src/lib/review.ts:14 fn reviewHref
+apps/web/src/lib/review.ts:16 fn reviewHref
 apps/web/src/lib/providers.ts:55 fn useProviderOf
 apps/web/src/lib/providers.ts:52 type ProviderRef
-apps/web/src/lib/logbook.ts:11 iface LogbookParams
-apps/web/src/lib/units.ts:4 type UnitSystem
-apps/web/src/lib/units.ts:22 const pressureIn
-apps/web/src/lib/logbook.ts:39 fn logbookHref
-… 333 more symbols in this module
+… 361 more symbols in this module
 
 ### web/ui
 apps/web/src/ui/Layout.tsx:85 fn Notice

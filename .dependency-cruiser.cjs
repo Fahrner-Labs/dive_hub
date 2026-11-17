@@ -20,7 +20,8 @@ const MODULE_IMPORTS = {
   imports: ['divers', 'dives', 'equipment', 'live', 'revisions', 'sites'],
   lead: ['divers', 'dives'],
   mcp: ['assessment', 'divers', 'dives', 'equipment', 'planning', 'sites'],
-  planning: ['divers', 'dives'],
+  // The loadings endpoint reuses DAN's no-fly rule (series-rules.ts) rather than copying it (ADR 0071).
+  planning: ['assessment', 'divers', 'dives'],
   providers: ['certifications', 'divers', 'dives', 'imports', 'live', 'revisions', 'sites'],
   sites: ['live', 'revisions'],
   // Buddy suggestions (ADR 0070) read the shared facts, reuse the time-window tolerance of dive matching for an
@@ -115,12 +116,12 @@ module.exports = {
       to: { path: '^apps/web/src/[A-Z][^/]*\\.tsx$' },
     },
     {
-      // lib/ may import api.ts (amendment of 2026-10-29); api.ts takes from lib/ only what describes a query's
-      // inputs. A new lib/ file for api.ts joins this list, with the reason in the commit message.
+      // lib/ may import api.ts (amendment of 2026-10-29); the API layer takes from lib/ only what describes a
+      // query's inputs. A new lib/ file for the API layer joins this list, with the reason in the commit message.
       name: 'api-imports-only-query-inputs-from-lib',
       severity: 'error',
-      comment: 'api.ts takes from lib/ only the types and constants of its queries\' inputs: lib/logbook, sites-list, tools, waiting-push and the live channel\'s health (ADR 0053, amendment of 2026-10-29 and 2026-11-07).',
-      from: { path: '^apps/web/src/api[.]ts$' },
+      comment: 'The API layer (api.ts and its per-domain modules) takes from lib/ only the types and constants of its queries\' inputs: lib/logbook, sites-list, tools, waiting-push and the live channel\'s health (ADR 0053, amendment of 2026-10-29 and 2026-11-07).',
+      from: { path: '^apps/web/src/api([.]ts|/)' },
       to: { path: '^apps/web/src/lib/', pathNot: '^apps/web/src/lib/(logbook|sites-list|tools|waiting-push|live)[.]ts$' },
     },
   ],

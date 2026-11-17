@@ -23,6 +23,17 @@ export function withoutRepoEnv(env = process.env) {
 
 /** Browser test areas (tags in apps/web/e2e) by source path; first match wins. */
 const AREAS = [
+  // The API layer split by domain (FAH-48): a domain module reaches that domain's pages. The shared client,
+  // keys and barrel stay shared code below, so a change there still runs every browser test.
+  [/^apps\/web\/src\/api\/account\.ts$/, ['@account', '@admin', '@dives', '@divers', '@sites', '@equipment', '@tools', '@live', '@layout']],
+  [/^apps\/web\/src\/api\/admin\.ts$/, ['@admin']],
+  [/^apps\/web\/src\/api\/dives\.ts$/, ['@dives']],
+  [/^apps\/web\/src\/api\/divers\.ts$/, ['@divers', '@dives', '@account']],
+  [/^apps\/web\/src\/api\/equipment\.ts$/, ['@equipment', '@dives', '@divers']],
+  [/^apps\/web\/src\/api\/imports\.ts$/, ['@dives', '@account']],
+  [/^apps\/web\/src\/api\/planning\.ts$/, ['@tools', '@dives']],
+  [/^apps\/web\/src\/api\/providers\.ts$/, ['@dives', '@account']],
+  [/^apps\/web\/src\/api\/sites\.ts$/, ['@sites', '@dives', '@admin']],
   [/^apps\/web\/src\/SiteImportPage\.tsx$/, ['@admin', '@sites']],
   [/^apps\/web\/src\/(SitesPage|SiteForm|SiteHistory)\.tsx$|^apps\/web\/src\/lib\/(site-origin|sites-list|geo)\.ts$/, ['@sites']],
   [/^apps\/web\/src\/SitePicker\.tsx$/, ['@sites', '@dives']],
@@ -35,10 +46,10 @@ const AREAS = [
   [/^apps\/web\/src\/lib\/address-search\.ts$/, ['@sites', '@dives']],
   // Equipment items and their service schedules (ADR 0034): the page and its forms, the logbook's due notice and a Dive's gear.
   [/^apps\/web\/src\/(EquipmentPage|EquipmentDue|DiveGear)\.tsx$|^apps\/web\/src\/lib\/equipment\.ts$/, ['@equipment', '@dives']],
-  [/^apps\/web\/src\/(DivePage|DiveEditForm|DiveHistory|DiveList|ProfileSketch|DepthProfile|ProfilePlot|Decisions|ReviewPage|ReviewStrip|ReviewRows|BuddySuggestions|ImportPanel|DeleteDive|DeletedDives|MergeDive|AppendDive|LogbookChecks|Participants|Assessment|Cylinders|Weighting|LeadHint|PushRun).tsx$|^apps\/web\/src\/lib\/(dive-values|history|profile|tanks|cylinders|weighting|answer|sketch|logbook|review|devices|importable|deletion|assessment|waiting-push)\.ts$/, ['@dives']],
+  [/^apps\/web\/src\/(DivePage|DiveEditForm|DiveHistory|DiveList|ProfileSketch|DepthProfile|ProfilePlot|Decisions|DecisionTimeline|ReviewPage|ReviewStrip|ReviewRows|BuddySuggestions|ImportPanel|DeleteDive|DeletedDives|MergeDive|AppendDive|LogbookChecks|Participants|Assessment|Cylinders|Weighting|LeadHint|PushRun).tsx$|^apps\/web\/src\/lib\/(dive-values|history|profile|tanks|cylinders|weighting|answer|sketch|timeline|logbook|review|devices|importable|deletion|assessment|waiting-push)\.ts$/, ['@dives']],
   // A Diver's codes and details, and taking a scanned code (ADR 0043): on the divers page; the codes also show on a Dive.
   [/^apps\/web\/src\/DiverCodes\.tsx$/, ['@divers', '@dives']],
-  [/^apps\/web\/src\/DiversPage\.tsx$|^apps\/web\/src\/DiverPage\.tsx$|^apps\/web\/src\/lib\/divers\.ts$/, ['@divers']],
+  [/^apps\/web\/src\/DiversPage\.tsx$|^apps\/web\/src\/DiverPage\.tsx$|^apps\/web\/src\/lib\/(divers|loadings)\.ts$/, ['@divers']],
   [/^apps\/web\/src\/Devices\.tsx$/, ['@divers', '@account']],
   // A Diver's body weight (ADR 0031), a dialog on a Diver's page.
   [/^apps\/web\/src\/BodyWeight\.tsx$/, ['@divers']],
@@ -164,8 +175,9 @@ export function planFor(changed, { e2eServerLoads: loads } = {}) {
       plan.lint = 'all';
       continue;
     }
-    // The drift report, the repo map and the code graph have tests of their own, and nothing else reads them.
-    if (/^scripts\/(drift|repomap|code-graph)/.test(path)) { plan.scripts = true; continue; }
+    // The drift report, the repo map, the code graph and the release tag parser have tests of their own, and
+    // nothing else reads them.
+    if (/^scripts\/(drift|repomap|code-graph|release-tag)/.test(path)) { plan.scripts = true; continue; }
     // So has the check script (amendment of 2026-10-24); its lint part also lints everything.
     if (/^scripts\/check/.test(path)) {
       plan.scripts = true;

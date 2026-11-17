@@ -5,7 +5,7 @@ import { Type } from 'typebox';
 import type { Auth } from '../auth/auth.js';
 import { requireUser, userOf } from '../auth/fastify.js';
 import { answerErrors, Problem, answers } from '../http/problems.js';
-import { IdParams } from '../http/schemas.js';
+import { IdParams, Nullable } from '../http/schemas.js';
 import { SuggestionView, SuggestionPreviewView, SuggestionAcceptView, SuggestionDeclineView } from './suggestion-view.js';
 import { SuggestionError, type SuggestionService } from './suggestion-service.js';
 
@@ -67,7 +67,7 @@ export const suggestionRoutes: FastifyPluginAsyncTypebox<SuggestionRouteDeps> = 
         + 'not the invited Diver\'s or no longer overlaps; 409 `suggestion_link_conflict` when both Dives are in different Joint dives.',
       params: IdParams,
       // An absent body means branch A; Fastify validates `undefined` as `null` when a body schema is given.
-      body: Type.Union([AcceptBody, Type.Null()]),
+      body: Nullable(AcceptBody),
       response: { 200: SuggestionAcceptView, 404: Problem, 409: Problem },
     },
   }, async (request) => suggestions.accept(userOf(request).id, request.params.id, request.body?.diveId));

@@ -528,13 +528,18 @@
     "setup_restore_source_missing": "Wähle ein Archiv zum Wiederherstellen.",
     "setup_restore_archive_missing": "Unter /data/restore/ auf dem Server gibt es dieses Archiv nicht.",
     "setup_restore_decrypt_failed": "Das Archiv konnte nicht entschlüsselt werden. Prüfe die Passphrase oder den privaten Empfängerschlüssel; das Archiv kann auch beschädigt sein.",
-    "setup_restore_key_mismatch": "Dieses Backup braucht denselben DIVEHUB_ENCRYPTION_KEY, mit dem es erstellt wurde. Setze den Schlüssel, bevor du es wiederherstellst.",
+    "setup_restore_key_required": "Dieses Backup wurde mit einem DIVEHUB_ENCRYPTION_KEY erstellt. Setze denselben Schlüssel auf dieser Instanz, bevor du es wiederherstellst.",
+    "setup_restore_key_unexpected": "Dieses Backup wurde ohne DIVEHUB_ENCRYPTION_KEY erstellt, aber auf dieser Instanz ist einer gesetzt. Entferne ihn vor dem Wiederherstellen; die gespeicherten Zugangsdaten des Backups liegen im Klartext vor.",
+    "setup_restore_key_differs": "Der DIVEHUB_ENCRYPTION_KEY dieser Instanz unterscheidet sich von dem, mit dem das Backup erstellt wurde. Verwende den Schlüssel der ursprünglichen Instanz.",
     "setup_restore_schema_newer": "Dieses Backup wurde von einer neueren Dive-Hub-Version erstellt. Aktualisiere diese Instanz, bevor du es wiederherstellst.",
     "setup_restore_failed": "Das Backup konnte nicht wiederhergestellt werden. Die Datenbank ist weiterhin leer; prüfe das Server-Log und versuch es noch einmal.",
     "invitation_invalid": "Diese Einladung ist ungültig, schon benutzt oder abgelaufen.",
     "invitation_not_found": "Diese Einladung ist nicht mehr offen.",
     "email_taken": "Mit dieser E-Mail-Adresse gibt es schon ein Konto.",
     "reset_link_invalid": "Dieser Link ist ungültig, schon benutzt oder abgelaufen.",
+    "two_factor_password_invalid": "Das Passwort ist falsch.",
+    "two_factor_code_invalid": "Dieser Zwei-Faktor-Code ist falsch oder abgelaufen.",
+    "two_factor_not_enabled": "Die Zwei-Faktor-Authentifizierung ist für dieses Konto nicht eingeschaltet.",
     "too_many_attempts": "Zu viele Versuche aus diesem Netz. Versuch es in ein paar Minuten noch einmal.",
     "user_not_found": "Diesen Benutzer gibt es nicht (mehr).",
     "user_disabled": "Aktiviere den Benutzer zuerst.",
@@ -973,8 +978,6 @@
   },
   "decisions": {
     "title": "Aufzeichnungen ohne Tauchgang",
-    "intro_one": "Diese Aufzeichnung gehört nicht eindeutig zu einem Tauchgang. Ist es einer von diesen?",
-    "intro_other": "Diese {{count}} Aufzeichnungen gehören nicht eindeutig zu einem Tauchgang. Sind es welche von diesen?",
     "recording": "Aufzeichnung",
     "device": "{{name}} ({{serial}})",
     "unknownDevice": "unbekanntes Gerät",
@@ -985,18 +988,31 @@
     "discarded": "Verworfene Aufzeichnungen",
     "reopen": "Neu entscheiden",
     "discardedNotice": "Aufzeichnung vom {{time}} verworfen.",
-    "divesGone": "Die Tauchgänge, zu denen sie gehören könnte, sind nicht mehr in deinem Logbuch."
+    "divesGone": "Die Tauchgänge, zu denen sie gehören könnte, sind nicht mehr in deinem Logbuch.",
+    "question": "Wohin gehört diese Aufzeichnung?",
+    "consequence": "Beim Hinzufügen wird die Aufzeichnung an diesen Tauchgang gehängt. Ein eigener Tauchgang entsteht daraus; Verwerfen legt sie beiseite (rückgängig machbar).",
+    "fact": {
+      "maxDepth": "Max. Tiefe"
+    }
   },
   "checks": {
     "title": "Tauchgänge zur selben Zeit",
-    "rule": {
-      "recording_beside_entry": "Ein Tauchgang ohne Aufzeichnung und einer mit Aufzeichnung liegen zur selben Zeit",
-      "overlapping_dives": "Zwei Tauchgänge überschneiden sich zeitlich",
-      "entry_apart_from_recording": "Wahrscheinlich derselbe Tauchgang mit anderer Startzeit: die Starts liegen {{difference}} auseinander, Tiefe und Dauer stimmen überein",
-      "short_shallow_dive": "Eine Aufzeichnung, so kurz und flach, dass sie wahrscheinlich kein Tauchgang ist",
-      "surface_break": "Wahrscheinlich ein Tauchgang mit Oberflächenaufenthalt: derselbe Computer, höchstens 10 Minuten dazwischen"
+    "fact": {
+      "time": "Zeit",
+      "duration": "Dauer",
+      "maxDepth": "Max. Tiefe",
+      "site": "Tauchplatz",
+      "recording": "Aufzeichnung",
+      "diver": "Taucher"
     },
-    "how": "Wenn es derselbe Tauchgang ist, führe sie zusammen. Wenn eine Zeit falsch ist oder einer zu einem anderen Taucher gehört, öffne diesen Tauchgang und korrigiere es dort.",
+    "pairCard": {
+      "question": "Zweimal derselbe Tauchgang?",
+      "consequence": "Beim Zusammenführen bleibt ein Tauchgang mit den Werten, die du wählst; der andere wird gelöscht."
+    },
+    "rule": {
+      "surface_break": "Wahrscheinlich ein Tauchgang, an der Oberfläche unterbrochen."
+    },
+    "how": "Gleicher Tauchgang: zusammenführen. Sonst getrennt lassen.",
     "pair": "{{first}} und {{second}}",
     "merge": "Beide zusammenführen …",
     "stays": "bleibt beim Zusammenführen",
@@ -1012,19 +1028,37 @@
     "askAgain": "Wieder fragen",
     "surface": {
       "title": "Tauchgänge mit Oberflächenaufenthalt dazwischen",
-      "how_one": "Angehängt sind sie ein Tauchgang mit einem Profil. Der spätere kommt zu den „Gelöschten Tauchgängen“, wo du ihn wiederherstellen kannst.",
-      "how_other": "Mach diese {{dives}} Tauchgänge zu einem: Angehängt sind sie ein Tauchgang mit einem Profil. Die späteren kommen zu den „Gelöschten Tauchgängen“, wo du sie wiederherstellen kannst.",
+      "question": "Ein Tauchgang in {{count}} Teilen?",
+      "parts": "{{count}} Teile",
+      "break": "{{duration}} Oberflächenaufenthalt",
+      "consequence": "Beim Anhängen werden die Teile zum ersten Tauchgang.",
       "append": "Anhängen …"
     },
     "short": {
       "title": "Wahrscheinlich keine Tauchgänge",
-      "how": "Eine Aufzeichnung kürzer als {{duration}}, die über {{depth}} geblieben ist, ist meist ein nass gewordener Tauchcomputer oder ein Fehlstart. War es kein Tauchgang, lösche ihn: er kommt zu den „Gelöschten Tauchgängen“ und lässt sich wiederherstellen.",
+      "question": "Wahrscheinlich kein echter Tauchgang?",
+      "how": "Kürzer als {{duration}} und flacher als {{depth}}: meist ein nass gewordener Computer oder ein Fehlstart.",
       "delete": "Löschen …",
       "keep": "Behalten",
+      "consequence": "Beim Löschen kommt er zu den „Gelöschten Tauchgängen“ (wiederherstellbar); beim Behalten wird nicht mehr gefragt.",
       "kept": "Bleibt. Du wirst wieder gefragt, wenn sich seine Dauer oder Tiefe ändert.",
       "answered": "Kurze Tauchgänge, die bleiben",
       "answeredIntro": "Kurze, flache Aufzeichnungen, von denen du gesagt hast, dass sie bleiben."
     }
+  },
+  "comparison": {
+    "both": "Beide: {{value}}",
+    "all": "Alle: {{value}}"
+  },
+  "timeline": {
+    "gap": "{{duration}} Abstand",
+    "summaryBar": "{{label}}: {{start}} bis {{end}}, {{duration}}.",
+    "summaryGap": "{{duration}} Abstand.",
+    "summaryBreak": "{{duration}} Oberflächenaufenthalt.",
+    "summaryOverlap": "{{duration}} Überschneidung."
+  },
+  "sketch": {
+    "scale": "0–{{depth}}"
   },
   "merge": {
     "hint": "In diesem Logbuch gibt es einen weiteren Tauchgang zur selben Zeit: {{facts}}. Wenn beide derselbe Tauchgang sind, kannst du sie zusammenführen.",
@@ -1141,32 +1175,43 @@
   },
   "suggestions": {
     "title": "Tauchgangs-Empfehlungen ({{count}})",
-    "intro": "Ein Buddy hat einen Tauchgang mit einem Taucher geloggt, den du führst. Nimm ihn an, um die geteilten Angaben ins Logbuch zu übernehmen, oder lehne ab, wenn er nicht zu dir gehört.",
-    "from": "{{owner}} hat diesen Tauchgang mit {{diver}} geteilt.",
+    "intro": "Ein Buddy hat einen Tauchgang mit einem Taucher von dir geloggt.",
     "suggestedDive": "Empfohlener Tauchgang",
     "people": "Dabei: {{names}}",
-    "avgDepth": "{{depth}} im Schnitt",
-    "centre": "Tauchzentrum: {{names}}",
     "accept": "Annehmen",
     "decline": "Ablehnen",
     "acceptTitle": "Diesen Tauchgang annehmen",
     "acceptIntro": "Die geteilten Angaben kommen in {{diver}}s Logbuch. Verknüpfe einen deiner Tauchgänge aus dieser Zeit oder lege einen neuen Tauchgang an.",
-    "acceptWhat": "Kopiert werden nur die geteilten Angaben: Tauchplatz, Startzeit, Dauer, Tiefen und die Personen auf dem Tauchgang. Keine Aufzeichnung, Notizen oder Ausrüstung.",
+    "acceptWhat": "Nur die geteilten Angaben: Tauchplatz, Startzeit, Dauer, Tiefen und die Personen.",
     "overlapIntro": "Du hast bereits einen Tauchgang aus dieser Zeit:",
     "noOverlaps": "Du hast zu dieser Zeit keinen Tauchgang im Logbuch. Beim Annehmen wird aus den geteilten Angaben ein neuer Tauchgang.",
     "yourDive": "Dein Tauchgang",
     "link": "Mit deinem Tauchgang verknüpfen",
-    "create": "Neuen Tauchgang anlegen"
+    "create": "Neuen Tauchgang anlegen",
+    "question": "{{owner}} hat diesen Tauchgang mit deinem Taucher {{diver}} geloggt",
+    "consequence": "Beim Annehmen kommt der Tauchgang in dein Logbuch; Ablehnen entfernt die Empfehlung. Es wird nichts zurückgesendet.",
+    "acceptConsequence": "Beim Verknüpfen wird dein Tauchgang als derselbe markiert; Anlegen fügt eine Kopie hinzu.",
+    "fact": {
+      "time": "Zeit",
+      "duration": "Dauer",
+      "maxDepth": "Max. Tiefe",
+      "site": "Tauchplatz",
+      "avgDepth": "Durchschnittstiefe",
+      "centre": "Tauchzentrum"
+    }
   },
   "deleted": {
     "notice": "{{name}} gelöscht.",
     "noticeKept": "{{name}} gelöscht. Er ist noch in {{provider}}, als Tauchgang {{number}}: Unter „Gelöschte Tauchgänge“ kannst du ihn dort löschen.",
     "noticeBoth": "{{name}} gelöscht, hier und in {{provider}}. Rückgängig holt ihn nur hier zurück.",
     "noticeItself": "In {{provider}} wird er in 5 Minuten gelöscht. „Rückgängig“ bricht das ab.",
-    "reminder_one": "Ein Tauchgang, den du gelöscht hast, ist noch in {{name}}.",
-    "reminder_other": "{{count}} Tauchgänge, die du gelöscht hast, sind noch in {{name}}.",
-    "showList": "Gelöschte Tauchgänge zeigen",
-    "title": "Gelöschte Tauchgänge",
+  "reminder_one": "Ein Tauchgang, den du gelöscht hast, ist noch in {{name}}.",
+  "reminder_other": "{{count}} Tauchgänge, die du gelöscht hast, sind noch in {{name}}.",
+  "keep": "In {{name}} behalten",
+  "keptIn": "In {{name}} behalten.",
+  "showList": "Gelöschte Tauchgänge zeigen",
+  "title": "Gelöschte Tauchgänge",
+  "loadMore": "Mehr laden",
     "intro": "Sie zählen nirgends, und ihre Dateien erneut zu importieren holt sie nicht zurück. Wiederherstellen holt einen Tauchgang mit seinen Aufzeichnungen und seinem Verlauf zurück, aber nicht nach {{name}}.",
     "deletedOn": "Gelöscht am {{date}}",
     "stillAt": "Noch in {{name}}, als Tauchgang {{number}}.",
@@ -2604,6 +2649,30 @@
       "not_at_provider": "{{level}}: nicht mehr im Konto; hier behalten."
     }
   },
+  "loadings": {
+    "title": "Aktuelle Belastung",
+    "n2Label": "Reststickstoff",
+    "n2Value": "{{percent}} der Grenze bei GF {{gf}}",
+    "cnsLabel": "Sauerstoffuhr (CNS)",
+    "cnsValue": "Jetzt {{now}} · {{atEnd}} am Ende des letzten Tauchgangs",
+    "cnsNote": "CNS baut sich an der Oberfläche mit einer Halbwertszeit von {{minutes}} Minuten ab. OTU verfallen 24 Stunden nach einem Tauchgang.",
+    "otuLabel": "OTU, letzte 24 Stunden",
+    "otuValue": "{{value}}",
+    "noFlyLabel": "Fliegen nach dem letzten Tauchgang",
+    "noFly": {
+      "single": "Nicht vor {{until}} ({{hours}} Stunden nach einem einzelnen Tauchgang ohne Dekompressionsstopps).",
+      "several": "Nicht vor {{until}} ({{hours}} Stunden nach mehreren Tauchgängen oder Tauchtagen).",
+      "decompression": "Nicht vor {{until}} ({{hours}} Stunden; nach Dekompressionsstopps sagt DAN deutlich mehr als 18)."
+    },
+    "basis_one": "Aus {{count}} protokolliertem Tauchgang in den letzten {{window}} Stunden; der letzte endete {{last}}.",
+    "basis_other": "Aus {{count}} protokollierten Tauchgängen in den letzten {{window}} Stunden; der letzte endete {{last}}.",
+    "basisNone": "Kein protokollierter Tauchgang der letzten {{window}} Stunden ließ sich nachrechnen; der letzte endete {{last}}.",
+    "basisNoDive": "Noch kein protokollierter Tauchgang.",
+    "skipped_one": "{{count}} Tauchgang ohne Tiefenprofil trägt nichts bei.",
+    "skipped_other": "{{count}} Tauchgänge ohne Tiefenprofil tragen nichts bei.",
+    "note": "Eine Schätzung aus den eigenen protokollierten Tauchgängen, keine Empfehlung: Tauchcomputer und Ausbildung gelten.",
+    "sources": "Quellen:"
+  },
   "diverCodes": {
     "open": "Codes",
     "title": "{{name}}: Codes und Angaben",
@@ -2718,6 +2787,8 @@
       "aboveWorking": "In dieser Tiefe beträgt der ppO₂ {{ppo2}} bar, über deiner Arbeitsgrenze.",
       "otu": "Etwa {{otu}} OTU Sauerstoffbelastung.",
       "recent": "Du bist in den letzten 48 Stunden getaucht (der letzte Tauchgang endete {{when}}). Die wirkliche Grenze ist kürzer als gezeigt.",
+      "residual_one": "Du bist in den letzten 48 Stunden getaucht (der letzte Tauchgang endete {{when}}). Die Nullzeitgrenze beginnt mit dem Reststickstoff aus {{count}} protokollierten Tauchgang.",
+      "residual_other": "Du bist in den letzten 48 Stunden getaucht (der letzte Tauchgang endete {{when}}). Die Nullzeitgrenze beginnt mit dem Reststickstoff aus {{count}} protokollierten Tauchgängen.",
       "assumptions": "Was angenommen wird",
       "ascentAt": "Das Gaslimit endet bei {{pressure}}, wo du den Aufstieg beginnst."
     },

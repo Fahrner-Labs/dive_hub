@@ -44,7 +44,7 @@ export const DiveProviderStatusSchema = Type.Object({
     description: 'The Dive\'s Connection deletes at the Provider by itself (5 minutes after the Dive is deleted here; Undo cancels it): '
       + 'don\'t ask about deleting the copy there, and don\'t send `alsoAt` for it (docs/spec/clients.md)',
   }),
-  waiting: Type.Union([Type.Null(), WaitingPushView], { description: 'The Dive\'s entry in the queue of Waiting pushes for this Provider (ADR 0056); null when none' }),
+  waiting: Nullable(WaitingPushView, { description: 'The Dive\'s entry in the queue of Waiting pushes for this Provider (ADR 0056); null when none' }),
   connection: Nullable(Type.Object({ id: Type.String(), state: Type.Enum(['active', 'needs_sign_in']), accountLabel: Type.String() }, {
     description: 'The Connection of the Dive\'s Diver; null when that Diver is not connected to this Provider',
   })),

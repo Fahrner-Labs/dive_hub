@@ -44,6 +44,10 @@ function enumsOf(property: string): string[] {
 
 const english = flatten(en as Tree);
 
+// The logbook checks draw a timeline and word no rule code (FAH-210), except the surface-break panel; only they have
+// no text under `checks.rule.*`. Exempt them there only: `assessment.title` and `tools.rules` word their own codes.
+const UNWORDED_RULES = new Set(['recording_beside_entry', 'overlapping_dives', 'entry_apart_from_recording', 'short_shallow_dive']);
+
 describe.each([['de', de]])('%s translation', (_name, locale) => {
   const translated = flatten(locale as Tree);
 
@@ -116,8 +120,8 @@ describe('codes from the API', () => {
     // What a Push did at a Provider, and how an AI access's request ended (ADR 0035).
     ['outcome', 'provider.result', 'aiAccess.outcome'],
     ['notices', 'provider.notice'],
-    // The dive assessment (ADR 0036): a finding's rule, severity and evidence, and what the computer noted; the rule of
-    // a logbook check (ADR 0038), and a gas plan's gas rule by its name (ADR 0033).
+    // The dive assessment (ADR 0036): a finding's rule, severity and evidence, and what the computer noted; a logbook
+    // check's rule only on the surface-break panel (ADR 0038), and a gas plan's gas rule by its name (ADR 0033).
     ['rule', 'assessment.title', 'checks.rule', 'tools.rules'],
     ['evidence', 'assessment.evidence'],
     ['event', 'assessment.event'],
@@ -128,7 +132,7 @@ describe('codes from the API', () => {
     ['equipmentStatus', 'vocabulary.equipmentStatus'],
     ['use', 'vocabulary.equipmentUse'],
   ])('every %s has an English text under %s', (property, ...prefixes) => {
-    const codes = enumsOf(property);
+    const codes = enumsOf(property).filter((code) => !(prefixes.includes('checks.rule') && UNWORDED_RULES.has(code)));
     expect(codes.length).toBeGreaterThan(0);
     for (const code of codes) expect(prefixes.some((prefix) => english.has(`${prefix}.${code}`) || english.has(`${prefix}.${code}.name`)), `${prefixes.join(' or ')}.${code}`).toBe(true);
   });

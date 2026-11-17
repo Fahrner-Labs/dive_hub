@@ -11,7 +11,7 @@ describe.skipIf(!(await databaseReachable()))('reads of one Dive', () => {
   let logbook: ReturnType<typeof createLogbookService>;
   let annId: string;
   let otherId: string;
-  const id: Record<'first' | 'second' | 'gone', string> = { first: '', second: '', gone: '' };
+  const id: Record<'first' | 'second' | 'gone' | 'gone2' | 'gone3', string> = { first: '', second: '', gone: '', gone2: '', gone3: '' };
 
   const userIdOf = async (email: string) => (await t.db.select({ id: user.id }).from(user).where(eq(user.email, email)))[0]!.id;
 
@@ -31,6 +31,8 @@ describe.skipIf(!(await databaseReachable()))('reads of one Dive', () => {
     id.first = await make(1);
     id.second = await make(2);
     id.gone = await make(3, { deletedAt: new Date(Date.UTC(2026, 1, 4)) });
+    id.gone2 = await make(4, { deletedAt: new Date(Date.UTC(2026, 1, 5)) });
+    id.gone3 = await make(5, { deletedAt: new Date(Date.UTC(2026, 1, 6)) });
     await t.db.insert(cylinder).values({ diveId: id.first, position: 0, volumeL: 12, workingPressureBar: 232, material: 'steel' });
     await t.db.insert(lead).values({ diveId: id.first, position: 0, amountKg: 4 });
     await t.db.insert(participant).values({ diveId: id.first, diverId: otherDiverId, role: 'buddy' });
@@ -64,9 +66,22 @@ describe.skipIf(!(await databaseReachable()))('reads of one Dive', () => {
 
   it('lists the deleted Dives of the User with where each went', async () => {
     const deleted = await logbook.deletedDives(annId, 100);
-    expect(deleted.map((r) => r.d.id)).toEqual([id.gone]);
-    expect(deleted[0]).toMatchObject({ mergedInto: id.second, movedTo: null });
-    expect(await logbook.deletedDives(otherId, 100)).toEqual([]);
+    expect(deleted.rows.map((r) => r.d.id)).toEqual([id.gone3, id.gone2, id.gone]);
+    expect(deleted.total).toBe(3);
+    expect(deleted.hasMore).toBe(false);
+    expect(deleted.rows.find((r) => r.d.id === id.gone)).toMatchObject({ mergedInto: id.second, movedTo: null });
+    expect(await logbook.deletedDives(otherId, 100)).toMatchObject({ rows: [], total: 0, hasMore: false });
+  });
+
+  it('pages the deleted Dives newest first, after the page\'s last one', async () => {
+    const first = await logbook.deletedDives(annId, 2);
+    expect(first.rows.map((r) => r.d.id)).toEqual([id.gone3, id.gone2]);
+    expect(first.hasMore).toBe(true);
+    const last = first.rows.at(-1)!;
+    const second = await logbook.deletedDives(annId, 2, { deletedAt: last.d.deletedAt!, id: last.d.id });
+    expect(second.rows.map((r) => r.d.id)).toEqual([id.gone]);
+    expect(second.hasMore).toBe(false);
+    expect(await logbook.deletedDiveIds(annId)).toEqual(expect.arrayContaining([id.gone, id.gone2, id.gone3]));
   });
 
   it('gives the history of a Dive with who made each change', async () => {

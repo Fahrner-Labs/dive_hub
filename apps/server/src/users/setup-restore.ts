@@ -3,7 +3,9 @@
 
 /** Why a restore was refused: a Problem code the setup route answers, without any secret. */
 export type SetupRestoreFailure =
-  | 'backup_key_mismatch'
+  | 'backup_key_required'
+  | 'backup_key_unexpected'
+  | 'backup_key_differs'
   | 'backup_schema_newer'
   | 'backup_decrypt_failed'
   | 'backup_restore_failed'

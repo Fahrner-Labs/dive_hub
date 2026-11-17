@@ -365,6 +365,9 @@
               "invitation_not_found",
               "email_taken",
               "reset_link_invalid",
+              "two_factor_password_invalid",
+              "two_factor_code_invalid",
+              "two_factor_not_enabled",
               "too_many_attempts",
               "too_many_live_streams",
               "live_unavailable",
@@ -473,7 +476,9 @@
               "setup_restore_archive_missing",
               "setup_restore_key_missing",
               "setup_restore_decrypt_failed",
-              "setup_restore_key_mismatch",
+              "setup_restore_key_required",
+              "setup_restore_key_unexpected",
+              "setup_restore_key_differs",
               "setup_restore_schema_newer",
               "setup_restore_failed",
               "provider_number_taken",
@@ -2037,6 +2042,50 @@
           }
         }
       },
+      "DiveProfileView": {
+        "type": "object",
+        "required": [
+          "depthsM",
+          "spanSeconds",
+          "ascentBands"
+        ],
+        "properties": {
+          "depthsM": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "description": "Depth in metres, evenly spread over `spanSeconds`; the deepest sample of each stretch"
+          },
+          "spanSeconds": {
+            "type": "number",
+            "description": "Seconds from the first to the last depth sample of the Primary recording"
+          },
+          "ascentBands": {
+            "type": "array",
+            "items": {
+              "type": "array",
+              "additionalItems": false,
+              "items": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 3
+                }
+              ],
+              "minItems": 3
+            },
+            "description": "Stretches of the ascent that were fast, [start s, end s, band 1–3 for brisk, quick, very quick], in seconds from the first sample (ADR 0036)"
+          }
+        },
+        "description": "The Primary recording’s depth, reduced to draw a sketch of the dive (ADR 0041); null without a Recording, while the Dive waits to be assessed, or when its assessment is of a Recording it no longer has as Primary"
+      },
       "DiverView": {
         "type": "object",
         "required": [
@@ -3298,6 +3347,9 @@
                   "invitation_not_found",
                   "email_taken",
                   "reset_link_invalid",
+                  "two_factor_password_invalid",
+                  "two_factor_code_invalid",
+                  "two_factor_not_enabled",
                   "too_many_attempts",
                   "too_many_live_streams",
                   "live_unavailable",
@@ -3406,7 +3458,9 @@
                   "setup_restore_archive_missing",
                   "setup_restore_key_missing",
                   "setup_restore_decrypt_failed",
-                  "setup_restore_key_mismatch",
+                  "setup_restore_key_required",
+                  "setup_restore_key_unexpected",
+                  "setup_restore_key_differs",
                   "setup_restore_schema_newer",
                   "setup_restore_failed",
                   "provider_number_taken",
@@ -3517,6 +3571,9 @@
                   "invitation_not_found",
                   "email_taken",
                   "reset_link_invalid",
+                  "two_factor_password_invalid",
+                  "two_factor_code_invalid",
+                  "two_factor_not_enabled",
                   "too_many_attempts",
                   "too_many_live_streams",
                   "live_unavailable",
@@ -3625,7 +3682,9 @@
                   "setup_restore_archive_missing",
                   "setup_restore_key_missing",
                   "setup_restore_decrypt_failed",
-                  "setup_restore_key_mismatch",
+                  "setup_restore_key_required",
+                  "setup_restore_key_unexpected",
+                  "setup_restore_key_differs",
                   "setup_restore_schema_newer",
                   "setup_restore_failed",
                   "provider_number_taken",
@@ -4343,6 +4402,9 @@
                         "invitation_not_found",
                         "email_taken",
                         "reset_link_invalid",
+                        "two_factor_password_invalid",
+                        "two_factor_code_invalid",
+                        "two_factor_not_enabled",
                         "too_many_attempts",
                         "too_many_live_streams",
                         "live_unavailable",
@@ -4451,7 +4513,9 @@
                         "setup_restore_archive_missing",
                         "setup_restore_key_missing",
                         "setup_restore_decrypt_failed",
-                        "setup_restore_key_mismatch",
+                        "setup_restore_key_required",
+                        "setup_restore_key_unexpected",
+                        "setup_restore_key_differs",
                         "setup_restore_schema_newer",
                         "setup_restore_failed",
                         "provider_number_taken",
@@ -5673,6 +5737,11 @@
             "type": "string",
             "format": "date-time",
             "readOnly": true
+          },
+          "twoFactorEnabled": {
+            "type": "boolean",
+            "default": false,
+            "readOnly": true
           }
         },
         "required": [
@@ -6248,10 +6317,10 @@
                     "migrationHead": {
                       "anyOf": [
                         {
-                          "type": "string"
+                          "type": "null"
                         },
                         {
-                          "type": "null"
+                          "type": "string"
                         }
                       ]
                     }
@@ -6380,7 +6449,7 @@
     },
     "/api/password-resets/complete": {
       "post": {
-        "summary": "Set a new password with a reset link; signs out everywhere, then signs in here",
+        "summary": "Set a new password with a reset link; signs out everywhere, then signs in here (or asks for the second factor)",
         "requestBody": {
           "required": true,
           "content": {
@@ -6414,7 +6483,33 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UserView"
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/UserView"
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "twoFactorRedirect",
+                        "twoFactorMethods"
+                      ],
+                      "properties": {
+                        "twoFactorRedirect": {
+                          "type": "boolean",
+                          "enum": [
+                            true
+                          ]
+                        },
+                        "twoFactorMethods": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          },
+                          "description": "Second factors this account can use; \"totp\" is the built-in authenticator app"
+                        }
+                      }
+                    }
+                  ]
                 }
               }
             }
@@ -6547,6 +6642,90 @@
             "description": "Default Response"
           },
           "404": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/me/two-factor/disable": {
+      "post": {
+        "summary": "Turn off two-factor authentication; needs the password and a current code (authenticator or backup)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "password",
+                  "code"
+                ],
+                "properties": {
+                  "password": {
+                    "type": "string",
+                    "minLength": 15,
+                    "maxLength": 128,
+                    "description": "At least 15 characters"
+                  },
+                  "code": {
+                    "type": "string",
+                    "minLength": 6,
+                    "maxLength": 11,
+                    "pattern": "^(?:[0-9]{6}|[A-Za-z0-9]{5}-[A-Za-z0-9]{5})$",
+                    "description": "A 6-digit authenticator code, or one backup code in its XXXXX-XXXXX form"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status"
+                  ],
+                  "properties": {
+                    "status": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
             "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
             "content": {
               "application/json": {
@@ -7234,10 +7413,10 @@
                     "recipientPublicKey": {
                       "anyOf": [
                         {
-                          "type": "string"
+                          "type": "null"
                         },
                         {
-                          "type": "null"
+                          "type": "string"
                         }
                       ]
                     }
@@ -7314,10 +7493,10 @@
                     "recipientPublicKey": {
                       "anyOf": [
                         {
-                          "type": "string"
+                          "type": "null"
                         },
                         {
-                          "type": "null"
+                          "type": "string"
                         }
                       ]
                     }
@@ -7453,30 +7632,30 @@
                     "bytes": {
                       "anyOf": [
                         {
-                          "type": "integer"
+                          "type": "null"
                         },
                         {
-                          "type": "null"
+                          "type": "integer"
                         }
                       ]
                     },
                     "sha256": {
                       "anyOf": [
                         {
-                          "type": "string"
+                          "type": "null"
                         },
                         {
-                          "type": "null"
+                          "type": "string"
                         }
                       ]
                     },
                     "error": {
                       "anyOf": [
                         {
-                          "type": "string"
+                          "type": "null"
                         },
                         {
-                          "type": "null"
+                          "type": "string"
                         }
                       ]
                     },
@@ -7487,22 +7666,22 @@
                     "startedAt": {
                       "anyOf": [
                         {
-                          "type": "string",
-                          "format": "date-time"
+                          "type": "null"
                         },
                         {
-                          "type": "null"
+                          "type": "string",
+                          "format": "date-time"
                         }
                       ]
                     },
                     "finishedAt": {
                       "anyOf": [
                         {
-                          "type": "string",
-                          "format": "date-time"
+                          "type": "null"
                         },
                         {
-                          "type": "null"
+                          "type": "string",
+                          "format": "date-time"
                         }
                       ]
                     }
@@ -7616,30 +7795,30 @@
                       "bytes": {
                         "anyOf": [
                           {
-                            "type": "integer"
+                            "type": "null"
                           },
                           {
-                            "type": "null"
+                            "type": "integer"
                           }
                         ]
                       },
                       "sha256": {
                         "anyOf": [
                           {
-                            "type": "string"
+                            "type": "null"
                           },
                           {
-                            "type": "null"
+                            "type": "string"
                           }
                         ]
                       },
                       "error": {
                         "anyOf": [
                           {
-                            "type": "string"
+                            "type": "null"
                           },
                           {
-                            "type": "null"
+                            "type": "string"
                           }
                         ]
                       },
@@ -7650,22 +7829,22 @@
                       "startedAt": {
                         "anyOf": [
                           {
-                            "type": "string",
-                            "format": "date-time"
+                            "type": "null"
                           },
                           {
-                            "type": "null"
+                            "type": "string",
+                            "format": "date-time"
                           }
                         ]
                       },
                       "finishedAt": {
                         "anyOf": [
                           {
-                            "type": "string",
-                            "format": "date-time"
+                            "type": "null"
                           },
                           {
-                            "type": "null"
+                            "type": "string",
+                            "format": "date-time"
                           }
                         ]
                       }
@@ -8251,48 +8430,7 @@
                                 "type": "null"
                               },
                               {
-                                "type": "object",
-                                "required": [
-                                  "depthsM",
-                                  "spanSeconds",
-                                  "ascentBands"
-                                ],
-                                "properties": {
-                                  "depthsM": {
-                                    "type": "array",
-                                    "items": {
-                                      "type": "number"
-                                    },
-                                    "description": "Depth in metres, evenly spread over `spanSeconds`; the deepest sample of each stretch"
-                                  },
-                                  "spanSeconds": {
-                                    "type": "number",
-                                    "description": "Seconds from the first to the last depth sample of the Primary recording"
-                                  },
-                                  "ascentBands": {
-                                    "type": "array",
-                                    "items": {
-                                      "type": "array",
-                                      "additionalItems": false,
-                                      "items": [
-                                        {
-                                          "type": "number"
-                                        },
-                                        {
-                                          "type": "number"
-                                        },
-                                        {
-                                          "type": "integer",
-                                          "minimum": 1,
-                                          "maximum": 3
-                                        }
-                                      ],
-                                      "minItems": 3
-                                    },
-                                    "description": "Stretches of the ascent that were fast, [start s, end s, band 1–3 for brisk, quick, very quick], in seconds from the first sample (ADR 0036)"
-                                  }
-                                },
-                                "description": "The Primary recording’s depth, reduced to draw a sketch of the dive (ADR 0041); null without a Recording or while the Dive waits to be assessed"
+                                "$ref": "#/components/schemas/DiveProfileView"
                               }
                             ]
                           }
@@ -10179,7 +10317,8 @@
                           "site",
                           "fromProvider",
                           "recordings",
-                          "at"
+                          "at",
+                          "profile"
                         ],
                         "properties": {
                           "id": {
@@ -10295,9 +10434,19 @@
                                 }
                               }
                             }
+                          },
+                          "profile": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "$ref": "#/components/schemas/DiveProfileView"
+                              }
+                            ]
                           }
                         },
-                        "description": "The earlier of the two Dives; the Dive, when the check is about one (short_shallow_dive: `other` is null)"
+                        "description": "The earlier of the two Dives; the Dive, when the check is about one (short_shallow_dive: `other` is null). `profile` is the sketch its card draws; null without a current assessment"
                       },
                       "other": {
                         "anyOf": [
@@ -10319,6 +10468,7 @@
                               "fromProvider",
                               "recordings",
                               "at",
+                              "profile",
                               "keeps",
                               "bothAt",
                               "deletesItself"
@@ -10438,6 +10588,16 @@
                                   }
                                 }
                               },
+                              "profile": {
+                                "anyOf": [
+                                  {
+                                    "type": "null"
+                                  },
+                                  {
+                                    "$ref": "#/components/schemas/DiveProfileView"
+                                  }
+                                ]
+                              },
                               "keeps": {
                                 "type": "string",
                                 "description": "Which of the two a merge keeps"
@@ -10482,6 +10642,7 @@
                                 "fromProvider",
                                 "recordings",
                                 "at",
+                                "profile",
                                 "surfaceBreakSeconds"
                               ],
                               "properties": {
@@ -10598,6 +10759,16 @@
                                       }
                                     }
                                   }
+                                },
+                                "profile": {
+                                  "anyOf": [
+                                    {
+                                      "type": "null"
+                                    },
+                                    {
+                                      "$ref": "#/components/schemas/DiveProfileView"
+                                    }
+                                  ]
                                 },
                                 "surfaceBreakSeconds": {
                                   "anyOf": [
@@ -11202,193 +11373,277 @@
     },
     "/api/dives/deleted": {
       "get": {
-        "summary": "The User's deleted Dives, most recently deleted first (at most 100), to restore them; which Providers they are still at",
+        "summary": "A page of the User's deleted Dives, newest first (limit 1–200, default 25), to restore them; where each is still at a Provider",
+        "description": "Pass `nextCursor` back as `cursor` for the next page. `stillAt` covers every deleted Dive, not only this page, for the reminder (docs/spec/clients.md). ADR 0026, 0027.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 25
+            },
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "description": "Dives per page"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "description": "nextCursor of the previous answer; leave out for the first page"
+          }
+        ],
         "responses": {
           "200": {
             "description": "Default Response",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "type": "object",
-                    "required": [
-                      "id",
-                      "diverId",
-                      "version",
-                      "number",
-                      "startsAt",
-                      "utcOffsetSeconds",
-                      "utcOffsetSource",
-                      "durationSeconds",
-                      "maxDepthM",
-                      "site",
-                      "deletedAt",
-                      "mergedInto",
-                      "movedTo",
-                      "continuedInto",
-                      "appendedWith",
-                      "stillAt",
-                      "waiting"
-                    ],
-                    "properties": {
-                      "id": {
-                        "type": "string"
-                      },
-                      "diverId": {
-                        "type": "string"
-                      },
-                      "version": {
-                        "type": "integer",
-                        "description": "Send it back to restore the Dive"
-                      },
-                      "number": {
-                        "anyOf": [
-                          {
-                            "type": "null"
+                  "type": "object",
+                  "required": [
+                    "dives",
+                    "total",
+                    "stillAt"
+                  ],
+                  "properties": {
+                    "dives": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "id",
+                          "diverId",
+                          "version",
+                          "number",
+                          "startsAt",
+                          "utcOffsetSeconds",
+                          "utcOffsetSource",
+                          "durationSeconds",
+                          "maxDepthM",
+                          "site",
+                          "deletedAt",
+                          "mergedInto",
+                          "movedTo",
+                          "continuedInto",
+                          "appendedWith",
+                          "stillAt",
+                          "waiting"
+                        ],
+                        "properties": {
+                          "id": {
+                            "type": "string"
                           },
-                          {
-                            "type": "integer"
-                          }
-                        ]
-                      },
-                      "startsAt": {
-                        "type": "string",
-                        "format": "date-time"
-                      },
-                      "utcOffsetSeconds": {
-                        "anyOf": [
-                          {
-                            "type": "null"
+                          "diverId": {
+                            "type": "string"
                           },
-                          {
-                            "type": "integer"
-                          }
-                        ]
-                      },
-                      "utcOffsetSource": {
-                        "enum": [
-                          "device",
-                          "position",
-                          "nearby",
-                          "unknown"
-                        ]
-                      },
-                      "durationSeconds": {
-                        "type": "number"
-                      },
-                      "maxDepthM": {
-                        "anyOf": [
-                          {
-                            "type": "null"
+                          "version": {
+                            "type": "integer",
+                            "description": "Send it back to restore the Dive"
                           },
-                          {
-                            "type": "number"
-                          }
-                        ]
-                      },
-                      "site": {
-                        "anyOf": [
-                          {
-                            "type": "null"
-                          },
-                          {
-                            "type": "object",
-                            "required": [
-                              "id",
-                              "name"
-                            ],
-                            "properties": {
-                              "id": {
-                                "type": "string"
+                          "number": {
+                            "anyOf": [
+                              {
+                                "type": "null"
                               },
-                              "name": {
-                                "type": "string"
+                              {
+                                "type": "integer"
                               }
-                            }
-                          }
-                        ]
-                      },
-                      "deletedAt": {
-                        "type": "string",
-                        "format": "date-time"
-                      },
-                      "mergedInto": {
-                        "anyOf": [
-                          {
-                            "type": "null"
+                            ]
                           },
-                          {
+                          "startsAt": {
                             "type": "string",
-                            "description": "The Dive it was merged into (ADR 0038): clients say so and link there"
-                          }
-                        ]
-                      },
-                      "movedTo": {
-                        "anyOf": [
-                          {
-                            "type": "null"
+                            "format": "date-time"
                           },
-                          {
-                            "type": "string",
-                            "description": "The Dive it became in another Diver's logbook when it was moved while linked to a Provider (ADR 0038)"
-                          }
-                        ]
-                      },
-                      "continuedInto": {
-                        "anyOf": [
-                          {
-                            "type": "null"
+                          "utcOffsetSeconds": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "integer"
+                              }
+                            ]
                           },
-                          {
+                          "utcOffsetSource": {
+                            "enum": [
+                              "device",
+                              "position",
+                              "nearby",
+                              "unknown"
+                            ]
+                          },
+                          "durationSeconds": {
+                            "type": "number"
+                          },
+                          "maxDepthM": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "number"
+                              }
+                            ]
+                          },
+                          "site": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "object",
+                                "required": [
+                                  "id",
+                                  "name"
+                                ],
+                                "properties": {
+                                  "id": {
+                                    "type": "string"
+                                  },
+                                  "name": {
+                                    "type": "string"
+                                  }
+                                }
+                              }
+                            ]
+                          },
+                          "deletedAt": {
                             "type": "string",
-                            "description": "The Dive it was appended to as its continuation (ADR 0063): clients say so and link there"
-                          }
-                        ]
-                      },
-                      "appendedWith": {
-                        "type": "array",
-                        "items": {
-                          "type": "string"
-                        },
-                        "description": "The other Dives appended in the same append, in start order: clients list them as one entry, which one restore brings back"
-                      },
-                      "stillAt": {
-                        "type": "array",
-                        "items": {
-                          "type": "object",
-                          "required": [
-                            "provider",
-                            "remoteNumber"
-                          ],
-                          "properties": {
-                            "provider": {
+                            "format": "date-time"
+                          },
+                          "mergedInto": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "string",
+                                "description": "The Dive it was merged into (ADR 0038): clients say so and link there"
+                              }
+                            ]
+                          },
+                          "movedTo": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "string",
+                                "description": "The Dive it became in another Diver's logbook when it was moved while linked to a Provider (ADR 0038)"
+                              }
+                            ]
+                          },
+                          "continuedInto": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "string",
+                                "description": "The Dive it was appended to as its continuation (ADR 0063): clients say so and link there"
+                              }
+                            ]
+                          },
+                          "appendedWith": {
+                            "type": "array",
+                            "items": {
                               "type": "string"
                             },
-                            "remoteNumber": {
-                              "anyOf": [
-                                {
-                                  "type": "null"
+                            "description": "The other Dives appended in the same append, in start order: clients list them as one entry, which one restore brings back"
+                          },
+                          "stillAt": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "required": [
+                                "provider",
+                                "remoteNumber"
+                              ],
+                              "properties": {
+                                "provider": {
+                                  "type": "string"
                                 },
-                                {
-                                  "type": "integer",
-                                  "description": "The Provider's own dive number"
+                                "remoteNumber": {
+                                  "anyOf": [
+                                    {
+                                      "type": "null"
+                                    },
+                                    {
+                                      "type": "integer",
+                                      "description": "The Provider's own dive number"
+                                    }
+                                  ]
                                 }
-                              ]
-                            }
+                              }
+                            },
+                            "description": "Providers the dive is still at: clients remind the User and offer to delete it there (docs/spec/clients.md)"
+                          },
+                          "waiting": {
+                            "type": "array",
+                            "items": {
+                              "$ref": "#/components/schemas/WaitingPushView"
+                            },
+                            "description": "The Dive's entries in the queue of Waiting pushes: a delete at a Provider that goes out 5 minutes after deleting here (Undo cancels it), or one that is held or stopped, with its reason"
                           }
-                        },
-                        "description": "Providers the dive is still at: clients remind the User and offer to delete it there (docs/spec/clients.md)"
-                      },
-                      "waiting": {
-                        "type": "array",
-                        "items": {
-                          "$ref": "#/components/schemas/WaitingPushView"
-                        },
-                        "description": "The Dive's entries in the queue of Waiting pushes: a delete at a Provider that goes out 5 minutes after deleting here (Undo cancels it), or one that is held or stopped, with its reason"
+                        }
                       }
+                    },
+                    "total": {
+                      "type": "integer",
+                      "description": "Every deleted Dive of the Divers the User manages"
+                    },
+                    "nextCursor": {
+                      "type": "string",
+                      "description": "Pass as `cursor` to get the next page; absent on the last page"
+                    },
+                    "stillAt": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "diveId",
+                          "provider",
+                          "remoteNumber"
+                        ],
+                        "properties": {
+                          "diveId": {
+                            "type": "string"
+                          },
+                          "provider": {
+                            "type": "string"
+                          },
+                          "remoteNumber": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "integer",
+                                "description": "The Provider's own dive number"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "description": "Every deleted Dive still at a Provider, across all pages (not only this one): clients remind the User and let it keep the copy there without loading every page"
                     }
                   }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
                 }
               }
             }
@@ -17715,7 +17970,7 @@
     "/api/tools/bottom-time": {
       "get": {
         "summary": "Bottom time for a planned dive: the shortest of the no-decompression, oxygen and gas limits, and which binds (ADR 0032)",
-        "description": "An estimate from the Diver's own input and settings, not advice; the dive computer and training govern. Air and nitrox 21-40 % only, no-stop only, at most 40 m; otherwise status `outside_limits`.",
+        "description": "An estimate from the Diver's own input and settings, not advice; the dive computer and training govern. Air and nitrox 21-40 % only, no-stop only, at most 40 m; otherwise status `outside_limits`. With `diverId`, a Dive within 48 hours seeds the no-decompression limit with the Diver's residual N₂ and the answer says so in `residualN2`.",
         "parameters": [
           {
             "schema": {
@@ -17865,7 +18120,7 @@
             "in": "query",
             "name": "diverId",
             "required": false,
-            "description": "Start from this Diver's computer GF, SAC and last Dive"
+            "description": "Start from this Diver's computer GF, SAC, residual N₂ and last Dive"
           },
           {
             "schema": {
@@ -17890,7 +18145,8 @@
                     "used",
                     "gas",
                     "depthM",
-                    "recentDiveEndedAt"
+                    "recentDiveEndedAt",
+                    "residualN2"
                   ],
                   "properties": {
                     "status": {
@@ -18183,7 +18439,38 @@
                           "type": "string"
                         }
                       ],
-                      "description": "When the Diver's Dive within the last 48 hours ended; the real limit is then shorter than shown"
+                      "description": "When the Diver's latest Dive within the last 48 hours ended; `residualN2` says whether its profile seeded the limit, else the real limit is likely shorter than shown"
+                    },
+                    "residualN2": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "worstCompartmentPercent",
+                            "basedOnDives",
+                            "lastDiveEndedAt"
+                          ],
+                          "properties": {
+                            "worstCompartmentPercent": {
+                              "type": "number",
+                              "description": "The Diver's worst compartment at now, as a percent of its tolerated pressure at the surface and GF high; the NDL starts from these tissues"
+                            },
+                            "basedOnDives": {
+                              "type": "integer",
+                              "description": "How many logged Dives the tissue state rests on"
+                            },
+                            "lastDiveEndedAt": {
+                              "type": "string",
+                              "format": "date-time",
+                              "description": "When the latest Dive the tissue state rests on ended"
+                            }
+                          }
+                        }
+                      ],
+                      "description": "The residual nitrogen the no-decompression limit was seeded with; null without a Dive in the last 48 hours or without a profile"
                     }
                   }
                 }
@@ -19038,6 +19325,218 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/divers/{id}/loadings": {
+      "get": {
+        "summary": "The current N₂, CNS and OTU loadings from a Diver's logged dives, with the basis they rest on (ADR 0071)",
+        "description": "An estimate from the Diver's own logged dives, not advice; the dive computer and training govern. N₂ replays the Dives that ended within 72 h and is null when the latest ended over 48 h ago; CNS is the latest Recording's end value decayed with a 90-minute half-life; OTU sums the Dives that ended within 24 h; `noFly` is DAN's guideline beside them. `basis` counts the Dives used and skipped, always. Only for a User who keeps the Diver's logbook; others get 404 `diver_not_found`. Nothing is stored.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "computedAt",
+                    "basis",
+                    "n2",
+                    "cns",
+                    "otu",
+                    "noFly"
+                  ],
+                  "properties": {
+                    "computedAt": {
+                      "type": "string",
+                      "format": "date-time",
+                      "description": "When the estimate was computed"
+                    },
+                    "basis": {
+                      "type": "object",
+                      "required": [
+                        "windowHours",
+                        "divesUsed",
+                        "divesSkippedNoProfile",
+                        "lastDiveEndedAt"
+                      ],
+                      "properties": {
+                        "windowHours": {
+                          "type": "integer",
+                          "description": "How far back the N₂ replay looks; the latest Dives decide the rest"
+                        },
+                        "divesUsed": {
+                          "type": "integer",
+                          "description": "Dives in the window whose profiles were replayed"
+                        },
+                        "divesSkippedNoProfile": {
+                          "type": "integer",
+                          "description": "Dives in the window without a depth profile: they contribute nothing"
+                        },
+                        "lastDiveEndedAt": {
+                          "anyOf": [
+                            {
+                              "type": "null"
+                            },
+                            {
+                              "type": "string",
+                              "format": "date-time",
+                              "description": "When the Diver's latest Dive ended; null without one"
+                            }
+                          ]
+                        }
+                      },
+                      "description": "What the estimate rests on: always shown with the numbers (ADR 0071)"
+                    },
+                    "n2": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "worstCompartmentPercent",
+                            "gfHigh"
+                          ],
+                          "properties": {
+                            "worstCompartmentPercent": {
+                              "type": "number",
+                              "description": "The worst compartment as a percent of its tolerated pressure at the surface and GF high; 100 % is the decompression model's limit, not a verdict"
+                            },
+                            "gfHigh": {
+                              "type": "number"
+                            }
+                          }
+                        }
+                      ],
+                      "description": "Null when no usable Dive is in the 72 h window, the latest Dive ended over 48 h ago, or none has a profile"
+                    },
+                    "cns": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "percentNow",
+                            "percentAtLastDiveEnd",
+                            "halfLifeMinutes"
+                          ],
+                          "properties": {
+                            "percentNow": {
+                              "type": "number",
+                              "description": "The latest Recording's CNS, decayed to now with the 90-minute surface half-life"
+                            },
+                            "percentAtLastDiveEnd": {
+                              "type": "number",
+                              "description": "The computer's own CNS at the end of that Dive"
+                            },
+                            "halfLifeMinutes": {
+                              "type": "integer"
+                            }
+                          }
+                        }
+                      ],
+                      "description": "Null when no Recording carries CNS; a zero is a real zero"
+                    },
+                    "otu": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "last24Hours"
+                          ],
+                          "properties": {
+                            "last24Hours": {
+                              "type": "number",
+                              "description": "The OTU of the Dives that ended within 24 h"
+                            }
+                          }
+                        }
+                      ],
+                      "description": "Null when no Dive in the 24 h window carries OTU; a zero is a real zero"
+                    },
+                    "noFly": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "hours",
+                            "reason",
+                            "until",
+                            "source"
+                          ],
+                          "properties": {
+                            "hours": {
+                              "type": "integer",
+                              "description": "DAN's guideline: 12 after a single dive without stops, 18 after several dives or days of diving, 24 after decompression"
+                            },
+                            "reason": {
+                              "enum": [
+                                "single",
+                                "several",
+                                "decompression"
+                              ]
+                            },
+                            "until": {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            "source": {
+                              "type": "object",
+                              "required": [
+                                "title",
+                                "url"
+                              ],
+                              "properties": {
+                                "title": {
+                                  "type": "string"
+                                },
+                                "url": {
+                                  "type": "string"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      ],
+                      "description": "The no-fly time after the latest Dive, as on the Dive's assessment; information, not advice"
+                    }
+                  }
                 }
               }
             }
@@ -21985,6 +22484,8 @@
                         "durationSeconds",
                         "maxDepthM",
                         "avgDepthM",
+                        "profile",
+                        "hasRecording",
                         "site",
                         "owner",
                         "centres",
@@ -22032,6 +22533,20 @@
                               "type": "number"
                             }
                           ]
+                        },
+                        "profile": {
+                          "anyOf": [
+                            {
+                              "type": "null"
+                            },
+                            {
+                              "$ref": "#/components/schemas/DiveProfileView"
+                            }
+                          ]
+                        },
+                        "hasRecording": {
+                          "type": "boolean",
+                          "description": "Whether the suggested Dive has a Recording; without one the card draws an empty sketch slot"
                         },
                         "site": {
                           "anyOf": [
@@ -22219,6 +22734,9 @@
               "schema": {
                 "anyOf": [
                   {
+                    "type": "null"
+                  },
+                  {
                     "type": "object",
                     "properties": {
                       "diveId": {
@@ -22228,9 +22746,6 @@
                       }
                     },
                     "additionalProperties": false
-                  },
-                  {
-                    "type": "null"
                   }
                 ]
               }
@@ -30079,6 +30594,554 @@
                   },
                   "required": [
                     "user"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "message"
+                  ]
+                }
+              }
+            },
+            "description": "Bad Request. Usually due to missing parameters, or invalid parameters."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "message"
+                  ]
+                }
+              }
+            },
+            "description": "Unauthorized. Due to missing or invalid authentication."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Forbidden. You do not have permission to access this resource or to perform this action."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Not Found. The requested resource was not found."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Too Many Requests. You have exceeded the rate limit. Try again later."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Internal Server Error. This is a problem with the server that you cannot fix."
+          }
+        }
+      }
+    },
+    "/api/auth/two-factor/enable": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "description": "Enable two factor authentication. Pass method 'totp' (default) to set up an authenticator app (returns TOTP URI and backup codes), or 'otp' to enable email/SMS-based codes immediately.",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "password": {
+                    "type": "string",
+                    "description": "User password"
+                  },
+                  "method": {
+                    "type": "string",
+                    "enum": [
+                      "otp",
+                      "totp"
+                    ]
+                  },
+                  "issuer": {
+                    "type": "string",
+                    "description": "Custom issuer for the TOTP URI"
+                  }
+                },
+                "required": [
+                  "password"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "method": {
+                      "type": "string",
+                      "enum": [
+                        "otp",
+                        "totp"
+                      ],
+                      "description": "The 2FA method that was enabled."
+                    },
+                    "totpURI": {
+                      "type": "string",
+                      "description": "TOTP URI for authenticator app setup. Only present when method is 'totp'."
+                    },
+                    "backupCodes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "description": "Recovery backup codes. Only present when method is 'totp'."
+                    }
+                  },
+                  "required": [
+                    "method"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "message"
+                  ]
+                }
+              }
+            },
+            "description": "Bad Request. Usually due to missing parameters, or invalid parameters."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "message"
+                  ]
+                }
+              }
+            },
+            "description": "Unauthorized. Due to missing or invalid authentication."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Forbidden. You do not have permission to access this resource or to perform this action."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Not Found. The requested resource was not found."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Too Many Requests. You have exceeded the rate limit. Try again later."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Internal Server Error. This is a problem with the server that you cannot fix."
+          }
+        }
+      }
+    },
+    "/api/auth/two-factor/verify-totp": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "description": "Verify two factor TOTP",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "description": "The otp code to verify. Eg: \"012345\""
+                  },
+                  "trustDevice": {
+                    "type": "boolean",
+                    "description": "If true, the device will be trusted for 30 days. It'll be refreshed on every sign in request within this time. Eg: true"
+                  }
+                },
+                "required": [
+                  "code"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "message"
+                  ]
+                }
+              }
+            },
+            "description": "Bad Request. Usually due to missing parameters, or invalid parameters."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "message"
+                  ]
+                }
+              }
+            },
+            "description": "Unauthorized. Due to missing or invalid authentication."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Forbidden. You do not have permission to access this resource or to perform this action."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Not Found. The requested resource was not found."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Too Many Requests. You have exceeded the rate limit. Try again later."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Internal Server Error. This is a problem with the server that you cannot fix."
+          }
+        }
+      }
+    },
+    "/api/auth/two-factor/verify-backup-code": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "description": "Verify a backup code for two-factor authentication",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "description": "A backup code to verify. Eg: \"123456\""
+                  },
+                  "disableSession": {
+                    "type": "boolean",
+                    "description": "If true, the session cookie will not be set."
+                  },
+                  "trustDevice": {
+                    "type": "boolean",
+                    "description": "If true, the device will be trusted for 30 days. It'll be refreshed on every sign in request within this time. Eg: true"
+                  }
+                },
+                "required": [
+                  "code"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Backup code verified successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "user": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "description": "Unique identifier of the user"
+                        },
+                        "email": {
+                          "type": "string",
+                          "format": "email",
+                          "nullable": true,
+                          "description": "User's email address"
+                        },
+                        "emailVerified": {
+                          "type": "boolean",
+                          "nullable": true,
+                          "description": "Whether the email is verified"
+                        },
+                        "name": {
+                          "type": "string",
+                          "nullable": true,
+                          "description": "User's name"
+                        },
+                        "image": {
+                          "type": "string",
+                          "format": "uri",
+                          "nullable": true,
+                          "description": "User's profile image URL"
+                        },
+                        "twoFactorEnabled": {
+                          "type": "boolean",
+                          "description": "Whether two-factor authentication is enabled for the user"
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "description": "Timestamp when the user was created"
+                        },
+                        "updatedAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "description": "Timestamp when the user was last updated"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "twoFactorEnabled",
+                        "createdAt",
+                        "updatedAt"
+                      ],
+                      "description": "The authenticated user object with two-factor details"
+                    },
+                    "session": {
+                      "type": "object",
+                      "properties": {
+                        "token": {
+                          "type": "string",
+                          "description": "Session token"
+                        },
+                        "userId": {
+                          "type": "string",
+                          "description": "ID of the user associated with the session"
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "description": "Timestamp when the session was created"
+                        },
+                        "expiresAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "description": "Timestamp when the session expires"
+                        }
+                      },
+                      "required": [
+                        "token",
+                        "userId",
+                        "createdAt",
+                        "expiresAt"
+                      ],
+                      "description": "The current session object, included unless disableSession is true"
+                    }
+                  },
+                  "required": [
+                    "user",
+                    "session"
                   ]
                 }
               }

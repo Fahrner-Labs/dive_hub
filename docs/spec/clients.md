@@ -208,8 +208,11 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   age-style recipient private key (`AGE-SECRET-KEY-1…`); the route takes the former in `passphrase` and the latter in
   `recipientKey`, and also recognises a private key sent in `passphrase`. Say that restoring replaces this fresh
   instance and that the server stops after success; the operator restarts it and signs in with an account from the
-  backup. A refusal keeps the setup token usable for a corrected retry. *Web:* `SignedOut.tsx` (`Setup`),
-  `SetupRestore.tsx`.
+  backup. A refusal keeps the setup token usable for a corrected retry. Name a `DIVEHUB_ENCRYPTION_KEY` mismatch by
+  which side has the key and what to do: the backup was made with a key and this instance has none
+  (`setup_restore_key_required`, set it), the backup was made without one and this instance has one
+  (`setup_restore_key_unexpected`, unset it), or both have different keys (`setup_restore_key_differs`, use the
+  original instance's key). *Web:* `SignedOut.tsx` (`Setup`), `SetupRestore.tsx`.
 - **Invitations and reset links:** look the token up first (`/lookup`), then show for whom it is (the e-mail).
   An invalid, used or expired link says so and to ask the admin for a new one. *Web:* `AcceptInvitation`, `ResetPassword`.
 - **Passwords:** 15 to 128 characters, enforced by the server. Say the rule beside the field
@@ -452,12 +455,20 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   - Afterwards leave the dive page (it answers 404 now) and say what happened (`providers`: each with `copy` `deleted` or
     `kept`), with **Undo** (restore), which doesn't time out. Undo brings it back here only. *Web:* `DeletedDives.tsx`.
 - **Deleted dives** (`GET /api/dives/deleted`): offer to restore them (`POST /api/dives/{id}/restore` with `version`).
-  - **Must remind while a deleted Dive is still at a Provider** (`stillAt` not empty): say so on the Dive with "Delete
-    in SSI" per Provider (`DELETE /api/dives/{id}/providers/{provider}`, confirmed), and where the User lands (the logbook).
-    The reminder may be dismissed for a visit; it comes back while the dive is there. *Web:* `DeletedDives.tsx`.
+  The list is a page, newest deletion first: `limit` (1–200, default 25) and `cursor` from the previous answer's
+  `nextCursor`; `total` is every deleted Dive. Never assume `dives` is all of them. `stillAt` at the page's top level
+  covers every deleted Dive still at a Provider, not only this page, so the reminder needs no further pages.
+  - **Must remind while a deleted Dive is still at a Provider** (the page's `stillAt` not empty): say so on the Dive
+    with "Delete in SSI" per Provider (`DELETE /api/dives/{id}/providers/{provider}`, confirmed), and where the User
+    lands (the logbook). Offer "Keep it in SSI": the User keeps those copies there, so the reminder goes and stays away
+    on later visits; a Dive deleted later brings it back. Keep it on the client (the web client: `localStorage`), not
+    on the account. *Web:* `DeletedDives.tsx` (the list's "Load more").
   - **Must show `waiting`** (the queue of Waiting pushes): a `delete` that waits goes out at `dueAt` ("Will be deleted in
     {{provider}} in {{minutes}} min"); a `held` one says why (`reason`), a `stopped` one "Couldn't delete it in {{provider}}:
     {{reason}}" (the problem code's text).
+  - **A Dive may disappear:** 30 days after its last Provider copy is gone it is purged
+    ([ADR 0072](../decisions/0072-purging-deleted-dives.md)). The list simply no longer names it and it can't be restored;
+    no request changes. *Web:* `DeletedDives.tsx`.
 - **History:** a restored Dive's history shows "Deleted" and "Restored" (causes `delete`, `restore`; their change
   `deletedAt` needs no line of its own). *Web:* `DiveHistory.tsx`.
 - **History:** an import from a Provider writes `fill` (what a Dive lacked, from the Provider's dive: `site`,
@@ -903,9 +914,15 @@ dives, all off until the User turns them on. *Web:* `ProviderAutomation.tsx` (se
   `recording_beside_entry`, a Dive without a Recording beside one with a Recording; `overlapping_dives`;
   `entry_apart_from_recording`, an entry and a Recording's Dive on the same local day that don't overlap but agree in
   depth and duration). Show both Dives (time, depth, duration, site, with or without a recording, the Diver when the User
-  keeps several) and link to them.
-- **Show the rule's text on every pair of `entry_apart_from_recording`,** also when it is the only kind in the list (the
-  list's heading says "at the same time", which isn't so here), with both local start times and how far apart they are.
+  keeps several) and link to them. **Every listed Dive** (`dive`, `other` and each `chain` entry) carries `profile`: the
+  same depth sketch the logbook rows carry ([ADR 0041](../decisions/0041-logbook-profile-sketch.md)), for drawing
+  its card; `null` when the Dive has no current assessment (no Recording, or an assessment of a Recording it no longer
+  has as Primary).
+- **Draw every pair's card as a timeline** (`DecisionTimeline.tsx`): both Dives on one wall-clock axis with their
+  local start times (and end times), and the space between the two bars labeled with how far apart they are; a
+  visually-hidden summary carries the same in text. For `entry_apart_from_recording` this replaces the rule's text, also
+  when it is the only kind in the list (the list's heading says "at the same time", which isn't so here); the rule's text
+  is shown only on a `surface_break` panel.
   Such a pair is never `obvious`: it is merged only by the User's own click on that pair. **A pair's `other.deletesItself`**
   (a subset of `other.bothAt`) lists the Providers where the Connection of the Dive not kept deletes by itself after the
   merge: a merge from a check doesn't ask about them (as in the dialog under Dives; leave them out of `alsoAt`). After a merge the kept Dive may be
@@ -948,7 +965,10 @@ dives, all off until the User turns them on. *Web:* `ProviderAutomation.tsx` (se
 - **Show the suggestions of the Divers the User manages now,** each with the invited Diver and enough of the suggested
   Dive to recognise it (start, offset, duration, max depth, site), and its shared facts in a preview: site, start with
   offset, duration, max and average depth, the source Dive's owner and Participants, and the centre responsible for the
-  site. Never show the source's Recording, notes, suit, weighting, cylinders, lead or Overrides. Only a pending
+  site. The preview's `dive.profile` is the same depth sketch the logbook rows carry
+  ([ADR 0041](../decisions/0041-logbook-profile-sketch.md)), for drawing the card; `null` when the suggested Dive has no
+  current assessment. `dive.hasRecording` says whether it has a Recording at all, so the card can draw an empty sketch
+  slot for a Dive typed by hand instead of leaving a gap. Never show the source's Recording, notes, suit, weighting, cylinders, lead or Overrides. Only a pending
   suggestion is readable: once it was accepted, declined or cancelled, `GET /api/buddy-suggestions/{id}` answers 404
   `suggestion_not_found` like another User's suggestion, so a removed Participant revokes the source Dive's facts.
 - **Offer the invited Diver's overlapping Dives in the preview** (`overlaps`, earliest first): each with its id, start
@@ -1213,7 +1233,11 @@ What a client **must** do, because these are limits from the Diver's own input a
   Cylinder for the gas).
 - **Never show a number when `status` is `outside_limits`:** show the `reason` (`depth` beyond 40 m, `mod` beyond the MOD at
   the contingency ppO₂, `gas` not air or nitrox 21–40 %) and the MOD. `ppO2AboveWorking` says the ppO₂ is above the working limit.
-- **Say when `recentDiveEndedAt` is set** (a Dive within 48 hours): the real limit is shorter than shown.
+- **Say when `residualN2` is set** (a Dive within 48 hours whose profile could be replayed): the no-decompression limit
+  already starts from the Diver's residual nitrogen. Name what it rests on (`basedOnDives`, `lastDiveEndedAt`), and show
+  `worstCompartmentPercent` as the model's load, never as a verdict.
+- **Say when `recentDiveEndedAt` is set without `residualN2`** (a Dive within 48 hours with no profile): the real limit is
+  likely shorter than shown and this one starts from clean tissues.
 - **Depths from the MOD are rounded down to 0.1 m:** a client must not round them up. A mix under 16 % oxygen answers
   `gas_not_breathable` (400); a client sends `volume` and `pressure` together or neither.
 - **The gas limit ends at the ascent pressure of the gas rule** (`rule`, `bar`; default `rock_bottom`, never below 50 bar;
@@ -1250,6 +1274,27 @@ else plans with the SAC sent or 20 L/min, and no logbook value of theirs is in t
 - `outside_limits` gives the `reason` and `levelIndex` and no numbers, with `gas`, `used` and `rule` as for a plan. The
   OpenAPI document declares both answers in full; a client takes their types from it.
 The MCP tool `planning_gas_plan` returns the same with `assumptions`, `controlling_diver` and the notice.
+
+#### Current loadings from the Diver's logged dives
+
+([ADR 0071](../decisions/0071-current-loadings-estimate.md).) `GET /api/divers/{id}/loadings` computes on request and stores
+nothing: residual N₂, CNS and OTU, and DAN's no-fly time. Only for a User who keeps the Diver's logbook; anyone else gets
+`diver_not_found` (404), as for bottom time and the lead estimate. The response is `{ computedAt, basis, n2, cns, otu, noFly }`.
+A client **must**:
+- **Show the basis with every number:** `basis` carries `windowHours`, `divesUsed`, `divesSkippedNoProfile` and
+  `lastDiveEndedAt`. Say it is an estimate from the Diver's own logged dives, never advice; the dive computer and training
+  govern. Name the Dives it rests on, and link the sources: [ADR 0071](../decisions/0071-current-loadings-estimate.md) for the
+  rules, Shearwater's "CNS oxygen clock" for the CNS half-life and Garmin's surface-interval note for OTU expiry.
+- **Tell a missing estimate from a zero.** `n2` is null when no usable Dive is in the 72 h window, the latest Dive ended
+  over 48 h ago, or none has a depth profile; `cns` is null when no Recording carries CNS; `otu` is null when none in the
+  24 h window carries OTU. A returned `0` is a real zero. Never show a missing value as 0.
+- **Say what each number is, not whether it is safe.** `n2` is the worst compartment as a percent of its tolerated pressure
+  at the surface and the Diver's GF high (`gfHigh`); 100 % is the decompression model's limit, not a verdict. `cns` is
+  `percentNow` and the computer's `percentAtLastDiveEnd` with the fixed `halfLifeMinutes`; `otu` is the last 24 hours.
+- **Show the no-fly time** (`noFly`, DAN's guideline after the latest Dive, with its source) beside the numbers, as on a
+  Dive's assessment: information, not a countdown and not advice.
+- The answer holds no gradient factor, decay or window setting to change: they are fixed in code (ADR 0071). Only whether
+  the section is shown is the Diver's choice, like a muted assessment rule.
 
 #### Lead estimate
 
@@ -1305,8 +1350,10 @@ An LLM client is an API client Dive Hub can't make follow this contract, so the 
   model to name it when it passes the site's data on (see [Licenses](#licenses)).
 - **Tools** (names, descriptions and schemas are fixed in code, never built from data): `logbook_search_dives`,
   `logbook_get_dive`, `logbook_get_dive_assessment`, `logbook_stats`, `sites_search`, `sites_get`, `divers_buddies`,
-  `divers_list`, `planning_gas_and_bottom_time` (computed, not read from the logbook: gas numbers and bottom time with
-  their assumptions and a fixed notice that a client passes on with the numbers). Each has an output
+  `divers_list`, `planning_gas_and_bottom_time` and `planning_gas_plan` (computed, not read from the logbook: gas numbers,
+  bottom time and gas plans with their assumptions and a fixed notice that a client passes on with the numbers), and
+  `planning_diver_loadings` (the current N₂, CNS and OTU estimate from the Diver's logged dives, with its basis and DAN's
+  no-fly time). Each has an output
   schema; a result carries `structuredContent` and the same JSON as text.
 - **Units and times:** metres, °C, minutes. `start_local` is the wall-clock time where the dive was (null when the time
   zone is unknown), `start_utc` the instant (null when only the wall clock is known, [Dives](#dives)). A client that

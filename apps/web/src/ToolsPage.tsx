@@ -246,7 +246,14 @@ function BottomTimeAnswer({ b }: { b: ToolsBottomTime }) {
   const minutes = (n: number | null) => (n === null ? t('tools.bottom.noLimit') : t('tools.bottom.minutes', { count: Math.floor(n) }));
   return (
     <div className="tools-answer">
-      {b.recentDiveEndedAt && <Notice>{t('tools.bottom.recent', { when: display.dateTime(b.recentDiveEndedAt) })}</Notice>}
+      {b.residualN2 && (
+        <Notice>
+          {t('tools.bottom.residual', {
+            count: b.residualN2.basedOnDives, when: display.dateTime(b.residualN2.lastDiveEndedAt),
+          })}
+        </Notice>
+      )}
+      {!b.residualN2 && b.recentDiveEndedAt && <Notice>{t('tools.bottom.recent', { when: display.dateTime(b.recentDiveEndedAt) })}</Notice>}
       {b.status === 'outside_limits' ? (
         <Notice>
           <strong>{t('tools.bottom.outside')}</strong>{' '}

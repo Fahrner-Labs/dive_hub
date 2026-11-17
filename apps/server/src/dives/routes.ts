@@ -10,7 +10,7 @@ import {
   type RecordingSummary,
 } from '../db/schema.js';
 import { answerErrors, answers, Problem, problem } from '../http/problems.js';
-import { Copies, DeleteProblemSchema } from './deletion-view.js';
+import { Copies, decodeDeletedCursor, DeleteProblemSchema } from './deletion-view.js';
 import {
   CylinderInput, CylinderValues, CylinderView, DiveView, Field, LeadEntry, LeadInput, Role, SuitInput, SuitValues, valueProperties, ValuesSchema,
   WeightingFeedbackInput, WeightingFeedbackValues,
@@ -38,6 +38,7 @@ import type { CentreService } from '../centres/centre-service.js';
 import type { DiverService } from '../divers/diver-service.js';
 import { refreshAssessmentsAfterChange, type AssessmentRefresh } from './assessment-refresh.js';
 import { WaitingPushView } from './waiting-push-view.js';
+import { DiveProfileView } from './profile-view.js';
 import type { DiveProviderAnswers, DivePushes, DiveWaitingPushes } from './provider-port.js';
 import type { DiveCertifications } from './certification-port.js';
 import { Change, Changes, DateTime, historyRoute, IdParams, Made, Nullable, refTo } from '../http/schemas.js';
@@ -165,6 +166,26 @@ const DeletedDiveView = Type.Object({
   }),
 });
 
+/** A page of deleted Dives (ADR 0026): newest first, with the cursor for the next page and the reminder's whole set. */
+const DeletedDivesPage = Type.Object({
+  dives: Type.Array(DeletedDiveView),
+  total: Type.Integer({ description: 'Every deleted Dive of the Divers the User manages' }),
+  nextCursor: Type.Optional(Type.String({ description: 'Pass as `cursor` to get the next page; absent on the last page' })),
+  stillAt: Type.Array(Type.Object({
+    diveId: Type.String(),
+    provider: Type.String(),
+    remoteNumber: Nullable(Type.Integer({ description: 'The Provider\'s own dive number' })),
+  }), {
+    description: 'Every deleted Dive still at a Provider, across all pages (not only this one): clients remind the User and let it '
+      + 'keep the copy there without loading every page',
+  }),
+});
+
+const DeletedDivesQuery = Type.Object({
+  limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 200, default: 25, description: 'Dives per page' })),
+  cursor: Type.Optional(Type.String({ maxLength: 200, description: 'nextCursor of the previous answer; leave out for the first page' })),
+});
+
 const At = Type.Array(Type.Object({
   provider: Type.String(),
   remoteNumber: Nullable(Type.Integer({ description: 'The Provider\'s own dive number' })),
@@ -209,9 +230,10 @@ const CheckView = Type.Object({
   rule: Rule,
   obvious: Type.Boolean({ description: 'An import would have put the two together by itself, and no dive is left over at a Provider: may be merged with others in one go' }),
   diverId: Type.String(),
-  dive: Type.Object(PairedDive, { description: 'The earlier of the two Dives; the Dive, when the check is about one (short_shallow_dive: `other` is null)' }),
+  dive: Type.Object({ ...PairedDive, profile: DiveProfileView }, { description: 'The earlier of the two Dives; the Dive, when the check is about one (short_shallow_dive: `other` is null). `profile` is the sketch its card draws; null without a current assessment' }),
   other: Nullable(Type.Object({
     ...PairedDive,
+    profile: DiveProfileView,
     keeps: Type.String({ description: 'Which of the two a merge keeps' }),
     bothAt: Type.Array(Type.String(), { description: 'Providers both Dives are at (see GET /dives/{id}/merge-candidates)' }),
     deletesItself: Type.Array(Type.String(), {
@@ -221,14 +243,12 @@ const CheckView = Type.Object({
   })),
   chain: Nullable(Type.Array(Type.Object({
     ...PairedDive,
+    profile: DiveProfileView,
     surfaceBreakSeconds: Nullable(Type.Integer({ description: 'The Surface break before this Dive, in seconds; null for the first' })),
   }), { description: 'surface_break only, else null: every Dive to append, in order (`dive` and `other` are its first two; Appending keeps the first)' })),
 });
 
 const DeleteProblem = refTo(DeleteProblemSchema);
-
-/** Deleted Dives listed at most (newest deletion first). */
-const DELETED_SHOWN = 100;
 
 export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, { auth, dives, logbook, divers, centres, merging, checks, pushes, waitingPushes, deletion, merge, continuation, append, assessments, providerAnswers, certifications }) => {
   app.addHook('onRequest', requireUser(auth));
@@ -461,7 +481,7 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
     const at = (id: string) => providersOf(remote, id);
     const itself = await waitingPushes.deletingItself(ids);
     const paired = (d: (typeof list)[number]['dives'][number]) => ({
-      id: d.id, version: d.version, ...diveSummaryOf(d, d.siteName), fromProvider: d.fromProvider, recordings: d.recordings, at: at(d.id),
+      id: d.id, version: d.version, ...diveSummaryOf(d, d.siteName), fromProvider: d.fromProvider, recordings: d.recordings, at: at(d.id), profile: d.profile,
     });
     return [...list.map(({ rule, obvious, dives, surfaceBreaks }) => {
       const [a, b] = dives;
@@ -623,10 +643,18 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
 
   app.get('/dives/deleted', {
     schema: {
-      summary: 'The User\'s deleted Dives, most recently deleted first (at most 100), to restore them; which Providers they are still at',
-      response: { 200: Type.Array(DeletedDiveView) },
+      summary: 'A page of the User\'s deleted Dives, newest first (limit 1–200, default 25), to restore them; where each is still at a Provider',
+      description: 'Pass `nextCursor` back as `cursor` for the next page. `stillAt` covers every deleted Dive, not only this page, for the '
+        + 'reminder (docs/spec/clients.md). ADR 0026, 0027.',
+      querystring: DeletedDivesQuery,
+      response: { 200: DeletedDivesPage, 400: Problem },
     },
-  }, async (request) => deletion.deleted(userOf(request).id, DELETED_SHOWN));
+  }, async (request, reply) => {
+    const { cursor: raw, limit } = request.query;
+    const cursor = raw === undefined ? undefined : decodeDeletedCursor(raw);
+    if (raw !== undefined && !cursor) return reply.code(400).send(problem('invalid_input', 'The cursor is not valid; start again without it.'));
+    return deletion.deleted(userOf(request).id, limit ?? 25, cursor ?? undefined);
+  });
 
   app.get('/dives/:id/restore-preview', {
     schema: {

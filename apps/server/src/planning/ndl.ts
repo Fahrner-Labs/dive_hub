@@ -10,16 +10,7 @@
 // No credit for the ascent. One minute is taken off (ADR 0046, amending ADR 0032), the margin the reference
 // implementations carry. Estimate from the Diver's own settings, not advice.
 import { ambientPressureBar, metresPerBar, surfacePressureBar, type Conditions, type GasMix } from './gas.js';
-
-/** [half-time in minutes, a, b] for the 16 compartments (ZHL-16C, compartment 1b: 5.0 min). */
-const COMPARTMENTS: readonly (readonly [number, number, number])[] = [
-  [5.0, 1.1696, 0.5578], [8.0, 1.0, 0.6514], [12.5, 0.8618, 0.7222], [18.5, 0.7562, 0.7825],
-  [27.0, 0.62, 0.8126], [38.3, 0.5043, 0.8434], [54.3, 0.441, 0.8693], [77.0, 0.4, 0.891],
-  [109.0, 0.375, 0.9092], [146.0, 0.35, 0.9222], [187.0, 0.3295, 0.9319], [239.0, 0.3065, 0.9403],
-  [305.0, 0.2835, 0.9477], [390.0, 0.261, 0.9544], [498.0, 0.248, 0.9602], [635.0, 0.2327, 0.9653],
-];
-
-const WATER_VAPOUR_BAR = 0.0627;
+import { schreinerStep, surfaceSaturatedTissues, WATER_VAPOUR_BAR, ZHL16C_COMPARTMENTS } from './tissues.js';
 /** Descent rate, metres per minute (ADR 0032). */
 export const DESCENT_RATE_M_PER_MIN = 18;
 const STEP_SECONDS = 1;
@@ -32,6 +23,8 @@ export interface NdlInput {
   /** Gradient factor high in percent (for a no-stop dive only this one matters). */
   gfHigh: number;
   conditions: Conditions;
+  /** The 16 compartment pressures to start from; default clean tissues saturated with air at the surface. */
+  initialTissues?: readonly number[] | undefined;
 }
 
 /** Whole minutes from leaving the surface until the first stop would be needed, less one; Infinity when it never is. */
@@ -42,8 +35,8 @@ export function ndlMinutes(input: NdlInput): number {
   const surface = surfacePressureBar(conditions.altitudeM);
   const barPerMetre = 1 / metresPerBar(conditions);
   const descentSeconds = (depthM / DESCENT_RATE_M_PER_MIN) * 60;
-  // Clean tissues: saturated with air at the surface.
-  const tissue = COMPARTMENTS.map(() => 0.79 * (surface - WATER_VAPOUR_BAR));
+  // The Diver's residual nitrogen when the planner seeds it, else clean tissues saturated with air at the surface.
+  let tissue = input.initialTissues ? [...input.initialTissues] : surfaceSaturatedTissues(conditions);
   const stepMinutes = STEP_SECONDS / 60;
   const rateBarPerMin = DESCENT_RATE_M_PER_MIN * barPerMetre;
 
@@ -55,16 +48,13 @@ export function ndlMinutes(input: NdlInput): number {
     const ambient = ambientPressureBar(depthNow, conditions);
     const inspired = (ambient - WATER_VAPOUR_BAR) * fN2;
     const rate = descending ? rateBarPerMin * fN2 : 0;
-    for (let i = 0; i < COMPARTMENTS.length; i++) {
-      const k = Math.LN2 / COMPARTMENTS[i]![0];
-      // Schreiner; with rate 0 it is Haldane's.
-      tissue[i] = inspired + rate * (dt - 1 / k) - (inspired - tissue[i]! - rate / k) * Math.exp(-k * dt);
-    }
+    // Schreiner; with rate 0 it is Haldane's.
+    tissue = schreinerStep(tissue, inspired, rate, dt);
     t += dt * 60;
     if (t >= descentSeconds - 1e-9) {
       // Tolerated ambient pressure per compartment at GF high; a stop is needed once one exceeds the surface's.
-      for (let i = 0; i < COMPARTMENTS.length; i++) {
-        const [, a, b] = COMPARTMENTS[i]!;
+      for (let i = 0; i < ZHL16C_COMPARTMENTS.length; i++) {
+        const [, a, b] = ZHL16C_COMPARTMENTS[i]!;
         const tolerated = (tissue[i]! - gf * a) / (gf / b - gf + 1);
         if (tolerated > surface + 1e-9) return Math.max(0, Math.floor(t / 60) - 1);
       }

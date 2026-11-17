@@ -157,6 +157,28 @@ In `apps/web/src/ui/`, built on React Aria Components (behaviour, keyboard, ARIA
 | `Icon` | A Lucide icon by meaning (`edit`, `import`, `move`, …); the set lives in `ui/Icon.tsx`. |
 | Live arrivals (`DiveList`) | A row that arrived through a live hint, a reconnect or polling gets a 2.4 s `--color-accent-soft` overlay (opacity only; reduced motion removes the fade) when it first becomes at least half visible, and a small "N new dives" pill fixed to the bottom of the content column when the rows are out of sight. The pill uses `Button size="small"` with a fully round radius, `--color-surface`, `--color-border-strong` and no shadow; pressing it scrolls to the first unseen row and focuses its link. Arrival changes no layout and moves no focus. A Dive that changed while its dirty edit form is open shows a quiet `Notice tone="info"` ("This dive changed elsewhere. Your edits are still here.") with "Load the new version", which asks before discarding the edits. There is no "live" badge, connection indicator or toast. |
 
+## Decision cards
+
+The Review page's decision cards share one anatomy: a question heading, one visual that carries what the decision is
+really about, only the facts that differ (equal facts collapse to one muted line), one consequence sentence and the
+actions. `Comparison` is the stats layer; `DecisionTimeline` (`apps/web/src/DecisionTimeline.tsx`) and `ProfileSketch`
+are decoration (`aria-hidden`), so the comparison below and a visually hidden summary carry the same values as text.
+The timeline has one wall-clock axis and a lane per candidate. The bar is the data mark and fills the track, its
+duration optically centred inside. When every bar in a lane spans at least 45% of the track and the container is
+wider than 30rem, the bar also carries its start and end times inside its ends (the capsule). A lane with a shorter
+bar, or a container 30rem or narrower, falls back to one `start – end` caption under the bar. A gap between bars is
+labeled, and an overlap reads from the lanes lining up. It stays readable at 320 px; the times stay, secondary labels
+may compact.
+
+| Decision | What it is about | Visual |
+|---|---|---|
+| Recording attach (ADR 0016) | Temporal alignment: does the Recording's span line up with an existing Dive, or is it a Dive of its own? | Timeline (hero) of the Recording and each candidate Dive; depth and device beneath; the import reason and device on the Recording. |
+| Pair (ADR 0038) | Overlap and equality: one Dive logged twice, or two? | Timeline of both Dives; only the differing facts beneath (depth, site, Recording, Diver). |
+| Surface-break chain (ADR 0063) | Sequence: were these parts one Dive cut by time at the surface? | Segmented timeline, the parts left to right with each break a labeled gap; duration, depth and site only where they differ. |
+| Short/shallow (ADR 0038) | Magnitude: is this tiny blip a Dive at all? | One `ProfileSketch` on a fixed 40 m scale so the dip reads as small, then duration and depth. |
+| Buddy suggestion (ADR 0070) | What was the Dive, and who was there? | One `ProfileSketch` of the suggested Dive, its figures (time, duration, max depth, site; average depth and centre when present) and the people line. |
+| Accept-dialog overlap (ADR 0070) | Which of my Dives is the same one? | Timeline of the suggested Dive against my own; only the differing facts beneath. |
+
 ## Writing
 
 - Plain words from the [glossary](../glossary.md), sentence case, active voice. A button says what

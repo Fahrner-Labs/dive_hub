@@ -1,6 +1,6 @@
 ---
 title: "ADR 0032: MOD and bottom time on the Tools page - Bühlmann ZHL-16C with gradient factors, capped by oxygen and gas"
-summary: The Tools page gains MOD and gas numbers (best mix, EAD, END) for any mix, and a bottom time for a planned depth, gas and Cylinder - the shortest of the no-decompression limit (own clean-room ZHL-16C with GF, actual NDL with the descent, floored, never longer than the references), the NOAA oxygen limit and the gas above the reserve, saying which binds. Air and nitrox only for the NDL, no-stop only, at most 40 m, clean tissues with a warning after a recent dive; GF from the Diver's own computer, else 85; water and altitude as inputs; 1.4/1.6 with O₂ narcotic; FIT's SAC kept on Recordings; validated against MIT implementations, the US Navy table and the owner's logged NDL samples. Slice 21, after the weight calculator.
+summary: The Tools page gains MOD and gas numbers (best mix, EAD, END) for any mix, and a bottom time for a planned depth, gas and Cylinder - the shortest of the no-decompression limit (own clean-room ZHL-16C with GF, actual NDL with the descent, floored, never longer than the references), the NOAA oxygen limit and the gas above the reserve, saying which binds. Air and nitrox only for the NDL, no-stop only, at most 40 m, clean tissues by default and seeded from the replayed logbook tissues after a recent Dive (amendment 2026-11-16); GF from the Diver's own computer, else 85; water and altitude as inputs; 1.4/1.6 with O₂ narcotic; FIT's SAC kept on Recordings; validated against MIT implementations, the US Navy table and the owner's logged NDL samples. Slice 21, after the weight calculator.
 status: accepted
 date: 2026-10-06
 ---
@@ -52,8 +52,10 @@ The owner chose on 2026-10-06 the recommendation for each of the note's decision
   shorter, within a stated tolerance), the US Navy Rev 7 air table as a band, and the owner's logged Garmin dives (the
   NDL recomputed along the profile with the computer's GF against the computer's NDL samples; private files per
   `samples/README.md`, skipped when absent).
-- **Clean tissues** (no earlier dive). When the Diver has a Dive in the last 48 hours the page says the real limit is
-  shorter and the dive computer knows it. Tissues rebuilt from the logbook come later, after validation.
+- **Clean tissues by default.** When the User manages the Diver and the latest Dive ended within 48 hours with a
+  replayable profile, the NDL starts from the tissues replayed from the logbook ([ADR 0071](0071-current-loadings-estimate.md),
+  amendment 2026-11-16, [FAH-241](/FAH/issues/FAH-241)); otherwise the page says the real limit may be shorter and the dive
+  computer knows it. Tissues rebuilt from the logbook land in that slice, after validation.
 
 ### Inputs and defaults
 - **GF:** from the Diver's latest Recording that has it (Garmin writes `gf_low`/`gf_high`), else GF high 85; editable; the
@@ -112,3 +114,11 @@ Slice 21, after the weight calculator's slices 19 (Cylinders) and 20 (the Tools 
   panel and a "Bottom time" panel; the estimate notice is on the page before anything is typed.
 - **Not done:** the comparison with the owner's logged Garmin NDL samples (`samples/private`, skipped when absent) and the
   dive assessment's surfacing-GF rule; tissues from the logbook, a site's altitude and trimix NDLs stay open.
+
+## Amendment 2026-11-16: residual nitrogen seeds the NDL
+[FAH-241](/FAH/issues/FAH-241) implements the tissues-from-the-logbook step. When the Diver is one the User manages and
+their latest Dive ended within 48 hours, the no-decompression limit replays the Dives that ended within 72 hours through
+the shared ZHL-16C core ([ADR 0071](0071-current-loadings-estimate.md)) and starts from those 16 compartment pressures.
+Without a recent Dive or a replayable profile it stays on clean tissues. The answer carries `residualN2` (the worst
+compartment at the planning GF high, the Dives it rests on, and when the latest of them ended); `recentDiveEndedAt` stays
+for the 48-hour warning. The same seed and provenance reach the MCP tool and the web Tools page.

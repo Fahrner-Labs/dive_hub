@@ -64,7 +64,7 @@ describe.skipIf(!(await databaseReachable()))('appending a later Dive to the ear
     dives: await Promise.all(laterIds.map(async (id) => ({ id, version: (await diveOf(id)).version }))),
     ...more,
   });
-  const deleted = async (id: string) => (await json<Deleted[]>('GET', '/api/dives/deleted')).find((d) => d.id === id);
+  const deleted = async (id: string) => (await json<{ dives: Deleted[] }>('GET', '/api/dives/deleted')).dives.find((d) => d.id === id);
   const at = async (id: string) =>
     (await json<{ current: { remoteId: string } | null }>('GET', `/api/dives/${id}/providers/ledger`)).current?.remoteId ?? null;
   const send = async (id: string) => {

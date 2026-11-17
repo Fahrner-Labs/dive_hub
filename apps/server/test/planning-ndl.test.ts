@@ -8,6 +8,7 @@
 // It is at most TOLERANCE minutes shorter.
 import { describe, expect, it } from 'vitest';
 import { ndlMinutes } from '../src/planning/ndl.js';
+import { surfaceSaturatedTissues } from '../src/planning/tissues.js';
 
 const AIR = { o2: 21, he: 0 };
 const TOLERANCE = 3;
@@ -50,5 +51,17 @@ describe('no-decompression limit on air', () => {
     const at = (o2: number) => ndlMinutes({ gas: { o2, he: 0 }, depthM: 30, gfHigh: 85, conditions: { water: 'salt', altitudeM: 0 } });
     expect(at(32)).toBeGreaterThan(at(21));
     expect(at(40)).toBeGreaterThan(at(32));
+  });
+
+  it('starts from the tissues it is given, so residual nitrogen shortens the limit', () => {
+    const base = { gas: AIR, depthM: 30, gfHigh: 85, conditions: { water: 'salt' as const, altitudeM: 0 } };
+    const clean = ndlMinutes(base);
+    const loaded = surfaceSaturatedTissues(base.conditions).map((pressure) => pressure + 0.3);
+    expect(ndlMinutes({ ...base, initialTissues: loaded })).toBeLessThan(clean);
+  });
+
+  it('keeps the clean-tissue limit when no tissues are given', () => {
+    const base = { gas: AIR, depthM: 30, gfHigh: 85, conditions: { water: 'salt' as const, altitudeM: 0 } };
+    expect(ndlMinutes({ ...base, initialTissues: surfaceSaturatedTissues(base.conditions) })).toBe(ndlMinutes(base));
   });
 });

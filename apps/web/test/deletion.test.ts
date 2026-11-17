@@ -1,6 +1,8 @@
 // What the delete dialog offers about the Dive's copies at Providers, and the notice after deleting (ADR 0026, 0027).
 import { describe, expect, it } from 'vitest';
-import { deleteChoice, deletedNotice, deletionState, resetDeletion, updateDeletion } from '../src/lib/deletion.ts';
+import {
+  copyKey, deleteChoice, deletedNotice, deletionState, keepCopies, parseKeptCopies, resetDeletion, stillToShow, updateDeletion,
+} from '../src/lib/deletion.ts';
 
 const connection = { id: 'c1', state: 'active' as const, accountLabel: 'erika@example.com' };
 const current = { remoteId: '9', remoteNumber: 8, sentAt: '2026-10-05T10:00:00Z', upToDate: true, updateRemovesVerification: false, number: null };
@@ -48,10 +50,34 @@ describe('deletedNotice', () => {
   });
 });
 
+describe('keeping a deleted Dive in a Provider', () => {
+  const copy = (diveId: string, provider: string) => ({ diveId, provider, remoteNumber: 8 });
+
+  it('keeps copies on the client, so a later visit knows them', () => {
+    expect(parseKeptCopies(null)).toEqual(new Set());
+    expect(parseKeptCopies('not json')).toEqual(new Set());
+    expect(parseKeptCopies('{"a":1}')).toEqual(new Set());
+    expect(parseKeptCopies(JSON.stringify([copyKey(copy('d1', 'ssi')), 7]))).toEqual(new Set(['d1:ssi']));
+  });
+
+  it('leaves out the copies the User kept there, for that Dive and Provider only', () => {
+    const still = [copy('d1', 'ssi'), copy('d1', 'padi'), copy('d2', 'ssi')];
+    expect(stillToShow(still, new Set())).toEqual(still);
+    expect(stillToShow(still, new Set(['d1:ssi']))).toEqual([copy('d1', 'padi'), copy('d2', 'ssi')]);
+  });
+
+  it('forgets them when another User signs in', () => {
+    keepCopies([copy('d3', 'ssi')]);
+    expect(deletionState().kept.has('d3:ssi')).toBe(true);
+    resetDeletion();
+    expect(deletionState().kept.has('d3:ssi')).toBe(false);
+  });
+});
+
 describe('the logbook\'s deletion state', () => {
   it('starts empty again for the next User', () => {
-    updateDeletion({ justDeleted: { id: 'd1', name: 'Dive 9', copies: [], byThemselves: [] }, reminderDismissed: true });
+    updateDeletion({ justDeleted: { id: 'd1', name: 'Dive 9', copies: [], byThemselves: [] } });
     resetDeletion();
-    expect(deletionState()).toEqual({ justDeleted: undefined, reminderDismissed: false });
+    expect(deletionState().justDeleted).toBeUndefined();
   });
 });

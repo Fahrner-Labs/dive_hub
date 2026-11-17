@@ -6,8 +6,9 @@
 import { and, desc, eq, gte, inArray, isNull, lte } from 'drizzle-orm';
 import type { Db, Queryable, Tx } from '../db/client.js';
 import {
-  PARTICIPANT_ROLES, buddySuggestion, dive, diveCentre, diveCentreSite, diveSite, diver, diverManagement, jointDive, participant,
+  PARTICIPANT_ROLES, buddySuggestion, dive, diveAssessment, diveCentre, diveCentreSite, diveSite, diver, diverManagement, jointDive, participant,
 } from '../db/schema.js';
+import { profileOf } from '../dives/profile-view.js';
 import { audienceOfDiver, emitHint } from '../live/emit.js';
 import { managementOf } from '../divers/management.js';
 import { renumber } from '../divers/dive-numbers.js';
@@ -256,9 +257,11 @@ export function createSuggestionService(db: Db) {
     async preview(userId: string, id: string) {
       const [row] = await db.select({
         suggestion: buddySuggestion, dive, owner: { id: diver.id, name: diver.name },
+        assessment: { recordingId: diveAssessment.recordingId, profile: diveAssessment.profile, ascentBands: diveAssessment.ascentBands },
       }).from(buddySuggestion)
         .innerJoin(dive, and(eq(dive.id, buddySuggestion.diveId), isNull(dive.deletedAt)))
         .innerJoin(diver, eq(diver.id, dive.diverId))
+        .leftJoin(diveAssessment, eq(diveAssessment.diveId, dive.id))
         .where(eq(buddySuggestion.id, id));
       if (!row || row.suggestion.status !== 'pending') throw new SuggestionError('suggestion_not_found');
       if (!(await managementOf(db, userId, row.suggestion.diverId))) throw new SuggestionError('suggestion_not_found');
@@ -297,6 +300,8 @@ export function createSuggestionService(db: Db) {
           durationSeconds: row.dive.durationSeconds,
           maxDepthM: row.dive.maxDepthM,
           avgDepthM: row.dive.avgDepthM,
+          profile: profileOf(row.dive, row.assessment),
+          hasRecording: row.dive.primaryRecordingId !== null,
           site: site ?? null,
           owner: row.owner,
           centres,

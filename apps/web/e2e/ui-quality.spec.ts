@@ -71,6 +71,27 @@ test.beforeAll(async ({ playwright }) => {
   await api.dispose();
 });
 
+/**
+ * A Recording that does not clearly belong to a Dive, waiting as a Duplicate candidate: a computer no other spec uses,
+ * at the seeded Dive's start and much deeper (e2e/fixtures/attach-computer.fit). A discarded one is reopened, so the
+ * test runs again on the same server.
+ */
+async function attachCandidate(request: APIRequestContext) {
+  type Candidate = { id: string; recording: { device: { serialNumber: string } | null } };
+  for (const status of ['open', 'discarded'] as const) {
+    const found = (await (await request.get(`/api/duplicate-candidates?status=${status}`)).json() as Candidate[])
+      .find((c) => c.recording.device?.serialNumber === '8803');
+    if (!found) continue;
+    if (status === 'discarded') await request.post(`/api/duplicate-candidates/${found.id}/reopen`, { headers });
+    return;
+  }
+  const upload = await request.post('/api/imports', {
+    headers, multipart: { file: { name: 'attach-computer.fit', mimeType: 'application/octet-stream', buffer: readFileSync('e2e/fixtures/attach-computer.fit') } },
+  });
+  const { id } = await upload.json() as { id: string };
+  await expect.poll(async () => (await (await request.get(`/api/imports/${id}`)).json()).status).toBe('done');
+}
+
 const variants = [
   // axe in both colour schemes and both languages; the other two widths check layout, titles and names only
   // (axe's rules don't change with the width, and it is the slowest check, ADR 0023).
@@ -1007,6 +1028,24 @@ for (const v of variants) {
       }
     });
 
+    // A Recording that does not clearly belong to a Dive (ADR 0016): the card that decides where it goes.
+    test('a recording without a dive, on the Review page', { tag: ['@dives'] }, async ({ page, request }) => {
+      await resetDive(request); // the seeded Dive back at its imported time and depth, so the Recording stays in reach
+      await attachCandidate(request);
+      await page.goto('/#/review');
+      const panel = page.locator('section.panel').filter({
+        has: page.getByRole('heading', { name: v.english ? 'Recordings without a dive' : 'Aufzeichnungen ohne Tauchgang' }),
+      });
+      await expect(panel.getByRole('heading', { name: v.english ? 'Where does this recording belong?' : 'Wohin gehört diese Aufzeichnung?', level: 3 })).toBeVisible();
+      await expect(panel.getByRole('columnheader', { name: /Garmin Descent Mk3 \(8803\)/ })).toBeVisible();
+      await expect(panel.getByRole('rowheader', { name: v.english ? 'Max depth' : 'Max. Tiefe' })).toBeVisible();
+      // axe here, on the card: the discard below clears it before the afterEach run.
+      await expectGoodPage(page, title('Review'), v);
+      // A discarded candidate stays out of the way of the other specs on this server; the next run reopens or uploads it.
+      await panel.getByRole('button', { name: v.english ? /^Discard:/ : /^Verwerfen:/ }).click();
+      await expect(panel.getByRole('columnheader', { name: /Garmin Descent Mk3 \(8803\)/ })).toHaveCount(0);
+    });
+
     test('a dive after a surface break: appending it asked first, then the dive with its surface break and parts', { tag: ['@dives'] }, async ({ page, request }) => {
       const { first, second } = await surfaceBreakPair(request);
       try {
@@ -1171,6 +1210,30 @@ for (const v of variants) {
         await goodPage(page, title('Review'), v);
       } finally {
         await keepFalseStart(request);
+      }
+    });
+
+    // A Dive another User logged with one of the User's Divers (ADR 0070): the suggestion card on the Review page.
+    test('a dive suggested by a buddy, on the Review page', { tag: ['@dives'] }, async ({ page, request }) => {
+      const dive = await resetDive(request);
+      const name = `Suggested ${v.locale} ${Date.now()}`;
+      const diver = await (await request.post('/api/divers', { data: { name }, headers })).json() as { id: string };
+      await setBuddies(request, dive.id, [diver.id]);
+      try {
+        await page.goto('/#/review');
+        const panel = page.locator('section', { has: page.getByRole('heading', { name: v.english ? /Dive suggestions/ : /Tauchgangs-Empfehlungen/ }) });
+        await expect(panel.getByRole('heading', {
+          name: v.english ? new RegExp(`Erika logged this dive with your diver ${name}`) : new RegExp(`Erika hat diesen Tauchgang mit deinem Taucher ${name}`),
+          level: 3,
+        })).toBeVisible();
+        await expect(panel.getByRole('columnheader', { name: v.english ? 'Suggested dive' : 'Empfohlener Tauchgang' })).toBeVisible();
+        await expect(panel.locator('.sketch')).toBeVisible();
+        await expect(panel.locator('.sketch-scale')).toHaveText(/^0–\d+(?:[.,]\d+)? m$/);
+        // axe here, on the card: removing the Participant below clears it before the afterEach run.
+        await expectGoodPage(page, title('Review'), v);
+      } finally {
+        await clearParticipants(request, dive.id);
+        await request.delete(`/api/divers/${diver.id}`, { headers });
       }
     });
 
@@ -1457,17 +1520,23 @@ test.describe('behaviour', () => {
     });
   }
 
-  test('text at 200 % still fits: nothing scrolls sideways (WCAG 1.4.4)', { tag: ['@layout'] }, async ({ page }) => {
-    for (const path of ['/', `/#/dives/${diveId}`, '/#/divers', '/#/sites', `/#/sites/${siteId}`, `/#/sites/${importedSiteId}`, '/#/centres', `/#/centres/${centreId}`, '/#/tools?o2=32&depth=30&volume=11.1&pressure=200', '/#/tools/lead?lw=salt&suit=wetsuit&mm=5&hood=0&cyl=11.1%7Ealuminium', '/#/review', '/#/settings', '/#/settings/display', '/#/settings/security', '/#/settings/connections', '/#/settings/ai-access', '/#/settings/devices', '/#/settings/admin', '/#/settings/admin/site-imports', '/#/settings/admin/backups']) {
-      await page.goto(path);
-      await page.getByRole('heading', { level: 1 }).waitFor();
-      await page.addStyleTag({ content: 'html { font-size: 200% !important; }' });
-      await settleLayout(page);
-      const overflow = await page.evaluate(() => ({
-        page: document.documentElement.scrollWidth - document.documentElement.clientWidth,
-        tables: [...document.querySelectorAll('.table-scroll')].map((t) => t.scrollWidth - t.clientWidth).filter((o) => o > 0),
-      }));
-      expect(overflow, path).toEqual({ page: 0, tables: [] });
+  test('text at 200 % still fits: nothing scrolls sideways (WCAG 1.4.4)', { tag: ['@layout'] }, async ({ page, request }) => {
+    // The Review page needs a real decision card, or it only shows its quiet state.
+    await mergeablePair(request);
+    try {
+      for (const path of ['/', `/#/dives/${diveId}`, '/#/divers', '/#/sites', `/#/sites/${siteId}`, `/#/sites/${importedSiteId}`, '/#/centres', `/#/centres/${centreId}`, '/#/tools?o2=32&depth=30&volume=11.1&pressure=200', '/#/tools/lead?lw=salt&suit=wetsuit&mm=5&hood=0&cyl=11.1%7Ealuminium', '/#/review', '/#/settings', '/#/settings/display', '/#/settings/security', '/#/settings/connections', '/#/settings/ai-access', '/#/settings/devices', '/#/settings/admin', '/#/settings/admin/site-imports', '/#/settings/admin/backups']) {
+        await page.goto(path);
+        await page.getByRole('heading', { level: 1 }).waitFor();
+        await page.addStyleTag({ content: 'html { font-size: 200% !important; }' });
+        await settleLayout(page);
+        const overflow = await page.evaluate(() => ({
+          page: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+          tables: [...document.querySelectorAll('.table-scroll')].map((t) => t.scrollWidth - t.clientWidth).filter((o) => o > 0),
+        }));
+        expect(overflow, path).toEqual({ page: 0, tables: [] });
+      }
+    } finally {
+      await mergePair(request);
     }
   });
 

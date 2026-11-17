@@ -4,6 +4,7 @@ import { Type } from 'typebox';
 import { BOTTOM_TIME_RULES, planBottomTime } from '../planning/bottom-time-service.js';
 import { gasNumbers } from '../planning/gas-numbers.js';
 import { PLANNING_WATERS } from '../planning/gas.js';
+import { diverLoadings } from '../planning/loadings-service.js';
 import { PlanningError } from '../planning/planning-error.js';
 import { Id, Nullable, ToolError, defineTool } from './tool.js';
 
@@ -45,7 +46,7 @@ const Input = Type.Object({
   gas_rule: Type.Optional(Type.Enum([...BOTTOM_TIME_RULES], { description: 'Where the gas limit ends. Default rock_bottom: ascend at rock bottom, never below 50 bar. reserve: finish with rule_bar left. ascent_pressure: start the ascent at rule_bar' })),
   rule_bar: Type.Optional(Type.Number({ minimum: 0, maximum: 350, description: 'Bar for gas_rule reserve or ascent_pressure' })),
   gf_high: Type.Optional(Type.Number({ minimum: 20, maximum: 100, description: 'Gradient factor high. Default: from the Diver\'s latest Recording that has one, else 85' })),
-  diver_id: Type.Optional(Id('Start from this Diver\'s computer GF, SAC and last Dive (from divers_list)')),
+  diver_id: Type.Optional(Id('Start from this Diver\'s computer GF, SAC, residual N₂ and last Dive (from divers_list)')),
 }, { additionalProperties: false });
 
 const Used = (value: ReturnType<typeof Type.Number> | ReturnType<typeof Type.String> | ReturnType<typeof Type.Object>) => Type.Object({
@@ -56,9 +57,9 @@ const Used = (value: ReturnType<typeof Type.Number> | ReturnType<typeof Type.Str
 export const planGasAndBottomTime = defineTool({
   name: 'planning_gas_and_bottom_time',
   title: 'Gas numbers and bottom time for a planned dive',
-  description: `Computes limits for a planned dive from the inputs and the Diver's own settings: MOD of a gas mix at the working and the contingency ppO2, and for a depth the ppO2, best mix, EAD and END. With a depth, air or nitrox 21-40 %, no more than 40 m and within the MOD, also a bottom time: the shortest of the no-decompression limit (Bühlmann ZHL-16C with the gradient factor, clean tissues), the oxygen limit and the gas down to the ascent pressure of the gas rule (when a cylinder is given; by default rock bottom, never below 50 bar), and which limit binds.
+  description: `Computes limits for a planned dive from the inputs and the Diver's own settings: MOD of a gas mix at the working and the contingency ppO2, and for a depth the ppO2, best mix, EAD and END. With a depth, air or nitrox 21-40 %, no more than 40 m and within the MOD, also a bottom time: the shortest of the no-decompression limit (Bühlmann ZHL-16C with the gradient factor; clean tissues unless the managed Diver dived within 48 hours, whose residual N₂ then seeds it), the oxygen limit and the gas down to the ascent pressure of the gas rule (when a cylinder is given; by default rock bottom, never below 50 bar), and which limit binds.
 
-Returns { gas, hypoxic, ppo2_limits, mod_working_m, mod_contingency_m, at_depth, conditions, oxygen_narcotic, bottom_time, notice }. bottom_time is null without a depth. Its status is "ok" (minutes, binding, limits, otu, assumptions with where each value came from) or "outside_recreational_limits" (reason: depth, mod or gas; no number). When recent_dive_ended_at is set the Diver dived within 48 hours and the real limit is shorter than shown.
+Returns { gas, hypoxic, ppo2_limits, mod_working_m, mod_contingency_m, at_depth, conditions, oxygen_narcotic, bottom_time, notice }. bottom_time is null without a depth. Its status is "ok" (minutes, binding, limits, otu, assumptions with where each value came from) or "outside_recreational_limits" (reason: depth, mod or gas; no number). residual_n2 says when the limit was seeded from the Diver's residual nitrogen, how many Dives it rests on and when the last ended; recent_dive_ended_at stays as the 48-hour warning.
 
 Always pass on the notice and the assumptions with the numbers: this is an estimate, not advice, and the dive computer and training govern. Dive Hub plans no decompression dives.`,
   scope: 'logbook:read',
@@ -93,7 +94,12 @@ Always pass on the notice and the assumptions with the numbers: this is an estim
         water: Used(Type.String()), altitude_m: Used(Type.Number()),
         gas_rule: Used(Type.Object({ kind: Type.Enum([...BOTTOM_TIME_RULES]), bar: Nullable(Type.Number()) })),
       }),
-      recent_dive_ended_at: Nullable(Type.String({ description: 'The Diver dived within 48 hours: the real limit is shorter than shown' })),
+      recent_dive_ended_at: Nullable(Type.String({ description: 'The Diver dived within 48 hours; residual_n2 says whether its profile seeded the limit, else the real limit is likely shorter than shown' })),
+      residual_n2: Nullable(Type.Object({
+        worst_compartment_percent: Type.Number({ description: 'The Diver\'s worst compartment at now, at the surface and GF high; the NDL starts from these tissues' }),
+        based_on_dives: Type.Integer({ description: 'How many logged Dives the tissue state rests on' }),
+        last_dive_ended_at: Type.String({ description: 'When the latest Dive the tissue state rests on ended' }),
+      }, { description: 'The residual nitrogen the no-decompression limit was seeded with; null without a Dive in the last 48 hours or without a profile' })),
     })),
     notice: Type.String(),
   }),
@@ -115,11 +121,17 @@ Always pass on the notice and the assumptions with the numbers: this is an estim
         sac_l_per_min: { value: v.used.sacLpm.value, source: v.used.sacLpm.source, ...(v.used.sacLpm.basedOn !== undefined && { based_on_dives: v.used.sacLpm.basedOn }) },
         water: v.used.water, altitude_m: v.used.altitudeM, gas_rule: v.used.gasRule,
       };
+      const residualN2 = v.residualN2 && {
+        worst_compartment_percent: v.residualN2.worstCompartmentPercent,
+        based_on_dives: v.residualN2.basedOnDives,
+        last_dive_ended_at: v.residualN2.lastDiveEndedAt,
+      };
       bottomTime = v.status === 'outside_limits'
-        ? { status: 'outside_recreational_limits' as const, reason: v.reason, mod_m: v.modM, assumptions, recent_dive_ended_at: v.recentDiveEndedAt }
+        ? { status: 'outside_recreational_limits' as const, reason: v.reason, mod_m: v.modM, assumptions, recent_dive_ended_at: v.recentDiveEndedAt, residual_n2: residualN2 }
         : {
           status: 'ok' as const, minutes: v.minutes, binding: v.binding, limits: v.limits, otu: v.otu, ppo2_at_depth: v.ppO2AtDepth,
-          ppo2_above_working: v.ppO2AboveWorking, ascent_pressure_bar: v.ascentPressureBar, assumptions, recent_dive_ended_at: v.recentDiveEndedAt,
+          ppo2_above_working: v.ppO2AboveWorking, ascent_pressure_bar: v.ascentPressureBar, assumptions,
+          recent_dive_ended_at: v.recentDiveEndedAt, residual_n2: residualN2,
         };
     }
     const output = {
@@ -131,5 +143,64 @@ Always pass on the notice and the assumptions with the numbers: this is an estim
       bottom_time: bottomTime, notice: NOTICE,
     };
     return { output, rows: 0 };
+  },
+});
+
+const LoadingsInput = Type.Object({
+  diver_id: Id('The Diver whose logged dives to read (from divers_list)'),
+}, { additionalProperties: false });
+
+export const getDiverLoadings = defineTool({
+  name: 'planning_diver_loadings',
+  title: "Current loadings from a Diver's logged dives",
+  description: 'Estimates what the Diver\'s own logged dives leave in them now: the residual N₂ of the Dives that ended within 72 h replayed through the Bühlmann ZHL-16C compartments (null after 48 h without a Dive), the latest Recording\'s CNS decayed with the 90-minute half-life, the OTU of the Dives that ended within 24 h, and DAN\'s no-fly time. '
+    + 'Returns { computed_at, basis, n2, cns, otu, no_fly }. basis always says how many Dives were used, how many were skipped for having no profile, and when the latest Dive ended: the estimate rests on the Diver\'s own logbook, so an unlogged dive is missing from it. n2 is null when there is nothing usable to replay; cns and otu are null when no Recording carries them, while a zero is a real zero. '
+    + 'This is an estimate from the Diver\'s logged dives, not advice: pass the basis and the null-versus-zero distinction on with every number, and never call a value safe or unsafe. The dive computer and the Diver\'s training govern.',
+  scope: 'logbook:read',
+  input: LoadingsInput,
+  output: () => Type.Object({
+    computed_at: Type.String({ description: 'When the estimate was computed' }),
+    basis: Type.Object({
+      window_hours: Type.Integer({ description: 'How far back the N₂ replay looks' }),
+      dives_used: Type.Integer({ description: 'Dives in the window whose profiles were replayed' }),
+      dives_skipped_no_profile: Type.Integer({ description: 'Dives in the window without a depth profile' }),
+      last_dive_ended_at: Nullable(Type.String({ description: 'When the latest Dive ended; null without one' })),
+    }),
+    n2: Nullable(Type.Object({
+      worst_compartment_percent: Type.Number({ description: 'At the surface and GF high; 100 % is the model\'s limit, not a verdict' }),
+      gf_high: Type.Number(),
+    })),
+    cns: Nullable(Type.Object({
+      percent_now: Type.Number({ description: 'Decayed to now with the 90-minute surface half-life' }),
+      percent_at_last_dive_end: Type.Number({ description: 'The computer\'s own value at the end of that Dive' }),
+      half_life_minutes: Type.Integer(),
+    })),
+    otu: Nullable(Type.Object({ last_24_hours: Type.Number({ description: 'The OTU of the Dives that ended within 24 h' }) })),
+    no_fly: Nullable(Type.Object({
+      hours: Type.Integer({ description: 'DAN\'s guideline: 12 single, 18 several dives or days, 24 after decompression' }),
+      reason: Type.Enum(['single', 'several', 'decompression']),
+      until: Type.String({ description: 'From when the guideline is met' }),
+      source: Type.Object({ title: Type.String(), url: Type.String() }),
+    }, { description: 'The no-fly time after the latest Dive; information beside the numbers, not advice' })),
+  }),
+  async run(ctx, args) {
+    const loadings = await planning(() => diverLoadings(ctx.tx, ctx.diverIds, args.diver_id));
+    const output = {
+      computed_at: loadings.computedAt,
+      basis: {
+        window_hours: loadings.basis.windowHours,
+        dives_used: loadings.basis.divesUsed,
+        dives_skipped_no_profile: loadings.basis.divesSkippedNoProfile,
+        last_dive_ended_at: loadings.basis.lastDiveEndedAt,
+      },
+      n2: loadings.n2 && { worst_compartment_percent: loadings.n2.worstCompartmentPercent, gf_high: loadings.n2.gfHigh },
+      cns: loadings.cns && {
+        percent_now: loadings.cns.percentNow, percent_at_last_dive_end: loadings.cns.percentAtLastDiveEnd,
+        half_life_minutes: loadings.cns.halfLifeMinutes,
+      },
+      otu: loadings.otu && { last_24_hours: loadings.otu.last24Hours },
+      no_fly: loadings.noFly,
+    };
+    return { output, rows: loadings.basis.divesUsed };
   },
 });

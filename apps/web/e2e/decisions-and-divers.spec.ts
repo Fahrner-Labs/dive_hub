@@ -34,8 +34,29 @@ test('a recording that doesn\'t clearly fit is put aside, brought back and added
   const panel = page.locator('section.panel').filter({ has: page.getByRole('heading', { name: 'Recordings without a dive' }) });
   await expect(panel).toContainText('Garmin Descent Mk3 (777)');
   await expect(panel).toContainText('the max depth differs too much');
-  // The values that differ from the dive are marked, and the button names its target.
-  await expect(panel.locator('mark').first()).toBeVisible();
+  // The recording and its candidate dive are drawn on one timeline; the comparison keeps max depth, and the Device
+  // sits on the recording's own column.
+  await expect(panel.getByRole('heading', { name: 'Where does this recording belong?', level: 3 })).toBeVisible();
+  await expect(panel.locator('.timeline')).toBeVisible();
+  await expect(panel.locator('.timeline-bar')).toHaveCount(2);
+  await expect(panel.locator('.timeline-bar-time')).toHaveCount(4);
+  // The shared stretch is in the hidden summary too, not only in the lined-up lanes.
+  await expect(panel.locator('.timeline-figure')).toContainText(/overlap\./);
+  await expect(panel.getByRole('columnheader', { name: 'Recording' })).toBeVisible();
+  await expect(panel.getByRole('rowheader', { name: 'Max depth' })).toBeVisible();
+  await expect(panel.getByRole('rowheader', { name: 'Device' })).toHaveCount(0);
+  await expect(panel.getByRole('columnheader', { name: /Garmin Descent Mk3 \(777\)/ })).toBeVisible();
+  await expect(panel.getByText(/^Adding attaches the recording to that dive\./)).toBeVisible();
+  // With more than one candidate the comparison stacks on a phone instead of squeezing a column until it breaks:
+  // no sideways scroll, the header block stays, and each value names the candidate it belongs to.
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(panel.locator('.compare')).toHaveClass(/compare-multi/);
+  await expect(panel.locator('.compare tbody td[data-subject]').first()).toHaveAttribute('data-subject', 'Recording');
+  const rows = await panel.locator('.compare tbody tr').evaluateAll((all) => all.map((row) => getComputedStyle(row).display));
+  expect(rows.every((display) => display === 'block')).toBe(true);
+  const compareWidth = await panel.locator('.compare-wrap').evaluate((wrap) => ({ scroll: wrap.scrollWidth, client: wrap.clientWidth }));
+  expect(compareWidth.scroll).toBe(compareWidth.client);
+  await page.setViewportSize({ width: 1280, height: 720 });
   await expect(panel.getByRole('button', { name: /^Add to Dive \d+:/ })).toBeVisible();
   await expectGoodPage(page, 'Review');
 

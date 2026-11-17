@@ -52,12 +52,15 @@ test('suggests the pair in Needs your decision and appends on Anhängen', { tag:
   await request.put('/api/logbook-checks/answer', { data: { diveIds: [first, second], answer: null }, headers });
   try {
     await page.goto('/#/review');
-    // The card lists both dives and the surface break between them, and says what appending does.
+    // The card draws the parts as a segmented timeline with each surface break as a labeled gap.
     const card = page.getByRole('listitem').filter({ has: page.getByRole('button', { name: /^Append…: / }) });
+    await expect(card.getByRole('heading', { name: 'One dive in 2 parts?', level: 3 })).toBeVisible();
     await expect(card.getByRole('link', { name: `Dive ${n}`, exact: true })).toBeVisible();
     await expect(card.getByRole('link', { name: `Dive ${m}`, exact: true })).toBeVisible();
-    await expect(card.getByText('Surface break 4 min')).toBeVisible();
-    await expect(page.getByText(/they are one dive with one profile/)).toBeVisible();
+    await expect(card.locator('.timeline')).toBeVisible();
+    await expect(card.locator('.timeline-bar')).toHaveCount(2);
+    await expect(card.locator('.timeline-gap-label')).toHaveText('4 min surface break');
+    await expect(card.getByText('Appending joins the parts into the first dive.')).toBeVisible();
     // Never among the clear pairs merged in one go.
     await expect(page.getByRole('button', { name: /^Merge the \d+ clear pairs/ })).toHaveCount(0);
 
