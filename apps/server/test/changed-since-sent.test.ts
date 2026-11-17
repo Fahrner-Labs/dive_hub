@@ -193,6 +193,17 @@ describe.skipIf(!(await databaseReachable()))('the logbook list: "changed since 
     expect(refreshed!.version).not.toBe(-1);
   });
 
+  it('drops a stale stored fingerprint whose Provider has no current remote dive', async () => {
+    const id = await upload(day(1));
+    await send(id);
+    // A row left at a Provider whose remote dive is gone is never compared nor refreshed: it must not make every
+    // later read reload the Dive.
+    await t.db.insert(diveFingerprint).values({ diveId: id, provider: 'gone', diveVersion: -1, fingerprint: 'x' });
+    expect((await list()).counts.changedSinceSent).toBe(0);
+    expect(await t.db.select().from(diveFingerprint)
+      .where(and(eq(diveFingerprint.diveId, id), eq(diveFingerprint.provider, 'gone')))).toHaveLength(0);
+  });
+
   it('counts a number that differs only while the Connection follows numbers', async () => {
     const a = await upload(day(2));
     const b = await upload(day(3));

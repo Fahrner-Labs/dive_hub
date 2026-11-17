@@ -71,10 +71,11 @@ The `changed-since-sent` **chip count** no longer works out every sent Dive's fi
 the Dive's writes. A `dive_fingerprint` row per Dive and Provider holds what the Dive fingerprints as now there and the
 Dive version it was computed at. It is refreshed inside the transaction of every Dive Revision (`refreshFingerprints`,
 through the `ChangeListener`) and of every dive-site Revision, which recomputes each live Dive at that site (its water
-type and external IDs go out with the Dive), and a Push records the fingerprint it sent beside it. A Diver's account at a
-Source or an entry of an account's buddy list also counts in the fingerprint outside any Dive Revision: those writes mark
-the stored rows of the Dives carrying the Diver stale, and the next logbook request works them out again before it counts
-(`refreshStaleFingerprints`). The count compares the two in SQL, treats a missing row or one marked stale or from an older
+type and external IDs go out with the Dive), and a Push records the fingerprint it sent beside it. Inputs outside a Dive
+Revision, which write no site or Dive Revision, are marked stale by their own writes instead: a Diver's account at a
+Source, an entry of an account's buddy list, a private site ID (site history is shared, so it writes none). The stored
+rows of the Dives carrying the Diver, or at the site, are marked stale, and the next logbook request works them out again
+before it counts (`refreshStaleFingerprints`). The count compares the two in SQL, treats a missing row or one marked stale or from an older
 version as changed, and adds the number comparison from the Connection's `follow_numbers` and the Provider's declared
 number update. A first start after this change backfills the rows before the server listens (`backfillFingerprints`); a
 database that has none yet counts its sent Dives as changed until then. The filter result itself is unchanged:

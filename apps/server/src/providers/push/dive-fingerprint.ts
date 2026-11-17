@@ -2,7 +2,7 @@
 // Provider, kept where the Dive changes. The logbook's chip count compares it with the current Push's sent fingerprint
 // in SQL; the filter itself still works the answer out afresh when asked. The cost moves from every list request to
 // the Dive's own writes, which are far rarer.
-import { and, desc, eq, inArray, isNotNull, isNull, or, sql, type SQL } from 'drizzle-orm';
+import { and, desc, eq, inArray, isNotNull, isNull, notInArray, or, sql, type SQL } from 'drizzle-orm';
 import type { Db, Queryable } from '../../db/client.js';
 import { connection, dive, diveFingerprint, diverManagement, participant, push } from '../../db/schema.js';
 import { currentRemote, type PushRow } from '../current-remote.js';
@@ -70,6 +70,7 @@ export async function refreshFingerprints(q: Queryable, registry: ProviderRegist
   const loaded = await loadOutgoingDive(q, manager.userId, diveId);
   const adapters = new Map(exporting(registry).map((a) => [a.id, a]));
   const at = new Date();
+  const kept: string[] = [];
   for (const provider of current.keys()) {
     const adapter = adapters.get(provider);
     if (!adapter) continue;
@@ -81,7 +82,14 @@ export async function refreshFingerprints(q: Queryable, registry: ProviderRegist
         set: { diveVersion: target.version, fingerprint, updatedAt: at },
         ...(options.clearStale ? {} : { setWhere: sql`${diveFingerprint.diveVersion} <> ${STALE}` }),
       });
+    kept.push(provider);
   }
+  // A row at a Provider without a current remote dive is never compared nor refreshed; left behind, a stale one would
+  // make every later list reload this Dive. Drop what the current remotes don't cover (a later Push writes its own).
+  await q.delete(diveFingerprint).where(and(
+    eq(diveFingerprint.diveId, diveId),
+    kept.length === 0 ? undefined : notInArray(diveFingerprint.provider, kept),
+  ));
 }
 
 /** Marks these Dives' stored fingerprints as needing a fresh comparison. */

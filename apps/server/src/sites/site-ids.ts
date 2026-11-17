@@ -124,8 +124,9 @@ export async function storeId(tx: Tx, s: {
       siteId: s.siteId, source: s.source, externalId: s.externalId, accountId: s.accountId,
       providesData: s.providesData ?? false, imported: s.imported ?? null, siteImportId: s.siteImportId ?? null,
     });
-    // A private ID is never a Revision (site history is shared): mark the site's Dives stale for the logbook's count.
-    if (s.accountId !== null) await changeListenerOrNull()?.fingerprintSiteInputsChanged?.(tx, s.siteId);
+    // A private ID is never a Revision (site history is shared): mark the site's Dives stale for the logbook's count
+    // when the stored ID changes (writing the same one again would only make the next read work them out again).
+    if (s.accountId !== null && before?.externalId !== s.externalId) await changeListenerOrNull()?.fingerprintSiteInputsChanged?.(tx, s.siteId);
   } catch (error) {
     if (isUniqueViolation(error)) throw new SiteError('external_id_taken');
     throw error;
