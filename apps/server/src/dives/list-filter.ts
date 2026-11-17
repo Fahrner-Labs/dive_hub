@@ -32,10 +32,15 @@ export interface DiveListFilter {
   q?: string | undefined;
   only?: string | undefined;
   /**
-   * The Dives that changed since they were sent (`PushService.changedSinceSent`). The adapters' fingerprints are not SQL,
-   * so the caller works them out when this filter or the counts are asked for; without it the filter shows nothing.
+   * The Dives that changed since they were sent (`PushService.changedSinceSent`). The filter itself is worked out when
+   * asked; without it the filter shows nothing.
    */
   changedIds?: string[] | undefined;
+  /**
+   * The chip count's condition instead (`PushService.changedSinceSentSql`), over the stored fingerprints. The counts
+   * follow the Diver and the search only, so this is the one filter whose count the provider layer supplies as SQL.
+   */
+  changedSinceSent?: SQL | undefined;
 }
 
 /** Whether the list's `only` asks for this filter: the caller then needs to work out what it holds. */
@@ -43,15 +48,20 @@ export const asksFor = (only: string | undefined, filter: DiveOnly) => (only?.sp
 
 /**
  * `base`: the Diver, the site and the search (the counts follow these but not the chosen filters, so a chip keeps its
- * number once pressed). `filters`: each "show only" condition. `where`: `base` and the chosen filters.
+ * number once pressed). `countFilters`: each "show only" condition (the count of `changed-since-sent` may be the
+ * provider layer's SQL). `where`: `base` and the chosen filters.
  */
-export function diveListFilter({ userId, diverIds, siteId, q, only, changedIds }: DiveListFilter) {
+export function diveListFilter({ userId, diverIds, siteId, q, only, changedIds, changedSinceSent }: DiveListFilter) {
   const filters: Record<DiveOnly, SQL> = {
     'no-recording': NO_RECORDING,
     'no-site': isNull(dive.siteId),
     'with-findings': sql`${FINDINGS_SHOWN} > 0`,
     'not-at-provider': notAtProvider(userId),
     'changed-since-sent': changedIds?.length ? inArray(dive.id, changedIds) : sql`false`,
+  };
+  const countFilters: Record<DiveOnly, SQL> = {
+    ...filters,
+    ...(changedSinceSent && { 'changed-since-sent': changedSinceSent }),
   };
   const text = q?.trim();
   let search: SQL | undefined;
@@ -62,5 +72,5 @@ export function diveListFilter({ userId, diverIds, siteId, q, only, changedIds }
   }
   const base = and(inArray(dive.diverId, diverIds), isNull(dive.deletedAt), siteId ? eq(dive.siteId, siteId) : undefined, search);
   const chosen = (only?.split(',') ?? []) as DiveOnly[];
-  return { filters, base, where: and(base, ...chosen.map((f) => filters[f])) };
+  return { countFilters, base, where: and(base, ...chosen.map((f) => filters[f])) };
 }

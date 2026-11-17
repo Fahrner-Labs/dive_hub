@@ -35,5 +35,11 @@ export function withSuggestionChanges(inner: ChangeListener): ChangeListener {
       await inner.diverMerged?.(tx, fromId, intoId);
       await followMergedDiver(tx, fromId, intoId);
     },
+    async fingerprintInputsChanged(tx: Tx, diverIds) {
+      await inner.fingerprintInputsChanged?.(tx, diverIds);
+    },
+    async fingerprintSiteInputsChanged(tx: Tx, siteId) {
+      await inner.fingerprintSiteInputsChanged?.(tx, siteId);
+    },
   };
 }

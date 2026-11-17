@@ -18,8 +18,8 @@ import { DIVE_SORTS, type LogbookService, type RowExtras } from './logbook-servi
 export interface LogbookRouteDeps {
   auth: Auth;
   logbook: LogbookService;
-  /** For the logbook's "changed since sent" filter, which needs the adapters' fingerprints. */
-  pushes: Pick<DivePushes, 'changedSinceSent'>;
+  /** For the logbook's "changed since sent" filter (worked out afresh) and its chip count (stored fingerprints). */
+  pushes: Pick<DivePushes, 'changedSinceSent' | 'changedSinceSentSql' | 'refreshStaleFingerprints'>;
   waitingPushes: Pick<DiveWaitingPushes, 'waitingOf'>;
 }
 
@@ -131,9 +131,12 @@ export const logbookRoutes: FastifyPluginAsyncTypebox<LogbookRouteDeps> = async 
     const { diverId, siteId, q, only, sort, order } = query;
     const managed = await managedDivers(request);
     const divers = diverId ? managed.filter((id) => id === diverId) : managed;
-    // "Changed since sent" comes from the adapters' fingerprints, not SQL: worked out only when the list needs it.
-    const changedIds = counts || asksFor(only, 'changed-since-sent') ? await deps.pushes.changedSinceSent(userId(request), divers) : undefined;
-    return { userId: userId(request), diverIds: divers, siteId, q, only, changedIds, sort, order };
+    // The filter itself still works the set out afresh; the chip count compares the stored fingerprints in SQL.
+    const changedIds = asksFor(only, 'changed-since-sent') ? await deps.pushes.changedSinceSent(userId(request), divers) : undefined;
+    // A Diver's account or buddy-list entry may have marked stored fingerprints stale: work those out before counting.
+    if (counts) await deps.pushes.refreshStaleFingerprints(divers);
+    const changedSinceSent = counts ? deps.pushes.changedSinceSentSql(userId(request)) : undefined;
+    return { userId: userId(request), diverIds: divers, siteId, q, only, changedIds, changedSinceSent, sort, order };
   };
 
   app.get('/dives', {

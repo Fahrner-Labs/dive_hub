@@ -21,5 +21,11 @@ export function withRevisionHints(inner: ChangeListener): ChangeListener {
     async siteChanged(tx: Tx, siteId, at) {
       await inner.siteChanged(tx, siteId, at);
     },
+    async fingerprintInputsChanged(tx: Tx, diverIds) {
+      await inner.fingerprintInputsChanged?.(tx, diverIds);
+    },
+    async fingerprintSiteInputsChanged(tx: Tx, siteId) {
+      await inner.fingerprintSiteInputsChanged?.(tx, siteId);
+    },
   };
 }

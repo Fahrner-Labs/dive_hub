@@ -71,6 +71,14 @@ export async function start(config: Config) {
   if (changedMigrations.length > 0) {
     app.log.error({ migrations: changedMigrations }, 'Migration files changed after this database applied them; their changes never ran here. Put changes into a new migration (docs/development.md).');
   }
+  // A database from before the stored fingerprints (ADR 0040, amended) gets them before the logbook serves: until a
+  // Dive's row exists its chip counts it as changed, so this is a one-time pass that is cheap when nothing is missing.
+  try {
+    const filled = await services.providers.pushes.backfillFingerprints();
+    if (filled > 0) app.log.info({ dives: filled }, 'stored the current fingerprints of sent Dives');
+  } catch (err) {
+    app.log.error({ err }, 'the stored fingerprints of sent Dives could not be filled; the logbook counts them as changed');
+  }
   const setupToken = await services.setup.issue();
   if (setupToken) {
     // Deliberately logged: whoever can read the server log may create the first admin (ADR 0012). No worker starts yet.

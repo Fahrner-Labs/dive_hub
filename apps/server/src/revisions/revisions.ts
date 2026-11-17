@@ -48,6 +48,14 @@ export interface ChangeListener {
   siteChanged(tx: Tx, siteId: string, at: Date): Promise<void>;
   /** A Diver was merged away into another (ADR 0028): what hung on it follows to the surviving Diver (ADR 0070). */
   diverMerged?(tx: Tx, fromId: string, intoId: string): Promise<void>;
+  /**
+   * What a Provider's fingerprint covers changed outside a Dive Revision (ADR 0040, amended): a Diver's account at a
+   * Source, or an entry remembered in an account's list. The stored fingerprints of the Dives that carry these Divers
+   * are stale; mark them so, without computing.
+   */
+  fingerprintInputsChanged?(tx: Tx, diverIds: string[]): Promise<void>;
+  /** A private site ID changed at a Source (its account's sends use it): the Dives at that site are stale. */
+  fingerprintSiteInputsChanged?(tx: Tx, siteId: string): Promise<void>;
 }
 
 let listener: ChangeListener | null = null;
@@ -60,6 +68,11 @@ export function listenToChanges(given: ChangeListener): void {
 /** The listener; without one a change would silently not reach the Providers, so it fails instead. */
 export function changeListener(): ChangeListener {
   if (!listener) throw new Error('No change listener: build the provider layer (createProviderLayer) before writing Revisions');
+  return listener;
+}
+
+/** For a write that no Revision announces (a remembered list entry): nothing to tell when no layer is built. */
+export function changeListenerOrNull(): ChangeListener | null {
   return listener;
 }
 

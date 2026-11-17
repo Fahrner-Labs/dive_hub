@@ -1,7 +1,7 @@
 // The provider layer of one app (ADR 0027): the registry, Connections, Pushes and their leases, the account's list
 // of people (ADR 0029), importing its dives (ADR 0030), also on a schedule, and the Waiting pushes the worker sends (ADR 0056), built from
 // the adapters this instance has. main.ts passes the production adapters; tests pass the fake SSI and a test-only adapter.
-import type { Db } from '../db/client.js';
+import type { Db, Tx } from '../db/client.js';
 import { createDiverService } from '../divers/diver-service.js';
 import type { SecretBox } from '../secrets/secret-box.js';
 import type { BlobStore } from '../storage/blob-store.js';
@@ -21,17 +21,16 @@ import { createScheduledFetch } from './dive-import/scheduled-fetch.js';
 import { createSitePickService } from './site-pick.js';
 import { createWaitingPushService, type ProviderLog } from './waiting-push/waiting-push-service.js';
 import { consoleLog, noteDiveChange, noteSiteChange } from './waiting-push/waiting-push-queue.js';
-import { listenToChanges } from '../revisions/revisions.js';
+import { listenToChanges, type Actor, type RevisionCause } from '../revisions/revisions.js';
 
 export function createProviderLayer(deps: {
   db: Db; secrets: SecretBox; blobs: BlobStore; adapters: ProviderAdapter[]; clock?: Clock;
   /** Where the worker's own faults go (the app's logger); without one, the console (consoleLog). */
   log?: ProviderLog;
 }) {
-  // Changes to Dives and sites reach the Waiting push queue (ADR 0056) through the listener dives/ owns. Every site
-  // Revision also announces itself to open pages (ADR 0066), which compose.ts adds; the queue has no duty there.
-  const noSiteRevisionDuty = async () => {};
-  listenToChanges({ diveChanged: noteDiveChange, siteRevisionWritten: noSiteRevisionDuty, siteChanged: noteSiteChange });
+  // Changes to Dives and sites reach the Waiting push queue (ADR 0056) and refresh the stored fingerprints the
+  // logbook's chip compares (ADR 0040, amended) through the listener dives/ owns. Every site Revision also announces
+  // itself to open pages (ADR 0066), which compose.ts adds.
   const providers = createProviderRegistry(deps.adapters);
   const clock = deps.clock && { clock: deps.clock };
   // One fallback for the whole layer: every service that logs is handed the same logger.
@@ -40,6 +39,25 @@ export function createProviderLayer(deps: {
   const connections = createConnectionService({ db: deps.db, registry: providers, secrets: deps.secrets, leases, ...clock });
   const conflicts = createConflictService({ db: deps.db, connections, registry: providers, blobs: deps.blobs });
   const pushes = createPushService({ db: deps.db, blobs: deps.blobs, registry: providers, connections, leases, conflicts, ...clock, log });
+  // A Dive's Revision queues what goes to Providers by itself (ADR 0056) and refreshes the stored fingerprint the
+  // logbook's chip compares (ADR 0040, amended), in the change's own transaction.
+  const noteChanges = {
+    async diveChanged(tx: Tx, diveId: string, cause: RevisionCause, at: Date, actor?: Actor) {
+      await noteDiveChange(tx, diveId, cause, at, actor);
+      await pushes.refreshFingerprints(tx, diveId);
+    },
+    async siteRevisionWritten(tx: Tx, siteId: string) {
+      await pushes.refreshSiteFingerprints(tx, siteId);
+    },
+    siteChanged: noteSiteChange,
+    async fingerprintInputsChanged(tx: Tx, diverIds: string[]) {
+      await pushes.markFingerprintsStale(tx, diverIds);
+    },
+    async fingerprintSiteInputsChanged(tx: Tx, siteId: string) {
+      await pushes.markSiteFingerprintsStale(tx, siteId);
+    },
+  };
+  listenToChanges(noteChanges);
   const pushRuns = createPushRunService({ db: deps.db, registry: providers, pushes, conflicts, log });
   const waitingPushes = createWaitingPushService({ db: deps.db, registry: providers, pushes, ...clock, log });
   const buddies = createBuddyService({ db: deps.db, registry: providers, connections, divers: createDiverService(deps.db), log });
@@ -72,7 +90,7 @@ export function createProviderLayer(deps: {
   return {
     providers, connections, pushes, pushRuns, waitingPushes, buddies, sitePicks, diveImports, scheduledFetch, goneDives, conflicts, certifications,
     // What the layer does when a Revision or a site changes; compose.ts wraps it with the live hints (ADR 0066).
-    noteChanges: { diveChanged: noteDiveChange, siteRevisionWritten: noSiteRevisionDuty, siteChanged: noteSiteChange },
+    noteChanges,
   };
 }
 

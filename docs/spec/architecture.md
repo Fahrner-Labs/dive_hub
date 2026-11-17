@@ -377,7 +377,10 @@ Implemented:
 - **Diver External IDs** (`diver_external_id`): the SSI account (`mid`) of the connected Diver, unique per Source.
 - **Pushes** (`push`): create, update, link, delete, with SSI's dive ID and number, our reference
   (`divehub-<Dive id>`), the record sent (without samples), a fingerprint and the read-back differences.
-  "Outdated" is worked out from the fingerprint, not stored. Routes: `/api/dives/{id}/ssi` (state, send, delete) and
+  A Dive's "outdated" compares that fingerprint; the logbook's chip count compares it with `dive_fingerprint`, the Dive's
+  current fingerprint per Provider, refreshed inside the transactions that change the Dive or its site; a Diver's account
+  or buddy-list entry marks those rows stale and the next list works them out again (ADR 0040, amended).
+  Routes: `/api/dives/{id}/ssi` (state, send, delete) and
   `…/ssi/sites` (sites of the User's SSI logbook, nearest first).
 - **Sending:** reads the SSI logbook; updates the SSI dive the Dive has, or offers a dive at the same time (±2 min)
   before creating; creates with SSI's next number, the Dive's summary and the profile on SSI's 5 s grid; reads back.

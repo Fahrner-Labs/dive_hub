@@ -169,7 +169,8 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   show their `counts` (the numbers don't change when a filter is applied) and **hide a filter whose count is 0** unless it
   is applied. **Name the Provider** in `not-at-provider` (the connected Providers' own names, e.g. "Not in SSI"); name
   `changed-since-sent` "Changed since sent" (it holds Dives at any connected Provider; the count, like the others, is yours to
-  show, and a request with it is slower than the others: it is worked out from the Providers' fingerprints). With no
+  show and comes from stored fingerprints; a request with the filter itself is slower than the others, as it is worked out
+  from the Providers' fingerprints). With no
   result, name the applied filters and offer to show all dives. Show `totals` (the Diver's whole logbook) above the list
   and, while sorted by date, `months` as headings with their dives and time. A row says the Recordings (`recordings: 0`:
   "no recording"), the source (`fromProvider`), gas, the computer's surface interval and `participants`: buddies as

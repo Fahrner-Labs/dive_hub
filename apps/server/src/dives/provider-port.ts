@@ -2,6 +2,7 @@
 // at Providers (its remote dives and its Waiting pushes), and the Provider's answer when one refuses. dives owns these
 // shapes; the provider layer implements them and compose.ts/app.ts pass the real services in.
 import type { FastifyReply } from 'fastify';
+import type { SQL } from 'drizzle-orm';
 import type { push } from '../db/schema.js';
 import type { WaitingPushView } from './waiting-push-view.js';
 
@@ -33,6 +34,13 @@ export interface DivePushes {
   currentOf(diveIds: string[]): Promise<Map<string, Map<string, DivePushRow>>>;
   removeAt(userId: string, diveId: string, providers: string[]): Promise<DiveRemoval>;
   changedSinceSent(userId: string, diverIds: string[]): Promise<string[]>;
+  /**
+   * The same question for the logbook's chip count, as SQL over the stored fingerprints (ADR 0040, amended). It
+   * correlates with the caller's unaliased `"dive"` row (its id, Diver, number and version are read).
+   */
+  changedSinceSentSql(userId: string): SQL;
+  /** Works out the stored fingerprints a change outside a Dive Revision marked stale, before counting them. */
+  refreshStaleFingerprints(diverIds: string[]): Promise<void>;
 }
 
 /** The Waiting-push lookups dives uses. */

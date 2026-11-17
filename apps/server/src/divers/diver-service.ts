@@ -10,7 +10,7 @@ import {
 } from '../db/schema.js';
 import { managedDiverIds, managementOf } from './management.js';
 import { renumber } from './dive-numbers.js';
-import { userActor, writeRevision } from '../revisions/revisions.js';
+import { changeListener, userActor, writeRevision } from '../revisions/revisions.js';
 import { DiverError } from './diver-error.js';
 import { mergeExternalDiver } from './merge.js';
 import { tidyName } from './diver-name.js';
@@ -168,6 +168,7 @@ export function createDiverService(db: Db) {
     await tx.delete(diverExternalId).where(and(eq(diverExternalId.diverId, diverId), eq(diverExternalId.source, source)));
     if (externalId !== null) await tx.insert(diverExternalId).values({ diverId, source, externalId });
     await writeRevision(tx, 'diver', diverId, userActor(actor.userId), 'edit', { [accountKey(source)]: { from, to: externalId } });
+    await changeListener().fingerprintInputsChanged?.(tx, [diverId]);
   }
 
   /** An external Diver with an account and details, in the caller's transaction. */

@@ -5,7 +5,7 @@
 import { and, eq, inArray, isNotNull, isNull, or, sql } from 'drizzle-orm';
 import type { Queryable, Tx } from '../db/client.js';
 import { diveSite, diveSiteExternalId, diverExternalId, diverManagement } from '../db/schema.js';
-import { writeRevision, type Actor } from '../revisions/revisions.js';
+import { changeListenerOrNull, writeRevision, type Actor } from '../revisions/revisions.js';
 import type { Position } from '../vocabulary.js';
 import { distanceM, MATCH_WITHIN_M, namesMatch } from './import/import-plan.js';
 import type { ImportedValues } from './import/site-source.js';
@@ -124,6 +124,8 @@ export async function storeId(tx: Tx, s: {
       siteId: s.siteId, source: s.source, externalId: s.externalId, accountId: s.accountId,
       providesData: s.providesData ?? false, imported: s.imported ?? null, siteImportId: s.siteImportId ?? null,
     });
+    // A private ID is never a Revision (site history is shared): mark the site's Dives stale for the logbook's count.
+    if (s.accountId !== null) await changeListenerOrNull()?.fingerprintSiteInputsChanged?.(tx, s.siteId);
   } catch (error) {
     if (isUniqueViolation(error)) throw new SiteError('external_id_taken');
     throw error;
@@ -140,6 +142,8 @@ export async function clearId(tx: Tx, siteId: string, source: SiteSource, accoun
   if (!removed) return null;
   if (accountId === null && actor) {
     await writeRevision(tx, 'dive_site', siteId, actor, 'edit', { [revisionKey(source)]: { from: removed.externalId, to: null } });
+  } else if (accountId !== null) {
+    await changeListenerOrNull()?.fingerprintSiteInputsChanged?.(tx, siteId);
   }
   return removed.externalId;
 }

@@ -428,6 +428,13 @@
       "when": 1794919283367,
       "tag": "0060_reconcile_migration_hashes",
       "breakpoints": true
+    },
+    {
+      "idx": 61,
+      "version": "7",
+      "when": 1794927742638,
+      "tag": "0061_futuristic_lilith",
+      "breakpoints": true
     }
   ]
 }

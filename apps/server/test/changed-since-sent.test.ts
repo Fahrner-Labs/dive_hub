@@ -1,9 +1,10 @@
 // The logbook's "changed since sent" filter and its count (ADR 0040, amended): a Dive with a current remote dive at a
 // Provider the User is connected to for the Diver, whose outgoing data (or, with the Connection following numbers, whose
 // number) differs from what was sent. Worked out when asked, over the list's Diver and search, like the other filters.
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { dive, push } from '../src/db/schema.js';
+import { dive, diveFingerprint, diverExternalId, push } from '../src/db/schema.js';
+import { remember } from '../src/providers/list-entries.js';
 import { createFakeLedger } from './fake-ledger-provider.js';
 import { makeSyntheticDive } from './fixtures/synthetic-dive.js';
 import {
@@ -39,7 +40,7 @@ describe.skipIf(!(await databaseReachable()))('the logbook list: "changed since 
   };
   const send = async (id: string) => expect((await call('POST', `/api/dives/${id}/providers/ledger`, {})).statusCode).toBeLessThan(300);
   const version = async (id: string) => (await json<{ version: number }>('GET', `/api/dives/${id}`)).version;
-  const edit = async (id: string, notes: string) => call('PATCH', `/api/dives/${id}`, { version: await version(id), notes });
+  const edit = async (id: string, notes: string | null) => call('PATCH', `/api/dives/${id}`, { version: await version(id), notes });
   const follow = (on: boolean) => call('PATCH', `/api/connections/${connectionId}`, { diveNumbers: { follow: on } });
 
   beforeAll(async () => {
@@ -73,6 +74,7 @@ describe.skipIf(!(await databaseReachable()))('the logbook list: "changed since 
     expect((await list()).counts).toMatchObject({ changedSinceSent: 0 });
     expect((await list('?only=changed-since-sent')).total).toBe(0);
 
+    const before = (await t.db.select({ notes: dive.notes }).from(dive).where(eq(dive.id, changed)))[0]!.notes;
     await edit(changed, 'Turtle');
     const l = await list();
     expect(l.counts.changedSinceSent).toBe(1);
@@ -81,6 +83,10 @@ describe.skipIf(!(await databaseReachable()))('the logbook list: "changed since 
     expect(ids(await list('?only=not-at-provider'))).toEqual([never]);
     // Both filters must fit: changed since sent, and not at the Provider, share no Dive.
     expect((await list('?only=changed-since-sent,not-at-provider')).total).toBe(0);
+    // The stored fingerprint is compared, not a dirty flag: changing the notes back makes it up to date again.
+    await edit(changed, before);
+    expect((await list()).counts.changedSinceSent).toBe(0);
+    await edit(changed, 'Turtle');
     // Sending it again makes it up to date.
     await send(changed);
     expect((await list()).counts.changedSinceSent).toBe(0);
@@ -124,13 +130,67 @@ describe.skipIf(!(await databaseReachable()))('the logbook list: "changed since 
     expect((await list()).counts.changedSinceSent).toBe(1);
     await call('DELETE', `/api/dives/${id}/providers/ledger`, {});
     expect((await list()).counts.changedSinceSent).toBe(0);
+    // Changed while it has no remote dive there, then sent: the send records what it sent, so it is up to date again.
+    await edit(id, 'Turtle while gone');
+    expect((await list()).counts.changedSinceSent).toBe(0);
     await send(id);
+    expect((await list()).counts.changedSinceSent).toBe(0);
     await edit(id, 'Turtle again');
     expect((await list()).counts.changedSinceSent).toBe(1);
     await call('DELETE', `/api/connections/${connectionId}`);
     expect((await list()).counts.changedSinceSent).toBe(0);
     // Connect again for the next tests; its Pushes stay, tied to the old Connection.
     connectionId = (await json<{ id: string }>('POST', '/api/connections/ledger', { diverId, token: 'ledger-token-1', keepSignedIn: false })).id;
+  });
+
+  it('keeps counting after a site change that goes out with the Dive', async () => {
+    const id = await upload(day(1));
+    const site = await json<{ id: string }>('POST', '/api/dive-sites', { name: 'Water site', waterType: 'salt' });
+    await call('PATCH', `/api/dives/${id}`, { version: await version(id), siteId: site.id });
+    await send(id);
+    expect((await list()).counts.changedSinceSent).toBe(0);
+    // The site's water type is in the fingerprint, and a site Revision refreshes the stored one (ADR 0040, amended).
+    const before = await json<{ version: number }>('GET', `/api/dive-sites/${site.id}`);
+    await call('PATCH', `/api/dive-sites/${site.id}`, { version: before.version, waterType: 'fresh' });
+    expect((await list()).counts.changedSinceSent).toBe(1);
+    expect(ids(await list('?only=changed-since-sent'))).toEqual([id]);
+    const after = await json<{ version: number }>('GET', `/api/dive-sites/${site.id}`);
+    await call('PATCH', `/api/dive-sites/${site.id}`, { version: after.version, waterType: 'salt' });
+    expect((await list()).counts.changedSinceSent).toBe(0);
+  });
+
+  it('counts a Participant whose account changed after the send', async () => {
+    const id = await upload(day(1));
+    const buddy = await json<{ id: string }>('POST', '/api/external-divers', { name: 'Account Buddy' });
+    await call('PUT', `/api/divers/${buddy.id}/external-ids/padi`, { externalId: 'P-100' });
+    await call('PUT', `/api/dives/${id}/participants`, { version: await version(id), participants: [{ diverId: buddy.id, role: 'buddy' }] });
+    await send(id);
+    expect((await list()).counts.changedSinceSent).toBe(0);
+    // The account is in the fingerprint but no Dive Revision announces it: the change marks the stored row stale.
+    await call('PUT', `/api/divers/${buddy.id}/external-ids/padi`, { externalId: 'P-200' });
+    expect((await list()).counts.changedSinceSent).toBe(1);
+    expect(ids(await list('?only=changed-since-sent'))).toEqual([id]);
+    await call('PUT', `/api/divers/${buddy.id}/external-ids/padi`, { externalId: 'P-100' });
+    expect((await list()).counts.changedSinceSent).toBe(0);
+  });
+
+  it('marks the stored fingerprints stale when a buddy-list entry changes', async () => {
+    const id = await upload(day(1));
+    const buddy = await json<{ id: string }>('POST', '/api/external-divers', { name: 'Entry Buddy' });
+    await call('PUT', `/api/divers/${buddy.id}/external-ids/padi`, { externalId: 'P-300' });
+    await call('PUT', `/api/dives/${id}/participants`, { version: await version(id), participants: [{ diverId: buddy.id, role: 'buddy' }] });
+    expect((await call('PUT', `/api/divers/${diverId}/external-ids/ssi`, { externalId: '4700001' })).statusCode).toBe(204);
+    await send(id);
+    expect((await list()).counts.changedSinceSent).toBe(0);
+    const [owner] = await t.db.select({ id: diverExternalId.id }).from(diverExternalId)
+      .where(and(eq(diverExternalId.diverId, diverId), eq(diverExternalId.source, 'ssi')));
+    await remember(t.db, owner!.id, buddy.id, '77');
+    const [marked] = await t.db.select({ version: diveFingerprint.diveVersion }).from(diveFingerprint).where(eq(diveFingerprint.diveId, id));
+    expect(marked!.version).toBe(-1);
+    // The read works the row out again; the ledger's fingerprint doesn't use the entry, so the Dive stays up to date.
+    expect((await list()).counts.changedSinceSent).toBe(0);
+    const [refreshed] = await t.db.select({ version: diveFingerprint.diveVersion }).from(diveFingerprint).where(eq(diveFingerprint.diveId, id));
+    expect(refreshed!.version).not.toBe(-1);
   });
 
   it('counts a number that differs only while the Connection follows numbers', async () => {
@@ -156,6 +216,17 @@ describe.skipIf(!(await databaseReachable()))('the logbook list: "changed since 
     expect((await list()).counts.changedSinceSent).toBe(0);
   });
 
+  it('fills the stored fingerprints of a database that has none, before it serves', async () => {
+    const id = await upload(day(1));
+    await send(id);
+    expect((await list()).counts.changedSinceSent).toBe(0);
+    // A first start after the change has no rows yet: the Dive counts as changed, and the startup pass fills it.
+    await t.db.delete(diveFingerprint).where(eq(diveFingerprint.diveId, id));
+    expect((await list()).counts.changedSinceSent).toBe(1);
+    expect(await ctx.providers.pushes.backfillFingerprints()).toBeGreaterThan(0);
+    expect((await list()).counts.changedSinceSent).toBe(0);
+  });
+
   it('works out a large confirmed push set, not only the Dives of the page', async () => {
     const count = 60;
     const made = await t.db.insert(dive).values(Array.from({ length: count }, (_, i) => ({
@@ -165,7 +236,10 @@ describe.skipIf(!(await databaseReachable()))('the logbook list: "changed since 
       diveId: d.id, connectionId, provider: 'ledger', mode: 'api' as const, action: 'create' as const,
       state: 'confirmed' as const, remoteId: `L-fake-${i}`, diveVersion: 1, fingerprint: `stale-${i}`,
     })));
+    const reads = ledger.fingerprintReads;
     const page = await list();
+    // The chip count is one stored comparison: it works out no Dive's fingerprint, however many Pushes there are.
+    expect(ledger.fingerprintReads).toBe(reads);
     expect(page.counts.changedSinceSent).toBe(count);
     expect(page.dives).toHaveLength(25);
     const all = await list(`?only=changed-since-sent&limit=${count}`);
