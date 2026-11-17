@@ -4,8 +4,8 @@
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
 import { picture } from './qr-picture.ts';
 import {
-  clearParticipants, clearPushRuns, connectSsi, externalDiver, forgetDivers, importSsiBuddies, leaveSsi, openLine, pushRunSetup, readyForSsi,
-  resetDive, resetSsiBuddies, setBuddies, setPreferences,
+  clearParticipants, clearPushRuns, connectSsi, externalDiver, forgetDivers, headers, importSsiBuddies, leaveSsi, openLine, pushRunSetup, readyForSsi,
+  resetDive, resetSsiBuddies, setBuddies, setPreferences, uniqueWord,
 } from './support.ts';
 
 // Another spec in this worker may have left German or imperial units set.
@@ -120,6 +120,32 @@ test('puts buddies on a dive, finds one in the SSI buddy list, and sends both to
   await expect(people.locator('li > :not(.avatar)')).toHaveText(['Kai Lund (Instructor)']);
   await expect(ssi.getByText('Changed since sent')).toBeVisible();
 
+});
+
+test('a Participant whose Diver the User keeps says when theirs expired, and opens their certifications', { tag: ['@dives', '@divers'] }, async ({ page, request }) => {
+  const dive = await resetDive(request);
+  await clearParticipants(request, dive.id);
+  const name = `Lina ${uniqueWord()}`;
+  const child = await (await request.post('/api/divers', { data: { name }, headers })).json() as { id: string };
+  const day = (offset: number) => new Date(Date.now() + offset * 86_400_000).toISOString().slice(0, 10);
+  try {
+    await request.post(`/api/divers/${child.id}/certifications`, { data: { agency: 'SSI', level: 'Open Water Diver', expiresOn: day(30) }, headers });
+    await request.post(`/api/divers/${child.id}/certifications`, { data: { agency: 'DAN', level: 'First Aid', expiresOn: day(-2) }, headers });
+    await setBuddies(request, dive.id, [child.id]);
+
+    await page.goto(`/#/dives/${dive.id}`);
+    const people = page.getByRole('group', { name: 'Buddies and guides' });
+    // The expired card outranks the one that only expires soon; the server sends no card, only this hint.
+    const hint = people.getByRole('link', { name: /Certifications: .*First Aid expired/ });
+    await expect(hint).toBeVisible();
+
+    await hint.click();
+    await expect(page).toHaveURL(new RegExp(`#/divers/${child.id}\\?open=certifications$`));
+    await expect(page.getByRole('button', { name: `Certifications: ${name}` })).toHaveAttribute('aria-expanded', 'true');
+  } finally {
+    await clearParticipants(request, dive.id);
+    await request.delete(`/api/divers/${child.id}`, { headers });
+  }
 });
 
 /** The Dive with this person on it, who is in no SSI list and has no SSI account: the SSI line open on it. */

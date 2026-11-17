@@ -1926,6 +1926,32 @@
                     "instructor"
                   ],
                   "description": "buddy: dived together; guide: led the dive; instructor: taught on it"
+                },
+                "certificationHint": {
+                  "type": "object",
+                  "required": [
+                    "agency",
+                    "level",
+                    "expiry"
+                  ],
+                  "properties": {
+                    "agency": {
+                      "type": "string",
+                      "description": "The card's agency, free text"
+                    },
+                    "level": {
+                      "type": "string",
+                      "description": "The card's level, free text"
+                    },
+                    "expiry": {
+                      "enum": [
+                        "soon",
+                        "expired"
+                      ],
+                      "description": "soon: expires within 90 days; expired: the date has passed. An expired card outranks one that only expires soon"
+                    }
+                  },
+                  "description": "A certification card of this Participant that has expired or expires within 90 days. Set only for a Participant the signed-in User manages (ADR 0028): other Users never see a Diver's cards, nor this hint"
                 }
               }
             },

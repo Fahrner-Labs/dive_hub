@@ -1057,8 +1057,14 @@ dives, all off until the User turns them on. *Web:* `ProviderAutomation.tsx` (se
   as a second cue) and show it after the valid ones. The Divers list (`GET /api/divers`) carries a `certifications` summary per
   Diver (`count`, `newest` = `{ agency, level }` or null, `expired`, `expiringSoon`), so a client can say "3 cards, 1 expires
   soon" on the Diver's line without fetching the cards; it is the same for every User who keeps the Diver and nobody else sees it.
+  **A Dive can hint at a Participant's card:** `GET /api/dives/{id}` gives each Participant an optional
+  `certificationHint` (`{ agency, level, expiry }` with `expiry` `soon` or `expired`, the most urgent card; an expired card
+  outranks one that only expires soon), set only when the signed-in User keeps that Participant; for everyone else the field
+  is absent (ADR 0028). Show it beside that Participant on the Dive page as words naming the level ("Open Water Diver expired",
+  not a colour alone) and link it to that Diver's certifications section (`#/divers/<diver id>?open=certifications`); never
+  show the card itself there. A `certification` live hint must refetch open Dive views too, not only the Divers list.
   *Web:* `Certifications.tsx`, a section of the Diver's page (open state in the address,
-  `#/divers/<diver id>?open=certifications`; `#/divers?certifications=own|<diver id>` only leads there, and the profile menu links to the own one); the card form is a dialog.
+  `#/divers/<diver id>?open=certifications`; `#/divers?certifications=own|<diver id>` only leads there, and the profile menu links to the own one); the card form is a dialog. The hint is in `Participants.tsx`.
 - **Devices from a Provider:** importing a Provider's dives from a computer creates its Device for the Connection's
   Diver, the same Device the computer's own files find later (ADR 0030); list it like any other.
 - **Devices:** assigning one to another Diver affects only Imports from then on (ADR 0016). Say so where it is

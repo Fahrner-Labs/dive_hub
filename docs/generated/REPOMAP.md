@@ -4,7 +4,7 @@
 > `pnpm check` fails when this map is stale. Symbols are ranked by how widely the code references them;
 > each module shows its most-referenced ones (exported symbols rank higher). Search here before walking the tree.
 
-Files: 396 · symbols: 3583 · shown: 253
+Files: 397 · symbols: 3587 · shown: 253
 
 ### server/(root)
 apps/server/src/vocabulary.ts:13 type SiteWaterType
@@ -56,12 +56,12 @@ apps/server/src/centres/routes.ts:61 const errors
 … 24 more symbols in this module
 
 ### server/certifications
-apps/server/src/certifications/certification-service.ts:423 type CertificationService
-apps/server/src/certifications/certification-service.ts:36 class CertificationError
+apps/server/src/certifications/certification-service.ts:457 type CertificationService
+apps/server/src/certifications/certification-service.ts:37 class CertificationError
 apps/server/src/certifications/certification-providers.ts:7 iface RemoteCertification
 apps/server/src/certifications/routes.ts:38 const errors
 apps/server/src/certifications/routes.ts:19 const Text
-apps/server/src/certifications/certification-service.ts:119 fn createCertificationService
+apps/server/src/certifications/certification-service.ts:120 fn createCertificationService
 … 26 more symbols in this module
 
 ### server/db
@@ -87,7 +87,7 @@ apps/server/src/divers/management.ts:25 const managesDiveDiver
 … 51 more symbols in this module
 
 ### server/dives
-apps/server/src/dives/dive-view.ts:203 const DiveView
+apps/server/src/dives/dive-view.ts:215 const DiveView
 apps/server/src/dives/dive-service.ts:20 class DiveError
 apps/server/src/dives/time-zone.ts:11 iface Position
 apps/server/src/dives/cylinders.ts:52 fn cylindersOf
@@ -106,7 +106,7 @@ apps/server/src/dives/matching.ts:81 const DAY_MS
 apps/server/src/dives/logbook-service.ts:298 type LogbookService
 apps/server/src/dives/dive-values.ts:6 iface DiveValues
 apps/server/src/dives/dive-service.ts:87 const nextVersion
-… 299 more symbols in this module
+… 303 more symbols in this module
 
 ### server/equipment
 apps/server/src/equipment/usage.ts:37 fn usageMap
@@ -324,7 +324,7 @@ apps/web/src/lib/settings.ts:13 fn settingsHref
 apps/web/src/lib/geo.ts:4 iface Position
 apps/web/src/lib/focus.ts:16 fn focusHeading
 apps/web/src/lib/units.ts:20 const depthIn
-apps/web/src/lib/live.ts:111 const liveHealthy
+apps/web/src/lib/live.ts:115 const liveHealthy
 apps/web/src/lib/providers.ts:9 type SyncedField
 apps/web/src/lib/tools.ts:49 iface ToolsParams
 apps/web/src/lib/form.ts:4 const formValues

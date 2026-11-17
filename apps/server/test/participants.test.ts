@@ -7,7 +7,10 @@ import {
 
 type Found = { id: string; name: string; managed: boolean; external: boolean };
 type External = { id: string; name: string; accounts: string[]; inUse: boolean; canDelete: boolean };
-type Participant = { diverId: string; name: string; role: string };
+type Participant = {
+  diverId: string; name: string; role: string;
+  certificationHint?: { agency: string; level: string; expiry: 'soon' | 'expired' };
+};
 type DiveView = { id: string; version: number; participants: Participant[] };
 type RevisionView = { cause: string; changes: Record<string, { from: unknown; to: unknown }> };
 
@@ -141,6 +144,34 @@ describe.skipIf(!(await databaseReachable()))('Divers and Participants', () => {
         .toMatchObject({ code: 'diver_not_found' });
       expect((await call('PUT', `/api/dives/${diveId}/participants`, anna, { version, participants: [] })).statusCode).toBe(404);
       expect((await getDive()).version).toBe(version);
+    });
+
+    it('hint at the most urgent card of a Participant the User keeps, and never at one they do not', async () => {
+      const day = (offset: number) => new Date(Date.now() + offset * 86_400_000).toISOString().slice(0, 10);
+      const kid = await json<{ id: string }>('POST', '/api/divers', tim, { name: 'Nina' });
+      const card = (diverId: string, cookie: string, body: object) =>
+        call('POST', `/api/divers/${diverId}/certifications`, cookie, body);
+      expect((await card(kid.id, tim, { agency: 'SSI', level: 'Open Water Diver', expiresOn: day(30) })).statusCode).toBe(201);
+      // Anna keeps her Diver; Tim does not, so its card never shows on his Dive.
+      expect((await card(annaDiver, anna, { agency: 'PADI', level: 'Rescue Diver', expiresOn: day(-5) })).statusCode).toBe(201);
+      expect((await setParticipants([{ diverId: kid.id, role: 'buddy' }, { diverId: annaDiver, role: 'guide' }])).statusCode).toBe(200);
+      let people = (await getDive()).participants;
+      expect(people.find((p) => p.diverId === kid.id)!.certificationHint)
+        .toEqual({ agency: 'SSI', level: 'Open Water Diver', expiry: 'soon' });
+      expect(people.find((p) => p.diverId === annaDiver)).not.toHaveProperty('certificationHint');
+
+      // An expired card outranks one that only expires soon.
+      await card(kid.id, tim, { agency: 'DAN', level: 'First Aid', expiresOn: day(-1) });
+      people = (await getDive()).participants;
+      expect(people.find((p) => p.diverId === kid.id)!.certificationHint)
+        .toEqual({ agency: 'DAN', level: 'First Aid', expiry: 'expired' });
+
+      // A card that is still valid says nothing, and neither does a Diver with no card.
+      const other = await json<{ id: string }>('POST', '/api/divers', tim, { name: 'Ola' });
+      await card(other.id, tim, { agency: 'CMAS', level: 'Two Star', expiresOn: day(400) });
+      expect((await setParticipants([{ diverId: kid.id, role: 'buddy' }, { diverId: other.id, role: 'buddy' }, { diverId: annaDiver, role: 'guide' }])).statusCode).toBe(200);
+      people = (await getDive()).participants;
+      expect(people.find((p) => p.diverId === other.id)).not.toHaveProperty('certificationHint');
     });
 
     it('keep a Diver someone manages from being deleted', async () => {

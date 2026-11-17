@@ -14478,6 +14478,18 @@ export interface components {
                  * @enum {unknown}
                  */
                 role: "buddy" | "guide" | "instructor";
+                /** @description A certification card of this Participant that has expired or expires within 90 days. Set only for a Participant the signed-in User manages (ADR 0028): other Users never see a Diver's cards, nor this hint */
+                certificationHint?: {
+                    /** @description The card's agency, free text */
+                    agency: string;
+                    /** @description The card's level, free text */
+                    level: string;
+                    /**
+                     * @description soon: expires within 90 days; expired: the date has passed. An expired card outranks one that only expires soon
+                     * @enum {unknown}
+                     */
+                    expiry: "soon" | "expired";
+                };
             }[];
             /** @description The codes that verify the Dive at a Provider (ADR 0043): those of the Dive centres responsible for its site, by centre name, then those of its Participants with a leader number, whatever their role, by name. No other condition: not a Push, not the Diver. Draw each text as a QR code (docs/spec/clients.md) */
             verificationCodes: {
