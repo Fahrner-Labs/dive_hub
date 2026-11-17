@@ -282,8 +282,79 @@ describe.skipIf(!(await databaseReachable()))('restoring a backup', () => {
         migrationsFolder, encryptionKey: TEST_ENCRYPTION_KEY, log: silent,
       });
       await expect(restore.restore({ archivePath: archive, passphrase }))
-        .rejects.toMatchObject({ name: 'RestoreError', code: 'backup_key_mismatch' });
+        .rejects.toMatchObject({ name: 'RestoreError', code: 'backup_key_differs' });
     } finally {
+      await rm(targetDir, { recursive: true, force: true });
+    }
+  });
+
+  it('refuses a keyless backup when this instance has a DIVEHUB_ENCRYPTION_KEY', async () => {
+    const passphrase = 'refusal-passphrase';
+    const migrationHead = await imageMigrationHead(migrationsFolder);
+    const archive = await makeArchive(t.dataDir, { passphrase, migrationHead, key: undefined });
+    const targetDir = await mkdtemp(join(tmpdir(), 'divehub-restore-target-'));
+    try {
+      const restore = createRestoreService({
+        dataDir: targetDir, databaseUrl: 'postgres://divehub:nowhere@127.0.0.1:1/never',
+        migrationsFolder, encryptionKey: TEST_ENCRYPTION_KEY, log: silent,
+      });
+      await expect(restore.restore({ archivePath: archive, passphrase }))
+        .rejects.toMatchObject({ name: 'RestoreError', code: 'backup_key_unexpected' });
+    } finally {
+      await rm(targetDir, { recursive: true, force: true });
+    }
+  });
+
+  it('refuses a keyed backup when this instance has no DIVEHUB_ENCRYPTION_KEY', async () => {
+    const passphrase = 'refusal-passphrase';
+    const migrationHead = await imageMigrationHead(migrationsFolder);
+    const archive = await makeArchive(t.dataDir, { passphrase, migrationHead, key: TEST_ENCRYPTION_KEY });
+    const targetDir = await mkdtemp(join(tmpdir(), 'divehub-restore-target-'));
+    try {
+      const restore = createRestoreService({
+        dataDir: targetDir, databaseUrl: 'postgres://divehub:nowhere@127.0.0.1:1/never',
+        migrationsFolder, encryptionKey: undefined, log: silent,
+      });
+      await expect(restore.restore({ archivePath: archive, passphrase }))
+        .rejects.toMatchObject({ name: 'RestoreError', code: 'backup_key_required' });
+    } finally {
+      await rm(targetDir, { recursive: true, force: true });
+    }
+  });
+
+  it('restores a keyless backup into an instance without DIVEHUB_ENCRYPTION_KEY', async () => {
+    if (!(await restoreToolsAvailable())) return;
+    const passphrase = 'keyless-passphrase';
+    const keyless = createBackupService({
+      db: t.db, blobs: createLocalBlobStore(t.dataDir), dataDir: t.dataDir, databaseUrl: t.pool.options.connectionString!,
+      migrationsFolder, appVersion: 'test', encryptionKey: undefined, log: silent,
+    });
+    const run = await keyless.create({ kind: 'manual', createdBy: owner.id, passphrase });
+    await keyless.run(run.id);
+    expect(await keyless.find(run.id)).toMatchObject({ status: 'ready' });
+
+    const scratch = await createScratchDatabase();
+    const targetDir = await mkdtemp(join(tmpdir(), 'divehub-restore-target-'));
+    try {
+      const restore = createRestoreService({
+        dataDir: targetDir, databaseUrl: scratch.url, migrationsFolder, encryptionKey: undefined, log: silent,
+      });
+      const result = await restore.restore({ archivePath: keyless.archivePath(run.id), passphrase });
+      expect(result.manifest.encryptionKeySha256).toBeNull();
+      expect(result.manifest.plaintextCredentials).toBe(true);
+
+      const client = new pg.Client({ connectionString: scratch.url });
+      await client.connect();
+      try {
+        const users = await client.query<{ email: string }>('select email from "user" order by email');
+        expect(users.rows.map((row) => row.email)).toContain('restore-me@example.com');
+      } finally {
+        await client.end();
+      }
+      expect(await readFile(join(targetDir, 'originals', 'ab', 'cd', 'dive-1.fit'), 'utf8')).toBe('the original dive file');
+      expect(await readFile(join(targetDir, 'auth-secret'), 'utf8')).toBe('the auth secret from the backup');
+    } finally {
+      await scratch.drop();
       await rm(targetDir, { recursive: true, force: true });
     }
   });

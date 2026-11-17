@@ -34,7 +34,9 @@ const PlacedArchive = Type.Object({
 });
 
 const ANSWER: Record<SetupRestoreFailure, { code: ProblemCode; status: 400 | 500 }> = {
-  backup_key_mismatch: { code: 'setup_restore_key_mismatch', status: 400 },
+  backup_key_required: { code: 'setup_restore_key_required', status: 400 },
+  backup_key_unexpected: { code: 'setup_restore_key_unexpected', status: 400 },
+  backup_key_differs: { code: 'setup_restore_key_differs', status: 400 },
   backup_schema_newer: { code: 'setup_restore_schema_newer', status: 400 },
   backup_decrypt_failed: { code: 'setup_restore_decrypt_failed', status: 400 },
   backup_restore_failed: { code: 'setup_restore_failed', status: 500 },
