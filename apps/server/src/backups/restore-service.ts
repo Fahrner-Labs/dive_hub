@@ -16,7 +16,9 @@ const execFileAsync = promisify(execFile);
 
 /** Why a restore refused: the code the CLI and the setup route report, without leaking any secret. */
 export type RestoreRefusalCode =
-  | 'backup_key_mismatch'
+  | 'backup_key_required'
+  | 'backup_key_unexpected'
+  | 'backup_key_differs'
   | 'backup_schema_newer'
   | 'backup_decrypt_failed'
   | 'backup_restore_failed'
@@ -92,16 +94,18 @@ export async function verifySchemaHead(manifestHead: string | null, migrationsFo
   }
 }
 
-/** Refuses when the backup was made with a different DIVEHUB_ENCRYPTION_KEY; the stored secrets would not decrypt. */
+/** Refuses when the backup's DIVEHUB_ENCRYPTION_KEY use does not match this instance's; the stored secrets would not decrypt. */
 export function verifyEncryptionKey(manifest: BackupManifest, encryptionKey: Buffer | undefined): void {
   const wanted = manifest.encryptionKeySha256 ?? null;
   const present = encryptionKeyFingerprint(encryptionKey);
   if (wanted === present) return;
-  throw new RestoreError('backup_key_mismatch', wanted === null
-    ? 'this backup was made without DIVEHUB_ENCRYPTION_KEY; unset it before restoring (its credentials are plain text)'
-    : present === null
-      ? 'this backup needs the DIVEHUB_ENCRYPTION_KEY it was made with; set it before restoring'
-      : 'DIVEHUB_ENCRYPTION_KEY differs from the one this backup was made with; the stored credentials would be undecryptable');
+  if (wanted === null) {
+    throw new RestoreError('backup_key_unexpected', 'this backup was made without DIVEHUB_ENCRYPTION_KEY; unset it before restoring (its credentials are plain text)');
+  }
+  if (present === null) {
+    throw new RestoreError('backup_key_required', 'this backup needs the DIVEHUB_ENCRYPTION_KEY it was made with; set it before restoring');
+  }
+  throw new RestoreError('backup_key_differs', 'DIVEHUB_ENCRYPTION_KEY differs from the one this backup was made with; the stored credentials would be undecryptable');
 }
 
 /** Directories a restore must leave in place: the same ones the backup leaves out. */
