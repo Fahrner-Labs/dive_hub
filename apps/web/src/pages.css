@@ -89,6 +89,9 @@
 /* Who dived along, as a fact: the names in a row, the ways to change them beside it. */
 .people-fact { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-4); }
 .people-fact li { display: inline-flex; align-items: center; gap: var(--space-2); }
+/* A Participant's certification hint: the card's state, opening that Diver's section (ADR 0050). */
+.certification-hint { display: inline-flex; margin-inline-start: var(--space-2); }
+.certification-hint:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; border-radius: var(--radius-sm); }
 /* The Recordings share the panel of the facts: the profile follows them, set off by space. */
 .dive-recording { margin-top: var(--space-5); }
 .dive-recording:first-child { margin-top: 0; }

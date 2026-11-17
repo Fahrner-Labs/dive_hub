@@ -2147,6 +2147,8 @@
     "add": "Jemanden hinzufügen",
     "change": "Ändern",
     "withRole": "{{name}} ({{role}})",
+    "certificationExpired": "{{level}} abgelaufen",
+    "certificationExpiresSoon": "{{level}} läuft bald ab",
     "addTitle": "Wer war mit dir tauchen?",
     "as": "Als",
     "who": "Taucher suchen",

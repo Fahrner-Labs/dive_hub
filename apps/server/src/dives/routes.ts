@@ -39,6 +39,7 @@ import type { DiverService } from '../divers/diver-service.js';
 import { refreshAssessmentsAfterChange, type AssessmentRefresh } from './assessment-refresh.js';
 import { WaitingPushView } from './waiting-push-view.js';
 import type { DiveProviderAnswers, DivePushes, DiveWaitingPushes } from './provider-port.js';
+import type { DiveCertifications } from './certification-port.js';
 import { Change, Changes, DateTime, historyRoute, IdParams, Made, Nullable, refTo } from '../http/schemas.js';
 
 export interface DiveRouteDeps {
@@ -63,6 +64,8 @@ export interface DiveRouteDeps {
   assessments: AssessmentRefresh;
   /** How a refusal about a Provider is answered (providers/route-parts.ts). */
   providerAnswers: DiveProviderAnswers;
+  /** The expiry hint beside a Participant the User manages (ADR 0050). */
+  certifications: DiveCertifications;
 }
 
 
@@ -227,7 +230,7 @@ const DeleteProblem = refTo(DeleteProblemSchema);
 /** Deleted Dives listed at most (newest deletion first). */
 const DELETED_SHOWN = 100;
 
-export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, { auth, dives, logbook, divers, centres, merging, checks, pushes, waitingPushes, deletion, merge, continuation, append, assessments, providerAnswers }) => {
+export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, { auth, dives, logbook, divers, centres, merging, checks, pushes, waitingPushes, deletion, merge, continuation, append, assessments, providerAnswers, certifications }) => {
   app.addHook('onRequest', requireUser(auth));
   refreshAssessmentsAfterChange(app, assessments);
 
@@ -242,14 +245,16 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
   const viewOfKept = async (request: FastifyRequest, id: string) => {
     const row = await findDive(request, id);
     if (!row) throw new Error(`Dive ${id} is gone right after its change`);
-    return view(row);
+    return view(row, userOf(request).id);
   };
 
-  const view = async (row: typeof dive.$inferSelect): Promise<Static<typeof DiveView>> => {
+  const view = async (row: typeof dive.$inferSelect, userId: string): Promise<Static<typeof DiveView>> => {
     const { recordings: recs, site } = await logbook.recordingsAndSite(row);
     const primary = recs.find(({ r }) => r.id === row.primaryRecordingId)?.r;
     const { cylinders, lead } = await logbook.partsOf(row.id);
     const { sac, missing: sacMissing } = sacOfDive(row, cylinders);
+    const participants = await logbook.participantsOfDive(row.id);
+    const certificationHints = await certifications.hintsFor(userId, participants.map((p) => p.diverId));
     return {
       id: row.id,
       diverId: row.diverId,
@@ -281,7 +286,10 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
       suit: suitOf(row),
       sac,
       sacMissing,
-      participants: await logbook.participantsOfDive(row.id),
+      participants: participants.map((p) => {
+        const hint = certificationHints.get(p.diverId);
+        return hint ? { ...p, certificationHint: hint } : p;
+      }),
       verificationCodes: [
         ...(await centres.codesOfDive(row.id)).map((c) => ({ kind: 'centre' as const, diver: null, ...c })),
         ...(await divers.professionalCodesOfDive(row.id)).map((c) => ({ kind: 'professional' as const, centre: null, ...c })),
@@ -296,7 +304,7 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
     },
   }, async (request, reply) => {
     const row = await findDive(request, request.params.id);
-    return row ? view(row) : reply.code(404).send(problem('dive_not_found'));
+    return row ? view(row, userOf(request).id) : reply.code(404).send(problem('dive_not_found'));
   });
 
   app.patch('/dives/:id', {

@@ -6,8 +6,9 @@ import { and, desc, eq, inArray, isNull, ne, sql } from 'drizzle-orm';
 import type { Db, Queryable } from '../db/client.js';
 import { certification, original } from '../db/schema.js';
 import type { CertificationImageState, CertificationVerification } from '../db/schema.js';
-import { managementOf } from '../divers/management.js';
+import { managedDiverIds, managementOf } from '../divers/management.js';
 import type { CertificationSummary } from '../divers/certification-port.js';
+import type { CertificationHint } from '../dives/certification-port.js';
 import { audienceOfDiver, emitHint } from '../live/emit.js';
 import { writeRevision } from '../revisions/revisions.js';
 import type { CertificationProviders, RemoteCertification } from './certification-providers.js';
@@ -222,6 +223,39 @@ export function createCertificationService(deps: { db: Db; blobs: BlobStore; pro
         if (expiry === 'soon') s.expiringSoon += 1;
         out.set(r.diverId, s);
       }
+      return out;
+    },
+
+    /**
+     * The most urgent expired or expiring card of each of these Divers, by Diver id, for the User named: the hint beside
+     * a Dive's Participants. A Diver the User does not manage is left out, so the hint never reaches another User.
+     */
+    async hintsFor(userId: string, diverIds: string[]): Promise<Map<string, CertificationHint>> {
+      const out = new Map<string, CertificationHint>();
+      if (diverIds.length === 0) return out;
+      const managed = await managedDiverIds(db, userId, { live: true });
+      const ids = [...new Set(diverIds.filter((id) => managed.has(id)))];
+      if (ids.length === 0) return out;
+      const rows = await db.select({
+        diverId: certification.diverId, agency: certification.agency, level: certification.level, expiresOn: certification.expiresOn,
+      }).from(certification)
+        .where(and(inArray(certification.diverId, ids), isNull(certification.deletedAt)));
+      const today = isoDay(new Date());
+      type Chosen = { row: { agency: string; level: string; expiresOn: string | null }; expiry: CertificationHint['expiry'] };
+      const chosen = new Map<string, Chosen>();
+      for (const row of rows) {
+        const expiry = expiryOf(row.expiresOn, today);
+        if (expiry !== 'expired' && expiry !== 'soon') continue;
+        const current = chosen.get(row.diverId);
+        // An expired card outranks one that only expires soon; among expired cards the latest is the most useful, among
+        // soon ones the nearest. A tie keeps the one found first.
+        const better = !current
+          || (expiry === 'expired' && current.expiry === 'soon')
+          || (expiry === current.expiry && expiry === 'expired' && row.expiresOn! > current.row.expiresOn!)
+          || (expiry === current.expiry && expiry === 'soon' && row.expiresOn! < current.row.expiresOn!);
+        if (better) chosen.set(row.diverId, { row, expiry });
+      }
+      for (const [diverId, { row, expiry }] of chosen) out.set(diverId, { agency: row.agency, level: row.level, expiry });
       return out;
     },
 

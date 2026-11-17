@@ -9111,8 +9111,8 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * The shared facts of a suggested Dive, for the Review inbox
-         * @description Site, start time with its UTC offset, duration, max and average depth as starting values, the Dive's own Diver, its Participants by name and any centre responsible for the site. Never a Recording, notes, suit, weighting, cylinders, lead or an overridden value. 404 `suggestion_not_found` unless the User manages the invited Diver.
+         * The shared facts of a pending Buddy suggestion, for the Review inbox
+         * @description Site, start time with its UTC offset, duration, max and average depth as starting values, the Dive's own Diver, its Participants by name and any centre responsible for the site. Never a Recording, notes, suit, weighting, cylinders, lead or an overridden value. Only a pending invitation is readable: once accepted, declined or cancelled it answers 404 `suggestion_not_found` like another User's suggestion. 404 `suggestion_not_found` unless the User manages the invited Diver.
          */
         get: {
             parameters: {
@@ -13867,6 +13867,18 @@ export interface components {
                  * @enum {unknown}
                  */
                 role: "buddy" | "guide" | "instructor";
+                /** @description A certification card of this Participant that has expired or expires within 90 days. Set only for a Participant the signed-in User manages (ADR 0028): other Users never see a Diver's cards, nor this hint */
+                certificationHint?: {
+                    /** @description The card's agency, free text */
+                    agency: string;
+                    /** @description The card's level, free text */
+                    level: string;
+                    /**
+                     * @description soon: expires within 90 days; expired: the date has passed. An expired card outranks one that only expires soon
+                     * @enum {unknown}
+                     */
+                    expiry: "soon" | "expired";
+                };
             }[];
             /** @description The codes that verify the Dive at a Provider (ADR 0043): those of the Dive centres responsible for its site, by centre name, then those of its Participants with a leader number, whatever their role, by name. No other condition: not a Push, not the Diver. Draw each text as a QR code (docs/spec/clients.md) */
             verificationCodes: {

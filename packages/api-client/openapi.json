@@ -1921,6 +1921,32 @@
                     "instructor"
                   ],
                   "description": "buddy: dived together; guide: led the dive; instructor: taught on it"
+                },
+                "certificationHint": {
+                  "type": "object",
+                  "required": [
+                    "agency",
+                    "level",
+                    "expiry"
+                  ],
+                  "properties": {
+                    "agency": {
+                      "type": "string",
+                      "description": "The card's agency, free text"
+                    },
+                    "level": {
+                      "type": "string",
+                      "description": "The card's level, free text"
+                    },
+                    "expiry": {
+                      "enum": [
+                        "soon",
+                        "expired"
+                      ],
+                      "description": "soon: expires within 90 days; expired: the date has passed. An expired card outranks one that only expires soon"
+                    }
+                  },
+                  "description": "A certification card of this Participant that has expired or expires within 90 days. Set only for a Participant the signed-in User manages (ADR 0028): other Users never see a Diver's cards, nor this hint"
                 }
               }
             },
@@ -21878,8 +21904,8 @@
     },
     "/api/buddy-suggestions/{id}": {
       "get": {
-        "summary": "The shared facts of a suggested Dive, for the Review inbox",
-        "description": "Site, start time with its UTC offset, duration, max and average depth as starting values, the Dive's own Diver, its Participants by name and any centre responsible for the site. Never a Recording, notes, suit, weighting, cylinders, lead or an overridden value. 404 `suggestion_not_found` unless the User manages the invited Diver.",
+        "summary": "The shared facts of a pending Buddy suggestion, for the Review inbox",
+        "description": "Site, start time with its UTC offset, duration, max and average depth as starting values, the Dive's own Diver, its Participants by name and any centre responsible for the site. Never a Recording, notes, suit, weighting, cylinders, lead or an overridden value. Only a pending invitation is readable: once accepted, declined or cancelled it answers 404 `suggestion_not_found` like another User's suggestion. 404 `suggestion_not_found` unless the User manages the invited Diver.",
         "parameters": [
           {
             "schema": {

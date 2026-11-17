@@ -7,7 +7,7 @@ import {
 import { announce } from './lib/announce.ts';
 import { useErrorText } from './lib/display.ts';
 import { refocusAfterRemoval } from './lib/focus.ts';
-import { Button, Dialog, DiverAvatar, Notice, RadioGroup, SearchList, Select, type SearchListItem } from './ui/index.ts';
+import { Badge, Button, Dialog, DiverAvatar, Notice, RadioGroup, SearchList, Select, type SearchListItem } from './ui/index.ts';
 
 const ROLES: ParticipantRole[] = ['buddy', 'guide', 'instructor'];
 /** The row that adds a new Diver by the name typed. */
@@ -78,7 +78,23 @@ export function Participants({ dive: d, adding, onAddingChange: setAdding, empti
           <dd>
             <div className="site-fact" role="group" aria-labelledby={labelId}>
               <ul className="people-fact">
-                {d.participants.map((p) => <li key={p.diverId}><DiverAvatar inline name={p.name} diverId={p.diverId} /><span>{t('participants.withRole', { name: p.name, role: t(`participants.role.${p.role}`) })}</span></li>)}
+                {d.participants.map((p) => (
+                  <li key={p.diverId}>
+                    <DiverAvatar inline name={p.name} diverId={p.diverId} />
+                    <span>
+                      {t('participants.withRole', { name: p.name, role: t(`participants.role.${p.role}`) })}
+                      {/* Only a Participant whose Diver the User keeps carries this: the server leaves the others out (ADR 0028, 0050). */}
+                      {p.certificationHint && (
+                        <a className="certification-hint" href={`#/divers/${p.diverId}?open=certifications`}>
+                          <span className="visually-hidden">{t('common.forItem', { action: t('certifications.open'), item: p.name })}</span>
+                          <Badge tone={p.certificationHint.expiry === 'expired' ? 'danger' : 'neutral'}>
+                            {t(p.certificationHint.expiry === 'expired' ? 'participants.certificationExpired' : 'participants.certificationExpiresSoon', { level: p.certificationHint.level })}
+                          </Badge>
+                        </a>
+                      )}
+                    </span>
+                  </li>
+                ))}
               </ul>
               <Button variant="quiet" size="small" icon="edit" aria-label={t('common.forItem', { action: t('participants.change'), item: t('participants.title') })}
                 onPress={() => { save.reset(); setChanging(true); }}>

@@ -132,6 +132,7 @@ export async function buildApp(deps: AppDeps, app: Server = createServer()) {
   await app.register(diveRoutes, {
     prefix: '/api', auth, logbook, divers, centres, dives, merging, checks, pushes, waitingPushes,
     deletion: deps.deletion, merge: deps.merge, continuation: deps.continuation, append: deps.append, assessments, providerAnswers: diveAnswers,
+    certifications,
   });
   await app.register(candidateRoutes, { prefix: '/api', auth, candidates: deps.candidates, assessments });
   await app.register(assessmentRoutes, { prefix: '/api', auth, assessments });
