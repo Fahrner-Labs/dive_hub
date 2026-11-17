@@ -3362,10 +3362,18 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** The User's deleted Dives, most recently deleted first (at most 100), to restore them; which Providers they are still at */
+        /**
+         * A page of the User's deleted Dives, newest first (limit 1–200, default 25), to restore them; where each is still at a Provider
+         * @description Pass `nextCursor` back as `cursor` for the next page. `stillAt` covers every deleted Dive, not only this page, for the reminder (docs/spec/clients.md). ADR 0026, 0027.
+         */
         get: {
             parameters: {
-                query?: never;
+                query?: {
+                    /** @description Dives per page */
+                    limit?: number;
+                    /** @description nextCursor of the previous answer; leave out for the first page */
+                    cursor?: string;
+                };
                 header?: never;
                 path?: never;
                 cookie?: never;
@@ -3379,37 +3387,58 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
-                            id: string;
-                            diverId: string;
-                            /** @description Send it back to restore the Dive */
-                            version: number;
-                            number: null | number;
-                            /** Format: date-time */
-                            startsAt: string;
-                            utcOffsetSeconds: null | number;
-                            /** @enum {unknown} */
-                            utcOffsetSource: "device" | "position" | "nearby" | "unknown";
-                            durationSeconds: number;
-                            maxDepthM: null | number;
-                            site: null | {
+                            dives: {
                                 id: string;
-                                name: string;
-                            };
-                            /** Format: date-time */
-                            deletedAt: string;
-                            mergedInto: null | string;
-                            movedTo: null | string;
-                            continuedInto: null | string;
-                            /** @description The other Dives appended in the same append, in start order: clients list them as one entry, which one restore brings back */
-                            appendedWith: string[];
-                            /** @description Providers the dive is still at: clients remind the User and offer to delete it there (docs/spec/clients.md) */
+                                diverId: string;
+                                /** @description Send it back to restore the Dive */
+                                version: number;
+                                number: null | number;
+                                /** Format: date-time */
+                                startsAt: string;
+                                utcOffsetSeconds: null | number;
+                                /** @enum {unknown} */
+                                utcOffsetSource: "device" | "position" | "nearby" | "unknown";
+                                durationSeconds: number;
+                                maxDepthM: null | number;
+                                site: null | {
+                                    id: string;
+                                    name: string;
+                                };
+                                /** Format: date-time */
+                                deletedAt: string;
+                                mergedInto: null | string;
+                                movedTo: null | string;
+                                continuedInto: null | string;
+                                /** @description The other Dives appended in the same append, in start order: clients list them as one entry, which one restore brings back */
+                                appendedWith: string[];
+                                /** @description Providers the dive is still at: clients remind the User and offer to delete it there (docs/spec/clients.md) */
+                                stillAt: {
+                                    provider: string;
+                                    remoteNumber: null | number;
+                                }[];
+                                /** @description The Dive's entries in the queue of Waiting pushes: a delete at a Provider that goes out 5 minutes after deleting here (Undo cancels it), or one that is held or stopped, with its reason */
+                                waiting: components["schemas"]["WaitingPushView"][];
+                            }[];
+                            /** @description Every deleted Dive of the Divers the User manages */
+                            total: number;
+                            /** @description Pass as `cursor` to get the next page; absent on the last page */
+                            nextCursor?: string;
+                            /** @description Every deleted Dive still at a Provider, across all pages (not only this one): clients remind the User and let it keep the copy there without loading every page */
                             stillAt: {
+                                diveId: string;
                                 provider: string;
                                 remoteNumber: null | number;
                             }[];
-                            /** @description The Dive's entries in the queue of Waiting pushes: a delete at a Provider that goes out 5 minutes after deleting here (Undo cancels it), or one that is held or stopped, with its reason */
-                            waiting: components["schemas"]["WaitingPushView"][];
-                        }[];
+                        };
+                    };
+                };
+                /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
                     };
                 };
             };

@@ -1,9 +1,11 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState, type RefObject } from 'react';
 import { useTranslation } from 'react-i18next';
-import { api, deletedDivesQuery, diveQuery, diversQuery, keys, restorePreviewQuery, unwrap, type DeletedDiveView } from './api.ts';
+import {
+  api, deletedDivesOn, deletedDivesQuery, diveQuery, diversQuery, keys, restorePreviewQuery, unwrap, type DeletedDiveView,
+} from './api.ts';
 import { announce } from './lib/announce.ts';
-import { deletedNotice, updateDeletion, useDeletion, type JustDeleted } from './lib/deletion.ts';
+import { deletedNotice, keepCopies, stillToShow, updateDeletion, useDeletion, type JustDeleted } from './lib/deletion.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
 import { focusHeading, refocusAfterRemoval } from './lib/focus.ts';
 import { reviewHref } from './lib/review.ts';
@@ -38,26 +40,33 @@ function useRestore(d: DeletedDiveView, onRestored: () => void, name?: string) {
 
 /**
  * At the top of the logbook (ADR 0026): the Dive just deleted, with "Undo"; otherwise a reminder while deleted dives are
- * still at a Provider. Both can be dismissed; the reminder comes back on the next visit, as long as the dive is there.
+ * still at a Provider. The reminder's "Keep it in SSI" keeps those copies there on this client, so it stays away on later
+ * visits too; a dive deleted later brings it back.
  */
 export function DeletedNotices() {
   const { t } = useTranslation();
-  const { justDeleted, reminderDismissed } = useDeletion();
-  const deleted = useQuery(deletedDivesQuery());
+  const { justDeleted, reminderDismissed, kept } = useDeletion();
+  const deleted = useInfiniteQuery(deletedDivesQuery());
   const joinNames = useJoinNames();
   const providerOf = useProviderOf();
+  const entries = deletedDivesOn(deleted.data);
   // Offered only while that Dive is still deleted (it may have been restored from the list).
-  const entry = justDeleted && deleted.data?.find((d) => d.id === justDeleted.id);
+  const entry = justDeleted && entries.find((d) => d.id === justDeleted.id);
   if (justDeleted && entry) return <JustDeletedNotice key={entry.id} just={justDeleted} dive={entry} />;
-  const still = deleted.data?.filter((d) => d.stillAt.length > 0) ?? [];
-  if (still.length === 0 || reminderDismissed) return null;
-  const where = [...new Set(still.flatMap((d) => d.stillAt.map((s) => providerOf(s.provider).name)))];
+  const still = stillToShow(deleted.data?.pages[0]?.stillAt ?? [], kept);
+  const dives = new Set(still.map((c) => c.diveId)).size;
+  if (dives === 0 || reminderDismissed) return null;
+  const where = [...new Set(still.map((c) => providerOf(c.provider).name))];
+  const names = joinNames(where);
   return (
     <Notice tone="info">
-      <p>{t('deleted.reminder', { count: still.length, name: joinNames(where) })}</p>
+      <p>{t('deleted.reminder', { count: dives, name: names })}</p>
       <div className="form-actions">
         <LinkButton href={reviewHref('deleted')}>{t('deleted.showList')}</LinkButton>
         <Button variant="quiet" onPress={() => { updateDeletion({ reminderDismissed: true }); focusHeading(); }}>{t('common.dismiss')}</Button>
+        <Button variant="quiet" onPress={() => { keepCopies(still); announce(t('deleted.keptIn', { name: names })); focusHeading(); }}>
+          {t('deleted.keep', { name: names })}
+        </Button>
       </div>
     </Notice>
   );
@@ -90,11 +99,11 @@ function JustDeletedNotice({ just, dive: d }: { just: JustDeleted; dive: Deleted
  */
 export function DeletedDives() {
   const { t } = useTranslation();
-  const deleted = useQuery(deletedDivesQuery());
+  const deleted = useInfiniteQuery(deletedDivesQuery());
   const providers = useProviders();
   const joinNames = useJoinNames();
   const list = useRef<HTMLUListElement>(null);
-  const dives = deleted.data ?? [];
+  const dives = deletedDivesOn(deleted.data);
   const byId = new Map(dives.map((d) => [d.id, d]));
   // The Dives of one append are one entry, under the earliest of them (ADR 0063).
   const entries = dives.filter((d) => !d.appendedWith.some((id) => {
@@ -111,6 +120,13 @@ export function DeletedDives() {
           <DeletedRow key={d.id} dive={d} appended={d.appendedWith.flatMap((id) => byId.get(id) ?? [])} list={list} index={index} count={count} />
         ))}
       </ul>
+      {deleted.hasNextPage && (
+        <div className="form-actions">
+          <Button variant="quiet" isPending={deleted.isFetchingNextPage} onPress={() => deleted.fetchNextPage()}>
+            {t('deleted.loadMore')}
+          </Button>
+        </div>
+      )}
     </Panel>
   );
 }
@@ -228,11 +244,11 @@ function RestoreDialog({ dive: d, name, keptName, onClose, onRestored }: {
   const errorText = useErrorText();
   const joinNames = useJoinNames();
   const nameOf = useDiveName();
-  const deleted = useQuery(deletedDivesQuery());
+  const deleted = useInfiniteQuery(deletedDivesQuery());
   const preview = useQuery(restorePreviewQuery(d.id));
   const restore = useRestore(d, () => { onClose(); onRestored(); }, name);
   const named = (id: string) => {
-    const found = deleted.data?.find((g) => g.id === id);
+    const found = deletedDivesOn(deleted.data).find((g) => g.id === id);
     return found ? nameOf(found) : t('dive.titleNoNumber');
   };
   const comesBack = preview.data?.comesBack ?? [];

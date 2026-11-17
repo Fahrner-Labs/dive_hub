@@ -49,7 +49,7 @@ describe.skipIf(!(await databaseReachable()))('restoring an appended Dive', () =
     });
     expect(response.statusCode).toBe(200);
   };
-  const deleted = async (id: string) => (await json<Deleted[]>('GET', '/api/dives/deleted')).find((d) => d.id === id);
+  const deleted = async (id: string) => (await json<{ dives: Deleted[] }>('GET', '/api/dives/deleted')).dives.find((d) => d.id === id);
   const restore = async (id: string) => {
     const response = await call('POST', `/api/dives/${id}/restore`, { version: (await deleted(id))!.version });
     expect(response.statusCode).toBe(200);

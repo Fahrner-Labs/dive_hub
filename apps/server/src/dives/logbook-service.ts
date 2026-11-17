@@ -214,24 +214,40 @@ export function createLogbookService(db: Db) {
     return row?.version ?? null;
   }
 
-  /** The deleted Dives of the Divers the User manages, most recently deleted first; where a merge, move or append sent each. */
-  async function deletedDives(userId: string, limit: number) {
-    const rows = await db.select({ d: dive, siteName: diveSite.name }).from(dive)
-      .innerJoin(diverManagement, managesDiveDiver(userId))
-      .leftJoin(diveSite, eq(diveSite.id, dive.siteId))
-      .where(isNotNull(dive.deletedAt))
-      .orderBy(desc(dive.deletedAt), desc(dive.id)).limit(limit);
+  /**
+   * A page of the deleted Dives of the Divers the User manages, most recently deleted first, and the total; where a merge,
+   * move or append sent each. The cursor continues after a page's last Dive (ADR 0017's order: deletedAt, then id).
+   */
+  async function deletedDives(userId: string, limit: number, cursor?: { deletedAt: Date; id: string }) {
+    const pageWhere = cursor
+      ? and(isNotNull(dive.deletedAt), or(
+        lt(dive.deletedAt, cursor.deletedAt),
+        and(eq(dive.deletedAt, cursor.deletedAt), lt(dive.id, cursor.id)),
+      ))
+      : isNotNull(dive.deletedAt);
+    const [rows, [counted]] = await Promise.all([
+      db.select({ d: dive, siteName: diveSite.name }).from(dive)
+        .innerJoin(diverManagement, managesDiveDiver(userId))
+        .leftJoin(diveSite, eq(diveSite.id, dive.siteId))
+        .where(pageWhere)
+        .orderBy(desc(dive.deletedAt), desc(dive.id)).limit(limit + 1),
+      db.select({ n: count() }).from(dive)
+        .innerJoin(diverManagement, managesDiveDiver(userId))
+        .where(isNotNull(dive.deletedAt)),
+    ]);
+    const hasMore = rows.length > limit;
+    const page = hasMore ? rows.slice(0, limit) : rows;
     // Why it is gone, when it wasn't deleted by hand: the latest Revision names the Dive it went into.
-    const last = rows.length === 0 ? [] : await db.selectDistinctOn([revision.entityId], { id: revision.entityId, changes: revision.changes })
-      .from(revision).where(and(eq(revision.entityType, 'dive'), inArray(revision.entityId, rows.map((r) => r.d.id))))
+    const last = page.length === 0 ? [] : await db.selectDistinctOn([revision.entityId], { id: revision.entityId, changes: revision.changes })
+      .from(revision).where(and(eq(revision.entityType, 'dive'), inArray(revision.entityId, page.map((r) => r.d.id))))
       .orderBy(revision.entityId, desc(revision.at), desc(revision.id));
     const went = (id: string, key: 'mergedInto' | 'movedTo' | 'continuedInto') => {
       const to = last.find((r) => r.id === id)?.changes[key]?.to;
       return typeof to === 'string' ? to : null;
     };
     // The other Dives an append took with it, to list as one entry (ADR 0063): parts of the same append, not the kept Dive's.
-    const appendIds = rows.length === 0 ? [] : (await db.select({ appendId: recording.appendId }).from(recording)
-      .where(and(inArray(recording.fromDiveId, rows.map((r) => r.d.id)), isNotNull(recording.appendId)))).map((r) => r.appendId!);
+    const appendIds = page.length === 0 ? [] : (await db.select({ appendId: recording.appendId }).from(recording)
+      .where(and(inArray(recording.fromDiveId, page.map((r) => r.d.id)), isNotNull(recording.appendId)))).map((r) => r.appendId!);
     const taken = appendIds.length === 0 ? [] : (await db.select({ diveId: recording.fromDiveId, appendId: recording.appendId, keptDiveId: continuationAppend.keptDiveId })
       .from(recording).innerJoin(continuationAppend, eq(continuationAppend.id, recording.appendId))
       .where(inArray(recording.appendId, appendIds)).orderBy(recording.startsAt)).filter((p) => p.diveId !== p.keptDiveId);
@@ -239,10 +255,22 @@ export function createLogbookService(db: Db) {
       const own = taken.find((p) => p.diveId === id);
       return own ? taken.filter((p) => p.appendId === own.appendId && p.diveId !== id).map((p) => p.diveId!) : [];
     };
-    return rows.map(({ d, siteName }) => ({
-      d, siteName, mergedInto: went(d.id, 'mergedInto'), movedTo: went(d.id, 'movedTo'), continuedInto: went(d.id, 'continuedInto'),
-      appendedWith: appendedWith(d.id),
-    }));
+    return {
+      rows: page.map(({ d, siteName }) => ({
+        d, siteName, mergedInto: went(d.id, 'mergedInto'), movedTo: went(d.id, 'movedTo'), continuedInto: went(d.id, 'continuedInto'),
+        appendedWith: appendedWith(d.id),
+      })),
+      total: counted?.n ?? 0,
+      hasMore,
+    };
+  }
+
+  /** The ids of every deleted Dive of the Divers the User manages: what the reminder counts, across all pages. */
+  async function deletedDiveIds(userId: string) {
+    const rows = await db.select({ id: dive.id }).from(dive)
+      .innerJoin(diverManagement, managesDiveDiver(userId))
+      .where(isNotNull(dive.deletedAt));
+    return rows.map((r) => r.id);
   }
 
   /** The Revisions of a Dive and of its Recordings, newest first (at most 200), with the name of who made each. */
@@ -262,7 +290,7 @@ export function createLogbookService(db: Db) {
       .orderBy(desc(revision.at), desc(revision.id)).limit(200);
   }
 
-  return { managedDivers, listDives, ownDiveId, neighbours, ownRecordingId, samplesOf, findManagedDive, recordingsAndSite, previousDive, partsOf, gearOf, participantsOfDive, versionOf, deletedDives, revisionsOfDive };
+  return { managedDivers, listDives, ownDiveId, neighbours, ownRecordingId, samplesOf, findManagedDive, recordingsAndSite, previousDive, partsOf, gearOf, participantsOfDive, versionOf, deletedDives, deletedDiveIds, revisionsOfDive };
 }
 
 export type LogbookService = ReturnType<typeof createLogbookService>;

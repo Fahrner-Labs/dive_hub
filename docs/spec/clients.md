@@ -452,9 +452,14 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   - Afterwards leave the dive page (it answers 404 now) and say what happened (`providers`: each with `copy` `deleted` or
     `kept`), with **Undo** (restore), which doesn't time out. Undo brings it back here only. *Web:* `DeletedDives.tsx`.
 - **Deleted dives** (`GET /api/dives/deleted`): offer to restore them (`POST /api/dives/{id}/restore` with `version`).
-  - **Must remind while a deleted Dive is still at a Provider** (`stillAt` not empty): say so on the Dive with "Delete
-    in SSI" per Provider (`DELETE /api/dives/{id}/providers/{provider}`, confirmed), and where the User lands (the logbook).
-    The reminder may be dismissed for a visit; it comes back while the dive is there. *Web:* `DeletedDives.tsx`.
+  The list is a page, newest deletion first: `limit` (1–200, default 25) and `cursor` from the previous answer's
+  `nextCursor`; `total` is every deleted Dive. Never assume `dives` is all of them. `stillAt` at the page's top level
+  covers every deleted Dive still at a Provider, not only this page, so the reminder needs no further pages.
+  - **Must remind while a deleted Dive is still at a Provider** (the page's `stillAt` not empty): say so on the Dive
+    with "Delete in SSI" per Provider (`DELETE /api/dives/{id}/providers/{provider}`, confirmed), and where the User
+    lands (the logbook). Offer "Keep it in SSI": the User keeps those copies there, so the reminder goes and stays away
+    on later visits; a Dive deleted later brings it back. Keep it on the client (the web client: `localStorage`), not
+    on the account. *Web:* `DeletedDives.tsx` (the list's "Load more").
   - **Must show `waiting`** (the queue of Waiting pushes): a `delete` that waits goes out at `dueAt` ("Will be deleted in
     {{provider}} in {{minutes}} min"); a `held` one says why (`reason`), a `stopped` one "Couldn't delete it in {{provider}}:
     {{reason}}" (the problem code's text).

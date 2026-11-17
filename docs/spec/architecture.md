@@ -440,7 +440,8 @@ Deliberate simplifications, to revisit:
 
 Implemented:
 - **API:** `DELETE /api/dives/{id}` (`version`, `inSsi`; answers `{ ssi: 'deleted' | 'kept' | null }`),
-  `GET /api/dives/deleted` (the newest 100, with `ssi` while still in SSI) and `POST /api/dives/{id}/restore`.
+  `GET /api/dives/deleted` (a page, newest first: `limit` 1–200 default 25, `cursor` from `nextCursor`, `total`, and
+  `stillAt` for every deleted Dive still at a Provider) and `POST /api/dives/{id}/restore`.
   `DELETE /api/dives/{id}/ssi` and `GET /api/dives/{id}/ssi` also work for a deleted Dive; sending doesn't.
 - **Soft delete** (`dive-service.ts`, `remove` and `restore`): one `deleted_at` on the Dive and its Recordings, causes
   `delete` and `restore`. Every read already skipped deleted rows; the Diver's count, the site's `diveCount`/`inUse`,
@@ -451,11 +452,13 @@ Implemented:
   `ssi.currentOf` tells which Dives are still in SSI (for the answer and the list).
 - **Web client:** "Delete dive…" in the dive page's More menu (`DeleteDive.tsx`: one dialog with the SSI question);
   back to the logbook with a notice and Undo, the SSI reminder and "Deleted dives" with Restore and "Delete in SSI"
-  (`DeletedDives.tsx`, state shared between the pages in `lib/deletion.ts`). The candidates panel says when a
-  candidate's Dives are gone; the history shows "Restored".
+  (`DeletedDives.tsx`, state shared between the pages in `lib/deletion.ts`). The list pages with "Load more"; the
+  reminder's "Keep it in SSI" keeps those copies there on this client, so the reminder stays away on later visits. The
+  candidates panel says when a candidate's Dives are gone; the history shows "Restored".
 - **Tests:** `test/dive-deletion.test.ts` (server, against the fake SSI), `test/deletion.test.ts` (web),
-  `e2e/dive-deletion.spec.ts` and ui-quality cases for the dialog and the logbook states, with dive 9 from
-  `e2e/fixtures/deletable-computer.fit` (`test/fixtures/write-deletion-fixture.ts`); review captures 32–37.
+  `test/deletion-cursor.test.ts` (server cursor), `e2e/dive-deletion.spec.ts` and ui-quality cases for the dialog and
+  the logbook states, with dive 9 from `e2e/fixtures/deletable-computer.fit`
+  (`test/fixtures/write-deletion-fixture.ts`); review captures 32–37.
 
 Found in the screenshot review and fixed: with the list of deleted dives open, the SSI reminder stayed above it with
 only "Dismiss" left. It now hides while the list is open, which names each dive still in SSI.
@@ -463,9 +466,8 @@ only "Dismiss" left. It now hides while the list is open, which names each dive 
 Deliberate simplifications, to revisit:
 - **The SSI delete runs in the request**, like sending (slice 10).
 - **Deleted Dives stay forever** (with their Originals); there is no purge.
-- **No "Keep it in SSI"**: the reminder only goes when the dive is deleted in SSI or restored here; dismissing the
-  logbook's notice lasts for the visit.
-- **The deleted list isn't paged** (the newest 100).
+- **"Keep it in SSI" is kept on the client** (`localStorage`, like the equipment reminder's dismissal), not on the
+  account: another browser shows the reminder again. The server keeps listing the copy as still at the Provider.
 - **An Import's outcome** still links to a Dive deleted since; the dive page then says it wasn't found.
 
 **Slice 13 (2026-10-05): Providers as adapters** ([ADR 0027](../decisions/0027-providers-as-adapters.md), the

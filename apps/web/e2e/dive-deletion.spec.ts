@@ -68,10 +68,16 @@ test('keeps a dive in SSI when asked to, reminds about it, and deletes it there 
   await page.getByRole('button', { name: 'Dismiss' }).click();
   await expect(logbookHeading(page)).toBeFocused();
 
-  // Next visit: the reminder, until it's gone from SSI.
+  // Dismiss lasts for the visit; "Keep it in SSI" keeps the copy there on this client.
   await page.reload();
   await expect(page.locator('#main').getByText('A dive you deleted is still in SSI.')).toBeVisible();
-  await page.getByRole('link', { name: 'Show deleted dives', exact: true }).click();
+  await page.getByRole('button', { name: 'Keep it in SSI' }).click();
+  await expect(logbookHeading(page)).toBeFocused();
+  await page.reload();
+  await expect(page.locator('#main').getByText('A dive you deleted is still in SSI.')).toHaveCount(0);
+
+  // The list still says where the dive is, and deletes it there.
+  await goToMore(page, 'Deleted dives (1)');
   const panel = page.locator('section', { has: page.getByRole('heading', { name: 'Deleted dives' }) });
   await expect(page.getByRole('heading', { name: 'Review', level: 1 })).toBeFocused();
   await expect(panel).toContainText(/Still in SSI, as dive \d+\./);
@@ -108,7 +114,12 @@ test('a deleted dive with two copies at a Provider keeps Restore and puts the "D
   });
   const first = { ...dive('stub-a', 101, '2026-09-01T08:00:00.000Z'), appendedWith: ['stub-b'] };
   const second = { ...dive('stub-b', 102, '2026-09-01T09:00:00.000Z'), appendedWith: ['stub-a'] };
-  await page.route('**/api/dives/deleted', (route) => route.fulfill({ json: [first, second] }));
+  await page.route('**/api/dives/deleted', (route) => route.fulfill({
+    json: {
+      dives: [first, second], total: 2,
+      stillAt: [{ diveId: 'stub-a', provider: 'ssi', remoteNumber: 101 }, { diveId: 'stub-b', provider: 'ssi', remoteNumber: 102 }],
+    },
+  }));
   let deleted = 0;
   await page.route('**/api/dives/stub-*/providers/ssi', (route) => {
     if (route.request().method() === 'DELETE') { deleted += 1; return route.fulfill({ status: 204 }); }
@@ -126,4 +137,24 @@ test('a deleted dive with two copies at a Provider keeps Restore and puts the "D
   await expect(dialog.getByRole('button', { name: 'Delete in SSI' })).toBeVisible();
   await dialog.getByRole('button', { name: 'Delete in SSI' }).click();
   await expect.poll(() => deleted).toBe(1);
+});
+
+test('pages the deleted dives with "Load more"', { tag: ['@dives'] }, async ({ page }) => {
+  const dive = (id: string, number: number) => ({
+    id, diverId: 'stub-diver', version: 1, number, startsAt: '2026-09-01T08:00:00.000Z', utcOffsetSeconds: 0, utcOffsetSource: 'device',
+    durationSeconds: 1800, maxDepthM: 20, site: null, deletedAt: '2026-10-01T10:00:00.000Z',
+    mergedInto: null, movedTo: null, continuedInto: null, appendedWith: [], stillAt: [], waiting: [],
+  });
+  await page.route('**/api/dives/deleted*', (route) => {
+    const cursor = new URL(route.request().url()).searchParams.get('cursor');
+    if (cursor === 'page-2') return route.fulfill({ json: { dives: [dive('stub-b', 202)], total: 2, stillAt: [] } });
+    return route.fulfill({ json: { dives: [dive('stub-a', 201)], total: 2, nextCursor: 'page-2', stillAt: [] } });
+  });
+  await page.goto('/#/review?tab=deleted');
+  const panel = page.locator('section', { has: page.getByRole('heading', { name: 'Deleted dives' }) });
+  await expect(panel.getByText('Dive 201')).toBeVisible();
+  await expect(panel.getByText('Dive 202')).toHaveCount(0);
+  await panel.getByRole('button', { name: 'Load more' }).click();
+  await expect(panel.getByText('Dive 202')).toBeVisible();
+  await expect(panel.getByRole('button', { name: 'Load more' })).toHaveCount(0);
 });

@@ -11339,193 +11339,277 @@
     },
     "/api/dives/deleted": {
       "get": {
-        "summary": "The User's deleted Dives, most recently deleted first (at most 100), to restore them; which Providers they are still at",
+        "summary": "A page of the User's deleted Dives, newest first (limit 1–200, default 25), to restore them; where each is still at a Provider",
+        "description": "Pass `nextCursor` back as `cursor` for the next page. `stillAt` covers every deleted Dive, not only this page, for the reminder (docs/spec/clients.md). ADR 0026, 0027.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 25
+            },
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "description": "Dives per page"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "description": "nextCursor of the previous answer; leave out for the first page"
+          }
+        ],
         "responses": {
           "200": {
             "description": "Default Response",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "type": "object",
-                    "required": [
-                      "id",
-                      "diverId",
-                      "version",
-                      "number",
-                      "startsAt",
-                      "utcOffsetSeconds",
-                      "utcOffsetSource",
-                      "durationSeconds",
-                      "maxDepthM",
-                      "site",
-                      "deletedAt",
-                      "mergedInto",
-                      "movedTo",
-                      "continuedInto",
-                      "appendedWith",
-                      "stillAt",
-                      "waiting"
-                    ],
-                    "properties": {
-                      "id": {
-                        "type": "string"
-                      },
-                      "diverId": {
-                        "type": "string"
-                      },
-                      "version": {
-                        "type": "integer",
-                        "description": "Send it back to restore the Dive"
-                      },
-                      "number": {
-                        "anyOf": [
-                          {
-                            "type": "null"
+                  "type": "object",
+                  "required": [
+                    "dives",
+                    "total",
+                    "stillAt"
+                  ],
+                  "properties": {
+                    "dives": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "id",
+                          "diverId",
+                          "version",
+                          "number",
+                          "startsAt",
+                          "utcOffsetSeconds",
+                          "utcOffsetSource",
+                          "durationSeconds",
+                          "maxDepthM",
+                          "site",
+                          "deletedAt",
+                          "mergedInto",
+                          "movedTo",
+                          "continuedInto",
+                          "appendedWith",
+                          "stillAt",
+                          "waiting"
+                        ],
+                        "properties": {
+                          "id": {
+                            "type": "string"
                           },
-                          {
-                            "type": "integer"
-                          }
-                        ]
-                      },
-                      "startsAt": {
-                        "type": "string",
-                        "format": "date-time"
-                      },
-                      "utcOffsetSeconds": {
-                        "anyOf": [
-                          {
-                            "type": "null"
+                          "diverId": {
+                            "type": "string"
                           },
-                          {
-                            "type": "integer"
-                          }
-                        ]
-                      },
-                      "utcOffsetSource": {
-                        "enum": [
-                          "device",
-                          "position",
-                          "nearby",
-                          "unknown"
-                        ]
-                      },
-                      "durationSeconds": {
-                        "type": "number"
-                      },
-                      "maxDepthM": {
-                        "anyOf": [
-                          {
-                            "type": "null"
+                          "version": {
+                            "type": "integer",
+                            "description": "Send it back to restore the Dive"
                           },
-                          {
-                            "type": "number"
-                          }
-                        ]
-                      },
-                      "site": {
-                        "anyOf": [
-                          {
-                            "type": "null"
-                          },
-                          {
-                            "type": "object",
-                            "required": [
-                              "id",
-                              "name"
-                            ],
-                            "properties": {
-                              "id": {
-                                "type": "string"
+                          "number": {
+                            "anyOf": [
+                              {
+                                "type": "null"
                               },
-                              "name": {
-                                "type": "string"
+                              {
+                                "type": "integer"
                               }
-                            }
-                          }
-                        ]
-                      },
-                      "deletedAt": {
-                        "type": "string",
-                        "format": "date-time"
-                      },
-                      "mergedInto": {
-                        "anyOf": [
-                          {
-                            "type": "null"
+                            ]
                           },
-                          {
+                          "startsAt": {
                             "type": "string",
-                            "description": "The Dive it was merged into (ADR 0038): clients say so and link there"
-                          }
-                        ]
-                      },
-                      "movedTo": {
-                        "anyOf": [
-                          {
-                            "type": "null"
+                            "format": "date-time"
                           },
-                          {
-                            "type": "string",
-                            "description": "The Dive it became in another Diver's logbook when it was moved while linked to a Provider (ADR 0038)"
-                          }
-                        ]
-                      },
-                      "continuedInto": {
-                        "anyOf": [
-                          {
-                            "type": "null"
+                          "utcOffsetSeconds": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "integer"
+                              }
+                            ]
                           },
-                          {
+                          "utcOffsetSource": {
+                            "enum": [
+                              "device",
+                              "position",
+                              "nearby",
+                              "unknown"
+                            ]
+                          },
+                          "durationSeconds": {
+                            "type": "number"
+                          },
+                          "maxDepthM": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "number"
+                              }
+                            ]
+                          },
+                          "site": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "object",
+                                "required": [
+                                  "id",
+                                  "name"
+                                ],
+                                "properties": {
+                                  "id": {
+                                    "type": "string"
+                                  },
+                                  "name": {
+                                    "type": "string"
+                                  }
+                                }
+                              }
+                            ]
+                          },
+                          "deletedAt": {
                             "type": "string",
-                            "description": "The Dive it was appended to as its continuation (ADR 0063): clients say so and link there"
-                          }
-                        ]
-                      },
-                      "appendedWith": {
-                        "type": "array",
-                        "items": {
-                          "type": "string"
-                        },
-                        "description": "The other Dives appended in the same append, in start order: clients list them as one entry, which one restore brings back"
-                      },
-                      "stillAt": {
-                        "type": "array",
-                        "items": {
-                          "type": "object",
-                          "required": [
-                            "provider",
-                            "remoteNumber"
-                          ],
-                          "properties": {
-                            "provider": {
+                            "format": "date-time"
+                          },
+                          "mergedInto": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "string",
+                                "description": "The Dive it was merged into (ADR 0038): clients say so and link there"
+                              }
+                            ]
+                          },
+                          "movedTo": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "string",
+                                "description": "The Dive it became in another Diver's logbook when it was moved while linked to a Provider (ADR 0038)"
+                              }
+                            ]
+                          },
+                          "continuedInto": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "string",
+                                "description": "The Dive it was appended to as its continuation (ADR 0063): clients say so and link there"
+                              }
+                            ]
+                          },
+                          "appendedWith": {
+                            "type": "array",
+                            "items": {
                               "type": "string"
                             },
-                            "remoteNumber": {
-                              "anyOf": [
-                                {
-                                  "type": "null"
+                            "description": "The other Dives appended in the same append, in start order: clients list them as one entry, which one restore brings back"
+                          },
+                          "stillAt": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "required": [
+                                "provider",
+                                "remoteNumber"
+                              ],
+                              "properties": {
+                                "provider": {
+                                  "type": "string"
                                 },
-                                {
-                                  "type": "integer",
-                                  "description": "The Provider's own dive number"
+                                "remoteNumber": {
+                                  "anyOf": [
+                                    {
+                                      "type": "null"
+                                    },
+                                    {
+                                      "type": "integer",
+                                      "description": "The Provider's own dive number"
+                                    }
+                                  ]
                                 }
-                              ]
-                            }
+                              }
+                            },
+                            "description": "Providers the dive is still at: clients remind the User and offer to delete it there (docs/spec/clients.md)"
+                          },
+                          "waiting": {
+                            "type": "array",
+                            "items": {
+                              "$ref": "#/components/schemas/WaitingPushView"
+                            },
+                            "description": "The Dive's entries in the queue of Waiting pushes: a delete at a Provider that goes out 5 minutes after deleting here (Undo cancels it), or one that is held or stopped, with its reason"
                           }
-                        },
-                        "description": "Providers the dive is still at: clients remind the User and offer to delete it there (docs/spec/clients.md)"
-                      },
-                      "waiting": {
-                        "type": "array",
-                        "items": {
-                          "$ref": "#/components/schemas/WaitingPushView"
-                        },
-                        "description": "The Dive's entries in the queue of Waiting pushes: a delete at a Provider that goes out 5 minutes after deleting here (Undo cancels it), or one that is held or stopped, with its reason"
+                        }
                       }
+                    },
+                    "total": {
+                      "type": "integer",
+                      "description": "Every deleted Dive of the Divers the User manages"
+                    },
+                    "nextCursor": {
+                      "type": "string",
+                      "description": "Pass as `cursor` to get the next page; absent on the last page"
+                    },
+                    "stillAt": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "diveId",
+                          "provider",
+                          "remoteNumber"
+                        ],
+                        "properties": {
+                          "diveId": {
+                            "type": "string"
+                          },
+                          "provider": {
+                            "type": "string"
+                          },
+                          "remoteNumber": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "integer",
+                                "description": "The Provider's own dive number"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "description": "Every deleted Dive still at a Provider, across all pages (not only this one): clients remind the User and let it keep the copy there without loading every page"
                     }
                   }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
                 }
               }
             }
