@@ -342,7 +342,8 @@ are **forward-only**.
    files commands above, before every upgrade.
 2. **Read the release notes** for the version you are moving to.
 3. **Pin an exact `vX.Y.Z` tag** in `compose.yaml`. Do not use `latest`, `X.Y` or `X` in
-   production: a moving tag can jump across a migration without warning.
+   production: a moving tag can jump across a migration without warning. `-rcN` tags exist for
+   testing an upgrade before the final release; never pin one in production.
 4. Pull and restart:
 
    ```sh

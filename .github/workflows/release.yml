@@ -1,6 +1,7 @@
-# Publishes a release: the vX.Y.Z tag is the only input (ADR 0068). The tag must point at a commit on main, the
-# image is built for amd64 and arm64, smoke-tested, pushed to ghcr.io under four tags, and announced on the Releases
-# page. A tag that fails the checks publishes nothing.
+# Publishes a release: the vX.Y.Z or vX.Y.Z-rcN tag is the only input (ADR 0068). The tag must point at a commit on
+# main, the image is built for amd64 and arm64, smoke-tested, pushed to ghcr.io and announced on the Releases page.
+# A stable tag publishes four image tags and a latest release; an rc publishes only its exact tag as a non-latest
+# prerelease. A tag that fails the checks publishes nothing.
 name: release
 
 on:
@@ -14,7 +15,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Release tag to publish (vX.Y.Z)'
+        description: 'Release tag to publish (vX.Y.Z or vX.Y.Z-rcN)'
         required: true
         type: string
 
@@ -41,6 +42,7 @@ jobs:
       version: ${{ steps.release.outputs.version }}
       major: ${{ steps.release.outputs.major }}
       minor: ${{ steps.release.outputs.minor }}
+      prerelease: ${{ steps.release.outputs.prerelease }}
       sha: ${{ steps.release.outputs.sha }}
     steps:
       - uses: actions/checkout@v4
@@ -54,10 +56,10 @@ jobs:
         run: |
           set -euo pipefail
           tag="$RELEASE_TAG"
-          if [[ ! "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "::error::'$tag' is not a release tag of the form vX.Y.Z"
-            exit 1
-          fi
+          release="$(node scripts/release-tag.mjs "$tag")"
+          printf '%s\n' "$release" >> "$GITHUB_OUTPUT"
+          prerelease="$(printf '%s\n' "$release" | sed -n 's/^prerelease=//p')"
+          base_version="$(printf '%s\n' "$release" | sed -n 's/^baseVersion=//p')"
           git rev-parse --verify "refs/tags/$tag" >/dev/null || {
             echo "::error::tag $tag does not exist"
             exit 1
@@ -68,17 +70,11 @@ jobs:
             echo "::error::commit $sha of $tag is not an ancestor of origin/main; tags are cut only on main (ADR 0068)"
             exit 1
           fi
-          version="${tag#v}"
-          major="${version%%.*}"
-          rest="${version#*.}"
-          minor="${rest%%.*}"
-          {
-            echo "tag=$tag"
-            echo "version=$version"
-            echo "major=$major"
-            echo "minor=$minor"
-            echo "sha=$sha"
-          } >> "$GITHUB_OUTPUT"
+          if [ "$prerelease" = "true" ] && git rev-parse --verify "refs/tags/v$base_version" >/dev/null 2>&1; then
+            echo "::error::'$tag' was cut after the final release 'v$base_version'"
+            exit 1
+          fi
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
           echo "Publishing $tag from $sha"
 
   build-smoke:
@@ -202,7 +198,20 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # Idempotent: a re-run overwrites the same four tags.
+      - name: Choose the image tags
+        run: |
+          {
+            echo 'IMAGE_TAGS<<IMAGE_TAGS_EOF'
+            echo "${{ env.IMAGE }}:${{ needs.verify.outputs.tag }}"
+            if [ "${{ needs.verify.outputs.prerelease }}" = "false" ]; then
+              echo "${{ env.IMAGE }}:${{ needs.verify.outputs.major }}.${{ needs.verify.outputs.minor }}"
+              echo "${{ env.IMAGE }}:${{ needs.verify.outputs.major }}"
+              echo "${{ env.IMAGE }}:latest"
+            fi
+            echo 'IMAGE_TAGS_EOF'
+          } >> "$GITHUB_ENV"
+
+      # Idempotent: a re-run overwrites the same tags.
       - name: Push the image tags
         uses: docker/build-push-action@v6
         with:
@@ -212,11 +221,7 @@ jobs:
           build-args: |
             DIVEHUB_VERSION=${{ needs.verify.outputs.tag }}
             DIVEHUB_REVISION=${{ needs.verify.outputs.sha }}
-          tags: |
-            ${{ env.IMAGE }}:${{ needs.verify.outputs.tag }}
-            ${{ env.IMAGE }}:${{ needs.verify.outputs.major }}.${{ needs.verify.outputs.minor }}
-            ${{ env.IMAGE }}:${{ needs.verify.outputs.major }}
-            ${{ env.IMAGE }}:latest
+          tags: ${{ env.IMAGE_TAGS }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -226,7 +231,13 @@ jobs:
         run: |
           set -euo pipefail
           tag="${{ needs.verify.outputs.tag }}"
-          if gh release view "$tag" >/dev/null 2>&1; then
+          if [ "${{ needs.verify.outputs.prerelease }}" = "true" ]; then
+            if gh release view "$tag" >/dev/null 2>&1; then
+              gh release edit "$tag" --title "$tag" --prerelease --latest=false
+            else
+              gh release create "$tag" --verify-tag --generate-notes --title "$tag" --prerelease --latest=false
+            fi
+          elif gh release view "$tag" >/dev/null 2>&1; then
             gh release edit "$tag" --title "$tag" --latest --prerelease=false
           else
             gh release create "$tag" --verify-tag --generate-notes --title "$tag" --latest
