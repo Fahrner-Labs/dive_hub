@@ -185,7 +185,10 @@ coverage, validity; B5), **Medical exam** (date, result, valid until, examiner),
 - *Deleting (ADR 0026, implemented):* soft, with a Revision (`delete`). The Dive and its Recordings get the same
   tombstone; Originals and samples stay. A deleted Dive counts nowhere (lists, search, site and Diver counts, Duplicate
   candidates, overlap matching) and can be **restored** with the Recordings deleted with it (`restore`; a site deleted
-  meanwhile becomes the one it was merged into, else none). Only Users who manage the Diver delete or restore.
+  meanwhile becomes the one it was merged into, else none). Only Users who manage the Diver delete or restore. A
+  tombstone whose Provider copies are all gone is **purged** after 30 days ([ADR 0072](../decisions/0072-purging-deleted-dives.md)):
+  the Dive row and its dependent rows go, its Recordings stay detached so re-imports are still skipped as
+  `deleted_earlier`, and its Originals stay because another Dive can share them. A Dive a Continuation uses is kept.
 
 **Joint dive** — the link between the Dives of Divers who made the same descent together. Created when a Buddy
 suggestion is accepted; nothing is copied or merged into it. The Joint dive's own visibility comes in a later slice.
@@ -639,7 +642,9 @@ With an SSI Connection, Dives go through SSI's app API ([ADR 0024](../decisions/
    - *No:* P2 stays. D1 is listed under "Deleted dives" as still in SSI, with "Delete in SSI", and the logbook reminds
      Tim until it's gone from SSI.
    Re-importing O1 (or a re-export of the dive) is skipped as "deleted earlier". Restoring D1 brings it back here, not
-   to SSI.
+   to SSI. Thirty days after its last Provider copy is gone, the tombstone is purged
+   ([ADR 0072](../decisions/0072-purging-deleted-dives.md)): D1's row and history go, R1 stays detached so O1 is still
+   skipped as "deleted earlier", and O1 itself stays.
 
 Edge cases:
 - *Token expired:* Tim chose "Don't store my password". The Push waits, and the Connection shows "Sign in to SSI again".

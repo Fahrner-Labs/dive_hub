@@ -12,7 +12,9 @@ Accepted – 2026-10-05. Amended by [ADR 0027](0027-providers-as-adapters.md) (2
 the Dive is at (`alsoAt`, `stillAt`, `provider_*` codes) instead of SSI by name. Amended by
 [ADR 0056](0056-two-way-exchange-and-automation.md) (built 2026-10-27, piece 6): with a Connection's "Delete at the
 Provider" on, the Dive is deleted here first and at the Provider after a 5-minute quiet period; the list of deleted dives
-shows that waiting or stopped delete in the place of the reminder. Off, this ADR stands.
+shows that waiting or stopped delete in the place of the reminder. Off, this ADR stands. Amended by
+[ADR 0072](0072-purging-deleted-dives.md) (2026-11-17): a tombstone whose Provider copies are all gone is purged after
+30 days; its Recordings stay, detached, so re-imports are still skipped.
 
 ## Context
 The [data model](../spec/data-model.md) says deletes are soft (A5), and ADR 0024 says deleting a Dive offers to delete
@@ -65,4 +67,6 @@ re-import as "deleted earlier"; Undo plus a list of deleted dives; the reminder 
   Recording up by its key must also look at deleted ones.
 - Merging sites moves deleted Dives too, so a restore finds the kept site.
 - Deleting a Diver still counts its deleted Dives, so a Diver isn't deleted from under them.
-- Deleted Dives stay forever for now; purging them (and their Originals) needs its own decision.
+- Deleted Dives whose Provider copies are all gone are purged after 30 days; a Dive a Continuation uses stays. Its
+  Recordings stay as tombstones, so re-imports are still skipped, and Originals stay because another Dive can share them
+  ([ADR 0072](0072-purging-deleted-dives.md)).

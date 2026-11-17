@@ -102,7 +102,7 @@ _Avoid_: Log number, dive count, ID
 _German_: Tauchgangsnummer
 
 **Deleted dive**:
-A Dive the User deleted. It counts nowhere and isn't imported again, but it is kept and can be restored with its Recordings ([ADR 0026](decisions/0026-deleting-dives.md)).
+A Dive the User deleted. It counts nowhere and isn't imported again, but it is kept and can be restored with its Recordings ([ADR 0026](decisions/0026-deleting-dives.md)). A tombstone whose Provider copies are all gone is purged after 30 days: it disappears and can't be restored, while its Recordings stay so re-imports are still skipped ([ADR 0072](decisions/0072-purging-deleted-dives.md)).
 _Avoid_: Trash, archived dive, removed dive
 _German_: gelöschter Tauchgang
 
