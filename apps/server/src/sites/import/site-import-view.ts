@@ -1,5 +1,6 @@
 // A Site import over HTTP (ADR 0021, 0025): the view its routes answer, and the area and Sources it is asked for.
 import { Type, type Static } from 'typebox';
+import { EMPTY_SITE_IMPORT_COUNTS, type SiteImportCounts } from '../../db/import-types.js';
 import { type siteImport, siteImportStatus } from '../../db/schema.js';
 import { PROBLEM_CODES, storedProblemCode } from '../../http/problems.js';
 import { DateTime, Nullable, refTo } from '../../http/schemas.js';
@@ -51,8 +52,11 @@ export const SiteImportViewSchema = Type.Object({
 }, { $id: 'SiteImportView' });
 export const SiteImportView = refTo(SiteImportViewSchema);
 
+const countsOf = (counts: SiteImportCounts | null): SiteImportCounts | null =>
+  counts && { ...EMPTY_SITE_IMPORT_COUNTS, ...counts };
+
 export const toSiteImportView = (r: typeof siteImport.$inferSelect): Static<typeof SiteImportView> => ({
   id: r.id, status: r.status, sources: r.sources, area: r.area, language: r.language, createSites: r.createSites, progress: r.progress,
-  counts: r.counts, findings: r.findings, failureCode: storedProblemCode(r.errorCode),
+  counts: countsOf(r.counts), findings: r.findings, failureCode: storedProblemCode(r.errorCode),
   createdAt: r.createdAt.toISOString(), finishedAt: r.finishedAt?.toISOString() ?? null,
 });

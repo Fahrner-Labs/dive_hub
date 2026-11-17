@@ -183,6 +183,30 @@ describe.skipIf(!(await databaseReachable()))('Push runs', () => {
     expect((await json<{ id: string }[]>('GET', '/api/push-runs')).map((r) => r.id)).toEqual([created.id]);
   });
 
+  it('answers a run whose stored leftOut lacks counters added later, so the list and the one run stay 200', async () => {
+    const { rows } = await t.pool.query<{ id: string }>(
+      `insert into push_run (user_id, connection_id, provider, diver_id, status, updates, updates_removing_verification, left_out)
+       select u.id, $1, 'ledger', $2, 'done', false, false, $3::jsonb from "user" u where u.email = 'ann@example.com'
+       returning id`,
+      [connectionId, diverId, JSON.stringify({
+        upToDate: 1, requirementsUnmet: 0, updateNotChosen: 0, removesVerification: 0, updateUnsupported: 0, beyondCeiling: 0, notFound: 0,
+      })],
+    );
+    const legacy = rows[0]!.id;
+    const leftOut = {
+      upToDate: 1, requirementsUnmet: 0, updateNotChosen: 0, removesVerification: 0, updateUnsupported: 0, beyondCeiling: 0, notFound: 0,
+      numberNotChosen: 0, numberTaken: 0, numberHeldAtProvider: 0,
+    };
+
+    const list = await call('GET', '/api/push-runs');
+    expect(list.statusCode).toBe(200);
+    expect((list.json() as Run[]).find((r) => r.id === legacy)!.leftOut).toEqual(leftOut);
+
+    const detail = await call('GET', `/api/push-runs/${legacy}`);
+    expect(detail.statusCode).toBe(200);
+    expect((detail.json() as Run).leftOut).toEqual(leftOut);
+  });
+
   it('answers the step with the Provider\'s run pause', async () => {
     await upload(day(1));
     await upload(day(2));
