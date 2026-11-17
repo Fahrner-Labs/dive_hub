@@ -64,7 +64,11 @@ async function applyHints(queryClient: QueryClient, hints: LiveHint[]): Promise<
   if (kindsSeen.has('import')) await queryClient.invalidateQueries({ queryKey: ['imports'] });
   if (kindsSeen.has('siteImport')) await queryClient.invalidateQueries({ queryKey: ['site-imports'] });
   if (kindsSeen.has('pushRun')) await queryClient.invalidateQueries({ queryKey: ['push-runs'] });
-  if (kindsSeen.has('certification')) await queryClient.invalidateQueries({ queryKey: ['divers'] });
+  if (kindsSeen.has('certification')) await Promise.all([
+    queryClient.invalidateQueries({ queryKey: ['divers'] }),
+    // A Dive shows a Participant's certification hint (ADR 0050), so its view can change with a card.
+    invalidateDives(queryClient),
+  ]);
   // The Review inbox's suggestions, and each card's preview with them (ADR 0070). The key is a literal because
   // `api.ts` imports this module; `keys.buddySuggestions` is the same value.
   if (kindsSeen.has('buddySuggestion')) await queryClient.invalidateQueries({ queryKey: ['buddy-suggestions'] });

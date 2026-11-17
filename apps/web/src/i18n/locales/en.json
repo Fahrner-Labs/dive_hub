@@ -2192,6 +2192,8 @@
     "add": "Add someone",
     "change": "Change",
     "withRole": "{{name}} ({{role}})",
+    "certificationExpired": "{{level}} expired",
+    "certificationExpiresSoon": "{{level}} expires soon",
     "addTitle": "Who dived with you?",
     "as": "As",
     "who": "Find a diver",

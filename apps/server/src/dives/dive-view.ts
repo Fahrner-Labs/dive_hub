@@ -67,10 +67,22 @@ const SummaryView = Type.Object({
 });
 
 export const Role = Type.Enum([...PARTICIPANT_ROLES], { description: 'buddy: dived together; guide: led the dive; instructor: taught on it' });
+/** The most urgent expired or expiring card of a Participant the signed-in User manages (ADR 0050). */
+const ParticipantCertificationHint = Type.Object({
+  agency: Type.String({ description: 'The card\'s agency, free text' }),
+  level: Type.String({ description: 'The card\'s level, free text' }),
+  expiry: Type.Enum(['soon', 'expired'], {
+    description: 'soon: expires within 90 days; expired: the date has passed. An expired card outranks one that only expires soon',
+  }),
+}, {
+  description: 'A certification card of this Participant that has expired or expires within 90 days. Set only for a Participant the signed-in User '
+    + 'manages (ADR 0028): other Users never see a Diver\'s cards, nor this hint',
+});
 const Participant = Type.Object({
   diverId: Type.String(),
   name: Type.String({ description: 'The Diver\'s name, as every User sees it' }),
   role: Role,
+  certificationHint: Type.Optional(ParticipantCertificationHint),
 });
 
 const SeriesRef = Type.Object({
