@@ -6255,6 +6255,24 @@
         },
         {
           "dynamic": false,
+          "module": "../dives/certification-port.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/dives/certification-port.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "../live/emit.js",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -6358,6 +6376,16 @@
       "dependents": [
         "apps/server/src/certifications/certification-service.ts",
         "apps/server/src/divers/routes.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/server/src/dives/certification-port.ts",
+      "dependencies": [],
+      "dependents": [
+        "apps/server/src/certifications/certification-service.ts",
+        "apps/server/src/dives/routes.ts"
       ],
       "orphan": false,
       "valid": true
@@ -20695,6 +20723,24 @@
             "import"
           ],
           "resolved": "apps/server/src/dives/calc/water.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./certification-port.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/dives/certification-port.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -48254,8 +48300,8 @@
     "baselineSize": 0,
     "baselineStale": 0,
     "advisedExitCode": 0,
-    "totalCruised": 458,
-    "totalDependenciesCruised": 2407,
+    "totalCruised": 459,
+    "totalDependenciesCruised": 2409,
     "optionsUsed": {
       "baseDir": "/home/runner/work/dive_hub/dive_hub",
       "combinedDependencies": false,
