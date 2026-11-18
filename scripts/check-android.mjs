@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // The Android lane of `pnpm check` (ADR 0073): the committed API models must match the OpenAPI document, then the
-// shared JVM tests and the debug APK build. CI installs a JDK and the Android SDK; a laptop needs both too.
+// shared JVM tests, the debug APK build and the Compose screenshot tests. CI installs a JDK and the Android SDK; a
+// laptop needs both too.
 import { spawnSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
@@ -33,12 +34,16 @@ if (javaVersion.error) {
 }
 
 const gradlew = process.platform === 'win32' ? 'gradlew.bat' : './gradlew';
-const build = spawnSync(gradlew, ['--no-daemon', '--console=plain', ':shared:jvmTest', ':app:assembleDebug'], {
-  cwd: APP,
-  stdio: 'inherit',
-  env: { ...process.env, ANDROID_HOME: sdk, ANDROID_SDK_ROOT: sdk },
-  shell: process.platform === 'win32',
-});
+const build = spawnSync(
+  gradlew,
+  ['--no-daemon', '--console=plain', ':shared:jvmTest', ':app:assembleDebug', ':app:verifyRoborazziDebug'],
+  {
+    cwd: APP,
+    stdio: 'inherit',
+    env: { ...process.env, ANDROID_HOME: sdk, ANDROID_SDK_ROOT: sdk },
+    shell: process.platform === 'win32',
+  },
+);
 if (build.error) {
   console.error(`android: could not start Gradle: ${build.error.message}`);
   process.exit(1);

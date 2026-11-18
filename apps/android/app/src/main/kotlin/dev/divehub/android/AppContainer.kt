@@ -7,6 +7,7 @@ import dev.divehub.android.auth.UserCacheStore
 import dev.divehub.shared.InstanceUrlStore
 import dev.divehub.shared.SessionRepository
 import dev.divehub.shared.TokenStore
+import dev.divehub.shared.logbook.LogbookRepository
 import dev.divehub.shared.UserScopedStore
 import io.ktor.client.engine.okhttp.OkHttp
 
@@ -19,4 +20,7 @@ class AppContainer(context: Context) {
     private val cache: UserScopedStore = UserCacheStore(application)
 
     val session = SessionRepository(OkHttp.create(), tokens, instances, cache)
+
+    /** The logbook's read side shares the session's HTTP layer (instance URL and bearer token). */
+    val logbook = LogbookRepository(session.client)
 }

@@ -43,16 +43,17 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.divehub.android.R
-import dev.divehub.api.models.UserView
+import dev.divehub.android.ui.logbook.LogbookRoute
+import dev.divehub.android.ui.logbook.LogbookViewModel
 import dev.divehub.shared.ErrorCodes
 
 @Composable
-fun DiveHubApp(viewModel: MainViewModel) {
+fun DiveHubApp(viewModel: MainViewModel, logbook: LogbookViewModel) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         when {
             state.loading -> Loading()
-            state.user != null -> SignedIn(state.user!!, state.busy, viewModel::signOut)
+            state.user != null -> LogbookRoute(logbook, viewModel::signOut)
             state.instanceUrl == null -> InstanceForm(state.error, viewModel::useInstance)
             else -> SignInForm(
                 instanceUrl = state.instanceUrl!!,
@@ -216,28 +217,6 @@ private fun PasswordField(
             }
         },
     )
-}
-
-@Composable
-private fun SignedIn(user: UserView, busy: Boolean, onSignOut: () -> Unit) {
-    Column(
-        Modifier
-            .fillMaxSize()
-            .padding(24.dp),
-        verticalArrangement = Arrangement.Center,
-    ) {
-        Text(
-            stringResource(R.string.signed_in_title, user.name),
-            modifier = Modifier.semantics { heading() },
-            style = MaterialTheme.typography.headlineMedium,
-        )
-        Spacer(Modifier.height(8.dp))
-        Text(stringResource(R.string.signed_in_about), style = MaterialTheme.typography.bodyLarge)
-        Spacer(Modifier.height(24.dp))
-        PrimaryButton(onClick = onSignOut, enabled = !busy) {
-            if (busy) Spinner() else Text(stringResource(R.string.sign_out))
-        }
-    }
 }
 
 @Composable
