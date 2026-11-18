@@ -8,6 +8,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.divehub.android.ui.DiveHubApp
 import dev.divehub.android.ui.DiveHubTheme
 import dev.divehub.android.ui.MainViewModel
+import dev.divehub.android.ui.dive.DiveDetailViewModel
 import dev.divehub.android.ui.logbook.LogbookViewModel
 
 class MainActivity : ComponentActivity() {
@@ -19,7 +20,8 @@ class MainActivity : ComponentActivity() {
                 val container = (application as DiveHubApplication).container
                 val viewModel: MainViewModel = viewModel(factory = MainViewModel.factory(container))
                 val logbook: LogbookViewModel = viewModel(factory = LogbookViewModel.factory(container))
-                DiveHubApp(viewModel, logbook)
+                val dive: DiveDetailViewModel = viewModel(factory = DiveDetailViewModel.factory(container))
+                DiveHubApp(viewModel, logbook, dive)
             }
         }
     }

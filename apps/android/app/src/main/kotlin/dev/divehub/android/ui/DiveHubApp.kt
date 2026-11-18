@@ -20,11 +20,13 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -44,21 +46,50 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.divehub.android.R
+import dev.divehub.android.ui.dive.DiveDetailRoute
+import dev.divehub.android.ui.dive.DiveDetailViewModel
 import dev.divehub.android.ui.logbook.LogbookRoute
 import dev.divehub.android.ui.logbook.LogbookViewModel
+import dev.divehub.shared.logbook.LogbookFilter
 import dev.divehub.shared.ErrorCodes
 
 @Composable
-fun DiveHubApp(viewModel: MainViewModel, logbook: LogbookViewModel) {
+fun DiveHubApp(viewModel: MainViewModel, logbook: LogbookViewModel, dive: DiveDetailViewModel) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    // The open Dive is the app's only navigation state; the logbook keeps its page and filters underneath, so back
+    // returns to the list as it was (ADR 0042).
+    var openDiveId by rememberSaveable { mutableStateOf<String?>(null) }
     // A sign-out (or another User) drops the logbook's pages with the session (client contract §1 Security).
     LaunchedEffect(state.user?.id) {
-        if (state.user == null) logbook.forget() else logbook.start(state.user!!.id)
+        if (state.user == null) {
+            logbook.forget()
+            dive.forget()
+            openDiveId = null
+        } else {
+            logbook.start(state.user!!.id)
+            // After process death the id is back but the page was never read in this process.
+            openDiveId?.let(dive::open)
+        }
     }
+    BackHandler(enabled = openDiveId != null) { openDiveId = null }
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         when {
             state.loading -> Loading()
-            state.user != null -> LogbookRoute(logbook, state.units, viewModel::signOut)
+            state.user != null && openDiveId != null -> DiveDetailRoute(
+                viewModel = dive,
+                units = state.units,
+                onBack = { openDiveId = null },
+                onOpenDive = dive::openNeighbour,
+            )
+            state.user != null -> LogbookRoute(
+                viewModel = logbook,
+                units = state.units,
+                onSignOut = viewModel::signOut,
+                onOpenDive = { id, filters ->
+                    dive.open(id, filters)
+                    openDiveId = id
+                },
+            )
             state.instanceUrl == null -> InstanceForm(state.error, viewModel::useInstance)
             else -> SignInForm(
                 instanceUrl = state.instanceUrl!!,

@@ -107,3 +107,31 @@ Read-only, from `GET /api/dives` ([ADR 0040](../../docs/decisions/0040-logbook-r
   The `profile` sketch shares one depth scale for every row (`totals.deepestM`, at least 10 m); fast ascent is thicker
   and coloured. A null profile draws nothing, or an empty dashed box when the Dive has no Recording (ADR 0041).
 - Pull-to-refresh; no answer shows a "no connection" state, distinct from the translated error codes.
+
+## The dive page (slice C2)
+
+Read-only, from `GET /api/dives/{id}`, `GET /api/dives/{id}/neighbours` and `GET /api/recordings/{id}/samples`
+(client contract, Dives):
+
+- **Values with overrides.** A value set by hand (`overrides`) says "edited" and what the recording has, as visible
+  text (ADR 0015). The number is display only: read-only, never a field (ADR 0048).
+- **Time** is the local time at the dive; `utcOffsetSource: unknown` shows it in UTC without an offset, as logged
+  (ADR 0030). Where the offset came from (`position`, `nearby`, `unknown`) is said in words, unless the start was set
+  by hand. The timezone words, override marking and the profile's text live in `shared/dive` with JVM unit tests.
+- **Recordings** are named by their Device ("Garmin Descent Mk3 (777)") and the Primary one is marked (ADR 0016). A
+  joined Recording's parts sit under it, named by device and time (ADR 0063). A Dive without a Recording names its
+  `fromProvider` and says the computer's file adds the recording later; there is no profile then.
+- **Depth profile** with a text alternative: a summary (deepest point and when, time, temperature range) and the
+  samples per minute as a table (WCAG 1.1.1). Surface breaks are a band at the surface, each with its length
+  (ADR 0063). The profile is the Primary recording's; the samples are read once the Dive is.
+- **Water:** the Dive's water type is its site's; the Recording's `summary.waterType` is labelled as the computer's
+  water setting. `waterMismatch` names both waters and how the depths read ("about 2 % shallow").
+- **Participants** with roles, and the Dive's own position only when the API sends it.
+- **Previous/next** follow the logbook's filters (ADR 0042): "previous" is the row above, the position reads
+  "Dive 12 of 312", and a control at either end stays but says it is unavailable. Back returns to the logbook at the
+  page and filters it had.
+- Errors show by `code`; no answer shows the "no connection" state. A profile that cannot be read leaves the rest of
+  the page standing.
+
+The dive page's contract-visible states are screenshots (`DiveDetailScreenshotTest`): an edited value, the timezone
+note, a Dive without a Recording, the water mismatch, and Surface breaks in the profile.
