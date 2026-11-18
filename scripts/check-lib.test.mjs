@@ -469,6 +469,12 @@ test('the dive number pages run the areas that show them', () => {
   }
 });
 
+test('golden vectors run both the server kernels and the Android port', () => {
+  const plan = planFor(['packages/test-vectors/planning/ndl.json']);
+  assert.deepEqual([plan.server, plan.android, plan.web, plan.e2e], ['all', true, 'none', 'none']);
+  assert.deepEqual(plan.notes.map((note) => note.steps).flat(), ['server', 'android']);
+});
+
 test('packages, the lockfile and configuration still run everything', () => {
   for (const path of ['package.json', 'pnpm-lock.yaml', 'apps/web/vite.config.ts', 'apps/server/tsconfig.json', 'packages/api-client/src/index.ts']) {
     const plan = planFor([path]);

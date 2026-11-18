@@ -1,0 +1,128 @@
+{
+  "kernel": "oxygen",
+  "version": 1,
+  "tolerance": {
+    "relative": 1e-9
+  },
+  "cases": [
+    {
+      "id": "below-table-0-55",
+      "input": {
+        "ppO2": 0.55,
+        "minutes": 30
+      },
+      "expected": {
+        "kernel": {
+          "limitMinutes": null,
+          "otu": 4.437325164504626
+        },
+        "service": {
+          "limitMinutes": null,
+          "otu": 4.4
+        }
+      }
+    },
+    {
+      "id": "row-0-7",
+      "input": {
+        "ppO2": 0.7,
+        "minutes": 60
+      },
+      "expected": {
+        "kernel": {
+          "limitMinutes": 570,
+          "otu": 28.04536155303686
+        },
+        "service": {
+          "limitMinutes": 570,
+          "otu": 28
+        }
+      }
+    },
+    {
+      "id": "row-1-0",
+      "input": {
+        "ppO2": 1,
+        "minutes": 30
+      },
+      "expected": {
+        "kernel": {
+          "limitMinutes": 300,
+          "otu": 30
+        },
+        "service": {
+          "limitMinutes": 300,
+          "otu": 30
+        }
+      }
+    },
+    {
+      "id": "row-1-2",
+      "input": {
+        "ppO2": 1.2,
+        "minutes": 120
+      },
+      "expected": {
+        "kernel": {
+          "limitMinutes": 210,
+          "otu": 158.66002400586206
+        },
+        "service": {
+          "limitMinutes": 210,
+          "otu": 158.7
+        }
+      }
+    },
+    {
+      "id": "between-1-3-and-1-4",
+      "input": {
+        "ppO2": 1.35,
+        "minutes": 45
+      },
+      "expected": {
+        "kernel": {
+          "limitMinutes": 164.99999999999997,
+          "otu": 69.90127840665005
+        },
+        "service": {
+          "limitMinutes": 165,
+          "otu": 69.9
+        }
+      }
+    },
+    {
+      "id": "row-1-6",
+      "input": {
+        "ppO2": 1.6,
+        "minutes": 45
+      },
+      "expected": {
+        "kernel": {
+          "limitMinutes": 45,
+          "otu": 86.58114778644547
+        },
+        "service": {
+          "limitMinutes": 45,
+          "otu": 86.6
+        }
+      }
+    },
+    {
+      "id": "above-table-1-61",
+      "input": {
+        "ppO2": 1.61,
+        "minutes": 10
+      },
+      "expected": {
+        "kernel": {
+          "limitMinutes": 0,
+          "otu": 19.38531974764777
+        },
+        "service": {
+          "limitMinutes": 0,
+          "otu": 19.4
+        }
+      }
+    }
+  ]
+}

@@ -190,6 +190,13 @@ export function planFor(changed, { e2eServerLoads: loads } = {}) {
       continue;
     }
     if (QUIET.test(path)) continue;
+    // The planning golden vectors are read by the server's TS kernels and the Android port (FAH-268): both lanes run.
+    if (path.startsWith('packages/test-vectors/')) {
+      more('server', 'all');
+      plan.android = true;
+      plan.notes.push({ text: `${path} is shared by the server's kernels and the Android port, so both lanes run`, steps: ['server', 'android'] });
+      continue;
+    }
     // The Android app has its own Gradle build and its own lane (ADR 0073); it changes no JS check.
     if (path.startsWith('apps/android/')) { plan.android = true; continue; }
     // The lint rules and their baselines change what every file is checked against, and nothing else.
