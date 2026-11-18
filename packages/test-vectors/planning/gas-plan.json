@@ -1,0 +1,1611 @@
+{
+  "kernel": "gas-plan",
+  "version": 1,
+  "tolerance": {
+    "relative": 1e-9
+  },
+  "cases": [
+    {
+      "id": "rock-bottom-air-30m-one-diver",
+      "input": {
+        "gas": {
+          "o2": 21,
+          "he": 0
+        },
+        "conditions": {
+          "water": "salt",
+          "altitudeM": 0
+        },
+        "levels": [
+          {
+            "depthM": 30,
+            "minutes": 20
+          }
+        ],
+        "divers": [
+          {
+            "name": "Ana",
+            "volumeL": 12,
+            "startPressureBar": 200,
+            "sacLpm": 20
+          }
+        ],
+        "rule": {
+          "kind": "rock_bottom"
+        },
+        "ppO2Contingency": 1.6
+      },
+      "expected": {
+        "kernel": {
+          "status": "ok",
+          "runtimeMinutes": 28.000000000000004,
+          "segments": [
+            {
+              "kind": "descent",
+              "fromDepthM": 0,
+              "depthM": 30,
+              "minutes": 1.6666666666666667,
+              "ambientBar": 2.5210224375
+            },
+            {
+              "kind": "level",
+              "fromDepthM": 30,
+              "depthM": 30,
+              "minutes": 20,
+              "ambientBar": 4.028794875
+            },
+            {
+              "kind": "ascent",
+              "fromDepthM": 30,
+              "depthM": 5,
+              "minutes": 2.7777777777777777,
+              "ambientBar": 2.77231784375
+            },
+            {
+              "kind": "safety_stop",
+              "fromDepthM": 5,
+              "depthM": 5,
+              "minutes": 3,
+              "ambientBar": 1.5158408125
+            },
+            {
+              "kind": "ascent",
+              "fromDepthM": 5,
+              "depthM": 0,
+              "minutes": 0.5555555555555556,
+              "ambientBar": 1.26454540625
+            }
+          ],
+          "divers": [
+            {
+              "name": "Ana",
+              "litres": 1954.5706424999998,
+              "endPressureBar": 31.302560798723967,
+              "rockBottom": [
+                {
+                  "depthM": 30,
+                  "pressureBar": 91.84160900699322
+                }
+              ],
+              "ascentPressureBar": 91.84160900699322,
+              "turnPressureBar": null,
+              "belowRockBottom": false,
+              "atAscentStartBar": 52.52468526721897,
+              "pressuresBar": [
+                200,
+                191.91220270845668,
+                52.524685267218956,
+                39.90939841941932,
+                32.455043417054696,
+                31.302560798723945
+              ],
+              "marginBar": -39.31692373977425,
+              "marginMinutes": -5.918571793346145,
+              "controlling": true
+            }
+          ],
+          "controllingIndex": 0,
+          "fits": false,
+          "leaveLastLevelAtMinute": 15.748094873320522
+        },
+        "service": {
+          "status": "ok",
+          "runtimeMinutes": 28,
+          "segments": [
+            {
+              "kind": "descent",
+              "fromDepthM": 0,
+              "depthM": 30,
+              "minutes": 1.7,
+              "ambientBar": 2.521
+            },
+            {
+              "kind": "level",
+              "fromDepthM": 30,
+              "depthM": 30,
+              "minutes": 20,
+              "ambientBar": 4.029
+            },
+            {
+              "kind": "ascent",
+              "fromDepthM": 30,
+              "depthM": 5,
+              "minutes": 2.8,
+              "ambientBar": 2.772
+            },
+            {
+              "kind": "safety_stop",
+              "fromDepthM": 5,
+              "depthM": 5,
+              "minutes": 3,
+              "ambientBar": 1.516
+            },
+            {
+              "kind": "ascent",
+              "fromDepthM": 5,
+              "depthM": 0,
+              "minutes": 0.6,
+              "ambientBar": 1.265
+            }
+          ],
+          "divers": [
+            {
+              "name": "Ana",
+              "litres": 1954.6,
+              "endPressureBar": 31.3,
+              "rockBottom": [
+                {
+                  "depthM": 30,
+                  "pressureBar": 91.8
+                }
+              ],
+              "ascentPressureBar": 91.8,
+              "turnPressureBar": null,
+              "belowRockBottom": false,
+              "atAscentStartBar": 52.5,
+              "pressuresBar": [
+                200,
+                191.9,
+                52.5,
+                39.9,
+                32.5,
+                31.3
+              ],
+              "marginBar": -39.3,
+              "marginMinutes": -5.9,
+              "controlling": true
+            }
+          ],
+          "controllingIndex": 0,
+          "fits": false,
+          "leaveLastLevelAtMinute": 15.7
+        }
+      }
+    },
+    {
+      "id": "halves-ean32-two-divers",
+      "input": {
+        "gas": {
+          "o2": 32,
+          "he": 0
+        },
+        "conditions": {
+          "water": "salt",
+          "altitudeM": 0
+        },
+        "levels": [
+          {
+            "depthM": 20,
+            "minutes": 15
+          },
+          {
+            "depthM": 30,
+            "minutes": 10
+          }
+        ],
+        "divers": [
+          {
+            "name": "Ana",
+            "volumeL": 12,
+            "startPressureBar": 200,
+            "sacLpm": 18
+          },
+          {
+            "name": "Bo",
+            "volumeL": 15,
+            "startPressureBar": 220,
+            "sacLpm": 22
+          }
+        ],
+        "rule": {
+          "kind": "halves"
+        },
+        "ppO2Contingency": 1.6
+      },
+      "expected": {
+        "kernel": {
+          "status": "ok",
+          "runtimeMinutes": 33,
+          "segments": [
+            {
+              "kind": "descent",
+              "fromDepthM": 0,
+              "depthM": 20,
+              "minutes": 1.1111111111111112,
+              "ambientBar": 2.018431625
+            },
+            {
+              "kind": "level",
+              "fromDepthM": 20,
+              "depthM": 20,
+              "minutes": 15,
+              "ambientBar": 3.0236132499999995
+            },
+            {
+              "kind": "descent",
+              "fromDepthM": 20,
+              "depthM": 30,
+              "minutes": 0.5555555555555556,
+              "ambientBar": 3.5262040624999997
+            },
+            {
+              "kind": "level",
+              "fromDepthM": 30,
+              "depthM": 30,
+              "minutes": 10,
+              "ambientBar": 4.028794875
+            },
+            {
+              "kind": "ascent",
+              "fromDepthM": 30,
+              "depthM": 5,
+              "minutes": 2.7777777777777777,
+              "ambientBar": 2.77231784375
+            },
+            {
+              "kind": "safety_stop",
+              "fromDepthM": 5,
+              "depthM": 5,
+              "minutes": 3,
+              "ambientBar": 1.5158408125
+            },
+            {
+              "kind": "ascent",
+              "fromDepthM": 5,
+              "depthM": 0,
+              "minutes": 0.5555555555555556,
+              "ambientBar": 1.26454540625
+            }
+          ],
+          "divers": [
+            {
+              "name": "Ana",
+              "litres": 1850.3060782499997,
+              "endPressureBar": 42.069717136117276,
+              "rockBottom": [
+                {
+                  "depthM": 20,
+                  "pressureBar": 59.318521904699736
+                },
+                {
+                  "depthM": 30,
+                  "pressureBar": 91.44120510481503
+                }
+              ],
+              "ascentPressureBar": 19.282326771926236,
+              "turnPressureBar": 96.77123527031034,
+              "belowRockBottom": true,
+              "atAscentStartBar": 61.05455633269253,
+              "pressuresBar": [
+                200,
+                196.18988658180172,
+                123.83568704768439,
+                120.86086937389737,
+                61.0545563326925,
+                49.767589387759756,
+                43.10026165364934,
+                42.06971713611725
+              ],
+              "marginBar": 41.77222956076629,
+              "marginMinutes": 7.056637514477059,
+              "controlling": false
+            },
+            {
+              "name": "Bo",
+              "litres": 2261.4852067499996,
+              "endPressureBar": 62.27250417426188,
+              "rockBottom": [
+                {
+                  "depthM": 20,
+                  "pressureBar": 49.52959513982434
+                },
+                {
+                  "depthM": 30,
+                  "pressureBar": 75.19426845633373
+                }
+              ],
+              "ascentPressureBar": 74.30222572357079,
+              "turnPressureBar": 133.934265780204,
+              "belowRockBottom": true,
+              "atAscentStartBar": 80.88134972896907,
+              "pressuresBar": [
+                220,
+                216.12132990975203,
+                143.13543450472463,
+                140.16227129690446,
+                80.88134972896907,
+                69.80492656306544,
+                63.27985076626727,
+                62.27250417426188
+              ],
+              "marginBar": 6.579124005398285,
+              "marginMinutes": 1.1345179522431854,
+              "controlling": true
+            }
+          ],
+          "controllingIndex": 1,
+          "fits": true,
+          "leaveLastLevelAtMinute": 27.801184618909854
+        },
+        "service": {
+          "status": "ok",
+          "runtimeMinutes": 33,
+          "segments": [
+            {
+              "kind": "descent",
+              "fromDepthM": 0,
+              "depthM": 20,
+              "minutes": 1.1,
+              "ambientBar": 2.018
+            },
+            {
+              "kind": "level",
+              "fromDepthM": 20,
+              "depthM": 20,
+              "minutes": 15,
+              "ambientBar": 3.024
+            },
+            {
+              "kind": "descent",
+              "fromDepthM": 20,
+              "depthM": 30,
+              "minutes": 0.6,
+              "ambientBar": 3.526
+            },
+            {
+              "kind": "level",
+              "fromDepthM": 30,
+              "depthM": 30,
+              "minutes": 10,
+              "ambientBar": 4.029
+            },
+            {
+              "kind": "ascent",
+              "fromDepthM": 30,
+              "depthM": 5,
+              "minutes": 2.8,
+              "ambientBar": 2.772
+            },
+            {
+              "kind": "safety_stop",
+              "fromDepthM": 5,
+              "depthM": 5,
+              "minutes": 3,
+              "ambientBar": 1.516
+            },
+            {
+              "kind": "ascent",
+              "fromDepthM": 5,
+              "depthM": 0,
+              "minutes": 0.6,
+              "ambientBar": 1.265
+            }
+          ],
+          "divers": [
+            {
+              "name": "Ana",
+              "litres": 1850.3,
+              "endPressureBar": 42.1,
+              "rockBottom": [
+                {
+                  "depthM": 20,
+                  "pressureBar": 59.3
+                },
+                {
+                  "depthM": 30,
+                  "pressureBar": 91.4
+                }
+              ],
+              "ascentPressureBar": 19.3,
+              "turnPressureBar": 96.8,
+              "belowRockBottom": true,
+              "atAscentStartBar": 61.1,
+              "pressuresBar": [
+                200,
+                196.2,
+                123.8,
+                120.9,
+                61.1,
+                49.8,
+                43.1,
+                42.1
+              ],
+              "marginBar": 41.8,
+              "marginMinutes": 7.1,
+              "controlling": false
+            },
+            {
+              "name": "Bo",
+              "litres": 2261.5,
+              "endPressureBar": 62.3,
+              "rockBottom": [
+                {
+                  "depthM": 20,
+                  "pressureBar": 49.5
+                },
+                {
+                  "depthM": 30,
+                  "pressureBar": 75.2
+                }
+              ],
+              "ascentPressureBar": 74.3,
+              "turnPressureBar": 133.9,
+              "belowRockBottom": true,
+              "atAscentStartBar": 80.9,
+              "pressuresBar": [
+                220,
+                216.1,
+                143.1,
+                140.2,
+                80.9,
+                69.8,
+                63.3,
+                62.3
+              ],
+              "marginBar": 6.6,
+              "marginMinutes": 1.1,
+              "controlling": true
+            }
+          ],
+          "controllingIndex": 1,
+          "fits": true,
+          "leaveLastLevelAtMinute": 27.8
+        }
+      }
+    },
+    {
+      "id": "thirds-air-three-divers-fresh-900",
+      "input": {
+        "gas": {
+          "o2": 21,
+          "he": 0
+        },
+        "conditions": {
+          "water": "fresh",
+          "altitudeM": 900
+        },
+        "levels": [
+          {
+            "depthM": 25,
+            "minutes": 20
+          }
+        ],
+        "divers": [
+          {
+            "name": "Ana",
+            "volumeL": 12,
+            "startPressureBar": 200,
+            "sacLpm": 18
+          },
+          {
+            "name": "Bo",
+            "volumeL": 12,
+            "startPressureBar": 210,
+            "sacLpm": 20
+          },
+          {
+            "name": "Cy",
+            "volumeL": 15,
+            "startPressureBar": 220,
+            "sacLpm": 16
+          }
+        ],
+        "rule": {
+          "kind": "thirds"
+        },
+        "ppO2Contingency": 1.6,
+        "descentRateMPerMin": 15,
+        "ascentRateMPerMin": 6
+      },
+      "expected": {
+        "kernel": {
+          "status": "ok",
+          "runtimeMinutes": 28.833333333333332,
+          "segments": [
+            {
+              "kind": "descent",
+              "fromDepthM": 0,
+              "depthM": 25,
+              "minutes": 1.6666666666666667,
+              "ambientBar": 2.1355320160811666
+            },
+            {
+              "kind": "level",
+              "fromDepthM": 25,
+              "depthM": 25,
+              "minutes": 20,
+              "ambientBar": 3.3613632660811668
+            },
+            {
+              "kind": "ascent",
+              "fromDepthM": 25,
+              "depthM": 5,
+              "minutes": 3.3333333333333335,
+              "ambientBar": 2.3806982660811666
+            },
+            {
+              "kind": "safety_stop",
+              "fromDepthM": 5,
+              "depthM": 5,
+              "minutes": 3,
+              "ambientBar": 1.4000332660811667
+            },
+            {
+              "kind": "ascent",
+              "fromDepthM": 5,
+              "depthM": 0,
+              "minutes": 0.8333333333333334,
+              "ambientBar": 1.1548670160811667
+            }
+          ],
+          "divers": [
+            {
+              "name": "Ana",
+              "litres": 1509.9234338461256,
+              "endPressureBar": 67.75587866883671,
+              "rockBottom": [
+                {
+                  "depthM": 25,
+                  "pressureBar": 86.64672670066
+                }
+              ],
+              "ascentPressureBar": 83.42216029946655,
+              "turnPressureBar": 129.16311158059125,
+              "belowRockBottom": true,
+              "atAscentStartBar": 87.22656518048089,
+              "pressuresBar": [
+                200,
+                193.8223571149823,
+                87.22656518048089,
+                75.40787121990775,
+                69.1805907946976,
+                67.75587866883671
+              ],
+              "marginBar": 3.804404881014335,
+              "marginMinutes": 0.7582194957960849,
+              "controlling": false
+            },
+            {
+              "name": "Bo",
+              "litres": 1677.6927042734728,
+              "endPressureBar": 62.35428030209022,
+              "rockBottom": [
+                {
+                  "depthM": 25,
+                  "pressureBar": 86.64672670066
+                }
+              ],
+              "ascentPressureBar": 94.07876786359,
+              "turnPressureBar": 138.02371319500992,
+              "belowRockBottom": false,
+              "atAscentStartBar": 83.9457306765479,
+              "pressuresBar": [
+                210,
+                203.00064126268313,
+                83.94573067654787,
+                70.84079004163434,
+                63.93458265842915,
+                62.3542803020902
+              ],
+              "marginBar": -10.133037187042106,
+              "marginMinutes": -1.8131564470140802,
+              "controlling": true
+            },
+            {
+              "name": "Cy",
+              "litres": 1342.1541634187784,
+              "endPressureBar": 121.08999622198274,
+              "rockBottom": [
+                {
+                  "depthM": 25,
+                  "pressureBar": 68.09785769007557
+                }
+              ],
+              "ascentPressureBar": 120.81115170174752,
+              "turnPressureBar": 160.7037562319079,
+              "belowRockBottom": false,
+              "atAscentStartBar": 135.55714758655546,
+              "pressuresBar": [
+                220,
+                215.41219379543037,
+                135.55714758655546,
+                126.76194864621633,
+                122.144561500744,
+                121.08999622198274
+              ],
+              "marginBar": 14.74599588480794,
+              "marginMinutes": 3.9724394243087957,
+              "controlling": false
+            }
+          ],
+          "controllingIndex": 1,
+          "fits": false,
+          "leaveLastLevelAtMinute": 19.853510219652588
+        },
+        "service": {
+          "status": "ok",
+          "runtimeMinutes": 28.8,
+          "segments": [
+            {
+              "kind": "descent",
+              "fromDepthM": 0,
+              "depthM": 25,
+              "minutes": 1.7,
+              "ambientBar": 2.136
+            },
+            {
+              "kind": "level",
+              "fromDepthM": 25,
+              "depthM": 25,
+              "minutes": 20,
+              "ambientBar": 3.361
+            },
+            {
+              "kind": "ascent",
+              "fromDepthM": 25,
+              "depthM": 5,
+              "minutes": 3.3,
+              "ambientBar": 2.381
+            },
+            {
+              "kind": "safety_stop",
+              "fromDepthM": 5,
+              "depthM": 5,
+              "minutes": 3,
+              "ambientBar": 1.4
+            },
+            {
+              "kind": "ascent",
+              "fromDepthM": 5,
+              "depthM": 0,
+              "minutes": 0.8,
+              "ambientBar": 1.155
+            }
+          ],
+          "divers": [
+            {
+              "name": "Ana",
+              "litres": 1509.9,
+              "endPressureBar": 67.8,
+              "rockBottom": [
+                {
+                  "depthM": 25,
+                  "pressureBar": 86.6
+                }
+              ],
+              "ascentPressureBar": 83.4,
+              "turnPressureBar": 129.2,
+              "belowRockBottom": true,
+              "atAscentStartBar": 87.2,
+              "pressuresBar": [
+                200,
+                193.8,
+                87.2,
+                75.4,
+                69.2,
+                67.8
+              ],
+              "marginBar": 3.8,
+              "marginMinutes": 0.8,
+              "controlling": false
+            },
+            {
+              "name": "Bo",
+              "litres": 1677.7,
+              "endPressureBar": 62.4,
+              "rockBottom": [
+                {
+                  "depthM": 25,
+                  "pressureBar": 86.6
+                }
+              ],
+              "ascentPressureBar": 94.1,
+              "turnPressureBar": 138,
+              "belowRockBottom": false,
+              "atAscentStartBar": 83.9,
+              "pressuresBar": [
+                210,
+                203,
+                83.9,
+                70.8,
+                63.9,
+                62.4
+              ],
+              "marginBar": -10.1,
+              "marginMinutes": -1.8,
+              "controlling": true
+            },
+            {
+              "name": "Cy",
+              "litres": 1342.2,
+              "endPressureBar": 121.1,
+              "rockBottom": [
+                {
+                  "depthM": 25,
+                  "pressureBar": 68.1
+                }
+              ],
+              "ascentPressureBar": 120.8,
+              "turnPressureBar": 160.7,
+              "belowRockBottom": false,
+              "atAscentStartBar": 135.6,
+              "pressuresBar": [
+                220,
+                215.4,
+                135.6,
+                126.8,
+                122.1,
+                121.1
+              ],
+              "marginBar": 14.7,
+              "marginMinutes": 4,
+              "controlling": false
+            }
+          ],
+          "controllingIndex": 1,
+          "fits": false,
+          "leaveLastLevelAtMinute": 19.9
+        }
+      }
+    },
+    {
+      "id": "sixths-air-40m",
+      "input": {
+        "gas": {
+          "o2": 21,
+          "he": 0
+        },
+        "conditions": {
+          "water": "salt",
+          "altitudeM": 0
+        },
+        "levels": [
+          {
+            "depthM": 40,
+            "minutes": 15
+          }
+        ],
+        "divers": [
+          {
+            "name": "Ana",
+            "volumeL": 12,
+            "startPressureBar": 220,
+            "sacLpm": 20
+          }
+        ],
+        "rule": {
+          "kind": "sixths"
+        },
+        "ppO2Contingency": 1.6
+      },
+      "expected": {
+        "kernel": {
+          "status": "ok",
+          "runtimeMinutes": 24.666666666666668,
+          "segments": [
+            {
+              "kind": "descent",
+              "fromDepthM": 0,
+              "depthM": 40,
+              "minutes": 2.2222222222222223,
+              "ambientBar": 3.02361325
+            },
+            {
+              "kind": "level",
+              "fromDepthM": 40,
+              "depthM": 40,
+              "minutes": 15,
+              "ambientBar": 5.0339765
+            },
+            {
+              "kind": "ascent",
+              "fromDepthM": 40,
+              "depthM": 5,
+              "minutes": 3.888888888888889,
+              "ambientBar": 3.27490865625
+            },
+            {
+              "kind": "safety_stop",
+              "fromDepthM": 5,
+              "depthM": 5,
+              "minutes": 3,
+              "ambientBar": 1.5158408125
+            },
+            {
+              "kind": "ascent",
+              "fromDepthM": 5,
+              "depthM": 0,
+              "minutes": 0.5555555555555556,
+              "ambientBar": 1.26454540625
+            }
+          ],
+          "divers": [
+            {
+              "name": "Ana",
+              "litres": 2004.2918320833332,
+              "endPressureBar": 43.77388879215934,
+              "rockBottom": [
+                {
+                  "depthM": 40,
+                  "pressureBar": 132.45162437357936
+                }
+              ],
+              "ascentPressureBar": 173.19181585409405,
+              "turnPressureBar": 179.0221858605998,
+              "belowRockBottom": false,
+              "atAscentStartBar": 73.29121011556609,
+              "pressuresBar": [
+                220,
+                206.59523964327906,
+                73.29121011556612,
+                52.37423399355508,
+                44.924624197648996,
+                43.77388879215934
+              ],
+              "marginBar": -99.90060573852796,
+              "marginMinutes": -11.512682011025458,
+              "controlling": true
+            }
+          ],
+          "controllingIndex": 0,
+          "fits": false,
+          "leaveLastLevelAtMinute": 5.709540211196764
+        },
+        "service": {
+          "status": "ok",
+          "runtimeMinutes": 24.7,
+          "segments": [
+            {
+              "kind": "descent",
+              "fromDepthM": 0,
+              "depthM": 40,
+              "minutes": 2.2,
+              "ambientBar": 3.024
+            },
+            {
+              "kind": "level",
+              "fromDepthM": 40,
+              "depthM": 40,
+              "minutes": 15,
+              "ambientBar": 5.034
+            },
+            {
+              "kind": "ascent",
+              "fromDepthM": 40,
+              "depthM": 5,
+              "minutes": 3.9,
+              "ambientBar": 3.275
+            },
+            {
+              "kind": "safety_stop",
+              "fromDepthM": 5,
+              "depthM": 5,
+              "minutes": 3,
+              "ambientBar": 1.516
+            },
+            {
+              "kind": "ascent",
+              "fromDepthM": 5,
+              "depthM": 0,
+              "minutes": 0.6,
+              "ambientBar": 1.265
+            }
+          ],
+          "divers": [
+            {
+              "name": "Ana",
+              "litres": 2004.3,
+              "endPressureBar": 43.8,
+              "rockBottom": [
+                {
+                  "depthM": 40,
+                  "pressureBar": 132.5
+                }
+              ],
+              "ascentPressureBar": 173.2,
+              "turnPressureBar": 179,
+              "belowRockBottom": false,
+              "atAscentStartBar": 73.3,
+              "pressuresBar": [
+                220,
+                206.6,
+                73.3,
+                52.4,
+                44.9,
+                43.8
+              ],
+              "marginBar": -99.9,
+              "marginMinutes": -11.5,
+              "controlling": true
+            }
+          ],
+          "controllingIndex": 0,
+          "fits": false,
+          "leaveLastLevelAtMinute": 5.7
+        }
+      }
+    },
+    {
+      "id": "reserve-ean36-25m",
+      "input": {
+        "gas": {
+          "o2": 36,
+          "he": 0
+        },
+        "conditions": {
+          "water": "salt",
+          "altitudeM": 0
+        },
+        "levels": [
+          {
+            "depthM": 25,
+            "minutes": 25
+          }
+        ],
+        "divers": [
+          {
+            "name": "Ana",
+            "volumeL": 12,
+            "startPressureBar": 200,
+            "sacLpm": 18
+          }
+        ],
+        "rule": {
+          "kind": "reserve",
+          "bar": 60
+        },
+        "ppO2Contingency": 1.6
+      },
+      "expected": {
+        "kernel": {
+          "status": "ok",
+          "runtimeMinutes": 32.166666666666664,
+          "segments": [
+            {
+              "kind": "descent",
+              "fromDepthM": 0,
+              "depthM": 25,
+              "minutes": 1.3888888888888888,
+              "ambientBar": 2.26972703125
+            },
+            {
+              "kind": "level",
+              "fromDepthM": 25,
+              "depthM": 25,
+              "minutes": 25,
+              "ambientBar": 3.5262040624999997
+            },
+            {
+              "kind": "ascent",
+              "fromDepthM": 25,
+              "depthM": 5,
+              "minutes": 2.2222222222222223,
+              "ambientBar": 2.5210224375
+            },
+            {
+              "kind": "safety_stop",
+              "fromDepthM": 5,
+              "depthM": 5,
+              "minutes": 3,
+              "ambientBar": 1.5158408125
+            },
+            {
+              "kind": "ascent",
+              "fromDepthM": 5,
+              "depthM": 0,
+              "minutes": 0.5555555555555556,
+              "ambientBar": 1.26454540625
+            }
+          ],
+          "divers": [
+            {
+              "name": "Ana",
+              "litres": 1838.8767593437497,
+              "endPressureBar": 43.815067888987244,
+              "rockBottom": [
+                {
+                  "depthM": 25,
+                  "pressureBar": 67.96840822977171
+                }
+              ],
+              "ascentPressureBar": 75.88419202853439,
+              "turnPressureBar": null,
+              "belowRockBottom": false,
+              "atAscentStartBar": 59.68649117043458,
+              "pressuresBar": [
+                200,
+                194.6983133646263,
+                59.68649117043455,
+                51.495651116795386,
+                44.8433615004362,
+                43.8150678889872
+              ],
+              "marginBar": -16.197700858099807,
+              "marginMinutes": -3.138429651245628,
+              "controlling": true
+            }
+          ],
+          "controllingIndex": 0,
+          "fits": false,
+          "leaveLastLevelAtMinute": 23.250459237643263
+        },
+        "service": {
+          "status": "ok",
+          "runtimeMinutes": 32.2,
+          "segments": [
+            {
+              "kind": "descent",
+              "fromDepthM": 0,
+              "depthM": 25,
+              "minutes": 1.4,
+              "ambientBar": 2.27
+            },
+            {
+              "kind": "level",
+              "fromDepthM": 25,
+              "depthM": 25,
+              "minutes": 25,
+              "ambientBar": 3.526
+            },
+            {
+              "kind": "ascent",
+              "fromDepthM": 25,
+              "depthM": 5,
+              "minutes": 2.2,
+              "ambientBar": 2.521
+            },
+            {
+              "kind": "safety_stop",
+              "fromDepthM": 5,
+              "depthM": 5,
+              "minutes": 3,
+              "ambientBar": 1.516
+            },
+            {
+              "kind": "ascent",
+              "fromDepthM": 5,
+              "depthM": 0,
+              "minutes": 0.6,
+              "ambientBar": 1.265
+            }
+          ],
+          "divers": [
+            {
+              "name": "Ana",
+              "litres": 1838.9,
+              "endPressureBar": 43.8,
+              "rockBottom": [
+                {
+                  "depthM": 25,
+                  "pressureBar": 68
+                }
+              ],
+              "ascentPressureBar": 75.9,
+              "turnPressureBar": null,
+              "belowRockBottom": false,
+              "atAscentStartBar": 59.7,
+              "pressuresBar": [
+                200,
+                194.7,
+                59.7,
+                51.5,
+                44.8,
+                43.8
+              ],
+              "marginBar": -16.2,
+              "marginMinutes": -3.1,
+              "controlling": true
+            }
+          ],
+          "controllingIndex": 0,
+          "fits": false,
+          "leaveLastLevelAtMinute": 23.3
+        }
+      }
+    },
+    {
+      "id": "ascent-pressure-air-18m",
+      "input": {
+        "gas": {
+          "o2": 21,
+          "he": 0
+        },
+        "conditions": {
+          "water": "salt",
+          "altitudeM": 0
+        },
+        "levels": [
+          {
+            "depthM": 18,
+            "minutes": 30
+          }
+        ],
+        "divers": [
+          {
+            "name": "Ana",
+            "volumeL": 12,
+            "startPressureBar": 210,
+            "sacLpm": 22
+          }
+        ],
+        "rule": {
+          "kind": "ascent_pressure",
+          "bar": 90
+        },
+        "ppO2Contingency": 1.6
+      },
+      "expected": {
+        "kernel": {
+          "status": "ok",
+          "runtimeMinutes": 36,
+          "segments": [
+            {
+              "kind": "descent",
+              "fromDepthM": 0,
+              "depthM": 18,
+              "minutes": 1,
+              "ambientBar": 1.9179134625
+            },
+            {
+              "kind": "level",
+              "fromDepthM": 18,
+              "depthM": 18,
+              "minutes": 30,
+              "ambientBar": 2.822576925
+            },
+            {
+              "kind": "ascent",
+              "fromDepthM": 18,
+              "depthM": 5,
+              "minutes": 1.4444444444444444,
+              "ambientBar": 2.16920886875
+            },
+            {
+              "kind": "safety_stop",
+              "fromDepthM": 5,
+              "depthM": 5,
+              "minutes": 3,
+              "ambientBar": 1.5158408125
+            },
+            {
+              "kind": "ascent",
+              "fromDepthM": 5,
+              "depthM": 0,
+              "minutes": 0.5555555555555556,
+              "ambientBar": 1.26454540625
+            }
+          ],
+          "divers": [
+            {
+              "name": "Ana",
+              "litres": 2089.5285526499997,
+              "endPressureBar": 28.59934625048823,
+              "rockBottom": [
+                {
+                  "depthM": 18,
+                  "pressureBar": 58.2481059257309
+                }
+              ],
+              "ascentPressureBar": 90,
+              "turnPressureBar": null,
+              "belowRockBottom": false,
+              "atAscentStartBar": 43.71750281765789,
+              "pressuresBar": [
+                210,
+                205.83889659857994,
+                43.71750281765789,
+                38.070881220669065,
+                29.867906325795325,
+                28.59934625048823
+              ],
+              "marginBar": -46.28249718234211,
+              "marginMinutes": -9.055141670100669,
+              "controlling": true
+            }
+          ],
+          "controllingIndex": 0,
+          "fits": false,
+          "leaveLastLevelAtMinute": 21.944858329899333
+        },
+        "service": {
+          "status": "ok",
+          "runtimeMinutes": 36,
+          "segments": [
+            {
+              "kind": "descent",
+              "fromDepthM": 0,
+              "depthM": 18,
+              "minutes": 1,
+              "ambientBar": 1.918
+            },
+            {
+              "kind": "level",
+              "fromDepthM": 18,
+              "depthM": 18,
+              "minutes": 30,
+              "ambientBar": 2.823
+            },
+            {
+              "kind": "ascent",
+              "fromDepthM": 18,
+              "depthM": 5,
+              "minutes": 1.4,
+              "ambientBar": 2.169
+            },
+            {
+              "kind": "safety_stop",
+              "fromDepthM": 5,
+              "depthM": 5,
+              "minutes": 3,
+              "ambientBar": 1.516
+            },
+            {
+              "kind": "ascent",
+              "fromDepthM": 5,
+              "depthM": 0,
+              "minutes": 0.6,
+              "ambientBar": 1.265
+            }
+          ],
+          "divers": [
+            {
+              "name": "Ana",
+              "litres": 2089.5,
+              "endPressureBar": 28.6,
+              "rockBottom": [
+                {
+                  "depthM": 18,
+                  "pressureBar": 58.2
+                }
+              ],
+              "ascentPressureBar": 90,
+              "turnPressureBar": null,
+              "belowRockBottom": false,
+              "atAscentStartBar": 43.7,
+              "pressuresBar": [
+                210,
+                205.8,
+                43.7,
+                38.1,
+                29.9,
+                28.6
+              ],
+              "marginBar": -46.3,
+              "marginMinutes": -9.1,
+              "controlling": true
+            }
+          ],
+          "controllingIndex": 0,
+          "fits": false,
+          "leaveLastLevelAtMinute": 21.9
+        }
+      }
+    },
+    {
+      "id": "overdraw-fits-false",
+      "input": {
+        "gas": {
+          "o2": 21,
+          "he": 0
+        },
+        "conditions": {
+          "water": "salt",
+          "altitudeM": 0
+        },
+        "levels": [
+          {
+            "depthM": 30,
+            "minutes": 60
+          }
+        ],
+        "divers": [
+          {
+            "name": "Ana",
+            "volumeL": 12,
+            "startPressureBar": 200,
+            "sacLpm": 20
+          }
+        ],
+        "rule": {
+          "kind": "rock_bottom"
+        },
+        "ppO2Contingency": 1.6
+      },
+      "expected": {
+        "kernel": {
+          "status": "ok",
+          "runtimeMinutes": 68,
+          "segments": [
+            {
+              "kind": "descent",
+              "fromDepthM": 0,
+              "depthM": 30,
+              "minutes": 1.6666666666666667,
+              "ambientBar": 2.5210224375
+            },
+            {
+              "kind": "level",
+              "fromDepthM": 30,
+              "depthM": 30,
+              "minutes": 60,
+              "ambientBar": 4.028794875
+            },
+            {
+              "kind": "ascent",
+              "fromDepthM": 30,
+              "depthM": 5,
+              "minutes": 2.7777777777777777,
+              "ambientBar": 2.77231784375
+            },
+            {
+              "kind": "safety_stop",
+              "fromDepthM": 5,
+              "depthM": 5,
+              "minutes": 3,
+              "ambientBar": 1.5158408125
+            },
+            {
+              "kind": "ascent",
+              "fromDepthM": 5,
+              "depthM": 0,
+              "minutes": 0.5555555555555556,
+              "ambientBar": 1.26454540625
+            }
+          ],
+          "divers": [
+            {
+              "name": "Ana",
+              "litres": 5177.6065425,
+              "endPressureBar": 0,
+              "rockBottom": [
+                {
+                  "depthM": 30,
+                  "pressureBar": 91.84160900699322
+                }
+              ],
+              "ascentPressureBar": 91.84160900699322,
+              "turnPressureBar": null,
+              "belowRockBottom": false,
+              "atAscentStartBar": 0,
+              "pressuresBar": [
+                200,
+                191.91220270845668,
+                0,
+                0,
+                0,
+                0
+              ],
+              "marginBar": -91.84160900699322,
+              "marginMinutes": -45.91857179334615,
+              "controlling": true
+            }
+          ],
+          "controllingIndex": 0,
+          "fits": false,
+          "leaveLastLevelAtMinute": 15.748094873320511
+        },
+        "service": {
+          "status": "ok",
+          "runtimeMinutes": 68,
+          "segments": [
+            {
+              "kind": "descent",
+              "fromDepthM": 0,
+              "depthM": 30,
+              "minutes": 1.7,
+              "ambientBar": 2.521
+            },
+            {
+              "kind": "level",
+              "fromDepthM": 30,
+              "depthM": 30,
+              "minutes": 60,
+              "ambientBar": 4.029
+            },
+            {
+              "kind": "ascent",
+              "fromDepthM": 30,
+              "depthM": 5,
+              "minutes": 2.8,
+              "ambientBar": 2.772
+            },
+            {
+              "kind": "safety_stop",
+              "fromDepthM": 5,
+              "depthM": 5,
+              "minutes": 3,
+              "ambientBar": 1.516
+            },
+            {
+              "kind": "ascent",
+              "fromDepthM": 5,
+              "depthM": 0,
+              "minutes": 0.6,
+              "ambientBar": 1.265
+            }
+          ],
+          "divers": [
+            {
+              "name": "Ana",
+              "litres": 5177.6,
+              "endPressureBar": 0,
+              "rockBottom": [
+                {
+                  "depthM": 30,
+                  "pressureBar": 91.8
+                }
+              ],
+              "ascentPressureBar": 91.8,
+              "turnPressureBar": null,
+              "belowRockBottom": false,
+              "atAscentStartBar": 0,
+              "pressuresBar": [
+                200,
+                191.9,
+                0,
+                0,
+                0,
+                0
+              ],
+              "marginBar": -91.8,
+              "marginMinutes": -45.9,
+              "controlling": true
+            }
+          ],
+          "controllingIndex": 0,
+          "fits": false,
+          "leaveLastLevelAtMinute": 15.7
+        }
+      }
+    },
+    {
+      "id": "outside-depth-41m",
+      "input": {
+        "gas": {
+          "o2": 21,
+          "he": 0
+        },
+        "conditions": {
+          "water": "salt",
+          "altitudeM": 0
+        },
+        "levels": [
+          {
+            "depthM": 41,
+            "minutes": 10
+          }
+        ],
+        "divers": [
+          {
+            "name": "Ana",
+            "volumeL": 12,
+            "startPressureBar": 200,
+            "sacLpm": 20
+          }
+        ],
+        "rule": {
+          "kind": "rock_bottom"
+        },
+        "ppO2Contingency": 1.6
+      },
+      "expected": {
+        "kernel": {
+          "status": "outside_limits",
+          "reason": "depth",
+          "levelIndex": 0
+        },
+        "service": {
+          "status": "outside_limits",
+          "reason": "depth",
+          "levelIndex": 0
+        }
+      }
+    },
+    {
+      "id": "outside-mod-ean40-32m",
+      "input": {
+        "gas": {
+          "o2": 40,
+          "he": 0
+        },
+        "conditions": {
+          "water": "salt",
+          "altitudeM": 0
+        },
+        "levels": [
+          {
+            "depthM": 32,
+            "minutes": 10
+          }
+        ],
+        "divers": [
+          {
+            "name": "Ana",
+            "volumeL": 12,
+            "startPressureBar": 200,
+            "sacLpm": 20
+          }
+        ],
+        "rule": {
+          "kind": "rock_bottom"
+        },
+        "ppO2Contingency": 1.6
+      },
+      "expected": {
+        "kernel": {
+          "status": "outside_limits",
+          "reason": "mod",
+          "levelIndex": 0
+        },
+        "service": {
+          "status": "outside_limits",
+          "reason": "mod",
+          "levelIndex": 0
+        }
+      }
+    },
+    {
+      "id": "outside-gas-trimix",
+      "input": {
+        "gas": {
+          "o2": 21,
+          "he": 35
+        },
+        "conditions": {
+          "water": "salt",
+          "altitudeM": 0
+        },
+        "levels": [
+          {
+            "depthM": 30,
+            "minutes": 10
+          }
+        ],
+        "divers": [
+          {
+            "name": "Ana",
+            "volumeL": 12,
+            "startPressureBar": 200,
+            "sacLpm": 20
+          }
+        ],
+        "rule": {
+          "kind": "rock_bottom"
+        },
+        "ppO2Contingency": 1.6
+      },
+      "expected": {
+        "kernel": {
+          "status": "outside_limits",
+          "reason": "gas",
+          "levelIndex": null
+        },
+        "service": {
+          "status": "outside_limits",
+          "reason": "gas",
+          "levelIndex": null
+        }
+      }
+    }
+  ]
+}

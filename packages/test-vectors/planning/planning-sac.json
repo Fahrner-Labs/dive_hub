@@ -1,0 +1,372 @@
+{
+  "kernel": "planning-sac",
+  "version": 1,
+  "tolerance": {
+    "relative": 1e-9
+  },
+  "cases": [
+    {
+      "id": "five-dives-inclusive-rank",
+      "input": {
+        "dives": [
+          {
+            "sacLpm": 22
+          },
+          {
+            "sacLpm": 18
+          },
+          {
+            "sacLpm": 20
+          },
+          {
+            "sacLpm": 16
+          },
+          {
+            "sacLpm": 24
+          }
+        ]
+      },
+      "expected": {
+        "kernel": {
+          "lpm": 22.8,
+          "basedOn": 5,
+          "source": "logbook"
+        },
+        "service": {
+          "lpm": 22.8,
+          "basedOn": 5,
+          "source": "logbook"
+        }
+      }
+    },
+    {
+      "id": "four-dives-default",
+      "input": {
+        "dives": [
+          {
+            "sacLpm": 22
+          },
+          {
+            "sacLpm": 18
+          },
+          {
+            "sacLpm": 20
+          },
+          {
+            "sacLpm": 16
+          }
+        ]
+      },
+      "expected": {
+        "kernel": {
+          "lpm": 20,
+          "basedOn": 4,
+          "source": "default"
+        },
+        "service": {
+          "lpm": 20,
+          "basedOn": 4,
+          "source": "default"
+        }
+      }
+    },
+    {
+      "id": "nulls-filtered",
+      "input": {
+        "dives": [
+          {
+            "sacLpm": 20
+          },
+          {
+            "sacLpm": null
+          },
+          {
+            "sacLpm": 22
+          },
+          {
+            "sacLpm": 18
+          },
+          {
+            "sacLpm": null
+          },
+          {
+            "sacLpm": 24
+          },
+          {
+            "sacLpm": 26
+          }
+        ]
+      },
+      "expected": {
+        "kernel": {
+          "lpm": 24.8,
+          "basedOn": 5,
+          "source": "logbook"
+        },
+        "service": {
+          "lpm": 24.8,
+          "basedOn": 5,
+          "source": "logbook"
+        }
+      }
+    },
+    {
+      "id": "twenty-most-recent",
+      "input": {
+        "dives": [
+          {
+            "sacLpm": 30
+          },
+          {
+            "sacLpm": 29
+          },
+          {
+            "sacLpm": 28
+          },
+          {
+            "sacLpm": 27
+          },
+          {
+            "sacLpm": 26
+          },
+          {
+            "sacLpm": 25
+          },
+          {
+            "sacLpm": 24
+          },
+          {
+            "sacLpm": 23
+          },
+          {
+            "sacLpm": 22
+          },
+          {
+            "sacLpm": 21
+          },
+          {
+            "sacLpm": 20
+          },
+          {
+            "sacLpm": 19
+          },
+          {
+            "sacLpm": 18
+          },
+          {
+            "sacLpm": 17
+          },
+          {
+            "sacLpm": 16
+          },
+          {
+            "sacLpm": 15
+          },
+          {
+            "sacLpm": 14
+          },
+          {
+            "sacLpm": 13
+          },
+          {
+            "sacLpm": 12
+          },
+          {
+            "sacLpm": 11
+          },
+          {
+            "sacLpm": 10
+          },
+          {
+            "sacLpm": 9
+          },
+          {
+            "sacLpm": 8
+          },
+          {
+            "sacLpm": 7
+          },
+          {
+            "sacLpm": 6
+          }
+        ]
+      },
+      "expected": {
+        "kernel": {
+          "lpm": 27.2,
+          "basedOn": 20,
+          "source": "logbook"
+        },
+        "service": {
+          "lpm": 27.2,
+          "basedOn": 20,
+          "source": "logbook"
+        }
+      }
+    },
+    {
+      "id": "all-tied",
+      "input": {
+        "dives": [
+          {
+            "sacLpm": 18
+          },
+          {
+            "sacLpm": 18
+          },
+          {
+            "sacLpm": 18
+          },
+          {
+            "sacLpm": 18
+          },
+          {
+            "sacLpm": 18
+          },
+          {
+            "sacLpm": 18
+          }
+        ]
+      },
+      "expected": {
+        "kernel": {
+          "lpm": 18,
+          "basedOn": 6,
+          "source": "logbook"
+        },
+        "service": {
+          "lpm": 18,
+          "basedOn": 6,
+          "source": "logbook"
+        }
+      }
+    },
+    {
+      "id": "rounds-tie-up",
+      "input": {
+        "dives": [
+          {
+            "sacLpm": 20
+          },
+          {
+            "sacLpm": 20
+          },
+          {
+            "sacLpm": 20
+          },
+          {
+            "sacLpm": 20
+          },
+          {
+            "sacLpm": 20.125
+          }
+        ]
+      },
+      "expected": {
+        "kernel": {
+          "lpm": 20.1,
+          "basedOn": 5,
+          "source": "logbook"
+        },
+        "service": {
+          "lpm": 20.1,
+          "basedOn": 5,
+          "source": "logbook"
+        }
+      }
+    },
+    {
+      "id": "single-dive-default",
+      "input": {
+        "dives": [
+          {
+            "sacLpm": 17
+          }
+        ]
+      },
+      "expected": {
+        "kernel": {
+          "lpm": 20,
+          "basedOn": 1,
+          "source": "default"
+        },
+        "service": {
+          "lpm": 20,
+          "basedOn": 1,
+          "source": "default"
+        }
+      }
+    },
+    {
+      "id": "all-null-default",
+      "input": {
+        "dives": [
+          {
+            "sacLpm": null
+          },
+          {
+            "sacLpm": null
+          },
+          {
+            "sacLpm": null
+          },
+          {
+            "sacLpm": null
+          },
+          {
+            "sacLpm": null
+          },
+          {
+            "sacLpm": null
+          }
+        ]
+      },
+      "expected": {
+        "kernel": {
+          "lpm": 20,
+          "basedOn": 0,
+          "source": "default"
+        },
+        "service": {
+          "lpm": 20,
+          "basedOn": 0,
+          "source": "default"
+        }
+      }
+    },
+    {
+      "id": "unsorted",
+      "input": {
+        "dives": [
+          {
+            "sacLpm": 24
+          },
+          {
+            "sacLpm": 16
+          },
+          {
+            "sacLpm": 22
+          },
+          {
+            "sacLpm": 18
+          },
+          {
+            "sacLpm": 20
+          }
+        ]
+      },
+      "expected": {
+        "kernel": {
+          "lpm": 22.8,
+          "basedOn": 5,
+          "source": "logbook"
+        },
+        "service": {
+          "lpm": 22.8,
+          "basedOn": 5,
+          "source": "logbook"
+        }
+      }
+    }
+  ]
+}

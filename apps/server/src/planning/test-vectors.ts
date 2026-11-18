@@ -6,12 +6,17 @@ import {
   ambientPressureBar, bestMixPercent, eadMetres, endMetres, isHypoxic, metresPerBar, modMetres, surfacePressureBar,
   type Conditions, type GasMix, type PlanningWater,
 } from './gas.js';
-import { gasNumbers } from './gas-numbers.js';
+import { bottomTime } from './bottom-time.js';
+import { gasNumbers, floorTenth } from './gas-numbers.js';
+import { planGas, type GasRule } from './gas-plan.js';
 import { ndlMinutes } from './ndl.js';
 import { otu, oxygenLimitMinutes } from './oxygen.js';
+import { planningSac } from './planning-sac.js';
 import { advanceTissues, surfaceSaturatedTissues, worstCompartmentPercent, type TissuePoint } from './tissues.js';
 
-export const VECTOR_KERNELS = ['gas', 'tissues', 'ndl', 'oxygen', 'real-gas', 'sac'] as const;
+export const VECTOR_KERNELS = [
+  'gas', 'tissues', 'ndl', 'oxygen', 'real-gas', 'sac', 'gas-plan', 'bottom-time', 'planning-sac',
+] as const;
 export type VectorKernel = (typeof VECTOR_KERNELS)[number];
 
 export interface VectorCase {
@@ -77,6 +82,33 @@ interface SacVectorCylinder {
 interface SacVectorInput {
   dive: { durationSeconds: number; avgDepthM: number | null };
   cylinders: SacVectorCylinder[];
+}
+
+interface GasPlanVectorInput {
+  gas: GasMix;
+  conditions: Conditions;
+  levels: { depthM: number; minutes: number }[];
+  divers: { name: string; volumeL: number; startPressureBar: number; sacLpm: number }[];
+  rule: GasRule;
+  ppO2Contingency: number;
+  descentRateMPerMin?: number;
+  ascentRateMPerMin?: number;
+}
+
+interface BottomTimeVectorInput {
+  gas: GasMix;
+  depthM: number;
+  gfHigh: number;
+  conditions: Conditions;
+  cylinder: { volumeL: number; startPressureBar: number } | null;
+  sacLpm: number;
+  rule: GasRule;
+  ppO2: { working: number; contingency: number };
+  initialTissues?: number[];
+}
+
+interface PlanningSacVectorInput {
+  dives: { sacLpm: number | null }[];
 }
 
 const conditionsOf = (input: { water: PlanningWater; altitudeM: number }): Conditions => ({
@@ -232,6 +264,214 @@ export const SAC_CASES: VectorCase[] = [
   },
 ];
 
+export const GAS_PLAN_CASES: VectorCase[] = [
+  {
+    id: 'rock-bottom-air-30m-one-diver',
+    input: {
+      gas: AIR, conditions: { water: 'salt', altitudeM: 0 }, levels: [{ depthM: 30, minutes: 20 }],
+      divers: [{ name: 'Ana', volumeL: 12, startPressureBar: 200, sacLpm: 20 }],
+      rule: { kind: 'rock_bottom' }, ppO2Contingency: 1.6,
+    } satisfies GasPlanVectorInput,
+  },
+  {
+    id: 'halves-ean32-two-divers',
+    input: {
+      gas: EAN32, conditions: { water: 'salt', altitudeM: 0 },
+      levels: [{ depthM: 20, minutes: 15 }, { depthM: 30, minutes: 10 }],
+      divers: [
+        { name: 'Ana', volumeL: 12, startPressureBar: 200, sacLpm: 18 },
+        { name: 'Bo', volumeL: 15, startPressureBar: 220, sacLpm: 22 },
+      ],
+      rule: { kind: 'halves' }, ppO2Contingency: 1.6,
+    } satisfies GasPlanVectorInput,
+  },
+  {
+    id: 'thirds-air-three-divers-fresh-900',
+    input: {
+      gas: AIR, conditions: { water: 'fresh', altitudeM: 900 }, levels: [{ depthM: 25, minutes: 20 }],
+      divers: [
+        { name: 'Ana', volumeL: 12, startPressureBar: 200, sacLpm: 18 },
+        { name: 'Bo', volumeL: 12, startPressureBar: 210, sacLpm: 20 },
+        { name: 'Cy', volumeL: 15, startPressureBar: 220, sacLpm: 16 },
+      ],
+      rule: { kind: 'thirds' }, ppO2Contingency: 1.6, descentRateMPerMin: 15, ascentRateMPerMin: 6,
+    } satisfies GasPlanVectorInput,
+  },
+  {
+    id: 'sixths-air-40m',
+    input: {
+      gas: AIR, conditions: { water: 'salt', altitudeM: 0 }, levels: [{ depthM: 40, minutes: 15 }],
+      divers: [{ name: 'Ana', volumeL: 12, startPressureBar: 220, sacLpm: 20 }],
+      rule: { kind: 'sixths' }, ppO2Contingency: 1.6,
+    } satisfies GasPlanVectorInput,
+  },
+  {
+    id: 'reserve-ean36-25m',
+    input: {
+      gas: { o2: 36, he: 0 }, conditions: { water: 'salt', altitudeM: 0 }, levels: [{ depthM: 25, minutes: 25 }],
+      divers: [{ name: 'Ana', volumeL: 12, startPressureBar: 200, sacLpm: 18 }],
+      rule: { kind: 'reserve', bar: 60 }, ppO2Contingency: 1.6,
+    } satisfies GasPlanVectorInput,
+  },
+  {
+    id: 'ascent-pressure-air-18m',
+    input: {
+      gas: AIR, conditions: { water: 'salt', altitudeM: 0 }, levels: [{ depthM: 18, minutes: 30 }],
+      divers: [{ name: 'Ana', volumeL: 12, startPressureBar: 210, sacLpm: 22 }],
+      rule: { kind: 'ascent_pressure', bar: 90 }, ppO2Contingency: 1.6,
+    } satisfies GasPlanVectorInput,
+  },
+  {
+    id: 'overdraw-fits-false',
+    input: {
+      gas: AIR, conditions: { water: 'salt', altitudeM: 0 }, levels: [{ depthM: 30, minutes: 60 }],
+      divers: [{ name: 'Ana', volumeL: 12, startPressureBar: 200, sacLpm: 20 }],
+      rule: { kind: 'rock_bottom' }, ppO2Contingency: 1.6,
+    } satisfies GasPlanVectorInput,
+  },
+  {
+    id: 'outside-depth-41m',
+    input: {
+      gas: AIR, conditions: { water: 'salt', altitudeM: 0 }, levels: [{ depthM: 41, minutes: 10 }],
+      divers: [{ name: 'Ana', volumeL: 12, startPressureBar: 200, sacLpm: 20 }],
+      rule: { kind: 'rock_bottom' }, ppO2Contingency: 1.6,
+    } satisfies GasPlanVectorInput,
+  },
+  {
+    id: 'outside-mod-ean40-32m',
+    input: {
+      gas: { o2: 40, he: 0 }, conditions: { water: 'salt', altitudeM: 0 }, levels: [{ depthM: 32, minutes: 10 }],
+      divers: [{ name: 'Ana', volumeL: 12, startPressureBar: 200, sacLpm: 20 }],
+      rule: { kind: 'rock_bottom' }, ppO2Contingency: 1.6,
+    } satisfies GasPlanVectorInput,
+  },
+  {
+    id: 'outside-gas-trimix',
+    input: {
+      gas: TRIMIX_21_35, conditions: { water: 'salt', altitudeM: 0 }, levels: [{ depthM: 30, minutes: 10 }],
+      divers: [{ name: 'Ana', volumeL: 12, startPressureBar: 200, sacLpm: 20 }],
+      rule: { kind: 'rock_bottom' }, ppO2Contingency: 1.6,
+    } satisfies GasPlanVectorInput,
+  },
+];
+
+export const BOTTOM_TIME_CASES: VectorCase[] = [
+  {
+    id: 'air-30m-gf85-rock-bottom',
+    input: {
+      gas: AIR, depthM: 30, gfHigh: 85, conditions: { water: 'salt', altitudeM: 0 },
+      cylinder: { volumeL: 12, startPressureBar: 200 }, sacLpm: 20,
+      rule: { kind: 'rock_bottom' }, ppO2: { working: 1.4, contingency: 1.6 },
+    } satisfies BottomTimeVectorInput,
+  },
+  {
+    id: 'ean32-30m-gf85-reserve',
+    input: {
+      gas: EAN32, depthM: 30, gfHigh: 85, conditions: { water: 'salt', altitudeM: 0 },
+      cylinder: { volumeL: 12, startPressureBar: 220 }, sacLpm: 20,
+      rule: { kind: 'reserve', bar: 50 }, ppO2: { working: 1.4, contingency: 1.6 },
+    } satisfies BottomTimeVectorInput,
+  },
+  {
+    id: 'air-18m-gf100-no-cylinder',
+    input: {
+      gas: AIR, depthM: 18, gfHigh: 100, conditions: { water: 'salt', altitudeM: 0 },
+      cylinder: null, sacLpm: 20,
+      rule: { kind: 'rock_bottom' }, ppO2: { working: 1.4, contingency: 1.6 },
+    } satisfies BottomTimeVectorInput,
+  },
+  {
+    id: 'ean36-25m-ascent-pressure',
+    input: {
+      gas: { o2: 36, he: 0 }, depthM: 25, gfHigh: 85, conditions: { water: 'salt', altitudeM: 0 },
+      cylinder: { volumeL: 12, startPressureBar: 200 }, sacLpm: 18,
+      rule: { kind: 'ascent_pressure', bar: 80 }, ppO2: { working: 1.4, contingency: 1.6 },
+    } satisfies BottomTimeVectorInput,
+  },
+  {
+    id: 'ean36-30m-above-working',
+    input: {
+      gas: { o2: 36, he: 0 }, depthM: 30, gfHigh: 85, conditions: { water: 'salt', altitudeM: 0 },
+      cylinder: { volumeL: 12, startPressureBar: 220 }, sacLpm: 20,
+      rule: { kind: 'ascent_pressure', bar: 80 }, ppO2: { working: 1.4, contingency: 1.6 },
+    } satisfies BottomTimeVectorInput,
+  },
+  {
+    id: 'air-20m-gf85-ascent-pressure',
+    input: {
+      gas: AIR, depthM: 20, gfHigh: 85, conditions: { water: 'salt', altitudeM: 0 },
+      cylinder: { volumeL: 15, startPressureBar: 220 }, sacLpm: 22,
+      rule: { kind: 'ascent_pressure', bar: 100 }, ppO2: { working: 1.4, contingency: 1.6 },
+    } satisfies BottomTimeVectorInput,
+  },
+  {
+    id: 'outside-depth-41m',
+    input: {
+      gas: AIR, depthM: 41, gfHigh: 85, conditions: { water: 'salt', altitudeM: 0 },
+      cylinder: { volumeL: 12, startPressureBar: 200 }, sacLpm: 20,
+      rule: { kind: 'rock_bottom' }, ppO2: { working: 1.4, contingency: 1.6 },
+    } satisfies BottomTimeVectorInput,
+  },
+  {
+    id: 'outside-mod-ean40-34m',
+    input: {
+      gas: { o2: 40, he: 0 }, depthM: 34, gfHigh: 85, conditions: { water: 'salt', altitudeM: 0 },
+      cylinder: { volumeL: 12, startPressureBar: 200 }, sacLpm: 20,
+      rule: { kind: 'rock_bottom' }, ppO2: { working: 1.4, contingency: 1.6 },
+    } satisfies BottomTimeVectorInput,
+  },
+  {
+    id: 'outside-gas-trimix',
+    input: {
+      gas: TRIMIX_21_35, depthM: 30, gfHigh: 85, conditions: { water: 'salt', altitudeM: 0 },
+      cylinder: { volumeL: 12, startPressureBar: 200 }, sacLpm: 20,
+      rule: { kind: 'rock_bottom' }, ppO2: { working: 1.4, contingency: 1.6 },
+    } satisfies BottomTimeVectorInput,
+  },
+  {
+    id: 'residual-air-18m-gf85',
+    input: {
+      gas: AIR, depthM: 18, gfHigh: 85, conditions: { water: 'salt', altitudeM: 0 },
+      cylinder: null, sacLpm: 20, rule: { kind: 'rock_bottom' }, ppO2: { working: 1.4, contingency: 1.6 },
+      initialTissues: Array.from({ length: 16 }, (_, i) => 0.82 + i * 0.001),
+    } satisfies BottomTimeVectorInput,
+  },
+  {
+    id: 'tie-ndl-gas-air-30m',
+    input: {
+      gas: AIR, depthM: 30, gfHigh: 85, conditions: { water: 'salt', altitudeM: 0 },
+      cylinder: { volumeL: 12, startPressureBar: 171.5 }, sacLpm: 20,
+      rule: { kind: 'rock_bottom' }, ppO2: { working: 1.4, contingency: 1.6 },
+    } satisfies BottomTimeVectorInput,
+  },
+  {
+    id: 'shallow-6m-gas-only',
+    input: {
+      gas: AIR, depthM: 6, gfHigh: 100, conditions: { water: 'salt', altitudeM: 0 },
+      cylinder: { volumeL: 12, startPressureBar: 200 }, sacLpm: 20,
+      rule: { kind: 'rock_bottom' }, ppO2: { working: 1.4, contingency: 1.6 },
+    } satisfies BottomTimeVectorInput,
+  },
+];
+
+export const PLANNING_SAC_CASES: VectorCase[] = [
+  { id: 'five-dives-inclusive-rank', input: { dives: [22, 18, 20, 16, 24].map((sacLpm) => ({ sacLpm })) } satisfies PlanningSacVectorInput },
+  { id: 'four-dives-default', input: { dives: [22, 18, 20, 16].map((sacLpm) => ({ sacLpm })) } satisfies PlanningSacVectorInput },
+  {
+    id: 'nulls-filtered',
+    input: { dives: [20, null, 22, 18, null, 24, 26].map((sacLpm) => ({ sacLpm })) } satisfies PlanningSacVectorInput,
+  },
+  {
+    id: 'twenty-most-recent',
+    input: { dives: [30, 29, 28, 27, 26, 25, 24, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6].map((sacLpm) => ({ sacLpm })) } satisfies PlanningSacVectorInput,
+  },
+  { id: 'all-tied', input: { dives: Array.from({ length: 6 }, () => ({ sacLpm: 18 })) } satisfies PlanningSacVectorInput },
+  { id: 'rounds-tie-up', input: { dives: [20, 20, 20, 20, 20.125].map((sacLpm) => ({ sacLpm })) } satisfies PlanningSacVectorInput },
+  { id: 'single-dive-default', input: { dives: [{ sacLpm: 17 }] } satisfies PlanningSacVectorInput },
+  { id: 'all-null-default', input: { dives: Array.from({ length: 6 }, () => ({ sacLpm: null })) } satisfies PlanningSacVectorInput },
+  { id: 'unsorted', input: { dives: [24, 16, 22, 18, 20].map((sacLpm) => ({ sacLpm })) } satisfies PlanningSacVectorInput },
+];
+
 export const VECTOR_CASES: Record<VectorKernel, VectorCase[]> = {
   gas: GAS_CASES,
   tissues: TISSUES_CASES,
@@ -239,6 +479,9 @@ export const VECTOR_CASES: Record<VectorKernel, VectorCase[]> = {
   oxygen: OXYGEN_CASES,
   'real-gas': REAL_GAS_CASES,
   sac: SAC_CASES,
+  'gas-plan': GAS_PLAN_CASES,
+  'bottom-time': BOTTOM_TIME_CASES,
+  'planning-sac': PLANNING_SAC_CASES,
 };
 
 function evaluateGas(input: GasVectorInput): VectorOutcome {
@@ -346,6 +589,98 @@ function evaluateSac(input: SacVectorInput): VectorOutcome {
   };
 }
 
+function evaluateGasPlan(input: GasPlanVectorInput): VectorOutcome {
+  const plan = planGas(input);
+  if (plan.status === 'outside_limits') {
+    const outside = { status: plan.status, reason: plan.reason, levelIndex: plan.levelIndex };
+    return { kernel: outside, service: outside };
+  }
+  const kernel = {
+    status: plan.status,
+    runtimeMinutes: plan.runtimeMinutes,
+    segments: plan.segments.map((s) => ({
+      kind: s.kind, fromDepthM: s.fromDepthM, depthM: s.depthM, minutes: s.minutes, ambientBar: s.ambientBar,
+    })),
+    divers: plan.divers.map((p) => ({
+      name: p.name, litres: p.litres, endPressureBar: p.endPressureBar,
+      rockBottom: p.rockBottom.map((r) => ({ depthM: r.depthM, pressureBar: r.pressureBar })),
+      ascentPressureBar: p.ascentPressureBar, turnPressureBar: p.turnPressureBar,
+      belowRockBottom: p.belowRockBottom, atAscentStartBar: p.atAscentStartBar,
+      pressuresBar: p.pressuresBar, marginBar: p.marginBar, marginMinutes: p.marginMinutes,
+      controlling: p.controlling,
+    })),
+    controllingIndex: plan.controllingIndex, fits: plan.fits, leaveLastLevelAtMinute: plan.leaveLastLevelAtMinute,
+  };
+  // The route's view: one decimal for minutes, pressures and litres, three for the mean ambient pressure.
+  const service = {
+    status: plan.status,
+    runtimeMinutes: round(plan.runtimeMinutes, 1),
+    segments: plan.segments.map((s) => ({
+      kind: s.kind, fromDepthM: s.fromDepthM, depthM: s.depthM, minutes: round(s.minutes, 1), ambientBar: round(s.ambientBar, 3),
+    })),
+    divers: plan.divers.map((p) => ({
+      name: p.name, litres: round(p.litres, 1), endPressureBar: round(p.endPressureBar, 1),
+      rockBottom: p.rockBottom.map((r) => ({ depthM: r.depthM, pressureBar: round(r.pressureBar, 1) })),
+      ascentPressureBar: round(p.ascentPressureBar, 1),
+      turnPressureBar: p.turnPressureBar === null ? null : round(p.turnPressureBar, 1),
+      belowRockBottom: p.belowRockBottom, atAscentStartBar: round(p.atAscentStartBar, 1),
+      pressuresBar: p.pressuresBar.map((bar) => round(bar, 1)), marginBar: round(p.marginBar, 1),
+      marginMinutes: round(p.marginMinutes, 1), controlling: p.controlling,
+    })),
+    controllingIndex: plan.controllingIndex, fits: plan.fits,
+    leaveLastLevelAtMinute: round(plan.leaveLastLevelAtMinute, 1),
+  };
+  return { kernel, service };
+}
+
+function evaluateBottomTime(input: BottomTimeVectorInput): VectorOutcome {
+  const result = bottomTime(input);
+  if (result.status === 'outside_limits') {
+    const kernel = { status: result.status, reason: result.reason, modM: result.modM };
+    const service = {
+      status: result.status, reason: result.reason,
+      modM: result.modM === null ? null : floorTenth(result.modM),
+    };
+    return { kernel, service };
+  }
+  const kernel = {
+    status: result.status,
+    minutes: result.minutes,
+    binding: result.binding,
+    limits: {
+      ndl: finiteOrNull(result.limits.ndl),
+      oxygen: finiteOrNull(result.limits.oxygen),
+      gas: result.limits.gas,
+    },
+    otu: result.otu,
+    ppO2AtDepth: result.ppO2AtDepth,
+    ascentPressureBar: result.ascentPressureBar,
+    ppO2AboveWorking: result.ppO2AboveWorking,
+  };
+  const finiteTenth = (n: number) => (Number.isFinite(n) ? round(n, 1) : null);
+  const service = {
+    status: result.status,
+    minutes: result.minutes,
+    binding: result.binding,
+    limits: {
+      ndl: finiteTenth(result.limits.ndl),
+      oxygen: finiteTenth(result.limits.oxygen),
+      gas: result.limits.gas === null ? null : finiteTenth(result.limits.gas),
+    },
+    ascentPressureBar: result.ascentPressureBar === null ? null : round(result.ascentPressureBar, 1),
+    otu: round(result.otu, 1),
+    ppO2AtDepth: round(result.ppO2AtDepth, 2),
+    ppO2AboveWorking: result.ppO2AboveWorking,
+  };
+  return { kernel, service };
+}
+
+function evaluatePlanningSac(input: PlanningSacVectorInput): VectorOutcome {
+  const result = planningSac(input.dives);
+  const view = { lpm: result.lpm, basedOn: result.basedOn, source: result.source };
+  return { kernel: view, service: view };
+}
+
 export function evaluateVectorCase(kernel: VectorKernel, input: unknown): VectorOutcome {
   switch (kernel) {
     case 'gas': return evaluateGas(input as GasVectorInput);
@@ -354,6 +689,9 @@ export function evaluateVectorCase(kernel: VectorKernel, input: unknown): Vector
     case 'oxygen': return evaluateOxygen(input as OxygenVectorInput);
     case 'real-gas': return evaluateRealGas(input as RealGasVectorInput);
     case 'sac': return evaluateSac(input as SacVectorInput);
+    case 'gas-plan': return evaluateGasPlan(input as GasPlanVectorInput);
+    case 'bottom-time': return evaluateBottomTime(input as BottomTimeVectorInput);
+    case 'planning-sac': return evaluatePlanningSac(input as PlanningSacVectorInput);
   }
 }
 

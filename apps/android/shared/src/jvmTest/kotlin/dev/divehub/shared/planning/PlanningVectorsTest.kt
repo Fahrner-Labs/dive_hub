@@ -214,4 +214,161 @@ class PlanningVectorsTest {
         }
         assertMissing("service.missing", expectedService["missing"], service.missing)
     }
+
+    private fun gasRule(rule: JsonObject): GasRule = when (val kind = rule.text("kind")) {
+        "rock_bottom" -> GasRule.RockBottom
+        "reserve" -> GasRule.Reserve(rule.number("bar"))
+        "ascent_pressure" -> GasRule.AscentPressure(rule.number("bar"))
+        "halves" -> GasRule.Turn(TurnRule.halves)
+        "thirds" -> GasRule.Turn(TurnRule.thirds)
+        "sixths" -> GasRule.Turn(TurnRule.sixths)
+        else -> error("unknown gas rule $kind")
+    }
+
+    private fun JsonObject.conditions(): Conditions =
+        Conditions(PlanningWater.valueOf(obj("conditions").text("water")), obj("conditions").number("altitudeM"))
+
+    private fun JsonObject.optionalArray(key: String): JsonArray? =
+        get(key)?.takeIf { it !is JsonNull }?.jsonArray
+
+    @Test
+    fun `gas-plan vectors match the Kotlin port`() = each("gas-plan") { case, tolerance ->
+        val input = case.obj("input")
+        val levels = input.array("levels").map {
+            GasPlanLevel(it.jsonObject.number("depthM"), it.jsonObject.number("minutes"))
+        }
+        val divers = input.array("divers").map {
+            val diver = it.jsonObject
+            GasPlanDiver(
+                diver.text("name"),
+                diver.number("volumeL"),
+                diver.number("startPressureBar"),
+                diver.number("sacLpm"),
+            )
+        }
+        val plan = planGas(
+            GasPlanInput(
+                gas = input.gas("gas"),
+                conditions = input.conditions(),
+                levels = levels,
+                divers = divers,
+                rule = gasRule(input.obj("rule")),
+                ppO2Contingency = input.number("ppO2Contingency"),
+                descentRateMPerMin = input.nullableNumber("descentRateMPerMin"),
+                ascentRateMPerMin = input.nullableNumber("ascentRateMPerMin"),
+            ),
+        )
+        val expected = case.obj("expected").obj("kernel")
+        when (plan) {
+            is GasPlan.OutsideLimits -> {
+                assertEquals("outside_limits", expected.text("status"), "status")
+                assertEquals(expected.text("reason"), plan.reason.name, "reason")
+                val levelIndex = expected["levelIndex"]
+                if (levelIndex == null || levelIndex is JsonNull) assertNull(plan.levelIndex, "levelIndex")
+                else assertEquals(levelIndex.jsonPrimitive.int, plan.levelIndex, "levelIndex")
+            }
+            is GasPlan.Ok -> {
+                assertEquals("ok", expected.text("status"), "status")
+                assertClose("runtimeMinutes", plan.runtimeMinutes, expected["runtimeMinutes"], tolerance)
+                val expectedSegments = expected.array("segments")
+                assertEquals(expectedSegments.size, plan.segments.size, "segments: length")
+                expectedSegments.forEachIndexed { i, element ->
+                    val segment = plan.segments[i]
+                    val block = element.jsonObject
+                    assertEquals(block.text("kind"), segment.kind.name, "segments[$i].kind")
+                    assertClose("segments[$i].fromDepthM", segment.fromDepthM, block["fromDepthM"], tolerance)
+                    assertClose("segments[$i].depthM", segment.depthM, block["depthM"], tolerance)
+                    assertClose("segments[$i].minutes", segment.minutes, block["minutes"], tolerance)
+                    assertClose("segments[$i].ambientBar", segment.ambientBar, block["ambientBar"], tolerance)
+                }
+                val expectedDivers = expected.array("divers")
+                assertEquals(expectedDivers.size, plan.divers.size, "divers: length")
+                expectedDivers.forEachIndexed { i, element ->
+                    val diver = plan.divers[i]
+                    val block = element.jsonObject
+                    assertEquals(block.text("name"), diver.name, "divers[$i].name")
+                    assertClose("divers[$i].litres", diver.litres, block["litres"], tolerance)
+                    assertClose("divers[$i].endPressureBar", diver.endPressureBar, block["endPressureBar"], tolerance)
+                    val rockBottom = block.array("rockBottom")
+                    assertEquals(rockBottom.size, diver.rockBottom.size, "divers[$i].rockBottom: length")
+                    rockBottom.forEachIndexed { j, point ->
+                        val expectedPoint = point.jsonObject
+                        assertClose("divers[$i].rockBottom[$j].depthM", diver.rockBottom[j].depthM, expectedPoint["depthM"], tolerance)
+                        assertClose("divers[$i].rockBottom[$j].pressureBar", diver.rockBottom[j].pressureBar, expectedPoint["pressureBar"], tolerance)
+                    }
+                    assertClose("divers[$i].ascentPressureBar", diver.ascentPressureBar, block["ascentPressureBar"], tolerance)
+                    assertNullableClose("divers[$i].turnPressureBar", diver.turnPressureBar, block["turnPressureBar"], tolerance)
+                    assertEquals(block.flag("belowRockBottom"), diver.belowRockBottom, "divers[$i].belowRockBottom")
+                    assertClose("divers[$i].atAscentStartBar", diver.atAscentStartBar, block["atAscentStartBar"], tolerance)
+                    assertCloseArray("divers[$i].pressuresBar", diver.pressuresBar, block["pressuresBar"], tolerance)
+                    assertClose("divers[$i].marginBar", diver.marginBar, block["marginBar"], tolerance)
+                    assertClose("divers[$i].marginMinutes", diver.marginMinutes, block["marginMinutes"], tolerance)
+                    assertEquals(block.flag("controlling"), diver.controlling, "divers[$i].controlling")
+                }
+                assertEquals(expected.getValue("controllingIndex").jsonPrimitive.int, plan.controllingIndex, "controllingIndex")
+                assertEquals(expected.flag("fits"), plan.fits, "fits")
+                assertClose("leaveLastLevelAtMinute", plan.leaveLastLevelAtMinute, expected["leaveLastLevelAtMinute"], tolerance)
+            }
+        }
+    }
+
+    @Test
+    fun `bottom-time vectors match the Kotlin port`() = each("bottom-time") { case, tolerance ->
+        val input = case.obj("input")
+        val cylinder = input["cylinder"]?.takeIf { it !is JsonNull }?.jsonObject?.let {
+            BottomTimeCylinder(it.number("volumeL"), it.number("startPressureBar"))
+        }
+        val initialTissues = input.optionalArray("initialTissues")?.map { it.jsonPrimitive.double }
+        val ppO2 = input.obj("ppO2")
+        val result = bottomTime(
+            BottomTimeInput(
+                gas = input.gas("gas"),
+                depthM = input.number("depthM"),
+                gfHigh = input.number("gfHigh"),
+                conditions = input.conditions(),
+                cylinder = cylinder,
+                sacLpm = input.number("sacLpm"),
+                rule = gasRule(input.obj("rule")),
+                ppO2 = PpO2Limits(ppO2.number("working"), ppO2.number("contingency")),
+                initialTissues = initialTissues,
+            ),
+        )
+        val expected = case.obj("expected").obj("kernel")
+        when (result) {
+            is BottomTime.OutsideLimits -> {
+                assertEquals("outside_limits", expected.text("status"), "status")
+                assertEquals(expected.text("reason"), result.reason.name, "reason")
+                assertNullableClose("modM", result.modM, expected["modM"], tolerance)
+            }
+            is BottomTime.Ok -> {
+                assertEquals("ok", expected.text("status"), "status")
+                assertClose("minutes", result.minutes, expected["minutes"], tolerance)
+                assertEquals(
+                    expected.array("binding").map { it.jsonPrimitive.content },
+                    result.binding.map { it.name },
+                    "binding",
+                )
+                val limits = expected.obj("limits")
+                assertClose("limits.ndl", result.limits.ndl, limits["ndl"], tolerance)
+                assertClose("limits.oxygen", result.limits.oxygen, limits["oxygen"], tolerance)
+                assertNullableClose("limits.gas", result.limits.gas, limits["gas"], tolerance)
+                assertClose("otu", result.otu, expected["otu"], tolerance)
+                assertClose("ppO2AtDepth", result.ppO2AtDepth, expected["ppO2AtDepth"], tolerance)
+                assertNullableClose("ascentPressureBar", result.ascentPressureBar, expected["ascentPressureBar"], tolerance)
+                assertEquals(expected.flag("ppO2AboveWorking"), result.ppO2AboveWorking, "ppO2AboveWorking")
+            }
+        }
+    }
+
+    @Test
+    fun `planning-sac vectors match the Kotlin port`() = each("planning-sac") { case, tolerance ->
+        val dives = case.obj("input").array("dives").map {
+            PlanningSacDive(it.jsonObject.nullableNumber("sacLpm"))
+        }
+        val result = planningSac(dives)
+        val expected = case.obj("expected").obj("kernel")
+        assertClose("lpm", result.lpm, expected["lpm"], tolerance)
+        assertEquals(expected.getValue("basedOn").jsonPrimitive.int, result.basedOn, "basedOn")
+        assertEquals(expected.text("source"), result.source.name, "source")
+    }
 }
