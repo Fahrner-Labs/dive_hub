@@ -8,7 +8,7 @@ date: 2026-10-07
 # ADR 0040: Logbook rows, "Show only" filters and their counts
 
 ## Status
-Accepted – 2026-10-07. Amends [ADR 0017](0017-logbook-list-paging.md). Numbers are calculated, as it left open: [ADR 0048](0048-dive-numbers.md) (built 2026-10-09).
+Accepted – 2026-10-07. Amended 2026-11-17: the chip count compares stored fingerprints (see below). Amends [ADR 0017](0017-logbook-list-paging.md). Numbers are calculated, as it left open: [ADR 0048](0048-dive-numbers.md) (built 2026-10-09).
 
 ## Context
 The [UI redesign](../research/2026-10-07-ui-redesign-proposal.md) (section 3, owner's answers under "Outcome") replaces
@@ -33,10 +33,10 @@ a Recording". Counts for the chips and the month figures can't be derived by a c
     Connection follows numbers and the Provider can set a number on an update, the Provider's number differs from the Dive's
     (owner's decision; [ADR 0048](0048-dive-numbers.md) keeps it a state of its own in a Dive's status). At *any* Provider, like
     `not-at-provider`; Dives whose update would remove a verification are not set apart (the Send preview says so). The
-    fingerprint is not stored and not SQL, so it is worked out per request for the Diver's Dives that have a confirmed Push at
-    a connected Provider (one outgoing-Dive load each), then used as an id set for the list, the count and a Push run's
-    list; nothing is migrated and it cannot go stale. Revisit with a stored fingerprint comparison if logbooks with many sent
-    Dives make the list slow.
+    filter is worked out per request for the Diver's Dives that have a confirmed Push at a connected Provider (one
+    outgoing-Dive load each), then used as an id set for the list and a Push run's list; it cannot go stale. The chip
+    count instead compares a stored fingerprint with the Push's in SQL (amended 2026-11-17, below), so it stays cheap on
+    every request.
   - `total` and the rows follow the filters.
 - **`counts`** (`noRecording`, `noSite`, `withFindings`, `notAtProvider`, `changedSinceSent`): how many Dives each filter would show for the
   Diver and the search, **whatever filters are applied**, so a pressed chip keeps its number. The client hides a chip
@@ -65,3 +65,18 @@ a Recording". Counts for the chips and the month figures can't be derived by a c
 - `not-at-provider` counts every Provider the User connected, including one without a dive export. With SSI the only
   Provider that is the same thing; a second, import-only Provider needs the registry's capabilities here.
 - A new duty for clients: [client contract](../spec/clients.md#dives).
+
+## Amended 2026-11-17 (FAH-216)
+The `changed-since-sent` **chip count** no longer works out every sent Dive's fingerprint per request: the cost moved to
+the Dive's writes. A `dive_fingerprint` row per Dive and Provider holds what the Dive fingerprints as now there and the
+Dive version it was computed at. It is refreshed inside the transaction of every Dive Revision (`refreshFingerprints`,
+through the `ChangeListener`) and of every dive-site Revision, which recomputes each live Dive at that site (its water
+type and external IDs go out with the Dive), and a Push records the fingerprint it sent beside it. Inputs outside a Dive
+Revision, which write no site or Dive Revision, are marked stale by their own writes instead: a Diver's account at a
+Source, an entry of an account's buddy list, a private site ID (site history is shared, so it writes none). The stored
+rows of the Dives carrying the Diver, or at the site, are marked stale, and the next logbook request works them out again
+before it counts (`refreshStaleFingerprints`). The count compares the two in SQL, treats a missing row or one marked stale or from an older
+version as changed, and adds the number comparison from the Connection's `follow_numbers` and the Provider's declared
+number update. A first start after this change backfills the rows before the server listens (`backfillFingerprints`); a
+database that has none yet counts its sent Dives as changed until then. The filter result itself is unchanged:
+`only=changed-since-sent` still works the set out afresh when used ([FAH-216](/FAH/issues/FAH-216)).

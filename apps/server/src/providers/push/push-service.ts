@@ -5,7 +5,7 @@
 // first, a removal goes out, and a field changed on both sides is a Conflict. What a Provider does with the Dive is the
 // adapter's.
 import { and, desc, eq, inArray, isNotNull, isNull } from 'drizzle-orm';
-import type { Db } from '../../db/client.js';
+import type { Db, Queryable } from '../../db/client.js';
 import { connection, dive, push, type ConnectionRow } from '../../db/schema.js';
 import type { SiteSource } from '../../sites/sources.js';
 import type { BlobStore } from '../../storage/blob-store.js';
@@ -14,6 +14,11 @@ import type { ConnectionService } from '../connection-service.js';
 import { createDiveChanges, type ProviderContext } from '../dive-import/dive-changes.js';
 import { LeaseBusy, realClock, type Clock, type LeaseService } from '../lease-service.js';
 import { loadOutgoingDive } from './outgoing-dive.js';
+import {
+  backfillFingerprints, changedSinceSentCount, markFingerprintsStale as markStoredFingerprintsStale, refreshFingerprints as refreshStoredFingerprints,
+  markSiteFingerprintsStale as markStoredSiteFingerprintsStale, refreshSiteFingerprints as refreshStoredSiteFingerprints,
+  refreshStaleFingerprints as refreshStoredStaleFingerprints, rememberFingerprint,
+} from './dive-fingerprint.js';
 import {
   DIVE_FIELDS, isExporting, ProviderError, referenceOf, type ActionContext, type Delivered, type DiveExport, type DiveExportAction, type DiveField, type ImportContext,
   type ExportingProvider, type ImportedDive, type Leave, type OutgoingDive, type ProviderAdapter, type RemoteDive, type RemoteSite,
@@ -151,6 +156,13 @@ export function createPushService(deps: { db: Db; blobs: BlobStore; registry: Pr
 
   async function record(adapter: ProviderAdapter, values: PushValues) {
     const [row] = await db.insert(push).values({ provider: adapter.id, mode: adapter.dives!.mode!, ...values }).returning();
+    // The fingerprint of a confirmed create, update or link from here is what the Dive is (ADR 0040): keep it beside the
+    // Push so the logbook's chip compares two stored values. A link from the Provider's own dive has none (it differs).
+    if (row!.state === 'confirmed' && row!.fingerprint !== null) {
+      await rememberFingerprint(db, {
+        diveId: row!.diveId, provider: row!.provider, diveVersion: row!.diveVersion, fingerprint: row!.fingerprint,
+      });
+    }
     return row!;
   }
 
@@ -476,6 +488,45 @@ export function createPushService(deps: { db: Db; blobs: BlobStore; registry: Pr
         return null;
       });
       return changed.filter((id): id is string => id !== null);
+    },
+
+    /**
+     * The logbook's chip count as SQL (ADR 0040, amended): the stored fingerprint and the Push's, compared per Dive and
+     * Provider; a row missing or from an older Dive version counts as changed. The filter itself still asks
+     * `changedSinceSent` above.
+     */
+    changedSinceSentSql(userId: string) {
+      return changedSinceSentCount(registry, userId);
+    },
+
+    /** Recomputes the stored fingerprint at every Provider where the Dive has a current remote dive (a Dive changed). */
+    async refreshFingerprints(q: Queryable, diveId: string): Promise<void> {
+      await refreshStoredFingerprints(q, registry, diveId);
+    },
+
+    /** The same for every Dive at a site: its water type and IDs go out with each (a site Revision). */
+    async refreshSiteFingerprints(q: Queryable, siteId: string): Promise<void> {
+      await refreshStoredSiteFingerprints(q, registry, siteId);
+    },
+
+    /** A Diver's account or an account's list entry changed: the Dives carrying them need their fingerprints again. */
+    async markFingerprintsStale(q: Queryable, diverIds: string[]): Promise<void> {
+      await markStoredFingerprintsStale(q, diverIds);
+    },
+
+    /** A private site ID changed: every Dive at the site needs its fingerprint again. */
+    async markSiteFingerprintsStale(q: Queryable, siteId: string): Promise<void> {
+      await markStoredSiteFingerprintsStale(q, siteId);
+    },
+
+    /** Works out the stored fingerprints a stale mark left, before the logbook counts (a list request). */
+    async refreshStaleFingerprints(diverIds: string[]): Promise<void> {
+      await refreshStoredStaleFingerprints(db, registry, diverIds);
+    },
+
+    /** Fills the stored fingerprints this database never had (a first start after ADR 0040's amendment). */
+    async backfillFingerprints(): Promise<number> {
+      return backfillFingerprints(db, registry);
     },
 
     /** The Provider's dive sites near the Dive, nearest first (to pick its site ID from). */

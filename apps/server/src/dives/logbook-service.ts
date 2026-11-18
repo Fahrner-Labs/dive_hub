@@ -3,7 +3,7 @@
 // a User manages, its Recordings and site, the Dive before it, its Cylinders, Lead and Participants, its version, the deleted Dives, its Revisions). Who may see what is decided by the caller, which
 // passes the Divers the User manages. A lookup that may find nothing answers null; one whose thing must exist throws (as
 // lockManagedDive in dive-service.ts does).
-import { and, count, desc, eq, inArray, isNotNull, isNull, lt, or, sql } from 'drizzle-orm';
+import { and, count, desc, eq, inArray, isNotNull, isNull, lt, or, sql, type SQL } from 'drizzle-orm';
 import type { Db } from '../db/client.js';
 import {
   continuationAppend, device, dive, diveAssessment, diveSite, diverManagement, equipmentItem, equipmentUse, importJob, recording, revision, sampleSeries, user,
@@ -28,6 +28,8 @@ export interface ListScope {
   only?: string | undefined;
   /** The Dives that changed since they were sent; see `DiveListFilter`. */
   changedIds?: string[] | undefined;
+  /** The chip count's condition over the stored fingerprints; see `DiveListFilter`. */
+  changedSinceSent?: SQL | undefined;
   sort?: DiveSort | undefined;
   order?: 'asc' | 'desc' | undefined;
 }
@@ -46,30 +48,30 @@ export interface RowExtras {
 export function createLogbookService(db: Db) {
   /** The Divers the User manages: every logbook read is scoped to them. */
   const managedDivers = async (userId: string) => [...await managedDiverIds(db, userId)];
-  const scopeOf = ({ userId, diverIds, siteId, q, only, changedIds, sort = 'startsAt', order = 'desc' }: ListScope) => {
-    const { filters, base, where } = diveListFilter({ userId, diverIds, siteId, q, only, changedIds });
+  const scopeOf = ({ userId, diverIds, siteId, q, only, changedIds, changedSinceSent, sort = 'startsAt', order = 'desc' }: ListScope) => {
+    const { countFilters, base, where } = diveListFilter({ userId, diverIds, siteId, q, only, changedIds, changedSinceSent });
     const column = { startsAt: dive.startsAt, number: dive.number, maxDepth: dive.maxDepthM, duration: dive.durationSeconds }[sort];
     // Dives without a value (no number, no depth) go last either way; the start time breaks ties.
     const direction = order === 'asc' ? sql`asc nulls last` : sql`desc nulls last`;
     const orderBy = [sql`${column} ${direction}`, desc(dive.startsAt), desc(dive.id)];
-    return { filters, base, where, orderBy };
+    return { countFilters, base, where, orderBy };
   };
 
   /** A page of the list, with the counts of each filter, the Diver's whole-logbook totals and the months of the page. Needs at least one Diver. */
   async function listDives(scope: ListScope, { limit, offset }: { limit: number; offset: number }) {
     const { diverIds, sort = 'startsAt' } = scope;
-    const { filters, base, where, orderBy } = scopeOf(scope);
+    const { countFilters, base, where, orderBy } = scopeOf(scope);
     const [rows, [counted], [counts], [totals]] = await Promise.all([
       db.select({ d: dive, siteName: diveSite.name, findings: FINDINGS_SHOWN }).from(dive).leftJoin(diveSite, eq(diveSite.id, dive.siteId)).where(where)
         .orderBy(...orderBy)
         .limit(limit).offset(offset),
       db.select({ n: count() }).from(dive).leftJoin(diveSite, eq(diveSite.id, dive.siteId)).where(where),
       db.select({
-        noRecording: sql<number>`(count(*) filter (where ${filters['no-recording']}))::int`,
-        noSite: sql<number>`(count(*) filter (where ${filters['no-site']}))::int`,
-        withFindings: sql<number>`(count(*) filter (where ${filters['with-findings']}))::int`,
-        notAtProvider: sql<number>`(count(*) filter (where ${filters['not-at-provider']}))::int`,
-        changedSinceSent: sql<number>`(count(*) filter (where ${filters['changed-since-sent']}))::int`,
+        noRecording: sql<number>`(count(*) filter (where ${countFilters['no-recording']}))::int`,
+        noSite: sql<number>`(count(*) filter (where ${countFilters['no-site']}))::int`,
+        withFindings: sql<number>`(count(*) filter (where ${countFilters['with-findings']}))::int`,
+        notAtProvider: sql<number>`(count(*) filter (where ${countFilters['not-at-provider']}))::int`,
+        changedSinceSent: sql<number>`(count(*) filter (where ${countFilters['changed-since-sent']}))::int`,
       }).from(dive).leftJoin(diveSite, eq(diveSite.id, dive.siteId)).where(base),
       db.select({
         dives: count(), durationSeconds: sql<number>`coalesce(sum(${dive.durationSeconds}), 0)`.mapWith(Number),

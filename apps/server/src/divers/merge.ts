@@ -71,5 +71,7 @@ export async function mergeExternalDiver(tx: Tx, fromId: string, intoId: string,
   // What waited on the merged-away Diver follows to the survivor (ADR 0070): its pending Buddy suggestions become the
   // survivor's managers', with a hint now that they have an audience.
   await changeListener().diverMerged?.(tx, fromId, intoId);
+  // An account moved to the surviving Diver changes what the Dives carrying either one fingerprint as.
+  await changeListener().fingerprintInputsChanged?.(tx, [fromId, intoId]);
   return { dives };
 }

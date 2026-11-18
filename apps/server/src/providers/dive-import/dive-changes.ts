@@ -18,6 +18,7 @@ import { accountOf, idsOf, pickId, settleVisibility } from '../../sites/site-ids
 import type { SiteSource } from '../../sites/sources.js';
 import type { BlobStore } from '../../storage/blob-store.js';
 import { loadOutgoingDive } from '../push/outgoing-dive.js';
+import { rememberFingerprint } from '../push/dive-fingerprint.js';
 import { localStartOf, recordedMode, type DiveField, type DiverSource, type ImportContext, type ImportedDive, type ProviderAdapter, type ProviderCylinder } from '../provider.js';
 import { currentRemote, fingerprintNow } from '../remote-state.js';
 import { comparableOf, SYNCED_FIELDS, threeWay, VALUE_FIELDS, type Comparable, type SyncedField } from './three-way.js';
@@ -319,11 +320,13 @@ export function createDiveChanges(deps: { db: Db; blobs: BlobStore }) {
     if (changes.startsAt) await renumber(tx, [current.diverId]);
     if (wasUpToDate && remote && !sending) {
       const loaded = await loadOutgoingDive(tx, pc.userId, diveId);
+      const fingerprint = fingerprintNow(pc.adapter, loaded);
       await tx.insert(push).values({
         diveId, connectionId: pc.connectionId, userId: pc.userId, provider: pc.adapter.id, mode: recordedMode(pc.adapter),
         action: 'link', state: 'confirmed', remoteId: remote.remoteId, remoteNumber: remote.remoteNumber, diveVersion: loaded.row.version,
-        fingerprint: fingerprintNow(pc.adapter, loaded),
+        fingerprint,
       });
+      if (fingerprint) await rememberFingerprint(tx, { diveId, provider: pc.adapter.id, diveVersion: loaded.row.version, fingerprint });
     }
     return taken;
   }

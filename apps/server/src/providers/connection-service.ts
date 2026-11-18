@@ -10,6 +10,7 @@ import { audienceOfDiver, emitHint } from '../live/emit.js';
 import { managedDiverIds } from '../divers/management.js';
 import { DiverError } from '../divers/diver-error.js';
 import { externalDiver, mergeExternalDiver, participations } from '../divers/merge.js';
+import { changeListener } from '../revisions/revisions.js';
 import type { SecretBox } from '../secrets/secret-box.js';
 import { realClock, TurnTimeout, type Clock, type LeaseService } from './lease-service.js';
 import { ProviderError, type ActionContext, type ProviderAdapter, type SignInInput } from './provider.js';
@@ -249,6 +250,8 @@ export function createConnectionService(deps: { db: Db; registry: ProviderRegist
             await tx.insert(diverExternalId).values({ diverId, source, externalId: signedIn.account.id });
           }
         }
+        // The Diver's account at the Source is part of what its Dives fingerprint as (ADR 0040, amended).
+        await changeListener().fingerprintInputsChanged?.(tx, [diverId]);
         await tx.insert(connection).values({
           id, userId, diverId, provider, accountId: signedIn.account.id, accountLabel: signedIn.account.label,
           keepSignedIn: fields.keepSignedIn, credentials: seal(id, credentialsFrom(input, signedIn.access, fields.keepSignedIn)),

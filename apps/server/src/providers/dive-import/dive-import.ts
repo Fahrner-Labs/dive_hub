@@ -27,6 +27,7 @@ import { siteOutlook } from '../../sites/provider-sites.js';
 import type { BlobStore } from '../../storage/blob-store.js';
 import type { ConnectionService } from '../connection-service.js';
 import { loadOutgoingDive } from '../push/outgoing-dive.js';
+import { rememberFingerprint } from '../push/dive-fingerprint.js';
 import { REFERENCE_PREFIX, ProviderError, localStartOf, recordedMode, type Capabilities, type DiveField, type ImportContext, type ImportedDive, type ProviderCylinder } from '../provider.js';
 import { createDiveChanges, importsField, type ProviderContext } from './dive-changes.js';
 import { currentRemote, fingerprintNow } from '../remote-state.js';
@@ -329,11 +330,13 @@ export function createDiveImportService(deps: {
   ) {
     if ((await withRemote(tx, pc, [diveId])).size > 0) return;
     const loaded = await loadOutgoingDive(tx, pc.userId, diveId, options);
+    const fingerprint = upToDate ? fingerprintNow(pc.adapter, loaded) : null;
     await tx.insert(push).values({
       diveId, connectionId: pc.connectionId, userId: pc.userId, provider: pc.adapter.id, mode: recordedMode(pc.adapter),
       action: 'link', state: 'confirmed', remoteId: d.remoteId, remoteNumber: d.remoteNumber, diveVersion: loaded.row.version,
-      fingerprint: upToDate ? fingerprintNow(pc.adapter, loaded) : null,
+      fingerprint,
     });
+    if (fingerprint) await rememberFingerprint(tx, { diveId, provider: pc.adapter.id, diveVersion: loaded.row.version, fingerprint });
   }
 
   /** A Dive without a Recording from a logbook entry (ADR 0030): its values, marked as the Provider's. */

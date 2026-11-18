@@ -28,6 +28,8 @@ export interface FakeLedger {
   heldReads: number;
   /** How many times the account's dives were listed (`imports` only). */
   listReads: number;
+  /** How many times a Dive's fingerprint was worked out (the logbook's chip count must not). */
+  fingerprintReads: number;
   /** Runs inside each listing, after Dive Hub asked for it (a test's second fetch "during a read"; `imports` only). */
   beforeList: (() => Promise<void>) | null;
   /** Puts a dive there that Dive Hub doesn't know (one only at the Provider), under the account of the sign-in token. */
@@ -100,6 +102,7 @@ export function createFakeLedger(options: { imports?: boolean } = {}): FakeLedge
     numberSaves: [],
     heldReads: 0,
     listReads: 0,
+    fingerprintReads: 0,
     beforeList: null,
     expireTokens: () => fake.tokens.clear(),
     seedRemote: ({ number, startsAt, notes = null, ...more }) => {
@@ -140,8 +143,11 @@ export function createFakeLedger(options: { imports?: boolean } = {}): FakeLedge
       },
       dives: {
         mode: 'api',
-        fingerprint: (dive) => createHash('sha256')
-          .update(`${dive.startsAt.toISOString()} ${dive.maxDepthM} ${dive.notes} ${padiOf(dive).join(',')}`).digest('base64url'),
+        fingerprint: (dive) => {
+          fake.fingerprintReads += 1;
+          return createHash('sha256')
+            .update(`${dive.startsAt.toISOString()} ${dive.maxDepthM} ${dive.notes} ${dive.waterType} ${padiOf(dive).join(',')}`).digest('base64url');
+        },
         open(ctx) {
           const mine = (remoteId: string) => {
             const { accountId } = account(ctx.access);

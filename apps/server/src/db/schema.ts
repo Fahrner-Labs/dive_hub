@@ -1135,6 +1135,23 @@ export const push = pgTable(
 );
 
 /**
+ * What a Dive fingerprints as now at one Provider (ADR 0040, amended 2026-11-17): kept where the Dive changes, so the
+ * logbook's "changed since sent" chip compares it with the Push's `fingerprint` in SQL instead of working out every
+ * Dive's fingerprint per request. `dive_version` catches a change the refresh after it missed (a stale row is dirty).
+ */
+export const diveFingerprint = pgTable(
+  'dive_fingerprint',
+  {
+    diveId: uuid('dive_id').notNull().references(() => dive.id, { onDelete: 'cascade' }),
+    provider: text('provider').notNull(),
+    diveVersion: integer('dive_version').notNull(),
+    fingerprint: text('fingerprint').notNull(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [primaryKey({ columns: [t.diveId, t.provider] })],
+);
+
+/**
  * One action per Dive and Provider at a time (src/providers/leases.ts), across every app process: held until
  * `locked_until` by `holder`, removed when the action ends. A row left by a process that crashed runs out by itself.
  */

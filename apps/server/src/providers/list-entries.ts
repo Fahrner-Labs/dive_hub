@@ -4,6 +4,7 @@ import { and, eq, inArray, isNotNull, ne } from 'drizzle-orm';
 import type { Queryable } from '../db/client.js';
 import { accountListEntry, diver, diverExternalId } from '../db/schema.js';
 import type { DiverSource, ImportContext } from './provider.js';
+import { changeListenerOrNull } from '../revisions/revisions.js';
 
 
 /** The Diver's account at a source (its `diver_external_id` row id), the list owner. The buddies lock key is `buddies:<this id>`. */
@@ -64,19 +65,37 @@ export async function rememberedEntries(q: Queryable, accountId: string): Promis
 /** Sets the Diver's entry. Another Diver's row for that entry goes first, so the last link wins. */
 export async function remember(q: Queryable, accountId: string, diverId: string, entryId: string): Promise<void> {
   await q.transaction(async (tx) => {
-    await tx.delete(accountListEntry).where(and(
+    const taken = await tx.delete(accountListEntry).where(and(
       eq(accountListEntry.accountId, accountId), eq(accountListEntry.entryId, entryId), ne(accountListEntry.diverId, diverId),
-    ));
-    await tx.insert(accountListEntry).values({ accountId, diverId, entryId })
-      .onConflictDoUpdate({ target: [accountListEntry.accountId, accountListEntry.diverId], set: { entryId, updatedAt: new Date() } });
+    )).returning({ diverId: accountListEntry.diverId });
+    const set = await tx.insert(accountListEntry).values({ accountId, diverId, entryId })
+      .onConflictDoUpdate({
+        target: [accountListEntry.accountId, accountListEntry.diverId],
+        set: { entryId, updatedAt: new Date() },
+        setWhere: ne(accountListEntry.entryId, entryId),
+      }).returning({ diverId: accountListEntry.diverId });
+    // An entry counts in the fingerprint of the Dives that carry the Diver (ADR 0040, amended): mark their stored ones.
+    const changed = [...new Set([...taken, ...set].map((r) => r.diverId))];
+    if (changed.length > 0) await changeListenerOrNull()?.fingerprintInputsChanged?.(tx, changed);
   });
 }
 
 export async function forget(q: Queryable, accountId: string, diverId: string): Promise<void> {
-  await q.delete(accountListEntry).where(and(eq(accountListEntry.accountId, accountId), eq(accountListEntry.diverId, diverId)));
+  await q.transaction(async (tx) => {
+    const gone = await tx.delete(accountListEntry)
+      .where(and(eq(accountListEntry.accountId, accountId), eq(accountListEntry.diverId, diverId)))
+      .returning({ diverId: accountListEntry.diverId });
+    if (gone.length > 0) await changeListenerOrNull()?.fingerprintInputsChanged?.(tx, [diverId]);
+  });
 }
 
 /** Forgets the entry, whichever Diver's row holds it (it may be a merged-away Diver's). */
 export async function forgetEntry(q: Queryable, accountId: string, entryId: string): Promise<void> {
-  await q.delete(accountListEntry).where(and(eq(accountListEntry.accountId, accountId), eq(accountListEntry.entryId, entryId)));
+  const rows = await q.select({ diverId: accountListEntry.diverId }).from(accountListEntry)
+    .where(and(eq(accountListEntry.accountId, accountId), eq(accountListEntry.entryId, entryId)));
+  if (rows.length === 0) return;
+  await q.transaction(async (tx) => {
+    await tx.delete(accountListEntry).where(and(eq(accountListEntry.accountId, accountId), eq(accountListEntry.entryId, entryId)));
+    await changeListenerOrNull()?.fingerprintInputsChanged?.(tx, [...new Set(rows.map((r) => r.diverId))]);
+  });
 }

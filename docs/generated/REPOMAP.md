@@ -4,7 +4,7 @@
 > `pnpm check` fails when this map is stale. Symbols are ranked by how widely the code references them;
 > each module shows its most-referenced ones (exported symbols rank higher). Search here before walking the tree.
 
-Files: 396 · symbols: 3572 · shown: 253
+Files: 397 · symbols: 3587 · shown: 253
 
 ### server/(root)
 apps/server/src/vocabulary.ts:13 type SiteWaterType
@@ -75,7 +75,7 @@ apps/server/src/db/schema.ts:75 const diverManagement
 apps/server/src/db/auth-schema.ts:20 const user
 apps/server/src/db/import-types.ts:12 iface ImportedValues
 apps/server/src/db/import-types.ts:6 type ImportArea
-… 152 more symbols in this module
+… 153 more symbols in this module
 
 ### server/divers
 apps/server/src/divers/management.ts:8 fn managedDiverIds
@@ -95,15 +95,15 @@ apps/server/src/dives/dive-service.ts:187 fn participantsOf
 apps/server/src/dives/cylinders.ts:9 iface ProviderCylinder
 apps/server/src/dives/matching.ts:83 const MAX_OFFSET_MS
 apps/server/src/dives/weighting.ts:17 fn leadOf
-apps/server/src/dives/provider-port.ts:32 iface DivePushes
+apps/server/src/dives/provider-port.ts:33 iface DivePushes
 apps/server/src/dives/waiting-push-view.ts:20 const WaitingPushView
 apps/server/src/dives/checks/logbook-check-rules.ts:201 fn probablyNoDive
 apps/server/src/dives/assessment-refresh.ts:7 iface AssessmentRefresh
-apps/server/src/dives/provider-port.ts:39 iface DiveWaitingPushes
+apps/server/src/dives/provider-port.ts:47 iface DiveWaitingPushes
 apps/server/src/dives/recording-units.ts:9 const isUnit
 apps/server/src/dives/weighting.ts:23 const leadTotalKg
 apps/server/src/dives/matching.ts:81 const DAY_MS
-apps/server/src/dives/logbook-service.ts:296 type LogbookService
+apps/server/src/dives/logbook-service.ts:298 type LogbookService
 apps/server/src/dives/dive-values.ts:6 iface DiveValues
 apps/server/src/dives/dive-service.ts:87 const nextVersion
 … 303 more symbols in this module
@@ -187,31 +187,31 @@ apps/server/src/providers/provider.ts:395 iface ProviderAdapter
 apps/server/src/providers/registry.ts:5 iface ProviderRegistry
 apps/server/src/providers/waiting-push/waiting-push-queue.ts:12 iface ProviderLog
 apps/server/src/providers/lease-service.ts:12 iface Clock
-apps/server/src/providers/provider.ts:127 class ProviderError
 apps/server/src/providers/current-remote.ts:11 fn currentRemote
+apps/server/src/providers/provider.ts:127 class ProviderError
 apps/server/src/providers/lease-service.ts:17 const realClock
 apps/server/src/providers/provider.ts:244 iface ActionContext
 apps/server/src/providers/connection-view.ts:66 const ConnectionView
 apps/server/src/providers/provider.ts:361 iface ImportedDive
-apps/server/src/providers/connection-service.ts:334 type ConnectionService
+apps/server/src/providers/connection-service.ts:337 type ConnectionService
 apps/server/src/providers/connection-routes.ts:51 const ProviderView
 apps/server/src/providers/registry.ts:93 const named
-apps/server/src/providers/dive-import/three-way.ts:11 type SyncedField
-apps/server/src/providers/provider.ts:205 iface OutgoingDive
 apps/server/src/providers/current-remote.ts:5 type PushRow
-apps/server/src/providers/provider.ts:83 type DiveField
+apps/server/src/providers/dive-import/three-way.ts:11 type SyncedField
 apps/server/src/providers/push/outgoing-dive.ts:64 fn loadOutgoingDive
+apps/server/src/providers/provider.ts:205 iface OutgoingDive
+apps/server/src/providers/provider.ts:83 type DiveField
 apps/server/src/providers/dive-import/three-way.ts:10 const SYNCED_FIELDS
-… 483 more symbols in this module
+… 496 more symbols in this module
 
 ### server/revisions
-apps/server/src/revisions/revisions.ts:66 fn writeRevision
+apps/server/src/revisions/revisions.ts:79 fn writeRevision
 apps/server/src/revisions/revisions.ts:5 type Actor
 apps/server/src/revisions/revisions.ts:34 type Changes
-apps/server/src/revisions/revisions.ts:61 fn changeListener
+apps/server/src/revisions/revisions.ts:69 fn changeListener
 apps/server/src/revisions/revisions.ts:8 const userActor
 apps/server/src/revisions/revisions.ts:32 type RevisionCause
-… 4 more symbols in this module
+… 5 more symbols in this module
 
 ### server/scripts
 apps/server/src/scripts/write-openapi.ts:24 const out
