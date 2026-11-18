@@ -60,6 +60,6 @@ describe('the logbook past page 1', () => {
   it('renders page 2 without looping through the live-arrivals reset', () => {
     renderPage2();
     expect(screen.getAllByRole('listitem')).toHaveLength(PAGE_SIZE);
-    expect(screen.getByText('26–50 of 50 dives')).toBeTruthy();
+    expect(screen.getByText(`${PAGE_SIZE + 1}–${PAGE_SIZE * 2} of ${PAGE_SIZE * 2} dives`)).toBeTruthy();
   });
 });

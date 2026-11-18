@@ -44,7 +44,7 @@ export function useLiveArrivals({
   const anchor = useRef<{ id: string; top: number } | null>(null);
   // The caller passes a fresh translator each render; reading it through a ref keeps the effect to what changes the data.
   const countRef = useRef(count);
-  countRef.current = count;
+  useEffect(() => { countRef.current = count; }, [count]);
 
   // Every hint batch or connect resync names its Dives; a plain polling refresh has none and trusts the id/total compare.
   useEffect(() => onLiveEvent(() => {
