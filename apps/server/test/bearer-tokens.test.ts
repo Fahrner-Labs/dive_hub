@@ -64,6 +64,22 @@ describe.skipIf(!(await databaseReachable()))('bearer tokens for native clients'
     expect(me.json()).toMatchObject({ user: { email: 'native@example.com' } });
   });
 
+  it('hands the session token only to a native sign-in, not to the browser sign-in', async () => {
+    const browser = await ctx.app.inject({
+      method: 'POST', url: '/api/auth/sign-in/email', headers: { origin: BASE_URL },
+      payload: { email: 'native@example.com', password: PASSWORD },
+    });
+    expect(browser.statusCode).toBe(200);
+    expect(browser.headers['set-auth-token']).toBeUndefined();
+
+    const native = await ctx.app.inject({
+      method: 'POST', url: '/api/auth/sign-in/email',
+      payload: { email: 'native@example.com', password: PASSWORD },
+    });
+    expect(native.statusCode).toBe(200);
+    expect(native.headers['set-auth-token']).toEqual(expect.any(String));
+  });
+
   it('ends with its session: signing out by bearer token revokes it', async () => {
     const token = await signInForToken(ctx.app, 'native@example.com');
     const out = await ctx.app.inject({
