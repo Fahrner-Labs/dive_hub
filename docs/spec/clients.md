@@ -123,8 +123,10 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
 ## 2. Talking to the API
 - **Sessions:**
   - The web client uses the session cookie on the same origin and sends an `Origin` header (Better Auth's CSRF checks).
-  - A native client will use bearer tokens. That isn't built yet, and its ADR comes with the mobile app
-    ([ADR 0011](../decisions/0011-better-auth.md)).
+  - A native client uses bearer tokens ([ADR 0074](../decisions/0074-bearer-tokens-for-native-clients.md),
+    [ADR 0011](../decisions/0011-better-auth.md)): the session token as `Authorization: Bearer`, stored on the
+    device (Android Keystore). A native sign-in is an ordinary session: it shows in the session list and ends
+    with "sign out everywhere" or a password change.
   - Only four Better Auth endpoints exist: sign-in, sign-out, get-session, change-password (ADR 0013). AI access
     keys work only at `/mcp`, never for `/api`.
 - **On 401 anywhere, the session has ended:** show sign-in. Retry only network failures and 5xx, once; a 4xx
@@ -1412,8 +1414,8 @@ Rules that only the web client kept. Both moved to the server on 2026-10-04, so 
   (`import file failed`).
 
 ## Open for the mobile client
-- Authentication with bearer tokens or the Expo integration (ADR 0011), and how a phone finds a self-hosted
-  instance (its URL).
+- Authentication: bearer tokens, decided in [ADR 0074](../decisions/0074-bearer-tokens-for-native-clients.md).
+  Still open: how a phone finds a self-hosted instance beyond typing its URL at first start.
 - Uploading from the phone: the share sheet, files from a watch app, large account exports (resumable uploads,
   [architecture](architecture.md#open-questions)).
 - Offline use, sync and conflict handling ([data, sync, upload](../research/2026-10-02-data-sync-upload-auth.md)).
