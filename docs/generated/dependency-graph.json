@@ -1586,6 +1586,22 @@
         },
         {
           "dynamic": false,
+          "module": "better-auth/plugins/bearer",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "unknown"
+          ],
+          "resolved": "better-auth/plugins/bearer",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": true,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "better-auth/plugins/two-factor",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -1735,6 +1751,22 @@
     },
     {
       "source": "better-auth/plugins/admin/access",
+      "followable": false,
+      "coreModule": false,
+      "couldNotResolve": true,
+      "matchesDoNotFollow": false,
+      "dependencyTypes": [
+        "unknown"
+      ],
+      "dependencies": [],
+      "dependents": [
+        "apps/server/src/auth/auth.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "better-auth/plugins/bearer",
       "followable": false,
       "coreModule": false,
       "couldNotResolve": true,
@@ -48564,8 +48596,8 @@
     "baselineSize": 0,
     "baselineStale": 0,
     "advisedExitCode": 0,
-    "totalCruised": 460,
-    "totalDependenciesCruised": 2423,
+    "totalCruised": 461,
+    "totalDependenciesCruised": 2424,
     "optionsUsed": {
       "baseDir": "/home/runner/work/dive_hub/dive_hub",
       "combinedDependencies": false,
@@ -48955,7 +48987,7 @@
       "version": "18.7.0",
       "nodeVersionSupported": "^22||^24||>=26",
       "nodeVersionFound": "v24.22.2",
-      "osVersionFound": "x64 linux@7.0.0-1016-aws",
+      "osVersionFound": "x64 linux@7.0.0-1019-azure",
       "transpilersFound": [
         {
           "name": "javascript",
