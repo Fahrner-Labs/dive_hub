@@ -23,6 +23,9 @@ passed on its retry does not fail the run, so it needs no entry here; the job su
 
 ## Escapes
 
+- 2026-11-18, PR #91, cb17868: live.spec.ts:51 (a background import brings a new Dive into an untouched logbook, tinted as it arrives) — flaky: it failed both attempts; the branch changes only `apps/android/` and the Android check lane, and this is the known arrival-tint flake (FAH-262); rerunning the failed job passed the whole check in 19m36s — CI rerun
+- 2026-11-18, PR #91, cb17868: Android build and shared tests step (the Kotlin multiplatform plugin 2.3.21 was not found) — other: the plugin marker resolves from Maven Central and the Gradle Plugin Portal and the same commit built locally, so the first CI run hit a network/cache transient; the rerun was green — CI rerun
+
 - 2026-11-17, PR #62, 11aa165: live.spec.ts:51 (a background import brings a new Dive into an untouched logbook, tinted as it arrives) — flaky: it failed both attempts on three check runs; the branch changes the backup pg-tool probes and docs, not live updates, and the same test failed on unrelated PR #63, PR #69 and PR #75 while main stayed green in the same windows — CI rerun
 - 2026-11-17, PR #75, c0643e3: live.spec.ts:51 (a background import brings a new Dive into an untouched logbook, tinted as it arrives) — flaky: it failed both attempts; the branch adds the deleted-dive purge job and docs and changes no live-update code, and the same test failed on unrelated PR #69 and PR #63 — CI rerun
 - 2026-11-17, PR #69, ab04c70: live.spec.ts:51 (a background import brings a new Dive into an untouched logbook, tinted as it arrives) — flaky: it failed both attempts on two check runs for 092728b and again on the docs-only head ab04c70; rerunning ab04c70's failed job passed the whole check (14m14s). The branch changes the deleted-dives list and reminder, not live updates, and the same test failed twice and passed on a rerun on unrelated PR #63 — CI rerun
