@@ -1067,6 +1067,7 @@
         "apps/server/src/dives/checks/logbook-check-service.ts",
         "apps/server/src/dives/logbook-service.ts",
         "apps/server/src/dives/list-filter.ts",
+        "apps/server/src/dives/provider-port.ts",
         "apps/server/src/dives/waiting-push-view.ts",
         "apps/server/src/dives/continuation/continuation-service.ts",
         "apps/server/src/dives/merging-service.ts",
@@ -1091,6 +1092,7 @@
         "apps/server/src/providers/conflicts/conflict-service.ts",
         "apps/server/src/providers/dive-import/dive-changes.ts",
         "apps/server/src/sites/provider-sites.ts",
+        "apps/server/src/providers/push/dive-fingerprint.ts",
         "apps/server/src/providers/push/outgoing-dive.ts",
         "apps/server/src/providers/dive-import/dive-import.ts",
         "apps/server/src/providers/dive-import/gone-dives.ts",
@@ -1870,6 +1872,7 @@
         "apps/server/src/providers/conflicts/conflict-service.ts",
         "apps/server/src/providers/dive-import/dive-changes.ts",
         "apps/server/src/sites/provider-sites.ts",
+        "apps/server/src/providers/push/dive-fingerprint.ts",
         "apps/server/src/providers/push/outgoing-dive.ts",
         "apps/server/src/providers/dive-import/dive-import.ts",
         "apps/server/src/providers/dive-import/gone-dives.ts",
@@ -2090,6 +2093,7 @@
         "apps/server/src/providers/conflicts/conflict-service.ts",
         "apps/server/src/providers/dive-import/dive-changes.ts",
         "apps/server/src/sites/provider-sites.ts",
+        "apps/server/src/providers/push/dive-fingerprint.ts",
         "apps/server/src/providers/push/outgoing-dive.ts",
         "apps/server/src/providers/requirements.ts",
         "apps/server/src/providers/dive-import/dive-import.ts",
@@ -4659,6 +4663,8 @@
         "apps/server/src/imports/placement.ts",
         "apps/server/src/live/revision-hints.ts",
         "apps/server/src/providers/layer.ts",
+        "apps/server/src/providers/connection-service.ts",
+        "apps/server/src/providers/list-entries.ts",
         "apps/server/src/providers/dive-import/dive-changes.ts",
         "apps/server/src/sites/provider-sites.ts",
         "apps/server/src/providers/dive-import/dive-import.ts",
@@ -8806,6 +8812,24 @@
           "followable": true,
           "couldNotResolve": false,
           "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "drizzle-orm",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "npm",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/node_modules/drizzle-orm/index.cjs",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": true,
           "circular": false,
           "valid": true
         },
@@ -14077,6 +14101,23 @@
         },
         {
           "dynamic": false,
+          "module": "../revisions/revisions.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/revisions/revisions.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "../secrets/secret-box.js",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -14416,6 +14457,7 @@
       ],
       "dependents": [
         "apps/server/src/providers/waiting-push/waiting-push-queue.ts",
+        "apps/server/src/providers/push/dive-fingerprint.ts",
         "apps/server/src/providers/remote-state.ts",
         "apps/server/src/providers/waiting-push/waiting-push-service.ts"
       ],
@@ -14542,8 +14584,9 @@
         "apps/server/src/providers/list-entries.ts",
         "apps/server/src/providers/conflicts/conflict-service.ts",
         "apps/server/src/providers/dive-import/dive-changes.ts",
-        "apps/server/src/providers/push/outgoing-dive.ts",
+        "apps/server/src/providers/push/dive-fingerprint.ts",
         "apps/server/src/providers/remote-state.ts",
+        "apps/server/src/providers/push/outgoing-dive.ts",
         "apps/server/src/providers/requirements.ts",
         "apps/server/src/providers/dive-import/three-way.ts",
         "apps/server/src/providers/dive-import/dive-import.ts",
@@ -14705,6 +14748,7 @@
         "apps/server/src/providers/buddies/buddy-service.ts",
         "apps/server/src/providers/connection-service.ts",
         "apps/server/src/providers/conflicts/conflict-service.ts",
+        "apps/server/src/providers/push/dive-fingerprint.ts",
         "apps/server/src/providers/push/outgoing-dive.ts",
         "apps/server/src/providers/dive-import/dive-import.ts",
         "apps/server/src/providers/dive-import/gone-dives.ts",
@@ -14752,6 +14796,23 @@
             "import"
           ],
           "resolved": "apps/server/src/db/schema.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../revisions/revisions.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/revisions/revisions.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -15321,6 +15382,23 @@
         },
         {
           "dynamic": false,
+          "module": "../push/dive-fingerprint.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/providers/push/dive-fingerprint.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "../push/outgoing-dive.js",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -15581,6 +15659,242 @@
       "valid": true
     },
     {
+      "source": "apps/server/src/providers/push/dive-fingerprint.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../../db/client.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/db/client.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../../db/schema.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/db/schema.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../current-remote.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/providers/current-remote.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../provider.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/providers/provider.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../registry.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/providers/registry.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../remote-state.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/providers/remote-state.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./outgoing-dive.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/providers/push/outgoing-dive.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "drizzle-orm",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "npm",
+            "import"
+          ],
+          "resolved": "apps/server/node_modules/drizzle-orm/index.cjs",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": true,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/server/src/providers/dive-import/dive-changes.ts",
+        "apps/server/src/providers/dive-import/dive-import.ts",
+        "apps/server/src/providers/push/push-service.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/server/src/providers/remote-state.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./current-remote.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "apps/server/src/providers/current-remote.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./provider.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/providers/provider.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./push/outgoing-dive.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/providers/push/outgoing-dive.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./requirements.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/providers/requirements.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/server/src/compose.ts",
+        "apps/server/src/providers/conflicts/conflict-service.ts",
+        "apps/server/src/providers/dive-import/dive-changes.ts",
+        "apps/server/src/providers/push/dive-fingerprint.ts",
+        "apps/server/src/providers/dive-import/dive-import.ts",
+        "apps/server/src/providers/dive-import/gone-dives.ts",
+        "apps/server/src/providers/push/push-service.ts",
+        "apps/server/src/providers/dive-provider-view.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "apps/server/src/providers/push/outgoing-dive.ts",
       "dependencies": [
         {
@@ -15792,94 +16106,10 @@
       ],
       "dependents": [
         "apps/server/src/providers/dive-import/dive-changes.ts",
+        "apps/server/src/providers/push/dive-fingerprint.ts",
         "apps/server/src/providers/remote-state.ts",
         "apps/server/src/providers/dive-import/dive-import.ts",
         "apps/server/src/providers/push/push-service.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "apps/server/src/providers/remote-state.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./current-remote.js",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "apps/server/src/providers/current-remote.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./provider.js",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "apps/server/src/providers/provider.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./push/outgoing-dive.js",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "import"
-          ],
-          "resolved": "apps/server/src/providers/push/outgoing-dive.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./requirements.js",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "apps/server/src/providers/requirements.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "apps/server/src/compose.ts",
-        "apps/server/src/providers/conflicts/conflict-service.ts",
-        "apps/server/src/providers/dive-import/dive-changes.ts",
-        "apps/server/src/providers/dive-import/dive-import.ts",
-        "apps/server/src/providers/dive-import/gone-dives.ts",
-        "apps/server/src/providers/push/push-service.ts",
-        "apps/server/src/providers/dive-provider-view.ts"
       ],
       "orphan": false,
       "valid": true
@@ -16326,6 +16556,23 @@
             "import"
           ],
           "resolved": "apps/server/src/providers/provider.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../push/dive-fingerprint.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/providers/push/dive-fingerprint.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -17418,6 +17665,23 @@
             "import"
           ],
           "resolved": "apps/server/src/providers/push/buddies-for-send.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./dive-fingerprint.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/providers/push/dive-fingerprint.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -48300,8 +48564,8 @@
     "baselineSize": 0,
     "baselineStale": 0,
     "advisedExitCode": 0,
-    "totalCruised": 459,
-    "totalDependenciesCruised": 2409,
+    "totalCruised": 460,
+    "totalDependenciesCruised": 2423,
     "optionsUsed": {
       "baseDir": "/home/runner/work/dive_hub/dive_hub",
       "combinedDependencies": false,
