@@ -73,9 +73,17 @@ jobs:
           distribution: temurin
           java-version: 21
           cache: gradle
-      - uses: android-actions/setup-android@v3
+      # The runner image already carries an Android SDK with `ANDROID_HOME`; install the platform AGP 9.5 and
+      # Compose 1.12 need. (android-actions/setup-android@v3 fails on the runner's SDK because it asks for the
+      # removed `tools` package, so the existing SDK is used directly.)
       - name: Android SDK platform and build tools
-        run: sdkmanager --install "platforms;android-37.0" "build-tools;37.0.0"
+        run: |
+          test -n "$ANDROID_HOME"
+          sdkmanager="$(command -v sdkmanager || true)"
+          if [ -z "$sdkmanager" ]; then
+            sdkmanager="$(find "$ANDROID_HOME/cmdline-tools" -name sdkmanager -type f | sort | tail -1)"
+          fi
+          yes | "$sdkmanager" --install "platforms;android-37.0" "build-tools;37.0.0"
 
       - run: pnpm install --frozen-lockfile
 
