@@ -36,4 +36,6 @@ kotlin {
 
 tasks.withType<Test>().configureEach {
     useJUnitPlatform()
+    // The planning golden vectors are shared with the server's kernels (FAH-268); CI checks out the repository root.
+    systemProperty("divehub.vectors.dir", rootProject.file("../../packages/test-vectors/planning").absolutePath)
 }
