@@ -40,28 +40,35 @@ class LogbookRepository(private val api: ApiClient) {
      * Provider names for the rows and the `not-at-provider` filter. A failure here never fails the logbook: the list
      * still shows, with the Provider's id where its name would be.
      */
-    suspend fun providers(): ProviderDirectory = try {
-        coroutineScope {
-            val providers = async { decodeList<ProviderSummary>(api.get("/api/providers")) }
-            val connections = async { decodeList<ConnectionView>(api.get("/api/connections")) }
-            val connectedIds = connections.await().map { it.provider }.toSet()
-            val all = providers.await()
-            ProviderDirectory(
-                names = all.associate { it.id to it.name },
-                connected = all.filter { it.id in connectedIds }.map { it.name },
-            )
-        }
-    } catch (_: DiveHubException) {
-        ProviderDirectory.EMPTY
-    } catch (_: NoAnswerException) {
-        ProviderDirectory.EMPTY
-    }
-
-    private suspend inline fun <reified T> decodeList(response: HttpResponse): List<T> {
-        if (!response.status.isSuccess()) throw api.failure(response)
-        return api.decode(response)
-    }
+    suspend fun providers(): ProviderDirectory = providerDirectory(api)
 }
+
+/**
+ * The instance's Provider names, for anything that must name one (the logbook's rows and filter, a Dive's
+ * `fromProvider`). A failure here never fails the screen: the Provider's id stands where its name would be.
+ */
+suspend fun providerDirectory(api: ApiClient): ProviderDirectory = try {
+    coroutineScope {
+        val providers = async { decodeList<ProviderSummary>(api, api.get("/api/providers")) }
+        val connections = async { decodeList<ConnectionView>(api, api.get("/api/connections")) }
+        val connectedIds = connections.await().map { it.provider }.toSet()
+        val all = providers.await()
+        ProviderDirectory(
+            names = all.associate { it.id to it.name },
+            connected = all.filter { it.id in connectedIds }.map { it.name },
+        )
+    }
+} catch (_: DiveHubException) {
+    ProviderDirectory.EMPTY
+} catch (_: NoAnswerException) {
+    ProviderDirectory.EMPTY
+}
+
+private suspend inline fun <reified T> decodeList(api: ApiClient, response: HttpResponse): List<T> {
+    if (!response.status.isSuccess()) throw api.failure(response)
+    return api.decode(response)
+}
+
 
 /**
  * `GET /api/dives` for a 1-based page with the pressed filters. Page size is fixed at 25 (ADR 0040), the list is
