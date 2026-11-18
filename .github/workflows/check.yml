@@ -66,6 +66,17 @@ jobs:
           node-version: 24
           cache: pnpm
 
+      # The Android lane (ADR 0073): the shared JVM tests and the debug APK. `cache: gradle` keeps the wrapper and
+      # dependencies between runs.
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+      - uses: android-actions/setup-android@v3
+      - name: Android SDK platform and build tools
+        run: sdkmanager --install "platforms;android-37.0" "build-tools;37.0.0"
+
       - run: pnpm install --frozen-lockfile
 
       - name: Playwright version

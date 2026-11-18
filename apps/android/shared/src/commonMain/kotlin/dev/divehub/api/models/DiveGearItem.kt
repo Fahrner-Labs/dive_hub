@@ -1,0 +1,16 @@
+// Generated from packages/api-client/openapi.json by scripts/generate-android-api.mjs.
+// Do not edit by hand: change the OpenAPI document and run the generator.
+package dev.divehub.api.models
+
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonElement
+
+@Serializable
+data class DiveGearItem(
+    @SerialName("id") val id: String,
+    @SerialName("name") val name: String,
+    @SerialName("category") val category: String,
+    @SerialName("equipmentStatus") val equipmentStatus: String,
+    @SerialName("onEveryDive") val onEveryDive: Boolean
+)

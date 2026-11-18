@@ -267,6 +267,7 @@ function otherSteps() {
   if (plan.scripts) lane.push({ name: 'check script tests', command: 'node --test scripts/check-lib.test.mjs scripts/check-run.test.mjs scripts/check-log.test.mjs && node --test scripts/repomap.test.mjs scripts/code-graph.test.mjs scripts/release-tag.test.mjs', step: 'scripts', env: testEnv });
   if (plan.server !== 'none') lane.push({ name: `server tests (${plan.server})`, command: unitTests('server', plan.server), step: 'server', env: testEnv });
   if (plan.web !== 'none') lane.push({ name: `web unit tests (${plan.web})`, command: unitTests('web', plan.web), step: 'web', env: testEnv });
+  if (plan.android) lane.push({ name: 'Android build and shared tests', command: 'node scripts/check-android.mjs', step: 'android' });
   return lane;
 }
 
@@ -351,7 +352,7 @@ if (records) {
 
 /** "3 changed file(s) since …": one line when every step counts from the same base, else a line per base. */
 function bases() {
-  const names = { typecheck: 'typecheck', lint: 'lint', scripts: 'check script tests', server: 'server tests', web: 'web unit tests', e2e: 'browser tests' };
+  const names = { typecheck: 'typecheck', lint: 'lint', scripts: 'check script tests', server: 'server tests', web: 'web unit tests', android: 'Android build and shared tests', e2e: 'browser tests' };
   const byBase = new Map();
   for (const step of STEPS) {
     const text = `${since[step].changed.length} changed file(s) since ${since[step].from}`;

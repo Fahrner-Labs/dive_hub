@@ -1,0 +1,361 @@
+package dev.divehub.shared
+
+import dev.divehub.api.models.UserView
+import io.ktor.client.engine.mock.MockEngine
+import io.ktor.client.engine.mock.MockRequestHandleScope
+import io.ktor.client.engine.mock.respond
+import io.ktor.client.request.HttpRequestData
+import io.ktor.client.request.HttpResponseData
+import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpMethod
+import io.ktor.http.HttpStatusCode
+import io.ktor.http.content.TextContent
+import io.ktor.http.headersOf
+import kotlinx.coroutines.test.runTest
+import kotlinx.io.IOException
+import kotlinx.serialization.json.Json
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
+import kotlin.test.assertIs
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
+
+private class FakeTokens(initial: String? = null) : TokenStore {
+    var value: String? = initial
+    var saves = 0
+    var clears = 0
+
+    override suspend fun load(): String? = value
+    override suspend fun save(token: String) {
+        value = token
+        saves += 1
+    }
+
+    override suspend fun clear() {
+        value = null
+        clears += 1
+    }
+}
+
+private class FakeInstances(initial: String? = null) : InstanceUrlStore {
+    var value: String? = initial
+    override suspend fun load(): String? = value
+    override suspend fun save(url: String) {
+        value = url
+    }
+
+    override suspend fun clear() {
+        value = null
+    }
+}
+
+private class FakeCache : UserScopedStore {
+    var forgets = 0
+    override suspend fun forget() {
+        forgets += 1
+    }
+}
+
+private const val USER_JSON = """{"id":"u1","name":"Ada","email":"ada@example.com","emailVerified":true,"createdAt":"2026-01-01T00:00:00Z","updatedAt":"2026-01-01T00:00:00Z","banned":false,"twoFactorEnabled":false}"""
+private const val ME_JSON = """{"user":{"id":"u1","email":"ada@example.com","name":"Ada","role":"user","disabled":false,"createdAt":"2026-01-01T00:00:00Z"},"ownDiver":{"id":"d1","name":"Ada"},"preferences":{"language":null,"units":null}}"""
+
+private class Harness(
+    val tokens: FakeTokens = FakeTokens(),
+    val instances: FakeInstances = FakeInstances("https://dive.example"),
+    val cache: FakeCache = FakeCache(),
+    handler: suspend MockRequestHandleScope.(HttpRequestData) -> HttpResponseData,
+) {
+    private val engine = MockEngine(handler)
+    val session = SessionRepository(engine, tokens, instances, cache)
+}
+
+private fun MockRequestHandleScope.json(body: String, status: HttpStatusCode = HttpStatusCode.OK): HttpResponseData =
+    respond(body, status, headersOf(HttpHeaders.ContentType, "application/json"))
+
+private const val SIGN_IN_PATH = "/api/auth/sign-in/email"
+
+class SessionRepositoryTest {
+
+@Test
+fun `signing in stores the token from set-auth-token and proves it with me`() = runTest {
+    var meAuthorization: String? = null
+    var signInAuthorization: String? = null
+    val harness = Harness { request ->
+        when (request.url.encodedPath) {
+            SIGN_IN_PATH -> {
+                signInAuthorization = request.headers[HttpHeaders.Authorization]
+                assertEquals("""{"email":"ada@example.com","password":"correct horse battery"}""", (request.body as TextContent).text)
+                respond(
+                    """{"redirect":false,"token":"body-token","user":$USER_JSON}""",
+                    headers = headersOf(
+                        HttpHeaders.ContentType to listOf("application/json"),
+                        SET_AUTH_TOKEN to listOf("header-token"),
+                    ),
+                )
+            }
+            "/api/me" -> {
+                meAuthorization = request.headers[HttpHeaders.Authorization]
+                json(ME_JSON)
+            }
+            else -> error("unexpected ${request.method} ${request.url}")
+        }
+    }
+
+    val user = harness.session.signIn("https://dive.example", "ada@example.com", "correct horse battery")
+
+    assertEquals("Ada", user.name)
+    assertEquals("header-token", harness.tokens.value)
+    assertNull(signInAuthorization)
+    assertEquals("Bearer header-token", meAuthorization)
+    assertTrue(harness.cache.forgets >= 1)
+    assertEquals("https://dive.example", harness.instances.value)
+    assertEquals(SessionState.SignedIn("https://dive.example", user), harness.session.state.value)
+}
+
+@Test
+fun `signing in forgets the previous User before the new token is stored`() = runTest {
+    val events = mutableListOf<String>()
+    val tokens = object : TokenStore {
+        var value: String? = "old-token"
+        override suspend fun load(): String? = value
+        override suspend fun save(token: String) {
+            events += "save"
+            value = token
+        }
+
+        override suspend fun clear() {
+            events += "clear-token"
+            value = null
+        }
+    }
+    val cache = object : UserScopedStore {
+        override suspend fun forget() {
+            events += "forget-cache"
+        }
+    }
+    val engine = MockEngine { request ->
+        when (request.url.encodedPath) {
+            SIGN_IN_PATH -> respond("", HttpStatusCode.OK, headersOf(SET_AUTH_TOKEN, "new-token"))
+            "/api/me" -> json(ME_JSON)
+            else -> error("unexpected ${request.url}")
+        }
+    }
+    val session = SessionRepository(engine, tokens, FakeInstances("https://dive.example"), cache)
+
+    session.signIn("https://dive.example", "ada@example.com", "correct horse battery")
+
+    assertEquals(listOf("forget-cache", "clear-token", "save"), events)
+}
+
+@Test
+fun `too many attempts is its own code`() = runTest {
+    val harness = Harness { json("""{"code":"TOO_MANY_REQUESTS","message":"Too many"}""", HttpStatusCode.TooManyRequests) }
+
+    val error = assertFailsWith<DiveHubException> {
+        harness.session.signIn("https://dive.example", "ada@example.com", "wrong")
+    }
+
+    assertEquals(ErrorCodes.TOO_MANY_ATTEMPTS, error.code)
+    assertNull(harness.tokens.value)
+}
+
+@Test
+fun `a disabled account is its own code`() = runTest {
+    val harness = Harness { json("""{"code":"BANNED_USER","message":"Banned"}""", HttpStatusCode.Forbidden) }
+
+    val error = assertFailsWith<DiveHubException> {
+        harness.session.signIn("https://dive.example", "ada@example.com", "correct horse battery")
+    }
+
+    assertEquals(ErrorCodes.USER_DISABLED, error.code)
+}
+
+@Test
+fun `a wrong e-mail or password never says which one`() = runTest {
+    val harness = Harness { json("""{"message":"Invalid email or password"}""", HttpStatusCode.Unauthorized) }
+
+    val error = assertFailsWith<DiveHubException> {
+        harness.session.signIn("https://dive.example", "ada@example.com", "wrong")
+    }
+
+    assertEquals(ErrorCodes.INVALID_CREDENTIALS, error.code)
+}
+
+@Test
+fun `signing out clears the token and the cache but keeps the instance`() = runTest {
+    val harness = Harness(tokens = FakeTokens("old-token")) { _ -> json("""{"success":true}""") }
+
+    harness.session.signOut()
+
+    assertNull(harness.tokens.value)
+    assertEquals(1, harness.cache.forgets)
+    assertEquals("https://dive.example", harness.instances.value)
+    assertIs<SessionState.SignedOut>(harness.session.state.value)
+}
+
+@Test
+fun `a 401 anywhere ends the session and forgets the User`() = runTest {
+    val harness = Harness(tokens = FakeTokens("expired")) { request ->
+        when (request.url.encodedPath) {
+            "/api/me" -> json("""{"code":"sign_in_required","error":"Sign in required"}""", HttpStatusCode.Unauthorized)
+            else -> error("unexpected ${request.url}")
+        }
+    }
+
+    val state = harness.session.restore()
+
+    assertIs<SessionState.SignedOut>(state)
+    assertNull(harness.tokens.value)
+    assertEquals(1, harness.cache.forgets)
+}
+
+@Test
+fun `a stored token is proven by me on start`() = runTest {
+    val harness = Harness(tokens = FakeTokens("stored")) { json(ME_JSON) }
+
+    val state = harness.session.restore()
+
+    assertIs<SessionState.SignedIn>(state)
+    assertEquals("Ada", state.user.name)
+}
+
+@Test
+fun `without a stored token or instance the sign-in form shows and no request is made`() = runTest {
+    var calls = 0
+    val harness = Harness(instances = FakeInstances(null)) {
+        calls += 1
+        json(ME_JSON)
+    }
+
+    assertEquals(SessionState.SignedOut(null), harness.session.restore())
+    assertEquals(0, calls)
+
+    val withInstance = Harness(tokens = FakeTokens(null), instances = FakeInstances("https://dive.example")) {
+        calls += 1
+        json(ME_JSON)
+    }
+    assertEquals(SessionState.SignedOut("https://dive.example"), withInstance.session.restore())
+    assertEquals(0, calls)
+}
+
+@Test
+fun `a 5xx is retried once`() = runTest {
+    var calls = 0
+    val harness = Harness(tokens = FakeTokens("stored")) {
+        calls += 1
+        if (calls == 1) json("""{"code":"internal_error","error":"boom"}""", HttpStatusCode.InternalServerError) else json(ME_JSON)
+    }
+
+    val state = harness.session.restore()
+
+    assertIs<SessionState.SignedIn>(state)
+    assertEquals(2, calls)
+}
+
+@Test
+fun `a second 5xx fails by its code`() = runTest {
+    var calls = 0
+    val harness = Harness(tokens = FakeTokens("stored")) {
+        calls += 1
+        json("""{"code":"internal_error","error":"boom"}""", HttpStatusCode.InternalServerError)
+    }
+
+    val error = assertFailsWith<DiveHubException> { harness.session.restore() }
+
+    assertEquals(ErrorCodes.SERVER_ERROR, error.code)
+    assertEquals(2, calls)
+    assertEquals("stored", harness.tokens.value)
+}
+
+@Test
+fun `a 4xx is not retried`() = runTest {
+    var calls = 0
+    val harness = Harness(tokens = FakeTokens("stored")) {
+        calls += 1
+        json("""{"code":"dive_not_found","error":"No such dive"}""", HttpStatusCode.NotFound)
+    }
+
+    val error = assertFailsWith<DiveHubException> { harness.session.restore() }
+
+    assertEquals("dive_not_found", error.code)
+    assertEquals(1, calls)
+}
+
+@Test
+fun `a network failure is retried once and then says there was no answer`() = runTest {
+    var calls = 0
+    val harness = Harness(tokens = FakeTokens("stored")) {
+        calls += 1
+        throw IOException("offline")
+    }
+
+    assertFailsWith<NoAnswerException> { harness.session.restore() }
+    assertEquals(2, calls)
+    assertEquals("stored", harness.tokens.value)
+}
+
+@Test
+fun `a network failure followed by an answer succeeds`() = runTest {
+    var calls = 0
+    val harness = Harness(tokens = FakeTokens("stored")) {
+        calls += 1
+        if (calls == 1) throw IOException("offline") else json(ME_JSON)
+    }
+
+    assertIs<SessionState.SignedIn>(harness.session.restore())
+    assertEquals(2, calls)
+}
+
+@Test
+fun `the instance URL takes a scheme and an origin only`() {
+    assertEquals("https://dive.example", InstanceUrl.normalize("dive.example"))
+    assertEquals("https://dive.example", InstanceUrl.normalize("  https://dive.example/  "))
+    assertEquals("http://127.0.0.1:3000", InstanceUrl.normalize("http://127.0.0.1:3000"))
+    assertNull(InstanceUrl.normalize(""))
+    assertNull(InstanceUrl.normalize("ftp://dive.example"))
+    assertNull(InstanceUrl.normalize("https://dive.example/api"))
+    assertNull(InstanceUrl.normalize("https://user@dive.example"))
+}
+
+@Test
+fun `an unusable instance URL is refused before any request`() = runTest {
+    var calls = 0
+    val harness = Harness { calls += 1; json(ME_JSON) }
+
+    val error = assertFailsWith<DiveHubException> {
+        harness.session.signIn("https://dive.example/path", "ada@example.com", "correct horse battery")
+    }
+
+    assertEquals(ErrorCodes.INVALID_INSTANCE_URL, error.code)
+    assertEquals(0, calls)
+}
+
+@Test
+fun `a sign-in without set-auth-token is refused, not stored`() = runTest {
+    val harness = Harness { json("""{"redirect":false,"token":"body-only","user":$USER_JSON}""") }
+
+    val error = assertFailsWith<DiveHubException> {
+        harness.session.signIn("https://dive.example", "ada@example.com", "correct horse battery")
+    }
+
+    assertEquals(ErrorCodes.MISSING_TOKEN, error.code)
+    assertNull(harness.tokens.value)
+}
+
+@Test
+fun `the generated user model keeps an unknown role and an unknown problem code`() {
+    val json = Json { ignoreUnknownKeys = true }
+    val user = json.decodeFromString<UserView>(
+        """{"id":"u1","email":"a@example.com","name":"A","role":"future-role","disabled":false,"createdAt":"2026-01-01T00:00:00Z"}""",
+    )
+    assertEquals("future-role", user.role)
+
+    val problem = json.decodeFromString<dev.divehub.api.models.Problem>(
+        """{"code":"a_code_from_a_newer_server","error":"English text for logs"}""",
+    )
+    assertEquals("a_code_from_a_newer_server", problem.code)
+    assertFalse(problem.error.isBlank())
+}
+}

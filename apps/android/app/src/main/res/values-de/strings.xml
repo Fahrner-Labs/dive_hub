@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Dive Hub</string>
+
+    <string name="instance_title">Mit deinem Dive Hub verbinden</string>
+    <string name="instance_about">Gib die Adresse deiner selbst betriebenen Dive-Hub-Instanz ein.</string>
+    <string name="instance_label">Adresse der Instanz</string>
+    <string name="instance_hint">https://tauchen.beispiel</string>
+    <string name="instance_continue">Weiter</string>
+    <string name="instance_change">Instanz ändern</string>
+
+    <string name="sign_in_title">Anmelden</string>
+    <string name="sign_in_about">Nutze die E-Mail-Adresse und das Passwort deines Dive-Hub-Kontos.</string>
+    <string name="sign_in_submit">Anmelden</string>
+    <string name="sign_in_no_account">Noch kein Konto? Bitte die Administration deines Dive Hub um eine Einladung.</string>
+
+    <string name="form_email">E-Mail</string>
+    <string name="form_password">Passwort</string>
+
+    <string name="signed_in_title">Angemeldet als %1$s</string>
+    <string name="signed_in_about">Das Sitzungs-Token funktioniert gegen diese Instanz.</string>
+    <string name="sign_out">Abmelden</string>
+
+    <string name="error_invalid_credentials">E-Mail-Adresse oder Passwort ist falsch.</string>
+    <string name="error_too_many_attempts">Zu viele Versuche. Versuche es in ein paar Minuten erneut.</string>
+    <string name="error_user_disabled">Dieses Konto ist deaktiviert. Bitte die Administration fragen.</string>
+    <string name="error_sign_in_required">Deine Sitzung ist beendet. Melde dich erneut an.</string>
+    <string name="error_invalid_instance_url">Gib die Adresse deiner Dive-Hub-Instanz ein, z. B. https://tauchen.beispiel.</string>
+    <string name="error_missing_token">Die Instanz hat kein Sitzungs-Token ausgegeben. Prüfe, ob sie aktuell ist.</string>
+    <string name="error_no_answer">Keine Antwort von der Instanz. Prüfe die Adresse und deine Verbindung.</string>
+    <string name="error_server">Die Instanz hatte ein Problem. Versuche es später erneut.</string>
+    <string name="error_unknown">Etwas ist schiefgelaufen. Versuche es erneut.</string>
+</resources>
