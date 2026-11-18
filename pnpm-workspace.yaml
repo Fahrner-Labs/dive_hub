@@ -1,6 +1,8 @@
 packages:
   - apps/*
   - packages/*
+  # The Android app has its own Gradle build and must never become a pnpm workspace package (ADR 0073).
+  - "!apps/android"
 
 # Supply-chain defaults stay on (minimumReleaseAge 1 day, strict build approval).
 # Packages allowed to run install scripts are listed here after review.

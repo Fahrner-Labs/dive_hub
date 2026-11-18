@@ -1,6 +1,7 @@
 package dev.divehub.android.ui
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -12,6 +13,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -25,9 +27,19 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.autofill.ContentType
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.contentType
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.toggleableState
+import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.divehub.android.R
@@ -55,8 +67,9 @@ fun DiveHubApp(viewModel: MainViewModel) {
 
 @Composable
 private fun Loading() {
+    val label = stringResource(R.string.loading)
     Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-        CircularProgressIndicator()
+        CircularProgressIndicator(Modifier.semantics { contentDescription = label })
     }
 }
 
@@ -71,7 +84,11 @@ private fun InstanceForm(error: String?, onContinue: (String) -> Unit) {
             .padding(24.dp),
         verticalArrangement = Arrangement.Center,
     ) {
-        Text(stringResource(R.string.instance_title), style = MaterialTheme.typography.headlineMedium)
+        Text(
+            stringResource(R.string.instance_title),
+            modifier = Modifier.semantics { heading() },
+            style = MaterialTheme.typography.headlineMedium,
+        )
         Spacer(Modifier.height(8.dp))
         Text(stringResource(R.string.instance_about), style = MaterialTheme.typography.bodyLarge)
         Spacer(Modifier.height(24.dp))
@@ -87,11 +104,9 @@ private fun InstanceForm(error: String?, onContinue: (String) -> Unit) {
         )
         ErrorText(error)
         Spacer(Modifier.height(16.dp))
-        Button(
-            onClick = { onContinue(address) },
-            enabled = address.isNotBlank(),
-            modifier = Modifier.fillMaxWidth(),
-        ) { Text(stringResource(R.string.instance_continue)) }
+        PrimaryButton(onClick = { onContinue(address) }, enabled = address.isNotBlank()) {
+            Text(stringResource(R.string.instance_continue))
+        }
     }
 }
 
@@ -105,6 +120,7 @@ private fun SignInForm(
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var passwordVisible by remember { mutableStateOf(false) }
     Column(
         Modifier
             .fillMaxSize()
@@ -113,7 +129,11 @@ private fun SignInForm(
             .padding(24.dp),
         verticalArrangement = Arrangement.Center,
     ) {
-        Text(stringResource(R.string.sign_in_title), style = MaterialTheme.typography.headlineMedium)
+        Text(
+            stringResource(R.string.sign_in_title),
+            modifier = Modifier.semantics { heading() },
+            style = MaterialTheme.typography.headlineMedium,
+        )
         Spacer(Modifier.height(4.dp))
         Text(instanceUrl, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         TextButton(onClick = onChangeInstance) { Text(stringResource(R.string.instance_change)) }
@@ -123,31 +143,32 @@ private fun SignInForm(
         OutlinedTextField(
             value = email,
             onValueChange = { email = it },
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .semantics { contentType = ContentType.Username },
             label = { Text(stringResource(R.string.form_email)) },
             singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
             isError = error != null,
         )
         Spacer(Modifier.height(8.dp))
-        OutlinedTextField(
+        PasswordField(
             value = password,
             onValueChange = { password = it },
-            modifier = Modifier.fillMaxWidth(),
-            label = { Text(stringResource(R.string.form_password)) },
-            singleLine = true,
-            visualTransformation = PasswordVisualTransformation(),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            visible = passwordVisible,
+            onToggleVisibility = { passwordVisible = !passwordVisible },
             isError = error != null,
         )
         ErrorText(error)
         Spacer(Modifier.height(16.dp))
-        Button(
-            onClick = { onSignIn(email, password) },
+        PrimaryButton(
+            onClick = {
+                passwordVisible = false
+                onSignIn(email, password)
+            },
             enabled = !busy && email.isNotBlank() && password.isNotEmpty(),
-            modifier = Modifier.fillMaxWidth(),
         ) {
-            if (busy) CircularProgressIndicator(Modifier.height(18.dp)) else Text(stringResource(R.string.sign_in_submit))
+            if (busy) Spinner() else Text(stringResource(R.string.sign_in_submit))
         }
         Spacer(Modifier.height(24.dp))
         Text(
@@ -158,6 +179,45 @@ private fun SignInForm(
     }
 }
 
+/** A password field with the eye button (client contract §5): its label names the field and says what the button does. */
+@Composable
+private fun PasswordField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    visible: Boolean,
+    onToggleVisibility: () -> Unit,
+    isError: Boolean,
+) {
+    val label = stringResource(R.string.form_password)
+    val toggleLabel = stringResource(R.string.password_show, label)
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        modifier = Modifier
+            .fillMaxWidth()
+            .semantics { contentType = ContentType.Password },
+        label = { Text(label) },
+        singleLine = true,
+        visualTransformation = if (visible) VisualTransformation.None else PasswordVisualTransformation(),
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+        isError = isError,
+        trailingIcon = {
+            TextButton(
+                onClick = onToggleVisibility,
+                colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.onSurfaceVariant),
+                modifier = Modifier.semantics {
+                    contentDescription = toggleLabel
+                    toggleableState = if (visible) ToggleableState.On else ToggleableState.Off
+                },
+            ) {
+                Text(
+                    if (visible) stringResource(R.string.password_hide_short) else stringResource(R.string.password_show_short),
+                )
+            }
+        },
+    )
+}
+
 @Composable
 private fun SignedIn(user: UserView, busy: Boolean, onSignOut: () -> Unit) {
     Column(
@@ -166,14 +226,28 @@ private fun SignedIn(user: UserView, busy: Boolean, onSignOut: () -> Unit) {
             .padding(24.dp),
         verticalArrangement = Arrangement.Center,
     ) {
-        Text(stringResource(R.string.signed_in_title, user.name), style = MaterialTheme.typography.headlineMedium)
+        Text(
+            stringResource(R.string.signed_in_title, user.name),
+            modifier = Modifier.semantics { heading() },
+            style = MaterialTheme.typography.headlineMedium,
+        )
         Spacer(Modifier.height(8.dp))
         Text(stringResource(R.string.signed_in_about), style = MaterialTheme.typography.bodyLarge)
         Spacer(Modifier.height(24.dp))
-        Button(onClick = onSignOut, enabled = !busy, modifier = Modifier.fillMaxWidth()) {
-            Text(stringResource(R.string.sign_out))
+        PrimaryButton(onClick = onSignOut, enabled = !busy) {
+            if (busy) Spinner() else Text(stringResource(R.string.sign_out))
         }
     }
+}
+
+@Composable
+private fun Spinner() {
+    val label = stringResource(R.string.loading)
+    CircularProgressIndicator(
+        modifier = Modifier
+            .height(18.dp)
+            .semantics { contentDescription = label },
+    )
 }
 
 @Composable
@@ -194,7 +268,23 @@ private fun ErrorText(code: String?) {
                 else -> R.string.error_unknown
             },
         ),
+        modifier = Modifier.semantics { liveRegion = LiveRegionMode.Assertive },
         color = MaterialTheme.colorScheme.error,
         style = MaterialTheme.typography.bodyMedium,
+    )
+}
+
+/** The one main action: an ink button in light mode, a light one in dark mode (ADR 0064). */
+@Composable
+private fun PrimaryButton(onClick: () -> Unit, enabled: Boolean = true, content: @Composable RowScope.() -> Unit) {
+    Button(
+        onClick = onClick,
+        enabled = enabled,
+        modifier = Modifier.fillMaxWidth(),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = MaterialTheme.colorScheme.onSurface,
+            contentColor = MaterialTheme.colorScheme.surface,
+        ),
+        content = content,
     )
 }

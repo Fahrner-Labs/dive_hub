@@ -20,7 +20,8 @@ if (!sdk || !existsSync(sdk)) {
   console.error('android: set ANDROID_HOME (or ANDROID_SDK_ROOT) to an Android SDK with platform 37 and build-tools 37.0.0');
   process.exit(1);
 }
-const java = process.env.JAVA_HOME ? join(process.env.JAVA_HOME, 'bin', 'java') : 'java';
+const javaBinary = process.platform === 'win32' ? 'java.exe' : 'java';
+const java = process.env.JAVA_HOME ? join(process.env.JAVA_HOME, 'bin', javaBinary) : javaBinary;
 if (!existsSync(java) && process.env.JAVA_HOME) {
   console.error(`android: JAVA_HOME points at no JDK (${process.env.JAVA_HOME})`);
   process.exit(1);
@@ -36,6 +37,7 @@ const build = spawnSync(gradlew, ['--no-daemon', '--console=plain', ':shared:jvm
   cwd: APP,
   stdio: 'inherit',
   env: { ...process.env, ANDROID_HOME: sdk, ANDROID_SDK_ROOT: sdk },
+  shell: process.platform === 'win32',
 });
 if (build.error) {
   console.error(`android: could not start Gradle: ${build.error.message}`);

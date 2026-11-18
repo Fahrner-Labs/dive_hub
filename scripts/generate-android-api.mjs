@@ -13,14 +13,18 @@ const OPENAPI = join(ROOT, 'packages/api-client/openapi.json');
 const OUT = join(ROOT, 'apps/android/shared/src/commonMain/kotlin/dev/divehub/api/models');
 const PACKAGE = 'dev.divehub.api.models';
 
-/** The operation schemas slice B needs. Later slices add the operations they use here, then regenerate. */
-const OPERATIONS = [
+/**
+ * The operation schemas slice B needs. Later slices add the operations they use here, then regenerate. Only the
+ * transitive closure of these operations and MODEL_SEEDS is generated, so a server-only schema does not churn the
+ * Android tree.
+ */
+export const OPERATIONS = [
   { name: 'SignInEmailRequest', path: '/api/auth/sign-in/email', method: 'post', kind: 'request' },
-  { name: 'SignInEmail200Response', path: '/api/auth/sign-in/email', method: 'post', kind: 'response', status: '200' },
-  { name: 'SignOut200Response', path: '/api/auth/sign-out', method: 'post', kind: 'response', status: '200' },
-  { name: 'GetSession200Response', path: '/api/auth/get-session', method: 'get', kind: 'response', status: '200' },
   { name: 'ApiMeGet200Response', path: '/api/me', method: 'get', kind: 'response', status: '200' },
 ];
+
+/** Named component schemas the app uses outside an operation body. Refusals decode through the tolerant ApiErrorBody. */
+export const MODEL_SEEDS = [];
 
 const KEYWORDS = new Set([
   'as', 'break', 'class', 'continue', 'do', 'else', 'false', 'for', 'fun', 'if', 'in', 'interface', 'is',
@@ -28,151 +32,38 @@ const KEYWORDS = new Set([
   'val', 'var', 'when', 'while', 'field', 'it',
 ]);
 
-const doc = JSON.parse(readFileSync(OPENAPI, 'utf8'));
-const classes = new Map();
-const usedNames = new Set();
-
-const pascal = (name) => {
+export const pascal = (name) => {
   const parts = String(name).split(/[^A-Za-z0-9]+/).filter(Boolean);
   const text = parts.map((part) => part[0].toUpperCase() + part.slice(1)).join('') || 'Value';
   return /^[0-9]/.test(text) ? `N${text}` : text;
 };
 
-const className = (name) => (KEYWORDS.has(name) ? `${pascal(name)}Model` : pascal(name));
+export const className = (name) => (KEYWORDS.has(name) ? `${pascal(name)}Model` : pascal(name));
 
-const identifier = (name) => {
+export const identifier = (name) => {
   if (/^[A-Za-z_][A-Za-z0-9_]*$/.test(name) && !KEYWORDS.has(name)) return name;
   return `\`${name.replace(/`/g, '')}\``;
 };
 
 const escape = (text) => String(text ?? '').replace(/\*\//g, '* /').replace(/\s+/g, ' ').trim();
 
-const refName = (ref) => {
-  const name = ref.split('/').pop();
-  if (!name || !doc.components.schemas[name]) throw new Error(`unknown $ref ${ref}`);
-  return className(name);
-};
+const nullableOf = (schema) => schema.nullable === true || schema.type === 'null';
 
-const refSchema = (schema) => (schema.$ref ? doc.components.schemas[schema.$ref.split('/').pop()] : schema);
+const refSchema = (document, schema) => (schema.$ref ? document.components.schemas[schema.$ref.split('/').pop()] : schema);
 
-const flatten = (schema) => {
-  if (!schema.allOf) return schema;
-  const merged = { ...schema, type: 'object', properties: {}, required: [] };
-  for (const raw of schema.allOf) {
-    const part = flatten(refSchema(raw));
-    Object.assign(merged.properties, part.properties ?? {});
-    merged.required.push(...(part.required ?? []));
-    if (!merged.description && part.description) merged.description = part.description;
+/** `allOf` as one object: a Problem plus its extras becomes one data class. */
+export function flattenSchema(document, rawSchema) {
+  if (!rawSchema.allOf) return rawSchema;
+  const merged = { ...rawSchema, type: 'object', properties: {}, required: [] };
+  for (const part of rawSchema.allOf) {
+    const flat = flattenSchema(document, refSchema(document, part));
+    Object.assign(merged.properties, flat.properties ?? {});
+    merged.required.push(...(flat.required ?? []));
+    if (!merged.description && flat.description) merged.description = flat.description;
   }
   delete merged.allOf;
   return merged;
-};
-
-const nullableOf = (schema) => schema.nullable === true || schema.type === 'null';
-
-const uniqueClass = (wanted) => {
-  if (!usedNames.has(wanted)) return wanted;
-  for (let index = 2; ; index += 1) {
-    const candidate = `${wanted}${index}`;
-    if (!usedNames.has(candidate)) return candidate;
-  }
-};
-
-function registerClass(hint, rawSchema) {
-  const name = uniqueClass(className(hint));
-  usedNames.add(name);
-  const entry = { name, schema: rawSchema, properties: [], description: '' };
-  classes.set(name, entry);
-  const schema = flatten(rawSchema);
-  entry.description = escape(schema.description);
-  const required = new Set(schema.required ?? []);
-  for (const [property, propertySchema] of Object.entries(schema.properties ?? {})) {
-    const type = typeOf(propertySchema, `${name}${pascal(property)}`);
-    const isRequired = required.has(property);
-    const nullable = nullableOf(propertySchema) || type.nullable;
-    entry.properties.push({
-      jsonName: property,
-      name: identifier(property),
-      type: type.type,
-      nullable: !isRequired || nullable,
-      optional: !isRequired,
-      description: escape(propertySchema.description ?? refSchema(propertySchema).description),
-    });
-  }
-  return name;
 }
-
-function typeOf(rawSchema, hint) {
-  if (!rawSchema) return { type: 'JsonElement', nullable: true };
-  if (rawSchema.$ref) return { type: refName(rawSchema.$ref), nullable: false };
-
-  if (rawSchema.anyOf) {
-    const variants = rawSchema.anyOf;
-    const nonNull = variants.filter((variant) => !nullableOf(variant));
-    const hadNull = nonNull.length !== variants.length;
-    if (nonNull.length === 0) return { type: 'JsonElement', nullable: true };
-    if (nonNull.length === 1) {
-      const type = typeOf(nonNull[0], hint);
-      return { type: type.type, nullable: hadNull || type.nullable };
-    }
-    return { type: 'JsonElement', nullable: hadNull };
-  }
-  if (rawSchema.oneOf) return { type: 'JsonElement', nullable: nullableOf(rawSchema) };
-
-  if (rawSchema.enum) {
-    const values = rawSchema.enum;
-    if (values.every((value) => typeof value === 'boolean')) return { type: 'Boolean', nullable: nullableOf(rawSchema) };
-    if (values.every((value) => Number.isInteger(value))) return { type: 'Int', nullable: nullableOf(rawSchema) };
-    if (values.every((value) => typeof value === 'number')) return { type: 'Double', nullable: nullableOf(rawSchema) };
-    // String, not an enum: a client must keep working when the server adds a value (errors, device vocabulary).
-    return { type: 'String', nullable: nullableOf(rawSchema) };
-  }
-
-  switch (rawSchema.type) {
-    case 'string':
-      return { type: 'String', nullable: nullableOf(rawSchema) };
-    case 'integer':
-      return { type: rawSchema.format === 'int64' ? 'Long' : 'Int', nullable: nullableOf(rawSchema) };
-    case 'number':
-      return { type: 'Double', nullable: nullableOf(rawSchema) };
-    case 'boolean':
-      return { type: 'Boolean', nullable: nullableOf(rawSchema) };
-    case 'array': {
-      if (Array.isArray(rawSchema.items)) return { type: 'List<JsonElement>', nullable: nullableOf(rawSchema) };
-      const item = typeOf(rawSchema.items, `${hint}Item`);
-      return { type: `List<${item.type}${item.nullable ? '?' : ''}>`, nullable: nullableOf(rawSchema) };
-    }
-    case 'object':
-      if (Object.keys(rawSchema.properties ?? {}).length > 0) {
-        return { type: registerClass(hint, rawSchema), nullable: nullableOf(rawSchema) };
-      }
-      if (rawSchema.additionalProperties === true || rawSchema.additionalProperties === undefined) {
-        return { type: 'JsonElement', nullable: nullableOf(rawSchema) };
-      }
-      if (typeof rawSchema.additionalProperties === 'object') {
-        const value = typeOf(rawSchema.additionalProperties, `${hint}Value`);
-        return { type: `Map<String, ${value.type}${value.nullable ? '?' : ''}>`, nullable: nullableOf(rawSchema) };
-      }
-      return { type: 'JsonElement', nullable: nullableOf(rawSchema) };
-    default:
-      if (rawSchema.properties) return { type: registerClass(hint, rawSchema), nullable: nullableOf(rawSchema) };
-      if (rawSchema.additionalProperties) return typeOf({ ...rawSchema, type: 'object' }, hint);
-      return { type: 'JsonElement', nullable: true };
-  }
-}
-
-const schemaAt = (operation) => {
-  const method = doc.paths[operation.path]?.[operation.method];
-  if (!method) throw new Error(`missing ${operation.method.toUpperCase()} ${operation.path}`);
-  if (operation.kind === 'request') {
-    const schema = method.requestBody?.content?.['application/json']?.schema;
-    if (!schema) throw new Error(`missing request body for ${operation.path}`);
-    return schema;
-  }
-  const schema = method.responses?.[operation.status]?.content?.['application/json']?.schema;
-  if (!schema) throw new Error(`missing ${operation.status} response for ${operation.path}`);
-  return schema;
-};
 
 const fileFor = (entry) => {
   const lines = [
@@ -188,49 +79,180 @@ const fileFor = (entry) => {
   if (entry.description) lines.push('/**', ` * ${entry.description}`, ' */');
   if (entry.properties.length === 0) {
     lines.push('@Serializable', `class ${entry.name}`, '');
-    return `${lines.join('\n')}`;
+    return lines.join('\n');
   }
   lines.push('@Serializable', `data class ${entry.name}(`);
   lines.push(entry.properties.map((property, index) => {
     const suffix = index === entry.properties.length - 1 ? '' : ',';
     const type = `${property.type}${property.nullable ? '?' : ''}`;
-    const value = `${property.optional ? ' = null' : ''}`;
+    const value = property.optional ? ' = null' : '';
     const note = property.description ? `    /** ${property.description} */\n` : '';
     return `${note}    @SerialName(${JSON.stringify(property.jsonName)}) val ${property.name}: ${type}${value}${suffix}`;
   }).join('\n'));
   lines.push(')', '');
-  return `${lines.join('\n')}`;
+  return lines.join('\n');
 };
 
-// The component schemas first (sorted for a stable diff), then the operation schemas slice B uses.
-for (const name of Object.keys(doc.components.schemas).sort()) {
-  registerClass(name, doc.components.schemas[name]);
-}
-for (const operation of OPERATIONS) registerClass(operation.name, schemaAt(operation));
-
-const files = new Map([...classes.keys()].sort().map((name) => [`${name}.kt`, fileFor(classes.get(name))]));
-
-if (process.argv.includes('--check')) {
-  const stale = [];
-  for (const [file, content] of files) {
-    const path = join(OUT, file);
-    if (!existsSync(path) || readFileSync(path, 'utf8') !== content) stale.push(file);
+const schemaAt = (document, operation) => {
+  const method = document.paths[operation.path]?.[operation.method];
+  if (!method) throw new Error(`missing ${operation.method.toUpperCase()} ${operation.path}`);
+  if (operation.kind === 'request') {
+    const schema = method.requestBody?.content?.['application/json']?.schema;
+    if (!schema) throw new Error(`missing request body for ${operation.path}`);
+    return schema;
   }
-  if (existsSync(OUT)) {
-    for (const file of readdirSync(OUT)) {
-      if (file.endsWith('.kt') && !files.has(file)) stale.push(file);
+  const schema = method.responses?.[operation.status]?.content?.['application/json']?.schema;
+  if (!schema) throw new Error(`missing ${operation.status} response for ${operation.path}`);
+  return schema;
+};
+
+/** The model files of a document: `{ filename → Kotlin source }`, sorted, with references pulled in transitively. */
+export function generateModels(document, operations = OPERATIONS, seeds = MODEL_SEEDS) {
+  const classes = new Map();
+  const usedNames = new Set();
+
+  const refName = (ref) => {
+    const name = ref.split('/').pop();
+    if (!name || !document.components.schemas[name]) throw new Error(`unknown $ref ${ref}`);
+    return className(name);
+  };
+
+  function registerClass(hint, rawSchema) {
+    if (rawSchema.$ref) return typeOf(rawSchema, hint).type;
+    let name = className(hint);
+    if (usedNames.has(name)) {
+      for (let index = 2; ; index += 1) {
+        if (!usedNames.has(`${name}${index}`)) {
+          name = `${name}${index}`;
+          break;
+        }
+      }
+    }
+    usedNames.add(name);
+    const entry = { name, properties: [], description: '' };
+    classes.set(name, entry);
+    const schema = flattenSchema(document, rawSchema);
+    entry.description = escape(schema.description);
+    const required = new Set(schema.required ?? []);
+    for (const [property, propertySchema] of Object.entries(schema.properties ?? {})) {
+      const type = typeOf(propertySchema, `${name}${pascal(property)}`);
+      const isRequired = required.has(property);
+      entry.properties.push({
+        jsonName: property,
+        name: identifier(property),
+        type: type.type,
+        nullable: !isRequired || nullableOf(propertySchema) || type.nullable,
+        optional: !isRequired,
+        description: escape(propertySchema.description ?? refSchema(document, propertySchema).description),
+      });
+    }
+    return name;
+  }
+
+  function typeOf(rawSchema, hint) {
+    if (!rawSchema) return { type: 'JsonElement', nullable: true };
+    if (rawSchema.$ref) {
+      const referenced = rawSchema.$ref.split('/').pop();
+      if (!usedNames.has(className(referenced))) registerClass(referenced, document.components.schemas[referenced]);
+      return { type: refName(rawSchema.$ref), nullable: false };
+    }
+
+    if (rawSchema.anyOf) {
+      const variants = rawSchema.anyOf;
+      const nonNull = variants.filter((variant) => !nullableOf(variant));
+      const hadNull = nonNull.length !== variants.length;
+      if (nonNull.length === 0) return { type: 'JsonElement', nullable: true };
+      if (nonNull.length === 1) {
+        const type = typeOf(nonNull[0], hint);
+        return { type: type.type, nullable: hadNull || type.nullable };
+      }
+      const types = nonNull.map((variant) => typeOf(variant, hint));
+      if (types.every((type) => type.type === types[0].type)) {
+        return { type: types[0].type, nullable: hadNull || types.some((type) => type.nullable) };
+      }
+      return { type: 'JsonElement', nullable: hadNull };
+    }
+    if (rawSchema.oneOf) return { type: 'JsonElement', nullable: nullableOf(rawSchema) };
+
+    if (rawSchema.enum) {
+      const values = rawSchema.enum;
+      if (values.every((value) => typeof value === 'boolean')) return { type: 'Boolean', nullable: nullableOf(rawSchema) };
+      if (values.every((value) => Number.isInteger(value))) return { type: 'Int', nullable: nullableOf(rawSchema) };
+      if (values.every((value) => typeof value === 'number')) return { type: 'Double', nullable: nullableOf(rawSchema) };
+      // String, not an enum: a client must keep working when the server adds a value (errors, device vocabulary).
+      return { type: 'String', nullable: nullableOf(rawSchema) };
+    }
+
+    switch (rawSchema.type) {
+      case 'string':
+        return { type: 'String', nullable: nullableOf(rawSchema) };
+      case 'integer':
+        return { type: rawSchema.format === 'int64' ? 'Long' : 'Int', nullable: nullableOf(rawSchema) };
+      case 'number':
+        return { type: 'Double', nullable: nullableOf(rawSchema) };
+      case 'boolean':
+        return { type: 'Boolean', nullable: nullableOf(rawSchema) };
+      case 'array': {
+        if (Array.isArray(rawSchema.items)) return { type: 'List<JsonElement>', nullable: nullableOf(rawSchema) };
+        const item = typeOf(rawSchema.items, `${hint}Item`);
+        return { type: `List<${item.type}${item.nullable ? '?' : ''}>`, nullable: nullableOf(rawSchema) };
+      }
+      case 'object':
+        if (Object.keys(rawSchema.properties ?? {}).length > 0) {
+          return { type: registerClass(hint, rawSchema), nullable: nullableOf(rawSchema) };
+        }
+        if (rawSchema.additionalProperties === true || rawSchema.additionalProperties === undefined) {
+          return { type: 'JsonElement', nullable: nullableOf(rawSchema) };
+        }
+        if (typeof rawSchema.additionalProperties === 'object') {
+          const value = typeOf(rawSchema.additionalProperties, `${hint}Value`);
+          return { type: `Map<String, ${value.type}${value.nullable ? '?' : ''}>`, nullable: nullableOf(rawSchema) };
+        }
+        return { type: 'JsonElement', nullable: nullableOf(rawSchema) };
+      default:
+        if (rawSchema.properties) return { type: registerClass(hint, rawSchema), nullable: nullableOf(rawSchema) };
+        if (rawSchema.additionalProperties) return typeOf({ ...rawSchema, type: 'object' }, hint);
+        return { type: 'JsonElement', nullable: true };
     }
   }
-  if (stale.length > 0) {
-    console.error(`android-api: ${stale.length} generated model file(s) are stale: ${stale.slice(0, 12).join(', ')}${stale.length > 12 ? ', …' : ''}`);
-    console.error('android-api: run `node scripts/generate-android-api.mjs` and commit the result');
-    process.exit(1);
+
+  for (const name of seeds) {
+    if (!document.components.schemas[name]) throw new Error(`unknown model seed ${name}`);
+    registerClass(name, document.components.schemas[name]);
   }
-  console.log(`android-api: ${files.size} generated model files match packages/api-client/openapi.json`);
-  process.exit(0);
+  for (const operation of operations) registerClass(operation.name, schemaAt(document, operation));
+
+  return new Map([...classes.keys()].sort().map((name) => [`${name}.kt`, fileFor(classes.get(name))]));
 }
 
-rmSync(OUT, { recursive: true, force: true });
-mkdirSync(OUT, { recursive: true });
-for (const [file, content] of files) writeFileSync(join(OUT, file), content);
-console.log(`android-api: wrote ${files.size} model file(s) to ${OUT}`);
+function main() {
+  const document = JSON.parse(readFileSync(OPENAPI, 'utf8'));
+  const files = generateModels(document);
+
+  if (process.argv.includes('--check')) {
+    const stale = [];
+    for (const [file, content] of files) {
+      const path = join(OUT, file);
+      if (!existsSync(path) || readFileSync(path, 'utf8') !== content) stale.push(file);
+    }
+    if (existsSync(OUT)) {
+      for (const file of readdirSync(OUT)) {
+        if (file.endsWith('.kt') && !files.has(file)) stale.push(file);
+      }
+    }
+    if (stale.length > 0) {
+      console.error(`android-api: ${stale.length} generated model file(s) are stale: ${stale.slice(0, 12).join(', ')}${stale.length > 12 ? ', …' : ''}`);
+      console.error('android-api: run `node scripts/generate-android-api.mjs` and commit the result');
+      process.exit(1);
+    }
+    console.log(`android-api: ${files.size} generated model files match packages/api-client/openapi.json`);
+    return;
+  }
+
+  rmSync(OUT, { recursive: true, force: true });
+  mkdirSync(OUT, { recursive: true });
+  for (const [file, content] of files) writeFileSync(join(OUT, file), content);
+  console.log(`android-api: wrote ${files.size} model file(s) to ${OUT}`);
+}
+
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main();

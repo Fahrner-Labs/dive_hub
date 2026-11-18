@@ -14,6 +14,7 @@ import dev.divehub.shared.NoAnswerException
 import dev.divehub.shared.SessionRepository
 import dev.divehub.shared.SessionState
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -33,6 +34,18 @@ class MainViewModel(private val session: SessionRepository) : ViewModel() {
     val state: StateFlow<UiState> = _state.asStateFlow()
 
     init {
+        // A 401 anywhere ends the session in the repository; the screen follows it without a second source of truth.
+        viewModelScope.launch {
+            session.state.collect { state ->
+                _state.update {
+                    when (state) {
+                        is SessionState.SignedIn -> it.copy(loading = false, instanceUrl = state.instanceUrl, user = state.user)
+                        is SessionState.SignedOut -> it.copy(loading = false, instanceUrl = state.instanceUrl, user = null)
+                        SessionState.Loading -> it
+                    }
+                }
+            }
+        }
         viewModelScope.launch { restore() }
     }
 
@@ -58,8 +71,8 @@ class MainViewModel(private val session: SessionRepository) : ViewModel() {
         viewModelScope.launch {
             _state.update { it.copy(busy = true, error = null) }
             try {
-                val user = session.signIn(url, email.trim(), password)
-                _state.update { it.copy(busy = false, user = user, instanceUrl = url, error = null) }
+                session.signIn(url, email.trim(), password)
+                _state.update { it.copy(busy = false, error = null) }
             } catch (error: DiveHubException) {
                 _state.update { it.copy(busy = false, error = error.code) }
             } catch (_: NoAnswerException) {
@@ -72,33 +85,17 @@ class MainViewModel(private val session: SessionRepository) : ViewModel() {
         viewModelScope.launch {
             _state.update { it.copy(busy = true, error = null) }
             session.signOut()
-            val instance = session.knownInstance()
-            _state.update {
-                it.copy(busy = false, user = null, instanceUrl = instance, error = null)
-            }
+            _state.update { it.copy(busy = false, error = null) }
         }
-    }
-
-    fun dismissError() {
-        _state.update { it.copy(error = null) }
     }
 
     private suspend fun restore() {
         try {
-            val state = session.restore()
-            _state.update {
-                when (state) {
-                    is SessionState.SignedIn -> it.copy(loading = false, instanceUrl = state.instanceUrl, user = state.user)
-                    is SessionState.SignedOut -> it.copy(loading = false, instanceUrl = state.instanceUrl, user = null)
-                    SessionState.Loading -> it
-                }
-            }
+            session.restore()
         } catch (_: NoAnswerException) {
-            val instance = session.knownInstance()
-            _state.update { it.copy(loading = false, instanceUrl = instance, error = NO_ANSWER) }
+            _state.update { it.copy(error = NO_ANSWER) }
         } catch (error: DiveHubException) {
-            val instance = session.knownInstance()
-            _state.update { it.copy(loading = false, instanceUrl = instance, error = error.code) }
+            _state.update { it.copy(error = error.code) }
         }
     }
 

@@ -43,9 +43,12 @@ node scripts/generate-android-api.mjs           # after changing the OpenAPI doc
 node scripts/generate-android-api.mjs --check   # what the Android lane runs
 ```
 
-The generator is [`scripts/generate-android-api.mjs`](../../scripts/generate-android-api.mjs). It generates every
-component schema, plus the operation request/response schemas the app uses (`OPERATIONS` in the script; slice B adds
-sign-in, sign-out, get-session and `/api/me`). Later slices add the operations they use there and regenerate.
+The generator is [`scripts/generate-android-api.mjs`](../../scripts/generate-android-api.mjs), with its tests in
+`scripts/generate-android-api.test.mjs`. It generates the **transitive closure** of the operation request/response
+schemas the app uses (`OPERATIONS` in the script; slice B adds the sign-in request and `/api/me`) and the named models
+in `MODEL_SEEDS`. A server-only schema therefore does not churn the Android tree; a later slice adds the operations it
+uses and regenerates. Refusals are read through `ApiErrorBody`, which accepts both our Problem body and Better Auth's
+`message` body (and keeps an unknown code as it is).
 
 ### Why not OpenAPI Generator
 

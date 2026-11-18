@@ -175,8 +175,8 @@ export function planFor(changed, { e2eServerLoads: loads } = {}) {
       plan.lint = 'all';
       continue;
     }
-    // The drift report, the repo map, the code graph and the release tag parser have tests of their own, and
-    // nothing else reads them.
+    // The drift report, the repo map, the code graph, the release tag parser and the Android API model generator have
+    // tests of their own, and nothing else reads them.
     if (/^scripts\/(drift|repomap|code-graph|release-tag|generate-android-api)/.test(path)) {
       plan.scripts = true;
       if (path === 'scripts/generate-android-api.mjs') plan.android = true;
@@ -186,6 +186,7 @@ export function planFor(changed, { e2eServerLoads: loads } = {}) {
     if (/^scripts\/check/.test(path)) {
       plan.scripts = true;
       if (path === 'scripts/check-lint.mjs') plan.lint = 'all';
+      if (path === 'scripts/check-android.mjs') plan.android = true;
       continue;
     }
     if (QUIET.test(path)) continue;
@@ -236,8 +237,8 @@ export function planFor(changed, { e2eServerLoads: loads } = {}) {
       plan.notes.push({ text: `${path} is shared ${app} code, so all ${app} tests and all browser tests run`, steps: [app, 'e2e'] });
       continue;
     }
-    Object.assign(plan, { lint: 'all', server: 'all', web: 'all', e2e: 'all' });
-    plan.notes.push({ text: `${path} is shared or unknown, so everything runs`, steps: ['lint', 'server', 'web', 'e2e'] });
+    Object.assign(plan, { lint: 'all', server: 'all', web: 'all', android: true, e2e: 'all' });
+    plan.notes.push({ text: `${path} is shared or unknown, so everything runs`, steps: ['lint', 'server', 'web', 'android', 'e2e'] });
   }
   return plan;
 }

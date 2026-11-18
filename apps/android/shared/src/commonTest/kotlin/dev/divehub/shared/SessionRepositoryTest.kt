@@ -17,7 +17,6 @@ import kotlinx.serialization.json.Json
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
-import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -44,10 +43,6 @@ private class FakeInstances(initial: String? = null) : InstanceUrlStore {
     override suspend fun load(): String? = value
     override suspend fun save(url: String) {
         value = url
-    }
-
-    override suspend fun clear() {
-        value = null
     }
 }
 
@@ -345,17 +340,16 @@ fun `a sign-in without set-auth-token is refused, not stored`() = runTest {
 }
 
 @Test
-fun `the generated user model keeps an unknown role and an unknown problem code`() {
+fun `the generated user model keeps an unknown role and a refusal keeps an unknown code`() {
     val json = Json { ignoreUnknownKeys = true }
     val user = json.decodeFromString<UserView>(
         """{"id":"u1","email":"a@example.com","name":"A","role":"future-role","disabled":false,"createdAt":"2026-01-01T00:00:00Z"}""",
     )
     assertEquals("future-role", user.role)
 
-    val problem = json.decodeFromString<dev.divehub.api.models.Problem>(
+    val problem = json.decodeFromString<ApiErrorBody>(
         """{"code":"a_code_from_a_newer_server","error":"English text for logs"}""",
     )
     assertEquals("a_code_from_a_newer_server", problem.code)
-    assertFalse(problem.error.isBlank())
 }
 }

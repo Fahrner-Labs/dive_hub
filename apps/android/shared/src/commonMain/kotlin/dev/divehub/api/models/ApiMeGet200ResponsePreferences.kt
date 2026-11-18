@@ -11,5 +11,5 @@ data class ApiMeGet200ResponsePreferences(
     /** Null: follow the browser */
     @SerialName("language") val language: String?,
     /** Null: follow the region of the browser */
-    @SerialName("units") val units: JsonElement?
+    @SerialName("units") val units: String?
 )

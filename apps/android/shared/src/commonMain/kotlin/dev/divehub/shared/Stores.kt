@@ -11,7 +11,6 @@ interface TokenStore {
 interface InstanceUrlStore {
     suspend fun load(): String?
     suspend fun save(url: String)
-    suspend fun clear()
 }
 
 /**

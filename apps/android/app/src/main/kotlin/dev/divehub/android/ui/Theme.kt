@@ -7,37 +7,42 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
-// The tonal-surfaces palette (ADR 0019, ADR 0064): white sheets on a deeper page tone, night dive blue-black.
+// The overhaul palette (ADR 0064): a near-neutral framed sheet, ink text and buttons, water blue only for links,
+// focus and data. It supersedes ADR 0019's navy tones.
 private val LightColors = lightColorScheme(
-    primary = Color(0xFF0B6076),
-    onPrimary = Color(0xFFFFFFFF),
-    primaryContainer = Color(0xFFB9E7F3),
-    onPrimaryContainer = Color(0xFF001F28),
-    background = Color(0xFFE9EEF2),
-    onBackground = Color(0xFF12212E),
-    surface = Color(0xFFFFFFFF),
-    onSurface = Color(0xFF12212E),
-    surfaceVariant = Color(0xFFDDE7EC),
-    onSurfaceVariant = Color(0xFF3E4C55),
-    outline = Color(0xFF6F7D86),
-    error = Color(0xFFB3261E),
-    onError = Color(0xFFFFFFFF),
+    primary = Color(0xFF0F5E8C),          // --color-accent
+    onPrimary = Color(0xFFFFFFFF),        // --color-on-accent
+    primaryContainer = Color(0xFFE1EEF6), // --color-accent-soft
+    onPrimaryContainer = Color(0xFF0E1A23),
+    background = Color(0xFFEEF3F6),       // --color-bg
+    onBackground = Color(0xFF0E1A23),     // --color-text
+    surface = Color(0xFFFFFFFF),          // --color-surface
+    onSurface = Color(0xFF0E1A23),
+    surfaceVariant = Color(0xFFF4F7F9),   // --color-surface-sunken
+    onSurfaceVariant = Color(0xFF52626F), // --color-text-muted
+    outline = Color(0xFF6E8497),          // --color-border-strong
+    error = Color(0xFFB3122B),            // --color-danger
+    onError = Color(0xFFFFFFFF),          // --color-on-danger
+    errorContainer = Color(0xFFFBE9EC),   // --color-danger-soft
+    onErrorContainer = Color(0xFFB3122B),
 )
 
 private val DarkColors = darkColorScheme(
-    primary = Color(0xFF7FD3E8),
-    onPrimary = Color(0xFF00363F),
-    primaryContainer = Color(0xFF004E5C),
-    onPrimaryContainer = Color(0xFFB9E7F3),
-    background = Color(0xFF061522),
-    onBackground = Color(0xFFE2EDF2),
-    surface = Color(0xFF0E2338),
-    onSurface = Color(0xFFE2EDF2),
-    surfaceVariant = Color(0xFF1B354B),
-    onSurfaceVariant = Color(0xFFB9CBD6),
-    outline = Color(0xFF8899A4),
-    error = Color(0xFFFFB4AB),
-    onError = Color(0xFF690005),
+    primary = Color(0xFF62B6E6),
+    onPrimary = Color(0xFF0B0D0F),
+    primaryContainer = Color(0xFF14303F),
+    onPrimaryContainer = Color(0xFFE9EEF2),
+    background = Color(0xFF0B0D0F),
+    onBackground = Color(0xFFE9EEF2),
+    surface = Color(0xFF131619),
+    onSurface = Color(0xFFE9EEF2),
+    surfaceVariant = Color(0xFF1A1E22),
+    onSurfaceVariant = Color(0xFFA1ACB5),
+    outline = Color(0xFF6B7782),
+    error = Color(0xFFFF7A7A),
+    onError = Color(0xFF0B0D0F),
+    errorContainer = Color(0xFF3A1620),
+    onErrorContainer = Color(0xFFFF7A7A),
 )
 
 @Composable

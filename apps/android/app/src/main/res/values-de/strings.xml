@@ -15,6 +15,10 @@
     <string name="sign_in_no_account">Noch kein Konto? Bitte die Administration deines Dive Hub um eine Einladung.</string>
 
     <string name="form_email">E-Mail</string>
+    <string name="loading">Wird geladen…</string>
+    <string name="password_show">Anzeigen: %1$s</string>
+    <string name="password_show_short">Anzeigen</string>
+    <string name="password_hide_short">Verbergen</string>
     <string name="form_password">Passwort</string>
 
     <string name="signed_in_title">Angemeldet als %1$s</string>

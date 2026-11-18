@@ -27,10 +27,6 @@ class PreferencesInstanceUrlStore(context: Context) : InstanceUrlStore {
         preferences.edit().putString(KEY_INSTANCE, url).apply()
     }
 
-    override suspend fun clear(): Unit = withContext(Dispatchers.IO) {
-        preferences.edit().remove(KEY_INSTANCE).apply()
-    }
-
     private companion object {
         const val KEY_INSTANCE = "instance_url"
     }

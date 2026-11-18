@@ -3,7 +3,6 @@ package dev.divehub.shared
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.HttpClientEngine
-import io.ktor.client.plugins.HttpRequestTimeoutException
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.header
 import io.ktor.client.request.request
@@ -72,10 +71,10 @@ class ApiClient(
         }
     }
 
-    /** A refusal as a code the UI translates; `fallback` names one the caller knows better than the status does. */
-    suspend fun failure(response: HttpResponse, fallback: String? = null): DiveHubException {
+    /** A refusal as a code the UI translates; the server's code wins, the status names a local one otherwise. */
+    suspend fun failure(response: HttpResponse): DiveHubException {
         val body = errorBody(response)
-        val code = body?.code ?: fallback ?: when (response.status.value) {
+        val code = body?.code ?: when (response.status.value) {
             401 -> ErrorCodes.SIGN_IN_REQUIRED
             429 -> ErrorCodes.TOO_MANY_ATTEMPTS
             in 500..599 -> ErrorCodes.SERVER_ERROR
@@ -106,12 +105,6 @@ class ApiClient(
                 return response
             } catch (error: CancellationException) {
                 throw error
-            } catch (error: HttpRequestTimeoutException) {
-                if (attempts == 0) {
-                    attempts += 1
-                    continue
-                }
-                throw NoAnswerException(error)
             } catch (error: IOException) {
                 if (attempts == 0) {
                     attempts += 1
