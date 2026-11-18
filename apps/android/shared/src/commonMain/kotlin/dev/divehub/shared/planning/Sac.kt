@@ -22,24 +22,24 @@ data class Sac(val litresPerMinute: Double, val barPerMinute: Double?)
 /** The unrounded kernel values; [surfaceMinutes] is the Dive's time at the surface's pressure. */
 data class SacValues(val litresPerMinute: Double, val barPerMinute: Double?, val surfaceMinutes: Double)
 
-data class SacOutcome<T>(val sac: T?, val missing: String?)
-
 /** Why a Dive with Cylinders has no SAC. */
-val SAC_MISSING = listOf("too_short", "no_average_depth", "cylinder_incomplete")
+enum class SacMissing { too_short, no_average_depth, cylinder_incomplete }
+
+data class SacOutcome<T>(val sac: T?, val missing: SacMissing?)
 
 /** The SAC's doubles before the route's rounding. */
 fun sacValues(dive: SacDive, cylinders: List<SacCylinder>): SacOutcome<SacValues> {
     if (cylinders.isEmpty()) return SacOutcome(null, null)
-    if (dive.durationSeconds < MIN_SAC_SECONDS) return SacOutcome(null, "too_short")
-    if (dive.avgDepthM == null) return SacOutcome(null, "no_average_depth")
+    if (dive.durationSeconds < MIN_SAC_SECONDS) return SacOutcome(null, SacMissing.too_short)
+    if (dive.avgDepthM == null) return SacOutcome(null, SacMissing.no_average_depth)
     if (cylinders.any { it.volumeL == null || it.startPressureBar == null || it.endPressureBar == null }) {
-        return SacOutcome(null, "cylinder_incomplete")
+        return SacOutcome(null, SacMissing.cylinder_incomplete)
     }
     // Minutes at the surface's pressure: the time times the ambient pressure at the average depth (ADR 0033).
     val surfaceMinutes = (dive.durationSeconds / 60) * (dive.avgDepthM / 10 + 1)
     val litres = cylinders.sumOf { cylinder ->
         surfaceLitres(cylinder.volumeL!!, cylinder.startPressureBar!!, cylinder.gas) -
-            surfaceLitres(cylinder.volumeL!!, cylinder.endPressureBar!!, cylinder.gas)
+            surfaceLitres(cylinder.volumeL, cylinder.endPressureBar!!, cylinder.gas)
     }
     val only = cylinders.first()
     val values = SacValues(

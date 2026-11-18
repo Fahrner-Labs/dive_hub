@@ -176,12 +176,12 @@ apps/server/src/planning/planning-error.ts:3 class PlanningError
 apps/server/src/planning/gas.ts:5 iface GasMix
 apps/server/src/planning/gas.ts:44 fn ambientPressureBar
 apps/server/src/planning/gas.ts:15 iface Conditions
-apps/server/src/planning/gas.ts:38 fn modMetres
+apps/server/src/planning/gas.ts:13 type PlanningWater
 apps/server/src/planning/gas-plan.ts:21 type GasRule
+apps/server/src/planning/gas-numbers.ts:24 fn gasNumbers
 apps/server/src/planning/tissues.ts:28 fn surfaceSaturatedTissues
 apps/server/src/planning/loadings-service.ts:17 const DAY_MS
 apps/server/src/planning/bottom-time-service.ts:22 const round
-apps/server/src/planning/gas-numbers.ts:9 const round
 … 159 more symbols in this module
 
 ### server/providers

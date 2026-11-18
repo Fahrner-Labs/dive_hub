@@ -6,7 +6,7 @@ import {
   ambientPressureBar, bestMixPercent, eadMetres, endMetres, isHypoxic, metresPerBar, modMetres, surfacePressureBar,
   type Conditions, type GasMix, type PlanningWater,
 } from './gas.js';
-import { floorTenth } from './gas-numbers.js';
+import { gasNumbers } from './gas-numbers.js';
 import { ndlMinutes } from './ndl.js';
 import { otu, oxygenLimitMinutes } from './oxygen.js';
 import { advanceTissues, surfaceSaturatedTissues, worstCompartmentPercent, type TissuePoint } from './tissues.js';
@@ -245,6 +245,12 @@ function evaluateGas(input: GasVectorInput): VectorOutcome {
   const gas = { o2: input.o2, he: input.he };
   const conditions = conditionsOf(input);
   const depthM = input.depthM;
+  const shell = gasNumbers({
+    o2: gas.o2, he: gas.he, depth: depthM, water: input.water, altitude: input.altitudeM,
+    ppo2Working: input.ppo2Working, ppo2Contingency: input.ppo2Contingency, oxygenNarcotic: input.oxygenNarcotic,
+  });
+  const atDepth = shell.atDepth;
+  if (atDepth === null) throw new Error('a gas vector needs a depth');
   return {
     kernel: {
       surfacePressureBar: surfacePressureBar(input.altitudeM),
@@ -258,15 +264,15 @@ function evaluateGas(input: GasVectorInput): VectorOutcome {
       hypoxic: isHypoxic(gas),
     },
     service: {
-      modWorkingM: floorTenth(modMetres(gas, input.ppo2Working, conditions)),
-      modContingencyM: floorTenth(modMetres(gas, input.ppo2Contingency, conditions)),
-      hypoxic: isHypoxic(gas),
+      modWorkingM: shell.modWorkingM,
+      modContingencyM: shell.modContingencyM,
+      hypoxic: shell.hypoxic,
       atDepth: {
-        depthM,
-        ppO2: round((gas.o2 / 100) * ambientPressureBar(depthM, conditions), 2),
-        bestMixPercent: bestMixPercent(depthM, input.ppo2Working, conditions),
-        eadM: round(eadMetres(gas, depthM, conditions), 1),
-        endM: round(endMetres(gas, depthM, conditions, { oxygenNarcotic: input.oxygenNarcotic }), 1),
+        depthM: atDepth.depthM,
+        ppO2: atDepth.ppO2,
+        bestMixPercent: atDepth.bestMixPercent,
+        eadM: atDepth.eadM,
+        endM: atDepth.endM,
       },
     },
   };

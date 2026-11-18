@@ -33,6 +33,10 @@ files, so a change on one side fails until both agree (FAH-268).
 - A `null` where a number is expected means infinity: JSON cannot carry `Infinity`, and the NDL and oxygen limit use
   it for "no limit".
 
+The kernels compute the gas they are given; the service and UI restrictions (air and nitrox 21–40 %, no helium,
+at most 40 m, the MOD) are not part of the kernel and must be reproduced at the service layer. The trimix and
+altitude cases pin the kernel math, not a promise that a route accepts that input.
+
 ## Regenerating
 
 From `apps/server`:

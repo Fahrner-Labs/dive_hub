@@ -3,7 +3,7 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { VECTOR_KERNELS, evaluateVectorCase, type VectorKernel } from '../src/planning/test-vectors.js';
+import { VECTOR_KERNELS, evaluateVectorCase, vectorFile, type VectorKernel } from '../src/planning/test-vectors.js';
 
 const VECTORS = fileURLToPath(new URL('../../../packages/test-vectors/planning/', import.meta.url));
 const DEFAULT_RELATIVE = 1e-9;
@@ -62,6 +62,7 @@ describe('planning golden vectors', () => {
   for (const kernel of VECTOR_KERNELS) {
     it(`${kernel} matches the TypeScript kernels`, () => {
       const file = readVectors(kernel);
+      expect(file, `${kernel}.json is stale; regenerate with src/scripts/write-planning-vectors.ts`).toEqual(vectorFile(kernel));
       expect(file.kernel).toBe(kernel);
       expect(file.version).toBe(1);
       expect(file.cases.length).toBeGreaterThan(0);

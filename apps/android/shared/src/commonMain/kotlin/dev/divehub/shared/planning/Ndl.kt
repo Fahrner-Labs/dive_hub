@@ -3,6 +3,8 @@
 // The limit is the actual one (ADR 0032): the time from leaving the surface until any compartment's tolerated
 // pressure at GF high rises above the surface pressure, the descent included, in whole minutes rounded down.
 // No credit for the ascent. One minute is taken off (ADR 0046), the margin the reference implementations carry.
+// This is the kernel: the routes' gas restriction (air and nitrox 21–40 %, no helium, at most 40 m, the MOD) stays
+// in the service layer.
 package dev.divehub.shared.planning
 
 import kotlin.math.floor

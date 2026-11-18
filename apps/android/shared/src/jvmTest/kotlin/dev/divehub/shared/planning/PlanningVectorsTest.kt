@@ -1,6 +1,6 @@
 // The Kotlin side of the planning golden vectors (FAH-268): reads the same committed JSON files as the server's
-// vitest runner and checks the Kotlin port against the kernel-level doubles. The service view is the TypeScript
-// service shells' rounding, checked by the server runner.
+// vitest runner and checks the Kotlin port against the kernel-level doubles. The other service views are the
+// TypeScript service shells' rounding, checked by the server runner; SAC's rounded view is ported too and checked here.
 package dev.divehub.shared.planning
 
 import java.io.File
@@ -91,6 +91,11 @@ class PlanningVectorsTest {
         val values = expected?.jsonArray ?: error("$path: no expected array")
         assertEquals(values.size, actual.size, "$path: length")
         values.forEachIndexed { i, value -> assertClose("$path[$i]", actual[i], value, tolerance) }
+    }
+
+    private fun assertMissing(path: String, expected: JsonElement?, actual: SacMissing?) {
+        if (expected == null || expected is JsonNull) assertNull(actual, path)
+        else assertEquals(expected.jsonPrimitive.content, actual?.name, path)
     }
 
     @Test
@@ -187,14 +192,26 @@ class PlanningVectorsTest {
                 cylinder.nullableGas("gas"),
             )
         }
-        val values = sacValues(dive, cylinders).sac
+        val values = sacValues(dive, cylinders)
         val expected = case.obj("expected").obj("kernel")
 
-        assertNullableClose("litresPerMinute", values?.litresPerMinute, expected["litresPerMinute"], tolerance)
-        assertNullableClose("barPerMinute", values?.barPerMinute, expected["barPerMinute"], tolerance)
-        assertNullableClose("surfaceMinutes", values?.surfaceMinutes, expected["surfaceMinutes"], tolerance)
-        val missing = expected["missing"]
-        if (missing == null || missing is JsonNull) assertNull(sacValues(dive, cylinders).missing, "missing")
-        else assertEquals(missing.jsonPrimitive.content, sacValues(dive, cylinders).missing, "missing")
+        assertNullableClose("litresPerMinute", values.sac?.litresPerMinute, expected["litresPerMinute"], tolerance)
+        assertNullableClose("barPerMinute", values.sac?.barPerMinute, expected["barPerMinute"], tolerance)
+        assertNullableClose("surfaceMinutes", values.sac?.surfaceMinutes, expected["surfaceMinutes"], tolerance)
+        assertMissing("missing", expected["missing"], values.missing)
+
+        // The port also ships the route's two-place view, so pin it too.
+        val service = sacOfDive(dive, cylinders)
+        val expectedService = case.obj("expected").obj("service")
+        val expectedSac = expectedService["sac"]
+        if (expectedSac == null || expectedSac is JsonNull) {
+            assertNull(service.sac, "service.sac")
+        } else {
+            val rounded = assertNotNull(service.sac, "service.sac")
+            val block = expectedSac.jsonObject
+            assertClose("service.litresPerMinute", rounded.litresPerMinute, block["litresPerMinute"], tolerance)
+            assertNullableClose("service.barPerMinute", rounded.barPerMinute, block["barPerMinute"], tolerance)
+        }
+        assertMissing("service.missing", expectedService["missing"], service.missing)
     }
 }
