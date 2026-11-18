@@ -11,6 +11,14 @@
  */
 export const ENGINE_VERSION = 4;
 
+/** Dive modes the rules don't cover (ADR 0036): no findings, and they don't count for the dives around them. */
+export const NOT_COVERED_DIVE_MODES: readonly string[] = ['apnea', 'ccr', 'scr'];
+
+/** Whether the assessment's rules cover a Dive, by its Recording's dive mode (ADR 0036). */
+export function assessmentApplies(diveMode: string | undefined): boolean {
+  return !NOT_COVERED_DIVE_MODES.includes(diveMode ?? '');
+}
+
 export const SEVERITIES = ['info', 'note', 'caution'] as const;
 export type Severity = (typeof SEVERITIES)[number];
 

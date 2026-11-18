@@ -1,6 +1,6 @@
 // The fixed cases of the planning golden vectors (FAH-268): the generator writes their expected values, and the
 // vitest runner recomputes them from the same cases. The Kotlin port reads the committed JSON, never this file.
-import { SOURCES } from '../assessment/rules.js';
+import { assessmentApplies, SOURCES } from '../assessment/rules.js';
 import { noFlyAfter, seriesDiveOf } from '../assessment/series-rules.js';
 import { downsampleMinMax } from '../dives/calc/downsample.js';
 import { compressibility, pressureForLitres, surfaceLitres } from '../dives/calc/real-gas.js';
@@ -527,7 +527,7 @@ const loadingDive = (
   startMs: endMs - durationSeconds * 1000, endMs, samples, gas: AIR, otuStart: null, otuEnd: null, ...extra,
 });
 
-/** A synthetic 30 m dive at 2 s sampling, downsampled as GET /api/recordings/{id}/samples emits it (min/max, peaks kept). */
+/** A synthetic 30 m dive at 2 s sampling, reduced by the samples endpoint's min/max downsample (maxPoints 40). */
 function syntheticProfile(): TissuePoint[] {
   const points: TissuePoint[] = [];
   const push = (tSeconds: number, depthM: number) => points.push({ tSeconds, depthM });
@@ -950,8 +950,7 @@ function evaluateLoadings(input: LoadingsVectorInput): VectorOutcome {
 }
 
 function evaluateNoFly(input: NoFlyVectorInput): VectorOutcome {
-  const NOT_COVERED = ['apnea', 'ccr', 'scr'];
-  const applies = (diveMode: string | null) => diveMode === null || !NOT_COVERED.includes(diveMode);
+  const applies = (diveMode: string | null) => assessmentApplies(diveMode ?? undefined);
   const series = input.dives.map((dive) => {
     const minNdlSeconds = dive.ndlSeconds !== null && dive.ndlSeconds.length > 0
       ? Math.min(...dive.ndlSeconds)
