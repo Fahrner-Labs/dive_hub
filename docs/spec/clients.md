@@ -144,8 +144,8 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   or the audience. Kinds: `dive`, `site`, `waitingPush`, `import`, `siteImport`, `pushRun`, `certification`,
   `connection`, `buddySuggestion` (the Review inbox's suggestions: refetch `['buddy-suggestions']` and each card's
   preview). On a hint, refetch the matching queries through the normal API (the web client invalidates their
-  query keys); a client may batch hints that arrive within ~250 ms into one refetch. **On every reconnect after
-  the first**, refetch what is on screen (`invalidateQueries` with `refetchType: 'active'` in TanStack Query):
+  query keys); a client may batch hints that arrive within ~250 ms into one refetch. **On every connect, the
+  first included**, refetch what is on screen (`invalidateQueries` with `refetchType: 'active'` in TanStack Query):
   hints are not replayed, so a gap is covered only that way. Polling remains fully valid: a client that ignores
   the stream, or sits behind a proxy that strips it, loses nothing but freshness. A server process without a
   configured LISTEN connection does not serve the route (404); while its LISTEN connection is not up it answers
