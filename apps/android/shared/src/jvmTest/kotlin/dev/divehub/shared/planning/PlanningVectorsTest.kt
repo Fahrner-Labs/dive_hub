@@ -1,6 +1,7 @@
-// The Kotlin side of the planning golden vectors (FAH-268): reads the same committed JSON files as the server's
-// vitest runner and checks the Kotlin port against the kernel-level doubles. The other service views are the
-// TypeScript service shells' rounding, checked by the server runner; SAC's rounded view is ported too and checked here.
+// The Kotlin side of the golden vectors (FAH-268, lead estimate FAH-272): reads the same committed JSON files as
+// the server's vitest runner and checks the Kotlin port against the kernel-level doubles. The other service views
+// are the TypeScript service shells' rounding, checked by the server runner; SAC's and the lead estimate's rounded
+// views are ported too and checked here.
 package dev.divehub.shared.planning
 
 import java.io.File
