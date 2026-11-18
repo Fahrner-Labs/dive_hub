@@ -14,7 +14,7 @@ describe.skipIf(!online)('two-factor authentication', () => {
   let ctx: Awaited<ReturnType<typeof createTestApp>>;
   beforeAll(async () => {
     t = await createTestDatabase();
-    // The plugin limits every /two-factor/ path to 3 per 10 s; these tests exercise the flows, not the limiter.
+    // These tests sign in repeatedly; Better Auth's sign-in rate limit (10 per 15 minutes) is not what they test.
     ctx = await createTestApp(t, { rateLimit: false });
   });
   afterAll(async () => {
@@ -28,6 +28,10 @@ describe.skipIf(!online)('two-factor authentication', () => {
     headers: { origin: BASE_URL, ...(cookie ? { cookie } : {}) },
     payload,
   });
+
+  const apiHeaders = (cookie: string) => new Headers({ origin: BASE_URL, cookie });
+  const cookiesFrom = (headers: Headers) =>
+    headers.getSetCookie().map((cookie) => cookie.split(';', 1)[0]).join('; ');
 
   /** The plugin puts the raw secret into the authenticator URI base32-encoded; generate codes from the raw value. */
   const totpSecret = (uri: string) => {
@@ -56,16 +60,17 @@ describe.skipIf(!online)('two-factor authentication', () => {
     return code === '000000' ? '000001' : '000000';
   };
 
-  /** Enrols a User the way the account page does: enable, then confirm the first authenticator code. */
+  /** Enrols a User the way the web challenge will: enable, then confirm the first authenticator code. */
   async function enrol(email: string) {
     await createUser(ctx.auth, email);
     const cookie = await signIn(ctx.app, email);
-    const started = await post('/api/auth/two-factor/enable', { password: PASSWORD }, cookie);
-    expect(started.statusCode).toBe(200);
-    const { totpURI, backupCodes } = started.json() as { totpURI: string; backupCodes: string[] };
-    const verified = await post('/api/auth/two-factor/verify-totp', { code: await currentCode(totpURI) }, cookie);
-    expect(verified.statusCode).toBe(200);
-    return { cookie: cookieHeader(verified), totpURI, backupCodes };
+    const started = await ctx.auth.api.enableTwoFactor({ body: { password: PASSWORD, method: 'totp' }, headers: apiHeaders(cookie) });
+    if (started.method !== 'totp') throw new Error('the test enrolled with TOTP');
+    const { totpURI, backupCodes } = started;
+    const verified = await ctx.auth.api.verifyTOTP({
+      body: { code: await currentCode(totpURI) }, headers: apiHeaders(cookie), returnHeaders: true,
+    });
+    return { cookie: cookiesFrom(verified.headers), totpURI, backupCodes };
   }
 
   const passwordSignIn = (email: string, password = PASSWORD) =>
@@ -74,7 +79,8 @@ describe.skipIf(!online)('two-factor authentication', () => {
   it('does not switch 2FA on until the first authenticator code is verified', async () => {
     await createUser(ctx.auth, 'pending@example.com');
     const cookie = await signIn(ctx.app, 'pending@example.com');
-    expect((await post('/api/auth/two-factor/enable', { password: PASSWORD }, cookie)).statusCode).toBe(200);
+    const started = await ctx.auth.api.enableTwoFactor({ body: { password: PASSWORD, method: 'totp' }, headers: apiHeaders(cookie) });
+    expect(started).toMatchObject({ method: 'totp', totpURI: expect.stringMatching(/^otpauth:\/\//) });
 
     const [row] = await t.db.select({ enabled: user.twoFactorEnabled }).from(user).where(eq(user.email, 'pending@example.com'));
     expect(row!.enabled).not.toBe(true);
@@ -93,10 +99,11 @@ describe.skipIf(!online)('two-factor authentication', () => {
     const challengeCookie = cookieHeader(challenge);
     expect((await ctx.app.inject({ method: 'GET', url: '/api/me', headers: { cookie: challengeCookie } })).statusCode).toBe(401);
 
-    expect((await post('/api/auth/two-factor/verify-totp', { code: await wrongCode(totpURI) }, challengeCookie)).statusCode).toBe(401);
-    const verified = await post('/api/auth/two-factor/verify-totp', { code: await currentCode(totpURI) }, challengeCookie);
-    expect(verified.statusCode).toBe(200);
-    const me = await ctx.app.inject({ method: 'GET', url: '/api/me', headers: { cookie: cookieHeader(verified) } });
+    const headers = apiHeaders(challengeCookie);
+    await expect(ctx.auth.api.verifyTOTP({ body: { code: await wrongCode(totpURI) }, headers }))
+      .rejects.toMatchObject({ statusCode: 401 });
+    const verified = await ctx.auth.api.verifyTOTP({ body: { code: await currentCode(totpURI) }, headers, returnHeaders: true });
+    const me = await ctx.app.inject({ method: 'GET', url: '/api/me', headers: { cookie: cookiesFrom(verified.headers) } });
     expect(me.statusCode).toBe(200);
     expect(me.json()).toMatchObject({ user: { email: 'totp@example.com' } });
   });
@@ -114,14 +121,23 @@ describe.skipIf(!online)('two-factor authentication', () => {
     const first = backupCodes[0]!;
 
     const challenge = await passwordSignIn('backup@example.com');
-    const used = await post('/api/auth/two-factor/verify-backup-code', { code: first }, cookieHeader(challenge));
-    expect(used.statusCode).toBe(200);
-    expect((await ctx.app.inject({ method: 'GET', url: '/api/me', headers: { cookie: cookieHeader(used) } })).statusCode).toBe(200);
-    expect((await post('/api/auth/sign-out', {}, cookieHeader(used))).statusCode).toBe(200);
+    const used = await ctx.auth.api.verifyBackupCode({
+      body: { code: first }, headers: apiHeaders(cookieHeader(challenge)), returnHeaders: true,
+    });
+    const usedCookie = cookiesFrom(used.headers);
+    expect((await ctx.app.inject({ method: 'GET', url: '/api/me', headers: { cookie: usedCookie } })).statusCode).toBe(200);
+    expect((await post('/api/auth/sign-out', {}, usedCookie)).statusCode).toBe(200);
 
     const again = await passwordSignIn('backup@example.com');
-    expect((await post('/api/auth/two-factor/verify-backup-code', { code: first }, cookieHeader(again))).statusCode).toBe(401);
-    expect((await post('/api/auth/two-factor/verify-backup-code', { code: backupCodes[1]! }, cookieHeader(again))).statusCode).toBe(200);
+    const againHeaders = apiHeaders(cookieHeader(again));
+    await expect(ctx.auth.api.verifyBackupCode({ body: { code: first }, headers: againHeaders }))
+      .rejects.toMatchObject({ statusCode: 401 });
+    const second = await ctx.auth.api.verifyBackupCode({
+      body: { code: backupCodes[1]! }, headers: againHeaders, returnHeaders: true,
+    });
+    expect((await ctx.app.inject({
+      method: 'GET', url: '/api/me', headers: { cookie: cookiesFrom(second.headers) },
+    })).statusCode).toBe(200);
   });
 
   it('disables only with the password and a current code, then allows plain sign-in', async () => {
@@ -159,10 +175,13 @@ describe.skipIf(!online)('two-factor authentication', () => {
   });
 
   it('keeps the endpoints it does not use off HTTP', async () => {
-    expect((await post('/api/auth/two-factor/enable', { password: PASSWORD })).statusCode).toBe(401);
+    expect((await post('/api/auth/two-factor/enable', { password: PASSWORD })).statusCode).toBe(404);
 
     await createUser(ctx.auth, 'off@example.com');
     const cookie = await signIn(ctx.app, 'off@example.com');
+    expect((await post('/api/auth/two-factor/enable', { password: PASSWORD }, cookie)).statusCode).toBe(404);
+    expect((await post('/api/auth/two-factor/verify-totp', { code: '000000' }, cookie)).statusCode).toBe(404);
+    expect((await post('/api/auth/two-factor/verify-backup-code', { code: 'abcde-12345' }, cookie)).statusCode).toBe(404);
     expect((await post('/api/auth/two-factor/disable', { password: PASSWORD }, cookie)).statusCode).toBe(404);
     expect((await post('/api/auth/two-factor/generate-backup-codes', { password: PASSWORD }, cookie)).statusCode).toBe(404);
   });
