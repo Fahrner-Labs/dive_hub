@@ -7,8 +7,8 @@ type OpenApiDoc = {
 
 /**
  * Our OpenAPI document plus the Better Auth endpoints we expose (PUBLIC_AUTH_PATHS), so generated
- * clients cover sign-in too. Authentication is the session cookie, so Better Auth's per-operation
- * bearer/API-key security entries are dropped.
+ * clients cover sign-in too. Authentication is the session cookie or a bearer session token (ADR 0074),
+ * so Better Auth's per-operation bearer/API-key security entries are dropped.
  */
 export async function withAuthEndpoints<T extends object>(ours: T, auth: Auth): Promise<T> {
   const theirs = (await auth.api.generateOpenAPISchema()) as unknown as OpenApiDoc;

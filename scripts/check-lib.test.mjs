@@ -133,13 +133,13 @@ test('a page runs the typecheck, the web tests related to it and its areas with 
 });
 
 test('documentation runs nothing; shared code of an app runs its tests and every browser test; an unknown path everything', () => {
-  assert.deepEqual(planFor(['docs/index.md', 'README.md', 'SECURITY.md']), { typecheck: false, lint: 'none', scripts: false, server: 'none', web: 'none', e2e: 'none', areas: new Set(), specs: new Set(), notes: [] });
+  assert.deepEqual(planFor(['docs/index.md', 'README.md', 'SECURITY.md']), { typecheck: false, lint: 'none', scripts: false, server: 'none', web: 'none', android: false, e2e: 'none', areas: new Set(), specs: new Set(), notes: [] });
 
   const shared = planFor(['apps/web/src/api.ts']);
   assert.deepEqual([shared.server, shared.web, shared.e2e], ['none', 'all', 'all']);
 
   const unknown = planFor(['pnpm-lock.yaml']);
-  assert.deepEqual([unknown.typecheck, unknown.lint, unknown.server, unknown.web, unknown.e2e], [true, 'all', 'all', 'all', 'all']);
+  assert.deepEqual([unknown.typecheck, unknown.lint, unknown.server, unknown.web, unknown.android, unknown.e2e], [true, 'all', 'all', 'all', true, 'all']);
 });
 
 test('a web unit or component test runs itself, without browser tests', () => {
@@ -219,6 +219,21 @@ test('a changed check script runs its own tests', () => {
   assert.equal(planFor(['apps/web/src/SitesPage.tsx']).scripts, false);
 });
 
+test('the Android app has its own lane, and the generated models follow the OpenAPI document', () => {
+  const plan = planFor(['apps/android/shared/src/commonMain/kotlin/dev/divehub/shared/ApiClient.kt']);
+  assert.deepEqual([plan.android, plan.typecheck, plan.lint, plan.server, plan.web, plan.e2e], [true, false, 'none', 'none', 'none', 'none']);
+
+  const generator = planFor(['scripts/generate-android-api.mjs']);
+  assert.deepEqual([generator.android, generator.scripts], [true, true]);
+
+  const lane = planFor(['scripts/check-android.mjs']);
+  assert.deepEqual([lane.android, lane.scripts], [true, true]);
+
+  const document = planFor(['packages/api-client/openapi.json']);
+  assert.equal(document.android, true);
+  assert.equal(document.web, 'all');
+});
+
 test('each step is planned from the files changed since its own green run', () => {
   // The server tests passed after the server change; the browser tests have not passed since before it.
   const plan = planSteps({
@@ -227,6 +242,7 @@ test('each step is planned from the files changed since its own green run', () =
     scripts: [],
     server: [],
     web: ['apps/web/src/DiversPage.tsx'],
+    android: [],
     e2e: ['apps/server/src/sites/routes.ts', 'apps/web/src/DiversPage.tsx', 'apps/web/e2e/sites.spec.ts'],
   });
   assert.equal(plan.typecheck, true);
@@ -240,11 +256,11 @@ test('each step is planned from the files changed since its own green run', () =
 });
 
 test('a note about running more is given only for the steps it widened', () => {
-  const plan = planSteps({ typecheck: [], lint: [], scripts: [], server: ['apps/web/src/api.ts'], web: [], e2e: [] });
+  const plan = planSteps({ typecheck: [], lint: [], scripts: [], server: ['apps/web/src/api.ts'], web: [], android: [], e2e: [] });
   assert.equal(plan.e2e, 'none');
   assert.deepEqual(plan.notes, []);
 
-  const widened = planSteps({ typecheck: [], lint: [], scripts: [], server: [], web: [], e2e: ['apps/web/src/api.ts'] });
+  const widened = planSteps({ typecheck: [], lint: [], scripts: [], server: [], web: [], android: [], e2e: ['apps/web/src/api.ts'] });
   assert.equal(widened.e2e, 'all');
   assert.deepEqual(widened.notes, ['apps/web/src/api.ts is shared web code, so all web tests and all browser tests run']);
 });
@@ -420,13 +436,13 @@ test('browser test setup, helpers and fixtures run no browser tests; typecheck a
 
 test('PR #5 replayed: a change to e2e/support.ts alone plans no browser tests in pnpm check', () => {
   const changed = ['apps/web/e2e/support.ts'];
-  const plan = planSteps(Object.fromEntries(['typecheck', 'lint', 'scripts', 'server', 'web', 'e2e'].map((step) => [step, changed])));
+  const plan = planSteps(Object.fromEntries(['typecheck', 'lint', 'scripts', 'server', 'web', 'android', 'e2e'].map((step) => [step, changed])));
   assert.deepEqual([plan.typecheck, plan.lint, plan.e2e], [true, 'changed', 'none']);
   assert.ok(plan.notes.some((note) => note.includes('apps/web/e2e/support.ts is browser test setup or data')));
 });
 
 test('the check scripts run their own tests only; the lint script also lints everything; one-off scripts and licences are quiet', () => {
-  for (const path of ['scripts/check.mjs', 'scripts/check-lib.mjs', 'scripts/check-lib.test.mjs', 'scripts/check-run.mjs', 'scripts/check-log.mjs', 'scripts/check-tags.mjs', 'scripts/repomap.mjs', 'scripts/repomap.test.mjs', 'scripts/code-graph.mjs', 'scripts/code-graph.test.mjs', 'scripts/release-tag.mjs', 'scripts/release-tag.test.mjs']) {
+  for (const path of ['scripts/check.mjs', 'scripts/check-lib.mjs', 'scripts/check-lib.test.mjs', 'scripts/check-run.mjs', 'scripts/check-log.mjs', 'scripts/check-tags.mjs', 'scripts/repomap.mjs', 'scripts/repomap.test.mjs', 'scripts/code-graph.mjs', 'scripts/code-graph.test.mjs', 'scripts/release-tag.mjs', 'scripts/release-tag.test.mjs', 'scripts/generate-android-api.test.mjs']) {
     const plan = planFor([path]);
     assert.deepEqual([plan.scripts, plan.typecheck, plan.lint, plan.server, plan.web, plan.e2e], [true, false, 'none', 'none', 'none', 'none'], path);
   }
@@ -456,12 +472,12 @@ test('the dive number pages run the areas that show them', () => {
 test('packages, the lockfile and configuration still run everything', () => {
   for (const path of ['package.json', 'pnpm-lock.yaml', 'apps/web/vite.config.ts', 'apps/server/tsconfig.json', 'packages/api-client/src/index.ts']) {
     const plan = planFor([path]);
-    assert.deepEqual([plan.server, plan.web, plan.e2e], ['all', 'all', 'all'], path);
+    assert.deepEqual([plan.server, plan.web, plan.android, plan.e2e], ['all', 'all', true, 'all'], path);
   }
 });
 
 test('planSteps passes on what the e2e server loads', () => {
-  const plan = planSteps({ typecheck: [], lint: [], scripts: [], server: [], web: [], e2e: ['apps/server/test/fixtures/ssi/site-checks.ts'] }, { e2eServerLoads: new Set() });
+  const plan = planSteps({ typecheck: [], lint: [], scripts: [], server: [], web: [], android: [], e2e: ['apps/server/test/fixtures/ssi/site-checks.ts'] }, { e2eServerLoads: new Set() });
   assert.equal(plan.e2e, 'none');
 });
 

@@ -83,7 +83,7 @@ export async function buildApp(deps: AppDeps, app: Server = createServer()) {
       info: {
         title: 'Dive Hub API',
         version: '0.6.0',
-        description: 'Sign in with POST /api/auth/sign-in/email (Better Auth); the session cookie authenticates every other call.',
+        description: 'Sign in with POST /api/auth/sign-in/email (Better Auth); the session cookie (web) or the session token as an Authorization bearer (native) authenticates every other call.',
       },
     },
     // A schema added with app.addSchema becomes the component named by its $id (Problem), which routes $ref.

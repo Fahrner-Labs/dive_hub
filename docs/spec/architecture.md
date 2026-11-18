@@ -12,10 +12,10 @@ Decided in [ADR 0004](../decisions/0004-system-architecture.md). Terms follow th
 ## Components
 
 ```
-            ┌──────────────┐   ┌───────────────────┐
-            │  Web client  │   │ Mobile app (later) │  file picker,
-            │  (browser)   │   │                    │  share receiver
-            └──────┬───────┘   └─────────┬──────────┘
+            ┌──────────────┐   ┌─────────────┐
+            │  Web client  │   │ Android app │  file picker,
+            │  (browser)   │   │             │  share receiver
+            └──────┬───────┘   └──────┬──────┘
                    │      HTTPS / JSON API (one API for all clients)
             ┌──────▼─────────────────────▼──────┐
  operator's │            API server             │
@@ -37,7 +37,7 @@ Decided in [ADR 0004](../decisions/0004-system-architecture.md). Terms follow th
 | **API server** | Authentication, authorization (Diver management, Visibility), domain logic, HTTP/JSON API with an OpenAPI description, receiving files, serving the web client's static files. |
 | **Worker** | Background jobs: parse Originals into Recordings, match to Dives (auto-attach, Duplicate candidates), later Pushes and watched folders. Same code and image as the API server; runs in the app process by default, optionally as its own service. |
 | **Web client** | Single-page app; uses only the public API. |
-| **Mobile app** | Later. Type open; uses the same API. |
+| **Android app** | Kotlin + Jetpack Compose in `apps/android`, non-UI code in a Kotlin Multiplatform core ([ADR 0073](../decisions/0073-android-app-in-monorepo-kotlin-compose.md)); uses the same API with bearer tokens ([ADR 0074](../decisions/0074-bearer-tokens-for-native-clients.md)). iOS later. |
 | **PostgreSQL** | All structured data, including Sample series and the job queue. |
 | **File storage** | Originals (unchanged, by content hash) and Media on a mounted volume. |
 
@@ -86,7 +86,7 @@ possible.
 Built-in accounts (e-mail + password) with Better Auth ([ADR 0011](../decisions/0011-better-auth.md)),
 invite-only, first admin from a setup token ([ADR 0012](../decisions/0012-invitations-and-admin-bootstrap.md)).
 Sessions are stored in the database. The web client uses an `HttpOnly`, `SameSite=Lax` cookie on the same origin;
-mobile will use the bearer plugin or the Expo integration. OIDC (Authentik, Authelia, Keycloak, …) is planned for later.
+native clients use the bearer plugin ([ADR 0074](../decisions/0074-bearer-tokens-for-native-clients.md)). OIDC (Authentik, Authelia, Keycloak, …) is planned for later.
 LLM clients reach the MCP endpoint `/mcp` with the key of an AI access instead of a session ([ADR 0035](../decisions/0035-mcp-connector.md)): off until an admin
 switches it on; behind a reverse proxy, `/mcp` must be forwarded like `/api`.
 
