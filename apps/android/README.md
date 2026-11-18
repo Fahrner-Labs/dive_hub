@@ -37,7 +37,7 @@ check mode, then runs `:shared:jvmTest` and `:app:assembleDebug`. `pnpm check:fu
 
 The logbook's offline read store is SQLDelight ([ADR 0075](../../docs/decisions/0075-android-read-store.md)): the schema
 is `shared/src/commonMain/sqldelight/`, the typed facade is `dev.divehub.shared.store.DiveStore`, and the app opens it
-with the Android driver in `app/src/main/kotlin/dev/divehub/android/data/`. The JVM unit tests use the in-memory SQLite
+with the Android driver in `app/src/main/kotlin/dev/divehub/android/database/`. The JVM unit tests use the in-memory SQLite
 driver, so `./gradlew :shared:jvmTest` needs no emulator. Schema changes are numbered `.sqm` migrations.
 
 ## API models

@@ -2,7 +2,7 @@ package dev.divehub.shared.store
 
 /**
  * One row of the offline store's `dive` table: the columns the logbook list and the detail screen read, plus the
- * server's identity/version/tombstone fields the later sync needs (ADR 0075, forward-compat rule 1).
+ * server's identity/version/tombstone fields the later sync and change feed need (ADR 0075).
  *
  * Timestamps are the API's ISO-8601 strings; JSON columns are the API's JSON payloads unchanged, so a client parses
  * them with the generated API models instead of a second hand-written mapping.
@@ -44,6 +44,7 @@ data class Recording(
     val maxDepthM: Double? = null,
     val parser: String,
     val partOf: String? = null,
+    val deletedAt: String? = null,
     val summaryJson: String = "{}",
     val channelsJson: String = "[]",
 )
@@ -78,6 +79,7 @@ data class DiveSite(
     val positionJson: String? = null,
     val countryCode: String? = null,
     val mergedInto: String? = null,
+    val deletedAt: String? = null,
     val payloadJson: String = "{}",
 )
 
@@ -88,6 +90,8 @@ data class Diver(
     val external: Boolean,
     val apneaCounts: Boolean,
     val divesBefore: Long,
+    val mergedInto: String? = null,
+    val deletedAt: String? = null,
     val payloadJson: String = "{}",
 )
 

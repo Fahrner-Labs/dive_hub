@@ -23,7 +23,10 @@ import dev.divehub.shared.store.db.Sync_state
 class DiveStore internal constructor(private val database: DiveHubDatabase) : UserScopedStore {
     private val queries = database.diveHubQueries
 
+    /** The logbook's dive; a tombstone is not part of the logbook (the sync reads [diveIncludingDeleted]). */
     fun dive(id: String): Dive? = queries.selectDiveById(id).executeAsOneOrNull()?.toModel()
+
+    fun diveIncludingDeleted(id: String): Dive? = queries.selectAnyDiveById(id).executeAsOneOrNull()?.toModel()
 
     /** The logbook page, newest start first, without tombstones (the list's normal order). */
     fun dives(limit: Long = DEFAULT_PAGE_SIZE, offset: Long = 0): List<Dive> =
@@ -67,6 +70,9 @@ class DiveStore internal constructor(private val database: DiveHubDatabase) : Us
 
     fun recording(id: String): Recording? = queries.selectRecordingById(id).executeAsOneOrNull()?.toModel()
 
+    fun recordingIncludingDeleted(id: String): Recording? =
+        queries.selectAnyRecordingById(id).executeAsOneOrNull()?.toModel()
+
     fun recordings(diveId: String): List<Recording> =
         queries.selectRecordingsByDive(diveId).executeAsList().map(RecordingRow::toModel)
 
@@ -83,6 +89,7 @@ class DiveStore internal constructor(private val database: DiveHubDatabase) : Us
             maxDepthM = recording.maxDepthM,
             parser = recording.parser,
             partOf = recording.partOf,
+            deletedAt = recording.deletedAt,
             summaryJson = recording.summaryJson,
             channelsJson = recording.channelsJson,
         )
@@ -128,7 +135,12 @@ class DiveStore internal constructor(private val database: DiveHubDatabase) : Us
 
     fun diveSite(id: String): DiveSite? = queries.selectDiveSiteById(id).executeAsOneOrNull()?.toModel()
 
-    fun diveSites(): List<DiveSite> = queries.selectAllDiveSites().executeAsList().map(Dive_site::toModel)
+    fun diveSiteIncludingDeleted(id: String): DiveSite? =
+        queries.selectAnyDiveSiteById(id).executeAsOneOrNull()?.toModel()
+
+    fun diveSites(): List<DiveSite> = queries.selectLiveDiveSites().executeAsList().map(Dive_site::toModel)
+
+    fun allDiveSites(): List<DiveSite> = queries.selectAllDiveSites().executeAsList().map(Dive_site::toModel)
 
     fun upsertDiveSite(site: DiveSite) {
         queries.upsertDiveSite(
@@ -139,13 +151,19 @@ class DiveStore internal constructor(private val database: DiveHubDatabase) : Us
             positionJson = site.positionJson,
             countryCode = site.countryCode,
             mergedInto = site.mergedInto,
+            deletedAt = site.deletedAt,
             payloadJson = site.payloadJson,
         )
     }
 
     fun diver(id: String): Diver? = queries.selectDiverById(id).executeAsOneOrNull()?.toModel()
 
-    fun divers(): List<Diver> = queries.selectAllDivers().executeAsList().map(DiverRow::toModel)
+    fun diverIncludingDeleted(id: String): Diver? =
+        queries.selectAnyDiverById(id).executeAsOneOrNull()?.toModel()
+
+    fun divers(): List<Diver> = queries.selectLiveDivers().executeAsList().map(DiverRow::toModel)
+
+    fun allDivers(): List<Diver> = queries.selectAllDivers().executeAsList().map(DiverRow::toModel)
 
     fun upsertDiver(diver: Diver) {
         queries.upsertDiver(
@@ -155,6 +173,8 @@ class DiveStore internal constructor(private val database: DiveHubDatabase) : Us
             external = diver.external.toLong(),
             apneaCounts = diver.apneaCounts.toLong(),
             divesBefore = diver.divesBefore,
+            mergedInto = diver.mergedInto,
+            deletedAt = diver.deletedAt,
             payloadJson = diver.payloadJson,
         )
     }
@@ -189,9 +209,17 @@ class DiveStore internal constructor(private val database: DiveHubDatabase) : Us
     fun syncState(): SyncState = queries.selectSyncState().executeAsOneOrNull()?.toModel()
         ?: SyncState(schemaVersion = schemaVersion)
 
+    /** The schema version is the store's, never the caller's: it is what [migrate] advances. */
     fun saveSyncState(state: SyncState) {
-        queries.upsertSyncState(state.lastFullSyncAt, state.lastHintAt, state.schemaVersion)
+        queries.upsertSyncState(state.lastFullSyncAt, state.lastHintAt, schemaVersion)
     }
+
+    /**
+     * One write transaction: a sync page and its checkpoint, or any other group that must not half-happen. A throw
+     * inside the block rolls the whole block back.
+     */
+    fun <T> transaction(block: DiveStore.() -> T): T =
+        database.transactionWithResult { this@DiveStore.block() }
 
     /**
      * Forget everything cached for a User: sign-in as someone else and sign-out must leave nothing of the previous
@@ -214,6 +242,14 @@ class DiveStore internal constructor(private val database: DiveHubDatabase) : Us
 
     override suspend fun forget() = wipe()
 
+    /** The schema is the source of truth; a driver may have migrated it before this store opened. */
+    private fun reconcileSchemaVersion() {
+        val state = syncState()
+        if (state.schemaVersion != schemaVersion) {
+            queries.upsertSyncState(state.lastFullSyncAt, state.lastHintAt, schemaVersion)
+        }
+    }
+
     companion object {
         /** The API's list page for the offline meta phase ([ADR 0017]); the store's default page mirrors it. */
         const val DEFAULT_PAGE_SIZE = 200L
@@ -221,7 +257,8 @@ class DiveStore internal constructor(private val database: DiveHubDatabase) : Us
         val schemaVersion: Long get() = DiveHubDatabase.Schema.version
 
         /** Open an existing store. Creating or migrating the schema is the driver owner's job, as in `app/`. */
-        fun open(driver: SqlDriver): DiveStore = DiveStore(DiveHubDatabase(driver))
+        fun open(driver: SqlDriver): DiveStore =
+            DiveStore(DiveHubDatabase(driver)).also(DiveStore::reconcileSchemaVersion)
 
         fun create(driver: SqlDriver): DiveStore {
             DiveHubDatabase.Schema.create(driver)
@@ -230,6 +267,8 @@ class DiveStore internal constructor(private val database: DiveHubDatabase) : Us
 
         fun migrate(driver: SqlDriver, oldVersion: Long, newVersion: Long = schemaVersion) {
             DiveHubDatabase.Schema.migrate(driver, oldVersion, newVersion)
+            val store = DiveStore(DiveHubDatabase(driver))
+            store.saveSyncState(store.syncState())
         }
     }
 }
@@ -275,6 +314,7 @@ private fun RecordingRow.toModel() = Recording(
     maxDepthM = maxDepthM,
     parser = parser,
     partOf = partOf,
+    deletedAt = deletedAt,
     summaryJson = summaryJson,
     channelsJson = channelsJson,
 )
@@ -308,6 +348,7 @@ private fun Dive_site.toModel() = DiveSite(
     positionJson = positionJson,
     countryCode = countryCode,
     mergedInto = mergedInto,
+    deletedAt = deletedAt,
     payloadJson = payloadJson,
 )
 
@@ -318,6 +359,8 @@ private fun DiverRow.toModel() = Diver(
     external = external_.toBoolean(),
     apneaCounts = apneaCounts.toBoolean(),
     divesBefore = divesBefore,
+    mergedInto = mergedInto,
+    deletedAt = deletedAt,
     payloadJson = payloadJson,
 )
 

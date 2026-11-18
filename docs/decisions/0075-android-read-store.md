@@ -21,8 +21,8 @@ a later write path, so its schema must be versioned, migratable and typed rather
 
 Two candidates fit: Room, whose Kotlin Multiplatform support is newer and brings `androidx.room` into
 `commonMain`, and SQLDelight, which is multiplatform-first and compiles SQL to typed Kotlin. The schema also has to
-survive API changes: a synced row carries the server `id`, its `version` where the API exposes one, and `deletedAt`,
-and a later change feed must reuse the same tables.
+survive API changes: rows with server identity keep the server `id`, its `version` where the API has one, and
+`deletedAt`, so a later change feed reuses the same tables.
 
 ## Decision
 - **Use SQLDelight** for the read store. The schema lives as `.sq` files in

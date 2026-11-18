@@ -5,6 +5,7 @@ import dev.divehub.shared.store.db.DiveHubDatabase
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertContains
+import kotlin.test.assertFailsWith
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
@@ -18,7 +19,7 @@ class DiveStoreTest {
 
     private fun newStore(): DiveStore = DiveStore.create(driver)
 
-    private fun dive(
+    private fun testDive(
         id: String = "dive-1",
         diverId: String = "diver-1",
         startsAt: String = "2026-11-01T10:00:00.000Z",
@@ -65,7 +66,7 @@ class DiveStoreTest {
     @Test
     fun `dive round trips every column`() {
         val store = newStore()
-        val expected = dive()
+        val expected = testDive()
 
         store.upsertDive(expected)
 
@@ -75,9 +76,9 @@ class DiveStoreTest {
     @Test
     fun `dive upsert replaces the row wholesale when its version changes`() {
         val store = newStore()
-        store.upsertDive(dive(version = 1))
+        store.upsertDive(testDive(version = 1))
 
-        store.upsertDive(dive(version = 2, startsAt = "2026-11-01T11:00:00.000Z").copy(notes = "Edited"))
+        store.upsertDive(testDive(version = 2, startsAt = "2026-11-01T11:00:00.000Z").copy(notes = "Edited"))
 
         val row = store.dive("dive-1")!!
         assertEquals(2L, row.version)
@@ -89,11 +90,11 @@ class DiveStoreTest {
     @Test
     fun `the logbook page is newest first, paged, and hides tombstones`() {
         val store = newStore()
-        store.upsertDive(dive(id = "old", startsAt = "2026-10-01T10:00:00.000Z"))
-        store.upsertDive(dive(id = "new", startsAt = "2026-11-02T10:00:00.000Z"))
-        store.upsertDive(dive(id = "middle", startsAt = "2026-10-20T10:00:00.000Z"))
+        store.upsertDive(testDive(id = "old", startsAt = "2026-10-01T10:00:00.000Z"))
+        store.upsertDive(testDive(id = "new", startsAt = "2026-11-02T10:00:00.000Z"))
+        store.upsertDive(testDive(id = "middle", startsAt = "2026-10-20T10:00:00.000Z"))
         store.upsertDive(
-            dive(id = "gone", startsAt = "2026-11-03T10:00:00.000Z", deletedAt = "2026-11-04T10:00:00.000Z"),
+            testDive(id = "gone", startsAt = "2026-11-03T10:00:00.000Z", deletedAt = "2026-11-04T10:00:00.000Z"),
         )
 
         assertEquals(listOf("new", "middle"), store.dives(limit = 2).map(Dive::id))
@@ -102,14 +103,25 @@ class DiveStoreTest {
     }
 
     @Test
+    fun `dives with the same start time break ties by id descending`() {
+        val store = newStore()
+        store.upsertDive(testDive(id = "a", startsAt = "2026-11-01T10:00:00.000Z"))
+        store.upsertDive(testDive(id = "b", startsAt = "2026-11-01T10:00:00.000Z"))
+
+        assertEquals(listOf("b", "a"), store.dives().map(Dive::id))
+        assertEquals(listOf("b", "a"), store.allDives().map(Dive::id))
+    }
+
+    @Test
     fun `counts separate live rows from tombstones`() {
         val store = newStore()
-        store.upsertDive(dive(id = "live"))
-        store.upsertDive(dive(id = "gone", deletedAt = "2026-11-04T10:00:00.000Z"))
+        store.upsertDive(testDive(id = "live"))
+        store.upsertDive(testDive(id = "gone", deletedAt = "2026-11-04T10:00:00.000Z"))
 
         assertEquals(1L, store.activeDiveCount())
         assertEquals(2L, store.diveCount())
-        assertNotNull(store.dive("gone"))
+        assertNull(store.dive("gone"))
+        assertNotNull(store.diveIncludingDeleted("gone"))
     }
 
     @Test
@@ -119,6 +131,18 @@ class DiveStoreTest {
         store.upsertRecording(recording(id = "primary", isPrimary = true))
 
         assertEquals(listOf("primary", "part"), store.recordings("dive-1").map(Recording::id))
+    }
+
+    @Test
+    fun `recordings hide tombstones from the logbook read`() {
+        val store = newStore()
+        store.upsertRecording(recording(id = "gone").copy(deletedAt = "2026-11-04T10:00:00.000Z"))
+        store.upsertRecording(recording(id = "live"))
+
+        assertEquals(listOf("live"), store.recordings("dive-1").map(Recording::id))
+        assertNull(store.recording("gone"))
+        assertNotNull(store.recordingIncludingDeleted("gone"))
+        assertEquals(2, store.allRecordings().size)
     }
 
     @Test
@@ -162,7 +186,7 @@ class DiveStoreTest {
     }
 
     @Test
-    fun `dive sites round trip`() {
+    fun `dive sites round trip, with live rows separate from tombstones`() {
         val store = newStore()
         val site = DiveSite(
             id = "site-1",
@@ -171,17 +195,22 @@ class DiveStoreTest {
             waterType = "fresh",
             positionJson = """{"lat":51.2,"lng":-2.4}""",
             countryCode = "GB",
-            mergedInto = null,
+            mergedInto = "site-2",
+            deletedAt = "2026-11-04T10:00:00.000Z",
         )
+        val live = DiveSite(id = "site-2", name = "Live Site")
 
         store.upsertDiveSite(site)
+        store.upsertDiveSite(live)
 
-        assertEquals(site, store.diveSite(site.id))
-        assertEquals(listOf(site), store.diveSites())
+        assertEquals(site, store.diveSiteIncludingDeleted(site.id))
+        assertNull(store.diveSite(site.id))
+        assertEquals(listOf(live), store.diveSites())
+        assertEquals(listOf(live, site), store.allDiveSites())
     }
 
     @Test
-    fun `divers round trip their flags`() {
+    fun `divers round trip their flags, with live rows separate from tombstones`() {
         val store = newStore()
         val diver = Diver(
             id = "diver-1",
@@ -190,12 +219,25 @@ class DiveStoreTest {
             external = false,
             apneaCounts = true,
             divesBefore = 120,
+            mergedInto = "diver-2",
+            deletedAt = "2026-11-04T10:00:00.000Z",
+        )
+        val live = Diver(
+            id = "diver-2",
+            name = "Bob",
+            isOwn = false,
+            external = false,
+            apneaCounts = false,
+            divesBefore = 0,
         )
 
         store.upsertDiver(diver)
+        store.upsertDiver(live)
 
-        assertEquals(diver, store.diver(diver.id))
-        assertEquals(listOf(diver), store.divers())
+        assertEquals(diver, store.diverIncludingDeleted(diver.id))
+        assertNull(store.diver(diver.id))
+        assertEquals(listOf(live), store.divers())
+        assertEquals(listOf(diver, live), store.allDivers())
     }
 
     @Test
@@ -245,7 +287,7 @@ class DiveStoreTest {
     @Test
     fun `wipe clears every table and resets the sync state`() {
         val store = newStore()
-        store.upsertDive(dive())
+        store.upsertDive(testDive())
         store.upsertRecording(recording())
         store.upsertSeries(series("depth", "[]", "[]"))
         store.upsertCylinder(cylinder(position = 1))
@@ -270,22 +312,63 @@ class DiveStoreTest {
     }
 
     @Test
-    fun `migration from v1 to the latest schema is a no-op and keeps the store usable`() {
+    fun `a transaction writes a page and its checkpoint, and rolls both back on failure`() {
         val store = newStore()
-        assertEquals(1L, DiveStore.schemaVersion)
 
-        DiveStore.migrate(driver, oldVersion = 1, newVersion = DiveStore.schemaVersion)
+        store.transaction {
+            upsertDive(testDive(id = "page-1"))
+            saveCheckpoint(
+                SyncCheckpoint("dives", "meta", pageOffset = 200, updatedAt = "2026-11-18T12:00:00.000Z"),
+            )
+        }
+        assertEquals(1L, store.diveCount())
+        assertEquals(200L, store.checkpoint("dives", "meta")!!.pageOffset)
 
-        store.upsertDive(dive())
-        assertEquals("dive-1", store.dive("dive-1")!!.id)
+        assertFailsWith<IllegalStateException> {
+            store.transaction {
+                upsertDive(testDive(id = "page-2"))
+                saveCheckpoint(
+                    SyncCheckpoint("dives", "meta", pageOffset = 400, updatedAt = "2026-11-18T12:01:00.000Z"),
+                )
+                throw IllegalStateException("simulated crash before the checkpoint")
+            }
+        }
+
+        assertEquals(1L, store.diveCount())
+        assertEquals(200L, store.checkpoint("dives", "meta")!!.pageOffset)
+    }
+
+    @Test
+    fun `the store keeps the schema version in sync state, not the caller`() {
+        val store = newStore()
+
+        store.saveSyncState(SyncState(lastFullSyncAt = "2026-11-18T12:00:00.000Z", schemaVersion = 999))
+
         assertEquals(DiveStore.schemaVersion, store.syncState().schemaVersion)
     }
 
     @Test
-    fun `the created schema version is the store's schema version`() {
-        newStore()
+    fun `opening a store reconciles a stale schema version in sync state`() {
+        val store = newStore()
+        store.saveSyncState(SyncState(lastFullSyncAt = "2026-11-18T12:00:00.000Z", schemaVersion = DiveStore.schemaVersion))
+        driver.execute(null, "UPDATE sync_state SET schemaVersion = 999", 0)
+
+        val reopened = DiveStore.open(driver)
+
+        assertEquals(DiveStore.schemaVersion, reopened.syncState().schemaVersion)
+    }
+
+    @Test
+    fun `migration smoke test from v1 to the latest schema keeps the store usable`() {
+        val store = newStore()
         assertEquals(1L, DiveStore.schemaVersion)
         assertContains(DiveHubDatabase.allTableNames(), "sync_checkpoint")
+
+        DiveStore.migrate(driver, oldVersion = 1, newVersion = DiveStore.schemaVersion)
+
+        store.upsertDive(testDive())
+        assertEquals("dive-1", store.dive("dive-1")!!.id)
+        assertEquals(DiveStore.schemaVersion, store.syncState().schemaVersion)
     }
 
     private fun recording(

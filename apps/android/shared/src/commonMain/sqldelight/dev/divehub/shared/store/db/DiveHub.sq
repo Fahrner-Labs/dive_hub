@@ -1,6 +1,7 @@
--- The offline read store, schema v1 (ADR 0075). Every synced row keeps the server id, its version where the API has
--- one, and deletedAt; complex API values stay in JSON columns, identity and ordering fields are real columns.
--- There are deliberately no foreign keys: sync writes pages out of order and keeps tombstones.
+-- The offline read store, schema v1 (ADR 0075). Rows with server identity keep the server id; where the API has a
+-- version, a tombstone or a merge target, the row keeps that too. Complex API values stay in JSON columns, identity
+-- and ordering fields are real columns. There are deliberately no foreign keys: sync writes pages out of order and
+-- keeps tombstones.
 
 CREATE TABLE dive (
     id TEXT NOT NULL PRIMARY KEY,
@@ -39,6 +40,7 @@ CREATE TABLE recording (
     maxDepthM REAL,
     parser TEXT NOT NULL,
     partOf TEXT,
+    deletedAt TEXT,
     summaryJson TEXT NOT NULL DEFAULT '{}',
     channelsJson TEXT NOT NULL DEFAULT '[]'
 );
@@ -74,6 +76,7 @@ CREATE TABLE dive_site (
     positionJson TEXT,
     countryCode TEXT,
     mergedInto TEXT,
+    deletedAt TEXT,
     payloadJson TEXT NOT NULL DEFAULT '{}'
 );
 
@@ -84,6 +87,8 @@ CREATE TABLE diver (
     external INTEGER NOT NULL,
     apneaCounts INTEGER NOT NULL,
     divesBefore INTEGER NOT NULL,
+    mergedInto TEXT,
+    deletedAt TEXT,
     payloadJson TEXT NOT NULL DEFAULT '{}'
 );
 
@@ -112,13 +117,16 @@ CREATE TABLE sync_state (
 );
 
 selectDiveById:
+SELECT * FROM dive WHERE id = ? AND deletedAt IS NULL;
+
+selectAnyDiveById:
 SELECT * FROM dive WHERE id = ?;
 
 selectDivesPage:
-SELECT * FROM dive WHERE deletedAt IS NULL ORDER BY startsAt DESC, id LIMIT :limit OFFSET :offset;
+SELECT * FROM dive WHERE deletedAt IS NULL ORDER BY startsAt DESC, id DESC LIMIT :limit OFFSET :offset;
 
 selectAllDives:
-SELECT * FROM dive ORDER BY startsAt DESC, id;
+SELECT * FROM dive ORDER BY startsAt DESC, id DESC;
 
 selectActiveDiveCount:
 SELECT count(*) FROM dive WHERE deletedAt IS NULL;
@@ -141,19 +149,22 @@ deleteAllDives:
 DELETE FROM dive;
 
 selectRecordingById:
+SELECT * FROM recording WHERE id = ? AND deletedAt IS NULL;
+
+selectAnyRecordingById:
 SELECT * FROM recording WHERE id = ?;
 
 selectRecordingsByDive:
-SELECT * FROM recording WHERE diveId = ? ORDER BY isPrimary DESC, startsAt, id;
+SELECT * FROM recording WHERE diveId = ? AND deletedAt IS NULL ORDER BY isPrimary DESC, startsAt, id;
 
 selectAllRecordings:
 SELECT * FROM recording ORDER BY diveId, isPrimary DESC, startsAt, id;
 
 upsertRecording:
 INSERT OR REPLACE INTO recording(
-    id, diveId, isPrimary, deviceJson, startsAt, durationSeconds, maxDepthM, parser, partOf, summaryJson, channelsJson
+    id, diveId, isPrimary, deviceJson, startsAt, durationSeconds, maxDepthM, parser, partOf, deletedAt, summaryJson, channelsJson
 ) VALUES (
-    :id, :diveId, :isPrimary, :deviceJson, :startsAt, :durationSeconds, :maxDepthM, :parser, :partOf, :summaryJson, :channelsJson
+    :id, :diveId, :isPrimary, :deviceJson, :startsAt, :durationSeconds, :maxDepthM, :parser, :partOf, :deletedAt, :summaryJson, :channelsJson
 );
 
 deleteAllRecordings:
@@ -192,32 +203,44 @@ deleteAllCylinders:
 DELETE FROM cylinder;
 
 selectDiveSiteById:
+SELECT * FROM dive_site WHERE id = ? AND deletedAt IS NULL;
+
+selectAnyDiveSiteById:
 SELECT * FROM dive_site WHERE id = ?;
+
+selectLiveDiveSites:
+SELECT * FROM dive_site WHERE deletedAt IS NULL ORDER BY name, id;
 
 selectAllDiveSites:
 SELECT * FROM dive_site ORDER BY name, id;
 
 upsertDiveSite:
 INSERT OR REPLACE INTO dive_site(
-    id, version, name, waterType, positionJson, countryCode, mergedInto, payloadJson
+    id, version, name, waterType, positionJson, countryCode, mergedInto, deletedAt, payloadJson
 ) VALUES (
-    :id, :version, :name, :waterType, :positionJson, :countryCode, :mergedInto, :payloadJson
+    :id, :version, :name, :waterType, :positionJson, :countryCode, :mergedInto, :deletedAt, :payloadJson
 );
 
 deleteAllDiveSites:
 DELETE FROM dive_site;
 
 selectDiverById:
+SELECT * FROM diver WHERE id = ? AND deletedAt IS NULL;
+
+selectAnyDiverById:
 SELECT * FROM diver WHERE id = ?;
+
+selectLiveDivers:
+SELECT * FROM diver WHERE deletedAt IS NULL ORDER BY name, id;
 
 selectAllDivers:
 SELECT * FROM diver ORDER BY name, id;
 
 upsertDiver:
 INSERT OR REPLACE INTO diver(
-    id, name, isOwn, external, apneaCounts, divesBefore, payloadJson
+    id, name, isOwn, external, apneaCounts, divesBefore, mergedInto, deletedAt, payloadJson
 ) VALUES (
-    :id, :name, :isOwn, :external, :apneaCounts, :divesBefore, :payloadJson
+    :id, :name, :isOwn, :external, :apneaCounts, :divesBefore, :mergedInto, :deletedAt, :payloadJson
 );
 
 deleteAllDivers:
