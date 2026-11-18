@@ -7,7 +7,7 @@ It lives in this repository with its own Gradle build and is **not** a pnpm work
 apps/android/
   app/       Jetpack Compose UI, Material 3, the Android Keystore store
   shared/    Kotlin Multiplatform core, no Android imports: Ktor + kotlinx.serialization, generated API models,
-             the sign-in flow and the token/cache abstractions
+             the sign-in flow, the token/cache abstractions and the SQLDelight offline read store
 ```
 
 `shared/` currently has a JVM target so the Android app can consume it and the unit tests run on the JVM. iOS targets
@@ -32,6 +32,13 @@ cd apps/android
 From the repository root, `pnpm check` runs the Android lane when something under `apps/android/`, the OpenAPI
 document or the API generator changed. The lane is `node scripts/check-android.mjs`: it regenerates the API models in
 check mode, then runs `:shared:jvmTest` and `:app:assembleDebug`. `pnpm check:full` (CI) always runs it.
+
+## Offline store
+
+The logbook's offline read store is SQLDelight ([ADR 0075](../../docs/decisions/0075-android-read-store.md)): the schema
+is `shared/src/commonMain/sqldelight/`, the typed facade is `dev.divehub.shared.store.DiveStore`, and the app opens it
+with the Android driver in `app/src/main/kotlin/dev/divehub/android/data/`. The JVM unit tests use the in-memory SQLite
+driver, so `./gradlew :shared:jvmTest` needs no emulator. Schema changes are numbered `.sqm` migrations.
 
 ## API models
 

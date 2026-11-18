@@ -4,8 +4,10 @@ import android.content.Context
 import dev.divehub.android.auth.KeystoreTokenStore
 import dev.divehub.android.auth.PreferencesInstanceUrlStore
 import dev.divehub.android.auth.UserCacheStore
+import dev.divehub.android.data.AndroidDiveStore
 import dev.divehub.shared.InstanceUrlStore
 import dev.divehub.shared.SessionRepository
+import dev.divehub.shared.store.DiveStore
 import dev.divehub.shared.TokenStore
 import dev.divehub.shared.UserScopedStore
 import io.ktor.client.engine.okhttp.OkHttp
@@ -19,4 +21,7 @@ class AppContainer(context: Context) {
     private val cache: UserScopedStore = UserCacheStore(application)
 
     val session = SessionRepository(OkHttp.create(), tokens, instances, cache)
+
+    /** Opened on first use; the logbook screens read it from D4 on. */
+    val diveStore: DiveStore by lazy { AndroidDiveStore(application).store }
 }

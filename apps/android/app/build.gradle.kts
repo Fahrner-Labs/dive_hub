@@ -42,6 +42,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.ktor.client.okhttp)
+    implementation(libs.sqldelight.android.driver)
 
     debugImplementation(libs.androidx.compose.ui.tooling)
 }
