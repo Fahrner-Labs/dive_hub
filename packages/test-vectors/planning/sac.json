@@ -1,0 +1,320 @@
+{
+  "kernel": "sac",
+  "version": 1,
+  "tolerance": {
+    "relative": 1e-9
+  },
+  "cases": [
+    {
+      "id": "single-air-40min-10m",
+      "input": {
+        "dive": {
+          "durationSeconds": 2400,
+          "avgDepthM": 10
+        },
+        "cylinders": [
+          {
+            "volumeL": 12,
+            "startPressureBar": 201,
+            "endPressureBar": 51,
+            "gas": {
+              "o2": 21,
+              "he": 0
+            }
+          }
+        ]
+      },
+      "expected": {
+        "kernel": {
+          "litresPerMinute": 21.55573862203213,
+          "barPerMinute": 1.875,
+          "surfaceMinutes": 80,
+          "missing": null
+        },
+        "service": {
+          "sac": {
+            "litresPerMinute": 21.56,
+            "barPerMinute": 1.88
+          },
+          "missing": null
+        }
+      }
+    },
+    {
+      "id": "single-air-300-to-101",
+      "input": {
+        "dive": {
+          "durationSeconds": 2400,
+          "avgDepthM": 10
+        },
+        "cylinders": [
+          {
+            "volumeL": 12,
+            "startPressureBar": 301,
+            "endPressureBar": 101,
+            "gas": {
+              "o2": 21,
+              "he": 0
+            }
+          }
+        ]
+      },
+      "expected": {
+        "kernel": {
+          "litresPerMinute": 25.479931329814566,
+          "barPerMinute": 2.5,
+          "surfaceMinutes": 80,
+          "missing": null
+        },
+        "service": {
+          "sac": {
+            "litresPerMinute": 25.48,
+            "barPerMinute": 2.5
+          },
+          "missing": null
+        }
+      }
+    },
+    {
+      "id": "single-trimix",
+      "input": {
+        "dive": {
+          "durationSeconds": 2400,
+          "avgDepthM": 10
+        },
+        "cylinders": [
+          {
+            "volumeL": 12,
+            "startPressureBar": 201,
+            "endPressureBar": 51,
+            "gas": {
+              "o2": 21,
+              "he": 35
+            }
+          }
+        ]
+      },
+      "expected": {
+        "kernel": {
+          "litresPerMinute": 21.21876506625684,
+          "barPerMinute": 1.875,
+          "surfaceMinutes": 80,
+          "missing": null
+        },
+        "service": {
+          "sac": {
+            "litresPerMinute": 21.22,
+            "barPerMinute": 1.88
+          },
+          "missing": null
+        }
+      }
+    },
+    {
+      "id": "two-cylinders",
+      "input": {
+        "dive": {
+          "durationSeconds": 2400,
+          "avgDepthM": 10
+        },
+        "cylinders": [
+          {
+            "volumeL": 12,
+            "startPressureBar": 201,
+            "endPressureBar": 51,
+            "gas": {
+              "o2": 21,
+              "he": 0
+            }
+          },
+          {
+            "volumeL": 7,
+            "startPressureBar": 201,
+            "endPressureBar": 101,
+            "gas": {
+              "o2": 50,
+              "he": 0
+            }
+          }
+        ]
+      },
+      "expected": {
+        "kernel": {
+          "litresPerMinute": 30.132452945237862,
+          "barPerMinute": null,
+          "surfaceMinutes": 80,
+          "missing": null
+        },
+        "service": {
+          "sac": {
+            "litresPerMinute": 30.13,
+            "barPerMinute": null
+          },
+          "missing": null
+        }
+      }
+    },
+    {
+      "id": "untouched-cylinder",
+      "input": {
+        "dive": {
+          "durationSeconds": 2400,
+          "avgDepthM": 10
+        },
+        "cylinders": [
+          {
+            "volumeL": 12,
+            "startPressureBar": 201,
+            "endPressureBar": 51,
+            "gas": {
+              "o2": 21,
+              "he": 0
+            }
+          },
+          {
+            "volumeL": 7,
+            "startPressureBar": 200,
+            "endPressureBar": 200,
+            "gas": {
+              "o2": 21,
+              "he": 0
+            }
+          }
+        ]
+      },
+      "expected": {
+        "kernel": {
+          "litresPerMinute": 21.55573862203213,
+          "barPerMinute": null,
+          "surfaceMinutes": 80,
+          "missing": null
+        },
+        "service": {
+          "sac": {
+            "litresPerMinute": 21.56,
+            "barPerMinute": null
+          },
+          "missing": null
+        }
+      }
+    },
+    {
+      "id": "too-short",
+      "input": {
+        "dive": {
+          "durationSeconds": 899,
+          "avgDepthM": 10
+        },
+        "cylinders": [
+          {
+            "volumeL": 12,
+            "startPressureBar": 200,
+            "endPressureBar": 50,
+            "gas": {
+              "o2": 21,
+              "he": 0
+            }
+          }
+        ]
+      },
+      "expected": {
+        "kernel": {
+          "litresPerMinute": null,
+          "barPerMinute": null,
+          "surfaceMinutes": null,
+          "missing": "too_short"
+        },
+        "service": {
+          "sac": null,
+          "missing": "too_short"
+        }
+      }
+    },
+    {
+      "id": "no-average-depth",
+      "input": {
+        "dive": {
+          "durationSeconds": 2400,
+          "avgDepthM": null
+        },
+        "cylinders": [
+          {
+            "volumeL": 12,
+            "startPressureBar": 200,
+            "endPressureBar": 50,
+            "gas": {
+              "o2": 21,
+              "he": 0
+            }
+          }
+        ]
+      },
+      "expected": {
+        "kernel": {
+          "litresPerMinute": null,
+          "barPerMinute": null,
+          "surfaceMinutes": null,
+          "missing": "no_average_depth"
+        },
+        "service": {
+          "sac": null,
+          "missing": "no_average_depth"
+        }
+      }
+    },
+    {
+      "id": "cylinder-incomplete",
+      "input": {
+        "dive": {
+          "durationSeconds": 2400,
+          "avgDepthM": 10
+        },
+        "cylinders": [
+          {
+            "volumeL": 12,
+            "startPressureBar": 200,
+            "endPressureBar": null,
+            "gas": {
+              "o2": 21,
+              "he": 0
+            }
+          }
+        ]
+      },
+      "expected": {
+        "kernel": {
+          "litresPerMinute": null,
+          "barPerMinute": null,
+          "surfaceMinutes": null,
+          "missing": "cylinder_incomplete"
+        },
+        "service": {
+          "sac": null,
+          "missing": "cylinder_incomplete"
+        }
+      }
+    },
+    {
+      "id": "no-cylinders",
+      "input": {
+        "dive": {
+          "durationSeconds": 2400,
+          "avgDepthM": 10
+        },
+        "cylinders": []
+      },
+      "expected": {
+        "kernel": {
+          "litresPerMinute": null,
+          "barPerMinute": null,
+          "surfaceMinutes": null,
+          "missing": null
+        },
+        "service": {
+          "sac": null,
+          "missing": null
+        }
+      }
+    }
+  ]
+}

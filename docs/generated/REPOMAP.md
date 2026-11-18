@@ -4,7 +4,7 @@
 > `pnpm check` fails when this map is stale. Symbols are ranked by how widely the code references them;
 > each module shows its most-referenced ones (exported symbols rank higher). Search here before walking the tree.
 
-Files: 397 · symbols: 3587 · shown: 253
+Files: 399 · symbols: 3623 · shown: 256
 
 ### server/(root)
 apps/server/src/vocabulary.ts:13 type SiteWaterType
@@ -104,17 +104,18 @@ apps/server/src/dives/recording-units.ts:9 const isUnit
 apps/server/src/dives/weighting.ts:23 const leadTotalKg
 apps/server/src/dives/matching.ts:81 const DAY_MS
 apps/server/src/dives/logbook-service.ts:298 type LogbookService
+apps/server/src/dives/calc/sac.ts:52 fn sacOfDive
 apps/server/src/dives/dive-values.ts:6 iface DiveValues
-apps/server/src/dives/dive-service.ts:87 const nextVersion
-… 303 more symbols in this module
+apps/server/src/dives/calc/real-gas.ts:25 const surfaceLitres
+… 304 more symbols in this module
 
 ### server/equipment
 apps/server/src/equipment/usage.ts:37 fn usageMap
 apps/server/src/equipment/equipment-error.ts:2 class EquipmentError
 apps/server/src/equipment/due.ts:59 const DAY_MS
 apps/server/src/equipment/usage.ts:16 iface Usage
-apps/server/src/equipment/due.ts:36 iface ScheduleDue
 apps/server/src/equipment/due.ts:86 const round
+apps/server/src/equipment/due.ts:36 iface ScheduleDue
 … 93 more symbols in this module
 
 ### server/http
@@ -175,11 +176,13 @@ apps/server/src/planning/planning-error.ts:3 class PlanningError
 apps/server/src/planning/gas.ts:5 iface GasMix
 apps/server/src/planning/gas.ts:44 fn ambientPressureBar
 apps/server/src/planning/gas.ts:15 iface Conditions
+apps/server/src/planning/gas.ts:38 fn modMetres
 apps/server/src/planning/gas-plan.ts:21 type GasRule
+apps/server/src/planning/tissues.ts:28 fn surfaceSaturatedTissues
 apps/server/src/planning/loadings-service.ts:17 const DAY_MS
 apps/server/src/planning/bottom-time-service.ts:22 const round
 apps/server/src/planning/gas-numbers.ts:9 const round
-… 127 more symbols in this module
+… 159 more symbols in this module
 
 ### server/providers
 apps/server/src/providers/registry.ts:70 class ProviderServiceError
@@ -268,9 +271,9 @@ apps/server/src/users/tokens.ts:4 const newToken
 
 ### web/(root)
 apps/web/src/ToolsLead.tsx:45 fn Panel
+apps/web/src/ToolsLead.tsx:54 fn Conditions
 apps/web/src/PushRun.tsx:21 const named
 apps/web/src/CodeScanner.tsx:106 fn CodeScanner
-apps/web/src/ToolsLead.tsx:54 fn Conditions
 apps/web/src/ReviewRows.tsx:52 iface CompareFact
 apps/web/src/ProviderDiveImport.tsx:18 const DIVE_KINDS
 apps/web/src/DiveCodes.tsx:10 fn CodeFigure

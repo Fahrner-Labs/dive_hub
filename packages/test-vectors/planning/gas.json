@@ -1,0 +1,237 @@
+{
+  "kernel": "gas",
+  "version": 1,
+  "tolerance": {
+    "relative": 1e-9
+  },
+  "cases": [
+    {
+      "id": "air-30m-salt",
+      "input": {
+        "o2": 21,
+        "he": 0,
+        "depthM": 30,
+        "water": "salt",
+        "altitudeM": 0,
+        "ppo2Working": 1.4,
+        "ppo2Contingency": 1.6,
+        "oxygenNarcotic": true
+      },
+      "expected": {
+        "kernel": {
+          "surfacePressureBar": 1.01325,
+          "metresPerBar": 9.948450858321252,
+          "ambientPressureBar": 4.028794875,
+          "modWorkingM": 56.24273788994766,
+          "modContingencyM": 65.71745299311077,
+          "bestMixPercent": 34,
+          "eadM": 30,
+          "endM": 30,
+          "hypoxic": false
+        },
+        "service": {
+          "modWorkingM": 56.2,
+          "modContingencyM": 65.7,
+          "hypoxic": false,
+          "atDepth": {
+            "depthM": 30,
+            "ppO2": 0.85,
+            "bestMixPercent": 34,
+            "eadM": 30,
+            "endM": 30
+          }
+        }
+      }
+    },
+    {
+      "id": "ean32-33m-salt",
+      "input": {
+        "o2": 32,
+        "he": 0,
+        "depthM": 33.4,
+        "water": "salt",
+        "altitudeM": 0,
+        "ppo2Working": 1.4,
+        "ppo2Contingency": 1.6,
+        "oxygenNarcotic": true
+      },
+      "expected": {
+        "kernel": {
+          "surfacePressureBar": 1.01325,
+          "metresPerBar": 9.948450858321252,
+          "ambientPressureBar": 4.3705566275,
+          "modWorkingM": 33.44420467296147,
+          "modContingencyM": 39.66198645941225,
+          "bestMixPercent": 32,
+          "eadM": 27.345785491719823,
+          "endM": 33.4,
+          "hypoxic": false
+        },
+        "service": {
+          "modWorkingM": 33.4,
+          "modContingencyM": 39.6,
+          "hypoxic": false,
+          "atDepth": {
+            "depthM": 33.4,
+            "ppO2": 1.4,
+            "bestMixPercent": 32,
+            "eadM": 27.3,
+            "endM": 33.4
+          }
+        }
+      }
+    },
+    {
+      "id": "trimix-21-35-40m-salt",
+      "input": {
+        "o2": 21,
+        "he": 35,
+        "depthM": 40,
+        "water": "salt",
+        "altitudeM": 0,
+        "ppo2Working": 1.4,
+        "ppo2Contingency": 1.6,
+        "oxygenNarcotic": true
+      },
+      "expected": {
+        "kernel": {
+          "surfacePressureBar": 1.01325,
+          "metresPerBar": 9.948450858321252,
+          "ambientPressureBar": 5.0339765,
+          "modWorkingM": 56.24273788994766,
+          "modContingencyM": 65.71745299311077,
+          "bestMixPercent": 27,
+          "eadM": 17.81253956801531,
+          "endM": 22.471906258732098,
+          "hypoxic": false
+        },
+        "service": {
+          "modWorkingM": 56.2,
+          "modContingencyM": 65.7,
+          "hypoxic": false,
+          "atDepth": {
+            "depthM": 40,
+            "ppO2": 1.06,
+            "bestMixPercent": 27,
+            "eadM": 17.8,
+            "endM": 22.5
+          }
+        }
+      }
+    },
+    {
+      "id": "ean36-25m-fresh-900",
+      "input": {
+        "o2": 36,
+        "he": 0,
+        "depthM": 25,
+        "water": "fresh",
+        "altitudeM": 900,
+        "ppo2Working": 1.4,
+        "ppo2Contingency": 1.6,
+        "oxygenNarcotic": false
+      },
+      "expected": {
+        "kernel": {
+          "surfacePressureBar": 0.9097007660811668,
+          "metresPerBar": 10.197162129779283,
+          "ambientPressureBar": 3.3613632660811668,
+          "modWorkingM": 30.379264303383135,
+          "modContingencyM": 36.04435437548274,
+          "bestMixPercent": 41,
+          "eadM": 18.491829202282137,
+          "endM": 18.491829202282137,
+          "hypoxic": false
+        },
+        "service": {
+          "modWorkingM": 30.3,
+          "modContingencyM": 36,
+          "hypoxic": false,
+          "atDepth": {
+            "depthM": 25,
+            "ppO2": 1.21,
+            "bestMixPercent": 41,
+            "eadM": 18.5,
+            "endM": 18.5
+          }
+        }
+      }
+    },
+    {
+      "id": "hypoxic-17-10m-en13319",
+      "input": {
+        "o2": 17,
+        "he": 0,
+        "depthM": 10,
+        "water": "en13319",
+        "altitudeM": 0,
+        "ppo2Working": 1.4,
+        "ppo2Contingency": 1.6,
+        "oxygenNarcotic": true
+      },
+      "expected": {
+        "kernel": {
+          "surfacePressureBar": 1.01325,
+          "metresPerBar": 9.997217774293414,
+          "ambientPressureBar": 2.0135283,
+          "modWorkingM": 72.20034781967236,
+          "modContingencyM": 83.9617804953117,
+          "bestMixPercent": 69,
+          "eadM": 11.019224349863428,
+          "endM": 10,
+          "hypoxic": true
+        },
+        "service": {
+          "modWorkingM": 72.2,
+          "modContingencyM": 83.9,
+          "hypoxic": true,
+          "atDepth": {
+            "depthM": 10,
+            "ppO2": 0.34,
+            "bestMixPercent": 69,
+            "eadM": 11,
+            "endM": 10
+          }
+        }
+      }
+    },
+    {
+      "id": "oxygen-100-5m-salt",
+      "input": {
+        "o2": 100,
+        "he": 0,
+        "depthM": 5,
+        "water": "salt",
+        "altitudeM": 0,
+        "ppo2Working": 1.4,
+        "ppo2Contingency": 1.6,
+        "oxygenNarcotic": true
+      },
+      "expected": {
+        "kernel": {
+          "surfacePressureBar": 1.01325,
+          "metresPerBar": 9.948450858321252,
+          "ambientPressureBar": 1.5158408125,
+          "modWorkingM": 3.8475633694557434,
+          "modContingencyM": 5.8372535411199955,
+          "bestMixPercent": 92,
+          "eadM": -10.080267832194009,
+          "endM": 5.000000000000001,
+          "hypoxic": false
+        },
+        "service": {
+          "modWorkingM": 3.8,
+          "modContingencyM": 5.8,
+          "hypoxic": false,
+          "atDepth": {
+            "depthM": 5,
+            "ppO2": 1.52,
+            "bestMixPercent": 92,
+            "eadM": -10.1,
+            "endM": 5
+          }
+        }
+      }
+    }
+  ]
+}
