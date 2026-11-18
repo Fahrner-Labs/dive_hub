@@ -50,7 +50,12 @@ export async function authHandler(app: FastifyInstance, { auth }: { auth: Auth }
         ...(typeof request.body === 'string' && request.body.length > 0 && { body: request.body }),
       }));
       reply.status(response.status);
+      // The bearer plugin adds `set-auth-token` whenever a response sets the session cookie. A browser sign-in must
+      // not hand same-origin JavaScript the HttpOnly session token (ADR 0011), so forward it only to a native-shaped
+      // request: no cookie and no Origin/Referer (ADR 0074). The browser keeps its cookie; a native client reads this.
+      const native = !request.headers.cookie && !request.headers.origin && !request.headers.referer;
       for (const [key, value] of response.headers) {
+        if (key === 'set-auth-token' && !native) continue;
         if (key !== 'set-cookie' && key !== 'content-length' && key !== 'content-encoding') reply.header(key, value);
       }
       forwardCookies(response.headers, reply);

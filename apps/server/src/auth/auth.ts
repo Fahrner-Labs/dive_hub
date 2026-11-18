@@ -5,6 +5,7 @@ import { createAuthMiddleware } from 'better-auth/api';
 import { admin } from 'better-auth/plugins/admin';
 import { adminAc, defaultAc, userAc } from 'better-auth/plugins/admin/access';
 import { openAPI } from 'better-auth/plugins';
+import { bearer } from 'better-auth/plugins/bearer';
 import { twoFactor } from 'better-auth/plugins/two-factor';
 import { apiKey } from '@better-auth/api-key';
 import type { Db } from '../db/client.js';
@@ -107,6 +108,9 @@ export function createAuth({ db, baseUrl, secret, trustedOrigins = [], rateLimit
       // sign-in with a challenge until a second factor is verified; it also locks an account after
       // repeated wrong codes.
       twoFactor({ issuer: 'Dive Hub' }),
+      // Native clients send the database session's token as `Authorization: Bearer` (ADR 0074): the same session as
+      // the web client's cookie, so revocation, the session list and password changes apply unchanged.
+      bearer(),
       // Only for describing PUBLIC_AUTH_PATHS in our OpenAPI document; its own pages stay off.
       openAPI({ disableDefaultReference: true }),
       apiKey({

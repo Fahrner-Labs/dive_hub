@@ -25,11 +25,11 @@ apps/server/src/assessment/series-rules.ts:113 iface NoFly
 … 80 more symbols in this module
 
 ### server/auth
-apps/server/src/auth/fastify.ts:76 fn userOf
-apps/server/src/auth/auth.ts:145 type Auth
-apps/server/src/auth/fastify.ts:63 fn requireUser
-apps/server/src/auth/fastify.ts:94 fn requireAdmin
-apps/server/src/auth/auth.ts:59 fn createAuth
+apps/server/src/auth/fastify.ts:81 fn userOf
+apps/server/src/auth/auth.ts:149 type Auth
+apps/server/src/auth/fastify.ts:68 fn requireUser
+apps/server/src/auth/fastify.ts:99 fn requireAdmin
+apps/server/src/auth/auth.ts:60 fn createAuth
 apps/server/src/auth/password.ts:11 const MIN_PASSWORD_LENGTH
 … 23 more symbols in this module
 
