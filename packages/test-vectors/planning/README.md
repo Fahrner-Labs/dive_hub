@@ -1,7 +1,9 @@
 # Planning golden vectors
 
 Plain JSON, committed, one file per kernel. The TypeScript kernels generate them and the Kotlin port reads the same
-files, so a change on one side fails until both agree (FAH-268).
+files, so a change on one side fails until both agree (FAH-268). The lead estimate joins the harness from its own
+module (FAH-272): it rounds its own answer (ADR 0031), so `lead-estimate.json`'s `expected.kernel` and
+`expected.service` are the same object.
 
 ## Format
 

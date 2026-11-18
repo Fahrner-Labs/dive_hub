@@ -22,6 +22,7 @@ import kotlinx.serialization.json.int
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import kotlin.time.Instant
 
 class PlanningVectorsTest {
     private val json = Json { ignoreUnknownKeys = true }
@@ -96,6 +97,108 @@ class PlanningVectorsTest {
     private fun assertMissing(path: String, expected: JsonElement?, actual: SacMissing?) {
         if (expected == null || expected is JsonNull) assertNull(actual, path)
         else assertEquals(expected.jsonPrimitive.content, actual?.name, path)
+    }
+
+    // ---- The lead estimate's vectors (FAH-272).
+
+    private fun JsonObject.nullableText(key: String): String? =
+        get(key)?.takeIf { it !is JsonNull }?.jsonPrimitive?.content
+
+    private fun JsonObject.suit(key: String): Suit? = get(key)?.takeIf { it !is JsonNull }?.jsonObject?.let { suit ->
+        Suit(
+            type = SuitType.valueOf(suit.text("type")),
+            thicknessMm = suit.nullableNumber("thicknessMm"),
+            hood = suit["hood"]?.takeIf { it !is JsonNull }?.jsonPrimitive?.boolean,
+            undergarment = suit.nullableText("undergarment")?.let { SuitUndergarment.valueOf(it) },
+        )
+    }
+
+    private fun JsonObject.cylinder(): EstimateCylinder =
+        EstimateCylinder(number("volumeL"), nullableText("material")?.let { CylinderMaterial.valueOf(it) })
+
+    private fun JsonObject.diveCylinder(): EstimateDiveCylinder = EstimateDiveCylinder(
+        volumeL = number("volumeL"),
+        material = nullableText("material")?.let { CylinderMaterial.valueOf(it) },
+        endPressureBar = nullableNumber("endPressureBar"),
+    )
+
+    private fun assertLeadBasis(path: String, actual: EstimateBasis?, expected: JsonElement?, tolerance: Double) {
+        if (expected == null || expected is JsonNull) {
+            assertNull(actual, path)
+            return
+        }
+        val block = expected.jsonObject
+        when (val basis = assertNotNull(actual, path)) {
+            is EstimateBasis.Dives -> {
+                assertEquals("dives", block.text("kind"), "$path.kind")
+                assertClose("$path.personal", basis.personal, block["personal"], tolerance)
+                val dives = block.array("dives")
+                assertEquals(dives.size, basis.dives.size, "$path.dives: length")
+                dives.forEachIndexed { i, element ->
+                    val dive = element.jsonObject
+                    val use = basis.dives[i]
+                    assertEquals(dive.text("id"), use.id, "$path.dives[$i].id")
+                    assertClose("$path.dives[$i].carried", use.carried, dive["carried"], tolerance)
+                    assertClose("$path.dives[$i].needed", use.needed, dive["needed"], tolerance)
+                    assertClose("$path.dives[$i].weight", use.weight, dive["weight"], tolerance)
+                }
+            }
+            is EstimateBasis.RuleOfThumb -> {
+                assertEquals("rule_of_thumb", block.text("kind"), "$path.kind")
+                assertClose("$path.rule", basis.rule, block["rule"], tolerance)
+                assertNullableClose("$path.personalOffset", basis.personalOffset, block["personalOffset"], tolerance)
+                assertEquals(block.getValue("offsetFromSuits").jsonPrimitive.int, basis.offsetFromSuits, "$path.offsetFromSuits")
+            }
+        }
+    }
+
+    private fun assertLeadAdjustments(path: String, actual: List<EstimateAdjustment>, expected: JsonArray, tolerance: Double) {
+        assertEquals(expected.size, actual.size, "$path: length")
+        expected.forEachIndexed { i, element ->
+            val block = element.jsonObject
+            when (val adjustment = actual[i]) {
+                is EstimateAdjustment.Cylinder -> {
+                    assertEquals("cylinder", block.text("kind"), "$path[$i].kind")
+                    assertClose("$path[$i].amount", adjustment.amount, block["amount"], tolerance)
+                }
+                is EstimateAdjustment.Water -> {
+                    assertEquals("water", block.text("kind"), "$path[$i].kind")
+                    assertClose("$path[$i].amount", adjustment.amount, block["amount"], tolerance)
+                    assertEquals(SiteWaterType.valueOf(block.text("water")), adjustment.water, "$path[$i].water")
+                }
+                is EstimateAdjustment.PersonalOffset -> {
+                    assertEquals("personal_offset", block.text("kind"), "$path[$i].kind")
+                    assertClose("$path[$i].amount", adjustment.amount, block["amount"], tolerance)
+                }
+            }
+        }
+    }
+
+    private fun assertLeadMissing(path: String, actual: List<EstimateMissing>, expected: JsonArray) {
+        assertEquals(expected.size, actual.size, "$path: length")
+        expected.forEachIndexed { i, element ->
+            val block = element.jsonObject
+            val missing = actual[i]
+            val kind = when (missing) {
+                is EstimateMissing.BodyWeight -> "body_weight"
+                is EstimateMissing.CylinderMaterial -> "cylinder_material"
+                is EstimateMissing.Cylinder -> "cylinder"
+                is EstimateMissing.SuitThickness -> "suit_thickness"
+                is EstimateMissing.SuitUndergarment -> "suit_undergarment"
+            }
+            assertEquals(kind, block.text("kind"), "$path[$i].kind")
+            if (missing is EstimateMissing.CylinderMaterial) {
+                assertEquals(
+                    block.array("diveIds").map { it.jsonPrimitive.content },
+                    missing.diveIds,
+                    "$path[$i].diveIds",
+                )
+                assertEquals(block.flag("planned"), missing.planned, "$path[$i].planned")
+            }
+            if (missing is EstimateMissing.Cylinder) {
+                assertEquals(block.array("diveIds").map { it.jsonPrimitive.content }, missing.diveIds, "$path[$i].diveIds")
+            }
+        }
     }
 
     @Test
@@ -213,5 +316,58 @@ class PlanningVectorsTest {
             assertNullableClose("service.barPerMinute", rounded.barPerMinute, block["barPerMinute"], tolerance)
         }
         assertMissing("service.missing", expectedService["missing"], service.missing)
+    }
+
+    @Test
+    fun `lead-estimate vectors match the Kotlin port`() = each("lead-estimate") { case, tolerance ->
+        val input = case.obj("input")
+        val dives = input.array("dives").map {
+            val dive = it.jsonObject
+            EstimateDive(
+                id = dive.text("id"),
+                date = Instant.parse(dive.text("date")),
+                leadKg = dive.nullableNumber("leadKg"),
+                feedback = dive["feedback"]?.takeIf { feedback -> feedback !is JsonNull }?.jsonObject?.let { feedback ->
+                    WeightingFeedback(WeightingFelt.valueOf(feedback.text("felt")), feedback.nullableNumber("amountKg"))
+                },
+                suit = dive.suit("suit"),
+                water = dive.nullableText("water")?.let { SiteWaterType.valueOf(it) },
+                cylinders = dive.array("cylinders").map { cylinder -> cylinder.jsonObject.diveCylinder() },
+            )
+        }
+        val planInput = input.obj("plan")
+        val plan = PlannedConditions(
+            water = SiteWaterType.valueOf(planInput.text("water")),
+            suit = assertNotNull(planInput.suit("suit"), "plan.suit"),
+            cylinders = planInput.array("cylinders").map { cylinder -> cylinder.jsonObject.cylinder() },
+        )
+        val result = estimateLead(
+            EstimateInput(
+                dives = dives,
+                bodyWeightKg = input.nullableNumber("bodyWeightKg"),
+                plan = plan,
+                unit = LeadUnit.valueOf(input.text("unit")),
+                today = Instant.parse(input.text("today")),
+            ),
+        )
+        val expected = case.obj("expected").obj("kernel")
+
+        assertEquals(expected.text("unit"), result.unit.name, "unit")
+        assertNullableClose("total", result.total, expected["total"], tolerance)
+        val expectedRange = expected["range"]?.takeIf { it !is JsonNull }?.jsonObject
+        if (expectedRange == null) {
+            assertNull(result.range, "range")
+        } else {
+            val range = assertNotNull(result.range, "range")
+            assertClose("range.low", range.low, expectedRange["low"], tolerance)
+            assertClose("range.high", range.high, expectedRange["high"], tolerance)
+        }
+        assertEquals(expected.text("confidence"), result.confidence.name, "confidence")
+        assertLeadBasis("basis", result.basis, expected["basis"], tolerance)
+        assertLeadAdjustments("adjustments", result.adjustments, expected.array("adjustments"), tolerance)
+        assertLeadMissing("missing", result.missing, expected.array("missing"))
+        val reserve = expected.obj("reserve")
+        assertClose("reserve.bar", result.reserve.bar, reserve["bar"], tolerance)
+        assertEquals(reserve.flag("fromDives"), result.reserve.fromDives, "reserve.fromDives")
     }
 }
