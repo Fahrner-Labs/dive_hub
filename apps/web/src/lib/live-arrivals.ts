@@ -42,6 +42,9 @@ export function useLiveArrivals({
   const [tinted, setTinted] = useState<Set<string>>(new Set());
   const [unseen, setUnseen] = useState<Set<string>>(new Set());
   const anchor = useRef<{ id: string; top: number } | null>(null);
+  // The caller passes a fresh translator each render; reading it through a ref keeps the effect to what changes the data.
+  const countRef = useRef(count);
+  countRef.current = count;
 
   // Every hint batch or connect resync names its Dives; a plain polling refresh has none and trusts the id/total compare.
   useEffect(() => onLiveEvent(() => {
@@ -52,8 +55,9 @@ export function useLiveArrivals({
   useEffect(() => {
     if (!enabled) {
       previous.current = null;
-      setArrived(new Set());
-      setUnseen(new Set());
+      // A reset can run again before the next render; the same empty Set keeps React from re-rendering forever.
+      setArrived((old) => (old.size === 0 ? old : new Set()));
+      setUnseen((old) => (old.size === 0 ? old : new Set()));
       hinted.current = new Set();
       return;
     }
@@ -84,8 +88,8 @@ export function useLiveArrivals({
     if (arrivals.length === 0) return;
     setArrived((old) => new Set([...old, ...arrivals]));
     setUnseen((old) => new Set([...old, ...arrivals]));
-    announce(count(arrivals.length));
-  }, [data, isPlaceholderData, enabled, pageKey, count]);
+    announce(countRef.current(arrivals.length));
+  }, [data, isPlaceholderData, enabled, pageKey]);
 
   // Tint an arrived row the first time it is at least half visible, and drop it from the unseen count then.
   useEffect(() => {
