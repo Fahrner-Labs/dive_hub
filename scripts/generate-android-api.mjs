@@ -21,6 +21,15 @@ const PACKAGE = 'dev.divehub.api.models';
 export const OPERATIONS = [
   { name: 'SignInEmailRequest', path: '/api/auth/sign-in/email', method: 'post', kind: 'request' },
   { name: 'ApiMeGet200Response', path: '/api/me', method: 'get', kind: 'response', status: '200' },
+  { name: 'ApiDivesGet200Response', path: '/api/dives', method: 'get', kind: 'response', status: '200' },
+  // The dive page (slice C2): the Dive itself, its neighbours in the list it was opened from (ADR 0042), and the
+  // Primary recording's samples for the depth profile.
+  { name: 'DiveView', path: '/api/dives/{id}', method: 'get', kind: 'response', status: '200' },
+  { name: 'NeighboursView', path: '/api/dives/{id}/neighbours', method: 'get', kind: 'response', status: '200' },
+  { name: 'RecordingSamplesView', path: '/api/recordings/{id}/samples', method: 'get', kind: 'response', status: '200' },
+  // The logbook names the Providers it is connected to in `not-at-provider` (ADR 0040); only these two fields are used.
+  { name: 'ProviderSummary', path: '/api/providers', method: 'get', kind: 'response', status: '200' },
+  { name: 'ConnectionView', path: '/api/connections', method: 'get', kind: 'response', status: '200' },
 ];
 
 /** Named component schemas the app uses outside an operation body. Refusals decode through the tolerant ApiErrorBody. */
@@ -220,7 +229,12 @@ export function generateModels(document, operations = OPERATIONS, seeds = MODEL_
     if (!document.components.schemas[name]) throw new Error(`unknown model seed ${name}`);
     registerClass(name, document.components.schemas[name]);
   }
-  for (const operation of operations) registerClass(operation.name, schemaAt(document, operation));
+  for (const operation of operations) {
+    const schema = schemaAt(document, operation);
+    // A list operation (ADR 0060's bare arrays) is its item's model: the caller decodes List<operation.name>.
+    if (schema.type === 'array') typeOf(schema.items, operation.name);
+    else registerClass(operation.name, schema);
+  }
 
   return new Map([...classes.keys()].sort().map((name) => [`${name}.kt`, fileFor(classes.get(name))]));
 }

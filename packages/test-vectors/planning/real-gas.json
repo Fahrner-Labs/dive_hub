@@ -1,0 +1,193 @@
+{
+  "kernel": "real-gas",
+  "version": 1,
+  "tolerance": {
+    "relative": 1e-9
+  },
+  "cases": [
+    {
+      "id": "air-12l-200bar",
+      "input": {
+        "gas": {
+          "o2": 21,
+          "he": 0
+        },
+        "volumeL": 12,
+        "bar": 200,
+        "litres": 2400
+      },
+      "expected": {
+        "kernel": {
+          "compressibility": 1.0284103800448,
+          "surfaceLitres": 2333.698732110668,
+          "pressureForLitres": 206.4754260409477
+        },
+        "service": {
+          "surfaceLitres": 2333.7,
+          "pressureForLitres": 206.5
+        }
+      }
+    },
+    {
+      "id": "air-12l-300bar",
+      "input": {
+        "gas": {
+          "o2": 21,
+          "he": 0
+        },
+        "volumeL": 12,
+        "bar": 300,
+        "litres": 3000
+      },
+      "expected": {
+        "kernel": {
+          "compressibility": 1.1060158294012,
+          "surfaceLitres": 3254.926289752155,
+          "pressureForLitres": 269.7780715650415
+        },
+        "service": {
+          "surfaceLitres": 3254.9,
+          "pressureForLitres": 269.8
+        }
+      }
+    },
+    {
+      "id": "trimix-21-35-12l-200bar",
+      "input": {
+        "gas": {
+          "o2": 21,
+          "he": 35
+        },
+        "volumeL": 12,
+        "bar": 200,
+        "litres": 2400
+      },
+      "expected": {
+        "kernel": {
+          "compressibility": 1.0435300672568,
+          "surfaceLitres": 2299.8858157571317,
+          "pressureForLitres": 209.72697231941652
+        },
+        "service": {
+          "surfaceLitres": 2299.9,
+          "pressureForLitres": 209.7
+        }
+      }
+    },
+    {
+      "id": "oxygen-7l-150bar",
+      "input": {
+        "gas": {
+          "o2": 100,
+          "he": 0
+        },
+        "volumeL": 7,
+        "bar": 150,
+        "litres": 900
+      },
+      "expected": {
+        "kernel": {
+          "compressibility": 0.937369463215,
+          "surfaceLitres": 1120.1559696629101,
+          "pressureForLitres": 121.02090261904755
+        },
+        "service": {
+          "surfaceLitres": 1120.2,
+          "pressureForLitres": 121
+        }
+      }
+    },
+    {
+      "id": "helium-12l-200bar",
+      "input": {
+        "gas": {
+          "o2": 0,
+          "he": 100
+        },
+        "volumeL": 12,
+        "bar": 200,
+        "litres": 2400
+      },
+      "expected": {
+        "kernel": {
+          "compressibility": 1.09516798632,
+          "surfaceLitres": 2191.444627654353,
+          "pressureForLitres": 220.9840578375672
+        },
+        "service": {
+          "surfaceLitres": 2191.4,
+          "pressureForLitres": 221
+        }
+      }
+    },
+    {
+      "id": "above-fit-400bar",
+      "input": {
+        "gas": {
+          "o2": 21,
+          "he": 0
+        },
+        "volumeL": 12,
+        "bar": 400,
+        "litres": 2400
+      },
+      "expected": {
+        "kernel": {
+          "compressibility": 1.1570849871777114,
+          "surfaceLitres": 4148.355611896631,
+          "pressureForLitres": 206.4754260409477
+        },
+        "service": {
+          "surfaceLitres": 4148.4,
+          "pressureForLitres": 206.5
+        }
+      }
+    },
+    {
+      "id": "clamped-at-351bar",
+      "input": {
+        "gas": {
+          "o2": 21,
+          "he": 0
+        },
+        "volumeL": 12,
+        "bar": 300,
+        "litres": 5000
+      },
+      "expected": {
+        "kernel": {
+          "compressibility": 1.1060158294012,
+          "surfaceLitres": 3254.926289752155,
+          "pressureForLitres": 351
+        },
+        "service": {
+          "surfaceLitres": 3254.9,
+          "pressureForLitres": 351
+        }
+      }
+    },
+    {
+      "id": "zero-and-negative",
+      "input": {
+        "gas": {
+          "o2": 21,
+          "he": 0
+        },
+        "volumeL": 12,
+        "bar": -50,
+        "litres": -10
+      },
+      "expected": {
+        "kernel": {
+          "compressibility": 1,
+          "surfaceLitres": -600,
+          "pressureForLitres": 0
+        },
+        "service": {
+          "surfaceLitres": -600,
+          "pressureForLitres": 0
+        }
+      }
+    }
+  ]
+}

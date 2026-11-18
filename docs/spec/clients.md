@@ -67,9 +67,13 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   tiles needs its own ADR first (tile source, privacy).
 
 ### Security
-- **Must forget everything about the previous User** when the User changes: after sign-in, sign-out, setup,
-  accepting an Invitation, using a reset link, or ending the current session. Drop every cached response;
-  on a shared device the next person must see nothing. *Web:* `SignedOut.tsx` (`useUserChanged`: `resetQueries`).
+- **Must forget everything about the previous User** when the User changes: on sign-in as someone else, an
+  explicit sign-out (including ending the current session), setup, accepting an Invitation, or using a reset
+  link. Drop every cached response and, on a native client, its read store, so on a shared device the next
+  person sees nothing. *Web:* `SignedOut.tsx` (`useUserChanged`: `resetQueries`).
+  A session that ended elsewhere (signed out from another device, revoked after a lost phone) is not a change of
+  User: the native client's read store stays readable offline as [Offline reads](#offline-reads-native-client)
+  says. That is the one exception; the next User change still wipes it.
 - **Must treat Invitation and password reset tokens as secrets.**
   - They travel in the URL fragment (`#/invite/<token>`, `#/reset/<token>`), never in a query string or a log
     ([ADR 0012](../decisions/0012-invitations-and-admin-bootstrap.md), [ADR 0013](../decisions/0013-account-management.md)).
@@ -148,7 +152,7 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
 - **The Android client identifies itself** on every request with
   `User-Agent: divehub-android/<version>` (the app's release version,
   [ADR 0076](../decisions/0076-api-versioning-policy.md)). The server logs it and, only for a hard break, uses it
-  to answer `client_too_old`: say that the app must be updated, do not retry and do not show sign-in.
+  to answer 400 `client_too_old`: say that the app must be updated, do not retry and do not show sign-in.
 - **Live hints (`GET /api/live`, [ADR 0066](../decisions/0066-live-updates-via-sse-hints.md)).** A client may open
   one `text/event-stream` per signed-in User with the session cookie, or (native) the session token as
   `Authorization: Bearer`; the browser's `EventSource` sends the cookie same-origin. The stream carries only
@@ -212,23 +216,29 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
 ### Offline reads (native client)
 
 V1 of the native client reads offline: phones lose signal where dives are, and the logbook still opens.
-- **The on-device read store is the single source for logbook reads.** While online, the native client syncs the
-  User's logbook, including the profiles, into a local store; every logbook read is served from that store, online
-  or not, and a live hint refreshes it. The API stays the source of truth: an offline read is data as of the last
-  sync, not the "no answer at all" of a request that failed.
+- **The on-device read store is the single source for the logbook reads it holds.** While online, the native
+  client syncs the User's logbook, including the profiles, into a local store; every logbook read the store holds
+  is served from it, online or not, and a live hint refreshes it. The API stays the source of truth: an offline
+  read is data as of the last sync, not the "no answer at all" of a request that failed. A read that needs
+  server-computed data the store does not hold (the stored-fingerprint counts of `changed-since-sent`) is fetched
+  online and never shown from an incomplete store; offline, the client says it is unavailable.
 - **Every offline calculation against synced data shows its age:** "Based on dives synced as of …" with the
   store's last successful sync. A personalized result (the lead estimate, the current loadings, a plan that uses
   the User's own SAC or last dive) says so while the profiles are still syncing, and rests only on the dives that
   are there; it must not wait for the sync to finish.
-- **Offline calculations use the ported kernels, pinned by the shared golden vectors.** A client must not
+- **Offline calculations use the server's own kernels, ported to the shared client module** (KMP core,
+  [ADR 0073](../decisions/0073-android-app-in-monorepo-kotlin-compose.md)) **and pinned by the shared golden
+  vectors** (one fixture per kernel, generated from the server's tests and run by both test suites; see
+  [`packages/test-vectors/planning/`](../../packages/test-vectors/planning/README.md)). A client must not
   reimplement the math: the same inputs give the same values as the server, and the vectors are the proof.
 - **A revoked session keeps the store readable.** When the session has ended, cached data stays readable offline;
   V1 has no offline writes, so nothing is gated. While online, the client shows sign-in, and the logbook returns
-  after signing in. This is not a change of User: an explicit sign-out, or signing in as someone else, still
-  drops the store and every cached response (§1, Security).
-- **The offline failure wording of §2 applies unchanged.** The store answers logbook reads; whatever it cannot
-  answer (a sync, another area, a write) is still said as "no answer at all", not as an unknown error. V1 has no
-  offline writes, so conflicts are not handled offline yet.
+  after signing in. This is the approved V1 trade-off: a lost phone's holder can read the last synced logbook
+  until the device is wiped. It is not a change of User: an explicit sign-out, or signing in as someone else,
+  still drops the store and every cached response (§1, Security).
+- **The offline failure wording of §2 applies unchanged.** The store answers the logbook reads it holds; whatever
+  it cannot answer (a sync, another area, a write, a server-only count) is still said as "no answer at all", not
+  as an unknown error. V1 has no offline writes, so conflicts are not handled offline yet.
 
 ## 3. Area by area
 
@@ -1454,4 +1464,5 @@ Rules that only the web client kept. Both moved to the server on 2026-10-04, so 
   uploads, [architecture](architecture.md#open-questions)).
 - Push notifications for finished Imports: still open.
 - API versions: decided in [ADR 0076](../decisions/0076-api-versioning-policy.md). The v1 API grows additively;
-  a field is never removed or re-typed without an overlap window that serves both forms for at least six months.
+  a field or endpoint is never removed or re-typed without an overlap window that serves both forms for at least
+  six months.

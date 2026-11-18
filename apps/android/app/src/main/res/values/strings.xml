@@ -34,4 +34,133 @@
     <string name="error_no_answer">No answer from the instance. Check the address and your connection.</string>
     <string name="error_server">The instance had a problem. Try again later.</string>
     <string name="error_unknown">Something went wrong. Try again.</string>
+
+    <string name="dive_back">Logbook</string>
+    <string name="dive_title_number">Dive %1$d</string>
+    <string name="dive_position_of">Dive %1$d of %2$d</string>
+    <string name="dive_previous">Previous dive</string>
+    <string name="dive_next">Next dive</string>
+    <string name="dive_previous_unavailable">Previous dive (unavailable)</string>
+    <string name="dive_next_unavailable">Next dive (unavailable)</string>
+
+    <string name="dive_number">Dive number</string>
+    <string name="dive_start">Start</string>
+    <string name="dive_duration">Duration</string>
+    <string name="dive_max_depth">Max depth</string>
+    <string name="dive_avg_depth">Average depth</string>
+    <string name="dive_water_temperature">Water temperature</string>
+    <string name="dive_water_type">Water type</string>
+    <string name="dive_no_water_type">None</string>
+    <string name="dive_water_from_site">Comes from the dive site</string>
+    <string name="dive_water_unknown">Not known for this dive site</string>
+    <string name="dive_choose_site_for_water">Choose a dive site, and the dive takes its water type.</string>
+    <string name="dive_water_mismatch">Your computer was set to %1$s; this site is %2$s.</string>
+    <string name="dive_water_reads_shallow">Its depths read about %1$s %% shallow.</string>
+    <string name="dive_water_reads_deep">Its depths read about %1$s %% deep.</string>
+    <string name="dive_water_reads_off">Its depths may read a little off.</string>
+    <string name="water_fresh">Fresh water</string>
+    <string name="water_salt">Salt water</string>
+    <string name="water_brackish">Brackish water</string>
+    <string name="water_en13319">EN 13319 (1020 kg/m³)</string>
+    <string name="water_custom">Custom density</string>
+    <string name="water_in_sentence_fresh">fresh water</string>
+    <string name="water_in_sentence_salt">salt water</string>
+    <string name="water_in_sentence_brackish">brackish water</string>
+    <string name="water_in_sentence_en13319">EN 13319 (1020 kg/m³)</string>
+    <string name="water_in_sentence_custom">a custom density</string>
+
+    <string name="dive_edited_value">edited · recording: %1$s</string>
+    <string name="dive_time_zone_position">Time zone from where the dive was</string>
+    <string name="dive_time_zone_nearby">Time zone from your dives in the days around it</string>
+    <string name="dive_time_zone_unknown">Time zone unknown: the time is shown as it was logged</string>
+    <string name="dive_time_with_offset">%1$s (%2$s)</string>
+    <string name="dive_start_pattern">EEE d MMM yyyy, HH:mm</string>
+
+    <string name="dive_recordings">Recordings</string>
+    <string name="dive_recording_n">Recording %1$d</string>
+    <string name="dive_primary">primary</string>
+    <string name="dive_computer_water">Water setting on the computer</string>
+    <string name="dive_no_recording">This dive has no recording.</string>
+    <string name="dive_no_recording_from">No recording yet: this dive comes from your %1$s logbook, typed in by hand.</string>
+    <string name="dive_no_recording_next">When you import the dive computer’s file, its recording is added, and its values replace these.</string>
+    <string name="dive_parts">Parts of this recording</string>
+    <string name="dive_recording_line">%1$s · %2$s · %3$s</string>
+
+    <string name="dive_profile">Depth profile</string>
+    <string name="dive_profile_summary">Deepest point %1$s after %2$s; %3$s in total.</string>
+    <string name="dive_profile_temperature">Water %1$s.</string>
+    <string name="dive_profile_temperature_range">%1$s – %2$s</string>
+    <string name="dive_profile_table">Profile as a table</string>
+    <string name="dive_time">Time</string>
+    <string name="dive_depth">Depth</string>
+    <string name="dive_temperature">Temperature</string>
+    <string name="dive_profile_failed">The depth profile couldn’t be drawn.</string>
+    <string name="dive_at_surface">%1$s at the surface</string>
+    <string name="dive_surface_break">Surface break %1$s</string>
+    <string name="dive_temperature_celsius">%1$s °C</string>
+    <string name="dive_temperature_fahrenheit">%1$s °F</string>
+
+    <string name="dive_participants">Participants</string>
+    <string name="dive_participant">%1$s (%2$s)</string>
+    <string name="dive_position">Position</string>
+    <string name="dive_position_value">%1$s, %2$s</string>
+    <string name="dive_position_north">%1$s° N</string>
+    <string name="dive_position_south">%1$s° S</string>
+    <string name="dive_position_east">%1$s° E</string>
+    <string name="dive_position_west">%1$s° W</string>
+
+    <string name="dive_offline">No connection. Check your connection and try again.</string>
+    <string name="dive_retry">Try again</string>
+    <string name="dive_error_not_found">This dive doesn’t exist or isn’t yours.</string>
+
+    <string name="logbook_title">Logbook</string>
+    <string name="logbook_show_only">Show only</string>
+    <string name="logbook_only_no_recording">No recording</string>
+    <string name="logbook_only_no_site">No dive site</string>
+    <string name="logbook_only_with_findings">With findings</string>
+    <string name="logbook_only_not_at_provider">Not in %1$s</string>
+    <string name="logbook_only_changed_since_sent">Changed since sent</string>
+    <string name="provider_some_service">the service</string>
+    <string name="logbook_none">No dives here.</string>
+    <string name="logbook_no_match_filters">No dives match these filters: %1$s.</string>
+    <string name="logbook_show_all">Show all dives</string>
+    <string name="logbook_no_site">No dive site</string>
+    <string name="logbook_no_recording">No recording</string>
+    <string name="logbook_from_provider">from %1$s</string>
+    <string name="logbook_surface_interval">%1$s after the dive before</string>
+    <string name="logbook_with">with %1$s</string>
+    <string name="logbook_depth_metres">%1$s m</string>
+    <string name="logbook_depth_feet">%1$s ft</string>
+    <string name="logbook_day_pattern">EEE d MMM, HH:mm</string>
+    <string name="logbook_month_pattern">LLLL yyyy</string>
+    <string name="logbook_more_people">+%1$d</string>
+    <string name="logbook_duration_minutes">%1$d min</string>
+    <string name="logbook_duration_hours_minutes">%1$d h %2$d min</string>
+    <string name="logbook_previous">Previous page</string>
+    <string name="logbook_next">Next page</string>
+    <string name="logbook_page_of">Page %1$d of %2$d</string>
+    <string name="logbook_offline">No connection. Check your connection and try again.</string>
+    <string name="logbook_retry">Try again</string>
+    <string name="logbook_refresh_failed">The list could not be refreshed.</string>
+    <string name="dive_air">Air</string>
+    <string name="participant_role_buddy">Buddy</string>
+    <string name="participant_role_guide">Guide</string>
+    <string name="participant_role_instructor">Instructor</string>
+
+    <plurals name="logbook_summary">
+        <item quantity="one">%1$s dive · %2$s under water · deepest %3$s</item>
+        <item quantity="other">%1$s dives · %2$s under water · deepest %3$s</item>
+    </plurals>
+    <plurals name="logbook_range">
+        <item quantity="one">%1$d–%2$d of %3$d dive</item>
+        <item quantity="other">%1$d–%2$d of %3$d dives</item>
+    </plurals>
+    <plurals name="logbook_month_figures">
+        <item quantity="one">%1$d dive · %2$s</item>
+        <item quantity="other">%1$d dives · %2$s</item>
+    </plurals>
+    <plurals name="logbook_findings">
+        <item quantity="one">%1$d finding</item>
+        <item quantity="other">%1$d findings</item>
+    </plurals>
 </resources>

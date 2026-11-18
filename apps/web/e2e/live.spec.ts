@@ -48,7 +48,7 @@ test.afterAll(async ({ request }) => {
   await resetDive(request);
 });
 
-test('a background import brings a new Dive into an untouched logbook, tinted as it arrives', { tag: ['@live', '@dives'] }, async ({ page, request }) => {
+test('a background import brings a new Dive into an untouched logbook, tinted as it arrives', { tag: ['@live', '@dives'] }, async ({ page, request }, testInfo) => {
   // The stream must be open before the upload, so the test observes the open channel rather than the first-connect
   // resync racing the Import (FAH-249): the resync is what brings a commit that landed before the stream opened.
   const streamOpen = page.waitForResponse((response) => new URL(response.url()).pathname === '/api/live' && response.status() === 200);
@@ -61,7 +61,11 @@ test('a background import brings a new Dive into an untouched logbook, tinted as
   const before = await page.locator('[data-dive-id]').count();
 
   const started = Date.now();
-  const { done } = await uploadFixture(request, 'live-computer.fit');
+  // The live fixtures start far in the future, so the arriving Dive is always the newest row of this worker's logbook
+  // (other specs leave newer fixture dives there) and is visible without a scroll; the tint only starts when the row
+  // is at least half visible. A retry runs in the same worker and database, and the first attempt's Dive stays: the
+  // same file would import as "unchanged" and never tint, so a retry uploads a file of its own (FAH-262).
+  const { done } = await uploadFixture(request, testInfo.retry === 0 ? 'live-computer.fit' : 'live-computer-3.fit');
   // Let the worker finish in the background too, so its Dive is in `created` for cleanup even if the tint assertion
   // fails; the catch keeps that background copy from surfacing when the test already failed.
   const finished = done();
@@ -73,10 +77,12 @@ test('a background import brings a new Dive into an untouched logbook, tinted as
   await expect(arrivingRow).toHaveCount(1, { timeout: 15_000 });
   const id = await arrivingRow.getAttribute('data-dive-id');
   if (!id) throw new Error('the arriving row has no Dive id');
-  // The row must show up without a reload or a scroll.
+  // Newest first: the row must show up at the top without a reload or a scroll, and be visible enough to tint.
+  await expect(page.locator('[data-dive-id]').first()).toHaveAttribute('data-dive-id', id);
   await expect(page.locator(`[data-dive-id="${id}"]`)).toBeVisible();
   expect(Date.now() - started).toBeLessThan(6_000);
-  expect(await page.locator('[data-dive-id]').count()).toBeGreaterThan(before);
+  // A full first page drops its oldest row instead of growing, so the row above is the proof that it is new.
+  expect(await page.locator('[data-dive-id]').count()).toBeGreaterThanOrEqual(before);
   expect(await finished).toBe(id);
 });
 

@@ -24,6 +24,7 @@ kotlin {
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.kotlinx.io.core)
             implementation(libs.sqldelight.runtime)
+            implementation(libs.kotlinx.datetime)
         }
         commonTest.dependencies {
             implementation(kotlin("test"))
@@ -37,8 +38,14 @@ kotlin {
     }
 }
 
+val planningVectors = rootProject.file("../../packages/test-vectors/planning")
+
 tasks.withType<Test>().configureEach {
     useJUnitPlatform()
+    // The planning golden vectors are shared with the server's kernels (FAH-268). They are a task input too, so a
+    // vectors-only change is not skipped as UP-TO-DATE.
+    inputs.dir(planningVectors).withPropertyName("planningGoldenVectors")
+    systemProperty("divehub.vectors.dir", planningVectors.absolutePath)
 }
 
 sqldelight {

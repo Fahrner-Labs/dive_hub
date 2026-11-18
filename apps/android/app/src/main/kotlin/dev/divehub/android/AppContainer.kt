@@ -9,6 +9,8 @@ import dev.divehub.shared.InstanceUrlStore
 import dev.divehub.shared.SessionRepository
 import dev.divehub.shared.store.DiveStore
 import dev.divehub.shared.TokenStore
+import dev.divehub.shared.dive.DiveRepository
+import dev.divehub.shared.logbook.LogbookRepository
 import dev.divehub.shared.UserScopedStore
 import io.ktor.client.engine.okhttp.OkHttp
 
@@ -24,4 +26,8 @@ class AppContainer(context: Context) {
 
     /** Opened on first use; the logbook screens read it from D4 on. */
     val diveStore: DiveStore by lazy { AndroidDiveStore(application).store }
+
+    /** The logbook's and dive page's read sides share the session's HTTP layer (instance URL and bearer token). */
+    val logbook = LogbookRepository(session.client)
+    val dive = DiveRepository(session.client)
 }

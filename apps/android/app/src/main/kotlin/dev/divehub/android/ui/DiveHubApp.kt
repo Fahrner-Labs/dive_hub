@@ -20,10 +20,13 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -43,16 +46,59 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.divehub.android.R
-import dev.divehub.api.models.UserView
+import dev.divehub.android.ui.dive.DiveDetailRoute
+import dev.divehub.android.ui.dive.DiveDetailViewModel
+import dev.divehub.android.ui.logbook.LogbookRoute
+import dev.divehub.android.ui.logbook.LogbookViewModel
+import dev.divehub.shared.logbook.LogbookPaging
 import dev.divehub.shared.ErrorCodes
 
 @Composable
-fun DiveHubApp(viewModel: MainViewModel) {
+fun DiveHubApp(viewModel: MainViewModel, logbook: LogbookViewModel, dive: DiveDetailViewModel) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    // The open Dive is the app's only navigation state; the logbook keeps its filters underneath and back lands on
+    // the page the Dive is on (ADR 0042).
+    var openDiveId by rememberSaveable { mutableStateOf<String?>(null) }
+    // A sign-out (or another User) drops the logbook's pages with the session (client contract §1 Security).
+    LaunchedEffect(state.user?.id) {
+        if (state.user == null) {
+            logbook.forget()
+            dive.forget()
+            openDiveId = null
+        } else {
+            logbook.start(state.user!!.id)
+            // After process death the id is back but the page was never read in this process.
+            openDiveId?.let(dive::open)
+        }
+    }
+    // ADR 0042: the logbook returns on the page the Dive is on, so stepping across a page boundary stays right.
+    val closeDive = {
+        val page = dive.state.value.neighbours?.position?.let(LogbookPaging::pageOf)
+        if (page != null && page != logbook.state.value.page) logbook.showPage(page)
+        openDiveId = null
+    }
+    BackHandler(enabled = openDiveId != null) { closeDive() }
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         when {
             state.loading -> Loading()
-            state.user != null -> SignedIn(state.user!!, state.busy, viewModel::signOut)
+            state.user != null && openDiveId != null -> DiveDetailRoute(
+                viewModel = dive,
+                units = state.units,
+                onBack = closeDive,
+                onOpenDive = { id ->
+                    dive.openNeighbour(id)
+                    openDiveId = id
+                },
+            )
+            state.user != null -> LogbookRoute(
+                viewModel = logbook,
+                units = state.units,
+                onSignOut = viewModel::signOut,
+                onOpenDive = { id, filters ->
+                    dive.open(id, filters)
+                    openDiveId = id
+                },
+            )
             state.instanceUrl == null -> InstanceForm(state.error, viewModel::useInstance)
             else -> SignInForm(
                 instanceUrl = state.instanceUrl!!,
@@ -216,28 +262,6 @@ private fun PasswordField(
             }
         },
     )
-}
-
-@Composable
-private fun SignedIn(user: UserView, busy: Boolean, onSignOut: () -> Unit) {
-    Column(
-        Modifier
-            .fillMaxSize()
-            .padding(24.dp),
-        verticalArrangement = Arrangement.Center,
-    ) {
-        Text(
-            stringResource(R.string.signed_in_title, user.name),
-            modifier = Modifier.semantics { heading() },
-            style = MaterialTheme.typography.headlineMedium,
-        )
-        Spacer(Modifier.height(8.dp))
-        Text(stringResource(R.string.signed_in_about), style = MaterialTheme.typography.bodyLarge)
-        Spacer(Modifier.height(24.dp))
-        PrimaryButton(onClick = onSignOut, enabled = !busy) {
-            if (busy) Spinner() else Text(stringResource(R.string.sign_out))
-        }
-    }
 }
 
 @Composable
