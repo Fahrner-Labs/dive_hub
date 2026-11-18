@@ -32,6 +32,8 @@ files, so a change on one side fails until both agree (FAH-268).
   documents a looser value.
 - A `null` where a number is expected means infinity: JSON cannot carry `Infinity`, and the NDL and oxygen limit use
   it for "no limit".
+- Two other `null`s mean "absent", not infinity: `turnPressureBar` on a rule that does not turn, and a gas-plan or
+  bottom-time field that needs a Cylinder the case leaves out (`limits.gas`, `ascentPressureBar`).
 
 The kernels compute the gas they are given; the service and UI restrictions (air and nitrox 21–40 %, no helium,
 at most 40 m, the MOD) are not part of the kernel and must be reproduced at the service layer. The trimix and
