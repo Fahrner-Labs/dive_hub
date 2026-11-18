@@ -1,9 +1,10 @@
-// The TypeScript side of the planning golden vectors (FAH-268): every committed vector is recomputed with the
-// reference kernels, so a changed kernel fails until the vectors are deliberately regenerated and reviewed.
+// The TypeScript side of the golden vectors (FAH-268, lead estimate FAH-272): every committed vector is recomputed
+// with the reference kernels, so a changed kernel fails until the vectors are deliberately regenerated and reviewed.
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { VECTOR_KERNELS, evaluateVectorCase, vectorFile, type VectorKernel } from '../src/planning/test-vectors.js';
+import { LEAD_VECTOR_KERNEL, evaluateLeadVectorCase, leadVectorFile } from '../src/lead/test-vectors.js';
+import { VECTOR_KERNELS, evaluateVectorCase, vectorFile } from '../src/planning/test-vectors.js';
 
 const VECTORS = fileURLToPath(new URL('../../../packages/test-vectors/planning/', import.meta.url));
 const DEFAULT_RELATIVE = 1e-9;
@@ -15,7 +16,7 @@ interface VectorFile {
   cases: { id: string; input: unknown; expected: { kernel: unknown; service: unknown } }[];
 }
 
-function readVectors(kernel: VectorKernel): VectorFile {
+function readVectors(kernel: string): VectorFile {
   return JSON.parse(readFileSync(`${VECTORS}${kernel}.json`, 'utf8')) as VectorFile;
 }
 
@@ -59,21 +60,29 @@ function assertMatch(actual: unknown, expected: unknown, path: string, relative:
 }
 
 describe('planning golden vectors', () => {
+  function checkVectors(kernel: string, expectedFile: VectorFile, evaluate: (input: unknown) => { kernel: unknown; service: unknown }) {
+    const file = readVectors(kernel);
+    expect(file, `${kernel}.json is stale; regenerate with src/scripts/write-planning-vectors.ts`).toEqual(expectedFile);
+    expect(file.kernel).toBe(kernel);
+    expect(file.version).toBe(1);
+    expect(file.cases.length).toBeGreaterThan(0);
+    const ids = file.cases.map((c) => c.id);
+    expect(new Set(ids).size, 'case ids are unique').toBe(ids.length);
+    const relative = file.tolerance?.relative ?? DEFAULT_RELATIVE;
+    for (const vector of file.cases) {
+      const actual = evaluate(vector.input);
+      assertMatch(actual.kernel, vector.expected.kernel, `${kernel}/${vector.id}/kernel`, relative);
+      assertMatch(actual.service, vector.expected.service, `${kernel}/${vector.id}/service`, relative);
+    }
+  }
+
   for (const kernel of VECTOR_KERNELS) {
     it(`${kernel} matches the TypeScript kernels`, () => {
-      const file = readVectors(kernel);
-      expect(file, `${kernel}.json is stale; regenerate with src/scripts/write-planning-vectors.ts`).toEqual(vectorFile(kernel));
-      expect(file.kernel).toBe(kernel);
-      expect(file.version).toBe(1);
-      expect(file.cases.length).toBeGreaterThan(0);
-      const ids = file.cases.map((c) => c.id);
-      expect(new Set(ids).size, 'case ids are unique').toBe(ids.length);
-      const relative = file.tolerance?.relative ?? DEFAULT_RELATIVE;
-      for (const vector of file.cases) {
-        const actual = evaluateVectorCase(kernel, vector.input);
-        assertMatch(actual.kernel, vector.expected.kernel, `${kernel}/${vector.id}/kernel`, relative);
-        assertMatch(actual.service, vector.expected.service, `${kernel}/${vector.id}/service`, relative);
-      }
+      checkVectors(kernel, vectorFile(kernel), (input) => evaluateVectorCase(kernel, input));
     });
   }
+
+  it(`${LEAD_VECTOR_KERNEL} matches the TypeScript kernel`, () => {
+    checkVectors(LEAD_VECTOR_KERNEL, leadVectorFile(), evaluateLeadVectorCase);
+  });
 });

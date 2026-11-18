@@ -18,7 +18,7 @@ const MODULE_IMPORTS = {
   equipment: ['divers', 'revisions'],
   // Narrower than plan D8's ['divers', 'dives', 'revisions'] on purpose: the equipment module needs nothing from dives.
   imports: ['divers', 'dives', 'equipment', 'live', 'revisions', 'sites'],
-  lead: ['divers', 'dives'],
+  lead: ['divers', 'dives', 'planning:type'],
   mcp: ['assessment', 'divers', 'dives', 'equipment', 'planning', 'sites'],
   // The loadings endpoint reuses DAN's no-fly rule (series-rules.ts) rather than copying it (ADR 0071).
   planning: ['assessment', 'divers', 'dives'],

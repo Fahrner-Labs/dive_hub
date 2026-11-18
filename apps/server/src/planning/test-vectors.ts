@@ -358,7 +358,8 @@ export function evaluateVectorCase(kernel: VectorKernel, input: unknown): Vector
 }
 
 export interface VectorFile {
-  kernel: VectorKernel;
+  /** The file's kernel name: one of [VECTOR_KERNELS] here, or another kernel's name (FAH-272). */
+  kernel: string;
   version: 1;
   tolerance: { relative: number };
   cases: { id: string; input: unknown; expected: VectorOutcome }[];

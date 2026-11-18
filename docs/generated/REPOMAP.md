@@ -4,7 +4,7 @@
 > `pnpm check` fails when this map is stale. Symbols are ranked by how widely the code references them;
 > each module shows its most-referenced ones (exported symbols rank higher). Search here before walking the tree.
 
-Files: 399 · symbols: 3623 · shown: 256
+Files: 400 · symbols: 3641 · shown: 257
 
 ### server/(root)
 apps/server/src/vocabulary.ts:13 type SiteWaterType
@@ -66,8 +66,8 @@ apps/server/src/certifications/certification-service.ts:120 fn createCertificati
 
 ### server/db
 apps/server/src/db/client.ts:5 type Db
-apps/server/src/db/schema.ts:661 const dive
 apps/server/src/db/client.ts:8 type Queryable
+apps/server/src/db/schema.ts:661 const dive
 apps/server/src/db/client.ts:6 type Tx
 apps/server/src/db/schema.ts:454 const diveSite
 apps/server/src/db/schema.ts:795 const recording
@@ -102,11 +102,11 @@ apps/server/src/dives/assessment-refresh.ts:7 iface AssessmentRefresh
 apps/server/src/dives/provider-port.ts:47 iface DiveWaitingPushes
 apps/server/src/dives/recording-units.ts:9 const isUnit
 apps/server/src/dives/weighting.ts:23 const leadTotalKg
+apps/server/src/dives/weighting.ts:96 iface Suit
 apps/server/src/dives/matching.ts:81 const DAY_MS
 apps/server/src/dives/logbook-service.ts:298 type LogbookService
 apps/server/src/dives/calc/sac.ts:52 fn sacOfDive
 apps/server/src/dives/dive-values.ts:6 iface DiveValues
-apps/server/src/dives/calc/real-gas.ts:25 const surfaceLitres
 … 304 more symbols in this module
 
 ### server/equipment
@@ -141,13 +141,13 @@ apps/server/src/imports/formats/uddf/xml.ts:141 const child
 … 147 more symbols in this module
 
 ### server/lead
-apps/server/src/lead/types.ts:16 iface EstimateDive
+apps/server/src/lead/test-vectors.ts:45 const dive
 apps/server/src/lead/types.ts:7 type LeadUnit
-apps/server/src/lead/types.ts:48 type EstimateBasis
-apps/server/src/lead/lead-service.ts:61 fn createLeadService
+apps/server/src/lead/types.ts:9 iface EstimateCylinder
+apps/server/src/lead/types.ts:16 iface EstimateDive
 apps/server/src/lead/estimate.ts:264 fn estimateLead
-apps/server/src/lead/lead-service.ts:25 fn leadEstimateOf
-… 72 more symbols in this module
+apps/server/src/lead/lead-service.ts:61 fn createLeadService
+… 89 more symbols in this module
 
 ### server/live
 apps/server/src/live/emit.ts:38 fn emitHint
@@ -217,6 +217,7 @@ apps/server/src/revisions/revisions.ts:32 type RevisionCause
 … 5 more symbols in this module
 
 ### server/scripts
+apps/server/src/scripts/write-planning-vectors.ts:9 const write
 apps/server/src/scripts/write-openapi.ts:24 const out
 apps/server/src/scripts/write-openapi.ts:22 const app
 apps/server/src/scripts/write-openapi.ts:17 const services
