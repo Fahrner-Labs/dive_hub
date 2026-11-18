@@ -43,7 +43,7 @@ export function useLiveArrivals({
   const [unseen, setUnseen] = useState<Set<string>>(new Set());
   const anchor = useRef<{ id: string; top: number } | null>(null);
 
-  // Every hint batch or reconnect resync names its Dives; a plain polling refresh has none and trusts the id/total compare.
+  // Every hint batch or connect resync names its Dives; a plain polling refresh has none and trusts the id/total compare.
   useEffect(() => onLiveEvent(() => {
     // The ids are consumed here; the hook's own data effect runs when the refetch lands.
     for (const id of takeHintedDives()) hinted.current.add(id);

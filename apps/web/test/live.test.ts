@@ -32,7 +32,12 @@ class FakeEventSource {
 
 /** A BroadcastChannel that only records what the tab announces. */
 class FakeBroadcastChannel {
+  static instances: FakeBroadcastChannel[] = [];
   readonly messages: unknown[] = [];
+
+  constructor() {
+    FakeBroadcastChannel.instances.push(this);
+  }
 
   addEventListener(): void {}
 
@@ -49,6 +54,7 @@ const locks = {
 
 beforeEach(() => {
   FakeEventSource.instances = [];
+  FakeBroadcastChannel.instances = [];
   vi.stubGlobal('window', new EventTarget());
   vi.stubGlobal('EventSource', FakeEventSource);
   vi.stubGlobal('BroadcastChannel', FakeBroadcastChannel);
@@ -80,6 +86,7 @@ describe('the live channel resync', () => {
     source.emit('open');
     expect(invalidateQueries).toHaveBeenCalledOnce();
     expect(invalidateQueries).toHaveBeenCalledWith(expect.objectContaining({ refetchType: 'active' }));
+    expect(FakeBroadcastChannel.instances[0]?.messages).toContainEqual({ type: 'resync' });
     stop();
   });
 
@@ -89,6 +96,7 @@ describe('the live channel resync', () => {
     source.emit('error');
     source.emit('open');
     expect(invalidateQueries).toHaveBeenCalledTimes(2);
+    expect(FakeBroadcastChannel.instances[0]?.messages.filter((message) => (message as { type?: string }).type === 'resync')).toHaveLength(2);
     stop();
   });
 

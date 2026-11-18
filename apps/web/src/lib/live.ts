@@ -28,7 +28,7 @@ export function pinDive(id: string): () => void {
   };
 }
 
-/** Hears that a pinned Dive changed elsewhere (a hint or a reconnect resync). */
+/** Hears that a pinned Dive changed elsewhere (a hint or a connect resync). */
 export function onDiveChanged(id: string, listener: () => void): () => void {
   const set = changedListeners.get(id) ?? new Set();
   set.add(listener);

@@ -66,8 +66,9 @@ cookie ([ADR 0011](0011-better-auth.md)); jobs are already enqueued in the writi
   `proxy_buffering off`. The sample proxy setup documents this next to the push timeout.
 
 ## Consequences
-- Hints are cheap and idempotent; a missed hint is invisible after the next reconnect, and no
-  event log or replay machinery is needed.
+- Hints are cheap and idempotent; a missed hint is invisible after the next connect, the first
+  included (amended 2026-11-18, [FAH-249](/FAH/issues/FAH-249)), and no event log or replay
+  machinery is needed.
 - Every new background mutation point must emit a hint in its writing transaction, or its screen
   waits for the next poll or reload.
 - The browser holds one persistent HTTP connection per browser; on HTTP/1.1 that counts against
