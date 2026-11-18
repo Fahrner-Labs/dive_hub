@@ -125,7 +125,8 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   - The web client uses the session cookie on the same origin and sends an `Origin` header (Better Auth's CSRF checks).
   - A native client uses bearer tokens ([ADR 0074](../decisions/0074-bearer-tokens-for-native-clients.md),
     [ADR 0011](../decisions/0011-better-auth.md)): the session token as `Authorization: Bearer`, stored on the
-    device (Android Keystore). A native sign-in is an ordinary session: it shows in the session list and ends
+    device (Android Keystore). The sign-in response carries it in the `set-auth-token` header; keep no cookie.
+    A native sign-in is an ordinary session: it shows in the session list and ends
     with "sign out everywhere" or a password change.
   - Only four Better Auth endpoints exist: sign-in, sign-out, get-session, change-password (ADR 0013). AI access
     keys work only at `/mcp`, never for `/api`.
@@ -141,8 +142,9 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
 - **Use the generated client or the OpenAPI document** (`/api/openapi.json`). Its enums are the complete lists
   to translate.
 - **Live hints (`GET /api/live`, [ADR 0066](../decisions/0066-live-updates-via-sse-hints.md)).** A client may open
-  one `text/event-stream` per signed-in User with the session cookie; the browser's `EventSource` sends it
-  same-origin. The stream carries only `event: hint` frames whose `data` is `{ v: 1, kind, id }` — never data
+  one `text/event-stream` per signed-in User with the session cookie, or (native) the session token as
+  `Authorization: Bearer`; the browser's `EventSource` sends the cookie same-origin. The stream carries only
+  `event: hint` frames whose `data` is `{ v: 1, kind, id }` — never data
   or the audience. Kinds: `dive`, `site`, `waitingPush`, `import`, `siteImport`, `pushRun`, `certification`,
   `connection`, `buddySuggestion` (the Review inbox's suggestions: refetch `['buddy-suggestions']` and each card's
   preview). On a hint, refetch the matching queries through the normal API (the web client invalidates their

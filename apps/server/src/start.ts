@@ -24,7 +24,12 @@ export async function start(config: Config) {
   const { db, pool } = createDb(config.databaseUrl);
   // The logger comes first: the Providers and the worker log through it.
   const app = createServer({
-    logger: { level: config.logLevel },
+    logger: {
+      level: config.logLevel,
+      // A native client's bearer token is the session token (ADR 0074). Fastify's request serializer logs no headers
+      // today; this also keeps the token out if one ever adds them.
+      redact: { paths: ['req.headers.authorization'], censor: '[redacted]' },
+    },
     // Reverse proxies whose X-Forwarded-For is believed; none unless configured.
     ...(config.trustedProxies.length > 0 && { trustProxy: config.trustedProxies }),
   });
