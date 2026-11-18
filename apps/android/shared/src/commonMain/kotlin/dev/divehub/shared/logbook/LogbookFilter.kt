@@ -10,10 +10,6 @@ enum class LogbookFilter(val wire: String) {
     NOT_AT_PROVIDER("not-at-provider"),
     CHANGED_SINCE_SENT("changed-since-sent"),
     ;
-
-    companion object {
-        fun fromWire(value: String): LogbookFilter? = entries.find { it.wire == value }
-    }
 }
 
 /** How many Dives this filter would show, whatever filters are pressed (ADR 0040): the counts never narrow. */

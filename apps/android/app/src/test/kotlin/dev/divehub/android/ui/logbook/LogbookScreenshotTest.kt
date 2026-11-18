@@ -63,6 +63,7 @@ class LogbookScreenshotTest {
             DiveHubTheme(darkTheme = false) {
                 LogbookScreen(
                     state = state,
+                    units = "metric",
                     onRefresh = {},
                     onRetry = {},
                     onShowAll = {},

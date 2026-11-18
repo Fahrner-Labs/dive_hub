@@ -51,7 +51,11 @@
     <string name="logbook_from_provider">aus %1$s</string>
     <string name="logbook_surface_interval">%1$s nach dem Tauchgang davor</string>
     <string name="logbook_with">mit %1$s</string>
-    <string name="logbook_depth">%1$s m</string>
+    <string name="logbook_depth_metres">%1$s m</string>
+    <string name="logbook_depth_feet">%1$s ft</string>
+    <string name="logbook_day_pattern">EEE d. MMM, HH:mm</string>
+    <string name="logbook_month_pattern">LLLL yyyy</string>
+    <string name="logbook_more_people">+%1$d</string>
     <string name="logbook_duration_minutes">%1$d Min.</string>
     <string name="logbook_duration_hours_minutes">%1$d Std. %2$d Min.</string>
     <string name="logbook_previous">Vorige Seite</string>

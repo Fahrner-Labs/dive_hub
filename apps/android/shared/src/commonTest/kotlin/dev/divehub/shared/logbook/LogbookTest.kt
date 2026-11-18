@@ -68,7 +68,6 @@ class LogbookPagingTest {
         assertEquals(25, LogbookPaging.offset(2))
         assertEquals(3, LogbookPaging.pageCount(51))
         assertEquals(0, LogbookPaging.pageCount(0))
-        assertEquals(4, LogbookPaging.pageOf(76))
     }
 
     @Test

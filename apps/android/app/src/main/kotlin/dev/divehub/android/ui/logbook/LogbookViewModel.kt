@@ -47,9 +47,23 @@ class LogbookViewModel(private val repository: LogbookRepository) : ViewModel() 
 
     private var loadJob: Job? = null
     private var providers: ProviderDirectory? = null
+    private var loadedFor: String? = null
 
-    init {
+    /** Reads the first page for this User once; a different User (or a sign-in again) starts from nothing. */
+    fun start(userId: String) {
+        if (loadedFor == userId) return
+        loadedFor = userId
+        providers = null
+        _state.value = LogbookUiState()
         load(page = 1, filters = emptySet())
+    }
+
+    /** Forgets everything about the previous User (client contract §1 Security). */
+    fun forget() {
+        loadedFor = null
+        providers = null
+        loadJob?.cancel()
+        _state.value = LogbookUiState()
     }
 
     fun refresh() = load(_state.value.page, _state.value.filters, refreshing = true)

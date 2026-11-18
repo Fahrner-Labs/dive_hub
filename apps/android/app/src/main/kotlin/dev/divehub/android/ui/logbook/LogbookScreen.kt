@@ -28,6 +28,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import android.content.Context
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -50,6 +51,7 @@ import dev.divehub.api.models.ApiDivesGet200ResponseDivesItem
 import dev.divehub.api.models.ApiDivesGet200ResponseDivesItemParticipantsItem
 import dev.divehub.shared.ErrorCodes
 import dev.divehub.shared.logbook.LogbookFilter
+import dev.divehub.shared.logbook.SAME_DAY_SECONDS
 import dev.divehub.shared.logbook.filterChips
 import dev.divehub.shared.logbook.initials
 import dev.divehub.shared.logbook.mixName
@@ -59,10 +61,11 @@ import java.util.Locale
 
 /** The logbook route: the list keeps its page and filters in the view model, not in an address. */
 @Composable
-fun LogbookRoute(viewModel: LogbookViewModel, onSignOut: () -> Unit) {
+fun LogbookRoute(viewModel: LogbookViewModel, units: String?, onSignOut: () -> Unit) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     LogbookScreen(
         state = state,
+        units = units,
         onRefresh = viewModel::refresh,
         onRetry = viewModel::retry,
         onShowAll = viewModel::showAll,
@@ -81,6 +84,7 @@ fun LogbookRoute(viewModel: LogbookViewModel, onSignOut: () -> Unit) {
 @Composable
 fun LogbookScreen(
     state: LogbookUiState,
+    units: String?,
     onRefresh: () -> Unit,
     onRetry: () -> Unit,
     onShowAll: () -> Unit,
@@ -106,7 +110,7 @@ fun LogbookScreen(
                 onRefresh = onRefresh,
                 modifier = modifier,
             ) {
-                LogbookList(state, onRetry, onShowAll, onPage, onToggleFilter)
+                LogbookList(state, units, onRetry, onShowAll, onPage, onToggleFilter)
             }
         }
     }
@@ -166,6 +170,7 @@ private fun Notice(modifier: Modifier, text: String, retry: String, onRetry: () 
 @Composable
 private fun LogbookList(
     state: LogbookUiState,
+    units: String?,
     onRetry: () -> Unit,
     onShowAll: () -> Unit,
     onPage: (Int) -> Unit,
@@ -173,6 +178,7 @@ private fun LogbookList(
 ) {
     val context = LocalContext.current
     val locale = context.resources.configuration.locales[0] ?: Locale.getDefault()
+    val imperial = LogbookText.imperial(units, locale)
     val data = state.data ?: return
     val groups = monthGroups(data.dives, data.months)
     val scaleM = sketchScale(data.totals.deepestM)
@@ -181,7 +187,7 @@ private fun LogbookList(
 
     LazyColumn(Modifier.fillMaxSize()) {
         item {
-            Totals(data, locale)
+            Totals(data, locale, imperial)
             if (chips.isNotEmpty()) {
                 Filters(chips, state.providers.connected, onToggleFilter)
             }
@@ -226,7 +232,7 @@ private fun LogbookList(
                 val month = group.month
                 if (month != null) {
                     item(key = "month-$month") {
-                        MonthHead(month, group.figures?.dives, group.figures?.durationSeconds, locale)
+                        MonthHead(context, month, group.figures?.dives, group.figures?.durationSeconds, locale)
                     }
                 }
                 items(group.dives, key = { it.id }) { dive ->
@@ -235,6 +241,7 @@ private fun LogbookList(
                         scaleM = scaleM,
                         providerName = state.providers::nameOf,
                         locale = locale,
+                        imperial = imperial,
                     )
                     HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant)
                 }
@@ -248,13 +255,13 @@ private fun LogbookList(
 }
 
 @Composable
-private fun Totals(data: ApiDivesGet200Response, locale: Locale) {
+private fun Totals(data: ApiDivesGet200Response, locale: Locale, imperial: Boolean) {
     val context = LocalContext.current
     val totals = data.totals
     val text = if (totals.dives == 0) {
         stringResource(R.string.logbook_none)
     } else {
-        val deepest = totals.deepestM?.let { LogbookText.depth(context, it, locale) } ?: "–"
+        val deepest = totals.deepestM?.let { LogbookText.depth(context, it, locale, imperial) } ?: "–"
         context.resources.getQuantityString(
             R.plurals.logbook_summary,
             totals.dives,
@@ -326,8 +333,7 @@ private fun Range(state: LogbookUiState) {
 }
 
 @Composable
-private fun MonthHead(month: String, dives: Int?, durationSeconds: Double?, locale: Locale) {
-    val context = LocalContext.current
+private fun MonthHead(context: Context, month: String, dives: Int?, durationSeconds: Double?, locale: Locale) {
     Row(
         Modifier
             .fillMaxWidth()
@@ -336,7 +342,7 @@ private fun MonthHead(month: String, dives: Int?, durationSeconds: Double?, loca
         verticalAlignment = Alignment.Bottom,
     ) {
         Text(
-            LogbookText.month(month, locale),
+            LogbookText.month(context, month, locale),
             modifier = Modifier.semantics { heading() },
             style = MaterialTheme.typography.titleMedium,
         )
@@ -362,9 +368,10 @@ private fun DiveRow(
     scaleM: Double,
     providerName: (String) -> String,
     locale: Locale,
+    imperial: Boolean,
 ) {
     val context = LocalContext.current
-    val day = LogbookText.diveDay(dive.startsAt, dive.utcOffsetSeconds, locale)
+    val day = LogbookText.diveDay(context, dive.startsAt, dive.utcOffsetSeconds, dive.utcOffsetSource, locale)
     Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp)) {
         Text(
             dive.number?.toString() ?: "–",
@@ -384,7 +391,7 @@ private fun DiveRow(
                 verticalArrangement = Arrangement.spacedBy(2.dp),
             ) {
                 Fact(if (dive.site != null) day else stringResource(R.string.logbook_no_site))
-                Fact(dive.maxDepthM?.let { LogbookText.depth(context, it, locale) } ?: "–")
+                Fact(dive.maxDepthM?.let { LogbookText.depth(context, it, locale, imperial) } ?: "–")
                 Fact(LogbookText.duration(context, dive.durationSeconds))
             }
             FlowRow(
@@ -396,7 +403,7 @@ private fun DiveRow(
                     Fact(stringResource(R.string.logbook_no_recording))
                     dive.fromProvider?.let { Fact(stringResource(R.string.logbook_from_provider, providerName(it))) }
                 }
-                dive.surfaceIntervalSeconds?.takeIf { it < 24 * 3600 }?.let {
+                dive.surfaceIntervalSeconds?.takeIf { it < SAME_DAY_SECONDS }?.let {
                     Fact(stringResource(R.string.logbook_surface_interval, LogbookText.duration(context, it)))
                 }
                 if (dive.findings > 0) {
@@ -442,7 +449,7 @@ private fun Participants(people: List<ApiDivesGet200ResponseDivesItemParticipant
         val more = people.size - 3
         if (more > 0) {
             Text(
-                "+$more",
+                context.getString(R.string.logbook_more_people, more),
                 modifier = Modifier.padding(start = 10.dp),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,

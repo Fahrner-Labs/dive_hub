@@ -16,7 +16,4 @@ object LogbookPaging {
         val to = (page.coerceAtLeast(1) * LOGBOOK_PAGE_SIZE).coerceAtMost(total)
         return from..to
     }
-
-    /** The page that holds a 1-based position (ADR 0042's "back to the logbook"). */
-    fun pageOf(position: Int): Int = if (position <= 0) 1 else (position - 1) / LOGBOOK_PAGE_SIZE + 1
 }
