@@ -48,7 +48,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.divehub.android.R
 import dev.divehub.android.ui.Formats
-import dev.divehub.android.ui.logbook.LogbookText
 import dev.divehub.api.models.DiveView
 import dev.divehub.api.models.DiveViewRecordingsItem
 import dev.divehub.api.models.NeighboursView
@@ -187,7 +186,7 @@ private fun DiveBody(
 ) {
     val context = LocalContext.current
     val locale = context.resources.configuration.locales[0] ?: Locale.getDefault()
-    val imperial = LogbookText.imperial(units, locale)
+    val imperial = Formats.imperial(units, locale)
     val primary = profileRecording(dive.recordings)
 
     LazyColumn(Modifier.fillMaxSize()) {
@@ -198,7 +197,7 @@ private fun DiveBody(
             item { Profile(state, primary, locale, imperial) }
         }
         if (dive.participants.isNotEmpty()) {
-            item { Participants(dive, locale) }
+            item { Participants(dive) }
         }
         dive.position?.let { position ->
             item { Position(position.latitude, position.longitude, locale) }
@@ -595,7 +594,7 @@ private fun TableCell(text: String, modifier: Modifier) {
 }
 
 @Composable
-private fun Participants(dive: DiveView, locale: Locale) {
+private fun Participants(dive: DiveView) {
     val context = LocalContext.current
     SectionHeading(stringResource(R.string.dive_participants))
     Column(Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) {

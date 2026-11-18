@@ -129,6 +129,15 @@ class DiveDetailScreenshotTest {
         capture("dive_surface_breaks.png")
     }
 
+    @Test
+    fun `a failed profile leaves the rest of the page standing`() {
+        render(state(dive = dive(), profileSamples = null, samplesError = "internal_error"))
+        compose.onNodeWithText("Dive 42").assertIsDisplayed()
+        compose.onNode(hasScrollAction()).performScrollToNode(hasText("The instance had a problem. Try again later."))
+        compose.onNodeWithText("The instance had a problem. Try again later.").assertIsDisplayed()
+        capture("dive_profile_failed.png")
+    }
+
     private fun render(state: DiveDetailUiState) {
         compose.setContent {
             DiveHubTheme(darkTheme = false) {
@@ -155,16 +164,20 @@ class DiveDetailScreenshotTest {
             position = 12,
             total = 312,
         ),
+        profileSamples: RecordingSamplesView? = samples(),
+        samplesError: String? = null,
     ) = DiveDetailUiState(
         diveId = dive.id,
         loading = false,
         dive = dive,
         providers = ProviderDirectory(names = mapOf("ssi" to "SSI")),
         neighbours = neighbours,
-        samples = samples(),
+        samples = profileSamples,
+        samplesError = samplesError,
     )
 
     private fun dive(
+        number: Int? = 42,
         overrides: List<String> = emptyList(),
         source: String = "device",
         recordings: List<DiveViewRecordingsItem> = listOf(recording()),
@@ -177,7 +190,7 @@ class DiveDetailScreenshotTest {
         diverId = "diver",
         version = 3,
         values = DiveViewValues(
-            number = 42,
+            number = number,
             startsAt = DiveViewValuesStartsAt("2026-04-02T09:00:00Z", 7200),
             durationSeconds = 3_000.0,
             maxDepthM = 24.3,

@@ -73,7 +73,8 @@ fun DiveHubApp(viewModel: MainViewModel, logbook: LogbookViewModel, dive: DiveDe
     }
     // ADR 0042: the logbook returns on the page the Dive is on, so stepping across a page boundary stays right.
     val closeDive = {
-        dive.state.value.neighbours?.position?.let { logbook.showPage(LogbookPaging.pageOf(it)) }
+        val page = dive.state.value.neighbours?.position?.let(LogbookPaging::pageOf)
+        if (page != null && page != logbook.state.value.page) logbook.showPage(page)
         openDiveId = null
     }
     BackHandler(enabled = openDiveId != null) { closeDive() }

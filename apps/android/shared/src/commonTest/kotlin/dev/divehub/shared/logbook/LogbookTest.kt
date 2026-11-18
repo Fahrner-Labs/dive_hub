@@ -71,6 +71,15 @@ class LogbookPagingTest {
     }
 
     @Test
+    fun `a position says which page shows it`() {
+        assertEquals(1, LogbookPaging.pageOf(1))
+        assertEquals(1, LogbookPaging.pageOf(25))
+        assertEquals(2, LogbookPaging.pageOf(26))
+        assertEquals(13, LogbookPaging.pageOf(312))
+        assertEquals(1, LogbookPaging.pageOf(0))
+    }
+
+    @Test
     fun `a range names the positions a page shows`() {
         assertEquals(1..25, LogbookPaging.range(1, 312))
         assertEquals(301..312, LogbookPaging.range(13, 312))
