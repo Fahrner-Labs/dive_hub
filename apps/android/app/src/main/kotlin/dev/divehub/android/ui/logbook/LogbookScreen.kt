@@ -384,7 +384,7 @@ private fun DiveRow(
                 verticalArrangement = Arrangement.spacedBy(2.dp),
             ) {
                 Fact(if (dive.site != null) day else stringResource(R.string.logbook_no_site))
-                Fact(LogbookText.depth(context, dive.maxDepthM ?: 0.0, locale))
+                Fact(dive.maxDepthM?.let { LogbookText.depth(context, it, locale) } ?: "–")
                 Fact(LogbookText.duration(context, dive.durationSeconds))
             }
             FlowRow(

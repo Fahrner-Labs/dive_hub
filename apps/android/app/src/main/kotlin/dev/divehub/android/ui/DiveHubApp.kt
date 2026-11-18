@@ -42,18 +42,27 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import dev.divehub.android.AppContainer
 import dev.divehub.android.R
 import dev.divehub.android.ui.logbook.LogbookRoute
 import dev.divehub.android.ui.logbook.LogbookViewModel
 import dev.divehub.shared.ErrorCodes
 
 @Composable
-fun DiveHubApp(viewModel: MainViewModel, logbook: LogbookViewModel) {
+fun DiveHubApp(viewModel: MainViewModel, container: AppContainer) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         when {
             state.loading -> Loading()
-            state.user != null -> LogbookRoute(logbook, viewModel::signOut)
+            state.user != null -> {
+                // One logbook per User: a sign-in as someone else must not keep the previous one's pages.
+                val logbook: LogbookViewModel = viewModel(
+                    key = state.user!!.id,
+                    factory = LogbookViewModel.factory(container),
+                )
+                LogbookRoute(logbook, viewModel::signOut)
+            }
             state.instanceUrl == null -> InstanceForm(state.error, viewModel::useInstance)
             else -> SignInForm(
                 instanceUrl = state.instanceUrl!!,
