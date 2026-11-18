@@ -141,6 +141,14 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   - A device value without our word shows as recorded, under "other values from the device".
 - **Use the generated client or the OpenAPI document** (`/api/openapi.json`). Its enums are the complete lists
   to translate.
+- **Ignore what a newer server adds** ([ADR 0076](../decisions/0076-api-versioning-policy.md)): a response may
+  carry fields and a server may serve endpoints a client does not know; leave them alone rather than failing the
+  whole answer. A closed enum gains a value only when its contract already says an unknown value is shown as
+  recorded (the device vocabulary above).
+- **The Android client identifies itself** on every request with
+  `User-Agent: divehub-android/<version>` (the app's release version,
+  [ADR 0076](../decisions/0076-api-versioning-policy.md)). The server logs it and, only for a hard break, uses it
+  to answer `client_too_old`: say that the app must be updated, do not retry and do not show sign-in.
 - **Live hints (`GET /api/live`, [ADR 0066](../decisions/0066-live-updates-via-sse-hints.md)).** A client may open
   one `text/event-stream` per signed-in User with the session cookie, or (native) the session token as
   `Authorization: Bearer`; the browser's `EventSource` sends the cookie same-origin. The stream carries only
@@ -200,6 +208,27 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   *Web:* `lib/providers.ts`, `Connections.tsx`, `ProviderPanel.tsx`.
 - **Use the server's flags for what is allowed** (`canDelete`, `inUse`, `isOwn`, `diveCount`/`deviceCount`, the
   User's `role`). Don't offer what the server would refuse, but never rely on hiding it.
+
+### Offline reads (native client)
+
+V1 of the native client reads offline: phones lose signal where dives are, and the logbook still opens.
+- **The on-device read store is the single source for logbook reads.** While online, the native client syncs the
+  User's logbook, including the profiles, into a local store; every logbook read is served from that store, online
+  or not, and a live hint refreshes it. The API stays the source of truth: an offline read is data as of the last
+  sync, not the "no answer at all" of a request that failed.
+- **Every offline calculation against synced data shows its age:** "Based on dives synced as of …" with the
+  store's last successful sync. A personalized result (the lead estimate, the current loadings, a plan that uses
+  the User's own SAC or last dive) says so while the profiles are still syncing, and rests only on the dives that
+  are there; it must not wait for the sync to finish.
+- **Offline calculations use the ported kernels, pinned by the shared golden vectors.** A client must not
+  reimplement the math: the same inputs give the same values as the server, and the vectors are the proof.
+- **A revoked session keeps the store readable.** When the session has ended, cached data stays readable offline;
+  V1 has no offline writes, so nothing is gated. While online, the client shows sign-in, and the logbook returns
+  after signing in. This is not a change of User: an explicit sign-out, or signing in as someone else, still
+  drops the store and every cached response (§1, Security).
+- **The offline failure wording of §2 applies unchanged.** The store answers logbook reads; whatever it cannot
+  answer (a sync, another area, a write) is still said as "no answer at all", not as an unknown error. V1 has no
+  offline writes, so conflicts are not handled offline yet.
 
 ## 3. Area by area
 
@@ -1415,13 +1444,14 @@ Rules that only the web client kept. Both moved to the server on 2026-10-04, so 
   sends `reason` and `errorCode` only. The detail stays in the database, and the worker logs it
   (`import file failed`).
 
-## Open for the mobile client
+## For the mobile client
 - Authentication: bearer tokens, decided in [ADR 0074](../decisions/0074-bearer-tokens-for-native-clients.md).
   Still open: how a phone finds a self-hosted instance beyond typing its URL at first start.
-- Uploading from the phone: the share sheet, files from a watch app, large account exports (resumable uploads,
-  [architecture](architecture.md#open-questions)).
-- Offline use, sync and conflict handling ([data, sync, upload](../research/2026-10-02-data-sync-upload-auth.md)).
-- Push notifications for finished Imports.
-- **Changing the API once a mobile client ships:** an installed app stays old for months, so a rule for versions or for
-  keeping a field for a while needs an ADR first. Until then, as with `ssiSiteId` and `needsSiteIdFrom` (ADR 0029),
-  there is one way to do a thing and replaced fields go in one step.
+- Offline use: read-only in V1, from the on-device read store ([Offline reads](#offline-reads-native-client)).
+  Offline writes and their conflict handling come later
+  ([data, sync, upload](../research/2026-10-02-data-sync-upload-auth.md)).
+- Uploading from the phone: still open. The share sheet, files from a watch app, large account exports (resumable
+  uploads, [architecture](architecture.md#open-questions)).
+- Push notifications for finished Imports: still open.
+- API versions: decided in [ADR 0076](../decisions/0076-api-versioning-policy.md). The v1 API grows additively;
+  a field is never removed or re-typed without an overlap window that serves both forms for at least six months.
