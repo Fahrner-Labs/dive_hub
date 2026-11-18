@@ -4,12 +4,12 @@
 - cluster-only mode — file stats not available
 
 ## Summary
-- 7365 nodes · 23002 edges · 179 communities (170 shown, 9 thin omitted)
+- 7365 nodes · 23001 edges · 178 communities (170 shown, 8 thin omitted)
 - Extraction: 99% EXTRACTED · 1% INFERRED · 0% AMBIGUOUS · INFERRED: 223 edges (avg confidence: 0.85)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `a649c86e`
+- Built from commit: `9dd4a6a5`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -190,8 +190,7 @@
 - Community 173
 - Community 174
 - Community 175
-- Community 176
-- Community 178
+- Community 177
 
 ## God Nodes (most connected - your core abstractions)
 1. `Notice()` - 204 edges
@@ -220,11 +219,11 @@
 ## Import Cycles
 - None detected.
 
-## Communities (179 total, 9 thin omitted)
+## Communities (178 total, 8 thin omitted)
 
 ### Community 0 - "Community 0"
 Cohesion: 0.02
-Nodes (170): buddySuggestion, diveAssessment, parseHint(), ADR-0013, dumpToolAvailable(), execFileAsync, ADR-0069, Sent (+162 more)
+Nodes (174): account, buddySuggestion, diveAssessment, parseHint(), ADR-0013, ADR-0011, dumpToolAvailable(), execFileAsync (+166 more)
 
 ### Community 1 - "Community 1"
 Cohesion: 0.05
@@ -256,7 +255,7 @@ Nodes (117): EMPTY_SITE_IMPORT_COUNTS, ImportArea, ImportedValues, SiteImportCou
 
 ### Community 8 - "Community 8"
 Cohesion: 0.02
-Nodes (119): account, accountRelations, apikey, rateLimit, session, sessionRelations, ADR-0011, ADR-0012 (+111 more)
+Nodes (117): accountRelations, apikey, rateLimit, session, sessionRelations, ADR-0011, ADR-0012, ADR-0035 (+109 more)
 
 ### Community 9 - "Community 9"
 Cohesion: 0.03
@@ -903,21 +902,21 @@ Cohesion: 0.50
 Nodes (3): match, ADR-0068, values
 
 ## Knowledge Gaps
-- **1178 isolated node(s):** `ADR-0013`, `ADR-0069`, `ADR-0070`, `ADR-0028`, `ADR-0070` (+1173 more)
+- **1178 isolated node(s):** `ADR-0013`, `ADR-0011`, `ADR-0069`, `ADR-0070`, `ADR-0028` (+1173 more)
   These have ≤1 connection - possible missing edges. (Counts symbols only; 2999 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
-- **9 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **8 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `drizzle-orm` connect `Community 8` to `Community 0`, `Community 3`, `Community 4`, `Community 7`, `Community 9`, `Community 11`, `Community 14`, `Community 15`, `Community 16`, `Community 17`, `Community 19`, `Community 148`, `Community 21`, `Community 22`, `Community 23`, `Community 20`, `Community 153`, `Community 26`, `Community 27`, `Community 25`, `Community 30`, `Community 32`, `Community 39`, `Community 46`, `Community 49`, `Community 51`, `Community 66`, `Community 67`, `Community 70`, `Community 71`, `Community 72`, `Community 81`, `Community 87`, `Community 102`, `Community 106`, `Community 115`, `Community 122`?**
   _High betweenness centrality (0.050) - this node is a cross-community bridge._
-- **What connects `ADR-0013`, `ADR-0069`, `ADR-0070` to the rest of the system?**
+- **What connects `ADR-0013`, `ADR-0011`, `ADR-0069` to the rest of the system?**
   _1178 weakly-connected nodes found - possible missing edges._
 - **Should `Community 0` be split into smaller, more focused modules?**
-  _Cohesion score 0.02257936507936508 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.021908526256352343 - nodes in this community are weakly interconnected._
 - **Why does `@tanstack/react-query` connect `Community 18` to `Community 96`, `Community 1`, `Community 2`, `Community 34`, `Community 5`, `Community 6`, `Community 10`, `Community 12`, `Community 77`, `Community 13`, `Community 78`, `Community 52`, `Community 117`?**
-  _High betweenness centrality (0.026) - this node is a cross-community bridge._
+  _High betweenness centrality (0.029) - this node is a cross-community bridge._
 - **Should `Community 1` be split into smaller, more focused modules?**
   _Cohesion score 0.045993269277666685 - nodes in this community are weakly interconnected._
 - **Why does `Auth` connect `Community 28` to `Community 0`, `Community 100`, `Community 58`, `Community 9`, `Community 14`, `Community 46`, `Community 16`, `Community 110`, `Community 19`, `Community 53`, `Community 24`, `Community 26`, `Community 127`?**
