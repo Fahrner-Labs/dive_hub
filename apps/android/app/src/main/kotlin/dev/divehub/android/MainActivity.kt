@@ -10,6 +10,7 @@ import dev.divehub.android.ui.DiveHubTheme
 import dev.divehub.android.ui.MainViewModel
 import dev.divehub.android.ui.dive.DiveDetailViewModel
 import dev.divehub.android.ui.logbook.LogbookViewModel
+import dev.divehub.android.ui.tools.ToolsViewModel
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -21,7 +22,8 @@ class MainActivity : ComponentActivity() {
                 val viewModel: MainViewModel = viewModel(factory = MainViewModel.factory(container))
                 val logbook: LogbookViewModel = viewModel(factory = LogbookViewModel.factory(container))
                 val dive: DiveDetailViewModel = viewModel(factory = DiveDetailViewModel.factory(container))
-                DiveHubApp(viewModel, logbook, dive)
+                val tools: ToolsViewModel = viewModel(factory = ToolsViewModel.factory(container))
+                DiveHubApp(viewModel, logbook, dive, tools)
             }
         }
     }

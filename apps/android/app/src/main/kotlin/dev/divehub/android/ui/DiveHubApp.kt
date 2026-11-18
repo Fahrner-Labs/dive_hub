@@ -50,21 +50,26 @@ import dev.divehub.android.ui.dive.DiveDetailRoute
 import dev.divehub.android.ui.dive.DiveDetailViewModel
 import dev.divehub.android.ui.logbook.LogbookRoute
 import dev.divehub.android.ui.logbook.LogbookViewModel
+import dev.divehub.android.ui.tools.ToolsRoute
+import dev.divehub.android.ui.tools.ToolsViewModel
 import dev.divehub.shared.logbook.LogbookPaging
 import dev.divehub.shared.ErrorCodes
 
 @Composable
-fun DiveHubApp(viewModel: MainViewModel, logbook: LogbookViewModel, dive: DiveDetailViewModel) {
+fun DiveHubApp(viewModel: MainViewModel, logbook: LogbookViewModel, dive: DiveDetailViewModel, tools: ToolsViewModel) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     // The open Dive is the app's only navigation state; the logbook keeps its filters underneath and back lands on
     // the page the Dive is on (ADR 0042).
     var openDiveId by rememberSaveable { mutableStateOf<String?>(null) }
+    var showTools by rememberSaveable { mutableStateOf(false) }
     // A sign-out (or another User) drops the logbook's pages with the session (client contract §1 Security).
     LaunchedEffect(state.user?.id) {
         if (state.user == null) {
             logbook.forget()
             dive.forget()
+            tools.forget()
             openDiveId = null
+            showTools = false
         } else {
             logbook.start(state.user!!.id)
             // After process death the id is back but the page was never read in this process.
@@ -78,6 +83,7 @@ fun DiveHubApp(viewModel: MainViewModel, logbook: LogbookViewModel, dive: DiveDe
         openDiveId = null
     }
     BackHandler(enabled = openDiveId != null) { closeDive() }
+    BackHandler(enabled = openDiveId == null && showTools) { showTools = false }
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         when {
             state.loading -> Loading()
@@ -90,10 +96,16 @@ fun DiveHubApp(viewModel: MainViewModel, logbook: LogbookViewModel, dive: DiveDe
                     openDiveId = id
                 },
             )
+            state.user != null && showTools -> ToolsRoute(
+                viewModel = tools,
+                units = state.units,
+                onBack = { showTools = false },
+            )
             state.user != null -> LogbookRoute(
                 viewModel = logbook,
                 units = state.units,
                 onSignOut = viewModel::signOut,
+                onOpenTools = { showTools = true },
                 onOpenDive = { id, filters ->
                     dive.open(id, filters)
                     openDiveId = id

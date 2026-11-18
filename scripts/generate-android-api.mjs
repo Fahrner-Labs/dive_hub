@@ -30,6 +30,9 @@ export const OPERATIONS = [
   // The logbook names the Providers it is connected to in `not-at-provider` (ADR 0040); only these two fields are used.
   { name: 'ProviderSummary', path: '/api/providers', method: 'get', kind: 'response', status: '200' },
   { name: 'ConnectionView', path: '/api/connections', method: 'get', kind: 'response', status: '200' },
+  // The offline tools (slice U1): their answers are the contract the phone's service layer shapes to.
+  { name: 'ApiToolsGasGet200Response', path: '/api/tools/gas', method: 'get', kind: 'response', status: '200' },
+  { name: 'ApiToolsBottomTimeGet200Response', path: '/api/tools/bottom-time', method: 'get', kind: 'response', status: '200' },
 ];
 
 /** Named component schemas the app uses outside an operation body. Refusals decode through the tolerant ApiErrorBody. */
@@ -160,6 +163,8 @@ export function generateModels(document, operations = OPERATIONS, seeds = MODEL_
 
   function typeOf(rawSchema, hint) {
     if (!rawSchema) return { type: 'JsonElement', nullable: true };
+    // `allOf` is one object also when it sits in a property (the tools' `sacLpm`): merge before typing it.
+    if (rawSchema.allOf) return typeOf(flattenSchema(document, rawSchema), hint);
     if (rawSchema.$ref) {
       const referenced = rawSchema.$ref.split('/').pop();
       if (!usedNames.has(className(referenced))) registerClass(referenced, document.components.schemas[referenced]);

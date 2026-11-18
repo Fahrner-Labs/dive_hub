@@ -66,6 +66,7 @@ fun LogbookRoute(
     viewModel: LogbookViewModel,
     units: String?,
     onSignOut: () -> Unit,
+    onOpenTools: () -> Unit,
     onOpenDive: (String, Set<LogbookFilter>) -> Unit,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -78,6 +79,7 @@ fun LogbookRoute(
         onPage = viewModel::showPage,
         onToggleFilter = viewModel::toggle,
         onSignOut = onSignOut,
+        onOpenTools = onOpenTools,
         onOpenDive = { dive -> onOpenDive(dive.id, state.filters) },
     )
 }
@@ -98,13 +100,17 @@ fun LogbookScreen(
     onPage: (Int) -> Unit,
     onToggleFilter: (LogbookFilter) -> Unit,
     onSignOut: () -> Unit,
+    onOpenTools: () -> Unit,
     onOpenDive: (ApiDivesGet200ResponseDivesItem) -> Unit,
 ) {
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.logbook_title)) },
-                actions = { TextButton(onClick = onSignOut) { Text(stringResource(R.string.sign_out)) } },
+                actions = {
+                    TextButton(onClick = onOpenTools) { Text(stringResource(R.string.tools_title)) }
+                    TextButton(onClick = onSignOut) { Text(stringResource(R.string.sign_out)) }
+                },
             )
         },
     ) { padding ->
