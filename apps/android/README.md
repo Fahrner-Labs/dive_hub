@@ -154,8 +154,8 @@ OpenAPI models for `GET /api/tools/gas` and `GET /api/tools/bottom-time` are the
 
 - The notice is above the inputs and every answer repeats it: an estimate, not advice.
 - The User's own Diver comes from the synced store: the GF high from their latest Recording, the planning SAC from
-  their Dives (with `basedOn`), and a Dive within the last 48 hours. Without a sync the screen says so as an empty
-  state and the numbers use only what is typed.
+  their Dives (with `basedOn`), and a Dive within the last 48 hours. A personalized answer says "Based on dives synced
+  as of …"; without a sync the screen says so as an empty state and the numbers use only what is typed.
 - Residual nitrogen is **not** seeded offline yet: `residualN2` is null and the recent-Dive notice says the limit
   starts from clean tissues. `recentDiveEndedAt` and the rest of the shape match the API.
 - `outside_limits` shows the reason and the MOD, never a number; MODs are rounded down to 0.1 m, never up.

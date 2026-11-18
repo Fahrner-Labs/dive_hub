@@ -232,7 +232,6 @@
     <string name="tools_bottom_reason_mod">The plan is beyond the MOD of %1$s at the contingency ppO2.</string>
     <string name="tools_bottom_reason_gas">The mix is not air or nitrox 21–40 %.</string>
     <string name="tools_bottom_recent">A dive ended %1$s, within 48 hours. This limit starts from clean tissues, so the real one is likely shorter.</string>
-    <string name="tools_bottom_residual">The no-decompression limit starts from residual nitrogen after a dive that ended %1$s.</string>
 
     <string name="tools_assumptions">What the answer assumes</string>
     <string name="tools_assumed_gf">GF high %1$s, %2$s.</string>
@@ -271,4 +270,9 @@
     <string name="tools_percent_value">%1$s %%</string>
     <string name="tools_bottom_ascent_rock_bottom">The gas limit ends at %1$s, the rock bottom, where you start up.</string>
     <string name="tools_date_pattern">d MMM yyyy, HH:mm</string>
+
+    <string name="tools_synced_at">Based on dives synced as of %1$s.</string>
+    <string name="tools_store_unreadable">The local logbook could not be read. Try again.</string>
+
+    <string name="tools_not_synced">Not synced yet; this answer uses what you type.</string>
 </resources>

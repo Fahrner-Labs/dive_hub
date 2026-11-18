@@ -232,7 +232,6 @@
     <string name="tools_bottom_reason_mod">Der Plan liegt jenseits des MOD von %1$s beim Notfall-ppO2.</string>
     <string name="tools_bottom_reason_gas">Das Gemisch ist nicht Luft oder Nitrox 21–40 %.</string>
     <string name="tools_bottom_recent">Ein Tauchgang endete %1$s, innerhalb von 48 Stunden. Diese Grenze startet mit sauberem Gewebe, die echte ist also wahrscheinlich kürzer.</string>
-    <string name="tools_bottom_residual">Die Nullzeitgrenze startet mit Reststickstoff nach einem Tauchgang, der %1$s endete.</string>
 
     <string name="tools_assumptions">Was die Antwort annimmt</string>
     <string name="tools_assumed_gf">GF high %1$s, %2$s.</string>
@@ -271,4 +270,9 @@
     <string name="tools_percent_value">%1$s %%</string>
     <string name="tools_bottom_ascent_rock_bottom">Die Gasgrenze endet bei %1$s, dem Rock Bottom, wo du aufsteigst.</string>
     <string name="tools_date_pattern">d. MMM yyyy, HH:mm</string>
+
+    <string name="tools_synced_at">Beruht auf Tauchgängen, synchronisiert bis %1$s.</string>
+    <string name="tools_store_unreadable">Das lokale Logbuch konnte nicht gelesen werden. Versuche es erneut.</string>
+
+    <string name="tools_not_synced">Noch nicht synchronisiert; diese Antwort nutzt nur deine Eingaben.</string>
 </resources>

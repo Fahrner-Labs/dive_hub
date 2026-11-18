@@ -9,6 +9,7 @@ import dev.divehub.shared.planning.SacCylinder
 import dev.divehub.shared.planning.SacDive
 import dev.divehub.shared.planning.planningSac
 import dev.divehub.shared.planning.sacOfDive
+import dev.divehub.shared.store.Cylinder
 import dev.divehub.shared.store.Dive
 import dev.divehub.shared.store.DiveStore
 import dev.divehub.shared.store.Recording
@@ -16,40 +17,59 @@ import kotlinx.datetime.Instant
 import kotlinx.serialization.json.Json
 
 private const val SAC_LOOKBACK_DIVES = 100
+private const val GF_LOOKBACK_RECORDINGS = 100
 private const val RECENT_DIVE_HOURS = 48L
 private val SUMMARY = Json { ignoreUnknownKeys = true }
 
-/** The store's values for the tools, read once per screen change; pure enough to test against an in-memory store. */
-fun assembleToolSources(store: DiveStore, nowMs: Long): ToolSources {
+/**
+ * The store's values for the tools, read in one transaction so a concurrent sync cannot mix two snapshots. The reads
+ * are the server's: the latest 100 Dives for the SAC, the latest 100 Recordings for the GF, and the Diver's Dives for
+ * the 48-hour warning; the three bulk queries are filtered here rather than one query per Dive.
+ */
+fun assembleToolSources(store: DiveStore, nowMs: Long): ToolSources = store.transaction {
     val own = store.divers().firstOrNull { it.isOwn }
-    val empty = store.activeDiveCount() == 0L
-    if (own == null) return ToolSources(storeEmpty = empty)
-    val dives = store.allDives()
-        .filter { it.diverId == own.id && it.deletedAt == null }
+    val dives = store.allDives().filter { it.deletedAt == null }
+    val empty = dives.isEmpty()
+    val syncedAt = store.syncState().lastFullSyncAt
+    if (own == null) return@transaction ToolSources(storeEmpty = empty)
+
+    val ownDives = dives
+        .filter { it.diverId == own.id }
         .sortedByDescending { epochMs(it.startsAt) ?: Long.MIN_VALUE }
-    val summaries = dives.associate { dive ->
-        dive.id to store.recordings(dive.id)
-            .filter { it.deletedAt == null }
-            .sortedByDescending { epochMs(it.startsAt) ?: Long.MIN_VALUE }
-            .mapNotNull(::summaryOf)
-    }
-    return ToolSources(
+    val recentDives = ownDives.take(SAC_LOOKBACK_DIVES)
+    val diveIds = ownDives.mapTo(HashSet()) { it.id }
+    val recordings = store.allRecordings()
+        .filter { it.deletedAt == null && it.diveId in diveIds }
+        .sortedByDescending { epochMs(it.startsAt) ?: Long.MIN_VALUE }
+    val summaries = recordings.groupBy { it.diveId }.mapValues { (_, rows) -> rows.mapNotNull(::summaryOf) }
+    val cylinders = store.allCylinders()
+        .filter { it.diveId in diveIds }
+        .groupBy { it.diveId }
+
+    ToolSources(
         ownDiverId = own.id,
-        gfHigh = summaries.values.asSequence().flatten().firstOrNull { it.gfHigh != null }?.gfHigh,
-        planningSac = planningSac(dives.take(SAC_LOOKBACK_DIVES).map { PlanningSacDive(sacOf(store, it, summaries[it.id].orEmpty())) }),
-        recentDiveEndedAt = recentDiveEnd(dives, nowMs),
+        gfHigh = recordings.take(GF_LOOKBACK_RECORDINGS).asSequence().mapNotNull { summaryOf(it)?.gfHigh }.firstOrNull(),
+        planningSac = planningSac(
+            recentDives.map { PlanningSacDive(sacOf(it, summaries[it.id].orEmpty(), cylinders[it.id].orEmpty())) },
+        ),
+        recentDiveEndedAt = recentDiveEnd(ownDives, nowMs),
         storeEmpty = empty,
+        syncedAt = syncedAt,
     )
 }
 
 /** The Dive's own SAC, else what its Cylinders say, else a tank pod's on its Recording (as `diveSacs`). */
-private fun sacOf(store: DiveStore, dive: Dive, recordings: List<DiveViewRecordingsItemSummary>): Double? {
+private fun sacOf(
+    dive: Dive,
+    recordings: List<DiveViewRecordingsItemSummary>,
+    cylinders: List<Cylinder>,
+): Double? {
     dive.sacLitresPerMinute?.let { return it }
     val fromPod = recordings.firstOrNull { it.sacLpm != null }?.sacLpm
     val duration = dive.durationSeconds ?: return fromPod
     val computed = sacOfDive(
         SacDive(duration.toDouble(), dive.avgDepthM),
-        store.cylinders(dive.id).map { cylinder ->
+        cylinders.map { cylinder ->
             SacCylinder(
                 volumeL = cylinder.volumeL,
                 startPressureBar = cylinder.startPressureBar,
@@ -75,7 +95,7 @@ private fun recentDiveEnd(dives: List<Dive>, nowMs: Long): String? {
     var latest = Long.MIN_VALUE
     for (dive in dives) {
         val start = epochMs(dive.startsAt) ?: continue
-        val end = start + (dive.durationSeconds ?: 0.0).toLong() * 1000
+        val end = start + (dive.durationSeconds ?: 0L) * 1000
         if (end <= nowMs && end >= from && end > latest) latest = end
     }
     return if (latest == Long.MIN_VALUE) null else Instant.fromEpochMilliseconds(latest).toString()

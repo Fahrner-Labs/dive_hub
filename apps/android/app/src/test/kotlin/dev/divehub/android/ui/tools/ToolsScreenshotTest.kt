@@ -51,9 +51,11 @@ class ToolsScreenshotTest {
             ownDiverId = "diver",
             gfHigh = 80.0,
             planningSac = PlanningSacResult(17.5, 12, PlanningSacSource.logbook),
+            syncedAt = "2026-11-18T08:00:00Z",
         )
         render(state(inputs(o2 = "32", depth = "30", volume = "12", pressure = "200"), sources))
         compose.onNode(hasScrollAction()).performScrollToNode(hasText("GF high 80, from your latest recording."))
+        compose.onNodeWithText("Based on dives synced as of 18 Nov 2026, 08:00.").assertIsDisplayed()
         compose.onNodeWithText("GF high 80, from your latest recording.").assertIsDisplayed()
         compose.onNode(hasScrollAction()).performScrollToNode(hasText("SAC 17.5, from your logbook, based on 12 dives."))
         compose.onNodeWithText("SAC 17.5, from your logbook, based on 12 dives.").assertIsDisplayed()
@@ -93,7 +95,7 @@ class ToolsScreenshotTest {
     private fun render(state: ToolsUiState) {
         compose.setContent {
             DiveHubTheme(darkTheme = false) {
-                ToolsScreen(state = state, imperial = false, onBack = {}, onChange = {})
+                ToolsScreen(state = state, imperial = false, onBack = {}, onChange = {}, onReload = {})
             }
         }
     }
@@ -111,6 +113,8 @@ class ToolsScreenshotTest {
 
     private fun state(inputs: ToolsInputs, sources: ToolSources = ToolSources()) = ToolsUiState(
         loading = false,
+        syncedAt = sources.syncedAt,
+        personalized = sources.ownDiverId != null,
         inputs = inputs,
         gas = gasNumbers(
             GasNumbersInput(

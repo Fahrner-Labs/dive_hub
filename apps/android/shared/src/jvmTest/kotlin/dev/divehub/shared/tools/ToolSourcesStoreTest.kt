@@ -4,7 +4,9 @@ import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import dev.divehub.shared.planning.PlanningSacSource
 import dev.divehub.shared.store.Dive
 import dev.divehub.shared.store.DiveStore
+import dev.divehub.shared.store.Cylinder
 import dev.divehub.shared.store.Diver
+import dev.divehub.shared.store.SyncState
 import dev.divehub.shared.store.Recording
 import kotlin.test.AfterTest
 import kotlin.test.Test
@@ -81,6 +83,66 @@ class ToolSourcesStoreTest {
         assertEquals(PlanningSacSource.logbook, sac.source)
         assertEquals(5, sac.basedOn)
         assertEquals(16.8, sac.lpm)
+    }
+
+    @Test
+    fun `the last full sync is carried for the staleness line`() {
+        ownDiver()
+        dive("d1", "2026-11-18T09:00:00.000Z", 18.0)
+        store.saveSyncState(
+            SyncState(lastFullSyncAt = "2026-11-18T08:00:00.000Z", schemaVersion = DiveStore.schemaVersion),
+        )
+
+        val sources = assembleToolSources(store, nowMs = 1_700_000_000_000)
+        assertEquals("2026-11-18T08:00:00.000Z", sources.syncedAt)
+    }
+
+    @Test
+    fun `a Dive without its own SAC falls back to its Cylinders`() {
+        ownDiver()
+        (0 until 5).forEach { index ->
+            val id = "d$index"
+            dive(id, "2026-11-${(18 - index).toString().padStart(2, '0')}T09:00:00.000Z")
+            store.upsertCylinder(
+                Cylinder(
+                    diveId = id,
+                    position = 0,
+                    volumeL = 12.0,
+                    o2 = 21.0,
+                    he = 0.0,
+                    startPressureBar = 200.0,
+                    endPressureBar = 100.0,
+                ),
+            )
+        }
+
+        val sac = assertNotNull(assembleToolSources(store, nowMs = 1_700_000_000_000).planningSac)
+        assertEquals(PlanningSacSource.logbook, sac.source)
+        assertTrue(sac.lpm > 0.0)
+    }
+
+    @Test
+    fun `a Dive without Cylinders falls back to its Recording's SAC`() {
+        ownDiver()
+        (0 until 5).forEach { index ->
+            val id = "d$index"
+            dive(id, "2026-11-${(18 - index).toString().padStart(2, '0')}T09:00:00.000Z")
+            store.upsertRecording(
+                Recording(
+                    id = "r$index",
+                    diveId = id,
+                    isPrimary = true,
+                    startsAt = "2026-11-${(18 - index).toString().padStart(2, '0')}T09:00:00.000Z",
+                    durationSeconds = 2_700,
+                    parser = "fit",
+                    summaryJson = """{"sacLpm":16}""",
+                ),
+            )
+        }
+
+        val sac = assertNotNull(assembleToolSources(store, nowMs = 1_700_000_000_000).planningSac)
+        assertEquals(PlanningSacSource.logbook, sac.source)
+        assertEquals(16.0, sac.lpm)
     }
 
     @Test

@@ -6,7 +6,6 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import dev.divehub.android.AppContainer
-import dev.divehub.android.ui.Formats
 import dev.divehub.api.models.ApiToolsBottomTimeGet200Response
 import dev.divehub.api.models.ApiToolsGasGet200Response
 import dev.divehub.shared.planning.PlanningWater
@@ -15,6 +14,9 @@ import dev.divehub.shared.tools.BottomTimeToolInput
 import dev.divehub.shared.tools.GasNumbersInput
 import dev.divehub.shared.tools.ToolSources
 import dev.divehub.shared.tools.ToolsError
+import dev.divehub.shared.tools.ToolRanges
+import dev.divehub.shared.tools.depthFromDisplay
+import dev.divehub.shared.tools.pressureFromDisplay
 import dev.divehub.shared.tools.assembleToolSources
 import dev.divehub.shared.tools.bottomTime
 import dev.divehub.shared.tools.gasNumbers
@@ -49,7 +51,12 @@ data class ToolsUiState(
     val loading: Boolean = true,
     /** No Dive has synced yet: an empty state, not an error (client contract §2). */
     val storeEmpty: Boolean = false,
-    val hasOwnDiver: Boolean = false,
+    /** The native store's last full sync, shown beside a personalized answer (client contract, Offline reads). */
+    val syncedAt: String? = null,
+    /** An own Diver is in the store, so the answer used synced logbook values and must say their age. */
+    val personalized: Boolean = false,
+    /** The local store could not be read; the screen offers a retry. */
+    val storeError: String? = null,
     val inputs: ToolsInputs = ToolsInputs(),
     val gas: ApiToolsGasGet200Response? = null,
     val gasError: String? = null,
@@ -93,12 +100,27 @@ class ToolsViewModel(private val store: DiveStore) : ViewModel() {
         recompute()
     }
 
+    fun reload() = load()
+
     private fun load() {
         loadJob?.cancel()
         loadJob = viewModelScope.launch(Dispatchers.Default) {
-            val read = assembleToolSources(store, System.currentTimeMillis())
-            sources = read
-            _state.update { it.copy(loading = false, storeEmpty = read.storeEmpty, hasOwnDiver = read.ownDiverId != null) }
+            try {
+                val read = assembleToolSources(store, System.currentTimeMillis())
+                sources = read
+                _state.update {
+                    it.copy(
+                        loading = false,
+                        storeEmpty = read.storeEmpty,
+                        syncedAt = read.syncedAt,
+                        personalized = read.ownDiverId != null,
+                        storeError = null,
+                    )
+                }
+            } catch (_: Exception) {
+                sources = ToolSources()
+                _state.update { it.copy(loading = false, storeError = STORE_UNREADABLE, personalized = false, syncedAt = null) }
+            }
             recompute()
         }
     }
@@ -125,33 +147,33 @@ class ToolsViewModel(private val store: DiveStore) : ViewModel() {
 
     private fun answers(inputs: ToolsInputs, sources: ToolSources, imperial: Boolean): Answers {
         val o2 = inputs.o2.number()
-        val depth = inputs.depth.number()?.let { Formats.depthFromDisplay(it, imperial) }
+        val depth = inputs.depth.number()?.let { depthFromDisplay(it, imperial) }
         val helium = inputs.helium.number()
         val volume = inputs.volume.number()
-        val pressure = inputs.pressure.number()?.let { Formats.pressureFromDisplay(it, imperial) }
+        val pressure = inputs.pressure.number()?.let { pressureFromDisplay(it, imperial) }
         val sac = inputs.sac.number()
         val gf = inputs.gf.number()
-        val altitude = inputs.altitude.number()?.let { Formats.depthFromDisplay(it, imperial) }
+        val altitude = inputs.altitude.number()?.let { depthFromDisplay(it, imperial) }
         val ppo2Working = inputs.ppo2Working.number()
         val ppo2Contingency = inputs.ppo2Contingency.number()
-        val bar = inputs.bar.number()?.let { Formats.pressureFromDisplay(it, imperial) }
+        val bar = inputs.bar.number()?.let { pressureFromDisplay(it, imperial) }
 
         val unreadable = listOf(
             inputs.o2, inputs.helium, inputs.depth, inputs.volume, inputs.pressure, inputs.sac, inputs.gf,
             inputs.altitude, inputs.ppo2Working, inputs.ppo2Contingency, inputs.bar,
         ).any { it.isNotBlank() && it.number() == null }
         val outOfRange = listOfNotNull(
-            o2?.takeUnless { it in 1.0..100.0 },
-            helium?.takeUnless { it in 0.0..100.0 },
-            depth?.takeUnless { it in 1.0..300.0 },
-            volume?.takeUnless { it in 1.0..60.0 },
-            pressure?.takeUnless { it in 1.0..350.0 },
-            sac?.takeUnless { it in 1.0..100.0 },
-            gf?.takeUnless { it in 20.0..100.0 },
-            altitude?.takeUnless { it in 0.0..5000.0 },
-            ppo2Working?.takeUnless { it in 1.0..2.0 },
-            ppo2Contingency?.takeUnless { it in 1.0..2.0 },
-            bar?.takeUnless { it in 0.0..350.0 },
+            o2?.takeUnless { it in ToolRanges.O2 },
+            helium?.takeUnless { it in ToolRanges.HELIUM },
+            depth?.takeUnless { it in ToolRanges.DEPTH_M },
+            volume?.takeUnless { it in ToolRanges.VOLUME_L },
+            pressure?.takeUnless { it in ToolRanges.PRESSURE_BAR },
+            sac?.takeUnless { it in ToolRanges.SAC_LPM },
+            gf?.takeUnless { it in ToolRanges.GF_HIGH },
+            altitude?.takeUnless { it in ToolRanges.ALTITUDE_M },
+            ppo2Working?.takeUnless { it in ToolRanges.PPO2 },
+            ppo2Contingency?.takeUnless { it in ToolRanges.PPO2 },
+            bar?.takeUnless { it in ToolRanges.RULE_BAR },
         ).isNotEmpty()
 
         val invalid = unreadable || outOfRange
@@ -215,6 +237,8 @@ class ToolsViewModel(private val store: DiveStore) : ViewModel() {
     }
 
     companion object {
+        const val STORE_UNREADABLE = "store_unreadable"
+
         fun factory(container: AppContainer): ViewModelProvider.Factory = viewModelFactory {
             initializer { ToolsViewModel(container.diveStore) }
         }

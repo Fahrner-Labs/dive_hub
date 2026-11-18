@@ -53,7 +53,6 @@ const val RULE_ASCENT_PRESSURE = "ascent_pressure"
 const val SOURCE_REQUEST = "request"
 const val SOURCE_RECORDING = "recording"
 const val SOURCE_LOGBOOK = "logbook"
-const val SOURCE_SITE = "site"
 const val SOURCE_DEFAULT = "default"
 
 const val STATUS_OK = "ok"
@@ -109,6 +108,8 @@ data class ToolSources(
     val recentDiveEndedAt: String? = null,
     /** No Dive has synced yet: the tools still answer from typed input, and say so. */
     val storeEmpty: Boolean = true,
+    /** The store's last full sync, for the staleness line (client contract, Offline reads). */
+    val syncedAt: String? = null,
 )
 
 /** Gas numbers for a mix: MOD, ppO2, best mix, EAD and END (ADR 0032). */

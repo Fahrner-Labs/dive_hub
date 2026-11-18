@@ -3,6 +3,8 @@ package dev.divehub.android.ui
 import android.content.Context
 import dev.divehub.android.R
 import dev.divehub.shared.logbook.durationMinutes
+import dev.divehub.shared.tools.depthIn
+import dev.divehub.shared.tools.pressureIn
 import java.text.NumberFormat
 import java.util.Locale
 
@@ -11,8 +13,6 @@ import java.util.Locale
  * minutes and hours, depths in metres or feet, and a Diver's role. A page adds only what is its own.
  */
 internal object Formats {
-    private const val FEET_PER_METRE = 1 / 0.3048
-    private const val PSI_PER_BAR = 14.5038
     private val IMPERIAL_REGIONS = setOf("US", "LR", "MM")
 
     fun number(locale: Locale, value: Int): String = NumberFormat.getIntegerInstance(locale).format(value)
@@ -42,12 +42,6 @@ internal object Formats {
         return context.getString(if (imperial) R.string.logbook_depth_feet else R.string.logbook_depth_metres, text)
     }
 
-    /** A depth in the User's units: metres or feet. */
-    fun depthIn(metres: Double, imperial: Boolean): Double = if (imperial) metres * FEET_PER_METRE else metres
-
-    /** A depth typed in the User's units, back in metres. */
-    fun depthFromDisplay(value: Double, imperial: Boolean): Double = if (imperial) value / FEET_PER_METRE else value
-
     /** "200 bar", "2,901 psi": whole numbers, as a gauge is read. */
     fun pressure(context: Context, bar: Double, locale: Locale, imperial: Boolean): String {
         val text = NumberFormat.getIntegerInstance(locale).format(pressureIn(bar, imperial))
@@ -56,12 +50,6 @@ internal object Formats {
             text,
         )
     }
-
-    /** A pressure in the User's units: bar or psi. */
-    fun pressureIn(bar: Double, imperial: Boolean): Double = if (imperial) bar * PSI_PER_BAR else bar
-
-    /** A pressure typed in the User's units, back in bar. */
-    fun pressureFromDisplay(value: Double, imperial: Boolean): Double = if (imperial) value / PSI_PER_BAR else value
 
     /** A number with the given decimals in the UI language. */
     fun decimal(locale: Locale, value: Double, places: Int): String =

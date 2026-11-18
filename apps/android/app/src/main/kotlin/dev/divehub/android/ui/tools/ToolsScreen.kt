@@ -74,6 +74,7 @@ fun ToolsRoute(viewModel: ToolsViewModel, units: String?, onBack: () -> Unit) {
         imperial = imperial,
         onBack = onBack,
         onChange = viewModel::update,
+        onReload = viewModel::reload,
     )
 }
 
@@ -89,6 +90,7 @@ fun ToolsScreen(
     imperial: Boolean,
     onBack: () -> Unit,
     onChange: ((ToolsInputs) -> ToolsInputs) -> Unit,
+    onReload: () -> Unit,
 ) {
     Scaffold(
         topBar = {
@@ -115,7 +117,17 @@ fun ToolsScreen(
                     .padding(horizontal = 16.dp, vertical = 12.dp),
             ) {
                 Notice(stringResource(R.string.tools_notice))
-                if (state.storeEmpty) {
+                if (state.storeError != null) {
+                    Spacer(Modifier.height(8.dp))
+                    Card {
+                        Text(
+                            stringResource(R.string.tools_store_unreadable),
+                            modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                        TextButton(onClick = onReload) { Text(stringResource(R.string.logbook_retry)) }
+                    }
+                } else if (state.storeEmpty) {
                     Spacer(Modifier.height(8.dp))
                     Card {
                         Text(
@@ -342,12 +354,18 @@ private fun BottomTimeAnswer(state: ToolsUiState, imperial: Boolean) {
     when {
         state.bottomError != null -> ErrorText(state.bottomError)
         state.bottom == null -> Muted(stringResource(R.string.tools_bottom_empty))
-        else -> BottomTimeBody(state.bottom, imperial, locale)
+        else -> BottomTimeBody(state.bottom, state.personalized, state.syncedAt, imperial, locale)
     }
 }
 
 @Composable
-private fun BottomTimeBody(answer: ApiToolsBottomTimeGet200Response, imperial: Boolean, locale: Locale) {
+private fun BottomTimeBody(
+    answer: ApiToolsBottomTimeGet200Response,
+    personalized: Boolean,
+    syncedAt: String?,
+    imperial: Boolean,
+    locale: Locale,
+) {
     val context = LocalContext.current
     val datePattern = stringResource(R.string.tools_date_pattern)
     val outside = answer.status == "outside_limits"
@@ -370,11 +388,7 @@ private fun BottomTimeBody(answer: ApiToolsBottomTimeGet200Response, imperial: B
         }
     } else {
         answer.recentDiveEndedAt?.let {
-            if (answer.residualN2 == null) Notice(
-                stringResource(R.string.tools_bottom_recent, dateTime(it, locale, datePattern)),
-            ) else Notice(
-                stringResource(R.string.tools_bottom_residual, dateTime(it, locale, datePattern)),
-            )
+            Notice(stringResource(R.string.tools_bottom_recent, dateTime(it, locale, datePattern)))
             Spacer(Modifier.height(8.dp))
         }
         Text(
@@ -421,7 +435,7 @@ private fun BottomTimeBody(answer: ApiToolsBottomTimeGet200Response, imperial: B
         answer.otu?.let { Muted(stringResource(R.string.tools_bottom_otu, Math.round(it).toInt())) }
     }
     Spacer(Modifier.height(8.dp))
-    Assumptions(answer, imperial, locale)
+    Assumptions(answer, personalized, syncedAt, imperial, locale)
     Spacer(Modifier.height(8.dp))
     Muted(stringResource(R.string.tools_estimate_short))
 }
@@ -438,10 +452,26 @@ private fun LimitRow(name: String, value: Double?, noLimit: String = stringResou
 }
 
 @Composable
-private fun Assumptions(answer: ApiToolsBottomTimeGet200Response, imperial: Boolean, locale: Locale) {
+private fun Assumptions(
+    answer: ApiToolsBottomTimeGet200Response,
+    personalized: Boolean,
+    syncedAt: String?,
+    imperial: Boolean,
+    locale: Locale,
+) {
     val context = LocalContext.current
     val used = answer.used
     HeadingSmall(stringResource(R.string.tools_assumptions))
+    if (personalized) {
+        val pattern = stringResource(R.string.tools_date_pattern)
+        Muted(
+            if (syncedAt != null) {
+                stringResource(R.string.tools_synced_at, dateTime(syncedAt, locale, pattern))
+            } else {
+                stringResource(R.string.tools_not_synced)
+            },
+        )
+    }
     Text(
         stringResource(R.string.tools_assumed_gf, Formats.decimal(locale, used.gfHigh.value, 0), source(used.gfHigh.source)),
         style = MaterialTheme.typography.bodyMedium,

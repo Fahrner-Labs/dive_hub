@@ -231,6 +231,10 @@ V1 of the native client reads offline: phones lose signal where dives are, and t
   vectors** (one fixture per kernel, generated from the server's tests and run by both test suites; see
   [`packages/test-vectors/planning/`](../../packages/test-vectors/planning/README.md)). A client must not
   reimplement the math: the same inputs give the same values as the server, and the vectors are the proof.
+- **V1's bottom time seeds no residual nitrogen offline.** The API starts the no-decompression limit from
+  `residualN2` when a recent Dive's profile can be replayed; the Android client has no replay in this slice, so it
+  sets `residualN2` to null, still carries `recentDiveEndedAt`, and says the limit starts from clean tissues. The
+  rest of the answer is shaped like the server's, and a personalized answer says "Based on dives synced as of …".
 - **A revoked session keeps the store readable.** When the session has ended, cached data stays readable offline;
   V1 has no offline writes, so nothing is gated. While online, the client shows sign-in, and the logbook returns
   after signing in. This is the approved V1 trade-off: a lost phone's holder can read the last synced logbook
