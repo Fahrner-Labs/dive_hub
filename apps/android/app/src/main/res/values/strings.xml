@@ -34,4 +34,55 @@
     <string name="error_no_answer">No answer from the instance. Check the address and your connection.</string>
     <string name="error_server">The instance had a problem. Try again later.</string>
     <string name="error_unknown">Something went wrong. Try again.</string>
+
+    <string name="logbook_title">Logbook</string>
+    <string name="logbook_show_only">Show only</string>
+    <string name="logbook_only_no_recording">No recording</string>
+    <string name="logbook_only_no_site">No dive site</string>
+    <string name="logbook_only_with_findings">With findings</string>
+    <string name="logbook_only_not_at_provider">Not in %1$s</string>
+    <string name="logbook_only_changed_since_sent">Changed since sent</string>
+    <string name="provider_some_service">the service</string>
+    <string name="logbook_none">No dives here.</string>
+    <string name="logbook_no_match_filters">No dives match these filters: %1$s.</string>
+    <string name="logbook_show_all">Show all dives</string>
+    <string name="logbook_no_site">No dive site</string>
+    <string name="logbook_no_recording">No recording</string>
+    <string name="logbook_from_provider">from %1$s</string>
+    <string name="logbook_surface_interval">%1$s after the dive before</string>
+    <string name="logbook_with">with %1$s</string>
+    <string name="logbook_depth_metres">%1$s m</string>
+    <string name="logbook_depth_feet">%1$s ft</string>
+    <string name="logbook_day_pattern">EEE d MMM, HH:mm</string>
+    <string name="logbook_month_pattern">LLLL yyyy</string>
+    <string name="logbook_more_people">+%1$d</string>
+    <string name="logbook_duration_minutes">%1$d min</string>
+    <string name="logbook_duration_hours_minutes">%1$d h %2$d min</string>
+    <string name="logbook_previous">Previous page</string>
+    <string name="logbook_next">Next page</string>
+    <string name="logbook_page_of">Page %1$d of %2$d</string>
+    <string name="logbook_offline">No connection. Check your connection and try again.</string>
+    <string name="logbook_retry">Try again</string>
+    <string name="logbook_refresh_failed">The list could not be refreshed.</string>
+    <string name="dive_air">Air</string>
+    <string name="participant_role_buddy">Buddy</string>
+    <string name="participant_role_guide">Guide</string>
+    <string name="participant_role_instructor">Instructor</string>
+
+    <plurals name="logbook_summary">
+        <item quantity="one">%1$s dive · %2$s under water · deepest %3$s</item>
+        <item quantity="other">%1$s dives · %2$s under water · deepest %3$s</item>
+    </plurals>
+    <plurals name="logbook_range">
+        <item quantity="one">%1$d–%2$d of %3$d dive</item>
+        <item quantity="other">%1$d–%2$d of %3$d dives</item>
+    </plurals>
+    <plurals name="logbook_month_figures">
+        <item quantity="one">%1$d dive · %2$s</item>
+        <item quantity="other">%1$d dives · %2$s</item>
+    </plurals>
+    <plurals name="logbook_findings">
+        <item quantity="one">%1$d finding</item>
+        <item quantity="other">%1$d findings</item>
+    </plurals>
 </resources>

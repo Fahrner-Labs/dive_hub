@@ -1,5 +1,6 @@
 package dev.divehub.shared
 
+import dev.divehub.api.models.ApiMeGet200ResponsePreferences
 import dev.divehub.api.models.UserView
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.MockRequestHandleScope
@@ -106,7 +107,10 @@ fun `signing in stores the token from set-auth-token and proves it with me`() = 
     assertEquals("Bearer header-token", meAuthorization)
     assertTrue(harness.cache.forgets >= 1)
     assertEquals("https://dive.example", harness.instances.value)
-    assertEquals(SessionState.SignedIn("https://dive.example", user), harness.session.state.value)
+    assertEquals(
+        SessionState.SignedIn("https://dive.example", user, ApiMeGet200ResponsePreferences(language = null, units = null)),
+        harness.session.state.value,
+    )
 }
 
 @Test

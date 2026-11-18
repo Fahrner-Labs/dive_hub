@@ -34,4 +34,55 @@
     <string name="error_no_answer">Keine Antwort von der Instanz. Prüfe die Adresse und deine Verbindung.</string>
     <string name="error_server">Die Instanz hatte ein Problem. Versuche es später erneut.</string>
     <string name="error_unknown">Etwas ist schiefgelaufen. Versuche es erneut.</string>
+
+    <string name="logbook_title">Logbuch</string>
+    <string name="logbook_show_only">Nur anzeigen</string>
+    <string name="logbook_only_no_recording">Keine Aufzeichnung</string>
+    <string name="logbook_only_no_site">Kein Tauchplatz</string>
+    <string name="logbook_only_with_findings">Mit Hinweisen</string>
+    <string name="logbook_only_not_at_provider">Nicht in %1$s</string>
+    <string name="logbook_only_changed_since_sent">Seit dem Senden geändert</string>
+    <string name="provider_some_service">der Dienst</string>
+    <string name="logbook_none">Keine Tauchgänge hier.</string>
+    <string name="logbook_no_match_filters">Keine Tauchgänge passen zu diesen Filtern: %1$s.</string>
+    <string name="logbook_show_all">Alle Tauchgänge zeigen</string>
+    <string name="logbook_no_site">Kein Tauchplatz</string>
+    <string name="logbook_no_recording">Keine Aufzeichnung</string>
+    <string name="logbook_from_provider">aus %1$s</string>
+    <string name="logbook_surface_interval">%1$s nach dem Tauchgang davor</string>
+    <string name="logbook_with">mit %1$s</string>
+    <string name="logbook_depth_metres">%1$s m</string>
+    <string name="logbook_depth_feet">%1$s ft</string>
+    <string name="logbook_day_pattern">EEE d. MMM, HH:mm</string>
+    <string name="logbook_month_pattern">LLLL yyyy</string>
+    <string name="logbook_more_people">+%1$d</string>
+    <string name="logbook_duration_minutes">%1$d Min.</string>
+    <string name="logbook_duration_hours_minutes">%1$d Std. %2$d Min.</string>
+    <string name="logbook_previous">Vorige Seite</string>
+    <string name="logbook_next">Nächste Seite</string>
+    <string name="logbook_page_of">Seite %1$d von %2$d</string>
+    <string name="logbook_offline">Keine Verbindung. Prüfe deine Verbindung und versuche es erneut.</string>
+    <string name="logbook_retry">Erneut versuchen</string>
+    <string name="logbook_refresh_failed">Die Liste konnte nicht aktualisiert werden.</string>
+    <string name="dive_air">Luft</string>
+    <string name="participant_role_buddy">Buddy</string>
+    <string name="participant_role_guide">Guide</string>
+    <string name="participant_role_instructor">Tauchlehrer</string>
+
+    <plurals name="logbook_summary">
+        <item quantity="one">%1$s Tauchgang · %2$s unter Wasser · am tiefsten %3$s</item>
+        <item quantity="other">%1$s Tauchgänge · %2$s unter Wasser · am tiefsten %3$s</item>
+    </plurals>
+    <plurals name="logbook_range">
+        <item quantity="one">%1$d–%2$d von %3$d Tauchgang</item>
+        <item quantity="other">%1$d–%2$d von %3$d Tauchgängen</item>
+    </plurals>
+    <plurals name="logbook_month_figures">
+        <item quantity="one">%1$d Tauchgang · %2$s</item>
+        <item quantity="other">%1$d Tauchgänge · %2$s</item>
+    </plurals>
+    <plurals name="logbook_findings">
+        <item quantity="one">%1$d Hinweis</item>
+        <item quantity="other">%1$d Hinweise</item>
+    </plurals>
 </resources>

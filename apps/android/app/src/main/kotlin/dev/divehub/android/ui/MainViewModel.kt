@@ -26,6 +26,8 @@ data class UiState(
     val busy: Boolean = false,
     val instanceUrl: String? = null,
     val user: UserView? = null,
+    /** "metric", "imperial" or null: the User's choice, else the device's region. */
+    val units: String? = null,
     val error: String? = null,
 )
 
@@ -39,8 +41,8 @@ class MainViewModel(private val session: SessionRepository) : ViewModel() {
             session.state.collect { state ->
                 _state.update {
                     when (state) {
-                        is SessionState.SignedIn -> it.copy(loading = false, instanceUrl = state.instanceUrl, user = state.user)
-                        is SessionState.SignedOut -> it.copy(loading = false, instanceUrl = state.instanceUrl, user = null)
+                        is SessionState.SignedIn -> it.copy(loading = false, instanceUrl = state.instanceUrl, user = state.user, units = state.preferences.units)
+                        is SessionState.SignedOut -> it.copy(loading = false, instanceUrl = state.instanceUrl, user = null, units = null)
                         SessionState.Loading -> it
                     }
                 }

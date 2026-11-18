@@ -1,6 +1,7 @@
 package dev.divehub.shared
 
 import dev.divehub.api.models.ApiMeGet200Response
+import dev.divehub.api.models.ApiMeGet200ResponsePreferences
 import dev.divehub.api.models.SignInEmailRequest
 import dev.divehub.api.models.UserView
 import io.ktor.client.engine.HttpClientEngine
@@ -16,7 +17,11 @@ import kotlinx.serialization.json.Json
 sealed interface SessionState {
     data object Loading : SessionState
     data class SignedOut(val instanceUrl: String?) : SessionState
-    data class SignedIn(val instanceUrl: String, val user: UserView) : SessionState
+    data class SignedIn(
+        val instanceUrl: String,
+        val user: UserView,
+        val preferences: ApiMeGet200ResponsePreferences,
+    ) : SessionState
 }
 
 /**
@@ -35,6 +40,9 @@ class SessionRepository(
         encodeDefaults = false
     }
     private val api = ApiClient(engine, token = { tokens.load() }, onUnauthorized = { forgetUser() }, json = json)
+
+    /** The signed-in User's HTTP layer, for repositories that read their data (the logbook). */
+    val client: ApiClient get() = api
 
     private val _state = MutableStateFlow<SessionState>(SessionState.Loading)
     val state: StateFlow<SessionState> = _state.asStateFlow()
@@ -56,7 +64,7 @@ class SessionRepository(
         }
         return try {
             val me = me()
-            SessionState.SignedIn(url, me.user).also { _state.value = it }
+            SessionState.SignedIn(url, me.user, me.preferences).also { _state.value = it }
         } catch (error: DiveHubException) {
             SessionState.SignedOut(url).also { _state.value = it }
             if (error.status != 401) throw error
@@ -97,7 +105,7 @@ class SessionRepository(
         }
 
         instances.save(url)
-        return me.user.also { _state.value = SessionState.SignedIn(url, it) }
+        return me.user.also { _state.value = SessionState.SignedIn(url, it, me.preferences) }
     }
 
     /**

@@ -8,6 +8,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.divehub.android.ui.DiveHubApp
 import dev.divehub.android.ui.DiveHubTheme
 import dev.divehub.android.ui.MainViewModel
+import dev.divehub.android.ui.logbook.LogbookViewModel
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -17,7 +18,8 @@ class MainActivity : ComponentActivity() {
             DiveHubTheme {
                 val container = (application as DiveHubApplication).container
                 val viewModel: MainViewModel = viewModel(factory = MainViewModel.factory(container))
-                DiveHubApp(viewModel)
+                val logbook: LogbookViewModel = viewModel(factory = LogbookViewModel.factory(container))
+                DiveHubApp(viewModel, logbook)
             }
         }
     }
