@@ -1,0 +1,218 @@
+{
+  "kernel": "ndl",
+  "version": 1,
+  "tolerance": {
+    "relative": 1e-9
+  },
+  "cases": [
+    {
+      "id": "air-18m-fresh-gf100",
+      "input": {
+        "gas": {
+          "o2": 21,
+          "he": 0
+        },
+        "depthM": 18,
+        "gfHigh": 100,
+        "conditions": {
+          "water": "fresh",
+          "altitudeM": 0
+        },
+        "initialTissues": null
+      },
+      "expected": {
+        "kernel": {
+          "minutes": 62
+        },
+        "service": {
+          "minutes": 62
+        }
+      }
+    },
+    {
+      "id": "air-30m-salt-gf85",
+      "input": {
+        "gas": {
+          "o2": 21,
+          "he": 0
+        },
+        "depthM": 30,
+        "gfHigh": 85,
+        "conditions": {
+          "water": "salt",
+          "altitudeM": 0
+        },
+        "initialTissues": null
+      },
+      "expected": {
+        "kernel": {
+          "minutes": 12
+        },
+        "service": {
+          "minutes": 12
+        }
+      }
+    },
+    {
+      "id": "ean32-30m-salt-gf85",
+      "input": {
+        "gas": {
+          "o2": 32,
+          "he": 0
+        },
+        "depthM": 30,
+        "gfHigh": 85,
+        "conditions": {
+          "water": "salt",
+          "altitudeM": 0
+        },
+        "initialTissues": null
+      },
+      "expected": {
+        "kernel": {
+          "minutes": 18
+        },
+        "service": {
+          "minutes": 18
+        }
+      }
+    },
+    {
+      "id": "air-10m-salt-gf100",
+      "input": {
+        "gas": {
+          "o2": 21,
+          "he": 0
+        },
+        "depthM": 10,
+        "gfHigh": 100,
+        "conditions": {
+          "water": "salt",
+          "altitudeM": 0
+        },
+        "initialTissues": null
+      },
+      "expected": {
+        "kernel": {
+          "minutes": 417
+        },
+        "service": {
+          "minutes": 417
+        }
+      }
+    },
+    {
+      "id": "air-40m-salt-gf85",
+      "input": {
+        "gas": {
+          "o2": 21,
+          "he": 0
+        },
+        "depthM": 40,
+        "gfHigh": 85,
+        "conditions": {
+          "water": "salt",
+          "altitudeM": 0
+        },
+        "initialTissues": null
+      },
+      "expected": {
+        "kernel": {
+          "minutes": 6
+        },
+        "service": {
+          "minutes": 6
+        }
+      }
+    },
+    {
+      "id": "trimix-21-35-40m-salt-gf85",
+      "input": {
+        "gas": {
+          "o2": 21,
+          "he": 35
+        },
+        "depthM": 40,
+        "gfHigh": 85,
+        "conditions": {
+          "water": "salt",
+          "altitudeM": 0
+        },
+        "initialTissues": null
+      },
+      "expected": {
+        "kernel": {
+          "minutes": 42
+        },
+        "service": {
+          "minutes": 42
+        }
+      }
+    },
+    {
+      "id": "residual-air-18m-gf85",
+      "input": {
+        "gas": {
+          "o2": 21,
+          "he": 0
+        },
+        "depthM": 18,
+        "gfHigh": 85,
+        "conditions": {
+          "water": "salt",
+          "altitudeM": 0
+        },
+        "initialTissues": [
+          0.82,
+          0.821,
+          0.822,
+          0.823,
+          0.824,
+          0.825,
+          0.826,
+          0.827,
+          0.828,
+          0.829,
+          0.83,
+          0.831,
+          0.832,
+          0.833,
+          0.834,
+          0.835
+        ]
+      },
+      "expected": {
+        "kernel": {
+          "minutes": 41
+        },
+        "service": {
+          "minutes": 41
+        }
+      }
+    },
+    {
+      "id": "shallow-6m-salt-gf100",
+      "input": {
+        "gas": {
+          "o2": 21,
+          "he": 0
+        },
+        "depthM": 6,
+        "gfHigh": 100,
+        "conditions": {
+          "water": "salt",
+          "altitudeM": 0
+        },
+        "initialTissues": null
+      },
+      "expected": {
+        "kernel": {
+          "minutes": null
+        },
+        "service": {
+          "minutes": null
+        }
+      }
+    }
+  ]
+}

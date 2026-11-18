@@ -221,7 +221,8 @@ V1 of the native client reads offline: phones lose signal where dives are, and t
   the User's own SAC or last dive) says so while the profiles are still syncing, and rests only on the dives that
   are there; it must not wait for the sync to finish.
 - **Offline calculations use the ported kernels, pinned by the shared golden vectors.** A client must not
-  reimplement the math: the same inputs give the same values as the server, and the vectors are the proof.
+  reimplement the math: the same inputs give the same values as the server, and the vectors
+  ([`packages/test-vectors/planning/`](../../packages/test-vectors/planning/README.md)) are the proof.
 - **A revoked session keeps the store readable.** When the session has ended, cached data stays readable offline;
   V1 has no offline writes, so nothing is gated. While online, the client shows sign-in, and the logbook returns
   after signing in. This is not a change of User: an explicit sign-out, or signing in as someone else, still

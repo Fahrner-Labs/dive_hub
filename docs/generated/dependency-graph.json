@@ -1172,7 +1172,8 @@
         "apps/server/src/storage/blob-store.ts",
         "apps/server/src/imports/archive.ts",
         "apps/server/src/db/migrate.ts",
-        "apps/server/src/scripts/write-openapi.ts"
+        "apps/server/src/scripts/write-openapi.ts",
+        "apps/server/src/scripts/write-planning-vectors.ts"
       ],
       "orphan": false,
       "valid": true
@@ -7365,7 +7366,8 @@
         "apps/server/src/compose.ts",
         "apps/server/src/main.ts",
         "apps/server/src/start.ts",
-        "apps/server/src/scripts/write-openapi.ts"
+        "apps/server/src/scripts/write-openapi.ts",
+        "apps/server/src/scripts/write-planning-vectors.ts"
       ],
       "orphan": false,
       "valid": true
@@ -12597,7 +12599,8 @@
       "dependencies": [],
       "dependents": [
         "apps/server/src/planning/gas-plan.ts",
-        "apps/server/src/dives/calc/sac.ts"
+        "apps/server/src/dives/calc/sac.ts",
+        "apps/server/src/planning/test-vectors.ts"
       ],
       "orphan": false,
       "valid": true
@@ -12617,7 +12620,8 @@
         "apps/server/src/planning/gas-plan-service.ts",
         "apps/server/src/mcp/tools-planning-gas-plan.ts",
         "apps/server/src/mcp/tools-planning.ts",
-        "apps/server/src/planning/routes.ts"
+        "apps/server/src/planning/routes.ts",
+        "apps/server/src/planning/test-vectors.ts"
       ],
       "orphan": false,
       "valid": true
@@ -12663,7 +12667,8 @@
       "dependents": [
         "apps/server/src/planning/bottom-time.ts",
         "apps/server/src/planning/gas-plan.ts",
-        "apps/server/src/planning/gas-plan-service.ts"
+        "apps/server/src/planning/gas-plan-service.ts",
+        "apps/server/src/planning/test-vectors.ts"
       ],
       "orphan": false,
       "valid": true
@@ -12691,7 +12696,8 @@
       ],
       "dependents": [
         "apps/server/src/planning/ndl.ts",
-        "apps/server/src/planning/loadings.ts"
+        "apps/server/src/planning/loadings.ts",
+        "apps/server/src/planning/test-vectors.ts"
       ],
       "orphan": false,
       "valid": true
@@ -12700,7 +12706,8 @@
       "source": "apps/server/src/planning/oxygen.ts",
       "dependencies": [],
       "dependents": [
-        "apps/server/src/planning/bottom-time.ts"
+        "apps/server/src/planning/bottom-time.ts",
+        "apps/server/src/planning/test-vectors.ts"
       ],
       "orphan": false,
       "valid": true
@@ -12747,7 +12754,8 @@
         "apps/server/src/planning/bottom-time-service.ts",
         "apps/server/src/planning/gas-plan-service.ts",
         "apps/server/src/mcp/tools-planning.ts",
-        "apps/server/src/planning/routes.ts"
+        "apps/server/src/planning/routes.ts",
+        "apps/server/src/planning/test-vectors.ts"
       ],
       "orphan": false,
       "valid": true
@@ -13052,7 +13060,8 @@
         "apps/server/src/planning/logbook-inputs.ts",
         "apps/server/src/dives/dive-view.ts",
         "apps/server/src/dives/routes.ts",
-        "apps/server/src/mcp/tools-logbook.ts"
+        "apps/server/src/mcp/tools-logbook.ts",
+        "apps/server/src/planning/test-vectors.ts"
       ],
       "orphan": false,
       "valid": true
@@ -30606,6 +30615,135 @@
       "valid": true
     },
     {
+      "source": "apps/server/src/planning/test-vectors.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../dives/calc/real-gas.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/dives/calc/real-gas.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../dives/calc/sac.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/dives/calc/sac.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./gas-numbers.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/planning/gas-numbers.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./gas.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/planning/gas.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./ndl.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/planning/ndl.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./oxygen.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/planning/oxygen.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./tissues.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/planning/tissues.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/server/src/scripts/write-planning-vectors.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "apps/server/src/scripts/write-openapi.ts",
       "dependencies": [
         {
@@ -30776,6 +30914,67 @@
             "import"
           ],
           "resolved": "apps/server/src/storage/blob-store.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "fs",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "core",
+            "import"
+          ],
+          "protocol": "node:",
+          "resolved": "fs",
+          "coreModule": true,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "url",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "core",
+            "import"
+          ],
+          "protocol": "node:",
+          "resolved": "url",
+          "coreModule": true,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/server/src/scripts/write-planning-vectors.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../planning/test-vectors.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/planning/test-vectors.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -48596,8 +48795,8 @@
     "baselineSize": 0,
     "baselineStale": 0,
     "advisedExitCode": 0,
-    "totalCruised": 461,
-    "totalDependenciesCruised": 2424,
+    "totalCruised": 463,
+    "totalDependenciesCruised": 2434,
     "optionsUsed": {
       "baseDir": "/home/runner/work/dive_hub/dive_hub",
       "combinedDependencies": false,

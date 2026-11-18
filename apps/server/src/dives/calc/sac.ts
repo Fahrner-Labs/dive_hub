@@ -11,16 +11,23 @@ export interface Sac {
   barPerMinute: number | null;
 }
 
+/** The unrounded kernel values; the route's answer is `sacOfDive`'s two-place view (FAH-268 vectors pin both). */
+export interface SacValues extends Sac {
+  /** Minutes at the surface's pressure: the Dive's time times the ambient pressure at its average depth. */
+  surfaceMinutes: number;
+}
+
 /** Why a Dive with Cylinders has no SAC. */
 export const SAC_MISSING = ['too_short', 'no_average_depth', 'cylinder_incomplete'] as const;
 export type SacMissing = (typeof SAC_MISSING)[number];
 
 const round = (n: number) => Math.round(n * 100) / 100;
 
-export function sacOfDive(
+/** The SAC's doubles before the route's rounding. */
+export function sacValues(
   dive: { durationSeconds: number; avgDepthM: number | null },
   cylinders: Pick<Cylinder, 'volumeL' | 'startPressureBar' | 'endPressureBar' | 'gas'>[],
-): { sac: Sac | null; missing: SacMissing | null } {
+): { sac: SacValues | null; missing: SacMissing | null } {
   if (cylinders.length === 0) return { sac: null, missing: null };
   if (dive.durationSeconds < MIN_SECONDS) return { sac: null, missing: 'too_short' };
   if (dive.avgDepthM === null) return { sac: null, missing: 'no_average_depth' };
@@ -34,8 +41,24 @@ export function sacOfDive(
   const [only] = cylinders;
   return {
     sac: {
-      litresPerMinute: round(litres / surfaceMinutes),
-      barPerMinute: cylinders.length === 1 ? round((only!.startPressureBar! - only!.endPressureBar!) / surfaceMinutes) : null,
+      litresPerMinute: litres / surfaceMinutes,
+      barPerMinute: cylinders.length === 1 ? (only!.startPressureBar! - only!.endPressureBar!) / surfaceMinutes : null,
+      surfaceMinutes,
+    },
+    missing: null,
+  };
+}
+
+export function sacOfDive(
+  dive: { durationSeconds: number; avgDepthM: number | null },
+  cylinders: Pick<Cylinder, 'volumeL' | 'startPressureBar' | 'endPressureBar' | 'gas'>[],
+): { sac: Sac | null; missing: SacMissing | null } {
+  const values = sacValues(dive, cylinders);
+  if (values.sac === null) return values;
+  return {
+    sac: {
+      litresPerMinute: round(values.sac.litresPerMinute),
+      barPerMinute: values.sac.barPerMinute === null ? null : round(values.sac.barPerMinute),
     },
     missing: null,
   };
