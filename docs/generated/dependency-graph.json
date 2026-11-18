@@ -12526,7 +12526,8 @@
         }
       ],
       "dependents": [
-        "apps/server/src/planning/bottom-time-service.ts"
+        "apps/server/src/planning/bottom-time-service.ts",
+        "apps/server/src/planning/test-vectors.ts"
       ],
       "orphan": false,
       "valid": true
@@ -12589,7 +12590,8 @@
       "dependents": [
         "apps/server/src/planning/bottom-time-service.ts",
         "apps/server/src/planning/bottom-time.ts",
-        "apps/server/src/planning/gas-plan-service.ts"
+        "apps/server/src/planning/gas-plan-service.ts",
+        "apps/server/src/planning/test-vectors.ts"
       ],
       "orphan": false,
       "valid": true
@@ -13071,7 +13073,8 @@
       "dependencies": [],
       "dependents": [
         "apps/server/src/planning/bottom-time-service.ts",
-        "apps/server/src/planning/gas-plan-service.ts"
+        "apps/server/src/planning/gas-plan-service.ts",
+        "apps/server/src/planning/test-vectors.ts"
       ],
       "orphan": false,
       "valid": true
@@ -30653,6 +30656,23 @@
         },
         {
           "dynamic": false,
+          "module": "./bottom-time.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/planning/bottom-time.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./gas-numbers.js",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -30661,6 +30681,23 @@
             "import"
           ],
           "resolved": "apps/server/src/planning/gas-numbers.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./gas-plan.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/planning/gas-plan.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -30712,6 +30749,23 @@
             "import"
           ],
           "resolved": "apps/server/src/planning/oxygen.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./planning-sac.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/planning/planning-sac.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -48796,7 +48850,7 @@
     "baselineStale": 0,
     "advisedExitCode": 0,
     "totalCruised": 463,
-    "totalDependenciesCruised": 2434,
+    "totalDependenciesCruised": 2437,
     "optionsUsed": {
       "baseDir": "/home/runner/work/dive_hub/dive_hub",
       "combinedDependencies": false,
