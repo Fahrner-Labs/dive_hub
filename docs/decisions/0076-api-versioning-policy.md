@@ -19,8 +19,9 @@ through a store and stays on a phone for months, while a self-hosted server upda
 
 Two habits from the pre-mobile API cannot continue unchanged:
 
-- **Replacing a field in one step.** `ssiSiteId` gave way to `needsSiteIdFrom` at once ([ADR 0029](0029-push-requirements-and-buddies.md));
-  that was fine while every client updated with the server, but an installed app would lose the field silently.
+- **Replacing fields in one step.** [ADR 0029](0029-push-requirements-and-buddies.md) removed the site API's
+  `ssiSiteId` and the export's `needsSiteIdFrom` at once; that was fine while every client updated with the
+  server, but an installed app would lose them silently.
 - **Treating a new enum value as harmless.** The Android models ignore unknown JSON fields (`ignoreUnknownKeys`),
   so a new response field is safe today, but a strict enum fails the whole answer on a value it does not know.
 
@@ -32,8 +33,10 @@ must keep working while it is served.
 ### v1 grows additively
 - Adding an endpoint, a response field, or an optional request field does not need a version or an overlap window.
   Clients ignore response fields and endpoints they do not know ([client contract](../spec/clients.md#2-talking-to-the-api)).
-- A new value of a closed enum is additive only when that field's contract already says an unknown value is shown
-  as recorded (the device vocabulary is the pattern); otherwise it follows the overlap rule below.
+- A new value of a closed enum is a break for a strict client and has no second form to overlap. It is added
+  only when every supported client already tolerates it, which within v1 means the field's contract says an
+  unknown value is shown as recorded (the device vocabulary is the pattern); otherwise the value goes in a new
+  optional field, which is additive, while the old field stays until it can be removed under the overlap rule.
 - A field's meaning, units and accepted values do not change within v1. A request that was valid stays valid: a
   new request field is optional, or has a default that matches the old behaviour.
 
@@ -56,11 +59,15 @@ must keep working while it is served.
 
 ### A hard break gets a problem code
 - A change that genuinely cannot be overlapped (for example an authentication or security fix) may refuse requests
-  from older app versions. The answer carries the problem code **`client_too_old`** in the usual
-  `{ code, error }` body, and the client says that the app must be updated. It must not retry and must not show
-  sign-in: the session is fine, the app is old.
-- The server gates only what the break affects, and only versions it can recognise from the User-Agent. A hard
-  break is a last resort, announced in the release notes like an overlap.
+  from older app versions. The answer carries the problem code **`client_too_old`** (HTTP 400, not 401) in the
+  usual `{ code, error }` body, and the client says that the app must be updated. It must not retry and must not
+  show sign-in: the session is fine, the app is old.
+- The User-Agent only chooses that message. **The break itself is enforced by the server's own logic for every
+  request, whatever the client sends**; the gate is best-effort UX, not access control. The server sends
+  `client_too_old` only to the versions it recognises as affected; an unrecognised client gets the ordinary
+  refusal, never a bypass.
+- The message is scoped to what the break affects. A hard break is a last resort, announced in the release notes
+  like an overlap.
 
 ### No URL versioning until a break ships
 - Everything stays under `/api`; there is no `/api/v1` and no `/api/v2` now.

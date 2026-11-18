@@ -1,0 +1,282 @@
+-- The offline read store, schema v1 (ADR 0075). Rows with server identity keep the server id; where the API has a
+-- version, a tombstone or a merge target, the row keeps that too. Complex API values stay in JSON columns, identity
+-- and ordering fields are real columns. There are deliberately no foreign keys: sync writes pages out of order and
+-- keeps tombstones.
+
+CREATE TABLE dive (
+    id TEXT NOT NULL PRIMARY KEY,
+    diverId TEXT NOT NULL,
+    version INTEGER,
+    deletedAt TEXT,
+    startsAt TEXT NOT NULL,
+    utcOffsetSeconds INTEGER,
+    utcOffsetSource TEXT,
+    durationSeconds INTEGER,
+    maxDepthM REAL,
+    avgDepthM REAL,
+    siteId TEXT,
+    waterType TEXT,
+    fromProvider TEXT,
+    notes TEXT,
+    suitJson TEXT,
+    weightingFeedbackJson TEXT,
+    leadJson TEXT,
+    leadTotalKg REAL,
+    sacLitresPerMinute REAL,
+    sacBarPerMinute REAL,
+    sacMissing TEXT,
+    number INTEGER,
+    findingsCount INTEGER,
+    summaryJson TEXT
+);
+
+CREATE TABLE recording (
+    id TEXT NOT NULL PRIMARY KEY,
+    diveId TEXT NOT NULL,
+    isPrimary INTEGER NOT NULL,
+    deviceJson TEXT,
+    startsAt TEXT NOT NULL,
+    durationSeconds INTEGER NOT NULL,
+    maxDepthM REAL,
+    parser TEXT NOT NULL,
+    partOf TEXT,
+    deletedAt TEXT,
+    summaryJson TEXT NOT NULL DEFAULT '{}',
+    channelsJson TEXT NOT NULL DEFAULT '[]'
+);
+
+CREATE TABLE recording_series (
+    recordingId TEXT NOT NULL,
+    channel TEXT NOT NULL,
+    offsetsMsJson TEXT NOT NULL,
+    valuesJson TEXT NOT NULL,
+    fetchedAt TEXT NOT NULL,
+    PRIMARY KEY (recordingId, channel)
+);
+
+CREATE TABLE cylinder (
+    diveId TEXT NOT NULL,
+    position INTEGER NOT NULL,
+    volumeL REAL,
+    material TEXT,
+    o2 REAL,
+    he REAL,
+    startPressureBar REAL,
+    endPressureBar REAL,
+    fromPod INTEGER NOT NULL,
+    seriesJson TEXT,
+    PRIMARY KEY (diveId, position)
+);
+
+CREATE TABLE dive_site (
+    id TEXT NOT NULL PRIMARY KEY,
+    version INTEGER,
+    name TEXT NOT NULL,
+    waterType TEXT,
+    positionJson TEXT,
+    countryCode TEXT,
+    mergedInto TEXT,
+    deletedAt TEXT,
+    payloadJson TEXT NOT NULL DEFAULT '{}'
+);
+
+CREATE TABLE diver (
+    id TEXT NOT NULL PRIMARY KEY,
+    name TEXT NOT NULL,
+    isOwn INTEGER NOT NULL,
+    external INTEGER NOT NULL,
+    apneaCounts INTEGER NOT NULL,
+    divesBefore INTEGER NOT NULL,
+    mergedInto TEXT,
+    deletedAt TEXT,
+    payloadJson TEXT NOT NULL DEFAULT '{}'
+);
+
+CREATE TABLE body_weight (
+    diverId TEXT NOT NULL,
+    date TEXT NOT NULL,
+    kg REAL NOT NULL,
+    PRIMARY KEY (diverId, date)
+);
+
+CREATE TABLE sync_checkpoint (
+    entity TEXT NOT NULL,
+    phase TEXT NOT NULL,
+    cursor TEXT,
+    pageOffset INTEGER,
+    done INTEGER NOT NULL DEFAULT 0,
+    updatedAt TEXT NOT NULL,
+    PRIMARY KEY (entity, phase)
+);
+
+CREATE TABLE sync_state (
+    id INTEGER NOT NULL PRIMARY KEY,
+    lastFullSyncAt TEXT,
+    lastHintAt TEXT,
+    schemaVersion INTEGER NOT NULL
+);
+
+selectDiveById:
+SELECT * FROM dive WHERE id = ? AND deletedAt IS NULL;
+
+selectAnyDiveById:
+SELECT * FROM dive WHERE id = ?;
+
+selectDivesPage:
+SELECT * FROM dive WHERE deletedAt IS NULL ORDER BY startsAt DESC, id DESC LIMIT :limit OFFSET :offset;
+
+selectAllDives:
+SELECT * FROM dive ORDER BY startsAt DESC, id DESC;
+
+selectActiveDiveCount:
+SELECT count(*) FROM dive WHERE deletedAt IS NULL;
+
+selectDiveCount:
+SELECT count(*) FROM dive;
+
+upsertDive:
+INSERT OR REPLACE INTO dive(
+    id, diverId, version, deletedAt, startsAt, utcOffsetSeconds, utcOffsetSource, durationSeconds, maxDepthM,
+    avgDepthM, siteId, waterType, fromProvider, notes, suitJson, weightingFeedbackJson, leadJson, leadTotalKg,
+    sacLitresPerMinute, sacBarPerMinute, sacMissing, number, findingsCount, summaryJson
+) VALUES (
+    :id, :diverId, :version, :deletedAt, :startsAt, :utcOffsetSeconds, :utcOffsetSource, :durationSeconds, :maxDepthM,
+    :avgDepthM, :siteId, :waterType, :fromProvider, :notes, :suitJson, :weightingFeedbackJson, :leadJson, :leadTotalKg,
+    :sacLitresPerMinute, :sacBarPerMinute, :sacMissing, :number, :findingsCount, :summaryJson
+);
+
+deleteAllDives:
+DELETE FROM dive;
+
+selectRecordingById:
+SELECT * FROM recording WHERE id = ? AND deletedAt IS NULL;
+
+selectAnyRecordingById:
+SELECT * FROM recording WHERE id = ?;
+
+selectRecordingsByDive:
+SELECT * FROM recording WHERE diveId = ? AND deletedAt IS NULL ORDER BY isPrimary DESC, startsAt, id;
+
+selectAllRecordings:
+SELECT * FROM recording ORDER BY diveId, isPrimary DESC, startsAt, id;
+
+upsertRecording:
+INSERT OR REPLACE INTO recording(
+    id, diveId, isPrimary, deviceJson, startsAt, durationSeconds, maxDepthM, parser, partOf, deletedAt, summaryJson, channelsJson
+) VALUES (
+    :id, :diveId, :isPrimary, :deviceJson, :startsAt, :durationSeconds, :maxDepthM, :parser, :partOf, :deletedAt, :summaryJson, :channelsJson
+);
+
+deleteAllRecordings:
+DELETE FROM recording;
+
+selectSeries:
+SELECT * FROM recording_series WHERE recordingId = ? ORDER BY channel;
+
+selectSeriesFor:
+SELECT * FROM recording_series WHERE recordingId = ? AND channel = ?;
+
+selectAllSeries:
+SELECT * FROM recording_series ORDER BY recordingId, channel;
+
+upsertSeries:
+INSERT OR REPLACE INTO recording_series(recordingId, channel, offsetsMsJson, valuesJson, fetchedAt)
+VALUES (:recordingId, :channel, :offsetsMsJson, :valuesJson, :fetchedAt);
+
+deleteAllSeries:
+DELETE FROM recording_series;
+
+selectCylindersByDive:
+SELECT * FROM cylinder WHERE diveId = ? ORDER BY position;
+
+selectAllCylinders:
+SELECT * FROM cylinder ORDER BY diveId, position;
+
+upsertCylinder:
+INSERT OR REPLACE INTO cylinder(
+    diveId, position, volumeL, material, o2, he, startPressureBar, endPressureBar, fromPod, seriesJson
+) VALUES (
+    :diveId, :position, :volumeL, :material, :o2, :he, :startPressureBar, :endPressureBar, :fromPod, :seriesJson
+);
+
+deleteAllCylinders:
+DELETE FROM cylinder;
+
+selectDiveSiteById:
+SELECT * FROM dive_site WHERE id = ? AND deletedAt IS NULL;
+
+selectAnyDiveSiteById:
+SELECT * FROM dive_site WHERE id = ?;
+
+selectLiveDiveSites:
+SELECT * FROM dive_site WHERE deletedAt IS NULL ORDER BY name, id;
+
+selectAllDiveSites:
+SELECT * FROM dive_site ORDER BY name, id;
+
+upsertDiveSite:
+INSERT OR REPLACE INTO dive_site(
+    id, version, name, waterType, positionJson, countryCode, mergedInto, deletedAt, payloadJson
+) VALUES (
+    :id, :version, :name, :waterType, :positionJson, :countryCode, :mergedInto, :deletedAt, :payloadJson
+);
+
+deleteAllDiveSites:
+DELETE FROM dive_site;
+
+selectDiverById:
+SELECT * FROM diver WHERE id = ? AND deletedAt IS NULL;
+
+selectAnyDiverById:
+SELECT * FROM diver WHERE id = ?;
+
+selectLiveDivers:
+SELECT * FROM diver WHERE deletedAt IS NULL ORDER BY name, id;
+
+selectAllDivers:
+SELECT * FROM diver ORDER BY name, id;
+
+upsertDiver:
+INSERT OR REPLACE INTO diver(
+    id, name, isOwn, external, apneaCounts, divesBefore, mergedInto, deletedAt, payloadJson
+) VALUES (
+    :id, :name, :isOwn, :external, :apneaCounts, :divesBefore, :mergedInto, :deletedAt, :payloadJson
+);
+
+deleteAllDivers:
+DELETE FROM diver;
+
+selectBodyWeights:
+SELECT * FROM body_weight WHERE diverId = ? ORDER BY date;
+
+selectAllBodyWeights:
+SELECT * FROM body_weight ORDER BY diverId, date;
+
+upsertBodyWeight:
+INSERT OR REPLACE INTO body_weight(diverId, date, kg) VALUES (:diverId, :date, :kg);
+
+deleteAllBodyWeights:
+DELETE FROM body_weight;
+
+selectCheckpoint:
+SELECT * FROM sync_checkpoint WHERE entity = ? AND phase = ?;
+
+selectAllCheckpoints:
+SELECT * FROM sync_checkpoint ORDER BY entity, phase;
+
+upsertCheckpoint:
+INSERT OR REPLACE INTO sync_checkpoint(entity, phase, cursor, pageOffset, done, updatedAt)
+VALUES (:entity, :phase, :cursor, :pageOffset, :done, :updatedAt);
+
+deleteAllCheckpoints:
+DELETE FROM sync_checkpoint;
+
+selectSyncState:
+SELECT * FROM sync_state WHERE id = 1;
+
+upsertSyncState:
+INSERT OR REPLACE INTO sync_state(id, lastFullSyncAt, lastHintAt, schemaVersion)
+VALUES (1, :lastFullSyncAt, :lastHintAt, :schemaVersion);
+
+deleteAllSyncState:
+DELETE FROM sync_state;

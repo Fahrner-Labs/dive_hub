@@ -1,0 +1,693 @@
+{
+  "kernel": "bottom-time",
+  "version": 1,
+  "tolerance": {
+    "relative": 1e-9
+  },
+  "cases": [
+    {
+      "id": "air-30m-gf85-rock-bottom",
+      "input": {
+        "gas": {
+          "o2": 21,
+          "he": 0
+        },
+        "depthM": 30,
+        "gfHigh": 85,
+        "conditions": {
+          "water": "salt",
+          "altitudeM": 0
+        },
+        "cylinder": {
+          "volumeL": 12,
+          "startPressureBar": 200
+        },
+        "sacLpm": 20,
+        "rule": {
+          "kind": "rock_bottom"
+        },
+        "ppO2": {
+          "working": 1.4,
+          "contingency": 1.6
+        }
+      },
+      "expected": {
+        "kernel": {
+          "status": "ok",
+          "minutes": 12,
+          "binding": [
+            "ndl"
+          ],
+          "limits": {
+            "ndl": 12,
+            "oxygen": 408.557768625,
+            "gas": 15.74809487332052
+          },
+          "otu": 8.841341924264883,
+          "ppO2AtDepth": 0.84604692375,
+          "ascentPressureBar": 91.84160900699322,
+          "ppO2AboveWorking": false
+        },
+        "service": {
+          "status": "ok",
+          "minutes": 12,
+          "binding": [
+            "ndl"
+          ],
+          "limits": {
+            "ndl": 12,
+            "oxygen": 408.6,
+            "gas": 15.7
+          },
+          "ascentPressureBar": 91.8,
+          "otu": 8.8,
+          "ppO2AtDepth": 0.85,
+          "ppO2AboveWorking": false
+        }
+      }
+    },
+    {
+      "id": "ean32-30m-gf85-reserve",
+      "input": {
+        "gas": {
+          "o2": 32,
+          "he": 0
+        },
+        "depthM": 30,
+        "gfHigh": 85,
+        "conditions": {
+          "water": "salt",
+          "altitudeM": 0
+        },
+        "cylinder": {
+          "volumeL": 12,
+          "startPressureBar": 220
+        },
+        "sacLpm": 20,
+        "rule": {
+          "kind": "reserve",
+          "bar": 50
+        },
+        "ppO2": {
+          "working": 1.4,
+          "contingency": 1.6
+        }
+      },
+      "expected": {
+        "kernel": {
+          "status": "ok",
+          "minutes": 18,
+          "binding": [
+            "ndl"
+          ],
+          "limits": {
+            "ndl": 18,
+            "oxygen": 183.23569199999997,
+            "gas": 21.732825664296872
+          },
+          "otu": 26.290523498315498,
+          "ppO2AtDepth": 1.2892143600000001,
+          "ascentPressureBar": 71.10270098721656,
+          "ppO2AboveWorking": false
+        },
+        "service": {
+          "status": "ok",
+          "minutes": 18,
+          "binding": [
+            "ndl"
+          ],
+          "limits": {
+            "ndl": 18,
+            "oxygen": 183.2,
+            "gas": 21.7
+          },
+          "ascentPressureBar": 71.1,
+          "otu": 26.3,
+          "ppO2AtDepth": 1.29,
+          "ppO2AboveWorking": false
+        }
+      }
+    },
+    {
+      "id": "air-18m-gf100-no-cylinder",
+      "input": {
+        "gas": {
+          "o2": 21,
+          "he": 0
+        },
+        "depthM": 18,
+        "gfHigh": 100,
+        "conditions": {
+          "water": "salt",
+          "altitudeM": 0
+        },
+        "cylinder": null,
+        "sacLpm": 20,
+        "rule": {
+          "kind": "rock_bottom"
+        },
+        "ppO2": {
+          "working": 1.4,
+          "contingency": 1.6
+        }
+      },
+      "expected": {
+        "kernel": {
+          "status": "ok",
+          "minutes": 58,
+          "binding": [
+            "ndl"
+          ],
+          "limits": {
+            "ndl": 58,
+            "oxygen": null,
+            "gas": null
+          },
+          "otu": 14.325805889605736,
+          "ppO2AtDepth": 0.59274115425,
+          "ascentPressureBar": null,
+          "ppO2AboveWorking": false
+        },
+        "service": {
+          "status": "ok",
+          "minutes": 58,
+          "binding": [
+            "ndl"
+          ],
+          "limits": {
+            "ndl": 58,
+            "oxygen": null,
+            "gas": null
+          },
+          "ascentPressureBar": null,
+          "otu": 14.3,
+          "ppO2AtDepth": 0.59,
+          "ppO2AboveWorking": false
+        }
+      }
+    },
+    {
+      "id": "ean36-25m-ascent-pressure",
+      "input": {
+        "gas": {
+          "o2": 36,
+          "he": 0
+        },
+        "depthM": 25,
+        "gfHigh": 85,
+        "conditions": {
+          "water": "salt",
+          "altitudeM": 0
+        },
+        "cylinder": {
+          "volumeL": 12,
+          "startPressureBar": 200
+        },
+        "sacLpm": 18,
+        "rule": {
+          "kind": "ascent_pressure",
+          "bar": 80
+        },
+        "ppO2": {
+          "working": 1.4,
+          "contingency": 1.6
+        }
+      },
+      "expected": {
+        "kernel": {
+          "status": "ok",
+          "minutes": 22,
+          "binding": [
+            "gas"
+          ],
+          "limits": {
+            "ndl": 40,
+            "oxygen": 189.16996125000003,
+            "gas": 22.454882234422797
+          },
+          "otu": 31.46295905637381,
+          "ppO2AtDepth": 1.2694334624999999,
+          "ascentPressureBar": 80,
+          "ppO2AboveWorking": false
+        },
+        "service": {
+          "status": "ok",
+          "minutes": 22,
+          "binding": [
+            "gas"
+          ],
+          "limits": {
+            "ndl": 40,
+            "oxygen": 189.2,
+            "gas": 22.5
+          },
+          "ascentPressureBar": 80,
+          "otu": 31.5,
+          "ppO2AtDepth": 1.27,
+          "ppO2AboveWorking": false
+        }
+      }
+    },
+    {
+      "id": "ean36-30m-above-working",
+      "input": {
+        "gas": {
+          "o2": 36,
+          "he": 0
+        },
+        "depthM": 30,
+        "gfHigh": 85,
+        "conditions": {
+          "water": "salt",
+          "altitudeM": 0
+        },
+        "cylinder": {
+          "volumeL": 12,
+          "startPressureBar": 220
+        },
+        "sacLpm": 20,
+        "rule": {
+          "kind": "ascent_pressure",
+          "bar": 80
+        },
+        "ppO2": {
+          "working": 1.4,
+          "contingency": 1.6
+        }
+      },
+      "expected": {
+        "kernel": {
+          "status": "ok",
+          "minutes": 20,
+          "binding": [
+            "gas"
+          ],
+          "limits": {
+            "ndl": 24,
+            "oxygen": 134.8901535,
+            "gas": 20.513949199887357
+          },
+          "otu": 34.08273125760872,
+          "ppO2AtDepth": 1.450366155,
+          "ascentPressureBar": 80,
+          "ppO2AboveWorking": true
+        },
+        "service": {
+          "status": "ok",
+          "minutes": 20,
+          "binding": [
+            "gas"
+          ],
+          "limits": {
+            "ndl": 24,
+            "oxygen": 134.9,
+            "gas": 20.5
+          },
+          "ascentPressureBar": 80,
+          "otu": 34.1,
+          "ppO2AtDepth": 1.45,
+          "ppO2AboveWorking": true
+        }
+      }
+    },
+    {
+      "id": "air-20m-gf85-ascent-pressure",
+      "input": {
+        "gas": {
+          "o2": 21,
+          "he": 0
+        },
+        "depthM": 20,
+        "gfHigh": 85,
+        "conditions": {
+          "water": "salt",
+          "altitudeM": 0
+        },
+        "cylinder": {
+          "volumeL": 15,
+          "startPressureBar": 220
+        },
+        "sacLpm": 22,
+        "rule": {
+          "kind": "ascent_pressure",
+          "bar": 100
+        },
+        "ppO2": {
+          "working": 1.4,
+          "contingency": 1.6
+        }
+      },
+      "expected": {
+        "kernel": {
+          "status": "ok",
+          "minutes": 25,
+          "binding": [
+            "gas"
+          ],
+          "limits": {
+            "ndl": 32,
+            "oxygen": 667.5618262500002,
+            "gas": 25.228757776931534
+          },
+          "otu": 8.430665551830252,
+          "ppO2AtDepth": 0.6349587824999998,
+          "ascentPressureBar": 100,
+          "ppO2AboveWorking": false
+        },
+        "service": {
+          "status": "ok",
+          "minutes": 25,
+          "binding": [
+            "gas"
+          ],
+          "limits": {
+            "ndl": 32,
+            "oxygen": 667.6,
+            "gas": 25.2
+          },
+          "ascentPressureBar": 100,
+          "otu": 8.4,
+          "ppO2AtDepth": 0.63,
+          "ppO2AboveWorking": false
+        }
+      }
+    },
+    {
+      "id": "outside-depth-41m",
+      "input": {
+        "gas": {
+          "o2": 21,
+          "he": 0
+        },
+        "depthM": 41,
+        "gfHigh": 85,
+        "conditions": {
+          "water": "salt",
+          "altitudeM": 0
+        },
+        "cylinder": {
+          "volumeL": 12,
+          "startPressureBar": 200
+        },
+        "sacLpm": 20,
+        "rule": {
+          "kind": "rock_bottom"
+        },
+        "ppO2": {
+          "working": 1.4,
+          "contingency": 1.6
+        }
+      },
+      "expected": {
+        "kernel": {
+          "status": "outside_limits",
+          "reason": "depth",
+          "modM": 65.71745299311077
+        },
+        "service": {
+          "status": "outside_limits",
+          "reason": "depth",
+          "modM": 65.7
+        }
+      }
+    },
+    {
+      "id": "outside-mod-ean40-34m",
+      "input": {
+        "gas": {
+          "o2": 40,
+          "he": 0
+        },
+        "depthM": 34,
+        "gfHigh": 85,
+        "conditions": {
+          "water": "salt",
+          "altitudeM": 0
+        },
+        "cylinder": {
+          "volumeL": 12,
+          "startPressureBar": 200
+        },
+        "sacLpm": 20,
+        "rule": {
+          "kind": "rock_bottom"
+        },
+        "ppO2": {
+          "working": 1.4,
+          "contingency": 1.6
+        }
+      },
+      "expected": {
+        "kernel": {
+          "status": "outside_limits",
+          "reason": "mod",
+          "modM": 29.713535601090996
+        },
+        "service": {
+          "status": "outside_limits",
+          "reason": "mod",
+          "modM": 29.7
+        }
+      }
+    },
+    {
+      "id": "outside-gas-trimix",
+      "input": {
+        "gas": {
+          "o2": 21,
+          "he": 35
+        },
+        "depthM": 30,
+        "gfHigh": 85,
+        "conditions": {
+          "water": "salt",
+          "altitudeM": 0
+        },
+        "cylinder": {
+          "volumeL": 12,
+          "startPressureBar": 200
+        },
+        "sacLpm": 20,
+        "rule": {
+          "kind": "rock_bottom"
+        },
+        "ppO2": {
+          "working": 1.4,
+          "contingency": 1.6
+        }
+      },
+      "expected": {
+        "kernel": {
+          "status": "outside_limits",
+          "reason": "gas",
+          "modM": null
+        },
+        "service": {
+          "status": "outside_limits",
+          "reason": "gas",
+          "modM": null
+        }
+      }
+    },
+    {
+      "id": "residual-air-18m-gf85",
+      "input": {
+        "gas": {
+          "o2": 21,
+          "he": 0
+        },
+        "depthM": 18,
+        "gfHigh": 85,
+        "conditions": {
+          "water": "salt",
+          "altitudeM": 0
+        },
+        "cylinder": null,
+        "sacLpm": 20,
+        "rule": {
+          "kind": "rock_bottom"
+        },
+        "ppO2": {
+          "working": 1.4,
+          "contingency": 1.6
+        },
+        "initialTissues": [
+          0.82,
+          0.821,
+          0.822,
+          0.823,
+          0.824,
+          0.825,
+          0.826,
+          0.827,
+          0.828,
+          0.829,
+          0.83,
+          0.831,
+          0.832,
+          0.833,
+          0.834,
+          0.835
+        ]
+      },
+      "expected": {
+        "kernel": {
+          "status": "ok",
+          "minutes": 41,
+          "binding": [
+            "ndl"
+          ],
+          "limits": {
+            "ndl": 41,
+            "oxygen": null,
+            "gas": null
+          },
+          "otu": 10.12686278403164,
+          "ppO2AtDepth": 0.59274115425,
+          "ascentPressureBar": null,
+          "ppO2AboveWorking": false
+        },
+        "service": {
+          "status": "ok",
+          "minutes": 41,
+          "binding": [
+            "ndl"
+          ],
+          "limits": {
+            "ndl": 41,
+            "oxygen": null,
+            "gas": null
+          },
+          "ascentPressureBar": null,
+          "otu": 10.1,
+          "ppO2AtDepth": 0.59,
+          "ppO2AboveWorking": false
+        }
+      }
+    },
+    {
+      "id": "tie-ndl-gas-air-30m",
+      "input": {
+        "gas": {
+          "o2": 21,
+          "he": 0
+        },
+        "depthM": 30,
+        "gfHigh": 85,
+        "conditions": {
+          "water": "salt",
+          "altitudeM": 0
+        },
+        "cylinder": {
+          "volumeL": 12,
+          "startPressureBar": 171.5
+        },
+        "sacLpm": 20,
+        "rule": {
+          "kind": "rock_bottom"
+        },
+        "ppO2": {
+          "working": 1.4,
+          "contingency": 1.6
+        }
+      },
+      "expected": {
+        "kernel": {
+          "status": "ok",
+          "minutes": 12,
+          "binding": [
+            "ndl",
+            "gas"
+          ],
+          "limits": {
+            "ndl": 12,
+            "oxygen": 408.557768625,
+            "gas": 12.000691988332303
+          },
+          "otu": 8.841341924264883,
+          "ppO2AtDepth": 0.84604692375,
+          "ascentPressureBar": 91.84160900699322,
+          "ppO2AboveWorking": false
+        },
+        "service": {
+          "status": "ok",
+          "minutes": 12,
+          "binding": [
+            "ndl",
+            "gas"
+          ],
+          "limits": {
+            "ndl": 12,
+            "oxygen": 408.6,
+            "gas": 12
+          },
+          "ascentPressureBar": 91.8,
+          "otu": 8.8,
+          "ppO2AtDepth": 0.85,
+          "ppO2AboveWorking": false
+        }
+      }
+    },
+    {
+      "id": "shallow-6m-gas-only",
+      "input": {
+        "gas": {
+          "o2": 21,
+          "he": 0
+        },
+        "depthM": 6,
+        "gfHigh": 100,
+        "conditions": {
+          "water": "salt",
+          "altitudeM": 0
+        },
+        "cylinder": {
+          "volumeL": 12,
+          "startPressureBar": 200
+        },
+        "sacLpm": 20,
+        "rule": {
+          "kind": "rock_bottom"
+        },
+        "ppO2": {
+          "working": 1.4,
+          "contingency": 1.6
+        }
+      },
+      "expected": {
+        "kernel": {
+          "status": "ok",
+          "minutes": 53,
+          "binding": [
+            "gas"
+          ],
+          "limits": {
+            "ndl": null,
+            "oxygen": null,
+            "gas": 53.4652554971739
+          },
+          "otu": 0,
+          "ppO2AtDepth": 0.33943538474999996,
+          "ascentPressureBar": 50,
+          "ppO2AboveWorking": false
+        },
+        "service": {
+          "status": "ok",
+          "minutes": 53,
+          "binding": [
+            "gas"
+          ],
+          "limits": {
+            "ndl": null,
+            "oxygen": null,
+            "gas": 53.5
+          },
+          "ascentPressureBar": 50,
+          "otu": 0,
+          "ppO2AtDepth": 0.34,
+          "ppO2AboveWorking": false
+        }
+      }
+    }
+  ]
+}
