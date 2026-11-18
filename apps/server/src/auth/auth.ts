@@ -17,8 +17,8 @@ import { hashPassword, MAX_PASSWORD_LENGTH, MIN_PASSWORD_LENGTH, verifyPassword 
  * actions go through our own routes, which keep at least one admin and clean up stored files.
  *
  * Enabling and signing in with 2FA use Better Auth's endpoints, which stay off HTTP until the web client can
- * complete the challenge (FAH-54); disabling is our own route (POST /api/me/two-factor/disable), because it also
- * asks for a current second factor.
+ * complete the challenge; disabling is our own route (POST /api/me/two-factor/disable), because it also asks for a
+ * current second factor.
  */
 export const PUBLIC_AUTH_PATHS = [
   '/sign-in/email', '/sign-out', '/get-session', '/change-password',

@@ -14,7 +14,7 @@ describe.skipIf(!online)('two-factor authentication', () => {
   let ctx: Awaited<ReturnType<typeof createTestApp>>;
   beforeAll(async () => {
     t = await createTestDatabase();
-    // The plugin limits every /two-factor/ path to 3 per 10 s; these tests exercise the flows, not the limiter.
+    // These tests sign in repeatedly; Better Auth's sign-in rate limit (10 per 15 minutes) is not what they test.
     ctx = await createTestApp(t, { rateLimit: false });
   });
   afterAll(async () => {
@@ -60,7 +60,7 @@ describe.skipIf(!online)('two-factor authentication', () => {
     return code === '000000' ? '000001' : '000000';
   };
 
-  /** Enrols a User the way the account page will once FAH-54 ships: enable, then confirm the first authenticator code. */
+  /** Enrols a User the way the web challenge will: enable, then confirm the first authenticator code. */
   async function enrol(email: string) {
     await createUser(ctx.auth, email);
     const cookie = await signIn(ctx.app, email);
