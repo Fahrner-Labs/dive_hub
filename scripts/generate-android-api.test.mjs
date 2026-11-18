@@ -101,3 +101,27 @@ test('inline objects and arrays become named classes with the parent prefix', ()
   assert.equal(files.has('ParentChild.kt'), true);
   assert.equal(files.has('ParentListItem.kt'), true);
 });
+
+test('a list response registers its item class under the operation name', () => {
+  const files = generateModels(document({
+    Ref: { type: 'object', required: ['id'], properties: { id: { type: 'string' } } },
+  }, {
+    '/api/inline': {
+      get: { responses: { 200: { content: { 'application/json': { schema: {
+        type: 'array', items: { type: 'object', required: ['name'], properties: { name: { type: 'string' } } },
+      } } } } } },
+    },
+    '/api/ref': {
+      get: { responses: { 200: { content: { 'application/json': { schema: {
+        type: 'array', items: { $ref: '#/components/schemas/Ref' },
+      } } } } } },
+    },
+  }), [
+    { name: 'InlineItem', path: '/api/inline', method: 'get', kind: 'response', status: '200' },
+    { name: 'IgnoredName', path: '/api/ref', method: 'get', kind: 'response', status: '200' },
+  ], []);
+
+  assert.match(files.get('InlineItem.kt'), /val name: String/);
+  assert.equal(files.has('Ref.kt'), true, 'a list of a named schema is that model');
+  assert.equal(files.has('IgnoredName.kt'), false, 'the reference keeps its own name');
+});

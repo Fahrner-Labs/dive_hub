@@ -36,6 +36,9 @@ class SessionRepository(
     }
     private val api = ApiClient(engine, token = { tokens.load() }, onUnauthorized = { forgetUser() }, json = json)
 
+    /** The signed-in User's HTTP layer, for repositories that read their data (the logbook). */
+    val client: ApiClient get() = api
+
     private val _state = MutableStateFlow<SessionState>(SessionState.Loading)
     val state: StateFlow<SessionState> = _state.asStateFlow()
 
