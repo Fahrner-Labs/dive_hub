@@ -324,7 +324,7 @@ apps/web/src/lib/settings.ts:13 fn settingsHref
 apps/web/src/lib/geo.ts:4 iface Position
 apps/web/src/lib/focus.ts:16 fn focusHeading
 apps/web/src/lib/units.ts:20 const depthIn
-apps/web/src/lib/live.ts:115 const liveHealthy
+apps/web/src/lib/live.ts:116 const liveHealthy
 apps/web/src/lib/providers.ts:9 type SyncedField
 apps/web/src/lib/tools.ts:49 iface ToolsParams
 apps/web/src/lib/form.ts:4 const formValues

@@ -1,6 +1,7 @@
 // The browser's live channel (ADR 0066): one EventSource per browser, chosen by a Web Lock, with hints fanned out to
 // the other tabs over a BroadcastChannel. Hints only say what changed; every screen refetches through the normal API.
-// A dropped channel (or a reconnect after a deploy) refetches what is on screen, so no state exists only in the stream.
+// A dropped channel (or a reconnect after a deploy) refetches what is on screen, and so does the first connect, so no
+// state exists only in the stream.
 import { useSyncExternalStore } from 'react';
 import type { QueryClient } from '@tanstack/react-query';
 
@@ -158,7 +159,6 @@ export function startLive(queryClient: QueryClient): () => void {
 
   let stopped = false;
   let source: EventSource | null = null;
-  let opened = false;
   const broadcast: BroadcastChannel | null = typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel(CHANNEL) : null;
   let leading = false;
   let pending: LiveHint[] = [];
@@ -183,7 +183,8 @@ export function startLive(queryClient: QueryClient): () => void {
   };
 
   const resync = () => {
-    // Every reconnect refetches what is on screen; a pinned dirty form hears that its Dive changed instead.
+    // Every connect refetches what is on screen, the first included; a pinned dirty form hears that its Dive changed
+    // instead.
     for (const id of pinnedDives) notifyChanged(id);
     void queryClient.invalidateQueries({ refetchType: 'active', predicate: (q) => !isPinnedDiveQuery(q.queryKey) });
     hintBatch([]);
@@ -214,14 +215,12 @@ export function startLive(queryClient: QueryClient): () => void {
       else deliver([hint]);
     });
     source.addEventListener('open', () => {
-      const reconnect = opened;
-      opened = true;
       setHealthy(true);
       if (isLeader) announceToTabs({ type: 'health', healthy: true });
-      if (reconnect) {
-        if (isLeader) announceToTabs({ type: 'resync' });
-        resync();
-      }
+      // Every connect refetches what is on screen, the first included: a hint committed between the last poll and
+      // the stream opening has no replay (ADR 0066), so the resync is what lets it arrive.
+      if (isLeader) announceToTabs({ type: 'resync' });
+      resync();
     });
     source.addEventListener('error', () => {
       setHealthy(false);
@@ -242,9 +241,6 @@ export function startLive(queryClient: QueryClient): () => void {
   const leader = async (): Promise<void> => {
     if (stopped) return;
     leading = true;
-    // Another tab held the stream before this one: what it heard while this tab was a follower may be stale, so the
-    // first open here goes through the reconnect resync too.
-    if (healthy) opened = true;
     openStream(true);
     announceToTabs({ type: 'health', healthy });
     // Hold the lock until this tab goes away; the next tab's request then runs and opens its own stream.

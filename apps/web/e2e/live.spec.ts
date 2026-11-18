@@ -49,11 +49,15 @@ test.afterAll(async ({ request }) => {
 });
 
 test('a background import brings a new Dive into an untouched logbook, tinted as it arrives', { tag: ['@live', '@dives'] }, async ({ page, request }) => {
+  // The stream must be open before the upload, so the test observes the open channel rather than the first-connect
+  // resync racing the Import (FAH-249): the resync is what brings a commit that landed before the stream opened.
+  const streamOpen = page.waitForResponse((response) => new URL(response.url()).pathname === '/api/live' && response.status() === 200);
   await page.goto('/');
   await expect(page.getByRole('heading', { name: 'Logbook', level: 1 })).toBeVisible();
   // Wait for the loaded first page: it is the snapshot an arrival is compared with. An Import that lands while the
   // logbook is still loading is part of that first page (the list mounts with it), so it never "arrives".
   await expect(page.locator('[data-dive-id]').first()).toBeVisible();
+  await streamOpen;
   const before = await page.locator('[data-dive-id]').count();
 
   const started = Date.now();
