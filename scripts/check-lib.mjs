@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 import { join, posix, resolve } from 'node:path';
 
 /** The steps that each remember their own green run, in the order they run. */
-export const STEPS = ['typecheck', 'lint', 'scripts', 'server', 'web', 'e2e'];
+export const STEPS = ['typecheck', 'lint', 'scripts', 'server', 'web', 'android', 'e2e'];
 
 /**
  * The Git variables that locate a repository. A hook exports them, so `GIT_DIR` overrides the `cwd` of a fixture
@@ -126,7 +126,7 @@ export function browserGrepInvert({ full, variants }) {
 }
 
 /** The plan that runs everything (`pnpm check:full`). */
-export const fullPlan = () => ({ typecheck: true, lint: 'all', scripts: true, server: 'all', web: 'all', e2e: 'all', areas: new Set(), specs: new Set(), notes: [] });
+export const fullPlan = () => ({ typecheck: true, lint: 'all', scripts: true, server: 'all', web: 'all', android: true, e2e: 'all', areas: new Set(), specs: new Set(), notes: [] });
 
 /**
  * Test helpers outside the test files (amendment of 2026-10-24); false when `path` isn't one.
@@ -165,7 +165,7 @@ function planTestSupport(path, plan, more, loads) {
  * without it, every server test helper counts as loaded.
  */
 export function planFor(changed, { e2eServerLoads: loads } = {}) {
-  const plan = { typecheck: false, lint: 'none', scripts: false, server: 'none', web: 'none', e2e: 'none', areas: new Set(), specs: new Set(), notes: [] };
+  const plan = { typecheck: false, lint: 'none', scripts: false, server: 'none', web: 'none', android: false, e2e: 'none', areas: new Set(), specs: new Set(), notes: [] };
   const more = (key, level) => { if (plan[key] !== 'all') plan[key] = level; };
 
   for (const path of changed) {
@@ -175,16 +175,23 @@ export function planFor(changed, { e2eServerLoads: loads } = {}) {
       plan.lint = 'all';
       continue;
     }
-    // The drift report, the repo map, the code graph and the release tag parser have tests of their own, and
-    // nothing else reads them.
-    if (/^scripts\/(drift|repomap|code-graph|release-tag)/.test(path)) { plan.scripts = true; continue; }
+    // The drift report, the repo map, the code graph, the release tag parser and the Android API model generator have
+    // tests of their own, and nothing else reads them.
+    if (/^scripts\/(drift|repomap|code-graph|release-tag|generate-android-api)/.test(path)) {
+      plan.scripts = true;
+      if (path === 'scripts/generate-android-api.mjs') plan.android = true;
+      continue;
+    }
     // So has the check script (amendment of 2026-10-24); its lint part also lints everything.
     if (/^scripts\/check/.test(path)) {
       plan.scripts = true;
       if (path === 'scripts/check-lint.mjs') plan.lint = 'all';
+      if (path === 'scripts/check-android.mjs') plan.android = true;
       continue;
     }
     if (QUIET.test(path)) continue;
+    // The Android app has its own Gradle build and its own lane (ADR 0073); it changes no JS check.
+    if (path.startsWith('apps/android/')) { plan.android = true; continue; }
     // The lint rules and their baselines change what every file is checked against, and nothing else.
     if (LINT_CONFIG.test(path)) {
       plan.lint = 'all';
@@ -218,6 +225,9 @@ export function planFor(changed, { e2eServerLoads: loads } = {}) {
       continue;
     }
     if (planTestSupport(path, plan, more, loads)) continue;
+    // A changed OpenAPI document also regenerates the Android core's committed models; the rest of the JS checks
+    // still run as for any package change.
+    if (path === 'packages/api-client/openapi.json') plan.android = true;
     // Shared code of one app (web: ui/, design/, i18n/, App, api; server: app, schema, migrations): that app's
     // tests and every browser test. The test setup, packages, configuration and anything else: everything.
     const app = /^apps\/(web|server)\/(src|drizzle)\//.exec(path)?.[1];
@@ -227,8 +237,8 @@ export function planFor(changed, { e2eServerLoads: loads } = {}) {
       plan.notes.push({ text: `${path} is shared ${app} code, so all ${app} tests and all browser tests run`, steps: [app, 'e2e'] });
       continue;
     }
-    Object.assign(plan, { lint: 'all', server: 'all', web: 'all', e2e: 'all' });
-    plan.notes.push({ text: `${path} is shared or unknown, so everything runs`, steps: ['lint', 'server', 'web', 'e2e'] });
+    Object.assign(plan, { lint: 'all', server: 'all', web: 'all', android: true, e2e: 'all' });
+    plan.notes.push({ text: `${path} is shared or unknown, so everything runs`, steps: ['lint', 'server', 'web', 'android', 'e2e'] });
   }
   return plan;
 }
@@ -246,6 +256,7 @@ export function planSteps(changedByStep, context = {}) {
     scripts: plans.scripts.scripts,
     server: plans.server.server,
     web: plans.web.web,
+    android: plans.android.android,
     e2e: plans.e2e.e2e,
     areas: plans.e2e.areas,
     specs: plans.e2e.specs,
