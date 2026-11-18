@@ -50,14 +50,14 @@ import dev.divehub.android.ui.dive.DiveDetailRoute
 import dev.divehub.android.ui.dive.DiveDetailViewModel
 import dev.divehub.android.ui.logbook.LogbookRoute
 import dev.divehub.android.ui.logbook.LogbookViewModel
-import dev.divehub.shared.logbook.LogbookFilter
+import dev.divehub.shared.logbook.LogbookPaging
 import dev.divehub.shared.ErrorCodes
 
 @Composable
 fun DiveHubApp(viewModel: MainViewModel, logbook: LogbookViewModel, dive: DiveDetailViewModel) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    // The open Dive is the app's only navigation state; the logbook keeps its page and filters underneath, so back
-    // returns to the list as it was (ADR 0042).
+    // The open Dive is the app's only navigation state; the logbook keeps its filters underneath and back lands on
+    // the page the Dive is on (ADR 0042).
     var openDiveId by rememberSaveable { mutableStateOf<String?>(null) }
     // A sign-out (or another User) drops the logbook's pages with the session (client contract §1 Security).
     LaunchedEffect(state.user?.id) {
@@ -71,15 +71,23 @@ fun DiveHubApp(viewModel: MainViewModel, logbook: LogbookViewModel, dive: DiveDe
             openDiveId?.let(dive::open)
         }
     }
-    BackHandler(enabled = openDiveId != null) { openDiveId = null }
+    // ADR 0042: the logbook returns on the page the Dive is on, so stepping across a page boundary stays right.
+    val closeDive = {
+        dive.state.value.neighbours?.position?.let { logbook.showPage(LogbookPaging.pageOf(it)) }
+        openDiveId = null
+    }
+    BackHandler(enabled = openDiveId != null) { closeDive() }
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         when {
             state.loading -> Loading()
             state.user != null && openDiveId != null -> DiveDetailRoute(
                 viewModel = dive,
                 units = state.units,
-                onBack = { openDiveId = null },
-                onOpenDive = dive::openNeighbour,
+                onBack = closeDive,
+                onOpenDive = { id ->
+                    dive.openNeighbour(id)
+                    openDiveId = id
+                },
             )
             state.user != null -> LogbookRoute(
                 viewModel = logbook,

@@ -97,3 +97,10 @@ fun partsOf(recording: DiveViewRecordingsItem, recordings: List<DiveViewRecordin
 /** The Recordings that are computers of their own: never the parts of a joined one (ADR 0063). */
 fun computerRecordings(recordings: List<DiveViewRecordingsItem>): List<DiveViewRecordingsItem> =
     recordings.filter { it.partOf == null }
+
+/**
+ * The Recording the dive page draws its profile from (ADR 0016): the Primary one, else the first computer of its own.
+ * One rule for the samples, the drawn profile and the Surface breaks said with the duration.
+ */
+fun profileRecording(recordings: List<DiveViewRecordingsItem>): DiveViewRecordingsItem? =
+    recordings.firstOrNull { it.isPrimary } ?: recordings.firstOrNull { it.partOf == null }

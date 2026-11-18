@@ -2,7 +2,7 @@ package dev.divehub.android.ui.dive
 
 import android.content.Context
 import dev.divehub.android.R
-import dev.divehub.android.ui.logbook.LogbookText
+import dev.divehub.android.ui.Formats
 import dev.divehub.shared.dive.DepthReading
 import dev.divehub.shared.dive.DiveValue
 import dev.divehub.shared.dive.MarkedValue
@@ -18,8 +18,6 @@ import java.util.Locale
 internal object DiveDetailText {
     private const val FAHRENHEIT_PER_CELSIUS = 9.0 / 5.0
 
-    fun number(locale: Locale, value: Int): String = NumberFormat.getIntegerInstance(locale).format(value)
-
     /** The local time at the dive, with where its offset lies, "(UTC+2)"; as logged in UTC when there is none. */
     fun start(context: Context, at: String, utcOffsetSeconds: Int?, locale: Locale): String {
         val local = diveLocalTime(at, utcOffsetSeconds) ?: return at
@@ -31,10 +29,10 @@ internal object DiveDetailText {
         return context.getString(R.string.dive_time_with_offset, text, offset)
     }
 
-    fun duration(context: Context, seconds: Double): String = LogbookText.duration(context, seconds)
+    fun duration(context: Context, seconds: Double): String = Formats.duration(context, seconds)
 
     fun depth(context: Context, metres: Double, locale: Locale, imperial: Boolean): String =
-        LogbookText.depth(context, metres, locale, imperial)
+        Formats.depth(context, metres, locale, imperial)
 
     /** "18 °C" or "64 °F", whole numbers as a dive page shows water temperature. */
     fun temperature(context: Context, celsius: Double, locale: Locale, imperial: Boolean): String {
@@ -117,7 +115,7 @@ internal object DiveDetailText {
         return context.getString(R.string.dive_position_value, lat, lon)
     }
 
-    fun role(context: Context, role: String): String = LogbookText.role(context, role)
+    fun role(context: Context, role: String): String = Formats.role(context, role)
 
     private fun abs(value: Double): Double = if (value < 0) -value else value
 }

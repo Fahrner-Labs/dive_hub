@@ -40,9 +40,6 @@ fun diveLocalTime(startsAt: String, utcOffsetSeconds: Int?): LocalDateTime? = ru
     Instant.parse(startsAt).toLocalDateTime(zone)
 }.getOrNull()
 
-/** True where the page must show the time in UTC without an offset, as it was logged (ADR 0030). */
-fun showsTimeAsLogged(utcOffsetSeconds: Int?): Boolean = utcOffsetSeconds == null
-
 /** The UTC offset a page puts beside the time, "UTC+2", "UTC-3:30"; null where no offset is shown. */
 fun utcOffsetText(utcOffsetSeconds: Int?): String? {
     if (utcOffsetSeconds == null) return null

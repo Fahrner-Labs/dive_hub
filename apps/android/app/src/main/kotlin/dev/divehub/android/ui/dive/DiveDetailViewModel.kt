@@ -12,8 +12,8 @@ import dev.divehub.api.models.RecordingSamplesView
 import dev.divehub.shared.DiveHubException
 import dev.divehub.shared.NoAnswerException
 import dev.divehub.shared.dive.DiveRepository
+import dev.divehub.shared.dive.profileRecording
 import dev.divehub.shared.logbook.LogbookFilter
-import dev.divehub.shared.logbook.LogbookRepository
 import dev.divehub.shared.logbook.ProviderDirectory
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -43,10 +43,7 @@ data class DiveDetailUiState(
  * recording's profile, the Providers its values may come from, and the Dives on either side in the list it was opened
  * from (ADR 0042). Every query's maths lives in `shared/dive`; this only holds what the screen last read.
  */
-class DiveDetailViewModel(
-    private val repository: DiveRepository,
-    private val logbook: LogbookRepository,
-) : ViewModel() {
+class DiveDetailViewModel(private val repository: DiveRepository) : ViewModel() {
     private val _state = MutableStateFlow(DiveDetailUiState())
     val state: StateFlow<DiveDetailUiState> = _state.asStateFlow()
 
@@ -87,7 +84,7 @@ class DiveDetailViewModel(
                 _state.update { it.copy(loading = false, offline = true) }
                 return@launch
             }
-            val directory = providers ?: logbook.providers().also {
+            val directory = providers ?: repository.providers().also {
                 if (it.names.isNotEmpty() || it.connected.isNotEmpty()) providers = it
             }
             _state.update { it.copy(loading = false, dive = dive, providers = directory) }
@@ -101,8 +98,7 @@ class DiveDetailViewModel(
             } catch (_: NoAnswerException) {
             }
 
-            val recording = dive.recordings.firstOrNull { it.isPrimary }
-                ?: dive.recordings.firstOrNull { it.partOf == null }
+            val recording = profileRecording(dive.recordings)
             if (recording != null) {
                 try {
                     val samples = repository.samples(recording.id)
@@ -118,7 +114,7 @@ class DiveDetailViewModel(
 
     companion object {
         fun factory(container: AppContainer): ViewModelProvider.Factory = viewModelFactory {
-            initializer { DiveDetailViewModel(container.dive, container.logbook) }
+            initializer { DiveDetailViewModel(container.dive) }
         }
     }
 }

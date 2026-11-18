@@ -124,8 +124,6 @@ class DiveTimeTest {
     @Test
     fun `a time logged without a zone is shown as logged, in UTC`() {
         assertEquals(LocalDateTime(2026, 4, 2, 9, 0), diveLocalTime("2026-04-02T09:00:00Z", null))
-        assertTrue(showsTimeAsLogged(null))
-        assertFalse(showsTimeAsLogged(0))
         assertNull(diveLocalTime("not a time", 7200))
     }
 
@@ -249,6 +247,17 @@ class ProfileTextTest {
         val all = listOf(joined, later, earlier, other)
         assertEquals(listOf("earlier", "later"), partsOf(joined, all).map { it.id })
         assertEquals(listOf("joined", "other"), computerRecordings(all).map { it.id })
+    }
+
+    @Test
+    fun `the page draws the primary recording's profile, else the first computer`() {
+        val primary = recording("primary")
+        val part = recording("part", primary = false, partOf = "joined")
+        val other = recording("other", primary = false)
+        assertEquals("primary", profileRecording(listOf(part, other, primary))?.id)
+        assertEquals("other", profileRecording(listOf(part, other))?.id)
+        assertNull(profileRecording(listOf(part)))
+        assertNull(profileRecording(emptyList()))
     }
 
     @Test

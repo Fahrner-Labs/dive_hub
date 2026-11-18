@@ -126,10 +126,12 @@ Read-only, from `GET /api/dives/{id}`, `GET /api/dives/{id}/neighbours` and `GET
   (ADR 0063). The profile is the Primary recording's; the samples are read once the Dive is.
 - **Water:** the Dive's water type is its site's; the Recording's `summary.waterType` is labelled as the computer's
   water setting. `waterMismatch` names both waters and how the depths read ("about 2 % shallow").
-- **Participants** with roles, and the Dive's own position only when the API sends it.
+- **Participants** with roles, and the Dive's own position only when the API sends it. A Participant's
+  `certificationHint` and its link to the Diver's certifications are left to the Divers slice; this page shows names
+  and roles only.
 - **Previous/next** follow the logbook's filters (ADR 0042): "previous" is the row above, the position reads
-  "Dive 12 of 312", and a control at either end stays but says it is unavailable. Back returns to the logbook at the
-  page and filters it had.
+  "Dive 12 of 312", and a control at either end stays but says it is unavailable. Back returns to the logbook with
+  its filters, on the page the Dive is on (ADR 0042).
 - Errors show by `code`; no answer shows the "no connection" state. A profile that cannot be read leaves the rest of
   the page standing.
 

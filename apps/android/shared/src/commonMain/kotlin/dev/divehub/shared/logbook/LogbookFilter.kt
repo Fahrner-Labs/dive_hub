@@ -33,3 +33,7 @@ fun filterChips(counts: ApiDivesGet200ResponseCounts, applied: Set<LogbookFilter
 /** This filter pressed or released. */
 fun toggleFilter(applied: Set<LogbookFilter>, filter: LogbookFilter): Set<LogbookFilter> =
     if (filter in applied) applied - filter else applied + filter
+
+/** The `only` query value for these filters, in the order they are offered; null when none is pressed. */
+fun onlyParam(filters: Set<LogbookFilter>): String? =
+    LogbookFilter.entries.filter { it in filters }.takeIf { it.isNotEmpty() }?.joinToString(",") { it.wire }

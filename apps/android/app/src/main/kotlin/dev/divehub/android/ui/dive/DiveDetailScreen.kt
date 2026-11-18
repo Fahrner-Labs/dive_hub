@@ -47,6 +47,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.divehub.android.R
+import dev.divehub.android.ui.Formats
 import dev.divehub.android.ui.logbook.LogbookText
 import dev.divehub.api.models.DiveView
 import dev.divehub.api.models.DiveViewRecordingsItem
@@ -64,6 +65,7 @@ import dev.divehub.shared.dive.deviceName
 import dev.divehub.shared.dive.markOf
 import dev.divehub.shared.dive.partsOf
 import dev.divehub.shared.dive.perMinute
+import dev.divehub.shared.dive.profileRecording
 import dev.divehub.shared.dive.startSetByHand
 import dev.divehub.shared.dive.summarize
 import dev.divehub.shared.dive.surfaceBands
@@ -186,8 +188,7 @@ private fun DiveBody(
     val context = LocalContext.current
     val locale = context.resources.configuration.locales[0] ?: Locale.getDefault()
     val imperial = LogbookText.imperial(units, locale)
-    val primary = dive.recordings.firstOrNull { it.isPrimary }
-        ?: dive.recordings.firstOrNull { it.partOf == null }
+    val primary = profileRecording(dive.recordings)
 
     LazyColumn(Modifier.fillMaxSize()) {
         item { Neighbours(state.neighbours, onOpenDive) }
@@ -261,7 +262,7 @@ private fun Facts(dive: DiveView, locale: Locale, imperial: Boolean) {
     Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
         FactRow(
             label = stringResource(R.string.dive_number),
-            value = values.number?.let { DiveDetailText.number(locale, it) } ?: "–",
+            value = values.number?.let { Formats.number(locale, it) } ?: "–",
         )
         FactRow(
             label = stringResource(R.string.dive_start),
@@ -269,7 +270,7 @@ private fun Facts(dive: DiveView, locale: Locale, imperial: Boolean) {
             mark = DiveDetailText.editedValue(context, dive.markOf(DiveValue.STARTS_AT), DiveValue.STARTS_AT, locale, imperial),
             note = timeZoneNote(dive.utcOffsetSource, dive.startSetByHand)?.let { timeZoneText(context, it) },
         )
-        val surface = dive.recordings.firstOrNull { it.isPrimary }?.let(::surfaceBreakTotalSeconds) ?: 0.0
+        val surface = profileRecording(dive.recordings)?.let(::surfaceBreakTotalSeconds) ?: 0.0
         FactRow(
             label = stringResource(R.string.dive_duration),
             value = DiveDetailText.duration(context, values.durationSeconds) +

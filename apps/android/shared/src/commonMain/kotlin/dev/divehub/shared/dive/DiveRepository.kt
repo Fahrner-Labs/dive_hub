@@ -5,6 +5,7 @@ import dev.divehub.api.models.NeighboursView
 import dev.divehub.api.models.RecordingSamplesView
 import dev.divehub.shared.ApiClient
 import dev.divehub.shared.logbook.LogbookFilter
+import dev.divehub.shared.logbook.onlyParam
 import dev.divehub.shared.logbook.ProviderDirectory
 import dev.divehub.shared.logbook.providerDirectory
 import io.ktor.http.isSuccess
@@ -43,8 +44,7 @@ class DiveRepository(private val api: ApiClient) {
  */
 fun neighboursPath(id: String, filters: Set<LogbookFilter>): String = buildString {
     append("/api/dives/").append(id).append("/neighbours")
-    val only = LogbookFilter.entries.filter { it in filters }
-    if (only.isNotEmpty()) append("?only=").append(only.joinToString(",") { it.wire })
+    onlyParam(filters)?.let { append("?only=").append(it) }
 }
 
 /** The depth and temperature series the profile draws and its table lists. */

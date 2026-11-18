@@ -78,8 +78,7 @@ fun logbookPath(page: Int, filters: Set<LogbookFilter>): String {
     val query = buildString {
         append("/api/dives?limit=").append(LOGBOOK_PAGE_SIZE)
         append("&offset=").append(LogbookPaging.offset(page))
-        val only = LogbookFilter.entries.filter { it in filters }
-        if (only.isNotEmpty()) append("&only=").append(only.joinToString(",") { it.wire })
+        onlyParam(filters)?.let { append("&only=").append(it) }
     }
     return query
 }
