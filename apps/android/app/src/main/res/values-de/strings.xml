@@ -35,6 +35,84 @@
     <string name="error_server">Die Instanz hatte ein Problem. Versuche es später erneut.</string>
     <string name="error_unknown">Etwas ist schiefgelaufen. Versuche es erneut.</string>
 
+    <string name="dive_back">Logbuch</string>
+    <string name="dive_title_number">Tauchgang %1$d</string>
+    <string name="dive_position_of">Tauchgang %1$d von %2$d</string>
+    <string name="dive_previous">Vorheriger Tauchgang</string>
+    <string name="dive_next">Nächster Tauchgang</string>
+    <string name="dive_previous_unavailable">Vorheriger Tauchgang (nicht verfügbar)</string>
+    <string name="dive_next_unavailable">Nächster Tauchgang (nicht verfügbar)</string>
+
+    <string name="dive_number">Tauchgangsnummer</string>
+    <string name="dive_start">Beginn</string>
+    <string name="dive_duration">Dauer</string>
+    <string name="dive_max_depth">Maximale Tiefe</string>
+    <string name="dive_avg_depth">Durchschnittliche Tiefe</string>
+    <string name="dive_water_temperature">Wassertemperatur</string>
+    <string name="dive_water_type">Wasserart</string>
+    <string name="dive_no_water_type">Keine</string>
+    <string name="dive_water_from_site">Kommt vom Tauchplatz</string>
+    <string name="dive_water_unknown">Für diesen Tauchplatz nicht bekannt</string>
+    <string name="dive_choose_site_for_water">Wähle einen Tauchplatz, dann übernimmt der Tauchgang seine Wasserart.</string>
+    <string name="dive_water_mismatch">Dein Computer war auf %1$s eingestellt; dieser Platz ist %2$s.</string>
+    <string name="dive_water_reads_shallow">Die Tiefen lesen sich etwa %1$s %% zu flach.</string>
+    <string name="dive_water_reads_deep">Die Tiefen lesen sich etwa %1$s %% zu tief.</string>
+    <string name="dive_water_reads_off">Die Tiefen können etwas danebenliegen.</string>
+    <string name="water_fresh">Süßwasser</string>
+    <string name="water_salt">Salzwasser</string>
+    <string name="water_brackish">Brackwasser</string>
+    <string name="water_en13319">EN 13319 (1020 kg/m³)</string>
+    <string name="water_custom">Eigene Dichte</string>
+    <string name="water_in_sentence_fresh">Süßwasser</string>
+    <string name="water_in_sentence_salt">Salzwasser</string>
+    <string name="water_in_sentence_brackish">Brackwasser</string>
+    <string name="water_in_sentence_en13319">EN 13319 (1020 kg/m³)</string>
+    <string name="water_in_sentence_custom">eine eigene Dichte</string>
+
+    <string name="dive_edited_value">bearbeitet · Aufzeichnung: %1$s</string>
+    <string name="dive_time_zone_position">Zeitzone vom Ort des Tauchgangs</string>
+    <string name="dive_time_zone_nearby">Zeitzone aus deinen Tauchgängen an den Tagen davor und danach</string>
+    <string name="dive_time_zone_unknown">Zeitzone unbekannt: die Zeit wird so gezeigt, wie sie aufgezeichnet wurde</string>
+    <string name="dive_time_with_offset">%1$s (%2$s)</string>
+    <string name="dive_start_pattern">EEE d. MMM yyyy, HH:mm</string>
+
+    <string name="dive_recordings">Aufzeichnungen</string>
+    <string name="dive_recording_n">Aufzeichnung %1$d</string>
+    <string name="dive_primary">primär</string>
+    <string name="dive_computer_water">Wassereinstellung am Computer</string>
+    <string name="dive_no_recording">Dieser Tauchgang hat keine Aufzeichnung.</string>
+    <string name="dive_no_recording_from">Noch keine Aufzeichnung: Dieser Tauchgang kommt aus deinem %1$s-Logbuch und wurde von Hand eingetragen.</string>
+    <string name="dive_no_recording_next">Wenn du die Datei des Tauchcomputers importierst, kommt ihre Aufzeichnung hinzu und ihre Werte ersetzen diese.</string>
+    <string name="dive_parts">Teile dieser Aufzeichnung</string>
+    <string name="dive_recording_line">%1$s · %2$s · %3$s</string>
+
+    <string name="dive_profile">Tiefenprofil</string>
+    <string name="dive_profile_summary">Tiefster Punkt %1$s nach %2$s; insgesamt %3$s.</string>
+    <string name="dive_profile_temperature">Wasser %1$s.</string>
+    <string name="dive_profile_temperature_range">%1$s – %2$s</string>
+    <string name="dive_profile_table">Profil als Tabelle</string>
+    <string name="dive_time">Zeit</string>
+    <string name="dive_depth">Tiefe</string>
+    <string name="dive_temperature">Temperatur</string>
+    <string name="dive_profile_failed">Das Tiefenprofil konnte nicht gezeichnet werden.</string>
+    <string name="dive_at_surface">%1$s an der Oberfläche</string>
+    <string name="dive_surface_break">Oberflächenpause %1$s</string>
+    <string name="dive_temperature_celsius">%1$s °C</string>
+    <string name="dive_temperature_fahrenheit">%1$s °F</string>
+
+    <string name="dive_participants">Teilnehmende</string>
+    <string name="dive_participant">%1$s (%2$s)</string>
+    <string name="dive_position">Position</string>
+    <string name="dive_position_value">%1$s, %2$s</string>
+    <string name="dive_position_north">%1$s° N</string>
+    <string name="dive_position_south">%1$s° S</string>
+    <string name="dive_position_east">%1$s° O</string>
+    <string name="dive_position_west">%1$s° W</string>
+
+    <string name="dive_offline">Keine Verbindung. Prüfe deine Verbindung und versuche es erneut.</string>
+    <string name="dive_retry">Erneut versuchen</string>
+    <string name="dive_error_not_found">Dieser Tauchgang existiert nicht oder gehört dir nicht.</string>
+
     <string name="logbook_title">Logbuch</string>
     <string name="logbook_show_only">Nur anzeigen</string>
     <string name="logbook_only_no_recording">Keine Aufzeichnung</string>

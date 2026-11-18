@@ -2,9 +2,8 @@ package dev.divehub.android.ui.logbook
 
 import android.content.Context
 import dev.divehub.android.R
+import dev.divehub.android.ui.Formats
 import dev.divehub.shared.logbook.LogbookFilter
-import dev.divehub.shared.logbook.durationMinutes
-import java.text.NumberFormat
 import java.time.Instant
 import java.time.YearMonth
 import java.time.ZoneId
@@ -12,38 +11,17 @@ import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-/** Number and date text for the logbook rows (ADR 0014). Values are stored in metres and seconds. */
+/** Date text for the logbook rows, over the units every page says the same way ([Formats]). */
 internal object LogbookText {
-    private const val FEET_PER_METRE = 1 / 0.3048
-    private val IMPERIAL_REGIONS = setOf("US", "LR", "MM")
-
-    fun number(locale: Locale, value: Int): String = NumberFormat.getIntegerInstance(locale).format(value)
+    fun number(locale: Locale, value: Int): String = Formats.number(locale, value)
 
     /** The User's unit system: their choice, else the device region (ADR 0014). */
-    fun imperial(preference: String?, locale: Locale): Boolean = when (preference) {
-        "imperial" -> true
-        "metric" -> false
-        else -> locale.country in IMPERIAL_REGIONS
-    }
+    fun imperial(preference: String?, locale: Locale): Boolean = Formats.imperial(preference, locale)
 
-    /** "45 min", "1 h 5 min". */
-    fun duration(context: Context, seconds: Double): String {
-        val minutes = durationMinutes(seconds)
-        val hours = minutes / 60
-        val rest = minutes % 60
-        return if (hours == 0L) {
-            context.getString(R.string.logbook_duration_minutes, rest)
-        } else {
-            context.getString(R.string.logbook_duration_hours_minutes, hours, rest)
-        }
-    }
+    fun duration(context: Context, seconds: Double): String = Formats.duration(context, seconds)
 
-    /** "18.5 m", "60.7 ft". */
-    fun depth(context: Context, metres: Double, locale: Locale, imperial: Boolean): String {
-        val value = if (imperial) metres * FEET_PER_METRE else metres
-        val text = String.format(locale, "%.1f", value)
-        return context.getString(if (imperial) R.string.logbook_depth_feet else R.string.logbook_depth_metres, text)
-    }
+    fun depth(context: Context, metres: Double, locale: Locale, imperial: Boolean): String =
+        Formats.depth(context, metres, locale, imperial)
 
     /** "April 2026" for a local month "2026-04". */
     fun month(context: Context, month: String, locale: Locale): String =
@@ -74,10 +52,5 @@ internal object LogbookText {
         LogbookFilter.CHANGED_SINCE_SENT -> context.getString(R.string.logbook_only_changed_since_sent)
     }
 
-    fun role(context: Context, role: String): String = when (role) {
-        "buddy" -> context.getString(R.string.participant_role_buddy)
-        "guide" -> context.getString(R.string.participant_role_guide)
-        "instructor" -> context.getString(R.string.participant_role_instructor)
-        else -> role
-    }
+    fun role(context: Context, role: String): String = Formats.role(context, role)
 }

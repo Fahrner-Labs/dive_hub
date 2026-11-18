@@ -1,6 +1,7 @@
 package dev.divehub.android.ui.logbook
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -61,7 +62,12 @@ import java.util.Locale
 
 /** The logbook route: the list keeps its page and filters in the view model, not in an address. */
 @Composable
-fun LogbookRoute(viewModel: LogbookViewModel, units: String?, onSignOut: () -> Unit) {
+fun LogbookRoute(
+    viewModel: LogbookViewModel,
+    units: String?,
+    onSignOut: () -> Unit,
+    onOpenDive: (String, Set<LogbookFilter>) -> Unit,
+) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     LogbookScreen(
         state = state,
@@ -72,6 +78,7 @@ fun LogbookRoute(viewModel: LogbookViewModel, units: String?, onSignOut: () -> U
         onPage = viewModel::showPage,
         onToggleFilter = viewModel::toggle,
         onSignOut = onSignOut,
+        onOpenDive = { dive -> onOpenDive(dive.id, state.filters) },
     )
 }
 
@@ -91,6 +98,7 @@ fun LogbookScreen(
     onPage: (Int) -> Unit,
     onToggleFilter: (LogbookFilter) -> Unit,
     onSignOut: () -> Unit,
+    onOpenDive: (ApiDivesGet200ResponseDivesItem) -> Unit,
 ) {
     Scaffold(
         topBar = {
@@ -110,7 +118,7 @@ fun LogbookScreen(
                 onRefresh = onRefresh,
                 modifier = modifier,
             ) {
-                LogbookList(state, units, onRetry, onShowAll, onPage, onToggleFilter)
+                LogbookList(state, units, onRetry, onShowAll, onPage, onToggleFilter, onOpenDive)
             }
         }
     }
@@ -175,6 +183,7 @@ private fun LogbookList(
     onShowAll: () -> Unit,
     onPage: (Int) -> Unit,
     onToggleFilter: (LogbookFilter) -> Unit,
+    onOpenDive: (ApiDivesGet200ResponseDivesItem) -> Unit,
 ) {
     val context = LocalContext.current
     val locale = context.resources.configuration.locales[0] ?: Locale.getDefault()
@@ -242,6 +251,7 @@ private fun LogbookList(
                         providerName = state.providers::nameOf,
                         locale = locale,
                         imperial = imperial,
+                        onOpen = { onOpenDive(dive) },
                     )
                     HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant)
                 }
@@ -369,10 +379,11 @@ private fun DiveRow(
     providerName: (String) -> String,
     locale: Locale,
     imperial: Boolean,
+    onOpen: () -> Unit,
 ) {
     val context = LocalContext.current
     val day = LogbookText.diveDay(context, dive.startsAt, dive.utcOffsetSeconds, dive.utcOffsetSource, locale)
-    Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp)) {
+    Row(Modifier.fillMaxWidth().clickable(onClick = onOpen).padding(horizontal = 16.dp, vertical = 10.dp)) {
         Text(
             dive.number?.toString() ?: "–",
             modifier = Modifier.width(32.dp),

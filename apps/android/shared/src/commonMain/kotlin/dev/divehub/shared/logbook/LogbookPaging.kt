@@ -9,6 +9,9 @@ object LogbookPaging {
 
     fun pageCount(total: Int): Int = if (total <= 0) 0 else (total + LOGBOOK_PAGE_SIZE - 1) / LOGBOOK_PAGE_SIZE
 
+    /** The page showing a 1-based position in the list (ADR 0042: a Dive's page is worked out from its position). */
+    fun pageOf(position: Int): Int = (position.coerceAtLeast(1) - 1) / LOGBOOK_PAGE_SIZE + 1
+
     /** The 1-based positions this page shows, "26–50 of 312"; null when there is nothing to show. */
     fun range(page: Int, total: Int): IntRange? {
         if (total <= 0) return null
