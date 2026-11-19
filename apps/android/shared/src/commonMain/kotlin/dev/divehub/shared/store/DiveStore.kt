@@ -65,6 +65,8 @@ class DiveStore internal constructor(private val database: DiveHubDatabase) : Us
             number = dive.number,
             findingsCount = dive.findingsCount,
             summaryJson = dive.summaryJson,
+            listJson = dive.listJson,
+            detailJson = dive.detailJson,
         )
     }
 
@@ -236,7 +238,13 @@ class DiveStore internal constructor(private val database: DiveHubDatabase) : Us
 
     /** The schema version is the store's, never the caller's: it is what [migrate] advances. */
     fun saveSyncState(state: SyncState) {
-        queries.upsertSyncState(state.lastFullSyncAt, state.lastHintAt, schemaVersion)
+        queries.upsertSyncState(state.lastFullSyncAt, state.lastHintAt, schemaVersion, state.countsJson)
+    }
+
+    /** The last list page's per-filter counts, kept so the chips survive offline; null before the first list sync. */
+    fun saveLogbookCounts(countsJson: String) {
+        val state = syncState()
+        saveSyncState(state.copy(countsJson = countsJson))
     }
 
     /**
@@ -261,7 +269,7 @@ class DiveStore internal constructor(private val database: DiveHubDatabase) : Us
             queries.deleteAllBodyWeights()
             queries.deleteAllCheckpoints()
             queries.deleteAllSyncState()
-            queries.upsertSyncState(lastFullSyncAt = null, lastHintAt = null, schemaVersion = schemaVersion)
+            queries.upsertSyncState(lastFullSyncAt = null, lastHintAt = null, schemaVersion = schemaVersion, countsJson = null)
         }
     }
 
@@ -271,7 +279,7 @@ class DiveStore internal constructor(private val database: DiveHubDatabase) : Us
     private fun reconcileSchemaVersion() {
         val state = syncState()
         if (state.schemaVersion != schemaVersion) {
-            queries.upsertSyncState(state.lastFullSyncAt, state.lastHintAt, schemaVersion)
+            queries.upsertSyncState(state.lastFullSyncAt, state.lastHintAt, schemaVersion, state.countsJson)
         }
     }
 
@@ -327,6 +335,8 @@ private fun DiveRow.toModel() = Dive(
     number = number,
     findingsCount = findingsCount,
     summaryJson = summaryJson,
+    listJson = listJson,
+    detailJson = detailJson,
 )
 
 private fun RecordingRow.toModel() = Recording(
@@ -404,4 +414,5 @@ private fun Sync_state.toModel() = SyncState(
     lastFullSyncAt = lastFullSyncAt,
     lastHintAt = lastHintAt,
     schemaVersion = schemaVersion,
+    countsJson = countsJson,
 )

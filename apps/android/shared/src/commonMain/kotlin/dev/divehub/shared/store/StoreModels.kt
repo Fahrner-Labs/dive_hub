@@ -32,6 +32,10 @@ data class Dive(
     val number: Long? = null,
     val findingsCount: Long? = null,
     val summaryJson: String? = null,
+    /** The API's own list row (`GET /api/dives`), so the logbook screen draws exactly what the server sent. */
+    val listJson: String? = null,
+    /** The API's own Dive view (`GET /api/dives/{id}`), so the dive page draws exactly what the server sent. */
+    val detailJson: String? = null,
 )
 
 data class Recording(
@@ -116,4 +120,6 @@ data class SyncState(
     val lastFullSyncAt: String? = null,
     val lastHintAt: String? = null,
     val schemaVersion: Long,
+    /** The last list page's per-filter counts, JSON as `ApiDivesGet200ResponseCounts`; null before the first list sync. */
+    val countsJson: String? = null,
 )

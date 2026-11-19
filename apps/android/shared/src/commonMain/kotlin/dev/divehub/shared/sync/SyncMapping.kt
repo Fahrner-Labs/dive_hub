@@ -72,6 +72,7 @@ internal fun ApiDivesGet200ResponseDivesItem.toStore(existing: Dive?): Dive {
             fromProvider = fromProvider,
             number = number?.toLong(),
             findingsCount = findings.toLong(),
+            listJson = JSON.encodeToString(this),
         )
     }
     return Dive(
@@ -99,6 +100,7 @@ internal fun ApiDivesGet200ResponseDivesItem.toStore(existing: Dive?): Dive {
         number = number?.toLong(),
         findingsCount = findings.toLong(),
         summaryJson = null,
+        listJson = JSON.encodeToString(this),
     )
 }
 
@@ -129,6 +131,8 @@ internal fun DiveView.toStore(existing: Dive?): Dive = Dive(
     number = values.number?.toLong(),
     findingsCount = existing?.findingsCount,
     summaryJson = existing?.summaryJson,
+    listJson = existing?.listJson,
+    detailJson = JSON.encodeToString(this),
 )
 
 internal fun DiveViewRecordingsItem.toStore(diveId: String): Recording = Recording(

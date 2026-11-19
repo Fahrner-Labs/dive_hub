@@ -1,0 +1,5 @@
+-- v2 keeps the API's own list row and detail payloads beside the typed columns, so the D4 screens read exactly what the
+-- API sent without a second hand-written mapping, and keeps the last list page's per-filter counts for the chips.
+ALTER TABLE dive ADD COLUMN listJson TEXT;
+ALTER TABLE dive ADD COLUMN detailJson TEXT;
+ALTER TABLE sync_state ADD COLUMN countsJson TEXT;

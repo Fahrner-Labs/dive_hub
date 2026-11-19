@@ -27,7 +27,9 @@ CREATE TABLE dive (
     sacMissing TEXT,
     number INTEGER,
     findingsCount INTEGER,
-    summaryJson TEXT
+    summaryJson TEXT,
+    listJson TEXT,
+    detailJson TEXT
 );
 
 CREATE TABLE recording (
@@ -113,7 +115,8 @@ CREATE TABLE sync_state (
     id INTEGER NOT NULL PRIMARY KEY,
     lastFullSyncAt TEXT,
     lastHintAt TEXT,
-    schemaVersion INTEGER NOT NULL
+    schemaVersion INTEGER NOT NULL,
+    countsJson TEXT
 );
 
 selectDiveById:
@@ -138,11 +141,11 @@ upsertDive:
 INSERT OR REPLACE INTO dive(
     id, diverId, version, deletedAt, startsAt, utcOffsetSeconds, utcOffsetSource, durationSeconds, maxDepthM,
     avgDepthM, siteId, waterType, fromProvider, notes, suitJson, weightingFeedbackJson, leadJson, leadTotalKg,
-    sacLitresPerMinute, sacBarPerMinute, sacMissing, number, findingsCount, summaryJson
+    sacLitresPerMinute, sacBarPerMinute, sacMissing, number, findingsCount, summaryJson, listJson, detailJson
 ) VALUES (
     :id, :diverId, :version, :deletedAt, :startsAt, :utcOffsetSeconds, :utcOffsetSource, :durationSeconds, :maxDepthM,
     :avgDepthM, :siteId, :waterType, :fromProvider, :notes, :suitJson, :weightingFeedbackJson, :leadJson, :leadTotalKg,
-    :sacLitresPerMinute, :sacBarPerMinute, :sacMissing, :number, :findingsCount, :summaryJson
+    :sacLitresPerMinute, :sacBarPerMinute, :sacMissing, :number, :findingsCount, :summaryJson, :listJson, :detailJson
 );
 
 markDiveDeleted:
@@ -290,8 +293,8 @@ selectSyncState:
 SELECT * FROM sync_state WHERE id = 1;
 
 upsertSyncState:
-INSERT OR REPLACE INTO sync_state(id, lastFullSyncAt, lastHintAt, schemaVersion)
-VALUES (1, :lastFullSyncAt, :lastHintAt, :schemaVersion);
+INSERT OR REPLACE INTO sync_state(id, lastFullSyncAt, lastHintAt, schemaVersion, countsJson)
+VALUES (1, :lastFullSyncAt, :lastHintAt, :schemaVersion, :countsJson);
 
 deleteAllSyncState:
 DELETE FROM sync_state;
