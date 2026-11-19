@@ -377,6 +377,7 @@
 
     <string name="tools_day_pattern">d MMM yyyy</string>
     <string name="tools_profiles_syncing">(profiles still syncing)</string>
+    <string name="tools_details_syncing">(dive details still syncing)</string>
     <string name="tools_tools_back">Tools</string>
     <string name="tools_suit_none">No suit</string>
     <string name="tools_suit_skin">Skin</string>
@@ -417,10 +418,13 @@
     <string name="tools_lead_not_certain">A starting point, not a certain number: check it with the weight check below.</string>
     <string name="tools_lead_no_number">No number yet</string>
     <string name="tools_lead_no_number_body">There is no dive with this suit and no body weight on record, so there is nothing to start from. Add a body weight, or log a dive with this suit and its lead.</string>
+    <string name="tools_lead_syncing">Dive details still syncing</string>
+    <string name="tools_lead_syncing_body">This rests on what is already on the device. A dive with this suit may not have arrived yet; check again when the sync has finished.</string>
     <string name="tools_lead_basis_dives">Based on %1$d of your dives with this suit:</string>
     <string name="tools_lead_dive_label">Dive %1$d, %2$s</string>
     <string name="tools_lead_dive_line">carried %1$s, needed %2$s · counts ×%3$s</string>
     <string name="tools_lead_basis_rule">No dive with this suit. A rule of thumb for the body weight gives %1$s, a first guess.</string>
+    <string name="tools_lead_basis_rule_syncing">Dive details are still syncing, so this is only the rule of thumb from your body weight: %1$s. A dive with this suit may still arrive.</string>
     <plurals name="tools_lead_basis_offset">
         <item quantity="one">Moved by %1$s: your %2$d other suit with dives needed more or less than the rule.</item>
         <item quantity="other">Moved by %1$s: your %2$d other suits with dives needed more or less than the rule.</item>

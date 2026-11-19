@@ -377,6 +377,7 @@
 
     <string name="tools_day_pattern">d. MMM yyyy</string>
     <string name="tools_profiles_syncing">(Profile werden noch synchronisiert)</string>
+    <string name="tools_details_syncing">(Tauchgangsdetails werden noch synchronisiert)</string>
     <string name="tools_tools_back">Werkzeuge</string>
     <string name="tools_suit_none">Kein Anzug</string>
     <string name="tools_suit_skin">Skin</string>
@@ -417,10 +418,13 @@
     <string name="tools_lead_not_certain">Ein Ausgangspunkt, keine sichere Zahl: Prüfe sie mit der Gewichtskontrolle unten.</string>
     <string name="tools_lead_no_number">Noch keine Zahl</string>
     <string name="tools_lead_no_number_body">Es gibt keinen Tauchgang mit diesem Anzug und kein Körpergewicht, also keinen Ausgangspunkt. Trage ein Körpergewicht ein oder logge einen Tauchgang mit diesem Anzug und seinem Blei.</string>
+    <string name="tools_lead_syncing">Tauchgangsdetails werden noch synchronisiert</string>
+    <string name="tools_lead_syncing_body">Das beruht auf dem, was schon auf dem Gerät ist. Ein Tauchgang mit diesem Anzug ist vielleicht noch nicht angekommen; versuche es erneut, wenn die Synchronisierung fertig ist.</string>
     <string name="tools_lead_basis_dives">Aus %1$d deiner Tauchgänge mit diesem Anzug:</string>
     <string name="tools_lead_dive_label">Tauchgang %1$d, %2$s</string>
     <string name="tools_lead_dive_line">getragen %1$s, gebraucht %2$s · zählt ×%3$s</string>
     <string name="tools_lead_basis_rule">Kein Tauchgang mit diesem Anzug. Eine Faustregel aus dem Körpergewicht ergibt %1$s, eine erste Schätzung.</string>
+    <string name="tools_lead_basis_rule_syncing">Tauchgangsdetails werden noch synchronisiert; das ist deshalb nur die Faustregel aus deinem Körpergewicht: %1$s. Ein Tauchgang mit diesem Anzug kommt vielleicht noch.</string>
     <plurals name="tools_lead_basis_offset">
         <item quantity="one">Verschoben um %1$s: Dein %2$d anderer Anzug mit Tauchgängen brauchte mehr oder weniger als die Regel.</item>
         <item quantity="other">Verschoben um %1$s: Deine %2$d anderen Anzüge mit Tauchgängen brauchten mehr oder weniger als die Regel.</item>

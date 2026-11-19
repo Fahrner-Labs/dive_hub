@@ -123,6 +123,55 @@ class PersonalizedScreenshotTest {
     }
 
     @Test
+    fun `no number while details sync says so instead of claiming there is no dive`() {
+        renderLead(
+            LeadEstimateUiState(
+                loading = false,
+                personalized = true,
+                syncedAt = "2026-11-18T08:00:00Z",
+                profilesComplete = true,
+                detailsComplete = false,
+                inputs = LeadInputs(suit = SuitType.wetsuit, thickness = "5", cylinders = listOf(LeadCylinderInput("12", CylinderMaterial.steel))),
+                answer = leadAnswer(
+                    total = null,
+                    range = null,
+                    basis = null,
+                    confidence = "low",
+                    missing = listOf(ApiDiversIdLeadEstimateGet200ResponseMissingItem(kind = "body_weight")),
+                    adjustments = emptyList(),
+                ),
+            ),
+        )
+        compose.onNodeWithText("Based on dives synced as of 18 Nov 2026, 09:00. (dive details still syncing)").assertIsDisplayed()
+        compose.onNode(hasScrollAction()).performScrollToNode(hasText("Dive details still syncing"))
+        compose.onNodeWithText("Dive details still syncing").assertIsDisplayed()
+        compose.onNode(hasScrollAction()).performScrollToNode(hasText("This rests on what is already on the device", substring = true))
+        compose.onNodeWithText("This rests on what is already on the device", substring = true).assertIsDisplayed()
+        compose.onNodeWithText("There is no dive with this suit", substring = true).assertDoesNotExist()
+        capture("lead_no_number_syncing.png")
+    }
+
+    @Test
+    fun `the rule of thumb gives way to the details marker while details sync`() {
+        renderLead(
+            LeadEstimateUiState(
+                loading = false,
+                personalized = true,
+                syncedAt = "2026-11-18T08:00:00Z",
+                profilesComplete = true,
+                detailsComplete = false,
+                inputs = LeadInputs(suit = SuitType.wetsuit, thickness = "5", cylinders = listOf(LeadCylinderInput("12", CylinderMaterial.steel))),
+                answer = leadAnswer(
+                    basis = ApiDiversIdLeadEstimateGet200ResponseBasis(kind = "rule_of_thumb", rule = 6.0),
+                ),
+            ),
+        )
+        compose.onNode(hasScrollAction()).performScrollToNode(hasText("Dive details are still syncing", substring = true))
+        compose.onNodeWithText("Dive details are still syncing", substring = true).assertIsDisplayed()
+        compose.onNodeWithText("No dive with this suit", substring = true).assertDoesNotExist()
+    }
+
+    @Test
     fun `the loadings name their basis and mark the profiles still syncing`() {
         renderLoadings(
             LoadingsUiState(
