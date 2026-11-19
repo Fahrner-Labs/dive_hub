@@ -164,6 +164,20 @@ private fun resetRefreshData() {
 
 private fun refreshPathId(path: String): String = path.substringAfterLast('/').substringBefore('?')
 
+private fun refreshDiveId(listItem: String): String =
+    Regex("\"id\":\"([^\"]+)\"").find(listItem)?.groupValues?.get(1) ?: error("no id in $listItem")
+
+private fun refreshDiveStartsAt(listItem: String): String =
+    Regex("\"startsAt\":\"([^\"]+)\"").find(listItem)?.groupValues?.get(1) ?: error("no startsAt in $listItem")
+
+private fun refreshDetailsPage(items: List<String>): String {
+    val details = items.map { dive ->
+        val id = refreshDiveId(dive)
+        RefreshData.details[id] ?: refreshDetailJson(id, refreshDiveStartsAt(dive))
+    }
+    return """{"dives":[${details.joinToString(",")}],"total":${RefreshData.dives.size}}"""
+}
+
 private fun refreshRoutes(path: String): RefreshReply = when {
     path == "/api/divers" -> refreshJson("[${RefreshData.divers.joinToString(",")}]")
     path.startsWith("/api/divers/") && path.endsWith("/body-weights") -> refreshJson(refreshWeightsJson())
@@ -183,7 +197,11 @@ private fun refreshRoutes(path: String): RefreshReply = when {
     path.startsWith("/api/dives?") -> {
         val offset = refreshQuery(path, "offset")?.toInt() ?: 0
         val limit = refreshQuery(path, "limit")?.toInt() ?: 200
-        refreshJson(refreshDivePage(RefreshData.dives.drop(offset).take(limit)))
+        if (refreshQuery(path, "include") == "details") {
+            refreshJson(refreshDetailsPage(RefreshData.dives.drop(offset).take(limit)))
+        } else {
+            refreshJson(refreshDivePage(RefreshData.dives.drop(offset).take(limit)))
+        }
     }
     path.startsWith("/api/recordings/") && path.contains("/samples?") -> {
         val id = path.removePrefix("/api/recordings/").substringBefore('/')
@@ -299,10 +317,15 @@ class SyncRefreshTest {
         )
         var detailFails = true
         val harness = RefreshHarness(store = store, handler = { path ->
-            if (path == "/api/dives/dive-2" && detailFails) {
-                RefreshReply.Status(HttpStatusCode.InternalServerError)
-            } else {
-                refreshRoutes(path)
+            when {
+                // The batched page does not return dive-2, so only the per-Dive repair path can bring it in.
+                path.startsWith("/api/dives?") && refreshQuery(path, "include") == "details" -> {
+                    val offset = refreshQuery(path, "offset")?.toInt() ?: 0
+                    val rows = if (offset == 0) listOf(RefreshData.details["dive-1"]!!) else emptyList()
+                    refreshJson("""{"dives":[${rows.joinToString(",")}],"total":${RefreshData.dives.size}}""")
+                }
+                path == "/api/dives/dive-2" && detailFails -> RefreshReply.Status(HttpStatusCode.InternalServerError)
+                else -> refreshRoutes(path)
             }
         })
 

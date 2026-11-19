@@ -184,7 +184,10 @@ The sync engine ([`shared/sync/SyncEngine.kt`](shared/src/commonMain/kotlin/dev/
 the read store in three phases, in order:
 
 1. **Meta** — Divers, body weights, Dive sites and the paged Dive list. The logbook list renders offline after this.
-2. **Details** — one `GET /api/dives/{id}` per Dive (Dive, Recordings, Cylinders). The dive page renders offline after this.
+2. **Details** — pages `GET /api/dives?include=details` (50 a page, the server's cap), each row a whole Dive view:
+   Dive, Recordings, Cylinders. The dive page renders offline after this. A checkpoint that misses a Dive (it was
+   deleted between the phases, or a page boundary moved) is repaired with the single `GET /api/dives/{id}` fetch,
+   which is also what a `dive` hint uses.
 3. **Profiles** — one `GET /api/recordings/{id}/samples` per Recording with all its listed channels and the explicit
    `maxPoints=20000` cap the server verified (FAH-269). This runs in the background, is cancellable, and records
    completion per Dive in `sync_checkpoint` (`profiles:<diveId>`), so `SyncEngine.profileSynced(diveId)` and

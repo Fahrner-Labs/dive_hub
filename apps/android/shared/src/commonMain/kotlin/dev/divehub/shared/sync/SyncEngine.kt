@@ -313,45 +313,38 @@ class SyncEngine(
             it.deletedAt == null && it.version != null && it.detailJson == null
         }
         if (existing?.done == true && !stalePayloads) return
-        val dives = store.allDives()
-        val start = if (stalePayloads) 0 else existing?.pageOffset?.toInt()?.coerceAtLeast(0) ?: 0
-        if (start >= dives.size) {
+        var offset = if (stalePayloads) 0L else existing?.pageOffset?.coerceAtLeast(0) ?: 0L
+        var total = 0L
+        while (true) {
+            // A details page is a whole Dive per row, so the server caps it lower than the summary list (FAH-297).
+            val page = fetchJson<DiveDetailsPage>(
+                "/api/dives?include=details&limit=$DETAILS_PAGE_SIZE&offset=$offset",
+            )
+            total = page.total
+            val next = offset + page.dives.size
+            val done = page.dives.isEmpty() || next >= total
             store.transaction {
+                page.dives.forEach { writeDetail(it) }
                 store.saveCheckpoint(
-                    checkpoint(
-                        ENTITY_DIVE_DETAILS,
-                        PHASE_DETAILS,
-                        dives.lastOrNull()?.id,
-                        dives.size.toLong(),
-                        done = true,
-                        now = now,
-                    ),
+                    checkpoint(ENTITY_DIVE_DETAILS, PHASE_DETAILS, cursor = null, pageOffset = next, done = done, now = now),
                 )
             }
-            return
+            if (done) break
+            offset = next
         }
-        for (index in start until dives.size) {
-            val dive = dives[index]
-            val next = index + 1
-            val done = next >= dives.size
-            try {
-                val detail = fetchJson<DiveView>("/api/dives/${dive.id}")
-                store.transaction {
-                    writeDetail(detail)
-                    store.saveCheckpoint(
-                        checkpoint(ENTITY_DIVE_DETAILS, PHASE_DETAILS, dive.id, next.toLong(), done, now),
-                    )
-                }
-            } catch (error: DiveHubException) {
-                // Deleted between the list and this fetch: leave a tombstone and move on.
-                if (error.status != 404) throw error
-                store.transaction {
-                    store.markDiveDeleted(dive.id, now)
-                    store.saveCheckpoint(
-                        checkpoint(ENTITY_DIVE_DETAILS, PHASE_DETAILS, dive.id, next.toLong(), done, now),
-                    )
-                }
-            }
+        // The per-Dive fetch stays the repair path (ADR 0066): a Dive phase 1 stored but the details pages did not
+        // return (deleted meanwhile, or a page boundary moved) is fetched on its own, and a 404 leaves a tombstone.
+        // The same goes for a v1 row whose version is known but whose API payload is still missing. Their progress is
+        // not a page, so the phase stays open until each miss is written or tombstoned.
+        val missing = store.allDives().filter { it.deletedAt == null && (it.version == null || it.detailJson == null) }
+        if (missing.isEmpty()) return
+        store.transaction {
+            store.saveCheckpoint(checkpoint(ENTITY_DIVE_DETAILS, PHASE_DETAILS, cursor = null, pageOffset = total, done = false, now = now))
+        }
+        for (dive in missing) fetchAndStoreDetail(dive.id, now)
+        store.transaction {
+            val repaired = store.allDives().none { it.deletedAt == null && (it.version == null || it.detailJson == null) }
+            store.saveCheckpoint(checkpoint(ENTITY_DIVE_DETAILS, PHASE_DETAILS, cursor = null, pageOffset = total, done = repaired, now = now))
         }
     }
 
@@ -673,6 +666,9 @@ class SyncEngine(
         const val PHASE_TOMBSTONES = "tombstones"
         const val MAX_RETRIES = 1
         const val RETRY_BACKOFF_MS = 1_000L
+
+        /** The details mode's server cap (FAH-297): a page carries a whole Dive per row. */
+        const val DETAILS_PAGE_SIZE = 50
 
         /** The samples route's verified maximum (FAH-269): an explicit high cap keeps the peaks for offline replay. */
         const val MAX_PROFILE_POINTS = 20_000

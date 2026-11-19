@@ -108,6 +108,7 @@ private fun detailJson(id: String = "dive-1", startsAt: String = "2026-11-01T10:
     "values":{"number":42,"startsAt":{"at":"$startsAt","utcOffsetSeconds":3600},
     "durationSeconds":3000,"maxDepthM":24.3,"avgDepthM":12,"waterTemperatureC":18},
     "overrides":[],"utcOffsetSource":"device","fromProvider":"ssi","notes":"A good dive",
+    "site":{"id":"site-1","name":"Reef"},"waterType":"salt",
     "recordings":[{"id":"recording-$id","isPrimary":true,
       "device":{"manufacturer":"Garmin","product":"Descent","serialNumber":"777"},
       "startsAt":"2026-11-01T10:00:00Z","durationSeconds":3000,"maxDepthM":24.3,"parser":"fit","partOf":null,
@@ -116,7 +117,18 @@ private fun detailJson(id: String = "dive-1", startsAt: String = "2026-11-01T10:
     "cylinders":[{"volumeL":12,"workingPressureBar":232,"material":"steel","gas":{"o2":21,"he":0},
       "startPressureBar":200,"endPressureBar":50,"fromPod":false,"series":null}],
     "lead":[{"amountKg":4,"placement":"belt"}],"leadTotalKg":4,
+    "weightingFeedback":{"felt":"good","amountKg":4},
+    "suit":{"type":"wetsuit","thicknessMm":5.0,"hood":true,"undergarment":null},
     "participants":[],"verificationCodes":[]}"""
+
+private fun diveIdOf(listItem: String): String =
+    Regex("\"id\":\"([^\"]+)\"").find(listItem)?.groupValues?.get(1) ?: error("no id in $listItem")
+
+private fun diveStartsAtOf(listItem: String): String =
+    Regex("\"startsAt\":\"([^\"]+)\"").find(listItem)?.groupValues?.get(1) ?: error("no startsAt in $listItem")
+
+private fun diveDetailsPage(ids: List<Pair<String, String>>, total: Int): String =
+    """{"dives":[${ids.joinToString(",") { (id, startsAt) -> detailJson(id, startsAt) }}],"total":$total}"""
 
 private class RouteData(
     val divers: List<String> = listOf(diverJson()),
@@ -139,7 +151,12 @@ private fun routes(data: RouteData = RouteData()): (String) -> Reply = { path ->
         path.startsWith("/api/dives?") -> {
             val offset = query(path, "offset")?.toInt() ?: 0
             val limit = query(path, "limit")?.toInt() ?: 200
-            json(divePage(data.dives.drop(offset).take(limit), data.dives.size))
+            if (query(path, "include") == "details") {
+                val rows = data.dives.drop(offset).take(limit)
+                json(diveDetailsPage(rows.map { diveIdOf(it) to diveStartsAtOf(it) }, data.dives.size))
+            } else {
+                json(divePage(data.dives.drop(offset).take(limit), data.dives.size))
+            }
         }
         path.startsWith("/api/dives/") -> {
             val id = path.removePrefix("/api/dives/")
@@ -196,6 +213,10 @@ class SyncEngineTest {
         assertNotNull(store.dive("dive-1")!!.detailJson)
         assertNotNull(store.syncState().countsJson)
         assertEquals(NOW, store.syncState().lastFullSyncAt)
+        assertTrue(harness.paths.contains("/api/dives?include=details&limit=50&offset=0"))
+        assertTrue(harness.paths.none { it.startsWith("/api/dives/") })
+        assertEquals("salt", store.dive("dive-1")!!.waterType)
+        assertTrue(store.dive("dive-1")!!.suitJson!!.contains("\"type\":\"wetsuit\""))
     }
 
     @Test
@@ -249,6 +270,9 @@ class SyncEngineTest {
         assertTrue(harness.paths.contains("/api/dives?limit=200&offset=0"))
         assertTrue(harness.paths.contains("/api/dives?limit=200&offset=200"))
         assertTrue(harness.paths.none { it.startsWith("/api/dives?") && query(it, "offset") == "400" })
+        assertTrue(harness.paths.contains("/api/dives?include=details&limit=50&offset=0"))
+        assertTrue(harness.paths.contains("/api/dives?include=details&limit=50&offset=200"))
+        assertTrue(harness.paths.none { it.startsWith("/api/dives/") })
     }
 
     @Test
@@ -257,7 +281,7 @@ class SyncEngineTest {
         var failSecondPage = 2
         val routes = routes(RouteData(dives = dives))
         val harness = Harness(store) { path ->
-            if (path.startsWith("/api/dives?") && query(path, "offset") == "200" && failSecondPage > 0) {
+            if (path.startsWith("/api/dives?") && query(path, "include") == null && query(path, "offset") == "200" && failSecondPage > 0) {
                 failSecondPage -= 1
                 status(HttpStatusCode.InternalServerError)
             } else {
@@ -278,22 +302,20 @@ class SyncEngineTest {
         assertEquals(SyncResult.Complete, harness.engine.sync())
 
         assertEquals(201, store.diveCount())
-        assertTrue(harness.paths.none { it.startsWith("/api/dives?") && query(it, "offset") == "0" })
+        assertTrue(harness.paths.none { it.startsWith("/api/dives?") && query(it, "include") == null && query(it, "offset") == "0" })
         assertTrue(harness.paths.contains("/api/dives?limit=200&offset=200"))
     }
 
     @Test
-    fun `a failed detail keeps the details checkpoint and resumes at the next dive`() = runTest {
-        val dives = listOf(
-            diveListItem(id = "dive-1", startsAt = "2026-11-03T10:00:00Z"),
-            diveListItem(id = "dive-2", startsAt = "2026-11-02T10:00:00Z"),
-            diveListItem(id = "dive-3", startsAt = "2026-11-01T10:00:00Z"),
-        )
-        var failSecondDetail = 2
+    fun `a failed details page keeps the checkpoint and resumes at its offset`() = runTest {
+        val dives = manyDives(120)
+        var failSecondPage = 2
         val routes = routes(RouteData(dives = dives))
         val harness = Harness(store) { path ->
-            if (path == "/api/dives/dive-2" && failSecondDetail > 0) {
-                failSecondDetail -= 1
+            if (path.startsWith("/api/dives?") && query(path, "include") == "details" &&
+                query(path, "offset") == "50" && failSecondPage > 0
+            ) {
+                failSecondPage -= 1
                 status(HttpStatusCode.InternalServerError)
             } else {
                 routes(path)
@@ -304,18 +326,16 @@ class SyncEngineTest {
 
         assertIs<SyncResult.Stopped>(first)
         assertEquals(SyncPhase.Details, first.phase)
-        assertEquals(1L, store.checkpoint("dive_details", "details")!!.pageOffset)
-        assertEquals(3L, store.dive("dive-1")!!.version)
-        assertNull(store.dive("dive-2")!!.version)
+        assertEquals(50L, store.checkpoint("dive_details", "details")!!.pageOffset)
+        assertEquals(50, store.dives().count { it.version != null })
         assertNull(store.syncState().lastFullSyncAt)
 
         harness.paths.clear()
-        failSecondDetail = 0
+        failSecondPage = 0
         assertEquals(SyncResult.Complete, harness.engine.sync())
-        assertEquals(3L, store.dive("dive-2")!!.version)
-        assertEquals(3L, store.dive("dive-3")!!.version)
-        assertTrue(harness.paths.none { it == "/api/dives/dive-1" })
-        assertTrue(harness.paths.contains("/api/dives/dive-2"))
+        assertEquals(120, store.dives().count { it.version != null })
+        assertTrue(harness.paths.none { it.startsWith("/api/dives?") && query(it, "include") == "details" && query(it, "offset") == "0" })
+        assertTrue(harness.paths.contains("/api/dives?include=details&limit=50&offset=50"))
     }
 
     @Test
@@ -369,13 +389,18 @@ class SyncEngineTest {
     @Test
     fun `a 401 during the details keeps the phase-one dives`() = runTest {
         val harness = Harness(store) { path ->
-            if (path == "/api/dives/dive-1") status(HttpStatusCode.Unauthorized) else routes()(path)
+            if (path.startsWith("/api/dives?") && query(path, "include") == "details") {
+                status(HttpStatusCode.Unauthorized)
+            } else {
+                routes()(path)
+            }
         }
 
         assertEquals(SyncResult.SessionEnded, harness.engine.sync())
 
         assertEquals(1, harness.unauthorized)
         assertEquals(listOf("dive-1"), store.dives().map { it.id })
+        assertNull(store.dive("dive-1")!!.version)
         assertNull(store.syncState().lastFullSyncAt)
         assertNull(store.checkpoint("dive_details", "details"))
     }
@@ -442,8 +467,8 @@ class SyncEngineTest {
         val weights = harness.paths.indexOf("/api/divers/diver-1/body-weights")
         val sites = harness.paths.indexOfFirst { it.startsWith("/api/dive-sites?") }
         val dives = harness.paths.indexOfFirst { it.startsWith("/api/dives?") }
-        val detail = harness.paths.indexOf("/api/dives/dive-1")
-        assertTrue(divers < weights && weights < sites && sites < dives && dives < detail)
+        val details = harness.paths.indexOfFirst { it.startsWith("/api/dives?") && query(it, "include") == "details" }
+        assertTrue(divers < weights && weights < sites && sites < dives && dives < details)
     }
 
     @Test
@@ -462,8 +487,14 @@ class SyncEngineTest {
             diveListItem(id = "dive-1", startsAt = "2026-11-03T10:00:00Z"),
             diveListItem(id = "dive-2", startsAt = "2026-11-02T10:00:00Z"),
         )
+        val base = routes(RouteData(dives = dives))
         val harness = Harness(store) { path ->
-            if (path == "/api/dives/dive-1") status(HttpStatusCode.NotFound) else routes(RouteData(dives = dives))(path)
+            when {
+                path.startsWith("/api/dives?") && query(path, "include") == "details" ->
+                    json(diveDetailsPage(listOf("dive-2" to "2026-11-02T10:00:00Z"), total = 1))
+                path == "/api/dives/dive-1" -> status(HttpStatusCode.NotFound)
+                else -> base(path)
+            }
         }
 
         assertEquals(SyncResult.Complete, harness.engine.sync())
@@ -472,11 +503,61 @@ class SyncEngineTest {
         assertNotNull(store.diveIncludingDeleted("dive-1")!!.deletedAt)
         assertEquals(3L, store.dive("dive-2")!!.version)
         assertTrue(store.checkpoint("dive_details", "details")!!.done)
+        assertTrue(harness.paths.contains("/api/dives/dive-1"))
+        assertTrue(harness.paths.none { it == "/api/dives/dive-2" })
+    }
+
+    @Test
+    fun `a stale v1 detail the pages no longer carry is tombstoned by the repair path`() = runTest {
+        store.upsertDive(
+            Dive(
+                id = "dive-1",
+                diverId = "diver-1",
+                version = 3,
+                startsAt = "2026-10-01T10:00:00Z",
+            ),
+        )
+        val base = routes(RouteData(dives = listOf(diveListItem(id = "dive-2", startsAt = "2026-11-02T10:00:00Z"))))
+        val harness = Harness(store) { path ->
+            if (path == "/api/dives/dive-1") status(HttpStatusCode.NotFound) else base(path)
+        }
+
+        assertEquals(SyncResult.Complete, harness.engine.sync())
+
+        assertNull(store.dive("dive-1"))
+        assertNotNull(store.diveIncludingDeleted("dive-1")!!.deletedAt)
+        assertEquals(3L, store.dive("dive-2")!!.version)
+        assertTrue(harness.paths.contains("/api/dives/dive-1"))
+    }
+
+    @Test
+    fun `batched details map suit lead and water type like the per-dive repair path`() = runTest {
+        val data = RouteData(dives = listOf(diveListItem()))
+        assertEquals(SyncResult.Complete, Harness(store, routes(data)).engine.sync())
+        val batched = store.dive("dive-1")!!
+
+        val hintDriver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
+        try {
+            val hintStore = DiveStore.create(hintDriver)
+            val hint = Harness(hintStore, routes(data))
+
+            assertEquals(SyncResult.Complete, hint.engine.applyDiveHint("dive-1"))
+
+            val perDive = hintStore.dive("dive-1")!!
+            assertEquals(perDive.waterType, batched.waterType)
+            assertEquals(perDive.suitJson, batched.suitJson)
+            assertEquals(perDive.leadJson, batched.leadJson)
+            assertEquals(perDive.leadTotalKg, batched.leadTotalKg)
+            assertEquals(perDive.weightingFeedbackJson, batched.weightingFeedbackJson)
+            assertTrue(hint.paths.contains("/api/dives/dive-1"))
+        } finally {
+            hintDriver.close()
+        }
     }
 
     @Test
     fun `progress reports the per-phase counts and the last full sync`() = runTest {
-        val harness = Harness(store, routes())
+        val harness = Harness(store, routes(RouteData(dives = manyDives(3))))
 
         assertEquals(SyncResult.Complete, harness.engine.sync())
 
@@ -487,7 +568,8 @@ class SyncEngineTest {
         assertEquals(1L, progress.storedDivers)
         assertEquals(2L, progress.storedBodyWeights)
         assertEquals(1L, progress.storedDiveSites)
-        assertEquals(1L, progress.storedDives)
-        assertEquals(1L, progress.detailedDives)
+        assertEquals(3L, progress.storedDives)
+        assertEquals(3L, progress.detailedDives)
+        assertEquals(3L, progress.divesAwaitingProfiles)
     }
 }
