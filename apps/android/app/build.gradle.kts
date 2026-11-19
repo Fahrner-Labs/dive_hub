@@ -4,6 +4,19 @@ plugins {
     alias(libs.plugins.roborazzi)
 }
 
+val releaseSigningEnv = listOf(
+    "ANDROID_RELEASE_KEYSTORE_PATH",
+    "ANDROID_RELEASE_KEYSTORE_PASSWORD",
+    "ANDROID_RELEASE_KEY_PASSWORD",
+    "ANDROID_RELEASE_KEY_ALIAS",
+)
+val missingReleaseSigningEnv = releaseSigningEnv.filter { providers.environmentVariable(it).orNull.isNullOrBlank() }
+
+fun envInt(name: String, fallback: Int): Int {
+    val raw = providers.environmentVariable(name).orNull ?: return fallback
+    return raw.toIntOrNull() ?: throw GradleException("$name must be an integer, got '$raw'")
+}
+
 android {
     namespace = "dev.divehub.android"
     compileSdk = 37
@@ -12,8 +25,8 @@ android {
         applicationId = "dev.divehub.android"
         minSdk = 26
         targetSdk = 37
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = envInt("ANDROID_VERSION_CODE", 1)
+        versionName = providers.environmentVariable("ANDROID_VERSION_NAME").orNull ?: "0.1.0-dev"
     }
 
     signingConfigs {
@@ -23,11 +36,24 @@ android {
             keyAlias = "androiddebugkey"
             keyPassword = "android"
         }
+        if (missingReleaseSigningEnv.isEmpty()) {
+            create("release") {
+                storeFile = file(providers.environmentVariable("ANDROID_RELEASE_KEYSTORE_PATH").get())
+                storePassword = providers.environmentVariable("ANDROID_RELEASE_KEYSTORE_PASSWORD").get()
+                keyAlias = providers.environmentVariable("ANDROID_RELEASE_KEY_ALIAS").get()
+                keyPassword = providers.environmentVariable("ANDROID_RELEASE_KEY_PASSWORD").get()
+            }
+        }
     }
 
     buildTypes {
         getByName("debug") {
             signingConfig = signingConfigs.getByName("debug")
+        }
+        getByName("release") {
+            if (missingReleaseSigningEnv.isEmpty()) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
     }
 
@@ -54,6 +80,14 @@ android {
 
 roborazzi {
     outputDir.set(layout.projectDirectory.dir("src/test/screenshots"))
+}
+
+tasks.matching { it.name == "preReleaseBuild" }.configureEach {
+    doFirst {
+        if (missingReleaseSigningEnv.isNotEmpty()) {
+            throw GradleException("release signing env vars not set: ${missingReleaseSigningEnv.joinToString(", ")}")
+        }
+    }
 }
 
 dependencies {

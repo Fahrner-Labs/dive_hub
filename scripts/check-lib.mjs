@@ -175,9 +175,9 @@ export function planFor(changed, { e2eServerLoads: loads } = {}) {
       plan.lint = 'all';
       continue;
     }
-    // The drift report, the repo map, the code graph, the release tag parser and the Android API model generator have
-    // tests of their own, and nothing else reads them.
-    if (/^scripts\/(drift|repomap|code-graph|release-tag|generate-android-api)/.test(path)) {
+    // The drift report, the repo map, the code graph, the release tag parsers and the Android API model generator
+    // have tests of their own, and nothing else reads them.
+    if (/^scripts\/(drift|repomap|code-graph|release-tag|android-version-code|generate-android-api)/.test(path)) {
       plan.scripts = true;
       if (path === 'scripts/generate-android-api.mjs') plan.android = true;
       continue;
