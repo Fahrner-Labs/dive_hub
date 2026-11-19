@@ -68,6 +68,26 @@ in `MODEL_SEEDS`. A server-only schema therefore does not churn the Android tree
 uses and regenerates. Refusals are read through `ApiErrorBody`, which accepts both our Problem body and Better Auth's
 `message` body (and keeps an unknown code as it is).
 
+### The logbook and dive page read the store (slice D4)
+
+From FAH-277 the screens never fetch logbook data themselves: `GET /api/dives`, `GET /api/dives/{id}` and
+`GET /api/recordings/{id}/samples` only fill the store during sync. `shared/logbook/StoreLogbook.kt` reads the stored
+list rows and Dive views (the API's own JSON, beside the typed columns) and computes the totals and month figures from
+the same rows the server does. The list and the dive page show "Last synced …" from `sync_state.lastFullSyncAt`, and a
+Dive whose profile series are still missing from phase 3 says "Profile syncing"/"still syncing" from its
+`profiles:<id>` checkpoint.
+
+- Chips: `no-recording`, `no-site` and `with-findings` are answered from the stored rows. Their counts (and the two
+  Push-backed ones) come from the last list sync, so a chip keeps its number offline. `changed-since-sent` and
+  `not-at-provider` need server-side Push state: they are fetched online and, with no answer, the cached list is shown
+  without them and the screen says the filter needs a connection.
+- Offline with a cache shows the stored list or Dive with "No connection. Showing … synced as of …"; before the first
+  sync there is nothing to show, so the pre-sync "No connection. Check your connection and try again." state remains.
+- The open screens follow `SyncRefresher.revision` and reread the store after a hint or refresh.
+
+Schema v2 (`1.sqm`) adds `dive.listJson`, `dive.detailJson` and `sync_state.countsJson`. A store migrated from v1 is
+backfilled by the next sync, so it reads the API's payloads too.
+
 ### Why not OpenAPI Generator
 
 OpenAPI Generator 7.x's Kotlin targets were evaluated before writing the script:
@@ -90,9 +110,10 @@ values as `String`, which is what a client needs when the server adds a code. It
 ## Screenshot tests
 
 `app/src/test/screenshots/` holds the pictures Roborazzi's Compose test rule renders with Robolectric on the JVM
-(`LogbookScreenshotTest`). They pin the contract-visible states of the logbook list: the "Show only" counts, a row
-without a Recording, and the findings mark. An intended visual change rewrites them with `:app:recordRoborazziDebug`
-and commits the PNGs; CI fails when the drawing no longer matches them.
+(`LogbookScreenshotTest`, `DiveDetailScreenshotTest`). They pin the contract-visible states: the logbook's "Show only"
+counts, a row without a Recording, the findings mark, the sync line, a dive whose profiles are still syncing, and
+offline-with-cache versus offline-empty on both screens. An intended visual change rewrites them with
+`:app:recordRoborazziDebug` and commits the PNGs; CI fails when the drawing no longer matches them.
 
 ## Behaviour in this slice
 
@@ -137,7 +158,8 @@ the store readable (client contract, Offline reads), so it does not wipe.
 
 ## The logbook list (slice C1)
 
-Read-only, from `GET /api/dives` ([ADR 0040](../../docs/decisions/0040-logbook-rows-and-filters.md)):
+Read-only, from the synced store ([ADR 0040](../../docs/decisions/0040-logbook-rows-and-filters.md)); the rows and
+counts are the API's own, read from the store (see slice D4 above):
 
 - 25 Dives a page with `limit`/`offset` and `total` (ADR 0017); the pager and the "1–25 of 312" range sit on the list.
 - "Show only" toggles with their `counts`; a filter whose count is 0 is hidden unless it is applied. `not-at-provider`
@@ -148,12 +170,13 @@ Read-only, from `GET /api/dives` ([ADR 0040](../../docs/decisions/0040-logbook-r
   participants as initials in circles, with names and roles as the row's accessible text. The findings mark is text.
   The `profile` sketch shares one depth scale for every row (`totals.deepestM`, at least 10 m); fast ascent is thicker
   and coloured. A null profile draws nothing, or an empty dashed box when the Dive has no Recording (ADR 0041).
-- Pull-to-refresh; no answer shows a "no connection" state, distinct from the translated error codes.
+- Pull-to-refresh re-runs the sync. With a cache, no answer shows the stored list and its age; before the first sync
+  it shows the "no connection" state, distinct from the translated error codes.
 
 ## The dive page (slice C2)
 
-Read-only, from `GET /api/dives/{id}`, `GET /api/dives/{id}/neighbours` and `GET /api/recordings/{id}/samples`
-(client contract, Dives):
+Read-only, from the synced store: the Dive, its neighbours and the Primary recording's series (client contract,
+Dives):
 
 - **Values with overrides.** A value set by hand (`overrides`) says "edited" and what the recording has, as visible
   text (ADR 0015). The number is display only: read-only, never a field (ADR 0048).
@@ -174,8 +197,8 @@ Read-only, from `GET /api/dives/{id}`, `GET /api/dives/{id}/neighbours` and `GET
 - **Previous/next** follow the logbook's filters (ADR 0042): "previous" is the row above, the position reads
   "Dive 12 of 312", and a control at either end stays but says it is unavailable. Back returns to the logbook with
   its filters, on the page the Dive is on (ADR 0042).
-- Errors show by `code`; no answer shows the "no connection" state. A profile that cannot be read leaves the rest of
-  the page standing.
+- Errors show by `code`; with a cache, no answer shows the stored Dive and its age, and before the first sync the
+  "no connection" state. A profile still syncing says so; one that cannot be read leaves the rest of the page standing.
 
 The dive page's contract-visible states are screenshots (`DiveDetailScreenshotTest`): an edited value, the timezone
 note, a Dive without a Recording, the water mismatch, and Surface breaks in the profile.

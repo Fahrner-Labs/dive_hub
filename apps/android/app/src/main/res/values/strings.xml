@@ -110,8 +110,13 @@
     <string name="dive_position_west">%1$s° W</string>
 
     <string name="dive_offline">No connection. Check your connection and try again.</string>
+    <string name="dive_offline_cached">No connection. Showing this dive synced as of %1$s.</string>
+    <string name="dive_profile_pending">The depth profile is still syncing; it appears when the sync finishes.</string>
     <string name="dive_retry">Try again</string>
     <string name="dive_error_not_found">This dive doesn’t exist or isn’t yours.</string>
+
+    <string name="sync_last">Last synced %1$s.</string>
+    <string name="sync_date_pattern">d MMM yyyy, HH:mm</string>
 
     <string name="logbook_title">Logbook</string>
     <string name="logbook_show_only">Show only</string>
@@ -140,6 +145,9 @@
     <string name="logbook_next">Next page</string>
     <string name="logbook_page_of">Page %1$d of %2$d</string>
     <string name="logbook_offline">No connection. Check your connection and try again.</string>
+    <string name="logbook_offline_cached">No connection. Showing dives synced as of %1$s.</string>
+    <string name="logbook_filter_offline">This filter needs a connection. Showing the dives synced on this device.</string>
+    <string name="logbook_profile_pending">Profile syncing</string>
     <string name="logbook_retry">Try again</string>
     <string name="logbook_refresh_failed">The list could not be refreshed.</string>
     <string name="dive_air">Air</string>

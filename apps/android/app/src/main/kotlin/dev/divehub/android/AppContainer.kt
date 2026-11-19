@@ -12,6 +12,7 @@ import dev.divehub.shared.store.DiveStore
 import dev.divehub.shared.TokenStore
 import dev.divehub.shared.dive.DiveRepository
 import dev.divehub.shared.logbook.LogbookRepository
+import dev.divehub.shared.logbook.StoreLogbook
 import dev.divehub.shared.UserScopedStore
 import dev.divehub.shared.sync.SseLiveHints
 import dev.divehub.shared.sync.SyncEngine
@@ -71,9 +72,16 @@ class AppContainer(context: Context) {
     val logbook = LogbookRepository(session.client)
     val dive = DiveRepository(session.client)
 
+    /** The D4 read side: the list, one Dive, its neighbours and its profiles come from the store, never a request. */
+    val storeLogbook = StoreLogbook(diveStore)
+
     /** The sync engine and its refresh loop; the UI reads the store, never the API, from D4 on. */
     val sync = SyncEngine(session.client, diveStore)
     private val refresher = SyncRefresher(sync, SseLiveHints(session.client))
+
+    /** Open screens reread the store when a sync or hint writes it, and say "cached" when the last attempt got no answer. */
+    val syncRevision = refresher.revision
+    val syncOffline = refresher.offline
     private val periodicSync = WorkManagerPeriodicSync(application)
     private val syncScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val wipeLock = Mutex()
@@ -89,7 +97,9 @@ class AppContainer(context: Context) {
         refresher.start(syncScope)
         periodicSync.schedule()
         syncScope.launch {
-            if (sync.sync() == SyncResult.SessionEnded) return@launch
+            val result = sync.sync()
+            if (result == SyncResult.SessionEnded) return@launch
+            refresher.initialFinished(result)
             refresher.profilesOnce()
         }
     }

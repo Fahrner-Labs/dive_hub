@@ -110,8 +110,13 @@
     <string name="dive_position_west">%1$s° W</string>
 
     <string name="dive_offline">Keine Verbindung. Prüfe deine Verbindung und versuche es erneut.</string>
+    <string name="dive_offline_cached">Keine Verbindung. Dieser Tauchgang ist synchronisiert bis %1$s.</string>
+    <string name="dive_profile_pending">Das Tiefenprofil wird noch synchronisiert; es erscheint, sobald die Synchronisierung fertig ist.</string>
     <string name="dive_retry">Erneut versuchen</string>
     <string name="dive_error_not_found">Dieser Tauchgang existiert nicht oder gehört dir nicht.</string>
+
+    <string name="sync_last">Zuletzt synchronisiert: %1$s.</string>
+    <string name="sync_date_pattern">d. MMM yyyy, HH:mm</string>
 
     <string name="logbook_title">Logbuch</string>
     <string name="logbook_show_only">Nur anzeigen</string>
@@ -140,6 +145,9 @@
     <string name="logbook_next">Nächste Seite</string>
     <string name="logbook_page_of">Seite %1$d von %2$d</string>
     <string name="logbook_offline">Keine Verbindung. Prüfe deine Verbindung und versuche es erneut.</string>
+    <string name="logbook_offline_cached">Keine Verbindung. Die Tauchgänge sind synchronisiert bis %1$s.</string>
+    <string name="logbook_filter_offline">Dieser Filter braucht eine Verbindung. Gezeigt werden die auf diesem Gerät synchronisierten Tauchgänge.</string>
+    <string name="logbook_profile_pending">Profil wird synchronisiert</string>
     <string name="logbook_retry">Erneut versuchen</string>
     <string name="logbook_refresh_failed">Die Liste konnte nicht aktualisiert werden.</string>
     <string name="dive_air">Luft</string>

@@ -1,5 +1,6 @@
 package dev.divehub.shared.sync
 
+import dev.divehub.shared.NoAnswerException
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -31,6 +32,14 @@ class SyncRefresher(
     private val _streamHealthy = MutableStateFlow(false)
     val streamHealthy: StateFlow<Boolean> = _streamHealthy.asStateFlow()
 
+    private val _offline = MutableStateFlow(false)
+
+    /**
+     * True when the last sync attempt got no answer at all (offline, or the instance cannot be reached). Screens with
+     * cached data say so instead of showing the pre-sync "no connection" state (client contract, Offline reads).
+     */
+    val offline: StateFlow<Boolean> = _offline.asStateFlow()
+
     /** Started between [start] and [stop]; a listener cannot launch work after a wipe once this is false. */
     private val running = MutableStateFlow(false)
 
@@ -48,7 +57,8 @@ class SyncRefresher(
         when (event) {
             LiveEvent.Connected -> {
                 _streamHealthy.value = true
-                if (engine.refresh() != SyncResult.SessionEnded) bump()
+                _offline.value = false
+                mark(engine.refresh())
                 profilesSoon()
             }
             is LiveEvent.Hint -> {
@@ -59,11 +69,9 @@ class SyncRefresher(
                     "site" -> engine.applySiteHint(event.hint.id)
                     else -> return
                 }
-                if (result != SyncResult.SessionEnded) {
-                    bump()
-                    // A dive hint marked its profiles pending; the background phase picks that work up.
-                    if (dive) profilesSoon()
-                }
+                mark(result)
+                // A dive hint marked its profiles pending; the background phase picks that work up.
+                if (dive) profilesSoon()
             }
         }
     }
@@ -75,9 +83,12 @@ class SyncRefresher(
         profilesSoon()
     }
 
+    /** The app's first sync result: mark a no-answer run and let open screens reread what landed. */
+    fun initialFinished(result: SyncResult) = mark(result)
+
     /** One refresh regardless of stream health; the WorkManager worker runs this without a foreground poll. */
     suspend fun refreshOnce() {
-        if (engine.refresh() != SyncResult.SessionEnded) bump()
+        mark(engine.refresh())
     }
 
     /** Drain the pending profiles phase and tell open screens; a no-op when every Dive already has its profiles. */
@@ -122,7 +133,8 @@ class SyncRefresher(
                         runLive()
                     } catch (error: CancellationException) {
                         throw error
-                    } catch (_: Exception) {
+                    } catch (error: Exception) {
+                        if (error is NoAnswerException) _offline.value = true
                         _streamHealthy.value = false
                     }
                     delay(reconnectDelayMs)
@@ -136,8 +148,9 @@ class SyncRefresher(
                     pollOnce()
                 } catch (error: CancellationException) {
                     throw error
-                } catch (_: Exception) {
+                } catch (error: Exception) {
                     // The next tick tries again; a 401 has already ended the session.
+                    if (error is NoAnswerException) _offline.value = true
                 }
             }
         }
@@ -145,6 +158,7 @@ class SyncRefresher(
 
     fun stop() {
         running.value = false
+        _offline.value = false
         liveJob?.cancel()
         pollJob?.cancel()
         profilesJob?.cancel()
@@ -180,6 +194,12 @@ class SyncRefresher(
                 }
             } while (profilesAgain && running.value)
         }
+    }
+
+    /** A result changes the store's revision, and a no-answer result turns the screens' cached state on. */
+    private fun mark(result: SyncResult) {
+        _offline.value = result is SyncResult.Stopped && result.error is NoAnswerException
+        if (result != SyncResult.SessionEnded) bump()
     }
 
     private fun bump() = _revision.update { it + 1 }

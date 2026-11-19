@@ -47,6 +47,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.divehub.android.R
+import dev.divehub.android.ui.SyncLine
 import dev.divehub.api.models.ApiDivesGet200Response
 import dev.divehub.api.models.ApiDivesGet200ResponseDivesItem
 import dev.divehub.api.models.ApiDivesGet200ResponseDivesItemParticipantsItem
@@ -202,6 +203,17 @@ private fun LogbookList(
 
     LazyColumn(Modifier.fillMaxSize()) {
         item {
+            SyncLine(state.syncedAt, state.offline, R.string.logbook_offline_cached)
+            if (state.filterUnavailable) {
+                Text(
+                    stringResource(R.string.logbook_filter_offline),
+                    modifier = Modifier
+                        .padding(horizontal = 16.dp, vertical = 4.dp)
+                        .semantics { liveRegion = LiveRegionMode.Polite },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
             Totals(data, locale, imperial)
             if (chips.isNotEmpty()) {
                 Filters(chips, state.providers.connected, onToggleFilter)
@@ -255,6 +267,7 @@ private fun LogbookList(
                         dive = dive,
                         scaleM = scaleM,
                         providerName = state.providers::nameOf,
+                        profilePending = dive.id in state.profilePending,
                         locale = locale,
                         imperial = imperial,
                         onOpen = { onOpenDive(dive) },
@@ -383,6 +396,7 @@ private fun DiveRow(
     dive: ApiDivesGet200ResponseDivesItem,
     scaleM: Double,
     providerName: (String) -> String,
+    profilePending: Boolean,
     locale: Locale,
     imperial: Boolean,
     onOpen: () -> Unit,
@@ -429,6 +443,9 @@ private fun DiveRow(
                         style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.error,
                     )
+                }
+                if (profilePending && dive.recordings > 0) {
+                    Fact(stringResource(R.string.logbook_profile_pending))
                 }
             }
             Participants(dive.participants)

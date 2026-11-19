@@ -83,7 +83,7 @@ class SyncEngine(
 
     /** Run or resume the initial phases 1–2. A completed sync is a no-op; [refresh] owns the later triggers. */
     suspend fun sync(): SyncResult = lock.withLock {
-        if (store.syncState().lastFullSyncAt != null) return@withLock SyncResult.Complete
+        if (store.syncState().lastFullSyncAt != null) return@withLock backfillPayloadsIfMissing()
         var phase = SyncPhase.Meta
         return@withLock try {
             syncMeta(now = clock())
@@ -97,6 +97,27 @@ class SyncEngine(
             if (error.status == 401) SyncResult.SessionEnded else SyncResult.Stopped(phase, error)
         } catch (error: NoAnswerException) {
             SyncResult.Stopped(phase, error)
+        }
+    }
+
+    /**
+     * A store migrated from schema v1 has no list or detail payload for its rows. Fetch them once through the normal
+     * refresh, so the D4 screens read exactly what the API sends; a normal store returns at once.
+     */
+    private suspend fun backfillPayloadsIfMissing(): SyncResult {
+        val missing = store.allDives().any {
+            it.deletedAt == null && (it.listJson == null || it.detailJson == null)
+        }
+        if (!missing) return SyncResult.Complete
+        return try {
+            refreshInternal(now = clock())
+            SyncResult.Complete
+        } catch (error: CancellationException) {
+            throw error
+        } catch (error: DiveHubException) {
+            if (error.status == 401) SyncResult.SessionEnded else SyncResult.Stopped(SyncPhase.Meta, error)
+        } catch (error: NoAnswerException) {
+            SyncResult.Stopped(SyncPhase.Meta, error)
         }
     }
 
@@ -283,12 +304,14 @@ class SyncEngine(
 
     private suspend fun syncDetails(now: String) {
         val existing = store.checkpoint(ENTITY_DIVE_DETAILS, PHASE_DETAILS)
-        // A store migrated from v1 has rows without their API payload: fetch every detail once so the screens read it.
-        val missingPayloads = existing?.done == true &&
-            store.allDives().any { it.deletedAt == null && it.detailJson == null }
-        if (existing?.done == true && !missingPayloads) return
+        // A store migrated from v1 has detailed rows without their API payload: fetch every detail once so the
+        // screens read exactly what the API sent. A row still waiting for its first detail is not stale.
+        val stalePayloads = store.allDives().any {
+            it.deletedAt == null && it.version != null && it.detailJson == null
+        }
+        if (existing?.done == true && !stalePayloads) return
         val dives = store.allDives()
-        val start = if (missingPayloads) 0 else existing?.pageOffset?.toInt()?.coerceAtLeast(0) ?: 0
+        val start = if (stalePayloads) 0 else existing?.pageOffset?.toInt()?.coerceAtLeast(0) ?: 0
         if (start >= dives.size) {
             store.transaction {
                 store.saveCheckpoint(

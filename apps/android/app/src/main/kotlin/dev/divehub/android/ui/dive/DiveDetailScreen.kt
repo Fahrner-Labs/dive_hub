@@ -47,6 +47,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.divehub.android.R
+import dev.divehub.android.ui.SyncLine
 import dev.divehub.android.ui.Formats
 import dev.divehub.api.models.DiveView
 import dev.divehub.api.models.DiveViewRecordingsItem
@@ -135,7 +136,7 @@ fun DiveDetailScreen(
                 retry = stringResource(R.string.dive_retry),
                 onRetry = onRetry,
             )
-            state.dive != null -> DiveBody(state, state.dive, units, onOpenDive)
+            state.dive != null -> DiveBody(state, state.dive, units, onOpenDive, modifier)
         }
     }
 }
@@ -183,13 +184,15 @@ private fun DiveBody(
     dive: DiveView,
     units: String?,
     onOpenDive: (String) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
     val locale = context.resources.configuration.locales[0] ?: Locale.getDefault()
     val imperial = Formats.imperial(units, locale)
     val primary = profileRecording(dive.recordings)
 
-    LazyColumn(Modifier.fillMaxSize()) {
+    LazyColumn(modifier) {
+        item { SyncLine(state.syncedAt, state.offline, R.string.dive_offline_cached) }
         item { Neighbours(state.neighbours, onOpenDive) }
         item { Facts(dive, locale, imperial) }
         item { Recordings(dive, locale, state.providers) }
@@ -449,6 +452,15 @@ private fun Profile(
     val depth = samples?.let(::depthSeries)
     val summary = if (samples != null && depth != null) summarize(depth, temperatureSeries(samples)) else null
     if (depth == null || summary == null) {
+        if (state.samplesPending) {
+            Text(
+                stringResource(R.string.dive_profile_pending),
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            return
+        }
         val failure = when {
             state.samplesError != null -> errorText(context, state.samplesError)
             state.samplesOffline -> context.getString(R.string.dive_offline)
