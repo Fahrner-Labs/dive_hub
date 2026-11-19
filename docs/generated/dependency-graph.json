@@ -807,6 +807,41 @@
         },
         {
           "dynamic": false,
+          "module": "./version/gate.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/version/gate.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./version/min-client-versions.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/version/min-client-versions.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "@fastify/multipart",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -1148,7 +1183,9 @@
         "apps/server/src/providers/route-parts.ts",
         "apps/server/src/users/admin-routes.ts",
         "apps/server/src/users/routes.ts",
-        "apps/server/src/users/setup-restore-routes.ts"
+        "apps/server/src/users/setup-restore-routes.ts",
+        "apps/server/src/version/gate.ts",
+        "apps/server/src/version/request-log.ts"
       ],
       "orphan": false,
       "valid": true
@@ -2584,7 +2621,8 @@
         "apps/server/src/users/views.ts",
         "apps/server/src/users/admin-routes.ts",
         "apps/server/src/users/routes.ts",
-        "apps/server/src/users/setup-restore-routes.ts"
+        "apps/server/src/users/setup-restore-routes.ts",
+        "apps/server/src/version/gate.ts"
       ],
       "orphan": false,
       "valid": true
@@ -28800,6 +28838,105 @@
       "valid": true
     },
     {
+      "source": "apps/server/src/version/gate.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../http/problems.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/http/problems.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./min-client-versions.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/version/min-client-versions.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./user-agent.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/version/user-agent.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "fastify",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "npm",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/node_modules/fastify/fastify.js",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": true,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/server/src/app.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/server/src/version/min-client-versions.ts",
+      "dependencies": [],
+      "dependents": [
+        "apps/server/src/app.ts",
+        "apps/server/src/version/gate.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/server/src/version/user-agent.ts",
+      "dependencies": [],
+      "dependents": [
+        "apps/server/src/version/gate.ts",
+        "apps/server/src/version/request-log.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "apps/server/src/auth/cli-config.ts",
       "dependencies": [
         {
@@ -29975,6 +30112,23 @@
             "import"
           ],
           "resolved": "apps/server/src/storage/blob-store.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./version/request-log.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/version/request-log.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -31255,6 +31409,51 @@
       ],
       "dependents": [
         "apps/server/src/site-sources.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/server/src/version/request-log.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./user-agent.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/version/user-agent.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "fastify",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "npm",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/node_modules/fastify/fastify.js",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": true,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/server/src/start.ts"
       ],
       "orphan": false,
       "valid": true
@@ -49328,8 +49527,8 @@
     "baselineSize": 0,
     "baselineStale": 0,
     "advisedExitCode": 0,
-    "totalCruised": 465,
-    "totalDependenciesCruised": 2462,
+    "totalCruised": 469,
+    "totalDependenciesCruised": 2471,
     "optionsUsed": {
       "baseDir": "/home/runner/work/dive_hub/dive_hub",
       "combinedDependencies": false,
@@ -49391,7 +49590,7 @@
             "path": "^apps/server/src/revisions/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|backups|centres|certifications|divers|dives|equipment|imports|lead|mcp|planning|providers|sites|social|live|users)/"
+            "path": "^apps/server/src/(assessment|backups|centres|certifications|divers|dives|equipment|imports|lead|mcp|planning|providers|sites|social|live|users|version)/"
           },
           "scope": "module"
         },
@@ -49403,7 +49602,7 @@
             "path": "^apps/server/src/assessment/"
           },
           "to": {
-            "path": "^apps/server/src/(revisions|backups|centres|certifications|dives|equipment|lead|mcp|planning|providers|sites|social|live|users)/"
+            "path": "^apps/server/src/(revisions|backups|centres|certifications|dives|equipment|lead|mcp|planning|providers|sites|social|live|users|version)/"
           },
           "scope": "module"
         },
@@ -49415,7 +49614,7 @@
             "path": "^apps/server/src/backups/"
           },
           "to": {
-            "path": "^apps/server/src/(revisions|assessment|centres|certifications|divers|dives|equipment|imports|lead|mcp|planning|providers|sites|social|live|users)/"
+            "path": "^apps/server/src/(revisions|assessment|centres|certifications|divers|dives|equipment|imports|lead|mcp|planning|providers|sites|social|live|users|version)/"
           },
           "scope": "module"
         },
@@ -49427,7 +49626,7 @@
             "path": "^apps/server/src/centres/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|backups|certifications|dives|equipment|imports|lead|mcp|planning|providers|social|live|users)/"
+            "path": "^apps/server/src/(assessment|backups|certifications|dives|equipment|imports|lead|mcp|planning|providers|social|live|users|version)/"
           },
           "scope": "module"
         },
@@ -49439,7 +49638,7 @@
             "path": "^apps/server/src/certifications/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|backups|centres|equipment|imports|lead|mcp|planning|providers|sites|social|users)/"
+            "path": "^apps/server/src/(assessment|backups|centres|equipment|imports|lead|mcp|planning|providers|sites|social|users|version)/"
           },
           "scope": "module"
         },
@@ -49451,7 +49650,7 @@
             "path": "^apps/server/src/divers/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|backups|centres|certifications|dives|equipment|imports|lead|mcp|planning|providers|sites|social|live|users)/"
+            "path": "^apps/server/src/(assessment|backups|centres|certifications|dives|equipment|imports|lead|mcp|planning|providers|sites|social|live|users|version)/"
           },
           "scope": "module"
         },
@@ -49463,7 +49662,7 @@
             "path": "^apps/server/src/dives/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|backups|certifications|equipment|imports|lead|mcp|planning|providers|social|live|users)/"
+            "path": "^apps/server/src/(assessment|backups|certifications|equipment|imports|lead|mcp|planning|providers|social|live|users|version)/"
           },
           "scope": "module"
         },
@@ -49475,7 +49674,7 @@
             "path": "^apps/server/src/equipment/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|backups|centres|certifications|dives|imports|lead|mcp|planning|providers|sites|social|live|users)/"
+            "path": "^apps/server/src/(assessment|backups|centres|certifications|dives|imports|lead|mcp|planning|providers|sites|social|live|users|version)/"
           },
           "scope": "module"
         },
@@ -49487,7 +49686,7 @@
             "path": "^apps/server/src/imports/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|backups|centres|certifications|lead|mcp|planning|providers|social|users)/"
+            "path": "^apps/server/src/(assessment|backups|centres|certifications|lead|mcp|planning|providers|social|users|version)/"
           },
           "scope": "module"
         },
@@ -49499,7 +49698,7 @@
             "path": "^apps/server/src/lead/"
           },
           "to": {
-            "path": "^apps/server/src/(revisions|assessment|backups|centres|certifications|equipment|imports|mcp|providers|sites|social|live|users)/"
+            "path": "^apps/server/src/(revisions|assessment|backups|centres|certifications|equipment|imports|mcp|providers|sites|social|live|users|version)/"
           },
           "scope": "module"
         },
@@ -49526,7 +49725,7 @@
             "path": "^apps/server/src/mcp/"
           },
           "to": {
-            "path": "^apps/server/src/(revisions|backups|centres|certifications|imports|lead|providers|social|live|users)/"
+            "path": "^apps/server/src/(revisions|backups|centres|certifications|imports|lead|providers|social|live|users|version)/"
           },
           "scope": "module"
         },
@@ -49538,7 +49737,7 @@
             "path": "^apps/server/src/planning/"
           },
           "to": {
-            "path": "^apps/server/src/(revisions|backups|centres|certifications|equipment|imports|lead|mcp|providers|sites|social|live|users)/"
+            "path": "^apps/server/src/(revisions|backups|centres|certifications|equipment|imports|lead|mcp|providers|sites|social|live|users|version)/"
           },
           "scope": "module"
         },
@@ -49550,7 +49749,7 @@
             "path": "^apps/server/src/providers/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|backups|centres|equipment|lead|mcp|planning|social|users)/"
+            "path": "^apps/server/src/(assessment|backups|centres|equipment|lead|mcp|planning|social|users|version)/"
           },
           "scope": "module"
         },
@@ -49562,7 +49761,7 @@
             "path": "^apps/server/src/sites/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|backups|centres|certifications|divers|dives|equipment|imports|lead|mcp|planning|providers|social|users)/"
+            "path": "^apps/server/src/(assessment|backups|centres|certifications|divers|dives|equipment|imports|lead|mcp|planning|providers|social|users|version)/"
           },
           "scope": "module"
         },
@@ -49574,7 +49773,7 @@
             "path": "^apps/server/src/social/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|backups|centres|certifications|equipment|imports|lead|mcp|planning|providers|sites|users)/"
+            "path": "^apps/server/src/(assessment|backups|centres|certifications|equipment|imports|lead|mcp|planning|providers|sites|users|version)/"
           },
           "scope": "module"
         },
@@ -49586,7 +49785,7 @@
             "path": "^apps/server/src/live/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|backups|centres|certifications|divers|dives|equipment|imports|lead|mcp|planning|providers|sites|social|users)/"
+            "path": "^apps/server/src/(assessment|backups|centres|certifications|divers|dives|equipment|imports|lead|mcp|planning|providers|sites|social|users|version)/"
           },
           "scope": "module"
         },
@@ -49613,7 +49812,19 @@
             "path": "^apps/server/src/users/"
           },
           "to": {
-            "path": "^apps/server/src/(revisions|assessment|backups|centres|certifications|dives|equipment|imports|lead|mcp|planning|providers|sites|social|live)/"
+            "path": "^apps/server/src/(revisions|assessment|backups|centres|certifications|dives|equipment|imports|lead|mcp|planning|providers|sites|social|live|version)/"
+          },
+          "scope": "module"
+        },
+        {
+          "name": "module-imports-version",
+          "severity": "error",
+          "comment": "version/ may import only these domain modules:  (MODULE_IMPORTS in .dependency-cruiser.cjs, ADR 0053).",
+          "from": {
+            "path": "^apps/server/src/version/"
+          },
+          "to": {
+            "path": "^apps/server/src/(revisions|assessment|backups|centres|certifications|divers|dives|equipment|imports|lead|mcp|planning|providers|sites|social|live|users)/"
           },
           "scope": "module"
         },
@@ -49733,8 +49944,8 @@
     "environment": {
       "version": "18.7.0",
       "nodeVersionSupported": "^22||^24||>=26",
-      "nodeVersionFound": "v24.22.2",
-      "osVersionFound": "x64 linux@7.0.0-1019-azure",
+      "nodeVersionFound": "v24.22.3",
+      "osVersionFound": "x64 linux@7.0.0-1020-azure",
       "transpilersFound": [
         {
           "name": "javascript",
