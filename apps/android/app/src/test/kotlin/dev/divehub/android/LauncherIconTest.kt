@@ -3,6 +3,7 @@ package dev.divehub.android
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.drawable.AdaptiveIconDrawable
 import android.view.View
 import android.widget.ImageView
 import com.github.takahirom.roborazzi.captureRoboImage
@@ -30,6 +31,14 @@ class LauncherIconTest {
         val info = context.packageManager.getApplicationInfo(context.packageName, 0)
         assertEquals("dev.divehub.android:mipmap/ic_launcher", context.resources.getResourceName(info.icon))
         requireNotNull(context.getDrawable(R.mipmap.ic_launcher_round))
+    }
+
+    @Test
+    fun `both adaptive icons carry the themed monochrome layer`() {
+        val icon = requireNotNull(context.getDrawable(R.mipmap.ic_launcher)) as AdaptiveIconDrawable
+        requireNotNull(icon.monochrome)
+        val round = requireNotNull(context.getDrawable(R.mipmap.ic_launcher_round)) as AdaptiveIconDrawable
+        requireNotNull(round.monochrome)
     }
 
     @Test
