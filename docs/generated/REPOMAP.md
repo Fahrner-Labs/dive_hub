@@ -4,7 +4,7 @@
 > `pnpm check` fails when this map is stale. Symbols are ranked by how widely the code references them;
 > each module shows its most-referenced ones (exported symbols rank higher). Search here before walking the tree.
 
-Files: 400 · symbols: 3650 · shown: 258
+Files: 400 · symbols: 3668 · shown: 259
 
 ### server/(root)
 apps/server/src/vocabulary.ts:13 type SiteWaterType
@@ -16,13 +16,13 @@ apps/server/src/app.ts:75 fn buildApp
 … 40 more symbols in this module
 
 ### server/assessment
-apps/server/src/assessment/rules.ts:42 const RULES
-apps/server/src/assessment/rules.ts:58 type RuleId
+apps/server/src/assessment/rules.ts:50 const RULES
+apps/server/src/assessment/rules.ts:30 const SOURCES
+apps/server/src/assessment/rules.ts:66 type RuleId
 apps/server/src/assessment/signals.ts:10 const round
 apps/server/src/assessment/signals.ts:5 iface Series
-apps/server/src/assessment/rules.ts:62 const LIMITS
-apps/server/src/assessment/series-rules.ts:113 iface NoFly
-… 80 more symbols in this module
+apps/server/src/assessment/series-rules.ts:21 fn seriesDiveOf
+… 81 more symbols in this module
 
 ### server/auth
 apps/server/src/auth/fastify.ts:81 fn userOf
@@ -180,10 +180,11 @@ apps/server/src/planning/gas.ts:13 type PlanningWater
 apps/server/src/planning/gas-plan.ts:21 type GasRule
 apps/server/src/planning/gas-numbers.ts:24 fn gasNumbers
 apps/server/src/planning/gas-plan.ts:86 fn planGas
+apps/server/src/planning/loadings.ts:82 fn tissuesAfterDives
 apps/server/src/planning/planning-sac.ts:17 fn planningSac
 apps/server/src/planning/tissues.ts:28 fn surfaceSaturatedTissues
 apps/server/src/planning/loadings-service.ts:17 const DAY_MS
-… 167 more symbols in this module
+… 183 more symbols in this module
 
 ### server/providers
 apps/server/src/providers/registry.ts:70 class ProviderServiceError

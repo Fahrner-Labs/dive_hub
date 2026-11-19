@@ -1,5 +1,8 @@
 // The fixed cases of the planning golden vectors (FAH-268): the generator writes their expected values, and the
 // vitest runner recomputes them from the same cases. The Kotlin port reads the committed JSON, never this file.
+import { assessmentApplies, SOURCES } from '../assessment/rules.js';
+import { noFlyAfter, seriesDiveOf } from '../assessment/series-rules.js';
+import { downsampleMinMax } from '../dives/calc/downsample.js';
 import { compressibility, pressureForLitres, surfaceLitres } from '../dives/calc/real-gas.js';
 import { sacOfDive, sacValues, type SacMissing, type SacValues } from '../dives/calc/sac.js';
 import {
@@ -9,6 +12,9 @@ import {
 import { bottomTime } from './bottom-time.js';
 import { gasNumbers, floorTenth } from './gas-numbers.js';
 import { planGas, type GasRule } from './gas-plan.js';
+import {
+  cnsDecayed, CNS_HALF_LIFE_MINUTES, otuLast24h, tissuesAfterDives, type LoadingDive,
+} from './loadings.js';
 import { ndlMinutes } from './ndl.js';
 import { otu, oxygenLimitMinutes } from './oxygen.js';
 import { planningSac } from './planning-sac.js';
@@ -16,6 +22,7 @@ import { advanceTissues, surfaceSaturatedTissues, worstCompartmentPercent, type 
 
 export const VECTOR_KERNELS = [
   'gas', 'tissues', 'ndl', 'oxygen', 'real-gas', 'sac', 'gas-plan', 'bottom-time', 'planning-sac',
+  'loadings', 'no-fly',
 ] as const;
 export type VectorKernel = (typeof VECTOR_KERNELS)[number];
 
@@ -110,6 +117,42 @@ interface BottomTimeVectorInput {
 interface PlanningSacVectorInput {
   dives: { sacLpm: number | null }[];
 }
+
+interface LoadingsVectorDive {
+  startMs: number;
+  endMs: number;
+  samples: TissuePoint[];
+  gas: GasMix | null;
+  otuStart: number | null;
+  otuEnd: number | null;
+}
+
+interface LoadingsVectorInput {
+  dives: LoadingsVectorDive[];
+  nowMs: number;
+  gfHigh: number;
+  /** The latest Recording's CNS end and its Dive's end; null when no Recording carries CNS. */
+  cns: { cnsEnd: number; endedAtMs: number } | null;
+}
+
+interface NoFlyVectorDive {
+  id: string;
+  startMs: number;
+  utcOffsetSeconds: number | null;
+  durationSeconds: number;
+  maxDepthM: number | null;
+  /** The Recording's dive mode; apnea, CCR and SCR are not covered by the series rules (ADR 0036). */
+  diveMode: string | null;
+  /** The computer's no-decompression limit series, seconds; null when it carried none. */
+  ndlSeconds: number[] | null;
+}
+
+interface NoFlyVectorInput {
+  dives: NoFlyVectorDive[];
+  id: string;
+}
+
+const HOUR_MS = 3_600_000;
 
 const conditionsOf = (input: { water: PlanningWater; altitudeM: number }): Conditions => ({
   water: input.water,
@@ -472,6 +515,191 @@ export const PLANNING_SAC_CASES: VectorCase[] = [
   { id: 'unsorted', input: { dives: [24, 16, 22, 18, 20].map((sacLpm) => ({ sacLpm })) } satisfies PlanningSacVectorInput },
 ];
 
+/** A fixed instant for the loadings and no-fly cases: 2026-11-18T12:00:00Z. */
+const T0 = Date.UTC(2026, 10, 18, 12, 0, 0);
+
+const loadingDive = (
+  endMs: number,
+  durationSeconds: number,
+  samples: TissuePoint[],
+  extra: Partial<Pick<LoadingsVectorDive, 'gas' | 'otuStart' | 'otuEnd'>> = {},
+): LoadingsVectorDive => ({
+  startMs: endMs - durationSeconds * 1000, endMs, samples, gas: AIR, otuStart: null, otuEnd: null, ...extra,
+});
+
+/** A synthetic 30 m dive at 2 s sampling, reduced by the samples endpoint's min/max downsample (maxPoints 40). */
+function syntheticProfile(): TissuePoint[] {
+  const points: TissuePoint[] = [];
+  const push = (tSeconds: number, depthM: number) => points.push({ tSeconds, depthM });
+  for (let s = 0; s <= 120; s += 2) push(s, (s / 120) * 30);
+  for (let s = 122; s <= 1320; s += 2) push(s, 30);
+  for (let s = 1322; s <= 1560; s += 2) push(s, 30 - ((s - 1320) / 240) * 25);
+  for (let s = 1562; s <= 1740; s += 2) push(s, 5);
+  for (let s = 1742; s <= 1800; s += 2) push(s, 5 - ((s - 1740) / 60) * 5);
+  return points;
+}
+
+const DOWNSAMPLED_PROFILE: TissuePoint[] = (() => {
+  const full = syntheticProfile();
+  const { offsets, values } = downsampleMinMax(
+    full.map((point) => point.tSeconds * 1000),
+    full.map((point) => point.depthM),
+    40,
+  );
+  return offsets.map((ms, i) => ({ tSeconds: ms / 1000, depthM: values[i]! }));
+})();
+
+const PROFILE_31M = profile([0, 0], [120, 20], [1500, 20], [1740, 5], [1800, 5], [1860, 0]);
+const PROFILE_30M = profile([0, 0], [60, 18], [1500, 18], [1800, 0]);
+
+export const LOADINGS_CASES: VectorCase[] = [
+  {
+    id: 'no-dives',
+    input: { dives: [], nowMs: T0, gfHigh: 85, cns: null } satisfies LoadingsVectorInput,
+  },
+  {
+    id: 'latest-older-than-window',
+    input: {
+      dives: [loadingDive(T0 - 80 * HOUR_MS, 3600, [])],
+      nowMs: T0, gfHigh: 85, cns: null,
+    } satisfies LoadingsVectorInput,
+  },
+  {
+    id: 'stale-with-profile',
+    input: {
+      dives: [loadingDive(T0 - 50 * HOUR_MS, 1860, PROFILE_31M)],
+      nowMs: T0, gfHigh: 85, cns: null,
+    } satisfies LoadingsVectorInput,
+  },
+  {
+    id: 'no-profile',
+    input: {
+      dives: [loadingDive(T0 - 2 * HOUR_MS, 2400, [])],
+      nowMs: T0, gfHigh: 85, cns: null,
+    } satisfies LoadingsVectorInput,
+  },
+  {
+    id: 'single-air-30m-with-cns-otu',
+    input: {
+      dives: [loadingDive(T0 - HOUR_MS, 1860, PROFILE_31M, { otuStart: 12, otuEnd: 30 })],
+      nowMs: T0, gfHigh: 85, cns: { cnsEnd: 42, endedAtMs: T0 - HOUR_MS },
+    } satisfies LoadingsVectorInput,
+  },
+  {
+    id: 'cns-elapsed-zero',
+    input: {
+      dives: [],
+      nowMs: T0, gfHigh: 85, cns: { cnsEnd: 37.5, endedAtMs: T0 },
+    } satisfies LoadingsVectorInput,
+  },
+  {
+    id: 'two-dives-with-interval-and-old-dive',
+    input: {
+      dives: [
+        loadingDive(T0 - HOUR_MS, 1860, PROFILE_31M, { otuStart: 20, otuEnd: 35 }),
+        loadingDive(T0 - 80 * HOUR_MS, 3600, [], { otuStart: 100, otuEnd: 200 }),
+        loadingDive(T0 - 3 * HOUR_MS, 1800, PROFILE_30M, { otuStart: 5, otuEnd: 15 }),
+      ],
+      nowMs: T0, gfHigh: 85, cns: null,
+    } satisfies LoadingsVectorInput,
+  },
+  {
+    id: 'downsampled-series-as-the-api-emits-it',
+    input: {
+      dives: [loadingDive(T0 - 20 * HOUR_MS, 1800, DOWNSAMPLED_PROFILE)],
+      nowMs: T0, gfHigh: 85, cns: null,
+    } satisfies LoadingsVectorInput,
+  },
+];
+
+const seriesDive = (
+  id: string,
+  startMs: number,
+  durationSeconds: number,
+  extra: Partial<Pick<NoFlyVectorDive, 'utcOffsetSeconds' | 'maxDepthM' | 'diveMode' | 'ndlSeconds'>> = {},
+): NoFlyVectorDive => ({
+  id, startMs, durationSeconds, utcOffsetSeconds: null, maxDepthM: 20, diveMode: 'open_circuit', ndlSeconds: null, ...extra,
+});
+
+const DAY = Date.UTC(2026, 10, 18, 8, 0, 0);
+
+export const NO_FLY_CASES: VectorCase[] = [
+  {
+    id: 'single-last-dive',
+    input: {
+      dives: [seriesDive('a', DAY, 2400, { ndlSeconds: [600, 300, 120] })], id: 'a',
+    } satisfies NoFlyVectorInput,
+  },
+  {
+    id: 'first-of-two-is-not-last',
+    input: {
+      dives: [seriesDive('a', DAY, 2400), seriesDive('b', DAY + 3 * HOUR_MS, 1800)], id: 'a',
+    } satisfies NoFlyVectorInput,
+  },
+  {
+    id: 'second-of-two-same-day',
+    input: {
+      dives: [seriesDive('a', DAY, 2400), seriesDive('b', DAY + 3 * HOUR_MS, 1800)], id: 'b',
+    } satisfies NoFlyVectorInput,
+  },
+  {
+    id: 'deco-on-target',
+    input: {
+      dives: [seriesDive('a', DAY, 2400), seriesDive('b', DAY + 3 * HOUR_MS, 1800, { ndlSeconds: [300, 0, 0] })], id: 'b',
+    } satisfies NoFlyVectorInput,
+  },
+  {
+    id: 'deco-on-earlier-dive',
+    input: {
+      dives: [seriesDive('a', DAY, 2400, { ndlSeconds: [0, 0] }), seriesDive('b', DAY + 3 * HOUR_MS, 1800)], id: 'b',
+    } satisfies NoFlyVectorInput,
+  },
+  {
+    id: 'previous-day-diving',
+    input: {
+      dives: [seriesDive('a', DAY - 20 * HOUR_MS, 2400), seriesDive('b', DAY, 1800)], id: 'b',
+    } satisfies NoFlyVectorInput,
+  },
+  {
+    id: 'non-applying-dive-does-not-count',
+    input: {
+      dives: [seriesDive('a', DAY, 2400, { diveMode: 'apnea' }), seriesDive('b', DAY + 3 * HOUR_MS, 1800)], id: 'b',
+    } satisfies NoFlyVectorInput,
+  },
+  {
+    id: 'target-not-covered',
+    input: { dives: [seriesDive('a', DAY, 2400, { diveMode: 'ccr' })], id: 'a' } satisfies NoFlyVectorInput,
+  },
+  {
+    id: 'unknown-id',
+    input: { dives: [seriesDive('a', DAY, 2400)], id: 'missing' } satisfies NoFlyVectorInput,
+  },
+  {
+    id: 'empty-ndl-is-no-deco',
+    input: { dives: [seriesDive('a', DAY, 2400, { ndlSeconds: [] })], id: 'a' } satisfies NoFlyVectorInput,
+  },
+  {
+    id: 'utc-offset-crosses-midnight',
+    input: {
+      dives: [
+        seriesDive('a', Date.UTC(2026, 10, 18, 23, 0, 0), 2400, { utcOffsetSeconds: 3600 }),
+        seriesDive('b', Date.UTC(2026, 10, 19, 1, 0, 0), 1800, { utcOffsetSeconds: 3600 }),
+      ],
+      id: 'a',
+    } satisfies NoFlyVectorInput,
+  },
+  {
+    id: 'unknown-offset-uses-utc-wall-clock',
+    input: {
+      dives: [
+        seriesDive('a', Date.UTC(2026, 10, 18, 23, 0, 0), 2400),
+        seriesDive('b', Date.UTC(2026, 10, 19, 1, 0, 0), 1800),
+      ],
+      id: 'a',
+    } satisfies NoFlyVectorInput,
+  },
+];
+
 export const VECTOR_CASES: Record<VectorKernel, VectorCase[]> = {
   gas: GAS_CASES,
   tissues: TISSUES_CASES,
@@ -482,6 +710,8 @@ export const VECTOR_CASES: Record<VectorKernel, VectorCase[]> = {
   'gas-plan': GAS_PLAN_CASES,
   'bottom-time': BOTTOM_TIME_CASES,
   'planning-sac': PLANNING_SAC_CASES,
+  loadings: LOADINGS_CASES,
+  'no-fly': NO_FLY_CASES,
 };
 
 function evaluateGas(input: GasVectorInput): VectorOutcome {
@@ -681,6 +911,81 @@ function evaluatePlanningSac(input: PlanningSacVectorInput): VectorOutcome {
   return { kernel: view, service: view };
 }
 
+function evaluateLoadings(input: LoadingsVectorInput): VectorOutcome {
+  const dives: LoadingDive[] = input.dives.map((dive) => ({
+    startMs: dive.startMs,
+    endMs: dive.endMs,
+    samples: dive.samples,
+    ...(dive.gas === null ? {} : { gas: dive.gas }),
+    ...(dive.otuStart === null ? {} : { otuStart: dive.otuStart }),
+    ...(dive.otuEnd === null ? {} : { otuEnd: dive.otuEnd }),
+  }));
+  const n2 = tissuesAfterDives({ dives, nowMs: input.nowMs, gfHigh: input.gfHigh });
+  const otu = otuLast24h(dives, input.nowMs);
+  const cnsPercentNow = input.cns === null
+    ? null
+    : cnsDecayed(input.cns.cnsEnd, (input.nowMs - input.cns.endedAtMs) / 60_000);
+  return {
+    kernel: {
+      worstCompartmentPercent: n2.worstCompartmentPercent,
+      reason: 'reason' in n2 ? n2.reason : null,
+      gfHigh: n2.gfHigh,
+      basis: n2.basis,
+      tissues: n2.tissues,
+      cnsPercentNow,
+      otuLast24Hours: otu,
+    },
+    service: {
+      n2: n2.worstCompartmentPercent === null ? null : {
+        worstCompartmentPercent: round(n2.worstCompartmentPercent, 1), gfHigh: n2.gfHigh,
+      },
+      cns: cnsPercentNow === null || input.cns === null ? null : {
+        percentNow: round(cnsPercentNow, 1),
+        percentAtLastDiveEnd: round(input.cns.cnsEnd, 1),
+        halfLifeMinutes: CNS_HALF_LIFE_MINUTES,
+      },
+      otu: otu === null ? null : { last24Hours: round(otu, 1) },
+    },
+  };
+}
+
+function evaluateNoFly(input: NoFlyVectorInput): VectorOutcome {
+  const applies = (diveMode: string | null) => assessmentApplies(diveMode ?? undefined);
+  const series = input.dives.map((dive) => {
+    const minNdlSeconds = dive.ndlSeconds !== null && dive.ndlSeconds.length > 0
+      ? Math.min(...dive.ndlSeconds)
+      : null;
+    return seriesDiveOf(
+      {
+        id: dive.id,
+        startsAt: new Date(dive.startMs),
+        utcOffsetSeconds: dive.utcOffsetSeconds,
+        durationSeconds: dive.durationSeconds,
+        maxDepthM: dive.maxDepthM,
+      },
+      minNdlSeconds === 0,
+    );
+  });
+  const covered = series.filter((_, i) => applies(input.dives[i]!.diveMode));
+  const noFly = noFlyAfter(covered, input.id);
+  return {
+    kernel: {
+      dives: input.dives.map((dive, i) => ({
+        id: dive.id,
+        day: series[i]!.day,
+        startMs: series[i]!.startMs,
+        endMs: series[i]!.endMs,
+        diveMode: dive.diveMode,
+        applies: applies(dive.diveMode),
+        minNdlSeconds: dive.ndlSeconds !== null && dive.ndlSeconds.length > 0 ? Math.min(...dive.ndlSeconds) : null,
+        enteredDeco: series[i]!.enteredDeco,
+      })),
+      noFly,
+    },
+    service: { noFly: noFly === null ? null : { ...noFly, source: SOURCES.dan_flying } },
+  };
+}
+
 export function evaluateVectorCase(kernel: VectorKernel, input: unknown): VectorOutcome {
   switch (kernel) {
     case 'gas': return evaluateGas(input as GasVectorInput);
@@ -692,6 +997,8 @@ export function evaluateVectorCase(kernel: VectorKernel, input: unknown): Vector
     case 'gas-plan': return evaluateGasPlan(input as GasPlanVectorInput);
     case 'bottom-time': return evaluateBottomTime(input as BottomTimeVectorInput);
     case 'planning-sac': return evaluatePlanningSac(input as PlanningSacVectorInput);
+    case 'loadings': return evaluateLoadings(input as LoadingsVectorInput);
+    case 'no-fly': return evaluateNoFly(input as NoFlyVectorInput);
   }
 }
 

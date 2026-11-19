@@ -43,6 +43,11 @@ The kernels compute the gas they are given; the service and UI restrictions (air
 at most 40 m, the MOD) are not part of the kernel and must be reproduced at the service layer. The trimix and
 altitude cases pin the kernel math, not a promise that a route accepts that input.
 
+The `loadings` cases include a profile reduced by the same `downsampleMinMax` rule `GET /api/recordings/{id}/samples`
+uses (each bucket's minimum and maximum, peaks kept), generated with `maxPoints` 40 so the fixture stays readable.
+The shape is the endpoint's; the server and the phone replay the identical input. The `no-fly` cases pin
+`seriesDiveOf`, the local-day grouping, the covered-Dive filter and the `minNdl === 0` derivation of `enteredDeco`.
+
 ## Regenerating
 
 From `apps/server`:

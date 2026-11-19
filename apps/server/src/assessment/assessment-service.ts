@@ -12,7 +12,7 @@ import { managedDiverIds, managementOf, managesDiveDiver } from '../divers/manag
 import type { ComputerEvent } from '../vocabulary.js';
 import { sketchOf } from './sketch.js';
 import { assessProfile } from './profile-rules.js';
-import { ENGINE_VERSION, RULES, RULE_IDS, type Finding, type RuleId } from './rules.js';
+import { assessmentApplies, ENGINE_VERSION, RULES, RULE_IDS, type Finding, type RuleId } from './rules.js';
 import { assessSeries, noFlyAfter, seriesDiveOf } from './series-rules.js';
 
 export class AssessmentError extends Error {
@@ -23,9 +23,6 @@ export class AssessmentError extends Error {
 
 /** Sample channels the rules read. */
 const CHANNELS = ['depth', 'ndl', 'nextStopDepth', 'ceiling', 'po2', 'cns'] as const;
-/** Dive modes the rules don't cover (ADR 0036): no findings, and they don't count for the dives around them. */
-const NOT_COVERED = ['apnea', 'ccr', 'scr'];
-
 const isRule = (rule: string): rule is RuleId => (RULE_IDS as string[]).includes(rule);
 const same = (a: Pick<Finding, 'severity' | 'values'>, b: Pick<Finding, 'severity' | 'values'>) =>
   a.severity === b.severity && JSON.stringify(a.values) === JSON.stringify(b.values);
@@ -53,7 +50,7 @@ export function createAssessmentService(db: Db) {
       const enteredDeco = new Map<string, boolean>();
       const covered = new Set<string>();
       for (const d of dives) {
-        const applies = !NOT_COVERED.includes((d.summary as RecordingSummary | null)?.diveMode ?? '');
+        const applies = assessmentApplies((d.summary as RecordingSummary | null)?.diveMode);
         if (applies) covered.add(d.id);
         const was = known.get(d.id);
         const fresh = was && was.engineVersion === ENGINE_VERSION && was.applies === applies && was.recordingId === d.recordingId

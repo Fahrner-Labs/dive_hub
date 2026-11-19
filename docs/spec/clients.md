@@ -217,11 +217,13 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
 
 V1 of the native client reads offline: phones lose signal where dives are, and the logbook still opens.
 - **The on-device read store is the single source for the logbook reads it holds.** While online, the native
-  client syncs the User's logbook, including the profiles, into a local store; every logbook read the store holds
-  is served from it, online or not, and a live hint refreshes it. The API stays the source of truth: an offline
-  read is data as of the last sync, not the "no answer at all" of a request that failed. A read that needs
-  server-computed data the store does not hold (the stored-fingerprint counts of `changed-since-sent`) is fetched
-  online and never shown from an incomplete store; offline, the client says it is unavailable.
+  client syncs the User's logbook into a local store: the Dives and Divers, the Recordings' summaries (CNS and OTU
+  ends, dive mode and GF high), and the sample series the pages and offline calculators read: the profiles,
+  including depth and temperature, and `ndl`. Every logbook read the store holds is served from it, online or
+  not, and a live hint refreshes it. The API stays the source of truth: an offline read is data as of the last
+  sync, not the "no answer at all" of a request that failed. A read that needs server-computed data the store
+  does not hold (the stored-fingerprint counts of `changed-since-sent`) is fetched online and never shown from an
+  incomplete store; offline, the client says it is unavailable.
 - **Every offline calculation against synced data shows its age:** "Based on dives synced as of …" with the
   store's last successful sync. A personalized result (the lead estimate, the current loadings, a plan that uses
   the User's own SAC or last dive) says so while the profiles are still syncing, and rests only on the dives that
@@ -1337,6 +1339,10 @@ A client **must**:
   `percentNow` and the computer's `percentAtLastDiveEnd` with the fixed `halfLifeMinutes`; `otu` is the last 24 hours.
 - **Show the no-fly time** (`noFly`, DAN's guideline after the latest Dive, with its source) beside the numbers, as on a
   Dive's assessment: information, not a countdown and not advice.
+- **An offline client replays the synced samples with the same ported kernels.** The samples endpoint downsamples each
+  series by keeping every bucket's minimum and maximum, so depth peaks survive; given the same samples the phone and the
+  server compute the same estimate. Against the server's full-resolution replay the only difference is what that
+  peak-preserving downsample kept, so an offline N₂ estimate says it rests on downsampled profiles.
 - The answer holds no gradient factor, decay or window setting to change: they are fixed in code (ADR 0071). Only whether
   the section is shown is the Diver's choice, like a muted assessment rule.
 
