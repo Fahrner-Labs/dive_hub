@@ -1372,6 +1372,7 @@
         "apps/server/src/dives/dive-view.ts",
         "apps/server/src/sites/position-view.ts",
         "apps/server/src/dives/logbook-routes.ts",
+        "apps/server/src/dives/dive-view-of.ts",
         "apps/server/src/dives/routes.ts",
         "apps/server/src/equipment/equipment-view.ts",
         "apps/server/src/equipment/routes.ts",
@@ -2149,8 +2150,9 @@
         "apps/server/src/dives/candidates/candidate-routes.ts",
         "apps/server/src/dives/dive-view.ts",
         "apps/server/src/dives/logbook-routes.ts",
-        "apps/server/src/dives/routes.ts",
+        "apps/server/src/dives/dive-view-of.ts",
         "apps/server/src/dives/calc/water.ts",
+        "apps/server/src/dives/routes.ts",
         "apps/server/src/dives/cylinder-catalogue.ts",
         "apps/server/src/equipment/equipment-view.ts",
         "apps/server/src/imports/import-view.ts",
@@ -2217,8 +2219,8 @@
         "apps/server/src/providers/provider.ts",
         "apps/server/src/sites/provider-sites.ts",
         "apps/server/src/dives/dive-view.ts",
-        "apps/server/src/dives/routes.ts",
         "apps/server/src/dives/calc/water.ts",
+        "apps/server/src/dives/routes.ts",
         "apps/server/src/equipment/equipment-view.ts",
         "apps/server/src/equipment/routes.ts",
         "apps/server/src/lead/routes.ts",
@@ -4572,6 +4574,8 @@
         "apps/server/src/centres/verification-code-view.ts",
         "apps/server/src/centres/routes.ts",
         "apps/server/src/compose.ts",
+        "apps/server/src/dives/logbook-routes.ts",
+        "apps/server/src/dives/dive-view-of.ts",
         "apps/server/src/dives/routes.ts"
       ],
       "orphan": false,
@@ -5756,6 +5760,8 @@
         "apps/server/src/providers/layer.ts",
         "apps/server/src/providers/buddies/buddy-service.ts",
         "apps/server/src/divers/routes.ts",
+        "apps/server/src/dives/logbook-routes.ts",
+        "apps/server/src/dives/dive-view-of.ts",
         "apps/server/src/dives/routes.ts"
       ],
       "orphan": false,
@@ -6427,6 +6433,8 @@
       "dependencies": [],
       "dependents": [
         "apps/server/src/certifications/certification-service.ts",
+        "apps/server/src/dives/logbook-routes.ts",
+        "apps/server/src/dives/dive-view-of.ts",
         "apps/server/src/dives/routes.ts"
       ],
       "orphan": false,
@@ -8066,7 +8074,7 @@
         "apps/server/src/dives/merging-service.ts",
         "apps/server/src/imports/placement.ts",
         "apps/server/src/providers/dive-import/dive-changes.ts",
-        "apps/server/src/dives/routes.ts"
+        "apps/server/src/dives/dive-view-of.ts"
       ],
       "orphan": false,
       "valid": true
@@ -8187,6 +8195,7 @@
         "apps/server/src/dives/dive-service.ts",
         "apps/server/src/dives/merging-service.ts",
         "apps/server/src/providers/dive-import/dive-changes.ts",
+        "apps/server/src/dives/dive-view-of.ts",
         "apps/server/src/dives/routes.ts"
       ],
       "orphan": false,
@@ -8276,6 +8285,7 @@
         "apps/server/src/lead/types.ts",
         "apps/server/src/providers/dive-import/dive-changes.ts",
         "apps/server/src/providers/push/outgoing-dive.ts",
+        "apps/server/src/dives/dive-view-of.ts",
         "apps/server/src/dives/routes.ts",
         "apps/server/src/lead/routes.ts",
         "apps/server/src/mcp/tools-logbook.ts",
@@ -8762,6 +8772,7 @@
         "apps/server/src/dives/deletion-service.ts",
         "apps/server/src/dives/merge-service.ts",
         "apps/server/src/dives/logbook-routes.ts",
+        "apps/server/src/dives/dive-view-of.ts",
         "apps/server/src/dives/routes.ts"
       ],
       "orphan": false,
@@ -13068,7 +13079,7 @@
       "dependents": [
         "apps/server/src/planning/logbook-inputs.ts",
         "apps/server/src/dives/dive-view.ts",
-        "apps/server/src/dives/routes.ts",
+        "apps/server/src/dives/dive-view-of.ts",
         "apps/server/src/mcp/tools-logbook.ts",
         "apps/server/src/planning/test-vectors.ts"
       ],
@@ -20507,6 +20518,8 @@
       ],
       "dependents": [
         "apps/server/src/app.ts",
+        "apps/server/src/dives/logbook-routes.ts",
+        "apps/server/src/dives/dive-view-of.ts",
         "apps/server/src/dives/routes.ts"
       ],
       "orphan": false,
@@ -20580,6 +20593,24 @@
         },
         {
           "dynamic": false,
+          "module": "../centres/centre-service.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/centres/centre-service.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "../db/schema.js",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -20588,6 +20619,24 @@
             "import"
           ],
           "resolved": "apps/server/src/db/schema.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../divers/diver-service.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/divers/diver-service.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -20648,6 +20697,24 @@
         },
         {
           "dynamic": false,
+          "module": "./certification-port.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/dives/certification-port.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./dive-summary-view.js",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -20656,6 +20723,40 @@
             "import"
           ],
           "resolved": "apps/server/src/dives/dive-summary-view.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./dive-view-of.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/dives/dive-view-of.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./dive-view.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/dives/dive-view.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -20820,6 +20921,269 @@
       "valid": true
     },
     {
+      "source": "apps/server/src/dives/dive-view-of.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../centres/centre-service.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/centres/centre-service.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../db/schema.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/db/schema.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../divers/diver-service.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/divers/diver-service.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../sites/dive-site-link.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/sites/dive-site-link.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./calc/sac.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/dives/calc/sac.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./calc/water.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/dives/calc/water.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./certification-port.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/dives/certification-port.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./dive-values.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/dives/dive-values.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./dive-view.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/dives/dive-view.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./logbook-service.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/dives/logbook-service.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./weighting.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/dives/weighting.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "typebox",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "unknown"
+          ],
+          "resolved": "typebox",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": true,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/server/src/dives/logbook-routes.ts",
+        "apps/server/src/dives/routes.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/server/src/dives/calc/water.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../../db/schema.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/db/schema.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../../vocabulary.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/vocabulary.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/server/src/dives/dive-view-of.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "apps/server/src/dives/routes.ts",
       "dependencies": [
         {
@@ -20963,23 +21327,6 @@
         },
         {
           "dynamic": false,
-          "module": "../sites/dive-site-link.js",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "apps/server/src/sites/dive-site-link.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
           "module": "../vocabulary.js",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -21005,40 +21352,6 @@
             "import"
           ],
           "resolved": "apps/server/src/dives/assessment-refresh.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./calc/sac.js",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "apps/server/src/dives/calc/sac.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./calc/water.js",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "apps/server/src/dives/calc/water.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -21245,9 +21558,27 @@
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
+            "type-only",
             "import"
           ],
           "resolved": "apps/server/src/dives/dive-values.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./dive-view-of.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/dives/dive-view-of.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -21450,51 +21781,6 @@
       ],
       "dependents": [
         "apps/server/src/app.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "apps/server/src/dives/calc/water.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../../db/schema.js",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "import"
-          ],
-          "resolved": "apps/server/src/db/schema.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../../vocabulary.js",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "apps/server/src/vocabulary.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "apps/server/src/dives/routes.ts"
       ],
       "orphan": false,
       "valid": true
@@ -49042,8 +49328,8 @@
     "baselineSize": 0,
     "baselineStale": 0,
     "advisedExitCode": 0,
-    "totalCruised": 464,
-    "totalDependenciesCruised": 2447,
+    "totalCruised": 465,
+    "totalDependenciesCruised": 2462,
     "optionsUsed": {
       "baseDir": "/home/runner/work/dive_hub/dive_hub",
       "combinedDependencies": false,
@@ -49447,8 +49733,8 @@
     "environment": {
       "version": "18.7.0",
       "nodeVersionSupported": "^22||^24||>=26",
-      "nodeVersionFound": "v24.22.3",
-      "osVersionFound": "x64 linux@7.0.0-1020-azure",
+      "nodeVersionFound": "v24.22.2",
+      "osVersionFound": "x64 linux@7.0.0-1019-azure",
       "transpilersFound": [
         {
           "name": "javascript",
