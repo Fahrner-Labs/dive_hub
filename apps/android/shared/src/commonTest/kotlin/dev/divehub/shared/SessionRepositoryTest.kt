@@ -195,7 +195,7 @@ fun `signing out clears the token and the cache but keeps the instance`() = runT
 }
 
 @Test
-fun `a 401 anywhere ends the session and forgets the User`() = runTest {
+fun `a 401 anywhere ends the session and keeps the cached store`() = runTest {
     val harness = Harness(tokens = FakeTokens("expired")) { request ->
         when (request.url.encodedPath) {
             "/api/me" -> json("""{"code":"sign_in_required","error":"Sign in required"}""", HttpStatusCode.Unauthorized)
@@ -207,7 +207,7 @@ fun `a 401 anywhere ends the session and forgets the User`() = runTest {
 
     assertIs<SessionState.SignedOut>(state)
     assertNull(harness.tokens.value)
-    assertEquals(1, harness.cache.forgets)
+    assertEquals(0, harness.cache.forgets)
 }
 
 @Test

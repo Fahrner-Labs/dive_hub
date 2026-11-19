@@ -1,0 +1,459 @@
+package dev.divehub.shared.sync
+
+import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
+import dev.divehub.shared.ApiClient
+import dev.divehub.shared.store.DiveStore
+import io.ktor.client.engine.mock.MockEngine
+import io.ktor.client.engine.mock.respond
+import io.ktor.client.request.HttpRequestData
+import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpStatusCode
+import io.ktor.http.headersOf
+import kotlinx.coroutines.test.runTest
+import kotlinx.io.IOException
+import kotlinx.serialization.json.Json
+import kotlin.test.AfterTest
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertIs
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
+
+private const val NOW = "2026-11-19T10:00:00Z"
+private val JSON = Json { ignoreUnknownKeys = true; explicitNulls = false }
+
+private sealed interface Reply {
+    data class Body(val text: String, val status: HttpStatusCode = HttpStatusCode.OK) : Reply
+    data class Status(val status: HttpStatusCode) : Reply
+    data object Offline : Reply
+}
+
+private fun json(text: String): Reply = Reply.Body(text)
+private fun status(code: HttpStatusCode): Reply = Reply.Status(code)
+
+private class Harness(val store: DiveStore, handler: (String) -> Reply) {
+    val paths = mutableListOf<String>()
+    val delays = mutableListOf<Int>()
+    var unauthorized = 0
+
+    private val api = ApiClient(
+        engine = MockEngine { request ->
+            val path = request.pathWithQuery()
+            paths += path
+            when (val reply = handler(path)) {
+                is Reply.Body -> respond(
+                    reply.text,
+                    reply.status,
+                    headersOf(HttpHeaders.ContentType, "application/json"),
+                )
+                is Reply.Status -> respond(
+                    "",
+                    reply.status,
+                    headersOf(HttpHeaders.ContentType, "application/json"),
+                )
+                Reply.Offline -> throw IOException("offline")
+            }
+        },
+        token = { "token" },
+        onUnauthorized = { unauthorized += 1 },
+        json = JSON,
+    ).apply { baseUrl = "https://dive.example" }
+
+    val engine = SyncEngine(api, store, clock = { NOW }, backoff = { delays += it })
+}
+
+private fun HttpRequestData.pathWithQuery(): String {
+    val query = url.encodedQuery
+    return url.encodedPath + if (query.isEmpty()) "" else "?$query"
+}
+
+private fun query(path: String, name: String): String? =
+    path.substringAfter('?', "").split('&').firstOrNull { it.startsWith("$name=") }?.substringAfter('=')
+
+private fun diverJson(id: String = "diver-1", name: String = "Ada", isOwn: Boolean = true): String =
+    """{"id":"$id","name":"$name","isOwn":$isOwn,"divesBefore":0,"apneaCounts":true,"diveCount":1,
+    "deviceCount":0,"mutedRules":[],"certifications":{"count":0,"newest":null,"expired":0,"expiringSoon":0}}"""
+
+private fun weightsJson(): String = """[{"date":"2026-01-01","kg":75.5},{"date":"2026-02-01","kg":76.0}]"""
+
+private fun siteJson(id: String = "site-1", name: String = "Reef"): String =
+    """{"id":"$id","name":"$name","position":{"latitude":54.1,"longitude":10.2},"country":"DE",
+    "waterBody":"Baltic","description":null,"maxDepthM":30,"waterType":"salt","externalIds":[],
+    "version":1,"diveCount":1,"inUse":true,"canDelete":false,"mergedInto":null}"""
+
+private fun diveListItem(
+    id: String = "dive-1",
+    startsAt: String = "2026-11-01T10:00:00Z",
+    number: Int = 1,
+    findings: Int = 2,
+): String =
+    """{"id":"$id","diverId":"diver-1","number":$number,"startsAt":"$startsAt","utcOffsetSeconds":3600,
+    "utcOffsetSource":"device","durationSeconds":2700,"maxDepthM":31.4,"avgDepthM":17.2,
+    "site":{"id":"site-1","name":"Reef"},"findings":$findings,"recordings":1,"fromProvider":"ssi",
+    "gases":[],"surfaceIntervalSeconds":null,"participants":[],"waiting":[],"profile":null}"""
+
+private fun divePage(items: List<String>, total: Int): String =
+    """{"dives":[${items.joinToString(",")}],"total":$total,
+    "counts":{"noRecording":0,"noSite":0,"withFindings":0,"notAtProvider":0,"changedSinceSent":0},
+    "totals":{"dives":$total,"durationSeconds":0,"deepestM":null,"lastDiveAt":null},"months":[]}"""
+
+private fun sitePage(items: List<String>, total: Int): String =
+    """{"sites":[${items.joinToString(",")}],"total":$total}"""
+
+private fun detailJson(id: String = "dive-1", startsAt: String = "2026-11-01T10:00:00Z", version: Int = 3): String =
+    """{"id":"$id","diverId":"diver-1","version":$version,
+    "values":{"number":42,"startsAt":{"at":"$startsAt","utcOffsetSeconds":3600},
+    "durationSeconds":3000,"maxDepthM":24.3,"avgDepthM":12,"waterTemperatureC":18},
+    "overrides":[],"utcOffsetSource":"device","fromProvider":"ssi","notes":"A good dive",
+    "recordings":[{"id":"recording-$id","isPrimary":true,
+      "device":{"manufacturer":"Garmin","product":"Descent","serialNumber":"777"},
+      "startsAt":"2026-11-01T10:00:00Z","durationSeconds":3000,"maxDepthM":24.3,"parser":"fit","partOf":null,
+      "summary":{"gfHigh":80,"cnsEnd":12,"otuEnd":34,"sacLpm":16.5,"waterType":"salt"},
+      "channels":["depth","temperature"]}],
+    "cylinders":[{"volumeL":12,"workingPressureBar":232,"material":"steel","gas":{"o2":21,"he":0},
+      "startPressureBar":200,"endPressureBar":50,"fromPod":false,"series":null}],
+    "lead":[{"amountKg":4,"placement":"belt"}],"leadTotalKg":4,
+    "participants":[],"verificationCodes":[]}"""
+
+private class RouteData(
+    val divers: List<String> = listOf(diverJson()),
+    val weights: (String) -> Reply = { json(weightsJson()) },
+    val sites: List<String> = listOf(siteJson()),
+    val dives: List<String> = listOf(diveListItem()),
+    val detail: (String, String) -> Reply = { id, startsAt -> json(detailJson(id, startsAt)) },
+)
+
+private fun routes(data: RouteData = RouteData()): (String) -> Reply = { path ->
+    when {
+        path == "/api/divers" -> json("[${data.divers.joinToString(",")}]")
+        path.startsWith("/api/divers/") && path.endsWith("/body-weights") ->
+            data.weights(path.removePrefix("/api/divers/").removeSuffix("/body-weights"))
+        path.startsWith("/api/dive-sites?") -> {
+            val offset = query(path, "offset")?.toInt() ?: 0
+            val limit = query(path, "limit")?.toInt() ?: 200
+            json(sitePage(data.sites.drop(offset).take(limit), data.sites.size))
+        }
+        path.startsWith("/api/dives?") -> {
+            val offset = query(path, "offset")?.toInt() ?: 0
+            val limit = query(path, "limit")?.toInt() ?: 200
+            json(divePage(data.dives.drop(offset).take(limit), data.dives.size))
+        }
+        path.startsWith("/api/dives/") -> {
+            val id = path.removePrefix("/api/dives/")
+            val startsAt = data.dives.firstOrNull { it.contains("\"id\":\"$id\"") }
+                ?.let { Regex("\"startsAt\":\"([^\"]+)\"").find(it)?.groupValues?.get(1) }
+                ?: "2026-11-01T10:00:00Z"
+            data.detail(id, startsAt)
+        }
+        else -> error("unexpected $path")
+    }
+}
+
+private fun manyDives(count: Int, prefix: String = "dive"): List<String> = (0 until count).map { index ->
+    val minute = (index % 60).toString().padStart(2, '0')
+    val hour = (index / 60 % 24).toString().padStart(2, '0')
+    val day = (1 + index / (60 * 24)).toString().padStart(2, '0')
+    diveListItem(
+        id = "$prefix-$index",
+        startsAt = "2026-10-${day}T$hour:$minute:00Z",
+        number = index + 1,
+    )
+}
+
+private fun manySites(count: Int): List<String> = (0 until count).map { index -> siteJson(id = "site-$index", name = "Site $index") }
+
+class SyncEngineTest {
+    private val driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
+    private val store: DiveStore = DiveStore.create(driver)
+
+    @AfterTest
+    fun close() = driver.close()
+
+    @Test
+    fun `phase one makes the logbook list readable and phase two the dive page`() = runTest {
+        val harness = Harness(store, routes())
+
+        assertEquals(SyncResult.Complete, harness.engine.sync())
+
+        assertEquals(listOf("Ada"), store.divers().map { it.name })
+        assertEquals(2, store.bodyWeights("diver-1").size)
+        assertEquals(listOf("Reef"), store.diveSites().map { it.name })
+        assertEquals(listOf("dive-1"), store.dives().map { it.id })
+        assertEquals(2L, store.dive("dive-1")!!.findingsCount)
+        assertEquals(3L, store.dive("dive-1")!!.version)
+
+        val recording = store.recordings("dive-1").single()
+        assertEquals("recording-dive-1", recording.id)
+        assertTrue(recording.isPrimary)
+        assertTrue(recording.summaryJson.contains("\"gfHigh\":80"))
+        assertTrue(recording.channelsJson.contains("depth"))
+        assertEquals(listOf(21.0), store.cylinders("dive-1").map { it.o2 })
+        assertEquals(4.0, store.dive("dive-1")!!.leadTotalKg)
+        assertEquals(NOW, store.syncState().lastFullSyncAt)
+    }
+
+    @Test
+    fun `sites page by offset and stop at the total`() = runTest {
+        val harness = Harness(store, routes(RouteData(sites = manySites(250), dives = emptyList())))
+
+        assertEquals(SyncResult.Complete, harness.engine.sync())
+
+        assertEquals(250, store.diveSites().size)
+        assertTrue(harness.paths.contains("/api/dive-sites?limit=200&offset=0"))
+        assertTrue(harness.paths.contains("/api/dive-sites?limit=200&offset=200"))
+        assertTrue(harness.paths.none { it.startsWith("/api/dive-sites?") && query(it, "offset") == "400" })
+    }
+
+    @Test
+    fun `the dive list pages by offset and stops at the total`() = runTest {
+        val dives = manyDives(201)
+        val harness = Harness(store, routes(RouteData(dives = dives)))
+
+        assertEquals(SyncResult.Complete, harness.engine.sync())
+
+        assertEquals(201, store.diveCount())
+        assertTrue(harness.paths.contains("/api/dives?limit=200&offset=0"))
+        assertTrue(harness.paths.contains("/api/dives?limit=200&offset=200"))
+        assertTrue(harness.paths.none { it.startsWith("/api/dives?") && query(it, "offset") == "400" })
+    }
+
+    @Test
+    fun `a failed page keeps its checkpoint and the next trigger resumes at the offset`() = runTest {
+        val dives = manyDives(201)
+        var failSecondPage = 2
+        val routes = routes(RouteData(dives = dives))
+        val harness = Harness(store) { path ->
+            if (path.startsWith("/api/dives?") && query(path, "offset") == "200" && failSecondPage > 0) {
+                failSecondPage -= 1
+                status(HttpStatusCode.InternalServerError)
+            } else {
+                routes(path)
+            }
+        }
+
+        val first = harness.engine.sync()
+
+        assertIs<SyncResult.Stopped>(first)
+        assertEquals(SyncPhase.Meta, first.phase)
+        assertEquals(200, store.diveCount())
+        assertEquals(200L, store.checkpoint("dives", "meta")!!.pageOffset)
+        assertEquals(listOf(1), harness.delays)
+
+        harness.paths.clear()
+        failSecondPage = 0
+        assertEquals(SyncResult.Complete, harness.engine.sync())
+
+        assertEquals(201, store.diveCount())
+        assertTrue(harness.paths.none { it.startsWith("/api/dives?") && query(it, "offset") == "0" })
+        assertTrue(harness.paths.contains("/api/dives?limit=200&offset=200"))
+    }
+
+    @Test
+    fun `a failed detail keeps the details checkpoint and resumes at the next dive`() = runTest {
+        val dives = listOf(
+            diveListItem(id = "dive-1", startsAt = "2026-11-03T10:00:00Z"),
+            diveListItem(id = "dive-2", startsAt = "2026-11-02T10:00:00Z"),
+            diveListItem(id = "dive-3", startsAt = "2026-11-01T10:00:00Z"),
+        )
+        var failSecondDetail = 2
+        val routes = routes(RouteData(dives = dives))
+        val harness = Harness(store) { path ->
+            if (path == "/api/dives/dive-2" && failSecondDetail > 0) {
+                failSecondDetail -= 1
+                status(HttpStatusCode.InternalServerError)
+            } else {
+                routes(path)
+            }
+        }
+
+        val first = harness.engine.sync()
+
+        assertIs<SyncResult.Stopped>(first)
+        assertEquals(SyncPhase.Details, first.phase)
+        assertEquals(1L, store.checkpoint("dive_details", "details")!!.pageOffset)
+        assertEquals(3L, store.dive("dive-1")!!.version)
+        assertNull(store.dive("dive-2")!!.version)
+        assertNull(store.syncState().lastFullSyncAt)
+
+        harness.paths.clear()
+        failSecondDetail = 0
+        assertEquals(SyncResult.Complete, harness.engine.sync())
+        assertEquals(3L, store.dive("dive-2")!!.version)
+        assertEquals(3L, store.dive("dive-3")!!.version)
+        assertTrue(harness.paths.none { it == "/api/dives/dive-1" })
+        assertTrue(harness.paths.contains("/api/dives/dive-2"))
+    }
+
+    @Test
+    fun `body weights resume at the next Diver`() = runTest {
+        val divers = listOf(diverJson("diver-1", "Ada"), diverJson("diver-2", "Bob", isOwn = false))
+        var failSecondDiver = 2
+        val routes = routes(RouteData(divers = divers, dives = emptyList(), sites = emptyList()))
+        val harness = Harness(store) { path ->
+            if (path == "/api/divers/diver-2/body-weights" && failSecondDiver > 0) {
+                failSecondDiver -= 1
+                status(HttpStatusCode.InternalServerError)
+            } else {
+                routes(path)
+            }
+        }
+
+        assertIs<SyncResult.Stopped>(harness.engine.sync())
+        assertEquals(2, store.bodyWeights("diver-1").size)
+        assertEquals(0, store.bodyWeights("diver-2").size)
+
+        harness.paths.clear()
+        failSecondDiver = 0
+        assertEquals(SyncResult.Complete, harness.engine.sync())
+
+        assertEquals(2, store.bodyWeights("diver-2").size)
+        assertTrue(harness.paths.none { it == "/api/divers/diver-1/body-weights" })
+        assertTrue(harness.paths.contains("/api/divers/diver-2/body-weights"))
+    }
+
+    @Test
+    fun `a 401 ends the session and keeps the cached store`() = runTest {
+        store.upsertDive(
+            dev.divehub.shared.store.Dive(
+                id = "cached",
+                diverId = "diver-1",
+                startsAt = "2026-10-01T10:00:00Z",
+            ),
+        )
+        val harness = Harness(store) { path ->
+            if (path == "/api/divers") status(HttpStatusCode.Unauthorized) else error("unexpected $path")
+        }
+
+        assertEquals(SyncResult.SessionEnded, harness.engine.sync())
+
+        assertEquals(1, harness.unauthorized)
+        assertNotNull(store.dive("cached"))
+        assertEquals(listOf("/api/divers"), harness.paths)
+        assertEquals(emptyList(), harness.delays)
+    }
+
+    @Test
+    fun `a 401 during the details keeps the phase-one dives`() = runTest {
+        val harness = Harness(store) { path ->
+            if (path == "/api/dives/dive-1") status(HttpStatusCode.Unauthorized) else routes()(path)
+        }
+
+        assertEquals(SyncResult.SessionEnded, harness.engine.sync())
+
+        assertEquals(1, harness.unauthorized)
+        assertEquals(listOf("dive-1"), store.dives().map { it.id })
+        assertNull(store.syncState().lastFullSyncAt)
+        assertNull(store.checkpoint("dive_details", "details"))
+    }
+
+    @Test
+    fun `a network failure is retried once with backoff`() = runTest {
+        var calls = 0
+        val harness = Harness(store) { path ->
+            if (path == "/api/divers" && calls++ == 0) Reply.Offline else routes()(path)
+        }
+
+        assertEquals(SyncResult.Complete, harness.engine.sync())
+
+        assertEquals(listOf(1), harness.delays)
+        assertEquals(2, harness.paths.count { it == "/api/divers" })
+    }
+
+    @Test
+    fun `a 5xx is retried once with backoff`() = runTest {
+        var calls = 0
+        val harness = Harness(store) { path ->
+            if (path == "/api/divers" && calls++ == 0) status(HttpStatusCode.BadGateway) else routes()(path)
+        }
+
+        assertEquals(SyncResult.Complete, harness.engine.sync())
+
+        assertEquals(listOf(1), harness.delays)
+        assertEquals(2, harness.paths.count { it == "/api/divers" })
+    }
+
+    @Test
+    fun `a second 5xx fails the phase without a third attempt`() = runTest {
+        val harness = Harness(store) { path ->
+            if (path == "/api/divers") status(HttpStatusCode.InternalServerError) else error("unexpected $path")
+        }
+
+        val result = harness.engine.sync()
+
+        assertIs<SyncResult.Stopped>(result)
+        assertEquals(SyncPhase.Meta, result.phase)
+        assertEquals(2, harness.paths.count { it == "/api/divers" })
+        assertEquals(listOf(1), harness.delays)
+    }
+
+    @Test
+    fun `a 4xx is not retried`() = runTest {
+        val harness = Harness(store) { path ->
+            if (path == "/api/divers") status(HttpStatusCode.BadRequest) else error("unexpected $path")
+        }
+
+        assertIs<SyncResult.Stopped>(harness.engine.sync())
+
+        assertEquals(1, harness.paths.count { it == "/api/divers" })
+        assertEquals(emptyList(), harness.delays)
+    }
+
+    @Test
+    fun `phases run in order divers, weights, sites, dives, then details`() = runTest {
+        val harness = Harness(store, routes())
+
+        assertEquals(SyncResult.Complete, harness.engine.sync())
+
+        val divers = harness.paths.indexOf("/api/divers")
+        val weights = harness.paths.indexOf("/api/divers/diver-1/body-weights")
+        val sites = harness.paths.indexOfFirst { it.startsWith("/api/dive-sites?") }
+        val dives = harness.paths.indexOfFirst { it.startsWith("/api/dives?") }
+        val detail = harness.paths.indexOf("/api/dives/dive-1")
+        assertTrue(divers < weights && weights < sites && sites < dives && dives < detail)
+    }
+
+    @Test
+    fun `a completed sync is a no-op until the refresh slice`() = runTest {
+        val harness = Harness(store, routes())
+        assertEquals(SyncResult.Complete, harness.engine.sync())
+        harness.paths.clear()
+
+        assertEquals(SyncResult.Complete, harness.engine.sync())
+        assertEquals(emptyList(), harness.paths)
+    }
+
+    @Test
+    fun `a dive deleted after the list is skipped and the phase completes`() = runTest {
+        val dives = listOf(
+            diveListItem(id = "dive-1", startsAt = "2026-11-03T10:00:00Z"),
+            diveListItem(id = "dive-2", startsAt = "2026-11-02T10:00:00Z"),
+        )
+        val harness = Harness(store) { path ->
+            if (path == "/api/dives/dive-1") status(HttpStatusCode.NotFound) else routes(RouteData(dives = dives))(path)
+        }
+
+        assertEquals(SyncResult.Complete, harness.engine.sync())
+
+        assertNull(store.dive("dive-1")!!.version)
+        assertEquals(3L, store.dive("dive-2")!!.version)
+        assertTrue(store.checkpoint("dive_details", "details")!!.done)
+    }
+
+    @Test
+    fun `progress reports the per-phase counts and the last full sync`() = runTest {
+        val harness = Harness(store, routes())
+
+        assertEquals(SyncResult.Complete, harness.engine.sync())
+
+        val progress = harness.engine.progress()
+        assertEquals(NOW, progress.lastFullSyncAt)
+        assertTrue(progress.metaDone)
+        assertTrue(progress.detailsDone)
+        assertEquals(1L, progress.storedDivers)
+        assertEquals(2L, progress.storedBodyWeights)
+        assertEquals(1L, progress.storedDiveSites)
+        assertEquals(1L, progress.storedDives)
+        assertEquals(1L, progress.detailedDives)
+    }
+}
