@@ -127,7 +127,7 @@ fun LoadingsScreen(
                 }
                 else -> {
                     Spacer(Modifier.height(12.dp))
-                    StalenessLabel(state.syncedAt, state.profilesComplete)
+                    StalenessLabel(state.syncedAt, state.profilesComplete, R.string.tools_not_fully_synced)
                     val answer = state.answer
                     if (answer == null) {
                         Muted(stringResource(R.string.tools_loadings_nothing))
@@ -163,6 +163,7 @@ private fun LoadingsAnswer(answer: ApiDiversIdLoadingsGet200Response) {
                 Formats.decimal(locale, n2.gfHigh, 0),
             ),
         )
+        Muted(stringResource(R.string.tools_loadings_n2_downsampled))
     } else {
         MissingValue(stringResource(R.string.tools_loadings_n2_missing))
     }

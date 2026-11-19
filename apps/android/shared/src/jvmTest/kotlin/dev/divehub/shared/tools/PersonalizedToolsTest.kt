@@ -249,6 +249,24 @@ class PersonalizedToolsTest {
     }
 
     @Test
+    fun `a suit thickness beyond the route's range is refused`() {
+        ownDiver()
+        val error = kotlin.runCatching {
+            leadEstimate(
+                PlannedConditions(
+                    water = SiteWaterType.salt,
+                    suit = Suit(SuitType.wetsuit, 20.0, null, null),
+                    cylinders = listOf(EstimateCylinder(12.0, CylinderMaterial.steel)),
+                ),
+                LeadUnit.kg,
+                assemblePersonalizedSources(store, nowMs),
+                today,
+            )
+        }.exceptionOrNull()
+        assertEquals(ToolsError.INVALID_INPUT, (error as? ToolsError)?.code)
+    }
+
+    @Test
     fun `loadings keep a missing estimate apart from a real zero`() {
         ownDiver()
         dive(id = "old", startsAt = "2026-11-17T00:00:00.000Z", durationSeconds = 3_600, maxDepthM = 12.0)
@@ -308,6 +326,33 @@ class PersonalizedToolsTest {
         assertFalse(assemblePersonalizedSources(store, nowMs).profilesComplete)
 
         series("r1", "temperature", "[0,60000]", "[18,17]")
+        assertTrue(assemblePersonalizedSources(store, nowMs).profilesComplete)
+    }
+
+    @Test
+    fun `the profiles phase's checkpoint decides when it exists`() {
+        ownDiver()
+        dive(id = "d1", startsAt = "2026-11-19T08:00:00.000Z")
+        recording("r1", "d1", "2026-11-19T08:00:00.000Z", channels = """["depth"]""")
+        series("r1", "depth", "[0,60000]", "[0,10]")
+        store.saveCheckpoint(
+            dev.divehub.shared.store.SyncCheckpoint(
+                entity = "profiles",
+                phase = "profiles",
+                done = false,
+                updatedAt = "2026-11-19T12:00:00.000Z",
+            ),
+        )
+        assertFalse(assemblePersonalizedSources(store, nowMs).profilesComplete)
+
+        store.saveCheckpoint(
+            dev.divehub.shared.store.SyncCheckpoint(
+                entity = "profiles",
+                phase = "profiles",
+                done = true,
+                updatedAt = "2026-11-19T12:00:00.000Z",
+            ),
+        )
         assertTrue(assemblePersonalizedSources(store, nowMs).profilesComplete)
     }
 

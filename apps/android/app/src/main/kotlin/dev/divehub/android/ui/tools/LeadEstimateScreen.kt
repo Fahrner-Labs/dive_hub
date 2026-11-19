@@ -141,7 +141,7 @@ fun LeadEstimateScreen(
             Spacer(Modifier.height(20.dp))
             Heading(stringResource(R.string.tools_lead_answer))
             if (state.personalized) {
-                StalenessLabel(state.syncedAt, state.profilesComplete)
+                StalenessLabel(state.syncedAt, state.profilesComplete, R.string.tools_not_fully_synced)
             }
             when {
                 state.error != null -> ErrorText(state.error)
@@ -337,6 +337,7 @@ private fun Answer(answer: ApiDiversIdLeadEstimateGet200Response, imperial: Bool
                         R.string.tools_lead_dive_line,
                         detail(locale, dive.carried, unit),
                         detail(locale, dive.needed, unit),
+                        Formats.decimal(locale, dive.weight, 2),
                     ),
                 )
             }

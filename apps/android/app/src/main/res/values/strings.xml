@@ -60,6 +60,7 @@
     <string name="dive_water_reads_off">Its depths may read a little off.</string>
     <string name="water_fresh">Fresh water</string>
     <string name="water_salt">Salt water</string>
+    <string name="water_brackish">Brackish water</string>
     <string name="water_en13319">EN 13319 (1020 kg/m³)</string>
     <string name="water_custom">Custom density</string>
     <string name="water_in_sentence_fresh">fresh water</string>
@@ -364,7 +365,6 @@
     <string name="tools_day_pattern">d MMM yyyy</string>
     <string name="tools_profiles_syncing">(profiles still syncing)</string>
     <string name="tools_tools_back">Tools</string>
-    <string name="water_brackish">Brackish water</string>
     <string name="tools_suit_none">No suit</string>
     <string name="tools_suit_skin">Skin</string>
     <string name="tools_suit_wetsuit">Wetsuit</string>
@@ -406,7 +406,7 @@
     <string name="tools_lead_no_number_body">There is no dive with this suit and no body weight on record, so there is nothing to start from. Add a body weight, or log a dive with this suit and its lead.</string>
     <string name="tools_lead_basis_dives">Based on %1$d of your dives with this suit:</string>
     <string name="tools_lead_dive_label">Dive %1$d, %2$s</string>
-    <string name="tools_lead_dive_line">carried %1$s, needed %2$s</string>
+    <string name="tools_lead_dive_line">carried %1$s, needed %2$s · counts ×%3$s</string>
     <string name="tools_lead_basis_rule">No dive with this suit. A rule of thumb for the body weight gives %1$s, a first guess.</string>
     <plurals name="tools_lead_basis_offset">
         <item quantity="one">Moved by %1$s: your %2$d other suit with dives needed more or less than the rule.</item>
@@ -476,4 +476,6 @@
     <string name="tools_loadings_source_rules">ADR 0071: current loadings from your dives</string>
     <string name="tools_loadings_source_cns">Shearwater: the CNS oxygen clock</string>
     <string name="tools_loadings_source_otu">Garmin Descent: surface interval</string>
+    <string name="tools_not_fully_synced">Not synced yet: this rests on what is already on the device.</string>
+    <string name="tools_loadings_n2_downsampled">The synced profiles are downsampled: the server’s full-resolution replay can differ a little.</string>
 </resources>

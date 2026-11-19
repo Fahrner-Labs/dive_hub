@@ -30,11 +30,8 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
+import androidx.activity.compose.BackHandler
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -47,6 +44,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.annotation.StringRes
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.divehub.android.R
 import dev.divehub.android.ui.Formats
@@ -64,7 +62,7 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 /** Which tool the Tools route shows; the gas numbers are its home. */
-private enum class ToolPage { Gas, Plan, Lead, Loadings }
+enum class ToolPage { Gas, Plan, Lead, Loadings }
 
 /** The tools route: opens the synced store once so a Diver's values are there before the first keystroke. */
 @Composable
@@ -74,6 +72,8 @@ fun ToolsRoute(
     leadViewModel: LeadEstimateViewModel,
     loadingsViewModel: LoadingsViewModel,
     units: String?,
+    page: ToolPage,
+    onPage: (ToolPage) -> Unit,
     onBack: () -> Unit,
     onOpenDive: (String) -> Unit,
 ) {
@@ -81,33 +81,32 @@ fun ToolsRoute(
     val context = LocalContext.current
     val locale = context.resources.configuration.locales[0] ?: Locale.getDefault()
     val imperial = Formats.imperial(units, locale)
-    var page by rememberSaveable { mutableStateOf(ToolPage.Gas) }
     LaunchedEffect(Unit) { viewModel.start(imperial) }
     LaunchedEffect(imperial) { viewModel.setUnits(imperial) }
-    BackHandler(enabled = page != ToolPage.Gas) { page = ToolPage.Gas }
+    BackHandler(enabled = page != ToolPage.Gas) { onPage(ToolPage.Gas) }
     when (page) {
         ToolPage.Plan -> GasPlanRoute(
             viewModel = planViewModel,
             units = units,
-            onBack = { page = ToolPage.Gas },
+            onBack = { onPage(ToolPage.Gas) },
         )
         ToolPage.Lead -> LeadEstimateRoute(
             viewModel = leadViewModel,
             units = units,
-            onBack = { page = ToolPage.Gas },
+            onBack = { onPage(ToolPage.Gas) },
             onOpenDive = onOpenDive,
         )
         ToolPage.Loadings -> LoadingsRoute(
             viewModel = loadingsViewModel,
-            onBack = { page = ToolPage.Gas },
+            onBack = { onPage(ToolPage.Gas) },
         )
         ToolPage.Gas -> ToolsScreen(
             state = state,
             imperial = imperial,
             onBack = onBack,
-            onOpenPlan = { page = ToolPage.Plan },
-            onOpenLead = { page = ToolPage.Lead },
-            onOpenLoadings = { page = ToolPage.Loadings },
+            onOpenPlan = { onPage(ToolPage.Plan) },
+            onOpenLead = { onPage(ToolPage.Lead) },
+            onOpenLoadings = { onPage(ToolPage.Loadings) },
             onChange = viewModel::update,
             onReload = viewModel::reload,
         )
@@ -741,14 +740,18 @@ internal fun dayDate(iso: String): String {
  * (client contract, Offline reads; FAH-276). Every personalized result carries it.
  */
 @Composable
-internal fun StalenessLabel(syncedAt: String?, profilesComplete: Boolean) {
+internal fun StalenessLabel(
+    syncedAt: String?,
+    profilesComplete: Boolean,
+    @StringRes notSynced: Int = R.string.tools_not_synced,
+) {
     val context = LocalContext.current
     val locale = context.resources.configuration.locales[0] ?: Locale.getDefault()
     val pattern = stringResource(R.string.tools_date_pattern)
     val text = if (syncedAt != null) {
         stringResource(R.string.tools_synced_at, dateTime(syncedAt, locale, pattern))
     } else {
-        stringResource(R.string.tools_not_synced)
+        stringResource(notSynced)
     }
     Muted(if (profilesComplete) text else "$text ${stringResource(R.string.tools_profiles_syncing)}")
 }

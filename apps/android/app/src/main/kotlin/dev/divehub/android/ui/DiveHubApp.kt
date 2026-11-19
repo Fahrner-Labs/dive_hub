@@ -53,6 +53,7 @@ import dev.divehub.android.ui.logbook.LogbookViewModel
 import dev.divehub.android.ui.tools.GasPlanViewModel
 import dev.divehub.android.ui.tools.LeadEstimateViewModel
 import dev.divehub.android.ui.tools.LoadingsViewModel
+import dev.divehub.android.ui.tools.ToolPage
 import dev.divehub.android.ui.tools.ToolsRoute
 import dev.divehub.android.ui.tools.ToolsViewModel
 import dev.divehub.shared.logbook.LogbookPaging
@@ -73,6 +74,8 @@ fun DiveHubApp(
     // the page the Dive is on (ADR 0042).
     var openDiveId by rememberSaveable { mutableStateOf<String?>(null) }
     var showTools by rememberSaveable { mutableStateOf(false) }
+    // Hoisted above the Dive page: opening a Dive from the lead estimate returns to the same tools page (FAH-276).
+    var toolPage by rememberSaveable { mutableStateOf(ToolPage.Gas) }
     // A sign-out (or another User) drops the logbook's pages with the session (client contract §1 Security).
     LaunchedEffect(state.user?.id) {
         if (state.user == null) {
@@ -84,6 +87,7 @@ fun DiveHubApp(
             loadings.forget()
             openDiveId = null
             showTools = false
+            toolPage = ToolPage.Gas
         } else {
             logbook.start(state.user!!.id)
             // After process death the id is back but the page was never read in this process.
@@ -92,8 +96,10 @@ fun DiveHubApp(
     }
     // ADR 0042: the logbook returns on the page the Dive is on, so stepping across a page boundary stays right.
     val closeDive = {
-        val page = dive.state.value.neighbours?.position?.let(LogbookPaging::pageOf)
-        if (page != null && page != logbook.state.value.page) logbook.showPage(page)
+        if (!showTools) {
+            val page = dive.state.value.neighbours?.position?.let(LogbookPaging::pageOf)
+            if (page != null && page != logbook.state.value.page) logbook.showPage(page)
+        }
         openDiveId = null
     }
     BackHandler(enabled = openDiveId != null) { closeDive() }
@@ -116,6 +122,8 @@ fun DiveHubApp(
                 leadViewModel = lead,
                 loadingsViewModel = loadings,
                 units = state.units,
+                page = toolPage,
+                onPage = { toolPage = it },
                 onBack = { showTools = false },
                 onOpenDive = { id ->
                     dive.open(id)

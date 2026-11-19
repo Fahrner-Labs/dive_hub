@@ -60,6 +60,7 @@
     <string name="dive_water_reads_off">Die Tiefen können etwas danebenliegen.</string>
     <string name="water_fresh">Süßwasser</string>
     <string name="water_salt">Salzwasser</string>
+    <string name="water_brackish">Brackwasser</string>
     <string name="water_en13319">EN 13319 (1020 kg/m³)</string>
     <string name="water_custom">Eigene Dichte</string>
     <string name="water_in_sentence_fresh">Süßwasser</string>
@@ -364,7 +365,6 @@
     <string name="tools_day_pattern">d. MMM yyyy</string>
     <string name="tools_profiles_syncing">(Profile werden noch synchronisiert)</string>
     <string name="tools_tools_back">Werkzeuge</string>
-    <string name="water_brackish">Brackwasser</string>
     <string name="tools_suit_none">Kein Anzug</string>
     <string name="tools_suit_skin">Skin</string>
     <string name="tools_suit_wetsuit">Neoprenanzug</string>
@@ -406,7 +406,7 @@
     <string name="tools_lead_no_number_body">Es gibt keinen Tauchgang mit diesem Anzug und kein Körpergewicht, also keinen Ausgangspunkt. Trage ein Körpergewicht ein oder logge einen Tauchgang mit diesem Anzug und seinem Blei.</string>
     <string name="tools_lead_basis_dives">Aus %1$d deiner Tauchgänge mit diesem Anzug:</string>
     <string name="tools_lead_dive_label">Tauchgang %1$d, %2$s</string>
-    <string name="tools_lead_dive_line">getragen %1$s, gebraucht %2$s</string>
+    <string name="tools_lead_dive_line">getragen %1$s, gebraucht %2$s · zählt ×%3$s</string>
     <string name="tools_lead_basis_rule">Kein Tauchgang mit diesem Anzug. Eine Faustregel aus dem Körpergewicht ergibt %1$s, eine erste Schätzung.</string>
     <plurals name="tools_lead_basis_offset">
         <item quantity="one">Verschoben um %1$s: Dein %2$d anderer Anzug mit Tauchgängen brauchte mehr oder weniger als die Regel.</item>
@@ -476,4 +476,6 @@
     <string name="tools_loadings_source_rules">ADR 0071: aktuelle Belastung aus deinen Tauchgängen</string>
     <string name="tools_loadings_source_cns">Shearwater: die CNS-Sauerstoffuhr</string>
     <string name="tools_loadings_source_otu">Garmin Descent: Oberflächenintervall</string>
+    <string name="tools_not_fully_synced">Noch nicht synchronisiert: Das beruht auf dem, was schon auf dem Gerät ist.</string>
+    <string name="tools_loadings_n2_downsampled">Die synchronisierten Profile sind heruntergerechnet: Die volle Auflösung des Servers kann leicht abweichen.</string>
 </resources>
