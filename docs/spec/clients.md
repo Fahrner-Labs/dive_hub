@@ -224,6 +224,13 @@ V1 of the native client reads offline: phones lose signal where dives are, and t
   sync, not the "no answer at all" of a request that failed. A read that needs server-computed data the store
   does not hold (the stored-fingerprint counts of `changed-since-sent`, and `not-at-provider`'s Push state) is fetched
   online and never shown from an incomplete store; offline, the client says it is unavailable.
+- **A logbook sync reads full Dives a page at a time.** `GET /api/dives?include=details` answers each row exactly as
+  `GET /api/dives/{id}` does, with the same filters, order, `total` and counts as the summary list, so the initial sync
+  pages through the logbook instead of one request per Dive. Each row carries the whole Dive (Recordings, cylinders,
+  lead, suit, weighting feedback, site water type); the sample series still come from
+  `GET /api/recordings/{id}/samples`. A details page is capped at 50 Dives a page because each row is a whole Dive,
+  not a summary: page with `limit=50` until `offset` reaches `total`. Without `include=details` the list answers the
+  summary row, unchanged.
 - **Refresh keeps the store current.** While online the client opens the live hint stream; a Dive or site hint
   refetches that thing through the normal API, and every (re)connect re-runs the list sync because hints are not
   replayed (ADR 0066). Polling remains the automatic fallback. Deleted Dives arrive as tombstones (`deletedAt`),

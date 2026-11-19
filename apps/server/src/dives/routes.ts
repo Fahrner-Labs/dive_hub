@@ -6,8 +6,7 @@ import { Type, type Static } from 'typebox';
 import type { Auth } from '../auth/auth.js';
 import { requireUser, userOf } from '../auth/fastify.js';
 import {
-  CYLINDER_MATERIALS, PARTICIPANT_ROLES, UTC_OFFSET_SOURCES, dive,
-  type RecordingSummary,
+  CYLINDER_MATERIALS, PARTICIPANT_ROLES, UTC_OFFSET_SOURCES,
 } from '../db/schema.js';
 import { answerErrors, answers, Problem, problem } from '../http/problems.js';
 import { Copies, decodeDeletedCursor, DeleteProblemSchema } from './deletion-view.js';
@@ -19,7 +18,7 @@ import { CYLINDER_CATALOGUE } from './cylinder-catalogue.js';
 import { CylinderError, withoutPressures } from './cylinders.js';
 import { DiveError, type DiveService } from './dive-service.js';
 import { DiveSummaryFields, diveSummaryOf, providersOf } from './dive-summary-view.js';
-import { WeightingError, leadTotalKg, suitOf, weightingFeedbackOf } from './weighting.js';
+import { WeightingError, suitOf } from './weighting.js';
 import type { MergingService } from './merging-service.js';
 import type { LogbookService } from './logbook-service.js';
 import type { DeletionService } from './deletion-service.js';
@@ -28,12 +27,10 @@ import type { AppendService } from './continuation/append-service.js';
 import type { ContinuationService } from './continuation/continuation-service.js';
 import { LOGBOOK_CHECK_RULES } from './checks/logbook-check-rules.js';
 import type { LogbookCheckService } from './checks/logbook-check-service.js';
-import { valuesFromRecording, type DiveValues } from './dive-values.js';
+import type { DiveValues } from './dive-values.js';
+import { createDiveView } from './dive-view-of.js';
 import { REVISION_CAUSES } from '../revisions/revisions.js';
 import { EQUIPMENT_CATEGORIES } from '../vocabulary.js';
-import { sacOfDive } from './calc/sac.js';
-import { waterMismatch } from './calc/water.js';
-import { recordingPosition } from '../sites/dive-site-link.js';
 import type { CentreService } from '../centres/centre-service.js';
 import type { DiverService } from '../divers/diver-service.js';
 import { refreshAssessmentsAfterChange, type AssessmentRefresh } from './assessment-refresh.js';
@@ -128,9 +125,6 @@ const RevisionView = Type.Object({
 });
 type StoredDiveChanges = Static<typeof DiveChanges>;
 
-const toValues = (v: DiveValues): Static<typeof ValuesSchema> => ({
-  ...v, startsAt: { at: v.startsAt.at.toISOString(), utcOffsetSeconds: v.startsAt.utcOffsetSeconds },
-});
 const fromValues = (v: Partial<Static<typeof ValuesSchema>>): Partial<DiveValues> => {
   const { startsAt, ...rest } = v;
   return { ...rest, ...(startsAt && { startsAt: { at: new Date(startsAt.at), utcOffsetSeconds: startsAt.utcOffsetSeconds } }) };
@@ -268,54 +262,7 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
     return view(row, userOf(request).id);
   };
 
-  const view = async (row: typeof dive.$inferSelect, userId: string): Promise<Static<typeof DiveView>> => {
-    const { recordings: recs, site } = await logbook.recordingsAndSite(row);
-    const primary = recs.find(({ r }) => r.id === row.primaryRecordingId)?.r;
-    const { cylinders, lead } = await logbook.partsOf(row.id);
-    const { sac, missing: sacMissing } = sacOfDive(row, cylinders);
-    const participants = await logbook.participantsOfDive(row.id);
-    const certificationHints = await certifications.hintsFor(userId, participants.map((p) => p.diverId));
-    return {
-      id: row.id,
-      diverId: row.diverId,
-      version: row.version,
-      values: { number: row.number, ...toValues({
-        startsAt: { at: row.startsAt, utcOffsetSeconds: row.utcOffsetSeconds },
-        durationSeconds: row.durationSeconds, maxDepthM: row.maxDepthM, avgDepthM: row.avgDepthM,
-        waterTemperatureC: row.waterTemperatureC,
-      }) },
-      overrides: row.overrides,
-      utcOffsetSource: row.utcOffsetSource,
-      fromProvider: row.fromProvider,
-      fromRecording: primary ? toValues(valuesFromRecording(primary)) : null,
-      notes: row.notes,
-      site: site ? { id: site.id, name: site.name } : null,
-      waterType: site?.waterType ?? null,
-      waterMismatch: waterMismatch(site?.waterType ?? null, primary?.summary),
-      position: primary ? recordingPosition(primary) : null,
-      recordings: recs.map(({ r, d, channels }) => ({
-        id: r.id, isPrimary: r.id === row.primaryRecordingId,
-        device: d ? { manufacturer: d.manufacturer, product: d.product, serialNumber: d.serialNumber } : null, startsAt: r.startsAt.toISOString(),
-        durationSeconds: r.durationSeconds, maxDepthM: r.maxDepthM, parser: r.parser, partOf: r.joinedRecordingId,
-        summary: r.summary as RecordingSummary, channels,
-      })),
-      cylinders,
-      lead,
-      leadTotalKg: leadTotalKg(lead),
-      weightingFeedback: weightingFeedbackOf(row),
-      suit: suitOf(row),
-      sac,
-      sacMissing,
-      participants: participants.map((p) => {
-        const hint = certificationHints.get(p.diverId);
-        return hint ? { ...p, certificationHint: hint } : p;
-      }),
-      verificationCodes: [
-        ...(await centres.codesOfDive(row.id)).map((c) => ({ kind: 'centre' as const, diver: null, ...c })),
-        ...(await divers.professionalCodesOfDive(row.id)).map((c) => ({ kind: 'professional' as const, centre: null, ...c })),
-      ],
-    };
-  };
+  const view = createDiveView({ logbook, centres, divers, certifications });
 
   app.get('/dives/:id', {
     schema: {

@@ -123,7 +123,7 @@ export async function buildApp(deps: AppDeps, app: Server = createServer()) {
   await app.register(adminRoutes, { prefix: '/api', auth, passwordResets, userAdmin: deps.userAdmin, invitations: deps.invitations, baseUrl });
   await app.register(backupRoutes, { prefix: '/api', auth, backups: deps.backups });
   await app.register(importRoutes, { prefix: '/api', auth, imports: deps.imports, waitingPushes, maxUploadBytes: deps.maxUploadBytes });
-  await app.register(logbookRoutes, { prefix: '/api', auth, logbook, pushes, waitingPushes });
+  await app.register(logbookRoutes, { prefix: '/api', auth, logbook, pushes, waitingPushes, centres, divers, certifications });
   // dives owns the shapes it needs (dives/provider-port.ts); this is where the real Provider answerer is wired in.
   // The only failures it answers come from the Push service, so they are ProviderServiceErrors.
   const diveAnswers: DiveProviderAnswers = {
