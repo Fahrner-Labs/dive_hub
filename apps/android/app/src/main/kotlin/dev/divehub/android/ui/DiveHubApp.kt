@@ -43,6 +43,7 @@ import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.divehub.android.R
@@ -107,6 +108,7 @@ fun DiveHubApp(
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         when {
             state.loading -> Loading()
+            state.updateRequired -> UpdateRequiredScreen()
             state.user != null && openDiveId != null -> DiveDetailRoute(
                 viewModel = dive,
                 units = state.units,
@@ -157,6 +159,29 @@ private fun Loading() {
     val label = stringResource(R.string.loading)
     Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
         CircularProgressIndicator(Modifier.semantics { contentDescription = label })
+    }
+}
+
+@Composable
+fun UpdateRequiredScreen(modifier: Modifier = Modifier) {
+    Column(
+        modifier.fillMaxSize().padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Text(
+            stringResource(R.string.update_required_title),
+            modifier = Modifier.semantics { heading() },
+            style = MaterialTheme.typography.headlineMedium,
+            textAlign = TextAlign.Center,
+        )
+        Spacer(Modifier.height(8.dp))
+        Text(
+            stringResource(R.string.update_required_body),
+            modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+            style = MaterialTheme.typography.bodyLarge,
+            textAlign = TextAlign.Center,
+        )
     }
 }
 

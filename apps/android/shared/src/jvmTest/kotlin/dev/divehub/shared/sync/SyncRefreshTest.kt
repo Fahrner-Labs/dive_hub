@@ -57,6 +57,7 @@ private class RefreshHarness(
                 }
             }
         },
+        versionName = "0.1.0-dev",
         token = { "token" },
         onUnauthorized = { unauthorized += 1 },
         json = RefreshJson,
@@ -446,6 +447,23 @@ class SyncRefreshTest {
 
         assertTrue(harness.paths.none { it.contains("/api/dives/deleted?") && refreshQuery(it, "cursor") == null })
         assertNotNull(store.diveIncludingDeleted("dive-2")!!.deletedAt)
+    }
+
+    @Test
+    fun `a server without the deleted-dives route still refreshes the logbook`() = runTest {
+        val harness = seeded { path ->
+            if (path.startsWith("/api/dives/deleted?")) {
+                RefreshReply.Status(HttpStatusCode.NotFound)
+            } else {
+                refreshRoutes(path)
+            }
+        }
+        RefreshData.dives += refreshDiveListItem(id = "dive-2", startsAt = "2026-10-01T10:00:00Z", number = 2)
+
+        assertEquals(SyncResult.Complete, harness.engine.refresh())
+
+        assertTrue(harness.paths.any { it.startsWith("/api/dives/deleted?") })
+        assertNotNull(store.dive("dive-2"))
     }
 
     @Test

@@ -29,6 +29,8 @@ data class UiState(
     /** "metric", "imperial" or null: the User's choice, else the device's region. */
     val units: String? = null,
     val error: String? = null,
+    /** The server refuses this app's release (ADR 0076): a terminal screen, never the sign-in form. */
+    val updateRequired: Boolean = false,
 )
 
 class MainViewModel(private val container: AppContainer) : ViewModel() {
@@ -43,8 +45,9 @@ class MainViewModel(private val container: AppContainer) : ViewModel() {
                 if (state is SessionState.SignedIn) container.startSync() else container.stopSync()
                 _state.update {
                     when (state) {
-                        is SessionState.SignedIn -> it.copy(loading = false, instanceUrl = state.instanceUrl, user = state.user, units = state.preferences.units)
-                        is SessionState.SignedOut -> it.copy(loading = false, instanceUrl = state.instanceUrl, user = null, units = null)
+                        is SessionState.SignedIn -> it.copy(loading = false, instanceUrl = state.instanceUrl, user = state.user, units = state.preferences.units, updateRequired = false)
+                        is SessionState.SignedOut -> it.copy(loading = false, instanceUrl = state.instanceUrl, user = null, units = null, updateRequired = false)
+                        is SessionState.UpdateRequired -> it.copy(loading = false, instanceUrl = state.instanceUrl, user = null, units = null, updateRequired = true)
                         SessionState.Loading -> it
                     }
                 }

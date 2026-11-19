@@ -57,6 +57,7 @@ private class Harness(val store: DiveStore, handler: (String) -> Reply) {
                 Reply.Offline -> throw IOException("offline")
             }
         },
+        versionName = "0.1.0-dev",
         token = { "token" },
         onUnauthorized = { unauthorized += 1 },
         json = JSON,

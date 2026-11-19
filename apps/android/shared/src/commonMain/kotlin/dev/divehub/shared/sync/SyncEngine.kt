@@ -426,7 +426,12 @@ class SyncEngine(
         refreshDiveSites(now)
         refreshDives(now)
         // Tombstones before the new details: a Dive deleted meanwhile must not be fetched as if it were new.
-        syncTombstones(now)
+        try {
+            syncTombstones(now)
+        } catch (error: DiveHubException) {
+            if (error.status != 404) throw error
+            // A server that predates the route cannot report deletions; the rest of the refresh still stands.
+        }
         refreshNewDetails(now)
         markFullSync(now)
     }

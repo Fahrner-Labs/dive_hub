@@ -22,6 +22,8 @@ sealed interface SessionState {
         val user: UserView,
         val preferences: ApiMeGet200ResponsePreferences,
     ) : SessionState
+    /** The server refuses this app's release (ADR 0076): keep the session, show only that an update is required. */
+    data class UpdateRequired(val instanceUrl: String?) : SessionState
 }
 
 /**
@@ -34,13 +36,21 @@ class SessionRepository(
     private val tokens: TokenStore,
     private val instances: InstanceUrlStore,
     private val userData: UserScopedStore,
+    versionName: String,
 ) {
     private val json = Json {
         ignoreUnknownKeys = true
         explicitNulls = false
         encodeDefaults = false
     }
-    private val api = ApiClient(engine, token = { tokens.load() }, onUnauthorized = { endSession() }, json = json)
+    private val api = ApiClient(
+        engine,
+        versionName = versionName,
+        token = { tokens.load() },
+        onUnauthorized = { endSession() },
+        json = json,
+        onClientTooOld = { clientTooOld() },
+    )
 
     /** The signed-in User's HTTP layer, for repositories that read their data (the logbook). */
     val client: ApiClient get() = api
@@ -70,6 +80,7 @@ class SessionRepository(
             val me = me()
             SessionState.SignedIn(url, me.user, me.preferences).also { _state.value = it }
         } catch (error: DiveHubException) {
+            if (error.code == ErrorCodes.CLIENT_TOO_OLD) return _state.value
             SessionState.SignedOut(url).also { _state.value = it }
             if (error.status != 401) throw error
             _state.value
@@ -100,8 +111,10 @@ class SessionRepository(
         val me = try {
             me()
         } catch (error: DiveHubException) {
-            tokens.clear()
-            userData.forget()
+            if (error.code != ErrorCodes.CLIENT_TOO_OLD) {
+                tokens.clear()
+                userData.forget()
+            }
             throw error
         } catch (error: NoAnswerException) {
             tokens.clear()
@@ -143,6 +156,10 @@ class SessionRepository(
 
     private suspend fun signInFailure(response: io.ktor.client.statement.HttpResponse): DiveHubException {
         val body = api.errorBody(response)
+        if (body?.code == ErrorCodes.CLIENT_TOO_OLD) {
+            clientTooOld()
+            return DiveHubException(ErrorCodes.CLIENT_TOO_OLD, response.status.value, body.message ?: body.error)
+        }
         val code = when {
             response.status.value == 429 -> ErrorCodes.TOO_MANY_ATTEMPTS
             body?.code == "BANNED_USER" -> ErrorCodes.USER_DISABLED
@@ -150,6 +167,11 @@ class SessionRepository(
             else -> body?.code ?: ErrorCodes.SERVER_ERROR
         }
         return DiveHubException(code, response.status.value, body?.message ?: body?.error)
+    }
+
+    /** A hard break: the app must be updated. The token and the instance stay; only the screen changes. */
+    private suspend fun clientTooOld() {
+        _state.value = SessionState.UpdateRequired(instances.load())
     }
 
     /** A 401: only the expired token goes; the read store stays readable until the next User change. */

@@ -34,9 +34,11 @@ data class ApiErrorBody(
  */
 class ApiClient(
     engine: HttpClientEngine,
+    private val versionName: String,
     private val token: suspend () -> String?,
     private val onUnauthorized: suspend () -> Unit,
     private val json: Json,
+    private val onClientTooOld: suspend () -> Unit = {},
 ) {
     var baseUrl: String = ""
 
@@ -88,6 +90,7 @@ class ApiClient(
             in 500..599 -> ErrorCodes.SERVER_ERROR
             else -> "http_${response.status.value}"
         }
+        if (code == ErrorCodes.CLIENT_TOO_OLD) onClientTooOld()
         return DiveHubException(code, response.status.value, body?.message ?: body?.error)
     }
 
@@ -104,6 +107,7 @@ class ApiClient(
             try {
                 val response = client.request("$baseUrl$path") {
                     this.method = method
+                    header(HttpHeaders.UserAgent, "$ANDROID_USER_AGENT_PREFIX$versionName")
                     if (body != null) {
                         contentType(ContentType.Application.Json)
                         setBody(body)
@@ -132,3 +136,6 @@ class ApiClient(
 
 /** The sign-in response is read from `set-auth-token`; this name keeps the contract's spelling in one place. */
 const val SET_AUTH_TOKEN: String = "set-auth-token"
+
+/** The app's identification on every request (ADR 0076); the server logs it and uses it only for a hard break. */
+const val ANDROID_USER_AGENT_PREFIX: String = "divehub-android/"

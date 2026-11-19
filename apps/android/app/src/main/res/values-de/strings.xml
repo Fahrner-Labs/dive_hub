@@ -35,6 +35,9 @@
     <string name="error_server">Die Instanz hatte ein Problem. Versuche es später erneut.</string>
     <string name="error_unknown">Etwas ist schiefgelaufen. Versuche es erneut.</string>
 
+    <string name="update_required_title">DiveHub aktualisieren</string>
+    <string name="update_required_body">Dieser Server braucht eine neuere Version der App. Aktualisiere DiveHub, um sie weiter zu nutzen.</string>
+
     <string name="dive_back">Logbuch</string>
     <string name="dive_title_number">Tauchgang %1$d</string>
     <string name="dive_position_of">Tauchgang %1$d von %2$d</string>

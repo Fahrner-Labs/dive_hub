@@ -65,7 +65,7 @@ private class Harness(
     handler: suspend MockRequestHandleScope.(HttpRequestData) -> HttpResponseData,
 ) {
     private val engine = MockEngine(handler)
-    val session = SessionRepository(engine, tokens, instances, cache)
+    val session = SessionRepository(engine, tokens, instances, cache, versionName = "0.1.0-dev")
 }
 
 private fun MockRequestHandleScope.json(body: String, status: HttpStatusCode = HttpStatusCode.OK): HttpResponseData =
@@ -157,7 +157,7 @@ fun `signing in forgets the previous User before the new token is stored`() = ru
             else -> error("unexpected ${request.url}")
         }
     }
-    val session = SessionRepository(engine, tokens, FakeInstances("https://dive.example"), cache)
+    val session = SessionRepository(engine, tokens, FakeInstances("https://dive.example"), cache, versionName = "0.1.0-dev")
 
     session.signIn("https://dive.example", "ada@example.com", "correct horse battery")
 
@@ -357,6 +357,42 @@ fun `a sign-in without set-auth-token is refused, not stored`() = runTest {
 
     assertEquals(ErrorCodes.MISSING_TOKEN, error.code)
     assertNull(harness.tokens.value)
+}
+
+@Test
+fun `client_too_old on restore is a terminal update state that keeps the token`() = runTest {
+    var calls = 0
+    val harness = Harness(tokens = FakeTokens("stored")) {
+        calls += 1
+        json("""{"code":"client_too_old","error":"Update required"}""", HttpStatusCode.BadRequest)
+    }
+
+    val state = harness.session.restore()
+
+    assertIs<SessionState.UpdateRequired>(state)
+    assertEquals("stored", harness.tokens.value)
+    assertEquals(1, calls)
+}
+
+@Test
+fun `client_too_old on sign-in is its own code, not a wrong password`() = runTest {
+    var calls = 0
+    val harness = Harness { request ->
+        calls += 1
+        when (request.url.encodedPath) {
+            SIGN_IN_PATH -> json("""{"code":"client_too_old","error":"Update required"}""", HttpStatusCode.BadRequest)
+            else -> error("unexpected ${request.url}")
+        }
+    }
+
+    val error = assertFailsWith<DiveHubException> {
+        harness.session.signIn("https://dive.example", "ada@example.com", "correct horse battery")
+    }
+
+    assertEquals(ErrorCodes.CLIENT_TOO_OLD, error.code)
+    assertIs<SessionState.UpdateRequired>(harness.session.state.value)
+    assertNull(harness.tokens.value)
+    assertEquals(1, calls)
 }
 
 @Test

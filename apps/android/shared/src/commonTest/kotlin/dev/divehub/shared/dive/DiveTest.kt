@@ -279,6 +279,7 @@ class DiveRepositoryTest {
     private fun harness(handler: suspend MockRequestHandleScope.(HttpRequestData) -> HttpResponseData): DiveRepository {
         val api = ApiClient(
             engine = MockEngine(handler),
+            versionName = "0.1.0-dev",
             token = { "token" },
             onUnauthorized = {},
             json = Json { ignoreUnknownKeys = true; explicitNulls = false },
