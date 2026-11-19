@@ -1,7 +1,8 @@
 # Publishes the Android app: the android-vX.Y.Z or android-vX.Y.Z-rcN tag is the only input (ADR 0077 D7). The tag
 # must point at a commit on main; the release APK is signed with the release key from GitHub Actions secrets,
-# checked with apksigner and attached to the GitHub Release. An rc publishes a non-latest prerelease; a stable tag
-# publishes a latest release. A tag that fails the checks publishes nothing.
+# checked with apksigner and attached to the GitHub Release as DiveHub-<versionName>.apk (for example
+# DiveHub-0.1.0-rc1.apk). An rc publishes a non-latest prerelease; a stable tag publishes a latest release. A tag
+# that fails the checks publishes nothing.
 name: android release
 
 on:
@@ -136,10 +137,18 @@ jobs:
           fi
           "$apksigner" verify --verbose --print-certs "$apk"
 
+      # The asset name is a CI/distribution concern, so Gradle keeps its default output name and the file is renamed
+      # here (the versionName grammar is filename-safe).
+      - name: Rename the APK for the release asset
+        run: |
+          set -euo pipefail
+          dir=apps/android/app/build/outputs/apk/release
+          mv "$dir/app-release.apk" "$dir/DiveHub-${{ needs.verify.outputs.versionName }}.apk"
+
       - uses: actions/upload-artifact@v4
         with:
-          name: app-release
-          path: apps/android/app/build/outputs/apk/release/app-release.apk
+          name: release-apk
+          path: apps/android/app/build/outputs/apk/release/DiveHub-${{ needs.verify.outputs.versionName }}.apk
           if-no-files-found: error
           retention-days: 30
 
@@ -151,7 +160,7 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
-          name: app-release
+          name: release-apk
           path: dist
 
       # Idempotent: an existing release is edited and its APK replaced, so a repair re-run is safe.
@@ -173,4 +182,4 @@ jobs:
           else
             gh release create "$tag" --verify-tag --generate-notes --title "$tag" --latest
           fi
-          gh release upload "$tag" dist/app-release.apk --clobber
+          gh release upload "$tag" "dist/DiveHub-${{ needs.verify.outputs.versionName }}.apk" --clobber

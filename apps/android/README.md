@@ -72,7 +72,8 @@ node scripts/android-version-code.mjs android-v0.1.0-rc1
 
 After the owner merges the release-lane change and confirms the cold backup (ADR 0077 D2), push
 `android-vX.Y.Z` or `android-vX.Y.Z-rcN` on main. The lane verifies the tag, builds and signs the APK, checks the
-signature and attaches it to the GitHub Release. Repair a failed run with *Run workflow* and the existing tag as
+signature and attaches it to the GitHub Release as `DiveHub-<versionName>.apk` — for example
+`android-v0.1.0-rc1` publishes `DiveHub-0.1.0-rc1.apk`. Repair a failed run with *Run workflow* and the existing tag as
 `version`; the release is edited and the APK replaced, never recreated.
 
 ## Commands
