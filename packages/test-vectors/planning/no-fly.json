@@ -1,0 +1,712 @@
+{
+  "kernel": "no-fly",
+  "version": 1,
+  "tolerance": {
+    "relative": 1e-9
+  },
+  "cases": [
+    {
+      "id": "single-last-dive",
+      "input": {
+        "dives": [
+          {
+            "id": "a",
+            "startMs": 1794988800000,
+            "durationSeconds": 2400,
+            "utcOffsetSeconds": null,
+            "maxDepthM": 20,
+            "diveMode": "open_circuit",
+            "ndlSeconds": [
+              600,
+              300,
+              120
+            ]
+          }
+        ],
+        "id": "a"
+      },
+      "expected": {
+        "kernel": {
+          "dives": [
+            {
+              "id": "a",
+              "day": "2026-11-18",
+              "startMs": 1794988800000,
+              "endMs": 1794991200000,
+              "diveMode": "open_circuit",
+              "applies": true,
+              "minNdlSeconds": 120,
+              "enteredDeco": false
+            }
+          ],
+          "noFly": {
+            "hours": 12,
+            "reason": "single",
+            "until": "2026-11-18T20:40:00.000Z"
+          }
+        },
+        "service": {
+          "noFly": {
+            "hours": 12,
+            "reason": "single",
+            "until": "2026-11-18T20:40:00.000Z",
+            "source": {
+              "title": "DAN 2002: guidelines for flying after diving",
+              "url": "https://dan.org/health-medicine/health-resource/health-safety-guidelines/guidelines-for-flying-after-diving/"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "first-of-two-is-not-last",
+      "input": {
+        "dives": [
+          {
+            "id": "a",
+            "startMs": 1794988800000,
+            "durationSeconds": 2400,
+            "utcOffsetSeconds": null,
+            "maxDepthM": 20,
+            "diveMode": "open_circuit",
+            "ndlSeconds": null
+          },
+          {
+            "id": "b",
+            "startMs": 1794999600000,
+            "durationSeconds": 1800,
+            "utcOffsetSeconds": null,
+            "maxDepthM": 20,
+            "diveMode": "open_circuit",
+            "ndlSeconds": null
+          }
+        ],
+        "id": "a"
+      },
+      "expected": {
+        "kernel": {
+          "dives": [
+            {
+              "id": "a",
+              "day": "2026-11-18",
+              "startMs": 1794988800000,
+              "endMs": 1794991200000,
+              "diveMode": "open_circuit",
+              "applies": true,
+              "minNdlSeconds": null,
+              "enteredDeco": false
+            },
+            {
+              "id": "b",
+              "day": "2026-11-18",
+              "startMs": 1794999600000,
+              "endMs": 1795001400000,
+              "diveMode": "open_circuit",
+              "applies": true,
+              "minNdlSeconds": null,
+              "enteredDeco": false
+            }
+          ],
+          "noFly": null
+        },
+        "service": {
+          "noFly": null
+        }
+      }
+    },
+    {
+      "id": "second-of-two-same-day",
+      "input": {
+        "dives": [
+          {
+            "id": "a",
+            "startMs": 1794988800000,
+            "durationSeconds": 2400,
+            "utcOffsetSeconds": null,
+            "maxDepthM": 20,
+            "diveMode": "open_circuit",
+            "ndlSeconds": null
+          },
+          {
+            "id": "b",
+            "startMs": 1794999600000,
+            "durationSeconds": 1800,
+            "utcOffsetSeconds": null,
+            "maxDepthM": 20,
+            "diveMode": "open_circuit",
+            "ndlSeconds": null
+          }
+        ],
+        "id": "b"
+      },
+      "expected": {
+        "kernel": {
+          "dives": [
+            {
+              "id": "a",
+              "day": "2026-11-18",
+              "startMs": 1794988800000,
+              "endMs": 1794991200000,
+              "diveMode": "open_circuit",
+              "applies": true,
+              "minNdlSeconds": null,
+              "enteredDeco": false
+            },
+            {
+              "id": "b",
+              "day": "2026-11-18",
+              "startMs": 1794999600000,
+              "endMs": 1795001400000,
+              "diveMode": "open_circuit",
+              "applies": true,
+              "minNdlSeconds": null,
+              "enteredDeco": false
+            }
+          ],
+          "noFly": {
+            "hours": 18,
+            "reason": "several",
+            "until": "2026-11-19T05:30:00.000Z"
+          }
+        },
+        "service": {
+          "noFly": {
+            "hours": 18,
+            "reason": "several",
+            "until": "2026-11-19T05:30:00.000Z",
+            "source": {
+              "title": "DAN 2002: guidelines for flying after diving",
+              "url": "https://dan.org/health-medicine/health-resource/health-safety-guidelines/guidelines-for-flying-after-diving/"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "deco-on-target",
+      "input": {
+        "dives": [
+          {
+            "id": "a",
+            "startMs": 1794988800000,
+            "durationSeconds": 2400,
+            "utcOffsetSeconds": null,
+            "maxDepthM": 20,
+            "diveMode": "open_circuit",
+            "ndlSeconds": null
+          },
+          {
+            "id": "b",
+            "startMs": 1794999600000,
+            "durationSeconds": 1800,
+            "utcOffsetSeconds": null,
+            "maxDepthM": 20,
+            "diveMode": "open_circuit",
+            "ndlSeconds": [
+              300,
+              0,
+              0
+            ]
+          }
+        ],
+        "id": "b"
+      },
+      "expected": {
+        "kernel": {
+          "dives": [
+            {
+              "id": "a",
+              "day": "2026-11-18",
+              "startMs": 1794988800000,
+              "endMs": 1794991200000,
+              "diveMode": "open_circuit",
+              "applies": true,
+              "minNdlSeconds": null,
+              "enteredDeco": false
+            },
+            {
+              "id": "b",
+              "day": "2026-11-18",
+              "startMs": 1794999600000,
+              "endMs": 1795001400000,
+              "diveMode": "open_circuit",
+              "applies": true,
+              "minNdlSeconds": 0,
+              "enteredDeco": true
+            }
+          ],
+          "noFly": {
+            "hours": 24,
+            "reason": "decompression",
+            "until": "2026-11-19T11:30:00.000Z"
+          }
+        },
+        "service": {
+          "noFly": {
+            "hours": 24,
+            "reason": "decompression",
+            "until": "2026-11-19T11:30:00.000Z",
+            "source": {
+              "title": "DAN 2002: guidelines for flying after diving",
+              "url": "https://dan.org/health-medicine/health-resource/health-safety-guidelines/guidelines-for-flying-after-diving/"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "deco-on-earlier-dive",
+      "input": {
+        "dives": [
+          {
+            "id": "a",
+            "startMs": 1794988800000,
+            "durationSeconds": 2400,
+            "utcOffsetSeconds": null,
+            "maxDepthM": 20,
+            "diveMode": "open_circuit",
+            "ndlSeconds": [
+              0,
+              0
+            ]
+          },
+          {
+            "id": "b",
+            "startMs": 1794999600000,
+            "durationSeconds": 1800,
+            "utcOffsetSeconds": null,
+            "maxDepthM": 20,
+            "diveMode": "open_circuit",
+            "ndlSeconds": null
+          }
+        ],
+        "id": "b"
+      },
+      "expected": {
+        "kernel": {
+          "dives": [
+            {
+              "id": "a",
+              "day": "2026-11-18",
+              "startMs": 1794988800000,
+              "endMs": 1794991200000,
+              "diveMode": "open_circuit",
+              "applies": true,
+              "minNdlSeconds": 0,
+              "enteredDeco": true
+            },
+            {
+              "id": "b",
+              "day": "2026-11-18",
+              "startMs": 1794999600000,
+              "endMs": 1795001400000,
+              "diveMode": "open_circuit",
+              "applies": true,
+              "minNdlSeconds": null,
+              "enteredDeco": false
+            }
+          ],
+          "noFly": {
+            "hours": 24,
+            "reason": "decompression",
+            "until": "2026-11-19T11:30:00.000Z"
+          }
+        },
+        "service": {
+          "noFly": {
+            "hours": 24,
+            "reason": "decompression",
+            "until": "2026-11-19T11:30:00.000Z",
+            "source": {
+              "title": "DAN 2002: guidelines for flying after diving",
+              "url": "https://dan.org/health-medicine/health-resource/health-safety-guidelines/guidelines-for-flying-after-diving/"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "previous-day-diving",
+      "input": {
+        "dives": [
+          {
+            "id": "a",
+            "startMs": 1794916800000,
+            "durationSeconds": 2400,
+            "utcOffsetSeconds": null,
+            "maxDepthM": 20,
+            "diveMode": "open_circuit",
+            "ndlSeconds": null
+          },
+          {
+            "id": "b",
+            "startMs": 1794988800000,
+            "durationSeconds": 1800,
+            "utcOffsetSeconds": null,
+            "maxDepthM": 20,
+            "diveMode": "open_circuit",
+            "ndlSeconds": null
+          }
+        ],
+        "id": "b"
+      },
+      "expected": {
+        "kernel": {
+          "dives": [
+            {
+              "id": "a",
+              "day": "2026-11-17",
+              "startMs": 1794916800000,
+              "endMs": 1794919200000,
+              "diveMode": "open_circuit",
+              "applies": true,
+              "minNdlSeconds": null,
+              "enteredDeco": false
+            },
+            {
+              "id": "b",
+              "day": "2026-11-18",
+              "startMs": 1794988800000,
+              "endMs": 1794990600000,
+              "diveMode": "open_circuit",
+              "applies": true,
+              "minNdlSeconds": null,
+              "enteredDeco": false
+            }
+          ],
+          "noFly": {
+            "hours": 18,
+            "reason": "several",
+            "until": "2026-11-19T02:30:00.000Z"
+          }
+        },
+        "service": {
+          "noFly": {
+            "hours": 18,
+            "reason": "several",
+            "until": "2026-11-19T02:30:00.000Z",
+            "source": {
+              "title": "DAN 2002: guidelines for flying after diving",
+              "url": "https://dan.org/health-medicine/health-resource/health-safety-guidelines/guidelines-for-flying-after-diving/"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "non-applying-dive-does-not-count",
+      "input": {
+        "dives": [
+          {
+            "id": "a",
+            "startMs": 1794988800000,
+            "durationSeconds": 2400,
+            "utcOffsetSeconds": null,
+            "maxDepthM": 20,
+            "diveMode": "apnea",
+            "ndlSeconds": null
+          },
+          {
+            "id": "b",
+            "startMs": 1794999600000,
+            "durationSeconds": 1800,
+            "utcOffsetSeconds": null,
+            "maxDepthM": 20,
+            "diveMode": "open_circuit",
+            "ndlSeconds": null
+          }
+        ],
+        "id": "b"
+      },
+      "expected": {
+        "kernel": {
+          "dives": [
+            {
+              "id": "a",
+              "day": "2026-11-18",
+              "startMs": 1794988800000,
+              "endMs": 1794991200000,
+              "diveMode": "apnea",
+              "applies": false,
+              "minNdlSeconds": null,
+              "enteredDeco": false
+            },
+            {
+              "id": "b",
+              "day": "2026-11-18",
+              "startMs": 1794999600000,
+              "endMs": 1795001400000,
+              "diveMode": "open_circuit",
+              "applies": true,
+              "minNdlSeconds": null,
+              "enteredDeco": false
+            }
+          ],
+          "noFly": {
+            "hours": 12,
+            "reason": "single",
+            "until": "2026-11-18T23:30:00.000Z"
+          }
+        },
+        "service": {
+          "noFly": {
+            "hours": 12,
+            "reason": "single",
+            "until": "2026-11-18T23:30:00.000Z",
+            "source": {
+              "title": "DAN 2002: guidelines for flying after diving",
+              "url": "https://dan.org/health-medicine/health-resource/health-safety-guidelines/guidelines-for-flying-after-diving/"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "target-not-covered",
+      "input": {
+        "dives": [
+          {
+            "id": "a",
+            "startMs": 1794988800000,
+            "durationSeconds": 2400,
+            "utcOffsetSeconds": null,
+            "maxDepthM": 20,
+            "diveMode": "ccr",
+            "ndlSeconds": null
+          }
+        ],
+        "id": "a"
+      },
+      "expected": {
+        "kernel": {
+          "dives": [
+            {
+              "id": "a",
+              "day": "2026-11-18",
+              "startMs": 1794988800000,
+              "endMs": 1794991200000,
+              "diveMode": "ccr",
+              "applies": false,
+              "minNdlSeconds": null,
+              "enteredDeco": false
+            }
+          ],
+          "noFly": null
+        },
+        "service": {
+          "noFly": null
+        }
+      }
+    },
+    {
+      "id": "unknown-id",
+      "input": {
+        "dives": [
+          {
+            "id": "a",
+            "startMs": 1794988800000,
+            "durationSeconds": 2400,
+            "utcOffsetSeconds": null,
+            "maxDepthM": 20,
+            "diveMode": "open_circuit",
+            "ndlSeconds": null
+          }
+        ],
+        "id": "missing"
+      },
+      "expected": {
+        "kernel": {
+          "dives": [
+            {
+              "id": "a",
+              "day": "2026-11-18",
+              "startMs": 1794988800000,
+              "endMs": 1794991200000,
+              "diveMode": "open_circuit",
+              "applies": true,
+              "minNdlSeconds": null,
+              "enteredDeco": false
+            }
+          ],
+          "noFly": null
+        },
+        "service": {
+          "noFly": null
+        }
+      }
+    },
+    {
+      "id": "empty-ndl-is-no-deco",
+      "input": {
+        "dives": [
+          {
+            "id": "a",
+            "startMs": 1794988800000,
+            "durationSeconds": 2400,
+            "utcOffsetSeconds": null,
+            "maxDepthM": 20,
+            "diveMode": "open_circuit",
+            "ndlSeconds": []
+          }
+        ],
+        "id": "a"
+      },
+      "expected": {
+        "kernel": {
+          "dives": [
+            {
+              "id": "a",
+              "day": "2026-11-18",
+              "startMs": 1794988800000,
+              "endMs": 1794991200000,
+              "diveMode": "open_circuit",
+              "applies": true,
+              "minNdlSeconds": null,
+              "enteredDeco": false
+            }
+          ],
+          "noFly": {
+            "hours": 12,
+            "reason": "single",
+            "until": "2026-11-18T20:40:00.000Z"
+          }
+        },
+        "service": {
+          "noFly": {
+            "hours": 12,
+            "reason": "single",
+            "until": "2026-11-18T20:40:00.000Z",
+            "source": {
+              "title": "DAN 2002: guidelines for flying after diving",
+              "url": "https://dan.org/health-medicine/health-resource/health-safety-guidelines/guidelines-for-flying-after-diving/"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "utc-offset-crosses-midnight",
+      "input": {
+        "dives": [
+          {
+            "id": "a",
+            "startMs": 1795042800000,
+            "durationSeconds": 2400,
+            "utcOffsetSeconds": 3600,
+            "maxDepthM": 20,
+            "diveMode": "open_circuit",
+            "ndlSeconds": null
+          },
+          {
+            "id": "b",
+            "startMs": 1795050000000,
+            "durationSeconds": 1800,
+            "utcOffsetSeconds": 3600,
+            "maxDepthM": 20,
+            "diveMode": "open_circuit",
+            "ndlSeconds": null
+          }
+        ],
+        "id": "a"
+      },
+      "expected": {
+        "kernel": {
+          "dives": [
+            {
+              "id": "a",
+              "day": "2026-11-19",
+              "startMs": 1795042800000,
+              "endMs": 1795045200000,
+              "diveMode": "open_circuit",
+              "applies": true,
+              "minNdlSeconds": null,
+              "enteredDeco": false
+            },
+            {
+              "id": "b",
+              "day": "2026-11-19",
+              "startMs": 1795050000000,
+              "endMs": 1795051800000,
+              "diveMode": "open_circuit",
+              "applies": true,
+              "minNdlSeconds": null,
+              "enteredDeco": false
+            }
+          ],
+          "noFly": null
+        },
+        "service": {
+          "noFly": null
+        }
+      }
+    },
+    {
+      "id": "unknown-offset-uses-utc-wall-clock",
+      "input": {
+        "dives": [
+          {
+            "id": "a",
+            "startMs": 1795042800000,
+            "durationSeconds": 2400,
+            "utcOffsetSeconds": null,
+            "maxDepthM": 20,
+            "diveMode": "open_circuit",
+            "ndlSeconds": null
+          },
+          {
+            "id": "b",
+            "startMs": 1795050000000,
+            "durationSeconds": 1800,
+            "utcOffsetSeconds": null,
+            "maxDepthM": 20,
+            "diveMode": "open_circuit",
+            "ndlSeconds": null
+          }
+        ],
+        "id": "a"
+      },
+      "expected": {
+        "kernel": {
+          "dives": [
+            {
+              "id": "a",
+              "day": "2026-11-18",
+              "startMs": 1795042800000,
+              "endMs": 1795045200000,
+              "diveMode": "open_circuit",
+              "applies": true,
+              "minNdlSeconds": null,
+              "enteredDeco": false
+            },
+            {
+              "id": "b",
+              "day": "2026-11-19",
+              "startMs": 1795050000000,
+              "endMs": 1795051800000,
+              "diveMode": "open_circuit",
+              "applies": true,
+              "minNdlSeconds": null,
+              "enteredDeco": false
+            }
+          ],
+          "noFly": {
+            "hours": 12,
+            "reason": "single",
+            "until": "2026-11-19T11:40:00.000Z"
+          }
+        },
+        "service": {
+          "noFly": {
+            "hours": 12,
+            "reason": "single",
+            "until": "2026-11-19T11:40:00.000Z",
+            "source": {
+              "title": "DAN 2002: guidelines for flying after diving",
+              "url": "https://dan.org/health-medicine/health-resource/health-safety-guidelines/guidelines-for-flying-after-diving/"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

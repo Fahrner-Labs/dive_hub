@@ -1,0 +1,622 @@
+{
+  "kernel": "loadings",
+  "version": 1,
+  "tolerance": {
+    "relative": 1e-9
+  },
+  "cases": [
+    {
+      "id": "no-dives",
+      "input": {
+        "dives": [],
+        "nowMs": 1795003200000,
+        "gfHigh": 85,
+        "cns": null
+      },
+      "expected": {
+        "kernel": {
+          "worstCompartmentPercent": null,
+          "reason": "no_recent_dive",
+          "gfHigh": 85,
+          "basis": {
+            "windowHours": 72,
+            "divesUsed": 0,
+            "divesSkippedNoProfile": 0,
+            "lastDiveEndedAt": null
+          },
+          "tissues": null,
+          "cnsPercentNow": null,
+          "otuLast24Hours": null
+        },
+        "service": {
+          "n2": null,
+          "cns": null,
+          "otu": null
+        }
+      }
+    },
+    {
+      "id": "latest-older-than-window",
+      "input": {
+        "dives": [
+          {
+            "startMs": 1794711600000,
+            "endMs": 1794715200000,
+            "samples": [],
+            "gas": {
+              "o2": 21,
+              "he": 0
+            },
+            "otuStart": null,
+            "otuEnd": null
+          }
+        ],
+        "nowMs": 1795003200000,
+        "gfHigh": 85,
+        "cns": null
+      },
+      "expected": {
+        "kernel": {
+          "worstCompartmentPercent": null,
+          "reason": "stale",
+          "gfHigh": 85,
+          "basis": {
+            "windowHours": 72,
+            "divesUsed": 0,
+            "divesSkippedNoProfile": 0,
+            "lastDiveEndedAt": "2026-11-15T04:00:00.000Z"
+          },
+          "tissues": null,
+          "cnsPercentNow": null,
+          "otuLast24Hours": null
+        },
+        "service": {
+          "n2": null,
+          "cns": null,
+          "otu": null
+        }
+      }
+    },
+    {
+      "id": "stale-with-profile",
+      "input": {
+        "dives": [
+          {
+            "startMs": 1794821340000,
+            "endMs": 1794823200000,
+            "samples": [
+              {
+                "tSeconds": 0,
+                "depthM": 0
+              },
+              {
+                "tSeconds": 120,
+                "depthM": 20
+              },
+              {
+                "tSeconds": 1500,
+                "depthM": 20
+              },
+              {
+                "tSeconds": 1740,
+                "depthM": 5
+              },
+              {
+                "tSeconds": 1800,
+                "depthM": 5
+              },
+              {
+                "tSeconds": 1860,
+                "depthM": 0
+              }
+            ],
+            "gas": {
+              "o2": 21,
+              "he": 0
+            },
+            "otuStart": null,
+            "otuEnd": null
+          }
+        ],
+        "nowMs": 1795003200000,
+        "gfHigh": 85,
+        "cns": null
+      },
+      "expected": {
+        "kernel": {
+          "worstCompartmentPercent": null,
+          "reason": "stale",
+          "gfHigh": 85,
+          "basis": {
+            "windowHours": 72,
+            "divesUsed": 1,
+            "divesSkippedNoProfile": 0,
+            "lastDiveEndedAt": "2026-11-16T10:00:00.000Z"
+          },
+          "tissues": null,
+          "cnsPercentNow": null,
+          "otuLast24Hours": null
+        },
+        "service": {
+          "n2": null,
+          "cns": null,
+          "otu": null
+        }
+      }
+    },
+    {
+      "id": "no-profile",
+      "input": {
+        "dives": [
+          {
+            "startMs": 1794993600000,
+            "endMs": 1794996000000,
+            "samples": [],
+            "gas": {
+              "o2": 21,
+              "he": 0
+            },
+            "otuStart": null,
+            "otuEnd": null
+          }
+        ],
+        "nowMs": 1795003200000,
+        "gfHigh": 85,
+        "cns": null
+      },
+      "expected": {
+        "kernel": {
+          "worstCompartmentPercent": null,
+          "reason": "no_profile",
+          "gfHigh": 85,
+          "basis": {
+            "windowHours": 72,
+            "divesUsed": 0,
+            "divesSkippedNoProfile": 1,
+            "lastDiveEndedAt": "2026-11-18T10:00:00.000Z"
+          },
+          "tissues": null,
+          "cnsPercentNow": null,
+          "otuLast24Hours": null
+        },
+        "service": {
+          "n2": null,
+          "cns": null,
+          "otu": null
+        }
+      }
+    },
+    {
+      "id": "single-air-30m-with-cns-otu",
+      "input": {
+        "dives": [
+          {
+            "startMs": 1794997740000,
+            "endMs": 1794999600000,
+            "samples": [
+              {
+                "tSeconds": 0,
+                "depthM": 0
+              },
+              {
+                "tSeconds": 120,
+                "depthM": 20
+              },
+              {
+                "tSeconds": 1500,
+                "depthM": 20
+              },
+              {
+                "tSeconds": 1740,
+                "depthM": 5
+              },
+              {
+                "tSeconds": 1800,
+                "depthM": 5
+              },
+              {
+                "tSeconds": 1860,
+                "depthM": 0
+              }
+            ],
+            "gas": {
+              "o2": 21,
+              "he": 0
+            },
+            "otuStart": 12,
+            "otuEnd": 30
+          }
+        ],
+        "nowMs": 1795003200000,
+        "gfHigh": 85,
+        "cns": {
+          "cnsEnd": 42,
+          "endedAtMs": 1794999600000
+        }
+      },
+      "expected": {
+        "kernel": {
+          "worstCompartmentPercent": 64.74559181427837,
+          "reason": null,
+          "gfHigh": 85,
+          "basis": {
+            "windowHours": 72,
+            "divesUsed": 1,
+            "divesSkippedNoProfile": 0,
+            "lastDiveEndedAt": "2026-11-18T11:00:00.000Z"
+          },
+          "tissues": [
+            0.7511881105319056,
+            0.7570588551765273,
+            0.7883147002504238,
+            0.84595664819646,
+            0.9078205639823743,
+            0.9463505261470848,
+            0.9571540982067863,
+            0.9443870229037589,
+            0.9180056293029344,
+            0.8919544556479913,
+            0.8701298237875343,
+            0.850115255286007,
+            0.8324676413928033,
+            0.8171561403292067,
+            0.8043448643634289,
+            0.7937941640170973
+          ],
+          "cnsPercentNow": 26.458342047792335,
+          "otuLast24Hours": 18
+        },
+        "service": {
+          "n2": {
+            "worstCompartmentPercent": 64.7,
+            "gfHigh": 85
+          },
+          "cns": {
+            "percentNow": 26.5,
+            "percentAtLastDiveEnd": 42,
+            "halfLifeMinutes": 90
+          },
+          "otu": {
+            "last24Hours": 18
+          }
+        }
+      }
+    },
+    {
+      "id": "cns-elapsed-zero",
+      "input": {
+        "dives": [],
+        "nowMs": 1795003200000,
+        "gfHigh": 85,
+        "cns": {
+          "cnsEnd": 37.5,
+          "endedAtMs": 1795003200000
+        }
+      },
+      "expected": {
+        "kernel": {
+          "worstCompartmentPercent": null,
+          "reason": "no_recent_dive",
+          "gfHigh": 85,
+          "basis": {
+            "windowHours": 72,
+            "divesUsed": 0,
+            "divesSkippedNoProfile": 0,
+            "lastDiveEndedAt": null
+          },
+          "tissues": null,
+          "cnsPercentNow": 37.5,
+          "otuLast24Hours": null
+        },
+        "service": {
+          "n2": null,
+          "cns": {
+            "percentNow": 37.5,
+            "percentAtLastDiveEnd": 37.5,
+            "halfLifeMinutes": 90
+          },
+          "otu": null
+        }
+      }
+    },
+    {
+      "id": "two-dives-with-interval-and-old-dive",
+      "input": {
+        "dives": [
+          {
+            "startMs": 1794997740000,
+            "endMs": 1794999600000,
+            "samples": [
+              {
+                "tSeconds": 0,
+                "depthM": 0
+              },
+              {
+                "tSeconds": 120,
+                "depthM": 20
+              },
+              {
+                "tSeconds": 1500,
+                "depthM": 20
+              },
+              {
+                "tSeconds": 1740,
+                "depthM": 5
+              },
+              {
+                "tSeconds": 1800,
+                "depthM": 5
+              },
+              {
+                "tSeconds": 1860,
+                "depthM": 0
+              }
+            ],
+            "gas": {
+              "o2": 21,
+              "he": 0
+            },
+            "otuStart": 20,
+            "otuEnd": 35
+          },
+          {
+            "startMs": 1794711600000,
+            "endMs": 1794715200000,
+            "samples": [],
+            "gas": {
+              "o2": 21,
+              "he": 0
+            },
+            "otuStart": 100,
+            "otuEnd": 200
+          },
+          {
+            "startMs": 1794990600000,
+            "endMs": 1794992400000,
+            "samples": [
+              {
+                "tSeconds": 0,
+                "depthM": 0
+              },
+              {
+                "tSeconds": 60,
+                "depthM": 18
+              },
+              {
+                "tSeconds": 1500,
+                "depthM": 18
+              },
+              {
+                "tSeconds": 1800,
+                "depthM": 0
+              }
+            ],
+            "gas": {
+              "o2": 21,
+              "he": 0
+            },
+            "otuStart": 5,
+            "otuEnd": 15
+          }
+        ],
+        "nowMs": 1795003200000,
+        "gfHigh": 85,
+        "cns": null
+      },
+      "expected": {
+        "kernel": {
+          "worstCompartmentPercent": 69.72280545261253,
+          "reason": null,
+          "gfHigh": 85,
+          "basis": {
+            "windowHours": 72,
+            "divesUsed": 2,
+            "divesSkippedNoProfile": 0,
+            "lastDiveEndedAt": "2026-11-18T11:00:00.000Z"
+          },
+          "tissues": [
+            0.7511881105465611,
+            0.7570590320309287,
+            0.7883595622259527,
+            0.8469343734145034,
+            0.914426866576544,
+            0.9666882096780776,
+            0.9977363214607422,
+            1.004065463387405,
+            0.9886781503488459,
+            0.9642709068005223,
+            0.9393476276342853,
+            0.9135351147763584,
+            0.8886617321960529,
+            0.8655792739297502,
+            0.8452402918569402,
+            0.8278096632548921
+          ],
+          "cnsPercentNow": null,
+          "otuLast24Hours": 25
+        },
+        "service": {
+          "n2": {
+            "worstCompartmentPercent": 69.7,
+            "gfHigh": 85
+          },
+          "cns": null,
+          "otu": {
+            "last24Hours": 25
+          }
+        }
+      }
+    },
+    {
+      "id": "downsampled-series-as-the-api-emits-it",
+      "input": {
+        "dives": [
+          {
+            "startMs": 1794929400000,
+            "endMs": 1794931200000,
+            "samples": [
+              {
+                "tSeconds": 0,
+                "depthM": 0
+              },
+              {
+                "tSeconds": 88,
+                "depthM": 22
+              },
+              {
+                "tSeconds": 90,
+                "depthM": 22.5
+              },
+              {
+                "tSeconds": 120,
+                "depthM": 30
+              },
+              {
+                "tSeconds": 180,
+                "depthM": 30
+              },
+              {
+                "tSeconds": 270,
+                "depthM": 30
+              },
+              {
+                "tSeconds": 360,
+                "depthM": 30
+              },
+              {
+                "tSeconds": 450,
+                "depthM": 30
+              },
+              {
+                "tSeconds": 540,
+                "depthM": 30
+              },
+              {
+                "tSeconds": 630,
+                "depthM": 30
+              },
+              {
+                "tSeconds": 720,
+                "depthM": 30
+              },
+              {
+                "tSeconds": 810,
+                "depthM": 30
+              },
+              {
+                "tSeconds": 900,
+                "depthM": 30
+              },
+              {
+                "tSeconds": 990,
+                "depthM": 30
+              },
+              {
+                "tSeconds": 1080,
+                "depthM": 30
+              },
+              {
+                "tSeconds": 1170,
+                "depthM": 30
+              },
+              {
+                "tSeconds": 1260,
+                "depthM": 30
+              },
+              {
+                "tSeconds": 1348,
+                "depthM": 27.083333333333332
+              },
+              {
+                "tSeconds": 1350,
+                "depthM": 26.875
+              },
+              {
+                "tSeconds": 1438,
+                "depthM": 17.708333333333336
+              },
+              {
+                "tSeconds": 1440,
+                "depthM": 17.5
+              },
+              {
+                "tSeconds": 1528,
+                "depthM": 8.333333333333332
+              },
+              {
+                "tSeconds": 1530,
+                "depthM": 8.125
+              },
+              {
+                "tSeconds": 1560,
+                "depthM": 5
+              },
+              {
+                "tSeconds": 1620,
+                "depthM": 5
+              },
+              {
+                "tSeconds": 1710,
+                "depthM": 5
+              },
+              {
+                "tSeconds": 1800,
+                "depthM": 0
+              }
+            ],
+            "gas": {
+              "o2": 21,
+              "he": 0
+            },
+            "otuStart": null,
+            "otuEnd": null
+          }
+        ],
+        "nowMs": 1795003200000,
+        "gfHigh": 85,
+        "cns": null
+      },
+      "expected": {
+        "kernel": {
+          "worstCompartmentPercent": 61.7829610762505,
+          "reason": null,
+          "gfHigh": 85,
+          "basis": {
+            "windowHours": 72,
+            "divesUsed": 1,
+            "divesSkippedNoProfile": 0,
+            "lastDiveEndedAt": "2026-11-17T16:00:00.000Z"
+          },
+          "tissues": [
+            0.7509345000000001,
+            0.7509345000000001,
+            0.7509345000000001,
+            0.7509345000000001,
+            0.75093450000004,
+            0.7509345002818554,
+            0.7509346303494387,
+            0.75094344332291,
+            0.7510918608018787,
+            0.7517692062749032,
+            0.7532471088533054,
+            0.7557621041819186,
+            0.7590532757060647,
+            0.762535391341419,
+            0.7654565808451035,
+            0.7673475429997897
+          ],
+          "cnsPercentNow": null,
+          "otuLast24Hours": null
+        },
+        "service": {
+          "n2": {
+            "worstCompartmentPercent": 61.8,
+            "gfHigh": 85
+          },
+          "cns": null,
+          "otu": null
+        }
+      }
+    }
+  ]
+}

@@ -19,6 +19,7 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.boolean
 import kotlinx.serialization.json.double
 import kotlinx.serialization.json.int
+import kotlinx.serialization.json.long
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -53,6 +54,15 @@ class PlanningVectorsTest {
 
     private fun JsonObject.nullableNumber(key: String): Double? =
         get(key)?.takeIf { it !is JsonNull }?.jsonPrimitive?.double
+
+    private fun JsonObject.nullableLong(key: String): Long? =
+        get(key)?.takeIf { it !is JsonNull }?.jsonPrimitive?.long
+
+    private fun JsonObject.nullableInt(key: String): Int? =
+        get(key)?.takeIf { it !is JsonNull }?.jsonPrimitive?.int
+
+    private fun JsonObject.nullableText(key: String): String? =
+        get(key)?.takeIf { it !is JsonNull }?.jsonPrimitive?.content
 
     private fun JsonObject.gas(key: String): GasMix {
         val mix = obj(key)
@@ -91,6 +101,14 @@ class PlanningVectorsTest {
         val values = expected?.jsonArray ?: error("$path: no expected array")
         assertEquals(values.size, actual.size, "$path: length")
         values.forEachIndexed { i, value -> assertClose("$path[$i]", actual[i], value, tolerance) }
+    }
+
+    private fun assertNullableCloseArray(path: String, actual: List<Double>?, expected: JsonElement?, tolerance: Double) {
+        if (expected == null || expected is JsonNull) {
+            assertNull(actual, path)
+            return
+        }
+        assertCloseArray(path, assertNotNull(actual, path), expected, tolerance)
     }
 
     private fun assertMissing(path: String, expected: JsonElement?, actual: SacMissing?) {
@@ -370,5 +388,95 @@ class PlanningVectorsTest {
         assertClose("lpm", result.lpm, expected["lpm"], tolerance)
         assertEquals(expected.getValue("basedOn").jsonPrimitive.int, result.basedOn, "basedOn")
         assertEquals(expected.text("source"), result.source.name, "source")
+    }
+
+    @Test
+    fun `loadings vectors match the Kotlin port`() = each("loadings") { case, tolerance ->
+        val input = case.obj("input")
+        val dives = input.array("dives").map { element ->
+            val dive = element.jsonObject
+            LoadingDive(
+                startMs = dive.getValue("startMs").jsonPrimitive.long,
+                endMs = dive.getValue("endMs").jsonPrimitive.long,
+                samples = dive.array("samples").map { point ->
+                    val sample = point.jsonObject
+                    TissuePoint(sample.number("tSeconds"), sample.number("depthM"))
+                },
+                gas = dive.nullableGas("gas"),
+                otuStart = dive.nullableNumber("otuStart"),
+                otuEnd = dive.nullableNumber("otuEnd"),
+            )
+        }
+        val nowMs = input.getValue("nowMs").jsonPrimitive.long
+        val gfHigh = input.number("gfHigh")
+        val actual = tissuesAfterDives(dives, nowMs, gfHigh)
+        val expected = case.obj("expected").obj("kernel")
+        val estimate = actual as? N2Loadings.Estimate
+        val unavailable = actual as? N2Loadings.Unavailable
+
+        assertNullableClose("worstCompartmentPercent", estimate?.worstCompartmentPercent, expected["worstCompartmentPercent"], tolerance)
+        assertEquals(expected.nullableText("reason"), unavailable?.reason?.name, "reason")
+        assertClose("gfHigh", actual.gfHigh, expected["gfHigh"], tolerance)
+        val basis = expected.obj("basis")
+        assertEquals(basis.getValue("windowHours").jsonPrimitive.int, actual.basis.windowHours, "basis.windowHours")
+        assertEquals(basis.getValue("divesUsed").jsonPrimitive.int, actual.basis.divesUsed, "basis.divesUsed")
+        assertEquals(
+            basis.getValue("divesSkippedNoProfile").jsonPrimitive.int,
+            actual.basis.divesSkippedNoProfile,
+            "basis.divesSkippedNoProfile",
+        )
+        assertEquals(basis.nullableText("lastDiveEndedAt"), actual.basis.lastDiveEndedAt, "basis.lastDiveEndedAt")
+        assertNullableCloseArray("tissues", estimate?.tissues, expected["tissues"], tolerance)
+
+        val cnsInput = input["cns"]?.takeIf { it !is JsonNull }?.jsonObject
+        val cnsNow = cnsInput?.let {
+            cnsDecayed(it.number("cnsEnd"), (nowMs - it.getValue("endedAtMs").jsonPrimitive.long) / 60_000.0)
+        }
+        assertNullableClose("cnsPercentNow", cnsNow, expected["cnsPercentNow"], tolerance)
+        assertNullableClose("otuLast24Hours", otuLast24h(dives, nowMs), expected["otuLast24Hours"], tolerance)
+    }
+
+    @Test
+    fun `no-fly vectors match the Kotlin port`() = each("no-fly") { case, tolerance ->
+        val input = case.obj("input")
+        val expected = case.obj("expected").obj("kernel")
+        val expectedDives = expected.array("dives")
+        val series = input.array("dives").mapIndexedNotNull { index, element ->
+            val dive = element.jsonObject
+            val ndl = dive["ndlSeconds"]?.takeIf { it !is JsonNull }?.jsonArray?.map { it.jsonPrimitive.double } ?: emptyList()
+            val pinned = expectedDives[index].jsonObject
+            assertEquals(pinned.nullableText("diveMode"), dive.nullableText("diveMode"), "diveMode")
+            assertEquals(pinned.flag("applies"), seriesRulesApply(dive.nullableText("diveMode")), "applies")
+            assertNullableClose("minNdlSeconds", minNdlSeconds(ndl), pinned["minNdlSeconds"], tolerance)
+            assertEquals(pinned.flag("enteredDeco"), enteredDecoFromNdl(ndl), "enteredDeco")
+            if (!seriesRulesApply(dive.nullableText("diveMode"))) {
+                return@mapIndexedNotNull null
+            }
+            seriesDiveOf(
+                SeriesDiveInput(
+                    id = dive.text("id"),
+                    startMs = dive.getValue("startMs").jsonPrimitive.long,
+                    utcOffsetSeconds = dive.nullableInt("utcOffsetSeconds"),
+                    durationSeconds = dive.number("durationSeconds"),
+                    maxDepthM = dive.nullableNumber("maxDepthM"),
+                ),
+                enteredDecoFromNdl(ndl),
+            ).also { seriesDive ->
+                assertEquals(pinned.text("day"), seriesDive.day, "day")
+                assertEquals(pinned.getValue("startMs").jsonPrimitive.long, seriesDive.startMs, "startMs")
+                assertClose("endMs", seriesDive.endMs, pinned["endMs"], tolerance)
+            }
+        }
+        val actual = noFlyAfter(series, input.text("id"))
+        val pinned = expected["noFly"]
+        if (pinned == null || pinned is JsonNull) {
+            assertNull(actual, "noFly")
+            return@each
+        }
+        val noFly = assertNotNull(actual, "noFly")
+        val block = pinned.jsonObject
+        assertEquals(block.getValue("hours").jsonPrimitive.int, noFly.hours, "noFly.hours")
+        assertEquals(block.text("reason"), noFly.reason.name, "noFly.reason")
+        assertEquals(block.text("until"), noFly.until, "noFly.until")
     }
 }
