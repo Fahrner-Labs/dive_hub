@@ -4,7 +4,7 @@
 > `pnpm check` fails when this map is stale. Symbols are ranked by how widely the code references them;
 > each module shows its most-referenced ones (exported symbols rank higher). Search here before walking the tree.
 
-Files: 400 · symbols: 3668 · shown: 259
+Files: 400 · symbols: 3668 · shown: 255
 
 ### server/(root)
 apps/server/src/vocabulary.ts:13 type SiteWaterType
@@ -106,8 +106,7 @@ apps/server/src/dives/weighting.ts:96 iface Suit
 apps/server/src/dives/matching.ts:81 const DAY_MS
 apps/server/src/dives/logbook-service.ts:298 type LogbookService
 apps/server/src/dives/calc/sac.ts:52 fn sacOfDive
-apps/server/src/dives/dive-values.ts:6 iface DiveValues
-… 304 more symbols in this module
+… 305 more symbols in this module
 
 ### server/equipment
 apps/server/src/equipment/usage.ts:37 fn usageMap
@@ -206,8 +205,7 @@ apps/server/src/providers/dive-import/three-way.ts:11 type SyncedField
 apps/server/src/providers/push/outgoing-dive.ts:64 fn loadOutgoingDive
 apps/server/src/providers/provider.ts:205 iface OutgoingDive
 apps/server/src/providers/provider.ts:83 type DiveField
-apps/server/src/providers/dive-import/three-way.ts:10 const SYNCED_FIELDS
-… 496 more symbols in this module
+… 497 more symbols in this module
 
 ### server/revisions
 apps/server/src/revisions/revisions.ts:79 fn writeRevision
@@ -292,8 +290,7 @@ apps/web/src/ImportPanel.tsx:39 const ImportContext
 apps/web/src/ReviewRows.tsx:6 iface Fact
 apps/web/src/SignedOut.tsx:20 fn useUserChanged
 apps/web/src/ProfilePlot.tsx:14 fn withAlpha
-apps/web/src/ReviewRows.tsx:37 fn Candidates
-… 511 more symbols in this module
+… 512 more symbols in this module
 
 ### web/api
 apps/web/src/api/request.ts:59 fn unwrap
@@ -337,8 +334,7 @@ apps/web/src/lib/form.ts:4 const formValues
 apps/web/src/lib/devices.ts:18 const deviceName
 apps/web/src/lib/review.ts:16 fn reviewHref
 apps/web/src/lib/providers.ts:55 fn useProviderOf
-apps/web/src/lib/providers.ts:52 type ProviderRef
-… 361 more symbols in this module
+… 362 more symbols in this module
 
 ### web/ui
 apps/web/src/ui/Layout.tsx:85 fn Notice
