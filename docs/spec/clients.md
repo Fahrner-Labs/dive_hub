@@ -149,6 +149,7 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   carry fields and a server may serve endpoints a client does not know; leave them alone rather than failing the
   whole answer. A closed enum gains a value only when its contract already says an unknown value is shown as
   recorded (the device vocabulary above).
+- **An endpoint the server does not have yet answers an ordinary 404:** show that feature as unavailable, not as an error.
 - **The Android client identifies itself** on every request with
   `User-Agent: divehub-android/<version>` (the app's release version,
   [ADR 0076](../decisions/0076-api-versioning-policy.md)). The server logs it and, only for a hard break, uses it

@@ -170,7 +170,7 @@ export function rankSymbols(root) {
  * How many symbols a module shows: small modules keep their few, large ones get a deeper slice. The per-module
  * allowance shrinks as the repo grows, so the whole map stays inside ADR 0067's ~4k-token budget.
  */
-export const perModuleLimit = (count) => Math.max(6, Math.min(19, Math.ceil(count / 17)));
+export const perModuleLimit = (count) => Math.max(6, Math.min(19, Math.ceil(count / 18)));
 
 /**
  * The module's top symbols. The first pass keeps any file to about a third of the places (at least three), so a large
