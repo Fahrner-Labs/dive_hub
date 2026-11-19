@@ -51,5 +51,9 @@ private val DarkColors = darkColorScheme(
 
 @Composable
 fun DiveHubTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) {
-    MaterialTheme(colorScheme = if (darkTheme) DarkColors else LightColors, content = content)
+    MaterialTheme(
+        colorScheme = if (darkTheme) DarkColors else LightColors,
+        typography = DiveHubTypography,
+        content = content,
+    )
 }
