@@ -2,6 +2,9 @@ package dev.divehub.shared.sync
 
 import dev.divehub.api.models.ApiDiverBodyWeightsGet200ResponseItem
 import dev.divehub.api.models.ApiDivesGet200ResponseDivesItem
+import dev.divehub.api.models.ApiDivesGet200ResponseDivesItemGasesItem
+import dev.divehub.api.models.ApiDivesGet200ResponseDivesItemParticipantsItem
+import dev.divehub.api.models.ApiDivesGet200ResponseDivesItemSite
 import dev.divehub.api.models.DiverView
 import dev.divehub.api.models.DiveView
 import dev.divehub.api.models.DiveViewCylindersItem
@@ -72,6 +75,7 @@ internal fun ApiDivesGet200ResponseDivesItem.toStore(existing: Dive?): Dive {
             fromProvider = fromProvider,
             number = number?.toLong(),
             findingsCount = findings.toLong(),
+            listJson = JSON.encodeToString(this),
         )
     }
     return Dive(
@@ -99,6 +103,7 @@ internal fun ApiDivesGet200ResponseDivesItem.toStore(existing: Dive?): Dive {
         number = number?.toLong(),
         findingsCount = findings.toLong(),
         summaryJson = null,
+        listJson = JSON.encodeToString(this),
     )
 }
 
@@ -129,7 +134,49 @@ internal fun DiveView.toStore(existing: Dive?): Dive = Dive(
     number = values.number?.toLong(),
     findingsCount = existing?.findingsCount,
     summaryJson = existing?.summaryJson,
+    listJson = existing?.listJson,
+    detailJson = JSON.encodeToString(this),
 )
+
+/**
+ * A Dive hint's detail into the row the logbook list shows, keeping the list-only values the detail does not carry
+ * (the findings mark, the profile sketch and Waiting pushes). The next list refresh replaces it anyway.
+ */
+internal fun DiveView.toListRow(existing: String?): String {
+    val old = existing?.let {
+        try {
+            JSON.decodeFromString(ApiDivesGet200ResponseDivesItem.serializer(), it)
+        } catch (_: Exception) {
+            null
+        }
+    }
+    val primary = recordings.firstOrNull { it.isPrimary } ?: recordings.firstOrNull()
+    val row = ApiDivesGet200ResponseDivesItem(
+        id = id,
+        diverId = diverId,
+        number = values.number,
+        startsAt = values.startsAt.at,
+        utcOffsetSeconds = values.startsAt.utcOffsetSeconds,
+        utcOffsetSource = utcOffsetSource,
+        durationSeconds = values.durationSeconds,
+        maxDepthM = values.maxDepthM,
+        avgDepthM = values.avgDepthM,
+        site = site?.let { ApiDivesGet200ResponseDivesItemSite(id = it.id, name = it.name) },
+        findings = old?.findings ?: 0,
+        recordings = recordings.size,
+        fromProvider = fromProvider,
+        gases = primary?.summary?.gases.orEmpty().map {
+            ApiDivesGet200ResponseDivesItemGasesItem(o2 = it.o2, he = it.he)
+        },
+        surfaceIntervalSeconds = primary?.summary?.surfaceIntervalSeconds,
+        participants = participants.map {
+            ApiDivesGet200ResponseDivesItemParticipantsItem(diverId = it.diverId, name = it.name, role = it.role)
+        },
+        waiting = old?.waiting.orEmpty(),
+        profile = old?.profile,
+    )
+    return JSON.encodeToString(ApiDivesGet200ResponseDivesItem.serializer(), row)
+}
 
 internal fun DiveViewRecordingsItem.toStore(diveId: String): Recording = Recording(
     id = id,

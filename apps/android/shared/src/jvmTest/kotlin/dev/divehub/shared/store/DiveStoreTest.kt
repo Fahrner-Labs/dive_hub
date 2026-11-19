@@ -359,16 +359,63 @@ class DiveStoreTest {
     }
 
     @Test
-    fun `migration smoke test from v1 to the latest schema keeps the store usable`() {
-        val store = newStore()
-        assertEquals(1L, DiveStore.schemaVersion)
+    fun `migration from v1 adds the API payload columns and keeps the store usable`() {
+        assertEquals(2L, DiveStore.schemaVersion)
         assertContains(DiveHubDatabase.allTableNames(), "sync_checkpoint")
 
-        DiveStore.migrate(driver, oldVersion = 1, newVersion = DiveStore.schemaVersion)
+        val old = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
+        try {
+            old.execute(
+                null,
+                """CREATE TABLE dive (
+                    id TEXT NOT NULL PRIMARY KEY,
+                    diverId TEXT NOT NULL,
+                    version INTEGER,
+                    deletedAt TEXT,
+                    startsAt TEXT NOT NULL,
+                    utcOffsetSeconds INTEGER,
+                    utcOffsetSource TEXT,
+                    durationSeconds INTEGER,
+                    maxDepthM REAL,
+                    avgDepthM REAL,
+                    siteId TEXT,
+                    waterType TEXT,
+                    fromProvider TEXT,
+                    notes TEXT,
+                    suitJson TEXT,
+                    weightingFeedbackJson TEXT,
+                    leadJson TEXT,
+                    leadTotalKg REAL,
+                    sacLitresPerMinute REAL,
+                    sacBarPerMinute REAL,
+                    sacMissing TEXT,
+                    number INTEGER,
+                    findingsCount INTEGER,
+                    summaryJson TEXT
+                )""",
+                0,
+            )
+            old.execute(
+                null,
+                "CREATE TABLE sync_state (id INTEGER NOT NULL PRIMARY KEY, lastFullSyncAt TEXT, lastHintAt TEXT, schemaVersion INTEGER NOT NULL)",
+                0,
+            )
+            old.execute(
+                null,
+                "INSERT INTO dive(id, diverId, startsAt, durationSeconds) VALUES ('dive-1', 'diver-1', '2026-11-01T10:00:00.000Z', 2700)",
+                0,
+            )
+            old.execute(null, "INSERT INTO sync_state(id, lastFullSyncAt, lastHintAt, schemaVersion) VALUES (1, NULL, NULL, 1)", 0)
 
-        store.upsertDive(testDive())
-        assertEquals("dive-1", store.dive("dive-1")!!.id)
-        assertEquals(DiveStore.schemaVersion, store.syncState().schemaVersion)
+            DiveStore.migrate(old, oldVersion = 1, newVersion = DiveStore.schemaVersion)
+            val migrated = DiveStore.open(old)
+
+            assertEquals("dive-1", migrated.dive("dive-1")!!.id)
+            assertNull(migrated.dive("dive-1")!!.listJson)
+            assertEquals(DiveStore.schemaVersion, migrated.syncState().schemaVersion)
+        } finally {
+            old.close()
+        }
     }
 
     private fun recording(

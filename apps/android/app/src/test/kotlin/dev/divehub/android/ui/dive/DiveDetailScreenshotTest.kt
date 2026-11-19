@@ -130,6 +130,36 @@ class DiveDetailScreenshotTest {
     }
 
     @Test
+    fun `the sync line says when the store was last filled`() {
+        render(state(dive = dive(), syncedAt = "2026-11-18T12:00:00Z"))
+        compose.onNodeWithText("Last synced 18 Nov 2026, 12:00.").assertIsDisplayed()
+        capture("dive_synced.png")
+    }
+
+    @Test
+    fun `offline with a cached dive shows it and its age`() {
+        render(state(dive = dive(), syncedAt = "2026-11-18T12:00:00Z", offline = true))
+        compose.onNodeWithText("No connection. Showing this dive synced as of 18 Nov 2026, 12:00.").assertIsDisplayed()
+        compose.onNodeWithText("Dive 42").assertIsDisplayed()
+        capture("dive_offline_cached.png")
+    }
+
+    @Test
+    fun `offline before the first sync is an empty state, not a stale dive`() {
+        render(DiveDetailUiState(loading = false, offline = true))
+        compose.onNodeWithText("No connection. Check your connection and try again.").assertIsDisplayed()
+        capture("dive_offline_empty.png")
+    }
+
+    @Test
+    fun `a dive whose profiles are still syncing says so`() {
+        render(state(dive = dive(), profileSamples = null, samplesPending = true))
+        compose.onNode(hasScrollAction()).performScrollToNode(hasText("The depth profile is still syncing; it appears when the sync finishes."))
+        compose.onNodeWithText("The depth profile is still syncing; it appears when the sync finishes.").assertIsDisplayed()
+        capture("dive_profile_pending.png")
+    }
+
+    @Test
     fun `a failed profile leaves the rest of the page standing`() {
         render(state(dive = dive(), profileSamples = null, samplesError = "internal_error"))
         compose.onNodeWithText("Dive 42").assertIsDisplayed()
@@ -166,6 +196,9 @@ class DiveDetailScreenshotTest {
         ),
         profileSamples: RecordingSamplesView? = samples(),
         samplesError: String? = null,
+        samplesPending: Boolean = false,
+        syncedAt: String? = null,
+        offline: Boolean = false,
     ) = DiveDetailUiState(
         diveId = dive.id,
         loading = false,
@@ -174,6 +207,9 @@ class DiveDetailScreenshotTest {
         neighbours = neighbours,
         samples = profileSamples,
         samplesError = samplesError,
+        samplesPending = samplesPending,
+        syncedAt = syncedAt,
+        offline = offline,
     )
 
     private fun dive(

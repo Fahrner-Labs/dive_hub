@@ -81,9 +81,12 @@ class SyncEngine(
     private val lock = Mutex()
     private val json = Json { ignoreUnknownKeys = true; explicitNulls = false }
 
-    /** Run or resume the initial phases 1–2. A completed sync is a no-op; [refresh] owns the later triggers. */
+    /**
+     * Run or resume the initial phases 1–2. A completed sync is a no-op except for backfilling a v1 store's missing API
+     * payloads; [refresh] owns the later triggers.
+     */
     suspend fun sync(): SyncResult = lock.withLock {
-        if (store.syncState().lastFullSyncAt != null) return@withLock SyncResult.Complete
+        if (store.syncState().lastFullSyncAt != null) return@withLock backfillPayloadsIfMissing()
         var phase = SyncPhase.Meta
         return@withLock try {
             syncMeta(now = clock())
@@ -97,6 +100,27 @@ class SyncEngine(
             if (error.status == 401) SyncResult.SessionEnded else SyncResult.Stopped(phase, error)
         } catch (error: NoAnswerException) {
             SyncResult.Stopped(phase, error)
+        }
+    }
+
+    /**
+     * A store migrated from schema v1 has no list or detail payload for its rows. Fetch them once through the normal
+     * refresh, so the D4 screens read exactly what the API sends; a normal store returns at once.
+     */
+    private suspend fun backfillPayloadsIfMissing(): SyncResult {
+        val missing = store.allDives().any {
+            it.deletedAt == null && (it.listJson == null || it.detailJson == null)
+        }
+        if (!missing) return SyncResult.Complete
+        return try {
+            refreshInternal(now = clock())
+            SyncResult.Complete
+        } catch (error: CancellationException) {
+            throw error
+        } catch (error: DiveHubException) {
+            if (error.status == 401) SyncResult.SessionEnded else SyncResult.Stopped(SyncPhase.Meta, error)
+        } catch (error: NoAnswerException) {
+            SyncResult.Stopped(SyncPhase.Meta, error)
         }
     }
 
@@ -273,6 +297,7 @@ class SyncEngine(
             val done = page.dives.isEmpty() || next >= page.total
             store.transaction {
                 page.dives.forEach { store.upsertDive(it.toStore(store.diveIncludingDeleted(it.id))) }
+                store.saveLogbookCounts(json.encodeToString(page.counts))
                 store.saveCheckpoint(checkpoint(ENTITY_DIVES, PHASE_META, cursor = null, pageOffset = next, done = done, now = now))
             }
             if (done) return
@@ -282,9 +307,14 @@ class SyncEngine(
 
     private suspend fun syncDetails(now: String) {
         val existing = store.checkpoint(ENTITY_DIVE_DETAILS, PHASE_DETAILS)
-        if (existing?.done == true) return
+        // A store migrated from v1 has detailed rows without their API payload: fetch every detail once so the
+        // screens read exactly what the API sent. A row still waiting for its first detail is not stale.
+        val stalePayloads = store.allDives().any {
+            it.deletedAt == null && it.version != null && it.detailJson == null
+        }
+        if (existing?.done == true && !stalePayloads) return
         val dives = store.allDives()
-        val start = existing?.pageOffset?.toInt()?.coerceAtLeast(0) ?: 0
+        val start = if (stalePayloads) 0 else existing?.pageOffset?.toInt()?.coerceAtLeast(0) ?: 0
         if (start >= dives.size) {
             store.transaction {
                 store.saveCheckpoint(
@@ -453,6 +483,7 @@ class SyncEngine(
             val done = page.dives.isEmpty() || next >= page.total
             store.transaction {
                 page.dives.forEach { store.upsertDive(it.toStore(store.diveIncludingDeleted(it.id))) }
+                store.saveLogbookCounts(json.encodeToString(page.counts))
                 store.saveCheckpoint(checkpoint(ENTITY_DIVES, PHASE_META, cursor = null, pageOffset = next, done = done, now = now))
             }
             if (done) return
@@ -493,7 +524,7 @@ class SyncEngine(
     }
 
     private suspend fun refreshNewDetails(now: String) {
-        val pending = store.allDives().filter { it.deletedAt == null && it.version == null }
+        val pending = store.allDives().filter { it.deletedAt == null && (it.version == null || it.detailJson == null) }
         for (dive in pending) fetchAndStoreDetail(dive.id, now)
         store.transaction {
             store.saveCheckpoint(
@@ -506,6 +537,7 @@ class SyncEngine(
         val page = fetchJson<ApiDivesGet200Response>("/api/dives?limit=${DiveStore.DEFAULT_PAGE_SIZE}&offset=0")
         store.transaction {
             page.dives.forEach { store.upsertDive(it.toStore(store.diveIncludingDeleted(it.id))) }
+            store.saveLogbookCounts(json.encodeToString(page.counts))
             store.saveCheckpoint(checkpoint(ENTITY_DIVES, PHASE_META, cursor = null, pageOffset = page.dives.size.toLong(), done = true, now = now))
         }
     }
@@ -537,7 +569,8 @@ class SyncEngine(
      */
     private fun writeDetail(detail: DiveView) {
         val diveId = detail.id
-        store.upsertDive(detail.toStore(store.diveIncludingDeleted(diveId)))
+        val existing = store.diveIncludingDeleted(diveId)
+        store.upsertDive(detail.toStore(existing).copy(listJson = detail.toListRow(existing?.listJson)))
         val kept = detail.recordings.mapTo(mutableSetOf()) { it.id }
         store.allRecordingsForDive(diveId).filter { it.id !in kept }.forEach { recording ->
             store.deleteSeries(recording.id)

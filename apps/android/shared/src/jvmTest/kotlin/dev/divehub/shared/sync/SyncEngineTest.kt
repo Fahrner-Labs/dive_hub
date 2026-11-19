@@ -2,7 +2,9 @@ package dev.divehub.shared.sync
 
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import dev.divehub.shared.ApiClient
+import dev.divehub.shared.store.Dive
 import dev.divehub.shared.store.DiveStore
+import dev.divehub.shared.store.SyncState
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
 import io.ktor.client.request.HttpRequestData
@@ -190,7 +192,38 @@ class SyncEngineTest {
         assertTrue(recording.channelsJson.contains("depth"))
         assertEquals(listOf(21.0), store.cylinders("dive-1").map { it.o2 })
         assertEquals(4.0, store.dive("dive-1")!!.leadTotalKg)
+        assertNotNull(store.dive("dive-1")!!.listJson)
+        assertNotNull(store.dive("dive-1")!!.detailJson)
+        assertNotNull(store.syncState().countsJson)
         assertEquals(NOW, store.syncState().lastFullSyncAt)
+    }
+
+    @Test
+    fun `a store migrated from v1 backfills its API payloads on the next sync`() = runTest {
+        store.saveSyncState(SyncState(lastFullSyncAt = NOW, schemaVersion = DiveStore.schemaVersion))
+        store.upsertDive(
+            Dive(
+                id = "dive-1",
+                diverId = "diver-1",
+                version = 3,
+                startsAt = "2026-11-01T10:00:00Z",
+                durationSeconds = 2_700,
+            ),
+        )
+        val base = routes()
+        val harness = Harness(store) { path ->
+            if (path.startsWith("/api/dives/deleted?")) {
+                json("""{"dives":[],"total":0,"stillAt":[]}""")
+            } else {
+                base(path)
+            }
+        }
+
+        assertEquals(SyncResult.Complete, harness.engine.sync())
+
+        assertNotNull(store.dive("dive-1")!!.listJson)
+        assertNotNull(store.dive("dive-1")!!.detailJson)
+        assertNotNull(store.syncState().countsJson)
     }
 
     @Test

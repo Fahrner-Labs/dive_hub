@@ -212,6 +212,32 @@ class SyncRefreshTest {
     }
 
     @Test
+    fun `an opened Dive's refresh rereads its detail and marks its profiles pending`() = runTest {
+        val harness = seeded()
+        RefreshData.details["dive-1"] = refreshDetailJson(version = 4, notes = "Changed elsewhere")
+
+        harness.refresher.refreshDiveOnce("dive-1")
+
+        assertEquals(4L, store.dive("dive-1")!!.version)
+        assertEquals("Changed elsewhere", store.dive("dive-1")!!.notes)
+        assertFalse(harness.engine.profileSynced("dive-1"))
+    }
+
+    @Test
+    fun `a no-answer refresh marks offline and a later success clears it`() = runTest {
+        var offline = false
+        val harness = seeded { path -> if (offline) RefreshReply.Offline else refreshRoutes(path) }
+
+        offline = true
+        harness.refresher.refreshOnce()
+        assertTrue(harness.refresher.offline.value)
+
+        offline = false
+        harness.refresher.refreshOnce()
+        assertFalse(harness.refresher.offline.value)
+    }
+
+    @Test
     fun `profiles fetch every listed channel with the explicit cap`() = runTest {
         RefreshData.details["dive-1"] = refreshDetailJson(recordings = listOf(refreshRecordingJson("recording-dive-1", channels = listOf("depth", "temperature", "tankPressure"))))
         val harness = seeded()

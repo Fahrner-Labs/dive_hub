@@ -58,6 +58,35 @@ class LogbookScreenshotTest {
         capture("logbook_findings_mark.png")
     }
 
+    @Test
+    fun `the sync line says when the store was last filled`() {
+        render(page(dives = listOf(reef), filters = emptySet()).copy(syncedAt = "2026-11-18T12:00:00Z"))
+        compose.onNodeWithText("Last synced 18 Nov 2026, 12:00.").assertIsDisplayed()
+        capture("logbook_synced.png")
+    }
+
+    @Test
+    fun `offline with a cache shows the stored dives and their age`() {
+        render(page(dives = listOf(reef), filters = emptySet()).copy(syncedAt = "2026-11-18T12:00:00Z", offline = true))
+        compose.onNodeWithText("No connection. Showing dives synced as of 18 Nov 2026, 12:00.").assertIsDisplayed()
+        compose.onNodeWithText("Lighthouse Reef").assertIsDisplayed()
+        capture("logbook_offline_cached.png")
+    }
+
+    @Test
+    fun `offline before the first sync is an empty state, not a stale list`() {
+        render(LogbookUiState(loading = false, offline = true))
+        compose.onNodeWithText("No connection. Check your connection and try again.").assertIsDisplayed()
+        capture("logbook_offline_empty.png")
+    }
+
+    @Test
+    fun `a dive whose profiles are still syncing carries its own marker`() {
+        render(page(dives = listOf(reef), filters = emptySet()).copy(profilePending = setOf(reef.id)))
+        compose.onNodeWithText("Profile syncing").assertIsDisplayed()
+        capture("logbook_profile_pending.png")
+    }
+
     private fun render(state: LogbookUiState) {
         compose.setContent {
             DiveHubTheme(darkTheme = false) {
