@@ -197,3 +197,28 @@ nothing is stored.
 
 The contract-visible states are screenshots (`GasPlanScreenshotTest`): the notice with an empty plan, a plan that
 fits, one that does not, a rule below rock bottom, `outside_limits`, and a turn rule's briefing.
+
+## The personalized tools (slice U3)
+
+The lead estimate and the current loadings, computed offline from the synced store (client contract, Offline reads
+and Tools; ADR 0031, ADR 0071). `shared/tools/PersonalizedSourcesStore.kt` assembles the Diver's own Dives,
+body weight, sites, Recordings and series in one store transaction; `PersonalizedTools.kt` shapes the answers exactly
+like `GET /api/divers/{id}/lead-estimate` and `GET /api/divers/{id}/loadings`, whose generated models are the
+contract. Nothing is fetched from the API for these results.
+
+- **Lead estimate:** the conditions (water, suit with thickness, hood and undergarment, one to four Cylinders, unit)
+  are typed; the answer always carries the total with its range, the confidence in words, the Dives it rests on
+  (each linked to its Dive page), each adjustment with its reason, what is missing and where to add it, the Dives
+  left out for a site without a water type, and the weight check in every state.
+- **Current loadings:** residual N₂, the oxygen clock and OTU, and DAN's no-fly time as information with its source.
+  A missing estimate stays missing (with the reason the shape allows); a returned zero is shown as a real zero. The
+  N₂ line says the synced profiles are downsampled.
+- **Staleness:** every personalized result says "Based on dives synced as of …" from `sync_state.lastFullSyncAt`,
+  with "(profiles still syncing)" while the profiles phase (FAH-273) is incomplete. The profiles checkpoints decide
+  once they exist; before that the store's own channels and series do.
+- Errors are codes the screen translates (`invalid_input`, `suit_invalid`); amounts are already in the answer's unit
+  and are never converted again. The lead screen's Dive links open the existing Dive page.
+
+The contract-visible states are screenshots (`PersonalizedScreenshotTest`): the lead estimate with the staleness
+label and profiles marker, the no-number state with the weight check, the loadings with their basis, and a missing
+estimate beside a real zero (`loadings_missing_zero.png`).

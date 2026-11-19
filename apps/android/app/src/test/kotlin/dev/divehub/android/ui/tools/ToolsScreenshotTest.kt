@@ -95,7 +95,7 @@ class ToolsScreenshotTest {
     private fun render(state: ToolsUiState) {
         compose.setContent {
             DiveHubTheme(darkTheme = false) {
-                ToolsScreen(state = state, imperial = false, onBack = {}, onOpenPlan = {}, onChange = {}, onReload = {})
+                ToolsScreen(state = state, imperial = false, onBack = {}, onOpenPlan = {}, onOpenLead = {}, onOpenLoadings = {}, onChange = {}, onReload = {})
             }
         }
     }

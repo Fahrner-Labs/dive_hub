@@ -30,11 +30,8 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
+import androidx.activity.compose.BackHandler
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -47,6 +44,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.annotation.StringRes
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.divehub.android.R
 import dev.divehub.android.ui.Formats
@@ -63,34 +61,52 @@ import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
+/** Which tool the Tools route shows; the gas numbers are its home. */
+enum class ToolPage { Gas, Plan, Lead, Loadings }
+
 /** The tools route: opens the synced store once so a Diver's values are there before the first keystroke. */
 @Composable
 fun ToolsRoute(
     viewModel: ToolsViewModel,
     planViewModel: GasPlanViewModel,
+    leadViewModel: LeadEstimateViewModel,
+    loadingsViewModel: LoadingsViewModel,
     units: String?,
+    page: ToolPage,
+    onPage: (ToolPage) -> Unit,
     onBack: () -> Unit,
+    onOpenDive: (String) -> Unit,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val locale = context.resources.configuration.locales[0] ?: Locale.getDefault()
     val imperial = Formats.imperial(units, locale)
-    var plan by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(Unit) { viewModel.start(imperial) }
     LaunchedEffect(imperial) { viewModel.setUnits(imperial) }
-    BackHandler(enabled = plan) { plan = false }
-    if (plan) {
-        GasPlanRoute(
+    BackHandler(enabled = page != ToolPage.Gas) { onPage(ToolPage.Gas) }
+    when (page) {
+        ToolPage.Plan -> GasPlanRoute(
             viewModel = planViewModel,
             units = units,
-            onBack = { plan = false },
+            onBack = { onPage(ToolPage.Gas) },
         )
-    } else {
-        ToolsScreen(
+        ToolPage.Lead -> LeadEstimateRoute(
+            viewModel = leadViewModel,
+            units = units,
+            onBack = { onPage(ToolPage.Gas) },
+            onOpenDive = onOpenDive,
+        )
+        ToolPage.Loadings -> LoadingsRoute(
+            viewModel = loadingsViewModel,
+            onBack = { onPage(ToolPage.Gas) },
+        )
+        ToolPage.Gas -> ToolsScreen(
             state = state,
             imperial = imperial,
             onBack = onBack,
-            onOpenPlan = { plan = true },
+            onOpenPlan = { onPage(ToolPage.Plan) },
+            onOpenLead = { onPage(ToolPage.Lead) },
+            onOpenLoadings = { onPage(ToolPage.Loadings) },
             onChange = viewModel::update,
             onReload = viewModel::reload,
         )
@@ -109,6 +125,8 @@ fun ToolsScreen(
     imperial: Boolean,
     onBack: () -> Unit,
     onOpenPlan: () -> Unit,
+    onOpenLead: () -> Unit,
+    onOpenLoadings: () -> Unit,
     onChange: ((ToolsInputs) -> ToolsInputs) -> Unit,
     onReload: () -> Unit,
 ) {
@@ -119,6 +137,8 @@ fun ToolsScreen(
                 navigationIcon = { TextButton(onClick = onBack) { Text(stringResource(R.string.tools_back)) } },
                 actions = {
                     TextButton(onClick = onOpenPlan) { Text(stringResource(R.string.tools_plan_title)) }
+                    TextButton(onClick = onOpenLead) { Text(stringResource(R.string.tools_lead_title_short)) }
+                    TextButton(onClick = onOpenLoadings) { Text(stringResource(R.string.tools_loadings_title_short)) }
                 },
             )
         },
@@ -632,6 +652,7 @@ internal fun ErrorText(code: String) {
             when (code) {
                 ToolsError.INVALID_INPUT -> R.string.tools_error_invalid_input
                 ToolsError.GAS_NOT_BREATHABLE -> R.string.tools_error_gas_not_breathable
+                ToolsError.SUIT_INVALID -> R.string.tools_error_suit_invalid
                 else -> R.string.tools_error_unknown
             },
         ),
@@ -702,8 +723,41 @@ internal fun source(source: String): String = stringResource(
     },
 )
 
+/** "18 Nov 2026" in UTC, for a Dive's own date. */
+@Composable
+internal fun dayDate(iso: String): String {
+    val locale = LocalContext.current.resources.configuration.locales[0] ?: Locale.getDefault()
+    val pattern = stringResource(R.string.tools_day_pattern)
+    return try {
+        Instant.parse(iso).atZone(ZoneOffset.UTC).format(DateTimeFormatter.ofPattern(pattern, locale))
+    } catch (_: Exception) {
+        iso
+    }
+}
+
+/**
+ * "Based on dives synced as of <date-time>", with "(profiles still syncing)" while the profiles phase is incomplete
+ * (client contract, Offline reads; FAH-276). Every personalized result carries it.
+ */
+@Composable
+internal fun StalenessLabel(
+    syncedAt: String?,
+    profilesComplete: Boolean,
+    @StringRes notSynced: Int = R.string.tools_not_synced,
+) {
+    val context = LocalContext.current
+    val locale = context.resources.configuration.locales[0] ?: Locale.getDefault()
+    val pattern = stringResource(R.string.tools_date_pattern)
+    val text = if (syncedAt != null) {
+        stringResource(R.string.tools_synced_at, dateTime(syncedAt, locale, pattern))
+    } else {
+        stringResource(notSynced)
+    }
+    Muted(if (profilesComplete) text else "$text ${stringResource(R.string.tools_profiles_syncing)}")
+}
+
 /** "18 Nov 2026, 09:45" in UTC, so the same sync reads the same on every phone. */
-private fun dateTime(iso: String, locale: Locale, contextPattern: String): String = try {
+internal fun dateTime(iso: String, locale: Locale, contextPattern: String): String = try {
     val formatter = DateTimeFormatter.ofPattern(contextPattern, locale)
     Instant.parse(iso).atZone(ZoneOffset.UTC).format(formatter)
 } catch (_: Exception) {
