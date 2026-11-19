@@ -36,6 +36,7 @@ not here.
 | accessibility | addyosmani/web-quality-skills | WCAG 2.2 rules, keyboard and screen-reader patterns, audits | 2026-10-03 |
 | playwright-cli | microsoft/playwright-cli | driving a browser, writing and debugging Playwright tests | 2026-10-03 |
 | karpathy-guidelines | forrestchang/andrej-karpathy-skills (2c60614) | writing, reviewing and refactoring code: assumptions said, the simplest change, surgical edits, verifiable goals | 2026-10-28 |
+| frontend-design | anthropics/skills | critiquing new or reshaped screens against generic/templated defaults | 2026-11-19 |
 
 Install with telemetry off: `DISABLE_TELEMETRY=1 npx skills add <owner/repo> -s <skill> -a claude-code --copy -y`.
 
@@ -61,3 +62,9 @@ Where a skill and this project disagree, these rules win.
   reviewer; the existing stops still ask: an irreversible or security-sensitive step, a plan where every way forward is a
   guess. Its "surgical changes" don't excuse leaving what the edit hook or `pnpm check` reports in a touched file. Its
   test-first examples follow the test rules in [AGENTS.md](../AGENTS.md#tests).
+- **frontend-design**: the brief is already written — the [design system](spec/design-system.md) with
+  [ADR 0019](decisions/0019-tonal-surfaces.md) and [ADR 0064](decisions/0064-ui-overhaul.md). Skip its
+  "identify the subject matter" step, and don't re-open palette, typeface (IBM Plex Sans) or tokens
+  (`design/tokens.css`): use the skill to critique a new or reshaped screen against the generic defaults it
+  names. Its copy guidance applies to the English source strings (i18next; German ships alongside), where
+  sentence case is already the rule.

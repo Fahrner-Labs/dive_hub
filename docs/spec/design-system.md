@@ -71,6 +71,11 @@ New semantic tokens: `--color-active` (the navigation pill), `--color-primary` a
 `--color-border` (dividers between rows) is decorative and lighter; anything that marks a control's
 boundary uses `--color-border-strong`. A panel is a section of the sheet, divided from the section before by a hairline, with no outline of its own (the overhaul design, "Surfaces").
 
+When a palette colour changes or a ramp grows (for example more steps in the depth ramp), derive and
+check the new steps with [Adobe Leonardo](https://leonardocolor.io) — it builds palettes from a target
+contrast ratio, which is how the pairs above stay at WCAG 2.2 AA. `contrast.test.ts` remains the gate;
+Leonardo is the dev-time aid, never a runtime dependency.
+
 ### Type, space, shape
 
 - **Typeface:** IBM Plex Sans (variable, OFL, bundled, never from a CDN), one family.
