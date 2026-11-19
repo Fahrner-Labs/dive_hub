@@ -15,9 +15,9 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
 /**
- * The launcher icon is the diver-down flag from the brand palette in `docs/spec/design-system.md`: a white diagonal
- * on the dive-flag red. Robolectric renders the adaptive icon's layers into a picture, so a changed drawing or a
- * manifest that stops naming the icon shows up here.
+ * The launcher icon is the Waypoint mark (FAH-305) from the brand palette in `docs/spec/design-system.md`: the white
+ * tile with the diagonal stripe knocked out and the bead at its centre, on the dive-flag red. Robolectric renders the
+ * adaptive icon's layers into a picture, so a changed drawing or a manifest that stops naming the icon shows up here.
  */
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
@@ -33,7 +33,7 @@ class LauncherIconTest {
     }
 
     @Test
-    fun `the launcher icon is the diver-down flag`() {
+    fun `the launcher icon is the Waypoint mark`() {
         val icon = requireNotNull(context.getDrawable(R.mipmap.ic_launcher))
         val size = (108 * context.resources.displayMetrics.density).toInt()
         val view = ImageView(context).apply {
