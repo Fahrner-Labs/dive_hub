@@ -83,9 +83,10 @@ class SessionRepository(
         val url = InstanceUrl.normalize(instanceUrl)
             ?: throw DiveHubException(ErrorCodes.INVALID_INSTANCE_URL)
         api.baseUrl = url
-        // The previous User's cached responses go before anything of the new one arrives (client contract §1).
-        userData.forget()
+        // The previous User's token goes first, so a background sync waiting on the wipe cannot refresh with it and
+        // write the old rows back after the store is cleared (client contract §1).
         tokens.clear()
+        userData.forget()
 
         val body = json.encodeToString(SignInEmailRequest(email = email, password = password))
         val response = api.post("/api/auth/sign-in/email", body, authenticated = false)

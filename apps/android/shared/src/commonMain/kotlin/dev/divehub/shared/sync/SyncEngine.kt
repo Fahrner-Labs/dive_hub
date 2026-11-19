@@ -180,8 +180,10 @@ class SyncEngine(
     fun profileSynced(diveId: String): Boolean =
         store.checkpoint(profileEntity(diveId), PHASE_PROFILES)?.done == true
 
-    /** Whether any live Dive still needs its profiles, so a refresh can hand the background phase some work. */
-    fun hasPendingProfiles(): Boolean = store.allDives().any { it.deletedAt == null && !profileSynced(it.id) }
+    /** Whether any live Dive with a stored detail still needs its profiles, so a refresh can hand phase 3 some work. */
+    fun hasPendingProfiles(): Boolean = store.allDives().any {
+        it.deletedAt == null && it.version != null && !profileSynced(it.id)
+    }
 
     /** The store's per-phase counts, read in one transaction so a concurrent write cannot mix two snapshots. */
     fun progress(): SyncProgress = store.transaction {
@@ -324,9 +326,10 @@ class SyncEngine(
     }
 
     private suspend fun syncProfilesInternal(now: String) {
-        // A snapshot: a Dive that arrives during the phase is picked up by the next run.
+        // A snapshot: a Dive that arrives during the phase is picked up by the next run. A Dive whose detail has
+        // not synced has no Recordings yet; marking it done here would hide its profiles forever.
         for (dive in store.allDives()) {
-            if (dive.deletedAt != null) continue
+            if (dive.deletedAt != null || dive.version == null) continue
             if (profileSynced(dive.id)) continue
             syncDiveProfiles(dive.id, now)
         }

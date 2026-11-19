@@ -264,6 +264,37 @@ class SyncRefreshTest {
     }
 
     @Test
+    fun `a dive without its detail is not marked profiles done`() = runTest {
+        RefreshData.dives += refreshDiveListItem(id = "dive-2", startsAt = "2026-10-01T10:00:00Z", number = 2)
+        RefreshData.details["dive-2"] = refreshDetailJson(
+            id = "dive-2",
+            startsAt = "2026-10-01T10:00:00Z",
+            recordings = listOf(refreshRecordingJson("recording-dive-2")),
+        )
+        var detailFails = true
+        val harness = RefreshHarness(store = store, handler = { path ->
+            if (path == "/api/dives/dive-2" && detailFails) {
+                RefreshReply.Status(HttpStatusCode.InternalServerError)
+            } else {
+                refreshRoutes(path)
+            }
+        })
+
+        assertIs<SyncResult.Stopped>(harness.engine.sync())
+        assertEquals(SyncResult.Complete, harness.engine.syncProfiles())
+        assertFalse(harness.engine.profileSynced("dive-2"))
+        assertTrue(harness.paths.none { it.startsWith("/api/recordings/recording-dive-2/samples") })
+
+        detailFails = false
+        harness.paths.clear()
+        assertEquals(SyncResult.Complete, harness.engine.sync())
+        assertEquals(SyncResult.Complete, harness.engine.syncProfiles())
+
+        assertTrue(harness.paths.any { it.startsWith("/api/recordings/recording-dive-2/samples") })
+        assertTrue(harness.engine.profileSynced("dive-2"))
+    }
+
+    @Test
     fun `profiles resume at the next dive after a failure`() = runTest {
         RefreshData.dives += refreshDiveListItem(id = "dive-2", startsAt = "2026-10-01T10:00:00Z", number = 2)
         RefreshData.details["dive-2"] = refreshDetailJson(id = "dive-2", startsAt = "2026-10-01T10:00:00Z", recordings = listOf(refreshRecordingJson("recording-dive-2")))

@@ -161,7 +161,7 @@ fun `signing in forgets the previous User before the new token is stored`() = ru
 
     session.signIn("https://dive.example", "ada@example.com", "correct horse battery")
 
-    assertEquals(listOf("forget-cache", "clear-token", "save"), events)
+    assertEquals(listOf("clear-token", "forget-cache", "save"), events)
 }
 
 @Test
