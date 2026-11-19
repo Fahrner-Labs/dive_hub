@@ -121,9 +121,9 @@ From FAH-277 the screens never fetch logbook data themselves: `GET /api/dives`, 
 `not-at-provider`) are the exception the client contract names: they are fetched online because the store holds no
 Push state, and offline the cached list is shown without them. `shared/logbook/StoreLogbook.kt` reads the stored list
 rows and Dive views (the API's own JSON, beside the typed columns) and computes the totals and month figures from the
-same rows the server does. The list and the dive page show "Last synced …" from `sync_state.lastFullSyncAt`, and a
-Dive whose profile series are still missing from phase 3 says "Profile syncing"/"still syncing" from its
-`profiles:<id>` checkpoint.
+same rows the server does. The list and the dive page show "Last synced …" from `sync_state.lastFullSyncAt`, in the
+device's time zone (`ui/SyncTimeFormat.kt`, FAH-296), and a Dive whose profile series are still missing from phase 3
+says "Profile syncing"/"still syncing" from its `profiles:<id>` checkpoint.
 
 - Chips: `no-recording`, `no-site` and `with-findings` are answered from the stored rows. Their counts (and the two
   Push-backed ones) come from the last list sync, so a chip keeps its number offline. `changed-since-sent` and
@@ -311,8 +311,8 @@ contract. Nothing is fetched from the API for these results.
   A missing estimate stays missing (with the reason the shape allows); a returned zero is shown as a real zero. The
   N₂ line says the synced profiles are downsampled.
 - **Staleness:** every personalized result says "Based on dives synced as of …" from `sync_state.lastFullSyncAt`,
-  with "(profiles still syncing)" while the profiles phase (FAH-273) is incomplete. The profiles checkpoints decide
-  once they exist; before that the store's own channels and series do.
+  in the device's time zone (FAH-296), with "(profiles still syncing)" while the profiles phase (FAH-273) is
+  incomplete. The profiles checkpoints decide once they exist; before that the store's own channels and series do.
 - Errors are codes the screen translates (`invalid_input`, `suit_invalid`); amounts are already in the answer's unit
   and are never converted again. The lead screen's Dive links open the existing Dive page.
 

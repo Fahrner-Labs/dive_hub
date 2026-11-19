@@ -18,6 +18,9 @@ import dev.divehub.api.models.DiveProfileView
 import dev.divehub.shared.logbook.LogbookFilter
 import dev.divehub.shared.logbook.ProviderDirectory
 import kotlinx.serialization.json.JsonPrimitive
+import java.util.TimeZone
+import org.junit.After
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -35,6 +38,19 @@ import org.robolectric.annotation.GraphicsMode
 class LogbookScreenshotTest {
     @get:Rule
     val compose = createComposeRule()
+
+    private var previousZone: TimeZone = TimeZone.getDefault()
+
+    @Before
+    fun pinZone() {
+        previousZone = TimeZone.getDefault()
+        TimeZone.setDefault(TimeZone.getTimeZone("Europe/Berlin"))
+    }
+
+    @After
+    fun restoreZone() {
+        TimeZone.setDefault(previousZone)
+    }
 
     @Test
     fun `filter counts`() {
@@ -61,14 +77,14 @@ class LogbookScreenshotTest {
     @Test
     fun `the sync line says when the store was last filled`() {
         render(page(dives = listOf(reef), filters = emptySet()).copy(syncedAt = "2026-11-18T12:00:00Z"))
-        compose.onNodeWithText("Last synced 18 Nov 2026, 12:00.").assertIsDisplayed()
+        compose.onNodeWithText("Last synced 18 Nov 2026, 13:00.").assertIsDisplayed()
         capture("logbook_synced.png")
     }
 
     @Test
     fun `offline with a cache shows the stored dives and their age`() {
         render(page(dives = listOf(reef), filters = emptySet()).copy(syncedAt = "2026-11-18T12:00:00Z", offline = true))
-        compose.onNodeWithText("No connection. Showing dives synced as of 18 Nov 2026, 12:00.").assertIsDisplayed()
+        compose.onNodeWithText("No connection. Showing dives synced as of 18 Nov 2026, 13:00.").assertIsDisplayed()
         compose.onNodeWithText("Lighthouse Reef").assertIsDisplayed()
         capture("logbook_offline_cached.png")
     }

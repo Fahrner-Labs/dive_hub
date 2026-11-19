@@ -49,6 +49,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.divehub.android.R
 import dev.divehub.android.ui.Formats
 import dev.divehub.android.ui.dive.DiveDetailText
+import dev.divehub.android.ui.formatSyncTime
 import dev.divehub.api.models.ApiToolsBottomTimeGet200Response
 import dev.divehub.api.models.ApiToolsGasGet200Response
 import dev.divehub.shared.planning.PlanningWater
@@ -509,7 +510,7 @@ private fun Assumptions(
         val pattern = stringResource(R.string.tools_date_pattern)
         Muted(
             if (syncedAt != null) {
-                stringResource(R.string.tools_synced_at, dateTime(syncedAt, locale, pattern))
+                stringResource(R.string.tools_synced_at, formatSyncTime(syncedAt, locale, pattern))
             } else {
                 stringResource(R.string.tools_not_synced)
             },
@@ -749,14 +750,17 @@ internal fun StalenessLabel(
     val locale = context.resources.configuration.locales[0] ?: Locale.getDefault()
     val pattern = stringResource(R.string.tools_date_pattern)
     val text = if (syncedAt != null) {
-        stringResource(R.string.tools_synced_at, dateTime(syncedAt, locale, pattern))
+        stringResource(R.string.tools_synced_at, formatSyncTime(syncedAt, locale, pattern))
     } else {
         stringResource(notSynced)
     }
     Muted(if (profilesComplete) text else "$text ${stringResource(R.string.tools_profiles_syncing)}")
 }
 
-/** "18 Nov 2026, 09:45" in UTC, so the same sync reads the same on every phone. */
+/**
+ * "18 Nov 2026, 09:45" in UTC, for the dive-time instants these pages show; a sync timestamp reads in the device's
+ * zone instead ([formatSyncTime]).
+ */
 internal fun dateTime(iso: String, locale: Locale, contextPattern: String): String = try {
     val formatter = DateTimeFormatter.ofPattern(contextPattern, locale)
     Instant.parse(iso).atZone(ZoneOffset.UTC).format(formatter)

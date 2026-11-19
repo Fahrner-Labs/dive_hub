@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.divehub.android.R
 import dev.divehub.android.ui.Formats
+import dev.divehub.android.ui.formatSyncTime
 import dev.divehub.api.models.ApiToolsGasPlanPost200Response
 import dev.divehub.api.models.ApiToolsGasPlanPost200ResponseDiversItem
 import dev.divehub.shared.planning.PlanningSacSource
@@ -565,7 +566,7 @@ private fun PlanBody(state: GasPlanUiState, imperial: Boolean, locale: Locale, d
     }
     Spacer(Modifier.height(8.dp))
     if (state.syncedAt != null) {
-        Muted(stringResource(R.string.tools_synced_at, state.syncedAt.dateTime(locale, datePattern)))
+        Muted(stringResource(R.string.tools_synced_at, formatSyncTime(state.syncedAt, locale, datePattern)))
     }
     Muted(stringResource(R.string.tools_estimate_short))
 }
@@ -679,12 +680,3 @@ private fun segmentName(kind: String): Int = when (kind) {
 private fun rateUnit(imperial: Boolean): String = stringResource(
     if (imperial) R.string.tools_plan_unit_rate_imperial else R.string.tools_plan_unit_rate_metric,
 )
-
-/** "18 Nov 2026, 09:45" in UTC, as the gas numbers page says it. */
-private fun String.dateTime(locale: Locale, pattern: String): String = try {
-    java.time.Instant.parse(this)
-        .atZone(java.time.ZoneOffset.UTC)
-        .format(java.time.format.DateTimeFormatter.ofPattern(pattern, locale))
-} catch (_: Exception) {
-    this
-}

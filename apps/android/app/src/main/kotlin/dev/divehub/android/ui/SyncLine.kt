@@ -14,9 +14,6 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import dev.divehub.android.R
-import java.time.Instant
-import java.time.ZoneOffset
-import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 /**
@@ -35,7 +32,7 @@ internal fun SyncLine(
     val context = LocalContext.current
     val locale = context.resources.configuration.locales[0] ?: Locale.getDefault()
     val pattern = stringResource(R.string.sync_date_pattern)
-    val time = syncDateTime(syncedAt, locale, pattern)
+    val time = formatSyncTime(syncedAt, locale, pattern)
     val text = if (offline) {
         stringResource(offlineText, time)
     } else {
@@ -50,11 +47,4 @@ internal fun SyncLine(
         style = MaterialTheme.typography.labelMedium,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
-}
-
-/** "18 Nov 2026, 09:45" in UTC, so the same sync reads the same on every phone. */
-internal fun syncDateTime(iso: String, locale: Locale, pattern: String): String = try {
-    Instant.parse(iso).atZone(ZoneOffset.UTC).format(DateTimeFormatter.ofPattern(pattern, locale))
-} catch (_: Exception) {
-    iso
 }
