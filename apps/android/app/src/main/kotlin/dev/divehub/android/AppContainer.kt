@@ -82,6 +82,7 @@ class AppContainer(context: Context) {
     /** Open screens reread the store when a sync or hint writes it, and say "cached" when the last attempt got no answer. */
     val syncRevision = refresher.revision
     val syncOffline = refresher.offline
+    val syncConnected = refresher.streamHealthy
     private val periodicSync = WorkManagerPeriodicSync(application)
     private val syncScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val wipeLock = Mutex()

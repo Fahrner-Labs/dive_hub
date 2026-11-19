@@ -136,12 +136,13 @@ class LogbookViewModel(
         } catch (_: NoAnswerException) {
             // The server-only filter needs a connection; show the stored list without it rather than "no connection".
             val cached = withContext(Dispatchers.IO) { store.page(page, store.storedFilters(filters)) }
+            val preSync = cached.syncedAt == null && cached.data.total == 0
             _state.update {
                 it.copy(
                     loading = false,
                     refreshing = false,
-                    data = cached.data,
-                    syncedAt = cached.syncedAt,
+                    data = if (preSync) null else cached.data,
+                    syncedAt = if (preSync) null else cached.syncedAt,
                     profilePending = cached.profilePending,
                     offline = true,
                     filterUnavailable = !store.canAnswer(filters),

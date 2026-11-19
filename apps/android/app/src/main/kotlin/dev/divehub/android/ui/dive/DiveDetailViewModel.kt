@@ -42,8 +42,6 @@ data class DiveDetailUiState(
     val offline: Boolean = false,
     /** The store's last successful sync; the page's "Last synced …" line. Null before the first sync. */
     val syncedAt: String? = null,
-    /** This Dive's Recordings are in the store but their sample series are still syncing (phase 3). */
-    val profilePending: Boolean = false,
 )
 
 /**
@@ -57,6 +55,7 @@ class DiveDetailViewModel(
     private val api: DiveRepository,
     private val revision: StateFlow<Long>,
     private val offlineState: StateFlow<Boolean>,
+    private val connectedState: StateFlow<Boolean>,
     private val refreshDive: suspend (String) -> Unit,
 ) : ViewModel() {
     private val _state = MutableStateFlow(DiveDetailUiState())
@@ -143,7 +142,6 @@ class DiveDetailViewModel(
                 dive = dive,
                 providers = directory,
                 syncedAt = stored.syncedAt,
-                profilePending = stored.profilePending,
                 offline = offlineState.value,
             )
         }
@@ -188,6 +186,14 @@ class DiveDetailViewModel(
         offlineJob = viewModelScope.launch {
             offlineState.collect { offline -> _state.update { it.copy(offline = offline) } }
         }
+        viewModelScope.launch {
+            // ADR 0066: on every (re)connect, refetch what is on screen. Hints are not replayed.
+            var wasConnected = connectedState.value
+            connectedState.collect { connected ->
+                if (connected && !wasConnected) _state.value.diveId?.let { refresh(it) }
+                wasConnected = connected
+            }
+        }
     }
 
     companion object {
@@ -198,6 +204,7 @@ class DiveDetailViewModel(
                     api = container.dive,
                     revision = container.syncRevision,
                     offlineState = container.syncOffline,
+                    connectedState = container.syncConnected,
                     refreshDive = { id -> container.refreshDiveNow(id) },
                 )
             }
