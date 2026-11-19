@@ -1,7 +1,9 @@
 # Planning golden vectors
 
 Plain JSON, committed, one file per kernel. The TypeScript kernels generate them and the Kotlin port reads the same
-files, so a change on one side fails until both agree (FAH-268).
+files, so a change on one side fails until both agree (FAH-268). The lead estimate joins the harness from its own
+module (FAH-272): it rounds its own answer (ADR 0031), so `lead-estimate.json`'s `expected.kernel` and
+`expected.service` are the same object.
 
 ## Format
 
@@ -23,10 +25,12 @@ files, so a change on one side fails until both agree (FAH-268).
 }
 ```
 
-- `expected.kernel` holds the kernel's doubles as computed, never rounded.
+- `expected.kernel` holds the kernel's doubles as computed, never rounded. Where a kernel rounds its own answer
+  (the lead estimate, ADR 0031) it holds that answer.
 - `expected.service` holds the view the server's service shell returns (MOD floored to 0.1 m, ppO2 to 2 places,
   depths and pressures to 1 place, SAC to 2 places, and so on). It is reference data for the clients' presentation
-  parity; the TypeScript runner checks it.
+  parity; the TypeScript runner checks it for every kernel, and the Kotlin runner too where the port ships that
+  view (SAC, lead estimate).
 - Integer-valued expected numbers (minute counts, best-mix percent, the NDL) assert exact equality. Other numbers
   assert `|actual − expected| <= relative × max(|actual|, |expected|, 1)`, with `relative` 1e-9 unless a case or file
   documents a looser value.

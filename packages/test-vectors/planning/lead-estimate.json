@@ -1,0 +1,3414 @@
+{
+  "kernel": "lead-estimate",
+  "version": 1,
+  "tolerance": {
+    "relative": 1e-9
+  },
+  "cases": [
+    {
+      "id": "one-dive-same-suit-too-heavy-2",
+      "input": {
+        "dives": [
+          {
+            "id": "red-sea-1",
+            "date": "2026-10-13T12:00:00Z",
+            "leadKg": 10,
+            "feedback": {
+              "felt": "too_heavy",
+              "amountKg": 2
+            },
+            "suit": {
+              "type": "wetsuit",
+              "thicknessMm": 5,
+              "hood": false,
+              "undergarment": null
+            },
+            "water": "salt",
+            "cylinders": [
+              {
+                "volumeL": 11.1,
+                "material": "aluminium",
+                "endPressureBar": null
+              }
+            ]
+          }
+        ],
+        "bodyWeightKg": 82,
+        "unit": "kg",
+        "today": "2026-10-13T12:00:00Z",
+        "plan": {
+          "water": "salt",
+          "suit": {
+            "type": "wetsuit",
+            "thicknessMm": 5,
+            "hood": false,
+            "undergarment": null
+          },
+          "cylinders": [
+            {
+              "volumeL": 11.1,
+              "material": "aluminium"
+            }
+          ]
+        }
+      },
+      "expected": {
+        "kernel": {
+          "unit": "kg",
+          "total": 8,
+          "range": {
+            "low": 6.5,
+            "high": 9.5
+          },
+          "confidence": "medium",
+          "basis": {
+            "kind": "dives",
+            "dives": [
+              {
+                "id": "red-sea-1",
+                "carried": 10,
+                "needed": 8,
+                "weight": 1
+              }
+            ],
+            "personal": 4.2
+          },
+          "adjustments": [
+            {
+              "kind": "cylinder",
+              "amount": 1
+            },
+            {
+              "kind": "water",
+              "amount": 2.8,
+              "water": "salt"
+            }
+          ],
+          "missing": [],
+          "reserve": {
+            "bar": 50,
+            "fromDives": false
+          }
+        },
+        "service": {
+          "unit": "kg",
+          "total": 8,
+          "range": {
+            "low": 6.5,
+            "high": 9.5
+          },
+          "confidence": "medium",
+          "basis": {
+            "kind": "dives",
+            "dives": [
+              {
+                "id": "red-sea-1",
+                "carried": 10,
+                "needed": 8,
+                "weight": 1
+              }
+            ],
+            "personal": 4.2
+          },
+          "adjustments": [
+            {
+              "kind": "cylinder",
+              "amount": 1
+            },
+            {
+              "kind": "water",
+              "amount": 2.8,
+              "water": "salt"
+            }
+          ],
+          "missing": [],
+          "reserve": {
+            "bar": 50,
+            "fromDives": false
+          }
+        }
+      }
+    },
+    {
+      "id": "one-dive-same-suit-felt-right",
+      "input": {
+        "dives": [
+          {
+            "id": "felt-right",
+            "date": "2026-10-13T12:00:00Z",
+            "leadKg": 8,
+            "feedback": {
+              "felt": "right",
+              "amountKg": null
+            },
+            "suit": {
+              "type": "wetsuit",
+              "thicknessMm": 7,
+              "hood": true,
+              "undergarment": null
+            },
+            "water": "fresh",
+            "cylinders": [
+              {
+                "volumeL": 12,
+                "material": "steel",
+                "endPressureBar": null
+              }
+            ]
+          }
+        ],
+        "bodyWeightKg": 82,
+        "unit": "kg",
+        "today": "2026-10-13T12:00:00Z",
+        "plan": {
+          "water": "fresh",
+          "suit": {
+            "type": "wetsuit",
+            "thicknessMm": 7,
+            "hood": true,
+            "undergarment": null
+          },
+          "cylinders": [
+            {
+              "volumeL": 12,
+              "material": "steel"
+            }
+          ]
+        }
+      },
+      "expected": {
+        "kernel": {
+          "unit": "kg",
+          "total": 8,
+          "range": {
+            "low": 6.5,
+            "high": 9.5
+          },
+          "confidence": "medium",
+          "basis": {
+            "kind": "dives",
+            "dives": [
+              {
+                "id": "felt-right",
+                "carried": 8,
+                "needed": 8,
+                "weight": 2
+              }
+            ],
+            "personal": 9.9
+          },
+          "adjustments": [
+            {
+              "kind": "cylinder",
+              "amount": -1.9
+            },
+            {
+              "kind": "water",
+              "amount": 0,
+              "water": "fresh"
+            }
+          ],
+          "missing": [],
+          "reserve": {
+            "bar": 50,
+            "fromDives": false
+          }
+        },
+        "service": {
+          "unit": "kg",
+          "total": 8,
+          "range": {
+            "low": 6.5,
+            "high": 9.5
+          },
+          "confidence": "medium",
+          "basis": {
+            "kind": "dives",
+            "dives": [
+              {
+                "id": "felt-right",
+                "carried": 8,
+                "needed": 8,
+                "weight": 2
+              }
+            ],
+            "personal": 9.9
+          },
+          "adjustments": [
+            {
+              "kind": "cylinder",
+              "amount": -1.9
+            },
+            {
+              "kind": "water",
+              "amount": 0,
+              "water": "fresh"
+            }
+          ],
+          "missing": [],
+          "reserve": {
+            "bar": 50,
+            "fromDives": false
+          }
+        }
+      }
+    },
+    {
+      "id": "no-dives-rule-5mm-salt-al80",
+      "input": {
+        "dives": [],
+        "bodyWeightKg": 82,
+        "unit": "kg",
+        "today": "2026-10-13T12:00:00Z",
+        "plan": {
+          "water": "salt",
+          "suit": {
+            "type": "wetsuit",
+            "thicknessMm": 5,
+            "hood": false,
+            "undergarment": null
+          },
+          "cylinders": [
+            {
+              "volumeL": 11.1,
+              "material": "aluminium"
+            }
+          ]
+        }
+      },
+      "expected": {
+        "kernel": {
+          "unit": "kg",
+          "total": 8,
+          "range": {
+            "low": 5,
+            "high": 11
+          },
+          "confidence": "low",
+          "basis": {
+            "kind": "rule_of_thumb",
+            "rule": 8.2,
+            "personalOffset": null,
+            "offsetFromSuits": 0
+          },
+          "adjustments": [
+            {
+              "kind": "cylinder",
+              "amount": 1
+            },
+            {
+              "kind": "water",
+              "amount": 2.8,
+              "water": "salt"
+            }
+          ],
+          "missing": [],
+          "reserve": {
+            "bar": 50,
+            "fromDives": false
+          }
+        },
+        "service": {
+          "unit": "kg",
+          "total": 8,
+          "range": {
+            "low": 5,
+            "high": 11
+          },
+          "confidence": "low",
+          "basis": {
+            "kind": "rule_of_thumb",
+            "rule": 8.2,
+            "personalOffset": null,
+            "offsetFromSuits": 0
+          },
+          "adjustments": [
+            {
+              "kind": "cylinder",
+              "amount": 1
+            },
+            {
+              "kind": "water",
+              "amount": 2.8,
+              "water": "salt"
+            }
+          ],
+          "missing": [],
+          "reserve": {
+            "bar": 50,
+            "fromDives": false
+          }
+        }
+      }
+    },
+    {
+      "id": "no-dives-no-body-weight",
+      "input": {
+        "dives": [],
+        "bodyWeightKg": null,
+        "unit": "kg",
+        "today": "2026-10-13T12:00:00Z",
+        "plan": {
+          "water": "salt",
+          "suit": {
+            "type": "wetsuit",
+            "thicknessMm": 5,
+            "hood": false,
+            "undergarment": null
+          },
+          "cylinders": [
+            {
+              "volumeL": 11.1,
+              "material": "aluminium"
+            }
+          ]
+        }
+      },
+      "expected": {
+        "kernel": {
+          "unit": "kg",
+          "total": null,
+          "range": null,
+          "confidence": "low",
+          "basis": null,
+          "adjustments": [],
+          "missing": [
+            {
+              "kind": "body_weight"
+            }
+          ],
+          "reserve": {
+            "bar": 50,
+            "fromDives": false
+          }
+        },
+        "service": {
+          "unit": "kg",
+          "total": null,
+          "range": null,
+          "confidence": "low",
+          "basis": null,
+          "adjustments": [],
+          "missing": [
+            {
+              "kind": "body_weight"
+            }
+          ],
+          "reserve": {
+            "bar": 50,
+            "fromDives": false
+          }
+        }
+      }
+    },
+    {
+      "id": "six-7mm-dives-offset-rule-5mm",
+      "input": {
+        "dives": [
+          {
+            "id": "tim-right-1",
+            "date": "2026-10-13T12:00:00Z",
+            "leadKg": 8,
+            "feedback": {
+              "felt": "right",
+              "amountKg": null
+            },
+            "suit": {
+              "type": "wetsuit",
+              "thicknessMm": 7,
+              "hood": true,
+              "undergarment": null
+            },
+            "water": "fresh",
+            "cylinders": [
+              {
+                "volumeL": 12,
+                "material": "steel",
+                "endPressureBar": null
+              }
+            ]
+          },
+          {
+            "id": "tim-right-2",
+            "date": "2026-10-13T12:00:00Z",
+            "leadKg": 8,
+            "feedback": {
+              "felt": "right",
+              "amountKg": null
+            },
+            "suit": {
+              "type": "wetsuit",
+              "thicknessMm": 7,
+              "hood": true,
+              "undergarment": null
+            },
+            "water": "fresh",
+            "cylinders": [
+              {
+                "volumeL": 12,
+                "material": "steel",
+                "endPressureBar": null
+              }
+            ]
+          },
+          {
+            "id": "tim-right-3",
+            "date": "2026-10-13T12:00:00Z",
+            "leadKg": 8,
+            "feedback": {
+              "felt": "right",
+              "amountKg": null
+            },
+            "suit": {
+              "type": "wetsuit",
+              "thicknessMm": 7,
+              "hood": true,
+              "undergarment": null
+            },
+            "water": "fresh",
+            "cylinders": [
+              {
+                "volumeL": 12,
+                "material": "steel",
+                "endPressureBar": null
+              }
+            ]
+          },
+          {
+            "id": "tim-heavy-1",
+            "date": "2026-10-13T12:00:00Z",
+            "leadKg": 8,
+            "feedback": {
+              "felt": "too_heavy",
+              "amountKg": 1
+            },
+            "suit": {
+              "type": "wetsuit",
+              "thicknessMm": 7,
+              "hood": true,
+              "undergarment": null
+            },
+            "water": "fresh",
+            "cylinders": [
+              {
+                "volumeL": 12,
+                "material": "steel",
+                "endPressureBar": null
+              }
+            ]
+          },
+          {
+            "id": "tim-no-feedback-1",
+            "date": "2026-10-13T12:00:00Z",
+            "leadKg": 8,
+            "feedback": null,
+            "suit": {
+              "type": "wetsuit",
+              "thicknessMm": 7,
+              "hood": true,
+              "undergarment": null
+            },
+            "water": "fresh",
+            "cylinders": [
+              {
+                "volumeL": 12,
+                "material": "steel",
+                "endPressureBar": null
+              }
+            ]
+          },
+          {
+            "id": "tim-no-feedback-2",
+            "date": "2026-10-13T12:00:00Z",
+            "leadKg": 8,
+            "feedback": null,
+            "suit": {
+              "type": "wetsuit",
+              "thicknessMm": 7,
+              "hood": true,
+              "undergarment": null
+            },
+            "water": "fresh",
+            "cylinders": [
+              {
+                "volumeL": 12,
+                "material": "steel",
+                "endPressureBar": null
+              }
+            ]
+          }
+        ],
+        "bodyWeightKg": 82,
+        "unit": "kg",
+        "today": "2026-10-13T12:00:00Z",
+        "plan": {
+          "water": "salt",
+          "suit": {
+            "type": "wetsuit",
+            "thicknessMm": 5,
+            "hood": false,
+            "undergarment": null
+          },
+          "cylinders": [
+            {
+              "volumeL": 11.1,
+              "material": "aluminium"
+            }
+          ]
+        }
+      },
+      "expected": {
+        "kernel": {
+          "unit": "kg",
+          "total": 12,
+          "range": {
+            "low": 10,
+            "high": 14
+          },
+          "confidence": "low",
+          "basis": {
+            "kind": "rule_of_thumb",
+            "rule": 8.2,
+            "personalOffset": 3.6,
+            "offsetFromSuits": 1
+          },
+          "adjustments": [
+            {
+              "kind": "personal_offset",
+              "amount": 3.6
+            },
+            {
+              "kind": "cylinder",
+              "amount": 1
+            },
+            {
+              "kind": "water",
+              "amount": 2.9,
+              "water": "salt"
+            }
+          ],
+          "missing": [],
+          "reserve": {
+            "bar": 50,
+            "fromDives": false
+          }
+        },
+        "service": {
+          "unit": "kg",
+          "total": 12,
+          "range": {
+            "low": 10,
+            "high": 14
+          },
+          "confidence": "low",
+          "basis": {
+            "kind": "rule_of_thumb",
+            "rule": 8.2,
+            "personalOffset": 3.6,
+            "offsetFromSuits": 1
+          },
+          "adjustments": [
+            {
+              "kind": "personal_offset",
+              "amount": 3.6
+            },
+            {
+              "kind": "cylinder",
+              "amount": 1
+            },
+            {
+              "kind": "water",
+              "amount": 2.9,
+              "water": "salt"
+            }
+          ],
+          "missing": [],
+          "reserve": {
+            "bar": 50,
+            "fromDives": false
+          }
+        }
+      }
+    },
+    {
+      "id": "rule-skin-80kg",
+      "input": {
+        "dives": [],
+        "bodyWeightKg": 80,
+        "unit": "kg",
+        "today": "2026-10-13T12:00:00Z",
+        "plan": {
+          "water": "salt",
+          "suit": {
+            "type": "skin",
+            "thicknessMm": null,
+            "hood": null,
+            "undergarment": null
+          },
+          "cylinders": [
+            {
+              "volumeL": 11.1,
+              "material": "aluminium"
+            }
+          ]
+        }
+      },
+      "expected": {
+        "kernel": {
+          "unit": "kg",
+          "total": 1.5,
+          "range": {
+            "low": 0,
+            "high": 4.5
+          },
+          "confidence": "low",
+          "basis": {
+            "kind": "rule_of_thumb",
+            "rule": 1.3,
+            "personalOffset": null,
+            "offsetFromSuits": 0
+          },
+          "adjustments": [
+            {
+              "kind": "cylinder",
+              "amount": 1
+            },
+            {
+              "kind": "water",
+              "amount": 2.6,
+              "water": "salt"
+            }
+          ],
+          "missing": [],
+          "reserve": {
+            "bar": 50,
+            "fromDives": false
+          }
+        },
+        "service": {
+          "unit": "kg",
+          "total": 1.5,
+          "range": {
+            "low": 0,
+            "high": 4.5
+          },
+          "confidence": "low",
+          "basis": {
+            "kind": "rule_of_thumb",
+            "rule": 1.3,
+            "personalOffset": null,
+            "offsetFromSuits": 0
+          },
+          "adjustments": [
+            {
+              "kind": "cylinder",
+              "amount": 1
+            },
+            {
+              "kind": "water",
+              "amount": 2.6,
+              "water": "salt"
+            }
+          ],
+          "missing": [],
+          "reserve": {
+            "bar": 50,
+            "fromDives": false
+          }
+        }
+      }
+    },
+    {
+      "id": "rule-3mm-80kg",
+      "input": {
+        "dives": [],
+        "bodyWeightKg": 80,
+        "unit": "kg",
+        "today": "2026-10-13T12:00:00Z",
+        "plan": {
+          "water": "salt",
+          "suit": {
+            "type": "wetsuit",
+            "thicknessMm": 3,
+            "hood": null,
+            "undergarment": null
+          },
+          "cylinders": [
+            {
+              "volumeL": 11.1,
+              "material": "aluminium"
+            }
+          ]
+        }
+      },
+      "expected": {
+        "kernel": {
+          "unit": "kg",
+          "total": 4,
+          "range": {
+            "low": 1,
+            "high": 7
+          },
+          "confidence": "low",
+          "basis": {
+            "kind": "rule_of_thumb",
+            "rule": 4,
+            "personalOffset": null,
+            "offsetFromSuits": 0
+          },
+          "adjustments": [
+            {
+              "kind": "cylinder",
+              "amount": 1
+            },
+            {
+              "kind": "water",
+              "amount": 2.7,
+              "water": "salt"
+            }
+          ],
+          "missing": [],
+          "reserve": {
+            "bar": 50,
+            "fromDives": false
+          }
+        },
+        "service": {
+          "unit": "kg",
+          "total": 4,
+          "range": {
+            "low": 1,
+            "high": 7
+          },
+          "confidence": "low",
+          "basis": {
+            "kind": "rule_of_thumb",
+            "rule": 4,
+            "personalOffset": null,
+            "offsetFromSuits": 0
+          },
+          "adjustments": [
+            {
+              "kind": "cylinder",
+              "amount": 1
+            },
+            {
+              "kind": "water",
+              "amount": 2.7,
+              "water": "salt"
+            }
+          ],
+          "missing": [],
+          "reserve": {
+            "bar": 50,
+            "fromDives": false
+          }
+        }
+      }
+    },
+    {
+      "id": "rule-7mm-hood-semidry-80kg",
+      "input": {
+        "dives": [],
+        "bodyWeightKg": 80,
+        "unit": "kg",
+        "today": "2026-10-13T12:00:00Z",
+        "plan": {
+          "water": "salt",
+          "suit": {
+            "type": "semidry",
+            "thicknessMm": 7,
+            "hood": true,
+            "undergarment": null
+          },
+          "cylinders": [
+            {
+              "volumeL": 11.1,
+              "material": "aluminium"
+            }
+          ]
+        }
+      },
+      "expected": {
+        "kernel": {
+          "unit": "kg",
+          "total": 10,
+          "range": {
+            "low": 7,
+            "high": 13
+          },
+          "confidence": "low",
+          "basis": {
+            "kind": "rule_of_thumb",
+            "rule": 10,
+            "personalOffset": null,
+            "offsetFromSuits": 0
+          },
+          "adjustments": [
+            {
+              "kind": "cylinder",
+              "amount": 1
+            },
+            {
+              "kind": "water",
+              "amount": 2.8,
+              "water": "salt"
+            }
+          ],
+          "missing": [],
+          "reserve": {
+            "bar": 50,
+            "fromDives": false
+          }
+        },
+        "service": {
+          "unit": "kg",
+          "total": 10,
+          "range": {
+            "low": 7,
+            "high": 13
+          },
+          "confidence": "low",
+          "basis": {
+            "kind": "rule_of_thumb",
+            "rule": 10,
+            "personalOffset": null,
+            "offsetFromSuits": 0
+          },
+          "adjustments": [
+            {
+              "kind": "cylinder",
+              "amount": 1
+            },
+            {
+              "kind": "water",
+              "amount": 2.8,
+              "water": "salt"
+            }
+          ],
+          "missing": [],
+          "reserve": {
+            "bar": 50,
+            "fromDives": false
+          }
+        }
+      }
+    },
+    {
+      "id": "rule-7mm-no-hood-80kg",
+      "input": {
+        "dives": [],
+        "bodyWeightKg": 80,
+        "unit": "kg",
+        "today": "2026-10-13T12:00:00Z",
+        "plan": {
+          "water": "salt",
+          "suit": {
+            "type": "wetsuit",
+            "thicknessMm": 7,
+            "hood": false,
+            "undergarment": null
+          },
+          "cylinders": [
+            {
+              "volumeL": 11.1,
+              "material": "aluminium"
+            }
+          ]
+        }
+      },
+      "expected": {
+        "kernel": {
+          "unit": "kg",
+          "total": 8,
+          "range": {
+            "low": 5,
+            "high": 11
+          },
+          "confidence": "low",
+          "basis": {
+            "kind": "rule_of_thumb",
+            "rule": 8,
+            "personalOffset": null,
+            "offsetFromSuits": 0
+          },
+          "adjustments": [
+            {
+              "kind": "cylinder",
+              "amount": 1
+            },
+            {
+              "kind": "water",
+              "amount": 2.8,
+              "water": "salt"
+            }
+          ],
+          "missing": [],
+          "reserve": {
+            "bar": 50,
+            "fromDives": false
+          }
+        },
+        "service": {
+          "unit": "kg",
+          "total": 8,
+          "range": {
+            "low": 5,
+            "high": 11
+          },
+          "confidence": "low",
+          "basis": {
+            "kind": "rule_of_thumb",
+            "rule": 8,
+            "personalOffset": null,
+            "offsetFromSuits": 0
+          },
+          "adjustments": [
+            {
+              "kind": "cylinder",
+              "amount": 1
+            },
+            {
+              "kind": "water",
+              "amount": 2.8,
+              "water": "salt"
+            }
+          ],
+          "missing": [],
+          "reserve": {
+            "bar": 50,
+            "fromDives": false
+          }
+        }
+      }
+    },
+    {
+      "id": "rule-drysuit-heavy-80kg",
+      "input": {
+        "dives": [],
+        "bodyWeightKg": 80,
+        "unit": "kg",
+        "today": "2026-10-13T12:00:00Z",
+        "plan": {
+          "water": "salt",
+          "suit": {
+            "type": "drysuit",
+            "thicknessMm": null,
+            "hood": null,
+            "undergarment": "heavy"
+          },
+          "cylinders": [
+            {
+              "volumeL": 11.1,
+              "material": "aluminium"
+            }
+          ]
+        }
+      },
+      "expected": {
+        "kernel": {
+          "unit": "kg",
+          "total": 13,
+          "range": {
+            "low": 10,
+            "high": 16
+          },
+          "confidence": "low",
+          "basis": {
+            "kind": "rule_of_thumb",
+            "rule": 13,
+            "personalOffset": null,
+            "offsetFromSuits": 0
+          },
+          "adjustments": [
+            {
+              "kind": "cylinder",
+              "amount": 1
+            },
+            {
+              "kind": "water",
+              "amount": 2.9,
+              "water": "salt"
+            }
+          ],
+          "missing": [],
+          "reserve": {
+            "bar": 50,
+            "fromDives": false
+          }
+        },
+        "service": {
+          "unit": "kg",
+          "total": 13,
+          "range": {
+            "low": 10,
+            "high": 16
+          },
+          "confidence": "low",
+          "basis": {
+            "kind": "rule_of_thumb",
+            "rule": 13,
+            "personalOffset": null,
+            "offsetFromSuits": 0
+          },
+          "adjustments": [
+            {
+              "kind": "cylinder",
+              "amount": 1
+            },
+            {
+              "kind": "water",
+              "amount": 2.9,
+              "water": "salt"
+            }
+          ],
+          "missing": [],
+          "reserve": {
+            "bar": 50,
+            "fromDives": false
+          }
+        }
+      }
+    },
+    {
+      "id": "rule-drysuit-undergarment-missing-80kg",
+      "input": {
+        "dives": [],
+        "bodyWeightKg": 80,
+        "unit": "kg",
+        "today": "2026-10-13T12:00:00Z",
+        "plan": {
+          "water": "salt",
+          "suit": {
+            "type": "drysuit",
+            "thicknessMm": null,
+            "hood": null,
+            "undergarment": null
+          },
+          "cylinders": [
+            {
+              "volumeL": 11.1,
+              "material": "aluminium"
+            }
+          ]
+        }
+      },
+      "expected": {
+        "kernel": {
+          "unit": "kg",
+          "total": 12,
+          "range": {
+            "low": 9,
+            "high": 15
+          },
+          "confidence": "low",
+          "basis": {
+            "kind": "rule_of_thumb",
+            "rule": 12,
+            "personalOffset": null,
+            "offsetFromSuits": 0
+          },
+          "adjustments": [
+            {
+              "kind": "cylinder",
+              "amount": 1
+            },
+            {
+              "kind": "water",
+              "amount": 2.9,
+              "water": "salt"
+            }
+          ],
+          "missing": [
+            {
+              "kind": "suit_undergarment"
+            }
+          ],
+          "reserve": {
+            "bar": 50,
+            "fromDives": false
+          }
+        },
+        "service": {
+          "unit": "kg",
+          "total": 12,
+          "range": {
+            "low": 9,
+            "high": 15
+          },
+          "confidence": "low",
+          "basis": {
+            "kind": "rule_of_thumb",
+            "rule": 12,
+            "personalOffset": null,
+            "offsetFromSuits": 0
+          },
+          "adjustments": [
+            {
+              "kind": "cylinder",
+              "amount": 1
+            },
+            {
+              "kind": "water",
+              "amount": 2.9,
+              "water": "salt"
+            }
+          ],
+          "missing": [
+            {
+              "kind": "suit_undergarment"
+            }
+          ],
+          "reserve": {
+            "bar": 50,
+            "fromDives": false
+          }
+        }
+      }
+    },
+    {
+      "id": "rule-wetsuit-thickness-missing-82kg",
+      "input": {
+        "dives": [],
+        "bodyWeightKg": 82,
+        "unit": "kg",
+        "today": "2026-10-13T12:00:00Z",
+        "plan": {
+          "water": "salt",
+          "suit": {
+            "type": "wetsuit",
+            "thicknessMm": null,
+            "hood": null,
+            "undergarment": null
+          },
+          "cylinders": [
+            {
+              "volumeL": 11.1,
+              "material": "aluminium"
+            }
+          ]
+        }
+      },
+      "expected": {
+        "kernel": {
+          "unit": "kg",
+          "total": 8,
+          "range": {
+            "low": 5,
+            "high": 11
+          },
+          "confidence": "low",
+          "basis": {
+            "kind": "rule_of_thumb",
+            "rule": 8.2,
+            "personalOffset": null,
+            "offsetFromSuits": 0
+          },
+          "adjustments": [
+            {
+              "kind": "cylinder",
+              "amount": 1
+            },
+            {
+              "kind": "water",
+              "amount": 2.8,
+              "water": "salt"
+            }
+          ],
+          "missing": [
+            {
+              "kind": "suit_thickness"
+            }
+          ],
+          "reserve": {
+            "bar": 50,
+            "fromDives": false
+          }
+        },
+        "service": {
+          "unit": "kg",
+          "total": 8,
+          "range": {
+            "low": 5,
+            "high": 11
+          },
+          "confidence": "low",
+          "basis": {
+            "kind": "rule_of_thumb",
+            "rule": 8.2,
+            "personalOffset": null,
+            "offsetFromSuits": 0
+          },
+          "adjustments": [
+            {
+              "kind": "cylinder",
+              "amount": 1
+            },
+            {
+              "kind": "water",
+              "amount": 2.8,
+              "water": "salt"
+            }
+          ],
+          "missing": [
+            {
+              "kind": "suit_thickness"
+            }
+          ],
+          "reserve": {
+            "bar": 50,
+            "fromDives": false
+          }
+        }
+      }
+    },
+    {
+      "id": "plan-brackish-water",
+      "input": {
+        "dives": [
+          {
+            "id": "fresh-7mm",
+            "date": "2026-10-13T12:00:00Z",
+            "leadKg": 8,
+            "feedback": null,
+            "suit": {
+              "type": "wetsuit",
+              "thicknessMm": 7,
+              "hood": true,
+              "undergarment": null
+            },
+            "water": "fresh",
+            "cylinders": [
+              {
+                "volumeL": 12,
+                "material": "steel",
+                "endPressureBar": null
+              }
+            ]
+          }
+        ],
+        "bodyWeightKg": 82,
+        "unit": "kg",
+        "today": "2026-10-13T12:00:00Z",
+        "plan": {
+          "water": "brackish",
+          "suit": {
+            "type": "wetsuit",
+            "thicknessMm": 7,
+            "hood": true,
+            "undergarment": null
+          },
+          "cylinders": [
+            {
+              "volumeL": 12,
+              "material": "steel"
+            }
+          ]
+        }
+      },
+      "expected": {
+        "kernel": {
+          "unit": "kg",
+          "total": 9.5,
+          "range": {
+            "low": 8,
+            "high": 11
+          },
+          "confidence": "medium",
+          "basis": {
+            "kind": "dives",
+            "dives": [
+              {
+                "id": "fresh-7mm",
+                "carried": 8,
+                "needed": 8,
+                "weight": 1
+              }
+            ],
+            "personal": 9.9
+          },
+          "adjustments": [
+            {
+              "kind": "cylinder",
+              "amount": -1.9
+            },
+            {
+              "kind": "water",
+              "amount": 1.4,
+              "water": "brackish"
+            }
+          ],
+          "missing": [],
+          "reserve": {
+            "bar": 50,
+            "fromDives": false
+          }
+        },
+        "service": {
+          "unit": "kg",
+          "total": 9.5,
+          "range": {
+            "low": 8,
+            "high": 11
+          },
+          "confidence": "medium",
+          "basis": {
+            "kind": "dives",
+            "dives": [
+              {
+                "id": "fresh-7mm",
+                "carried": 8,
+                "needed": 8,
+                "weight": 1
+              }
+            ],
+            "personal": 9.9
+          },
+          "adjustments": [
+            {
+              "kind": "cylinder",
+              "amount": -1.9
+            },
+            {
+              "kind": "water",
+              "amount": 1.4,
+              "water": "brackish"
+            }
+          ],
+          "missing": [],
+          "reserve": {
+            "bar": 50,
+            "fromDives": false
+          }
+        }
+      }
+    },
+    {
+      "id": "reserve-median-100-bar",
+      "input": {
+        "dives": [
+          {
+            "id": "end-90",
+            "date": "2026-10-13T12:00:00Z",
+            "leadKg": 8,
+            "feedback": null,
+            "suit": {
+              "type": "wetsuit",
+              "thicknessMm": 7,
+              "hood": true,
+              "undergarment": null
+            },
+            "water": "fresh",
+            "cylinders": [
+              {
+                "volumeL": 12,
+                "material": "steel",
+                "endPressureBar": 90
+              }
+            ]
+          },
+          {
+            "id": "end-100",
+            "date": "2026-10-13T12:00:00Z",
+            "leadKg": 8,
+            "feedback": null,
+            "suit": {
+              "type": "wetsuit",
+              "thicknessMm": 7,
+              "hood": true,
+              "undergarment": null
+            },
+            "water": "fresh",
+            "cylinders": [
+              {
+                "volumeL": 12,
+                "material": "steel",
+                "endPressureBar": 100
+              }
+            ]
+          },
+          {
+            "id": "end-110",
+            "date": "2026-10-13T12:00:00Z",
+            "leadKg": 8,
+            "feedback": null,
+            "suit": {
+              "type": "wetsuit",
+              "thicknessMm": 7,
+              "hood": true,
+              "undergarment": null
+            },
+            "water": "fresh",
+            "cylinders": [
+              {
+                "volumeL": 12,
+                "material": "steel",
+                "endPressureBar": 110
+              }
+            ]
+          }
+        ],
+        "bodyWeightKg": 82,
+        "unit": "kg",
+        "today": "2026-10-13T12:00:00Z",
+        "plan": {
+          "water": "fresh",
+          "suit": {
+            "type": "wetsuit",
+            "thicknessMm": 7,
+            "hood": true,
+            "undergarment": null
+          },
+          "cylinders": [
+            {
+              "volumeL": 11.1,
+              "material": "aluminium"
+            }
+          ]
+        }
+      },
+      "expected": {
+        "kernel": {
+          "unit": "kg",
+          "total": 11,
+          "range": {
+            "low": 10,
+            "high": 12
+          },
+          "confidence": "medium",
+          "basis": {
+            "kind": "dives",
+            "dives": [
+              {
+                "id": "end-90",
+                "carried": 8,
+                "needed": 8,
+                "weight": 1
+              },
+              {
+                "id": "end-100",
+                "carried": 8,
+                "needed": 8,
+                "weight": 1
+              },
+              {
+                "id": "end-110",
+                "carried": 8,
+                "needed": 8,
+                "weight": 1
+              }
+            ],
+            "personal": 10.7
+          },
+          "adjustments": [
+            {
+              "kind": "cylinder",
+              "amount": 0.3
+            },
+            {
+              "kind": "water",
+              "amount": 0,
+              "water": "fresh"
+            }
+          ],
+          "missing": [],
+          "reserve": {
+            "bar": 100,
+            "fromDives": true
+          }
+        },
+        "service": {
+          "unit": "kg",
+          "total": 11,
+          "range": {
+            "low": 10,
+            "high": 12
+          },
+          "confidence": "medium",
+          "basis": {
+            "kind": "dives",
+            "dives": [
+              {
+                "id": "end-90",
+                "carried": 8,
+                "needed": 8,
+                "weight": 1
+              },
+              {
+                "id": "end-100",
+                "carried": 8,
+                "needed": 8,
+                "weight": 1
+              },
+              {
+                "id": "end-110",
+                "carried": 8,
+                "needed": 8,
+                "weight": 1
+              }
+            ],
+            "personal": 10.7
+          },
+          "adjustments": [
+            {
+              "kind": "cylinder",
+              "amount": 0.3
+            },
+            {
+              "kind": "water",
+              "amount": 0,
+              "water": "fresh"
+            }
+          ],
+          "missing": [],
+          "reserve": {
+            "bar": 100,
+            "fromDives": true
+          }
+        }
+      }
+    },
+    {
+      "id": "unknown-cylinder-material-planned",
+      "input": {
+        "dives": [
+          {
+            "id": "same-conditions",
+            "date": "2026-10-13T12:00:00Z",
+            "leadKg": 8,
+            "feedback": null,
+            "suit": {
+              "type": "wetsuit",
+              "thicknessMm": 7,
+              "hood": true,
+              "undergarment": null
+            },
+            "water": "fresh",
+            "cylinders": [
+              {
+                "volumeL": 12,
+                "material": "steel",
+                "endPressureBar": null
+              }
+            ]
+          }
+        ],
+        "bodyWeightKg": 82,
+        "unit": "kg",
+        "today": "2026-10-13T12:00:00Z",
+        "plan": {
+          "water": "fresh",
+          "suit": {
+            "type": "wetsuit",
+            "thicknessMm": 7,
+            "hood": true,
+            "undergarment": null
+          },
+          "cylinders": [
+            {
+              "volumeL": 12,
+              "material": null
+            }
+          ]
+        }
+      },
+      "expected": {
+        "kernel": {
+          "unit": "kg",
+          "total": 9.5,
+          "range": {
+            "low": 6.5,
+            "high": 12.5
+          },
+          "confidence": "medium",
+          "basis": {
+            "kind": "dives",
+            "dives": [
+              {
+                "id": "same-conditions",
+                "carried": 8,
+                "needed": 8,
+                "weight": 1
+              }
+            ],
+            "personal": 9.9
+          },
+          "adjustments": [
+            {
+              "kind": "cylinder",
+              "amount": -0.6
+            },
+            {
+              "kind": "water",
+              "amount": 0,
+              "water": "fresh"
+            }
+          ],
+          "missing": [
+            {
+              "kind": "cylinder_material",
+              "diveIds": [],
+              "planned": true
+            }
+          ],
+          "reserve": {
+            "bar": 50,
+            "fromDives": false
+          }
+        },
+        "service": {
+          "unit": "kg",
+          "total": 9.5,
+          "range": {
+            "low": 6.5,
+            "high": 12.5
+          },
+          "confidence": "medium",
+          "basis": {
+            "kind": "dives",
+            "dives": [
+              {
+                "id": "same-conditions",
+                "carried": 8,
+                "needed": 8,
+                "weight": 1
+              }
+            ],
+            "personal": 9.9
+          },
+          "adjustments": [
+            {
+              "kind": "cylinder",
+              "amount": -0.6
+            },
+            {
+              "kind": "water",
+              "amount": 0,
+              "water": "fresh"
+            }
+          ],
+          "missing": [
+            {
+              "kind": "cylinder_material",
+              "diveIds": [],
+              "planned": true
+            }
+          ],
+          "reserve": {
+            "bar": 50,
+            "fromDives": false
+          }
+        }
+      }
+    },
+    {
+      "id": "dive-cylinder-material-unknown-and-none",
+      "input": {
+        "dives": [
+          {
+            "id": "rented",
+            "date": "2026-10-13T12:00:00Z",
+            "leadKg": 8,
+            "feedback": null,
+            "suit": {
+              "type": "wetsuit",
+              "thicknessMm": 7,
+              "hood": true,
+              "undergarment": null
+            },
+            "water": "fresh",
+            "cylinders": [
+              {
+                "volumeL": 12,
+                "material": null,
+                "endPressureBar": null
+              }
+            ]
+          },
+          {
+            "id": "none",
+            "date": "2026-10-13T12:00:00Z",
+            "leadKg": 8,
+            "feedback": null,
+            "suit": {
+              "type": "wetsuit",
+              "thicknessMm": 7,
+              "hood": true,
+              "undergarment": null
+            },
+            "water": "fresh",
+            "cylinders": []
+          }
+        ],
+        "bodyWeightKg": 82,
+        "unit": "kg",
+        "today": "2026-10-13T12:00:00Z",
+        "plan": {
+          "water": "fresh",
+          "suit": {
+            "type": "wetsuit",
+            "thicknessMm": 7,
+            "hood": true,
+            "undergarment": null
+          },
+          "cylinders": [
+            {
+              "volumeL": 12,
+              "material": "steel"
+            }
+          ]
+        }
+      },
+      "expected": {
+        "kernel": {
+          "unit": "kg",
+          "total": 7.5,
+          "range": {
+            "low": 4.5,
+            "high": 10
+          },
+          "confidence": "medium",
+          "basis": {
+            "kind": "dives",
+            "dives": [
+              {
+                "id": "rented",
+                "carried": 8,
+                "needed": 8,
+                "weight": 1
+              },
+              {
+                "id": "none",
+                "carried": 8,
+                "needed": 8,
+                "weight": 1
+              }
+            ],
+            "personal": 9.2
+          },
+          "adjustments": [
+            {
+              "kind": "cylinder",
+              "amount": -1.9
+            },
+            {
+              "kind": "water",
+              "amount": 0,
+              "water": "fresh"
+            }
+          ],
+          "missing": [
+            {
+              "kind": "cylinder_material",
+              "diveIds": [
+                "rented"
+              ],
+              "planned": false
+            },
+            {
+              "kind": "cylinder",
+              "diveIds": [
+                "none"
+              ]
+            }
+          ],
+          "reserve": {
+            "bar": 50,
+            "fromDives": false
+          }
+        },
+        "service": {
+          "unit": "kg",
+          "total": 7.5,
+          "range": {
+            "low": 4.5,
+            "high": 10
+          },
+          "confidence": "medium",
+          "basis": {
+            "kind": "dives",
+            "dives": [
+              {
+                "id": "rented",
+                "carried": 8,
+                "needed": 8,
+                "weight": 1
+              },
+              {
+                "id": "none",
+                "carried": 8,
+                "needed": 8,
+                "weight": 1
+              }
+            ],
+            "personal": 9.2
+          },
+          "adjustments": [
+            {
+              "kind": "cylinder",
+              "amount": -1.9
+            },
+            {
+              "kind": "water",
+              "amount": 0,
+              "water": "fresh"
+            }
+          ],
+          "missing": [
+            {
+              "kind": "cylinder_material",
+              "diveIds": [
+                "rented"
+              ],
+              "planned": false
+            },
+            {
+              "kind": "cylinder",
+              "diveIds": [
+                "none"
+              ]
+            }
+          ],
+          "reserve": {
+            "bar": 50,
+            "fromDives": false
+          }
+        }
+      }
+    },
+    {
+      "id": "carbon-planned-cylinder",
+      "input": {
+        "dives": [],
+        "bodyWeightKg": 82,
+        "unit": "kg",
+        "today": "2026-10-13T12:00:00Z",
+        "plan": {
+          "water": "salt",
+          "suit": {
+            "type": "wetsuit",
+            "thicknessMm": 5,
+            "hood": false,
+            "undergarment": null
+          },
+          "cylinders": [
+            {
+              "volumeL": 12,
+              "material": "carbon"
+            }
+          ]
+        }
+      },
+      "expected": {
+        "kernel": {
+          "unit": "kg",
+          "total": 6.5,
+          "range": {
+            "low": 2,
+            "high": 11
+          },
+          "confidence": "low",
+          "basis": {
+            "kind": "rule_of_thumb",
+            "rule": 8.2,
+            "personalOffset": null,
+            "offsetFromSuits": 0
+          },
+          "adjustments": [
+            {
+              "kind": "cylinder",
+              "amount": -0.6
+            },
+            {
+              "kind": "water",
+              "amount": 2.8,
+              "water": "salt"
+            }
+          ],
+          "missing": [
+            {
+              "kind": "cylinder_material",
+              "diveIds": [],
+              "planned": true
+            }
+          ],
+          "reserve": {
+            "bar": 50,
+            "fromDives": false
+          }
+        },
+        "service": {
+          "unit": "kg",
+          "total": 6.5,
+          "range": {
+            "low": 2,
+            "high": 11
+          },
+          "confidence": "low",
+          "basis": {
+            "kind": "rule_of_thumb",
+            "rule": 8.2,
+            "personalOffset": null,
+            "offsetFromSuits": 0
+          },
+          "adjustments": [
+            {
+              "kind": "cylinder",
+              "amount": -0.6
+            },
+            {
+              "kind": "water",
+              "amount": 2.8,
+              "water": "salt"
+            }
+          ],
+          "missing": [
+            {
+              "kind": "cylinder_material",
+              "diveIds": [],
+              "planned": true
+            }
+          ],
+          "reserve": {
+            "bar": 50,
+            "fromDives": false
+          }
+        }
+      }
+    },
+    {
+      "id": "twin-24l-steel",
+      "input": {
+        "dives": [
+          {
+            "id": "twin",
+            "date": "2026-10-13T12:00:00Z",
+            "leadKg": 8,
+            "feedback": null,
+            "suit": {
+              "type": "wetsuit",
+              "thicknessMm": 7,
+              "hood": true,
+              "undergarment": null
+            },
+            "water": "fresh",
+            "cylinders": [
+              {
+                "volumeL": 24,
+                "material": "steel",
+                "endPressureBar": null
+              }
+            ]
+          }
+        ],
+        "bodyWeightKg": 82,
+        "unit": "kg",
+        "today": "2026-10-13T12:00:00Z",
+        "plan": {
+          "water": "fresh",
+          "suit": {
+            "type": "wetsuit",
+            "thicknessMm": 7,
+            "hood": true,
+            "undergarment": null
+          },
+          "cylinders": [
+            {
+              "volumeL": 24,
+              "material": "steel"
+            }
+          ]
+        }
+      },
+      "expected": {
+        "kernel": {
+          "unit": "kg",
+          "total": 8,
+          "range": {
+            "low": 6.5,
+            "high": 9.5
+          },
+          "confidence": "medium",
+          "basis": {
+            "kind": "dives",
+            "dives": [
+              {
+                "id": "twin",
+                "carried": 8,
+                "needed": 8,
+                "weight": 1
+              }
+            ],
+            "personal": 11.9
+          },
+          "adjustments": [
+            {
+              "kind": "cylinder",
+              "amount": -3.9
+            },
+            {
+              "kind": "water",
+              "amount": 0,
+              "water": "fresh"
+            }
+          ],
+          "missing": [],
+          "reserve": {
+            "bar": 50,
+            "fromDives": false
+          }
+        },
+        "service": {
+          "unit": "kg",
+          "total": 8,
+          "range": {
+            "low": 6.5,
+            "high": 9.5
+          },
+          "confidence": "medium",
+          "basis": {
+            "kind": "dives",
+            "dives": [
+              {
+                "id": "twin",
+                "carried": 8,
+                "needed": 8,
+                "weight": 1
+              }
+            ],
+            "personal": 11.9
+          },
+          "adjustments": [
+            {
+              "kind": "cylinder",
+              "amount": -3.9
+            },
+            {
+              "kind": "water",
+              "amount": 0,
+              "water": "fresh"
+            }
+          ],
+          "missing": [],
+          "reserve": {
+            "bar": 50,
+            "fromDives": false
+          }
+        }
+      }
+    },
+    {
+      "id": "age-halves-weight",
+      "input": {
+        "dives": [
+          {
+            "id": "four-years-ago",
+            "date": "2022-10-13T12:00:00.000Z",
+            "leadKg": 10,
+            "feedback": null,
+            "suit": {
+              "type": "wetsuit",
+              "thicknessMm": 7,
+              "hood": true,
+              "undergarment": null
+            },
+            "water": "fresh",
+            "cylinders": [
+              {
+                "volumeL": 12,
+                "material": "steel",
+                "endPressureBar": null
+              }
+            ]
+          },
+          {
+            "id": "today",
+            "date": "2026-10-13T12:00:00Z",
+            "leadKg": 6,
+            "feedback": null,
+            "suit": {
+              "type": "wetsuit",
+              "thicknessMm": 7,
+              "hood": true,
+              "undergarment": null
+            },
+            "water": "fresh",
+            "cylinders": [
+              {
+                "volumeL": 12,
+                "material": "steel",
+                "endPressureBar": null
+              }
+            ]
+          }
+        ],
+        "bodyWeightKg": 82,
+        "unit": "kg",
+        "today": "2026-10-13T12:00:00Z",
+        "plan": {
+          "water": "fresh",
+          "suit": {
+            "type": "wetsuit",
+            "thicknessMm": 7,
+            "hood": true,
+            "undergarment": null
+          },
+          "cylinders": [
+            {
+              "volumeL": 12,
+              "material": "steel"
+            }
+          ]
+        }
+      },
+      "expected": {
+        "kernel": {
+          "unit": "kg",
+          "total": 6,
+          "range": {
+            "low": 4.5,
+            "high": 7.5
+          },
+          "confidence": "medium",
+          "basis": {
+            "kind": "dives",
+            "dives": [
+              {
+                "id": "four-years-ago",
+                "carried": 10,
+                "needed": 10,
+                "weight": 0.25
+              },
+              {
+                "id": "today",
+                "carried": 6,
+                "needed": 6,
+                "weight": 1
+              }
+            ],
+            "personal": 7.9
+          },
+          "adjustments": [
+            {
+              "kind": "cylinder",
+              "amount": -1.9
+            },
+            {
+              "kind": "water",
+              "amount": 0,
+              "water": "fresh"
+            }
+          ],
+          "missing": [],
+          "reserve": {
+            "bar": 50,
+            "fromDives": false
+          }
+        },
+        "service": {
+          "unit": "kg",
+          "total": 6,
+          "range": {
+            "low": 4.5,
+            "high": 7.5
+          },
+          "confidence": "medium",
+          "basis": {
+            "kind": "dives",
+            "dives": [
+              {
+                "id": "four-years-ago",
+                "carried": 10,
+                "needed": 10,
+                "weight": 0.25
+              },
+              {
+                "id": "today",
+                "carried": 6,
+                "needed": 6,
+                "weight": 1
+              }
+            ],
+            "personal": 7.9
+          },
+          "adjustments": [
+            {
+              "kind": "cylinder",
+              "amount": -1.9
+            },
+            {
+              "kind": "water",
+              "amount": 0,
+              "water": "fresh"
+            }
+          ],
+          "missing": [],
+          "reserve": {
+            "bar": 50,
+            "fromDives": false
+          }
+        }
+      }
+    },
+    {
+      "id": "felt-right-weighs-twice",
+      "input": {
+        "dives": [
+          {
+            "id": "six",
+            "date": "2026-10-13T12:00:00Z",
+            "leadKg": 6,
+            "feedback": null,
+            "suit": {
+              "type": "wetsuit",
+              "thicknessMm": 7,
+              "hood": true,
+              "undergarment": null
+            },
+            "water": "fresh",
+            "cylinders": [
+              {
+                "volumeL": 12,
+                "material": "steel",
+                "endPressureBar": null
+              }
+            ]
+          },
+          {
+            "id": "ten",
+            "date": "2026-10-13T12:00:00Z",
+            "leadKg": 10,
+            "feedback": {
+              "felt": "right",
+              "amountKg": null
+            },
+            "suit": {
+              "type": "wetsuit",
+              "thicknessMm": 7,
+              "hood": true,
+              "undergarment": null
+            },
+            "water": "fresh",
+            "cylinders": [
+              {
+                "volumeL": 12,
+                "material": "steel",
+                "endPressureBar": null
+              }
+            ]
+          }
+        ],
+        "bodyWeightKg": 82,
+        "unit": "kg",
+        "today": "2026-10-13T12:00:00Z",
+        "plan": {
+          "water": "fresh",
+          "suit": {
+            "type": "wetsuit",
+            "thicknessMm": 7,
+            "hood": true,
+            "undergarment": null
+          },
+          "cylinders": [
+            {
+              "volumeL": 12,
+              "material": "steel"
+            }
+          ]
+        }
+      },
+      "expected": {
+        "kernel": {
+          "unit": "kg",
+          "total": 10,
+          "range": {
+            "low": 8.5,
+            "high": 11.5
+          },
+          "confidence": "medium",
+          "basis": {
+            "kind": "dives",
+            "dives": [
+              {
+                "id": "six",
+                "carried": 6,
+                "needed": 6,
+                "weight": 1
+              },
+              {
+                "id": "ten",
+                "carried": 10,
+                "needed": 10,
+                "weight": 2
+              }
+            ],
+            "personal": 11.9
+          },
+          "adjustments": [
+            {
+              "kind": "cylinder",
+              "amount": -1.9
+            },
+            {
+              "kind": "water",
+              "amount": 0,
+              "water": "fresh"
+            }
+          ],
+          "missing": [],
+          "reserve": {
+            "bar": 50,
+            "fromDives": false
+          }
+        },
+        "service": {
+          "unit": "kg",
+          "total": 10,
+          "range": {
+            "low": 8.5,
+            "high": 11.5
+          },
+          "confidence": "medium",
+          "basis": {
+            "kind": "dives",
+            "dives": [
+              {
+                "id": "six",
+                "carried": 6,
+                "needed": 6,
+                "weight": 1
+              },
+              {
+                "id": "ten",
+                "carried": 10,
+                "needed": 10,
+                "weight": 2
+              }
+            ],
+            "personal": 11.9
+          },
+          "adjustments": [
+            {
+              "kind": "cylinder",
+              "amount": -1.9
+            },
+            {
+              "kind": "water",
+              "amount": 0,
+              "water": "fresh"
+            }
+          ],
+          "missing": [],
+          "reserve": {
+            "bar": 50,
+            "fromDives": false
+          }
+        }
+      }
+    },
+    {
+      "id": "five-dives-spread-high-confidence",
+      "input": {
+        "dives": [
+          {
+            "id": "dive-4",
+            "date": "2026-10-13T12:00:00Z",
+            "leadKg": 4,
+            "feedback": null,
+            "suit": {
+              "type": "wetsuit",
+              "thicknessMm": 7,
+              "hood": true,
+              "undergarment": null
+            },
+            "water": "fresh",
+            "cylinders": [
+              {
+                "volumeL": 12,
+                "material": "steel",
+                "endPressureBar": null
+              }
+            ]
+          },
+          {
+            "id": "dive-6",
+            "date": "2026-10-13T12:00:00Z",
+            "leadKg": 6,
+            "feedback": null,
+            "suit": {
+              "type": "wetsuit",
+              "thicknessMm": 7,
+              "hood": true,
+              "undergarment": null
+            },
+            "water": "fresh",
+            "cylinders": [
+              {
+                "volumeL": 12,
+                "material": "steel",
+                "endPressureBar": null
+              }
+            ]
+          },
+          {
+            "id": "dive-8",
+            "date": "2026-10-13T12:00:00Z",
+            "leadKg": 8,
+            "feedback": null,
+            "suit": {
+              "type": "wetsuit",
+              "thicknessMm": 7,
+              "hood": true,
+              "undergarment": null
+            },
+            "water": "fresh",
+            "cylinders": [
+              {
+                "volumeL": 12,
+                "material": "steel",
+                "endPressureBar": null
+              }
+            ]
+          },
+          {
+            "id": "dive-10",
+            "date": "2026-10-13T12:00:00Z",
+            "leadKg": 10,
+            "feedback": null,
+            "suit": {
+              "type": "wetsuit",
+              "thicknessMm": 7,
+              "hood": true,
+              "undergarment": null
+            },
+            "water": "fresh",
+            "cylinders": [
+              {
+                "volumeL": 12,
+                "material": "steel",
+                "endPressureBar": null
+              }
+            ]
+          },
+          {
+            "id": "dive-12",
+            "date": "2026-10-13T12:00:00Z",
+            "leadKg": 12,
+            "feedback": null,
+            "suit": {
+              "type": "wetsuit",
+              "thicknessMm": 7,
+              "hood": true,
+              "undergarment": null
+            },
+            "water": "fresh",
+            "cylinders": [
+              {
+                "volumeL": 12,
+                "material": "steel",
+                "endPressureBar": null
+              }
+            ]
+          }
+        ],
+        "bodyWeightKg": 82,
+        "unit": "kg",
+        "today": "2026-10-13T12:00:00Z",
+        "plan": {
+          "water": "fresh",
+          "suit": {
+            "type": "wetsuit",
+            "thicknessMm": 7,
+            "hood": true,
+            "undergarment": null
+          },
+          "cylinders": [
+            {
+              "volumeL": 12,
+              "material": "steel"
+            }
+          ]
+        }
+      },
+      "expected": {
+        "kernel": {
+          "unit": "kg",
+          "total": 8,
+          "range": {
+            "low": 5,
+            "high": 11
+          },
+          "confidence": "high",
+          "basis": {
+            "kind": "dives",
+            "dives": [
+              {
+                "id": "dive-4",
+                "carried": 4,
+                "needed": 4,
+                "weight": 1
+              },
+              {
+                "id": "dive-6",
+                "carried": 6,
+                "needed": 6,
+                "weight": 1
+              },
+              {
+                "id": "dive-8",
+                "carried": 8,
+                "needed": 8,
+                "weight": 1
+              },
+              {
+                "id": "dive-10",
+                "carried": 10,
+                "needed": 10,
+                "weight": 1
+              },
+              {
+                "id": "dive-12",
+                "carried": 12,
+                "needed": 12,
+                "weight": 1
+              }
+            ],
+            "personal": 9.9
+          },
+          "adjustments": [
+            {
+              "kind": "cylinder",
+              "amount": -1.9
+            },
+            {
+              "kind": "water",
+              "amount": 0,
+              "water": "fresh"
+            }
+          ],
+          "missing": [],
+          "reserve": {
+            "bar": 50,
+            "fromDives": false
+          }
+        },
+        "service": {
+          "unit": "kg",
+          "total": 8,
+          "range": {
+            "low": 5,
+            "high": 11
+          },
+          "confidence": "high",
+          "basis": {
+            "kind": "dives",
+            "dives": [
+              {
+                "id": "dive-4",
+                "carried": 4,
+                "needed": 4,
+                "weight": 1
+              },
+              {
+                "id": "dive-6",
+                "carried": 6,
+                "needed": 6,
+                "weight": 1
+              },
+              {
+                "id": "dive-8",
+                "carried": 8,
+                "needed": 8,
+                "weight": 1
+              },
+              {
+                "id": "dive-10",
+                "carried": 10,
+                "needed": 10,
+                "weight": 1
+              },
+              {
+                "id": "dive-12",
+                "carried": 12,
+                "needed": 12,
+                "weight": 1
+              }
+            ],
+            "personal": 9.9
+          },
+          "adjustments": [
+            {
+              "kind": "cylinder",
+              "amount": -1.9
+            },
+            {
+              "kind": "water",
+              "amount": 0,
+              "water": "fresh"
+            }
+          ],
+          "missing": [],
+          "reserve": {
+            "bar": 50,
+            "fromDives": false
+          }
+        }
+      }
+    },
+    {
+      "id": "lb-unit-rule",
+      "input": {
+        "dives": [],
+        "bodyWeightKg": 82,
+        "unit": "lb",
+        "today": "2026-10-13T12:00:00Z",
+        "plan": {
+          "water": "salt",
+          "suit": {
+            "type": "wetsuit",
+            "thicknessMm": 5,
+            "hood": false,
+            "undergarment": null
+          },
+          "cylinders": [
+            {
+              "volumeL": 11.1,
+              "material": "aluminium"
+            }
+          ]
+        }
+      },
+      "expected": {
+        "kernel": {
+          "unit": "lb",
+          "total": 18,
+          "range": {
+            "low": 11,
+            "high": 25
+          },
+          "confidence": "low",
+          "basis": {
+            "kind": "rule_of_thumb",
+            "rule": 18.1,
+            "personalOffset": null,
+            "offsetFromSuits": 0
+          },
+          "adjustments": [
+            {
+              "kind": "cylinder",
+              "amount": 2.2
+            },
+            {
+              "kind": "water",
+              "amount": 6.2,
+              "water": "salt"
+            }
+          ],
+          "missing": [],
+          "reserve": {
+            "bar": 50,
+            "fromDives": false
+          }
+        },
+        "service": {
+          "unit": "lb",
+          "total": 18,
+          "range": {
+            "low": 11,
+            "high": 25
+          },
+          "confidence": "low",
+          "basis": {
+            "kind": "rule_of_thumb",
+            "rule": 18.1,
+            "personalOffset": null,
+            "offsetFromSuits": 0
+          },
+          "adjustments": [
+            {
+              "kind": "cylinder",
+              "amount": 2.2
+            },
+            {
+              "kind": "water",
+              "amount": 6.2,
+              "water": "salt"
+            }
+          ],
+          "missing": [],
+          "reserve": {
+            "bar": 50,
+            "fromDives": false
+          }
+        }
+      }
+    },
+    {
+      "id": "metric-rounds-half-kg",
+      "input": {
+        "dives": [
+          {
+            "id": "ten-point-seven",
+            "date": "2026-10-13T12:00:00Z",
+            "leadKg": 10.7,
+            "feedback": null,
+            "suit": {
+              "type": "wetsuit",
+              "thicknessMm": 7,
+              "hood": true,
+              "undergarment": null
+            },
+            "water": "fresh",
+            "cylinders": [
+              {
+                "volumeL": 12,
+                "material": "steel",
+                "endPressureBar": null
+              }
+            ]
+          }
+        ],
+        "bodyWeightKg": 82,
+        "unit": "kg",
+        "today": "2026-10-13T12:00:00Z",
+        "plan": {
+          "water": "fresh",
+          "suit": {
+            "type": "wetsuit",
+            "thicknessMm": 7,
+            "hood": true,
+            "undergarment": null
+          },
+          "cylinders": [
+            {
+              "volumeL": 12,
+              "material": "steel"
+            }
+          ]
+        }
+      },
+      "expected": {
+        "kernel": {
+          "unit": "kg",
+          "total": 10.5,
+          "range": {
+            "low": 9,
+            "high": 12
+          },
+          "confidence": "medium",
+          "basis": {
+            "kind": "dives",
+            "dives": [
+              {
+                "id": "ten-point-seven",
+                "carried": 10.7,
+                "needed": 10.7,
+                "weight": 1
+              }
+            ],
+            "personal": 12.6
+          },
+          "adjustments": [
+            {
+              "kind": "cylinder",
+              "amount": -1.9
+            },
+            {
+              "kind": "water",
+              "amount": 0,
+              "water": "fresh"
+            }
+          ],
+          "missing": [],
+          "reserve": {
+            "bar": 50,
+            "fromDives": false
+          }
+        },
+        "service": {
+          "unit": "kg",
+          "total": 10.5,
+          "range": {
+            "low": 9,
+            "high": 12
+          },
+          "confidence": "medium",
+          "basis": {
+            "kind": "dives",
+            "dives": [
+              {
+                "id": "ten-point-seven",
+                "carried": 10.7,
+                "needed": 10.7,
+                "weight": 1
+              }
+            ],
+            "personal": 12.6
+          },
+          "adjustments": [
+            {
+              "kind": "cylinder",
+              "amount": -1.9
+            },
+            {
+              "kind": "water",
+              "amount": 0,
+              "water": "fresh"
+            }
+          ],
+          "missing": [],
+          "reserve": {
+            "bar": 50,
+            "fromDives": false
+          }
+        }
+      }
+    },
+    {
+      "id": "zero-lead-and-unknown-lead",
+      "input": {
+        "dives": [
+          {
+            "id": "dry",
+            "date": "2026-10-13T12:00:00Z",
+            "leadKg": 0,
+            "feedback": null,
+            "suit": {
+              "type": "wetsuit",
+              "thicknessMm": 7,
+              "hood": true,
+              "undergarment": null
+            },
+            "water": "fresh",
+            "cylinders": [
+              {
+                "volumeL": 12,
+                "material": "steel",
+                "endPressureBar": null
+              }
+            ]
+          },
+          {
+            "id": "unknown",
+            "date": "2026-10-13T12:00:00Z",
+            "leadKg": null,
+            "feedback": null,
+            "suit": {
+              "type": "wetsuit",
+              "thicknessMm": 7,
+              "hood": true,
+              "undergarment": null
+            },
+            "water": "fresh",
+            "cylinders": [
+              {
+                "volumeL": 12,
+                "material": "steel",
+                "endPressureBar": null
+              }
+            ]
+          }
+        ],
+        "bodyWeightKg": 82,
+        "unit": "kg",
+        "today": "2026-10-13T12:00:00Z",
+        "plan": {
+          "water": "fresh",
+          "suit": {
+            "type": "wetsuit",
+            "thicknessMm": 7,
+            "hood": true,
+            "undergarment": null
+          },
+          "cylinders": [
+            {
+              "volumeL": 12,
+              "material": "steel"
+            }
+          ]
+        }
+      },
+      "expected": {
+        "kernel": {
+          "unit": "kg",
+          "total": 0,
+          "range": {
+            "low": 0,
+            "high": 1.5
+          },
+          "confidence": "medium",
+          "basis": {
+            "kind": "dives",
+            "dives": [
+              {
+                "id": "dry",
+                "carried": 0,
+                "needed": 0,
+                "weight": 1
+              }
+            ],
+            "personal": 1.9
+          },
+          "adjustments": [
+            {
+              "kind": "cylinder",
+              "amount": -1.9
+            },
+            {
+              "kind": "water",
+              "amount": 0,
+              "water": "fresh"
+            }
+          ],
+          "missing": [],
+          "reserve": {
+            "bar": 50,
+            "fromDives": false
+          }
+        },
+        "service": {
+          "unit": "kg",
+          "total": 0,
+          "range": {
+            "low": 0,
+            "high": 1.5
+          },
+          "confidence": "medium",
+          "basis": {
+            "kind": "dives",
+            "dives": [
+              {
+                "id": "dry",
+                "carried": 0,
+                "needed": 0,
+                "weight": 1
+              }
+            ],
+            "personal": 1.9
+          },
+          "adjustments": [
+            {
+              "kind": "cylinder",
+              "amount": -1.9
+            },
+            {
+              "kind": "water",
+              "amount": 0,
+              "water": "fresh"
+            }
+          ],
+          "missing": [],
+          "reserve": {
+            "bar": 50,
+            "fromDives": false
+          }
+        }
+      }
+    },
+    {
+      "id": "dive-without-suit-or-water-ignored",
+      "input": {
+        "dives": [
+          {
+            "id": "no-site",
+            "date": "2026-10-13T12:00:00Z",
+            "leadKg": 8,
+            "feedback": null,
+            "suit": {
+              "type": "wetsuit",
+              "thicknessMm": 7,
+              "hood": true,
+              "undergarment": null
+            },
+            "water": null,
+            "cylinders": [
+              {
+                "volumeL": 12,
+                "material": "steel",
+                "endPressureBar": null
+              }
+            ]
+          },
+          {
+            "id": "no-suit",
+            "date": "2026-10-13T12:00:00Z",
+            "leadKg": 8,
+            "feedback": null,
+            "suit": null,
+            "water": "fresh",
+            "cylinders": [
+              {
+                "volumeL": 12,
+                "material": "steel",
+                "endPressureBar": null
+              }
+            ]
+          },
+          {
+            "id": "no-hood",
+            "date": "2026-10-13T12:00:00Z",
+            "leadKg": 8,
+            "feedback": null,
+            "suit": {
+              "type": "wetsuit",
+              "thicknessMm": 7,
+              "hood": false,
+              "undergarment": null
+            },
+            "water": "fresh",
+            "cylinders": [
+              {
+                "volumeL": 12,
+                "material": "steel",
+                "endPressureBar": null
+              }
+            ]
+          }
+        ],
+        "bodyWeightKg": 82,
+        "unit": "kg",
+        "today": "2026-10-13T12:00:00Z",
+        "plan": {
+          "water": "fresh",
+          "suit": {
+            "type": "wetsuit",
+            "thicknessMm": 7,
+            "hood": true,
+            "undergarment": null
+          },
+          "cylinders": [
+            {
+              "volumeL": 12,
+              "material": "steel"
+            }
+          ]
+        }
+      },
+      "expected": {
+        "kernel": {
+          "unit": "kg",
+          "total": 10,
+          "range": {
+            "low": 8,
+            "high": 12
+          },
+          "confidence": "low",
+          "basis": {
+            "kind": "rule_of_thumb",
+            "rule": 10.2,
+            "personalOffset": 5.6,
+            "offsetFromSuits": 1
+          },
+          "adjustments": [
+            {
+              "kind": "personal_offset",
+              "amount": 5.6
+            },
+            {
+              "kind": "cylinder",
+              "amount": -1.9
+            },
+            {
+              "kind": "water",
+              "amount": 0,
+              "water": "fresh"
+            }
+          ],
+          "missing": [],
+          "reserve": {
+            "bar": 50,
+            "fromDives": false
+          }
+        },
+        "service": {
+          "unit": "kg",
+          "total": 10,
+          "range": {
+            "low": 8,
+            "high": 12
+          },
+          "confidence": "low",
+          "basis": {
+            "kind": "rule_of_thumb",
+            "rule": 10.2,
+            "personalOffset": 5.6,
+            "offsetFromSuits": 1
+          },
+          "adjustments": [
+            {
+              "kind": "personal_offset",
+              "amount": 5.6
+            },
+            {
+              "kind": "cylinder",
+              "amount": -1.9
+            },
+            {
+              "kind": "water",
+              "amount": 0,
+              "water": "fresh"
+            }
+          ],
+          "missing": [],
+          "reserve": {
+            "bar": 50,
+            "fromDives": false
+          }
+        }
+      }
+    },
+    {
+      "id": "feedback-too-light-default-1kg",
+      "input": {
+        "dives": [
+          {
+            "id": "too-light",
+            "date": "2026-10-13T12:00:00Z",
+            "leadKg": 8,
+            "feedback": {
+              "felt": "too_light",
+              "amountKg": null
+            },
+            "suit": {
+              "type": "wetsuit",
+              "thicknessMm": 7,
+              "hood": true,
+              "undergarment": null
+            },
+            "water": "fresh",
+            "cylinders": [
+              {
+                "volumeL": 12,
+                "material": "steel",
+                "endPressureBar": null
+              }
+            ]
+          }
+        ],
+        "bodyWeightKg": 82,
+        "unit": "kg",
+        "today": "2026-10-13T12:00:00Z",
+        "plan": {
+          "water": "fresh",
+          "suit": {
+            "type": "wetsuit",
+            "thicknessMm": 7,
+            "hood": true,
+            "undergarment": null
+          },
+          "cylinders": [
+            {
+              "volumeL": 12,
+              "material": "steel"
+            }
+          ]
+        }
+      },
+      "expected": {
+        "kernel": {
+          "unit": "kg",
+          "total": 9,
+          "range": {
+            "low": 7.5,
+            "high": 10.5
+          },
+          "confidence": "medium",
+          "basis": {
+            "kind": "dives",
+            "dives": [
+              {
+                "id": "too-light",
+                "carried": 8,
+                "needed": 9,
+                "weight": 1
+              }
+            ],
+            "personal": 10.9
+          },
+          "adjustments": [
+            {
+              "kind": "cylinder",
+              "amount": -1.9
+            },
+            {
+              "kind": "water",
+              "amount": 0,
+              "water": "fresh"
+            }
+          ],
+          "missing": [],
+          "reserve": {
+            "bar": 50,
+            "fromDives": false
+          }
+        },
+        "service": {
+          "unit": "kg",
+          "total": 9,
+          "range": {
+            "low": 7.5,
+            "high": 10.5
+          },
+          "confidence": "medium",
+          "basis": {
+            "kind": "dives",
+            "dives": [
+              {
+                "id": "too-light",
+                "carried": 8,
+                "needed": 9,
+                "weight": 1
+              }
+            ],
+            "personal": 10.9
+          },
+          "adjustments": [
+            {
+              "kind": "cylinder",
+              "amount": -1.9
+            },
+            {
+              "kind": "water",
+              "amount": 0,
+              "water": "fresh"
+            }
+          ],
+          "missing": [],
+          "reserve": {
+            "bar": 50,
+            "fromDives": false
+          }
+        }
+      }
+    },
+    {
+      "id": "body-weight-missing-with-dives",
+      "input": {
+        "dives": [
+          {
+            "id": "same-suit",
+            "date": "2026-10-13T12:00:00Z",
+            "leadKg": 8,
+            "feedback": null,
+            "suit": {
+              "type": "wetsuit",
+              "thicknessMm": 7,
+              "hood": true,
+              "undergarment": null
+            },
+            "water": "fresh",
+            "cylinders": [
+              {
+                "volumeL": 12,
+                "material": "steel",
+                "endPressureBar": null
+              }
+            ]
+          }
+        ],
+        "bodyWeightKg": null,
+        "unit": "kg",
+        "today": "2026-10-13T12:00:00Z",
+        "plan": {
+          "water": "fresh",
+          "suit": {
+            "type": "wetsuit",
+            "thicknessMm": 7,
+            "hood": true,
+            "undergarment": null
+          },
+          "cylinders": [
+            {
+              "volumeL": 12,
+              "material": "steel"
+            }
+          ]
+        }
+      },
+      "expected": {
+        "kernel": {
+          "unit": "kg",
+          "total": 8,
+          "range": {
+            "low": 6.5,
+            "high": 9.5
+          },
+          "confidence": "medium",
+          "basis": {
+            "kind": "dives",
+            "dives": [
+              {
+                "id": "same-suit",
+                "carried": 8,
+                "needed": 8,
+                "weight": 1
+              }
+            ],
+            "personal": 9.9
+          },
+          "adjustments": [
+            {
+              "kind": "cylinder",
+              "amount": -1.9
+            },
+            {
+              "kind": "water",
+              "amount": 0,
+              "water": "fresh"
+            }
+          ],
+          "missing": [
+            {
+              "kind": "body_weight"
+            }
+          ],
+          "reserve": {
+            "bar": 50,
+            "fromDives": false
+          }
+        },
+        "service": {
+          "unit": "kg",
+          "total": 8,
+          "range": {
+            "low": 6.5,
+            "high": 9.5
+          },
+          "confidence": "medium",
+          "basis": {
+            "kind": "dives",
+            "dives": [
+              {
+                "id": "same-suit",
+                "carried": 8,
+                "needed": 8,
+                "weight": 1
+              }
+            ],
+            "personal": 9.9
+          },
+          "adjustments": [
+            {
+              "kind": "cylinder",
+              "amount": -1.9
+            },
+            {
+              "kind": "water",
+              "amount": 0,
+              "water": "fresh"
+            }
+          ],
+          "missing": [
+            {
+              "kind": "body_weight"
+            }
+          ],
+          "reserve": {
+            "bar": 50,
+            "fromDives": false
+          }
+        }
+      }
+    }
+  ]
+}

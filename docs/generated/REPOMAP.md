@@ -4,7 +4,7 @@
 > `pnpm check` fails when this map is stale. Symbols are ranked by how widely the code references them;
 > each module shows its most-referenced ones (exported symbols rank higher). Search here before walking the tree.
 
-Files: 399 · symbols: 3650 · shown: 258
+Files: 400 · symbols: 3668 · shown: 255
 
 ### server/(root)
 apps/server/src/vocabulary.ts:13 type SiteWaterType
@@ -66,8 +66,8 @@ apps/server/src/certifications/certification-service.ts:120 fn createCertificati
 
 ### server/db
 apps/server/src/db/client.ts:5 type Db
-apps/server/src/db/schema.ts:661 const dive
 apps/server/src/db/client.ts:8 type Queryable
+apps/server/src/db/schema.ts:661 const dive
 apps/server/src/db/client.ts:6 type Tx
 apps/server/src/db/schema.ts:454 const diveSite
 apps/server/src/db/schema.ts:795 const recording
@@ -102,12 +102,11 @@ apps/server/src/dives/assessment-refresh.ts:7 iface AssessmentRefresh
 apps/server/src/dives/provider-port.ts:47 iface DiveWaitingPushes
 apps/server/src/dives/recording-units.ts:9 const isUnit
 apps/server/src/dives/weighting.ts:23 const leadTotalKg
+apps/server/src/dives/weighting.ts:96 iface Suit
 apps/server/src/dives/matching.ts:81 const DAY_MS
 apps/server/src/dives/logbook-service.ts:298 type LogbookService
 apps/server/src/dives/calc/sac.ts:52 fn sacOfDive
-apps/server/src/dives/dive-values.ts:6 iface DiveValues
-apps/server/src/dives/calc/real-gas.ts:25 const surfaceLitres
-… 304 more symbols in this module
+… 305 more symbols in this module
 
 ### server/equipment
 apps/server/src/equipment/usage.ts:37 fn usageMap
@@ -141,13 +140,13 @@ apps/server/src/imports/formats/uddf/xml.ts:141 const child
 … 147 more symbols in this module
 
 ### server/lead
-apps/server/src/lead/types.ts:16 iface EstimateDive
+apps/server/src/lead/test-vectors.ts:45 const dive
 apps/server/src/lead/types.ts:7 type LeadUnit
-apps/server/src/lead/types.ts:48 type EstimateBasis
-apps/server/src/lead/lead-service.ts:61 fn createLeadService
+apps/server/src/lead/types.ts:9 iface EstimateCylinder
+apps/server/src/lead/types.ts:16 iface EstimateDive
 apps/server/src/lead/estimate.ts:264 fn estimateLead
-apps/server/src/lead/lead-service.ts:25 fn leadEstimateOf
-… 72 more symbols in this module
+apps/server/src/lead/lead-service.ts:61 fn createLeadService
+… 89 more symbols in this module
 
 ### server/live
 apps/server/src/live/emit.ts:38 fn emitHint
@@ -206,8 +205,7 @@ apps/server/src/providers/dive-import/three-way.ts:11 type SyncedField
 apps/server/src/providers/push/outgoing-dive.ts:64 fn loadOutgoingDive
 apps/server/src/providers/provider.ts:205 iface OutgoingDive
 apps/server/src/providers/provider.ts:83 type DiveField
-apps/server/src/providers/dive-import/three-way.ts:10 const SYNCED_FIELDS
-… 496 more symbols in this module
+… 497 more symbols in this module
 
 ### server/revisions
 apps/server/src/revisions/revisions.ts:79 fn writeRevision
@@ -219,6 +217,7 @@ apps/server/src/revisions/revisions.ts:32 type RevisionCause
 … 5 more symbols in this module
 
 ### server/scripts
+apps/server/src/scripts/write-planning-vectors.ts:9 const write
 apps/server/src/scripts/write-openapi.ts:24 const out
 apps/server/src/scripts/write-openapi.ts:22 const app
 apps/server/src/scripts/write-openapi.ts:17 const services
@@ -291,8 +290,7 @@ apps/web/src/ImportPanel.tsx:39 const ImportContext
 apps/web/src/ReviewRows.tsx:6 iface Fact
 apps/web/src/SignedOut.tsx:20 fn useUserChanged
 apps/web/src/ProfilePlot.tsx:14 fn withAlpha
-apps/web/src/ReviewRows.tsx:37 fn Candidates
-… 511 more symbols in this module
+… 512 more symbols in this module
 
 ### web/api
 apps/web/src/api/request.ts:59 fn unwrap
@@ -336,8 +334,7 @@ apps/web/src/lib/form.ts:4 const formValues
 apps/web/src/lib/devices.ts:18 const deviceName
 apps/web/src/lib/review.ts:16 fn reviewHref
 apps/web/src/lib/providers.ts:55 fn useProviderOf
-apps/web/src/lib/providers.ts:52 type ProviderRef
-… 361 more symbols in this module
+… 362 more symbols in this module
 
 ### web/ui
 apps/web/src/ui/Layout.tsx:85 fn Notice
