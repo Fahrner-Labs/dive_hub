@@ -22,6 +22,10 @@ export const OPERATIONS = [
   { name: 'SignInEmailRequest', path: '/api/auth/sign-in/email', method: 'post', kind: 'request' },
   { name: 'ApiMeGet200Response', path: '/api/me', method: 'get', kind: 'response', status: '200' },
   { name: 'ApiDivesGet200Response', path: '/api/dives', method: 'get', kind: 'response', status: '200' },
+  // The offline sync's phase 1 (slice D2): the Divers the User keeps, their body weights, and the paged Dive sites.
+  { name: 'DiverView', path: '/api/divers', method: 'get', kind: 'response', status: '200' },
+  { name: 'ApiDiverBodyWeightsGet200ResponseItem', path: '/api/divers/{id}/body-weights', method: 'get', kind: 'response', status: '200' },
+  { name: 'ApiDiveSitesGet200Response', path: '/api/dive-sites', method: 'get', kind: 'response', status: '200' },
   // The dive page (slice C2): the Dive itself, its neighbours in the list it was opened from (ADR 0042), and the
   // Primary recording's samples for the depth profile.
   { name: 'DiveView', path: '/api/dives/{id}', method: 'get', kind: 'response', status: '200' },

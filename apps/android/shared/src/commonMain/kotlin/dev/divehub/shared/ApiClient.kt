@@ -29,7 +29,8 @@ data class ApiErrorBody(
 
 /**
  * One HTTP layer for the shared core: instance base URL, the bearer token, one retry only for a network failure or a
- * 5xx, and a 401 that ends the session (client contract §2).
+ * 5xx, and a 401 that ends the session (client contract §2). A caller with its own retry policy (the sync engine)
+ * turns that retry off.
  */
 class ApiClient(
     engine: HttpClientEngine,
@@ -44,11 +45,11 @@ class ApiClient(
         install(ContentNegotiation) { json(json) }
     }
 
-    suspend fun get(path: String, authenticated: Boolean = true): HttpResponse =
-        send(HttpMethod.Get, path, null, authenticated)
+    suspend fun get(path: String, authenticated: Boolean = true, retry: Boolean = true): HttpResponse =
+        send(HttpMethod.Get, path, null, authenticated, retry)
 
     suspend fun post(path: String, body: String? = null, authenticated: Boolean = true): HttpResponse =
-        send(HttpMethod.Post, path, body, authenticated)
+        send(HttpMethod.Post, path, body, authenticated, retry = true)
 
     suspend inline fun <reified T> decode(response: HttpResponse): T = response.body()
 
@@ -83,7 +84,13 @@ class ApiClient(
         return DiveHubException(code, response.status.value, body?.message ?: body?.error)
     }
 
-    private suspend fun send(method: HttpMethod, path: String, body: String?, authenticated: Boolean): HttpResponse {
+    private suspend fun send(
+        method: HttpMethod,
+        path: String,
+        body: String?,
+        authenticated: Boolean,
+        retry: Boolean,
+    ): HttpResponse {
         check(baseUrl.isNotEmpty()) { "the instance URL is not set" }
         var attempts = 0
         while (true) {
@@ -96,7 +103,7 @@ class ApiClient(
                     }
                     if (authenticated) token()?.let { header(HttpHeaders.Authorization, "Bearer $it") }
                 }
-                if (response.status.value in 500..599 && attempts == 0) {
+                if (retry && response.status.value in 500..599 && attempts == 0) {
                     attempts += 1
                     response.bodyAsText()
                     continue
@@ -106,7 +113,7 @@ class ApiClient(
             } catch (error: CancellationException) {
                 throw error
             } catch (error: IOException) {
-                if (attempts == 0) {
+                if (retry && attempts == 0) {
                     attempts += 1
                     continue
                 }

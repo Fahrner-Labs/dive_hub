@@ -14,8 +14,9 @@ interface InstanceUrlStore {
 }
 
 /**
- * Everything cached for the signed-in User. It is dropped on sign-in, sign-out and a 401, so the next person at a
- * shared device sees nothing of the previous one (client contract §1 Security, a must).
+ * Everything cached for the signed-in User. It is dropped on sign-in, sign-out and any other change of User, so the
+ * next person at a shared device sees nothing of the previous one (client contract §1 Security, a must). A 401 is not
+ * a change of User: a revoked session keeps the read store readable offline (client contract, Offline reads).
  */
 interface UserScopedStore {
     suspend fun forget()

@@ -26,7 +26,8 @@ sealed interface SessionState {
 
 /**
  * Sign-in, sign-out and the stored session (ADR 0074). It owns the one rule that spans calls: a 401 anywhere ends the
- * session, and both sign-in and sign-out forget everything about the previous User (client contract §1 and §2).
+ * session, and both sign-in and sign-out forget everything about the previous User (client contract §1 and §2). A 401
+ * is not a change of User: the cached store stays readable offline (client contract, Offline reads).
  */
 class SessionRepository(
     engine: HttpClientEngine,
@@ -39,7 +40,7 @@ class SessionRepository(
         explicitNulls = false
         encodeDefaults = false
     }
-    private val api = ApiClient(engine, token = { tokens.load() }, onUnauthorized = { forgetUser() }, json = json)
+    private val api = ApiClient(engine, token = { tokens.load() }, onUnauthorized = { endSession() }, json = json)
 
     /** The signed-in User's HTTP layer, for repositories that read their data (the logbook). */
     val client: ApiClient get() = api
@@ -145,6 +146,12 @@ class SessionRepository(
             else -> body?.code ?: ErrorCodes.SERVER_ERROR
         }
         return DiveHubException(code, response.status.value, body?.message ?: body?.error)
+    }
+
+    /** A 401: only the expired token goes; the read store stays readable until the next User change. */
+    private suspend fun endSession() {
+        tokens.clear()
+        _state.value = SessionState.SignedOut(instances.load())
     }
 
     private suspend fun forgetUser() {
