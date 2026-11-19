@@ -51,6 +51,9 @@ class SessionRepository(
     /** The instance URL the sign-in screen starts from, if one was used before. */
     suspend fun knownInstance(): String? = instances.load()
 
+    /** Whether this device holds both an instance and a session token: what a background sync needs before a request. */
+    suspend fun hasSession(): Boolean = instances.load() != null && tokens.load() != null
+
     /** A stored token is proven by GET /api/me; without one (or after a 401) the sign-in screen shows. */
     suspend fun restore(): SessionState {
         val url = instances.load()

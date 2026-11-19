@@ -51,6 +51,13 @@ class ApiClient(
     suspend fun post(path: String, body: String? = null, authenticated: Boolean = true): HttpResponse =
         send(HttpMethod.Post, path, body, authenticated, retry = true)
 
+    /**
+     * Open a long-lived response without reading it (the live hint stream, ADR 0066). No retry: the caller owns
+     * reconnect timing, and a stream that fails must hand back to polling rather than block here.
+     */
+    suspend fun stream(path: String, authenticated: Boolean = true): HttpResponse =
+        send(HttpMethod.Get, path, null, authenticated, retry = false)
+
     suspend inline fun <reified T> decode(response: HttpResponse): T = response.body()
 
     /** The body of a refusal, if it has one; never used for a message to the person. */

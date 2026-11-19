@@ -3,25 +3,35 @@ package dev.divehub.shared.sync
 import dev.divehub.api.models.ApiDiveSitesGet200Response
 import dev.divehub.api.models.ApiDiverBodyWeightsGet200ResponseItem
 import dev.divehub.api.models.ApiDivesGet200Response
+import dev.divehub.api.models.DeletedDivesPage
 import dev.divehub.api.models.DiverView
 import dev.divehub.api.models.DiveView
+import dev.divehub.api.models.RecordingSamplesView
+import dev.divehub.api.models.SiteView
 import dev.divehub.shared.ApiClient
 import dev.divehub.shared.DiveHubException
 import dev.divehub.shared.NoAnswerException
 import dev.divehub.shared.store.DiveStore
+import dev.divehub.shared.store.Recording
+import dev.divehub.shared.store.RecordingSeries
 import dev.divehub.shared.store.SyncCheckpoint
 import io.ktor.client.statement.HttpResponse
+import io.ktor.http.encodeURLParameter
 import io.ktor.http.isSuccess
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import kotlin.time.Clock
 
-/** The two phases this slice syncs, in their strict order (FAH-265 plan §3). */
-enum class SyncPhase { Meta, Details }
+/** The sync phases in their strict order (FAH-265 plan §3); profiles is the background, cancellable one. */
+enum class SyncPhase { Meta, Details, Profiles }
 
-/** What one [SyncEngine.sync] call did. */
+/** What one [SyncEngine] call did. */
 sealed interface SyncResult {
-    /** Both phases are complete and the store is the logbook. */
+    /** The work asked for is complete and the store is the logbook. */
     data object Complete : SyncResult
 
     /** A 401 ended the session: the engine stops and cached data stays readable (client contract §2). */
@@ -33,25 +43,34 @@ sealed interface SyncResult {
 
 /**
  * The per-phase state the UI reads for its sync line and staleness label: how much of each phase is in the store.
+ *
+ * `profilesDone` and `divesAwaitingProfiles` are derived from the per-Dive profile checkpoints, so a Dive whose detail
+ * changed is counted pending again until phase 3 has refetched its samples.
  */
 data class SyncProgress(
     val lastFullSyncAt: String?,
+    val lastHintAt: String?,
     val metaDone: Boolean,
     val detailsDone: Boolean,
+    val profilesDone: Boolean,
     val storedDivers: Long,
     val storedBodyWeights: Long,
     val storedDiveSites: Long,
     val storedDives: Long,
     val detailedDives: Long,
+    val divesAwaitingProfiles: Long,
 )
 
 /**
- * The checkpointed sync loop (FAH-265 plan §3–§4). Every page is fetched, written and checkpointed in one store
- * transaction, so an interruption resumes the exact phase and offset and a crash never double-writes a page. The
- * cursor is cursor-shaped even while V1 pulls full pages, so the later change feed can replace the page source.
+ * The checkpointed sync loop (FAH-265 plan §3–§4): the initial phases 1–2, the background profiles phase, and the
+ * incremental refresh (ADR 0066). Every page is fetched, written and checkpointed in one store transaction, so an
+ * interruption resumes the exact phase and offset and a crash never double-writes a page.
  *
- * Phase 1 (meta) makes the logbook list render offline; phase 2 (details) makes the dive page render offline. The
- * engine has no Android imports: the app's WorkManager trigger arrives later, behind this plain `suspend` call.
+ * Phase 1 (meta) makes the logbook list render offline; phase 2 (details) makes the dive page render offline; phase 3
+ * fetches each Recording's sample series at the explicit 20,000-point cap the server allows (verified in FAH-269).
+ * A refresh re-runs phase 1, fetches details for new Dives and writes deletion tombstones; hints narrow that to one Dive
+ * or site. The engine has no Android imports: the app's foreground poll and WorkManager trigger arrive behind plain
+ * `suspend` calls and [PeriodicSyncScheduler].
  */
 class SyncEngine(
     private val api: ApiClient,
@@ -59,11 +78,14 @@ class SyncEngine(
     private val clock: () -> String = { Clock.System.now().toString() },
     private val backoff: suspend (attempt: Int) -> Unit = { delay(RETRY_BACKOFF_MS * it) },
 ) {
-    /** Run or resume both phases. A completed sync is a no-op until the refresh slice (D3) adds its triggers. */
-    suspend fun sync(): SyncResult {
-        if (store.syncState().lastFullSyncAt != null) return SyncResult.Complete
+    private val lock = Mutex()
+    private val json = Json { ignoreUnknownKeys = true; explicitNulls = false }
+
+    /** Run or resume the initial phases 1–2. A completed sync is a no-op; [refresh] owns the later triggers. */
+    suspend fun sync(): SyncResult = lock.withLock {
+        if (store.syncState().lastFullSyncAt != null) return@withLock SyncResult.Complete
         var phase = SyncPhase.Meta
-        return try {
+        return@withLock try {
             syncMeta(now = clock())
             phase = SyncPhase.Details
             syncDetails(now = clock())
@@ -78,17 +100,102 @@ class SyncEngine(
         }
     }
 
+    /**
+     * Phase 3: each active Dive's Recordings, lowest priority and cancellable. A Dive is done only after all its
+     * recordings are stored, so the UI can mark profiles "not yet synced" per Dive and the next run resumes there.
+     */
+    suspend fun syncProfiles(): SyncResult = lock.withLock {
+        try {
+            syncProfilesInternal(now = clock())
+            SyncResult.Complete
+        } catch (error: CancellationException) {
+            throw error
+        } catch (error: DiveHubException) {
+            if (error.status == 401) SyncResult.SessionEnded else SyncResult.Stopped(SyncPhase.Profiles, error)
+        } catch (error: NoAnswerException) {
+            SyncResult.Stopped(SyncPhase.Profiles, error)
+        }
+    }
+
+    /**
+     * The reconnect and polling path: phase 1 again, details for Dives that only have a list row, and the deleted-Dives
+     * cursor. It marks a full sync when it ends, because the store is then current as of now.
+     */
+    suspend fun refresh(): SyncResult = lock.withLock {
+        try {
+            refreshInternal(now = clock())
+            SyncResult.Complete
+        } catch (error: CancellationException) {
+            throw error
+        } catch (error: DiveHubException) {
+            if (error.status == 401) SyncResult.SessionEnded else SyncResult.Stopped(SyncPhase.Meta, error)
+        } catch (error: NoAnswerException) {
+            SyncResult.Stopped(SyncPhase.Meta, error)
+        }
+    }
+
+    /**
+     * A `dive` hint: list page 1 keeps the row's current summary, the detail replaces the cached values wholesale, and
+     * the Dive's profile checkpoint goes back to pending so the background phase refetches its samples. A 404 means the
+     * Dive was deleted meanwhile; it becomes a tombstone, never a local hard delete.
+     */
+    suspend fun applyDiveHint(id: String): SyncResult = lock.withLock {
+        val now = clock()
+        try {
+            refreshDiveListPageOne(now)
+            fetchAndStoreDetail(id, now)
+            markHint(now)
+            SyncResult.Complete
+        } catch (error: CancellationException) {
+            throw error
+        } catch (error: DiveHubException) {
+            if (error.status == 401) SyncResult.SessionEnded else SyncResult.Stopped(SyncPhase.Details, error)
+        } catch (error: NoAnswerException) {
+            SyncResult.Stopped(SyncPhase.Details, error)
+        }
+    }
+
+    /** A `site` hint: refetch that one Dive site through the normal API. A site gone meanwhile leaves the cache as is. */
+    suspend fun applySiteHint(id: String): SyncResult = lock.withLock {
+        val now = clock()
+        try {
+            try {
+                val site = fetchJson<SiteView>("/api/dive-sites/${id.encodeURLParameter()}")
+                store.transaction { store.upsertDiveSite(site.toStore()) }
+            } catch (error: DiveHubException) {
+                if (error.status != 404) throw error
+            }
+            markHint(now)
+            SyncResult.Complete
+        } catch (error: CancellationException) {
+            throw error
+        } catch (error: DiveHubException) {
+            if (error.status == 401) SyncResult.SessionEnded else SyncResult.Stopped(SyncPhase.Meta, error)
+        } catch (error: NoAnswerException) {
+            SyncResult.Stopped(SyncPhase.Meta, error)
+        }
+    }
+
+    /** Whether this Dive's profiles (all its Recordings' series) are in the store; the UI's per-Dive marker reads it. */
+    fun profileSynced(diveId: String): Boolean =
+        store.checkpoint(profileEntity(diveId), PHASE_PROFILES)?.done == true
+
     /** The store's per-phase counts, read in one transaction so a concurrent write cannot mix two snapshots. */
     fun progress(): SyncProgress = store.transaction {
+        val active = store.allDives().filter { it.deletedAt == null }
+        val awaiting = active.count { !profileSynced(it.id) }
         SyncProgress(
             lastFullSyncAt = store.syncState().lastFullSyncAt,
+            lastHintAt = store.syncState().lastHintAt,
             metaDone = metaDone(),
-            detailsDone = store.checkpoint(ENTITY_DIVE_DETAILS, PHASE_DETAILS)?.done == true,
+            detailsDone = active.all { it.version != null },
+            profilesDone = awaiting == 0,
             storedDivers = store.divers().size.toLong(),
             storedBodyWeights = store.allBodyWeights().size.toLong(),
             storedDiveSites = store.diveSites().size.toLong(),
             storedDives = store.activeDiveCount(),
-            detailedDives = store.checkpoint(ENTITY_DIVE_DETAILS, PHASE_DETAILS)?.pageOffset ?: 0,
+            detailedDives = active.count { it.version != null }.toLong(),
+            divesAwaitingProfiles = awaiting.toLong(),
         )
     }
 
@@ -160,7 +267,7 @@ class SyncEngine(
             val next = offset + page.dives.size
             val done = page.dives.isEmpty() || next >= page.total
             store.transaction {
-                page.dives.forEach { store.upsertDive(it.toStore()) }
+                page.dives.forEach { store.upsertDive(it.toStore(store.diveIncludingDeleted(it.id))) }
                 store.saveCheckpoint(checkpoint(ENTITY_DIVES, PHASE_META, cursor = null, pageOffset = next, done = done, now = now))
             }
             if (done) return
@@ -205,9 +312,10 @@ class SyncEngine(
                     )
                 }
             } catch (error: DiveHubException) {
-                // Deleted between the list and this fetch: the tombstone is a later slice; skip it for now.
+                // Deleted between the list and this fetch: leave a tombstone and move on.
                 if (error.status != 404) throw error
                 store.transaction {
+                    store.markDiveDeleted(dive.id, now)
                     store.saveCheckpoint(
                         checkpoint(ENTITY_DIVE_DETAILS, PHASE_DETAILS, dive.id, next.toLong(), done, now),
                     )
@@ -216,10 +324,227 @@ class SyncEngine(
         }
     }
 
+    private suspend fun syncProfilesInternal(now: String) {
+        // A snapshot: a Dive that arrives during the phase is picked up by the next run.
+        for (dive in store.allDives()) {
+            if (dive.deletedAt != null) continue
+            if (profileSynced(dive.id)) continue
+            syncDiveProfiles(dive.id, now)
+        }
+    }
+
+    private suspend fun syncDiveProfiles(diveId: String, now: String) {
+        val recordings = store.recordings(diveId)
+        val existing = store.checkpoint(profileEntity(diveId), PHASE_PROFILES)
+        val start = existing?.pageOffset?.toInt()?.coerceAtLeast(0) ?: 0
+        if (start >= recordings.size) {
+            store.transaction {
+                store.saveCheckpoint(SyncCheckpoint(profileEntity(diveId), PHASE_PROFILES, cursor = null, pageOffset = recordings.size.toLong(), done = true, updatedAt = now))
+            }
+            return
+        }
+        for (index in start until recordings.size) {
+            syncRecordingProfiles(recordings[index], now)
+            val next = index + 1
+            store.transaction {
+                store.saveCheckpoint(
+                    SyncCheckpoint(
+                        entity = profileEntity(diveId),
+                        phase = PHASE_PROFILES,
+                        cursor = null,
+                        pageOffset = next.toLong(),
+                        done = next >= recordings.size,
+                        updatedAt = now,
+                    ),
+                )
+            }
+        }
+    }
+
+    private suspend fun syncRecordingProfiles(recording: Recording, now: String) {
+        val channels = channelsOf(recording)
+        if (channels.isEmpty()) return
+        val wanted = channels.joinToString(",") { it.encodeURLParameter() }
+        val samples = fetchJson<RecordingSamplesView>(
+            "/api/recordings/${recording.id.encodeURLParameter()}/samples?channels=$wanted&maxPoints=$MAX_PROFILE_POINTS",
+        )
+        store.transaction {
+            // A refetch replaces the Recording's channels: one the server no longer reports must not linger.
+            store.deleteSeries(recording.id)
+            samples.series.forEach { series ->
+                store.upsertSeries(
+                    RecordingSeries(
+                        recordingId = recording.id,
+                        channel = series.channel,
+                        offsetsMsJson = json.encodeToString(series.offsetsMs),
+                        valuesJson = json.encodeToString(series.values),
+                        fetchedAt = now,
+                    ),
+                )
+            }
+        }
+    }
+
+    private suspend fun refreshInternal(now: String) {
+        refreshDivers(now)
+        refreshBodyWeights(now)
+        refreshDiveSites(now)
+        refreshDives(now)
+        // Tombstones before the new details: a Dive deleted meanwhile must not be fetched as if it were new.
+        syncTombstones(now)
+        refreshNewDetails(now)
+        markFullSync(now)
+    }
+
+    private suspend fun refreshDivers(now: String) {
+        val divers = fetchJson<List<DiverView>>("/api/divers")
+        store.transaction {
+            divers.forEach { store.upsertDiver(it.toStore()) }
+            store.saveCheckpoint(checkpoint(ENTITY_DIVERS, PHASE_META, cursor = null, pageOffset = null, done = true, now = now))
+        }
+    }
+
+    private suspend fun refreshBodyWeights(now: String) {
+        val divers = store.divers()
+        for ((index, diver) in divers.withIndex()) {
+            val weights = fetchJson<List<ApiDiverBodyWeightsGet200ResponseItem>>("/api/divers/${diver.id}/body-weights")
+            val next = index + 1
+            store.transaction {
+                weights.forEach { store.upsertBodyWeight(it.toStore(diver.id)) }
+                store.saveCheckpoint(
+                    checkpoint(ENTITY_BODY_WEIGHTS, PHASE_META, diver.id, next.toLong(), next >= divers.size, now),
+                )
+            }
+        }
+    }
+
+    private suspend fun refreshDiveSites(now: String) {
+        var offset = 0L
+        while (true) {
+            val page = fetchJson<ApiDiveSitesGet200Response>("/api/dive-sites?limit=${DiveStore.DEFAULT_PAGE_SIZE}&offset=$offset")
+            val next = offset + page.sites.size
+            val done = page.sites.isEmpty() || next >= page.total
+            store.transaction {
+                page.sites.forEach { store.upsertDiveSite(it.toStore()) }
+                store.saveCheckpoint(checkpoint(ENTITY_DIVE_SITES, PHASE_META, cursor = null, pageOffset = next, done = done, now = now))
+            }
+            if (done) return
+            offset = next
+        }
+    }
+
+    private suspend fun refreshDives(now: String) {
+        var offset = 0L
+        while (true) {
+            val page = fetchJson<ApiDivesGet200Response>("/api/dives?limit=${DiveStore.DEFAULT_PAGE_SIZE}&offset=$offset")
+            val next = offset + page.dives.size
+            val done = page.dives.isEmpty() || next >= page.total
+            store.transaction {
+                page.dives.forEach { store.upsertDive(it.toStore(store.diveIncludingDeleted(it.id))) }
+                store.saveCheckpoint(checkpoint(ENTITY_DIVES, PHASE_META, cursor = null, pageOffset = next, done = done, now = now))
+            }
+            if (done) return
+            offset = next
+        }
+    }
+
+    /** `GET /api/dives/deleted`, paged by its opaque cursor; each row becomes a local tombstone, nothing is deleted. */
+    private suspend fun syncTombstones(now: String) {
+        val existing = store.checkpoint(ENTITY_DELETED_DIVES, PHASE_TOMBSTONES)
+        var cursor = existing?.takeUnless { it.done }?.cursor
+        while (true) {
+            val query = cursor?.let { "&cursor=${it.encodeURLParameter()}" }.orEmpty()
+            val page = fetchJson<DeletedDivesPage>("/api/dives/deleted?limit=${DiveStore.DEFAULT_PAGE_SIZE}$query")
+            val next = page.nextCursor
+            store.transaction {
+                page.dives.forEach { store.markDiveDeleted(it.id, it.deletedAt, it.version.toLong()) }
+                store.saveCheckpoint(
+                    SyncCheckpoint(
+                        entity = ENTITY_DELETED_DIVES,
+                        phase = PHASE_TOMBSTONES,
+                        cursor = next,
+                        pageOffset = null,
+                        done = next == null,
+                        updatedAt = now,
+                    ),
+                )
+            }
+            if (next == null) return
+            cursor = next
+        }
+    }
+
+    private suspend fun refreshNewDetails(now: String) {
+        val pending = store.allDives().filter { it.deletedAt == null && it.version == null }
+        for (dive in pending) fetchAndStoreDetail(dive.id, now)
+        store.transaction {
+            store.saveCheckpoint(
+                checkpoint(ENTITY_DIVE_DETAILS, PHASE_DETAILS, cursor = null, pageOffset = store.activeDiveCount(), done = true, now = now),
+            )
+        }
+    }
+
+    private suspend fun refreshDiveListPageOne(now: String) {
+        val page = fetchJson<ApiDivesGet200Response>("/api/dives?limit=${DiveStore.DEFAULT_PAGE_SIZE}&offset=0")
+        store.transaction {
+            page.dives.forEach { store.upsertDive(it.toStore(store.diveIncludingDeleted(it.id))) }
+            store.saveCheckpoint(checkpoint(ENTITY_DIVES, PHASE_META, cursor = null, pageOffset = page.dives.size.toLong(), done = true, now = now))
+        }
+    }
+
+    /**
+     * One Dive's detail into the store, with its profile checkpoint back to pending. A 404 writes a tombstone: a hint
+     * arrived for a Dive deleted elsewhere, and the cached row is kept rather than removed.
+     */
+    private suspend fun fetchAndStoreDetail(diveId: String, now: String): Boolean = try {
+        val detail = fetchJson<DiveView>("/api/dives/${diveId.encodeURLParameter()}")
+        store.transaction {
+            store.upsertDive(detail.toStore(store.diveIncludingDeleted(diveId)))
+            detail.recordings.forEach { store.upsertRecording(it.toStore(diveId)) }
+            detail.cylinders.forEachIndexed { position, cylinder ->
+                store.upsertCylinder(cylinder.toStore(diveId, position.toLong()))
+            }
+            store.saveCheckpoint(pendingProfileCheckpoint(diveId, now))
+        }
+        true
+    } catch (error: DiveHubException) {
+        if (error.status != 404) throw error
+        store.transaction {
+            store.markDiveDeleted(diveId, now)
+            store.saveCheckpoint(pendingProfileCheckpoint(diveId, now))
+        }
+        false
+    }
+
+    private fun pendingProfileCheckpoint(diveId: String, now: String): SyncCheckpoint = SyncCheckpoint(
+        entity = profileEntity(diveId),
+        phase = PHASE_PROFILES,
+        cursor = null,
+        pageOffset = 0,
+        done = false,
+        updatedAt = now,
+    )
+
+    /** The channel names the detail pass listed; a malformed local value means no profiles rather than a failed phase. */
+    private fun channelsOf(recording: Recording): List<String> = try {
+        json.decodeFromString<List<String>>(recording.channelsJson)
+    } catch (_: Exception) {
+        emptyList()
+    }
+
+    private fun profileEntity(diveId: String): String = "$ENTITY_PROFILE_PREFIX$diveId"
+
     private fun markFullSync(now: String) {
         store.transaction {
             val state = store.syncState()
             store.saveSyncState(state.copy(lastFullSyncAt = now))
+        }
+    }
+
+    private fun markHint(now: String) {
+        store.transaction {
+            val state = store.syncState()
+            store.saveSyncState(state.copy(lastHintAt = now))
         }
     }
 
@@ -270,12 +595,19 @@ class SyncEngine(
     private companion object {
         const val PHASE_META = "meta"
         const val PHASE_DETAILS = "details"
+        const val PHASE_PROFILES = "profiles"
         const val ENTITY_DIVERS = "divers"
         const val ENTITY_BODY_WEIGHTS = "body_weights"
         const val ENTITY_DIVE_SITES = "dive_sites"
         const val ENTITY_DIVES = "dives"
         const val ENTITY_DIVE_DETAILS = "dive_details"
+        const val ENTITY_DELETED_DIVES = "deleted_dives"
+        const val ENTITY_PROFILE_PREFIX = "profiles:"
+        const val PHASE_TOMBSTONES = "tombstones"
         const val MAX_RETRIES = 1
         const val RETRY_BACKOFF_MS = 1_000L
+
+        /** The samples route's verified maximum (FAH-269): an explicit high cap keeps the peaks for offline replay. */
+        const val MAX_PROFILE_POINTS = 20_000
     }
 }

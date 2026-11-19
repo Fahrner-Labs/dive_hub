@@ -68,6 +68,14 @@ class DiveStore internal constructor(private val database: DiveHubDatabase) : Us
         )
     }
 
+    /**
+     * Write a deletion tombstone without touching the row's detail: a Dive deleted elsewhere leaves the logbook but
+     * keeps its cached values, and is never hard-deleted locally (sync slice D3). An unknown id writes nothing.
+     */
+    fun markDiveDeleted(id: String, deletedAt: String, version: Long? = null) {
+        queries.markDiveDeleted(deletedAt = deletedAt, version = version, id = id)
+    }
+
     fun recording(id: String): Recording? = queries.selectRecordingById(id).executeAsOneOrNull()?.toModel()
 
     fun recordingIncludingDeleted(id: String): Recording? =
@@ -111,6 +119,11 @@ class DiveStore internal constructor(private val database: DiveHubDatabase) : Us
             valuesJson = series.valuesJson,
             fetchedAt = series.fetchedAt,
         )
+    }
+
+    /** Drop a Recording's series before a refetch writes the channels the server now reports. */
+    fun deleteSeries(recordingId: String) {
+        queries.deleteSeriesFor(recordingId)
     }
 
     fun cylinders(diveId: String): List<Cylinder> =

@@ -49,33 +49,56 @@ internal fun SiteView.toStore(): DiveSite = DiveSite(
 internal fun ApiDiverBodyWeightsGet200ResponseItem.toStore(diverId: String): BodyWeight =
     BodyWeight(diverId = diverId, date = date, kg = kg)
 
-/** The list pass: what `GET /api/dives` says, before the detail pass fills the rest. */
-internal fun ApiDivesGet200ResponseDivesItem.toStore(): Dive = Dive(
-    id = id,
-    diverId = diverId,
-    version = null,
-    deletedAt = null,
-    startsAt = startsAt,
-    utcOffsetSeconds = utcOffsetSeconds?.toLong(),
-    utcOffsetSource = utcOffsetSource,
-    durationSeconds = durationSeconds.toLong(),
-    maxDepthM = maxDepthM,
-    avgDepthM = avgDepthM,
-    siteId = site?.id,
-    waterType = null,
-    fromProvider = fromProvider,
-    notes = null,
-    suitJson = null,
-    weightingFeedbackJson = null,
-    leadJson = null,
-    leadTotalKg = null,
-    sacLitresPerMinute = null,
-    sacBarPerMinute = null,
-    sacMissing = null,
-    number = number?.toLong(),
-    findingsCount = findings.toLong(),
-    summaryJson = null,
-)
+/**
+ * The list pass: what `GET /api/dives` says, before the detail pass fills the rest.
+ *
+ * A refresh re-reads the list after the detail pass has run. When the row is already detailed, its detail-only fields
+ * must survive: `version` is null in a list row, so a wholesale list write would erase the row's detail. The list's
+ * current summary fields (number, times, findings, site) still win, because that is what the logbook shows.
+ */
+internal fun ApiDivesGet200ResponseDivesItem.toStore(existing: Dive?): Dive {
+    if (existing?.version != null) {
+        return existing.copy(
+            diverId = diverId,
+            startsAt = startsAt,
+            utcOffsetSeconds = utcOffsetSeconds?.toLong() ?: existing.utcOffsetSeconds,
+            utcOffsetSource = utcOffsetSource,
+            durationSeconds = durationSeconds.toLong(),
+            maxDepthM = maxDepthM,
+            avgDepthM = avgDepthM,
+            siteId = site?.id,
+            fromProvider = fromProvider,
+            number = number?.toLong(),
+            findingsCount = findings.toLong(),
+        )
+    }
+    return Dive(
+        id = id,
+        diverId = diverId,
+        version = null,
+        deletedAt = existing?.deletedAt,
+        startsAt = startsAt,
+        utcOffsetSeconds = utcOffsetSeconds?.toLong(),
+        utcOffsetSource = utcOffsetSource,
+        durationSeconds = durationSeconds.toLong(),
+        maxDepthM = maxDepthM,
+        avgDepthM = avgDepthM,
+        siteId = site?.id,
+        waterType = null,
+        fromProvider = fromProvider,
+        notes = null,
+        suitJson = null,
+        weightingFeedbackJson = null,
+        leadJson = null,
+        leadTotalKg = null,
+        sacLitresPerMinute = null,
+        sacBarPerMinute = null,
+        sacMissing = null,
+        number = number?.toLong(),
+        findingsCount = findings.toLong(),
+        summaryJson = null,
+    )
+}
 
 /** The detail pass: a wholesale replacement, keeping what only the list pass carried (the findings count). */
 internal fun DiveView.toStore(existing: Dive?): Dive = Dive(

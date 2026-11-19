@@ -71,6 +71,7 @@ dependencies {
     implementation(libs.kotlinx.datetime)
     implementation(libs.ktor.client.okhttp)
     implementation(libs.sqldelight.android.driver)
+    implementation(libs.androidx.work.runtime.ktx)
 
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)

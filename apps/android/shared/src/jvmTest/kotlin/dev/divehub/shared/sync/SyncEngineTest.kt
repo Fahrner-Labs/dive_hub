@@ -424,7 +424,7 @@ class SyncEngineTest {
     }
 
     @Test
-    fun `a dive deleted after the list is skipped and the phase completes`() = runTest {
+    fun `a dive deleted after the list becomes a tombstone and the phase completes`() = runTest {
         val dives = listOf(
             diveListItem(id = "dive-1", startsAt = "2026-11-03T10:00:00Z"),
             diveListItem(id = "dive-2", startsAt = "2026-11-02T10:00:00Z"),
@@ -435,7 +435,8 @@ class SyncEngineTest {
 
         assertEquals(SyncResult.Complete, harness.engine.sync())
 
-        assertNull(store.dive("dive-1")!!.version)
+        assertNull(store.dive("dive-1"))
+        assertNotNull(store.diveIncludingDeleted("dive-1")!!.deletedAt)
         assertEquals(3L, store.dive("dive-2")!!.version)
         assertTrue(store.checkpoint("dive_details", "details")!!.done)
     }

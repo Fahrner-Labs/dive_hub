@@ -145,6 +145,9 @@ INSERT OR REPLACE INTO dive(
     :sacLitresPerMinute, :sacBarPerMinute, :sacMissing, :number, :findingsCount, :summaryJson
 );
 
+markDiveDeleted:
+UPDATE dive SET deletedAt = :deletedAt, version = COALESCE(:version, version) WHERE id = :id;
+
 deleteAllDives:
 DELETE FROM dive;
 
@@ -182,6 +185,9 @@ SELECT * FROM recording_series ORDER BY recordingId, channel;
 upsertSeries:
 INSERT OR REPLACE INTO recording_series(recordingId, channel, offsetsMsJson, valuesJson, fetchedAt)
 VALUES (:recordingId, :channel, :offsetsMsJson, :valuesJson, :fetchedAt);
+
+deleteSeriesFor:
+DELETE FROM recording_series WHERE recordingId = ?;
 
 deleteAllSeries:
 DELETE FROM recording_series;

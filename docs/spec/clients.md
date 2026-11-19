@@ -224,6 +224,11 @@ V1 of the native client reads offline: phones lose signal where dives are, and t
   sync, not the "no answer at all" of a request that failed. A read that needs server-computed data the store
   does not hold (the stored-fingerprint counts of `changed-since-sent`) is fetched online and never shown from an
   incomplete store; offline, the client says it is unavailable.
+- **Refresh keeps the store current.** While online the client opens the live hint stream; a Dive or site hint
+  refetches that thing through the normal API, and every (re)connect re-runs the list sync because hints are not
+  replayed (ADR 0066). Polling remains the automatic fallback. Deleted Dives arrive as tombstones (`deletedAt`),
+  never a local hard delete, and the profiles phase requests each Recording's samples at the endpoint's 20,000-point
+  cap so an offline replay keeps the peaks.
 - **Every offline calculation against synced data shows its age:** "Based on dives synced as of …" with the
   store's last successful sync. A personalized result (the lead estimate, the current loadings, a plan that uses
   the User's own SAC or last dive) says so while the profiles are still syncing, and rests only on the dives that
