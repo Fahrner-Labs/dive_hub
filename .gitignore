@@ -20,3 +20,8 @@ scorecard.png
 
 # Graphify's build directory (CI copies the artefacts into docs/generated/, ADR 0067)
 graphify-out/
+
+# Android signing: never commit a real keystore. The shared debug keystore is the one exception.
+*.jks
+*.keystore
+!apps/android/debug.keystore
