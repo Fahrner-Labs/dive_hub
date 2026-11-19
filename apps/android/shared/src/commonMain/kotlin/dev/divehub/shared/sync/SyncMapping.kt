@@ -16,10 +16,22 @@ import dev.divehub.shared.store.Dive
 import dev.divehub.shared.store.DiveSite
 import dev.divehub.shared.store.Diver
 import dev.divehub.shared.store.Recording
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 private val JSON = Json { ignoreUnknownKeys = true; explicitNulls = false }
+
+/**
+ * One page of `GET /api/dives?include=details` (FAH-297): the list envelope with a whole [DiveView] per row. Only the
+ * rows and total matter to the sync. The envelope is local because the OpenAPI document still describes the list's
+ * 200 as the summary page; the rows themselves are the generated [DiveView], so the Dive's shape is not duplicated.
+ */
+@Serializable
+internal data class DiveDetailsPage(
+    val dives: List<DiveView>,
+    val total: Long,
+)
 
 /**
  * The API's values into the store's rows (ADR 0075). The generated models are the contract: complex values keep
