@@ -30,7 +30,41 @@ store or the Android Keystore-wrapped session token. A debug key is not a secret
 
 Release builds follow [ADR 0077](../../docs/decisions/0077-android-app-distribution.md): the app ships as a
 release-signed APK attached to GitHub Releases, signed with a self-managed key held in GitHub Actions secrets. The
-`release` build type, the signing config and the release workflow land in follow-up tasks.
+`release` build type reads four environment variables; when any is missing, `:app:assembleRelease` fails with
+"release signing env vars not set" instead of falling back to the debug key:
+
+| Variable | Value |
+|---|---|
+| `ANDROID_RELEASE_KEYSTORE_PATH` | Absolute path of the JKS keystore |
+| `ANDROID_RELEASE_KEYSTORE_PASSWORD` | Keystore password |
+| `ANDROID_RELEASE_KEY_PASSWORD` | Key password |
+| `ANDROID_RELEASE_KEY_ALIAS` | Key alias |
+
+The Android release lane (the next task) stores these as GitHub Actions secrets and exports them for the
+`assembleRelease` step; nothing reads them from a file in the repository. To check the build locally, use a throwaway
+keystore outside the tree — never the release key:
+
+```sh
+keytool -genkeypair -keystore /tmp/throwaway.jks -storepass throwaway -keypass throwaway \
+  -alias throwaway -keyalg RSA -keysize 2048 -validity 1 -dname 'CN=throwaway'
+ANDROID_RELEASE_KEYSTORE_PATH=/tmp/throwaway.jks ANDROID_RELEASE_KEYSTORE_PASSWORD=throwaway \
+ANDROID_RELEASE_KEY_PASSWORD=throwaway ANDROID_RELEASE_KEY_ALIAS=throwaway \
+  ./gradlew :app:assembleRelease
+```
+
+`*.jks` and `*.keystore` are gitignored, except the committed debug keystore.
+
+### Versioning
+
+`versionName` is the tag without `android-v` (`android-v0.1.0-rc1` → `0.1.0-rc1`); `versionCode` is derived from it
+([ADR 0077](../../docs/decisions/0077-android-app-distribution.md) D5). Local builds default to `0.1.0-dev` / `1`.
+The release lane exports `ANDROID_VERSION_NAME` and `ANDROID_VERSION_CODE` from the `versionName=` / `versionCode=`
+lines the helper prints:
+
+```sh
+node scripts/android-version-code.mjs android-v0.1.0-rc1
+# tag=android-v0.1.0-rc1 versionName=0.1.0-rc1 versionCode=1001 prerelease=true
+```
 
 ## Commands
 
