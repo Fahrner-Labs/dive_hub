@@ -28,7 +28,9 @@ Debug builds are signed with the committed [`debug.keystore`](debug.keystore) an
 machine and CI use the same key, debug APKs install over each other without uninstalling and wiping the SQLDelight
 store or the Android Keystore-wrapped session token. A debug key is not a secret and is never used for release.
 
-Release signing does not exist yet; it follows an ADR once the distribution channel is decided ([FAH-281](https://paperclip/FAH/issues/FAH-281)).
+Release builds follow [ADR 0077](../../docs/decisions/0077-android-app-distribution.md): the app ships as a
+release-signed APK attached to GitHub Releases, signed with a self-managed key held in GitHub Actions secrets. The
+`release` build type, the signing config and the release workflow land in follow-up tasks.
 
 ## Commands
 
