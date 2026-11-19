@@ -14,6 +14,11 @@ import { diveSummaryOf } from './dive-summary-view.js';
 import { downsampleMinMax } from './calc/downsample.js';
 import { asksFor, DIVE_ONLY_PATTERN } from './list-filter.js';
 import { DIVE_SORTS, type LogbookService, type RowExtras } from './logbook-service.js';
+import { DiveView } from './dive-view.js';
+import { createDiveView } from './dive-view-of.js';
+import type { DiveCertifications } from './certification-port.js';
+import type { CentreService } from '../centres/centre-service.js';
+import type { DiverService } from '../divers/diver-service.js';
 
 export interface LogbookRouteDeps {
   auth: Auth;
@@ -21,7 +26,14 @@ export interface LogbookRouteDeps {
   /** For the logbook's "changed since sent" filter (worked out afresh) and its chip count (stored fingerprints). */
   pushes: Pick<DivePushes, 'changedSinceSent' | 'changedSinceSentSql' | 'refreshStaleFingerprints'>;
   waitingPushes: Pick<DiveWaitingPushes, 'waitingOf'>;
+  /** The parts of a Dive's full view, for `include=details`: the Dive's codes and its Participants' expiry hints. */
+  centres: Pick<CentreService, 'codesOfDive'>;
+  divers: Pick<DiverService, 'professionalCodesOfDive'>;
+  certifications: DiveCertifications;
 }
+
+/** A details page carries a whole Dive per row, so it is capped lower than the summary list's 200 (FAH-297). */
+const DETAILS_PAGE_LIMIT = 50;
 
 /** The logbook list (ADR 0017, 0040): a page of Dives, sorted, searched, narrowed by "show only" filters, with the total. */
 const DiveListQuery = Type.Object({
@@ -37,7 +49,11 @@ const DiveListQuery = Type.Object({
       + 'changed-since-sent (at a Provider the User is connected to for the Diver, the current dive there is not up to date with the Dive, '
       + 'or its number differs and the Connection follows numbers)',
   })),
-  limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 200, default: 25 })),
+  include: Type.Optional(Type.Enum(['details'], {
+    description: 'details: answer each row as GET /api/dives/{id} does (the full DiveView), for a batched logbook sync; '
+      + `then a page is at most ${DETAILS_PAGE_LIMIT} Dives. Omitted: the summary row`,
+  })),
+  limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 200, default: 25, description: `Dives per page; at most ${DETAILS_PAGE_LIMIT} with include=details` })),
   offset: Type.Optional(Type.Integer({ minimum: 0, default: 0 })),
 });
 
@@ -75,8 +91,7 @@ const DiveSummaryView = Type.Object({
   profile: DiveProfileView,
 });
 
-const DiveListView = Type.Object({
-  dives: Type.Array(DiveSummaryView),
+const DiveListMeta = {
   total: Type.Integer(),
   counts: DiveCounts,
   totals: Type.Object({
@@ -85,6 +100,14 @@ const DiveListView = Type.Object({
   months: Type.Array(Type.Object({
     month: Type.String({ pattern: '^\\d{4}-\\d{2}$', description: 'The local month, YYYY-MM' }), dives: Type.Integer(), durationSeconds: Type.Number(),
   }), { description: 'Only while sorted by date: the months of this page in page order, each with all the matching Dives of that month' }),
+};
+
+const DiveListView = Type.Object({ dives: Type.Array(DiveSummaryView), ...DiveListMeta });
+
+/** `include=details`: the same page and total, each row the full view GET /api/dives/{id} answers (FAH-297). */
+const DiveDetailsListView = Type.Object({
+  dives: Type.Array(DiveView, { description: 'Each Dive as GET /api/dives/{id} answers it' }),
+  ...DiveListMeta,
 });
 
 
@@ -118,6 +141,7 @@ const toDiveSummary = (
 
 export const logbookRoutes: FastifyPluginAsyncTypebox<LogbookRouteDeps> = async (app, deps) => {
   const { logbook } = deps;
+  const diveView = createDiveView(deps);
 
   // Every logbook route needs a signed-in User and only shows what that User may see.
   app.addHook('onRequest', requireUser(deps.auth));
@@ -142,11 +166,16 @@ export const logbookRoutes: FastifyPluginAsyncTypebox<LogbookRouteDeps> = async 
   app.get('/dives', {
     schema: {
       summary: 'A page of the Dives of the Divers the signed-in User manages (newest first unless sorted otherwise)',
+      description: 'With include=details, each row is the full DiveView of GET /api/dives/{id}, so a client can sync its logbook a page at a time; '
+        + `that mode is capped at ${DETAILS_PAGE_LIMIT} Dives a page. Without it, rows are summaries, unchanged.`,
       querystring: DiveListQuery,
-      response: { 200: DiveListView },
+      response: { 200: Type.Union([DiveListView, DiveDetailsListView]), 400: Problem },
     },
-  }, async (request) => {
-    const { limit = 25, offset = 0 } = request.query;
+  }, async (request, reply) => {
+    const { limit = 25, offset = 0, include } = request.query;
+    if (include === 'details' && limit > DETAILS_PAGE_LIMIT) {
+      return reply.code(400).send(problem('invalid_input', `include=details answers at most ${DETAILS_PAGE_LIMIT} Dives a page`));
+    }
     const scope = await listScope(request, request.query, { counts: true });
     if (scope.diverIds.length === 0) {
       return {
@@ -155,13 +184,14 @@ export const logbookRoutes: FastifyPluginAsyncTypebox<LogbookRouteDeps> = async 
       };
     }
     const { rows, total, counts, totals, months } = await logbook.listDives(scope, { limit, offset });
+    const meta = { total, counts, totals: { ...totals, lastDiveAt: totals.lastDiveAt?.toISOString() ?? null }, months };
+    if (include === 'details') {
+      return { dives: await Promise.all(rows.map((r) => diveView(r.d, scope.userId))), ...meta };
+    }
     const waiting = await deps.waitingPushes.waitingOf(rows.map((r) => r.d.id));
     return {
       dives: rows.map((r) => toDiveSummary(r.d, r.siteName, r.findings, r.extras, waiting.get(r.d.id) ?? [])),
-      total,
-      counts,
-      totals: { ...totals, lastDiveAt: totals.lastDiveAt?.toISOString() ?? null },
-      months,
+      ...meta,
     };
   });
 
@@ -171,7 +201,7 @@ export const logbookRoutes: FastifyPluginAsyncTypebox<LogbookRouteDeps> = async 
       description: 'Takes the list’s own settings (diverId, siteId, q, only, sort, order; not limit or offset). `previous` is the row above in that list, `next` the row below. '
         + 'When the list does not show the Dive, `position` and both neighbours are empty.',
       params: IdParams,
-      querystring: Type.Omit(DiveListQuery, ['limit', 'offset']),
+      querystring: Type.Omit(DiveListQuery, ['limit', 'offset', 'include']),
       response: { 200: DiveNeighboursView, 404: Problem },
     },
   }, async (request, reply) => {

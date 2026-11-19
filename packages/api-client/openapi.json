@@ -8128,6 +8128,7 @@
     "/api/dives": {
       "get": {
         "summary": "A page of the Dives of the Divers the signed-in User manages (newest first unless sorted otherwise)",
+        "description": "With include=details, each row is the full DiveView of GET /api/dives/{id}, so a client can sync its logbook a page at a time; that mode is capped at 50 Dives a page. Without it, rows are summaries, unchanged.",
         "parameters": [
           {
             "schema": {
@@ -8197,6 +8198,17 @@
           },
           {
             "schema": {
+              "enum": [
+                "details"
+              ]
+            },
+            "in": "query",
+            "name": "include",
+            "required": false,
+            "description": "details: answer each row as GET /api/dives/{id} does (the full DiveView), for a batched logbook sync; then a page is at most 50 Dives. Omitted: the summary row"
+          },
+          {
+            "schema": {
               "type": "integer",
               "minimum": 1,
               "maximum": 200,
@@ -8204,7 +8216,8 @@
             },
             "in": "query",
             "name": "limit",
-            "required": false
+            "required": false,
+            "description": "Dives per page; at most 50 with include=details"
           },
           {
             "schema": {
@@ -8223,316 +8236,444 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "required": [
-                    "dives",
-                    "total",
-                    "counts",
-                    "totals",
-                    "months"
-                  ],
-                  "properties": {
-                    "dives": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "required": [
-                          "id",
-                          "diverId",
-                          "number",
-                          "startsAt",
-                          "utcOffsetSeconds",
-                          "utcOffsetSource",
-                          "durationSeconds",
-                          "maxDepthM",
-                          "avgDepthM",
-                          "site",
-                          "findings",
-                          "recordings",
-                          "fromProvider",
-                          "gases",
-                          "surfaceIntervalSeconds",
-                          "participants",
-                          "waiting",
-                          "profile"
-                        ],
-                        "properties": {
-                          "id": {
-                            "type": "string"
-                          },
-                          "diverId": {
-                            "type": "string"
-                          },
-                          "number": {
-                            "anyOf": [
-                              {
-                                "type": "null"
-                              },
-                              {
-                                "type": "integer"
-                              }
-                            ]
-                          },
-                          "startsAt": {
-                            "type": "string",
-                            "format": "date-time"
-                          },
-                          "utcOffsetSeconds": {
-                            "anyOf": [
-                              {
-                                "type": "null"
-                              },
-                              {
-                                "type": "integer"
-                              }
-                            ]
-                          },
-                          "utcOffsetSource": {
-                            "enum": [
-                              "device",
-                              "position",
-                              "nearby",
-                              "unknown"
-                            ],
-                            "description": "unknown: startsAt is the local wall-clock time kept as if UTC; show it in UTC without an offset (ADR 0030)"
-                          },
-                          "durationSeconds": {
-                            "type": "number"
-                          },
-                          "maxDepthM": {
-                            "anyOf": [
-                              {
-                                "type": "null"
-                              },
-                              {
-                                "type": "number"
-                              }
-                            ]
-                          },
-                          "avgDepthM": {
-                            "anyOf": [
-                              {
-                                "type": "null"
-                              },
-                              {
-                                "type": "number"
-                              }
-                            ]
-                          },
-                          "site": {
-                            "anyOf": [
-                              {
-                                "type": "null"
-                              },
-                              {
-                                "type": "object",
-                                "required": [
-                                  "id",
-                                  "name"
-                                ],
-                                "properties": {
-                                  "id": {
-                                    "type": "string"
-                                  },
-                                  "name": {
-                                    "type": "string"
-                                  }
-                                }
-                              }
-                            ]
-                          },
-                          "findings": {
-                            "type": "integer",
-                            "description": "How many findings of the dive assessment differ from guidance (note or caution) and were not put aside (ADR 0036); 0: no mark"
-                          },
-                          "recordings": {
-                            "type": "integer",
-                            "description": "How many Recordings the Dive has; 0: a logbook entry only (from a Provider or typed)"
-                          },
-                          "fromProvider": {
-                            "anyOf": [
-                              {
-                                "type": "null"
-                              },
-                              {
-                                "type": "string",
-                                "description": "The Provider whose logbook entry the Dive was made from, while it has no Recording (ADR 0030)"
-                              }
-                            ]
-                          },
-                          "gases": {
-                            "type": "array",
-                            "items": {
-                              "type": "object",
-                              "required": [
-                                "o2",
-                                "he"
-                              ],
-                              "properties": {
-                                "o2": {
-                                  "type": "number"
-                                },
-                                "he": {
-                                  "type": "number"
-                                }
-                              }
-                            },
-                            "description": "The mixes the Primary recording’s computer knew; O₂ and He as percent"
-                          },
-                          "surfaceIntervalSeconds": {
-                            "anyOf": [
-                              {
-                                "type": "null"
-                              },
-                              {
-                                "type": "number",
-                                "description": "The computer’s own surface interval before the dive"
-                              }
-                            ]
-                          },
-                          "participants": {
-                            "type": "array",
-                            "items": {
-                              "type": "object",
-                              "required": [
-                                "diverId",
-                                "name",
-                                "role"
-                              ],
-                              "properties": {
-                                "diverId": {
-                                  "type": "string"
-                                },
-                                "name": {
-                                  "type": "string"
-                                },
-                                "role": {
-                                  "enum": [
-                                    "buddy",
-                                    "guide",
-                                    "instructor"
-                                  ]
-                                }
-                              }
-                            },
-                            "description": "The Divers on the Dive besides its own Diver: buddies first, then guides and instructors, each by name (ADR 0028)"
-                          },
-                          "waiting": {
-                            "type": "array",
-                            "items": {
-                              "$ref": "#/components/schemas/WaitingPushView"
-                            },
-                            "description": "The Dive's entries in the queue of Waiting pushes, one per Provider (ADR 0056): a small icon for waiting, a warning for held, an error with Retry for stopped (docs/spec/clients.md)"
-                          },
-                          "profile": {
-                            "anyOf": [
-                              {
-                                "type": "null"
-                              },
-                              {
-                                "$ref": "#/components/schemas/DiveProfileView"
-                              }
-                            ]
-                          }
-                        }
-                      }
-                    },
-                    "total": {
-                      "type": "integer"
-                    },
-                    "counts": {
-                      "type": "object",
-                      "required": [
-                        "noRecording",
-                        "noSite",
-                        "withFindings",
-                        "notAtProvider",
-                        "changedSinceSent"
-                      ],
-                      "properties": {
-                        "noRecording": {
-                          "type": "integer"
-                        },
-                        "noSite": {
-                          "type": "integer"
-                        },
-                        "withFindings": {
-                          "type": "integer"
-                        },
-                        "notAtProvider": {
-                          "type": "integer"
-                        },
-                        "changedSinceSent": {
-                          "type": "integer"
-                        }
-                      },
-                      "description": "How many Dives each filter would show for the Diver and the search, whatever filters are applied (ADR 0040)"
-                    },
-                    "totals": {
+                  "anyOf": [
+                    {
                       "type": "object",
                       "required": [
                         "dives",
-                        "durationSeconds",
-                        "deepestM",
-                        "lastDiveAt"
+                        "total",
+                        "counts",
+                        "totals",
+                        "months"
                       ],
                       "properties": {
                         "dives": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "required": [
+                              "id",
+                              "diverId",
+                              "number",
+                              "startsAt",
+                              "utcOffsetSeconds",
+                              "utcOffsetSource",
+                              "durationSeconds",
+                              "maxDepthM",
+                              "avgDepthM",
+                              "site",
+                              "findings",
+                              "recordings",
+                              "fromProvider",
+                              "gases",
+                              "surfaceIntervalSeconds",
+                              "participants",
+                              "waiting",
+                              "profile"
+                            ],
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "diverId": {
+                                "type": "string"
+                              },
+                              "number": {
+                                "anyOf": [
+                                  {
+                                    "type": "null"
+                                  },
+                                  {
+                                    "type": "integer"
+                                  }
+                                ]
+                              },
+                              "startsAt": {
+                                "type": "string",
+                                "format": "date-time"
+                              },
+                              "utcOffsetSeconds": {
+                                "anyOf": [
+                                  {
+                                    "type": "null"
+                                  },
+                                  {
+                                    "type": "integer"
+                                  }
+                                ]
+                              },
+                              "utcOffsetSource": {
+                                "enum": [
+                                  "device",
+                                  "position",
+                                  "nearby",
+                                  "unknown"
+                                ],
+                                "description": "unknown: startsAt is the local wall-clock time kept as if UTC; show it in UTC without an offset (ADR 0030)"
+                              },
+                              "durationSeconds": {
+                                "type": "number"
+                              },
+                              "maxDepthM": {
+                                "anyOf": [
+                                  {
+                                    "type": "null"
+                                  },
+                                  {
+                                    "type": "number"
+                                  }
+                                ]
+                              },
+                              "avgDepthM": {
+                                "anyOf": [
+                                  {
+                                    "type": "null"
+                                  },
+                                  {
+                                    "type": "number"
+                                  }
+                                ]
+                              },
+                              "site": {
+                                "anyOf": [
+                                  {
+                                    "type": "null"
+                                  },
+                                  {
+                                    "type": "object",
+                                    "required": [
+                                      "id",
+                                      "name"
+                                    ],
+                                    "properties": {
+                                      "id": {
+                                        "type": "string"
+                                      },
+                                      "name": {
+                                        "type": "string"
+                                      }
+                                    }
+                                  }
+                                ]
+                              },
+                              "findings": {
+                                "type": "integer",
+                                "description": "How many findings of the dive assessment differ from guidance (note or caution) and were not put aside (ADR 0036); 0: no mark"
+                              },
+                              "recordings": {
+                                "type": "integer",
+                                "description": "How many Recordings the Dive has; 0: a logbook entry only (from a Provider or typed)"
+                              },
+                              "fromProvider": {
+                                "anyOf": [
+                                  {
+                                    "type": "null"
+                                  },
+                                  {
+                                    "type": "string",
+                                    "description": "The Provider whose logbook entry the Dive was made from, while it has no Recording (ADR 0030)"
+                                  }
+                                ]
+                              },
+                              "gases": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "required": [
+                                    "o2",
+                                    "he"
+                                  ],
+                                  "properties": {
+                                    "o2": {
+                                      "type": "number"
+                                    },
+                                    "he": {
+                                      "type": "number"
+                                    }
+                                  }
+                                },
+                                "description": "The mixes the Primary recording’s computer knew; O₂ and He as percent"
+                              },
+                              "surfaceIntervalSeconds": {
+                                "anyOf": [
+                                  {
+                                    "type": "null"
+                                  },
+                                  {
+                                    "type": "number",
+                                    "description": "The computer’s own surface interval before the dive"
+                                  }
+                                ]
+                              },
+                              "participants": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "required": [
+                                    "diverId",
+                                    "name",
+                                    "role"
+                                  ],
+                                  "properties": {
+                                    "diverId": {
+                                      "type": "string"
+                                    },
+                                    "name": {
+                                      "type": "string"
+                                    },
+                                    "role": {
+                                      "enum": [
+                                        "buddy",
+                                        "guide",
+                                        "instructor"
+                                      ]
+                                    }
+                                  }
+                                },
+                                "description": "The Divers on the Dive besides its own Diver: buddies first, then guides and instructors, each by name (ADR 0028)"
+                              },
+                              "waiting": {
+                                "type": "array",
+                                "items": {
+                                  "$ref": "#/components/schemas/WaitingPushView"
+                                },
+                                "description": "The Dive's entries in the queue of Waiting pushes, one per Provider (ADR 0056): a small icon for waiting, a warning for held, an error with Retry for stopped (docs/spec/clients.md)"
+                              },
+                              "profile": {
+                                "anyOf": [
+                                  {
+                                    "type": "null"
+                                  },
+                                  {
+                                    "$ref": "#/components/schemas/DiveProfileView"
+                                  }
+                                ]
+                              }
+                            }
+                          }
+                        },
+                        "total": {
                           "type": "integer"
                         },
-                        "durationSeconds": {
-                          "type": "number"
-                        },
-                        "deepestM": {
-                          "anyOf": [
-                            {
-                              "type": "null"
+                        "counts": {
+                          "type": "object",
+                          "required": [
+                            "noRecording",
+                            "noSite",
+                            "withFindings",
+                            "notAtProvider",
+                            "changedSinceSent"
+                          ],
+                          "properties": {
+                            "noRecording": {
+                              "type": "integer"
                             },
-                            {
+                            "noSite": {
+                              "type": "integer"
+                            },
+                            "withFindings": {
+                              "type": "integer"
+                            },
+                            "notAtProvider": {
+                              "type": "integer"
+                            },
+                            "changedSinceSent": {
+                              "type": "integer"
+                            }
+                          },
+                          "description": "How many Dives each filter would show for the Diver and the search, whatever filters are applied (ADR 0040)"
+                        },
+                        "totals": {
+                          "type": "object",
+                          "required": [
+                            "dives",
+                            "durationSeconds",
+                            "deepestM",
+                            "lastDiveAt"
+                          ],
+                          "properties": {
+                            "dives": {
+                              "type": "integer"
+                            },
+                            "durationSeconds": {
                               "type": "number"
-                            }
-                          ]
-                        },
-                        "lastDiveAt": {
-                          "anyOf": [
-                            {
-                              "type": "null"
                             },
-                            {
-                              "type": "string",
-                              "format": "date-time"
+                            "deepestM": {
+                              "anyOf": [
+                                {
+                                  "type": "null"
+                                },
+                                {
+                                  "type": "number"
+                                }
+                              ]
+                            },
+                            "lastDiveAt": {
+                              "anyOf": [
+                                {
+                                  "type": "null"
+                                },
+                                {
+                                  "type": "string",
+                                  "format": "date-time"
+                                }
+                              ]
                             }
-                          ]
+                          },
+                          "description": "The Diver’s whole logbook, not narrowed by search, site or filters"
+                        },
+                        "months": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "required": [
+                              "month",
+                              "dives",
+                              "durationSeconds"
+                            ],
+                            "properties": {
+                              "month": {
+                                "type": "string",
+                                "pattern": "^\\d{4}-\\d{2}$",
+                                "description": "The local month, YYYY-MM"
+                              },
+                              "dives": {
+                                "type": "integer"
+                              },
+                              "durationSeconds": {
+                                "type": "number"
+                              }
+                            }
+                          },
+                          "description": "Only while sorted by date: the months of this page in page order, each with all the matching Dives of that month"
                         }
-                      },
-                      "description": "The Diver’s whole logbook, not narrowed by search, site or filters"
+                      }
                     },
-                    "months": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "required": [
-                          "month",
-                          "dives",
-                          "durationSeconds"
-                        ],
-                        "properties": {
-                          "month": {
-                            "type": "string",
-                            "pattern": "^\\d{4}-\\d{2}$",
-                            "description": "The local month, YYYY-MM"
+                    {
+                      "type": "object",
+                      "required": [
+                        "dives",
+                        "total",
+                        "counts",
+                        "totals",
+                        "months"
+                      ],
+                      "properties": {
+                        "dives": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/DiveView"
                           },
-                          "dives": {
-                            "type": "integer"
+                          "description": "Each Dive as GET /api/dives/{id} answers it"
+                        },
+                        "total": {
+                          "type": "integer"
+                        },
+                        "counts": {
+                          "type": "object",
+                          "required": [
+                            "noRecording",
+                            "noSite",
+                            "withFindings",
+                            "notAtProvider",
+                            "changedSinceSent"
+                          ],
+                          "properties": {
+                            "noRecording": {
+                              "type": "integer"
+                            },
+                            "noSite": {
+                              "type": "integer"
+                            },
+                            "withFindings": {
+                              "type": "integer"
+                            },
+                            "notAtProvider": {
+                              "type": "integer"
+                            },
+                            "changedSinceSent": {
+                              "type": "integer"
+                            }
                           },
-                          "durationSeconds": {
-                            "type": "number"
-                          }
+                          "description": "How many Dives each filter would show for the Diver and the search, whatever filters are applied (ADR 0040)"
+                        },
+                        "totals": {
+                          "type": "object",
+                          "required": [
+                            "dives",
+                            "durationSeconds",
+                            "deepestM",
+                            "lastDiveAt"
+                          ],
+                          "properties": {
+                            "dives": {
+                              "type": "integer"
+                            },
+                            "durationSeconds": {
+                              "type": "number"
+                            },
+                            "deepestM": {
+                              "anyOf": [
+                                {
+                                  "type": "null"
+                                },
+                                {
+                                  "type": "number"
+                                }
+                              ]
+                            },
+                            "lastDiveAt": {
+                              "anyOf": [
+                                {
+                                  "type": "null"
+                                },
+                                {
+                                  "type": "string",
+                                  "format": "date-time"
+                                }
+                              ]
+                            }
+                          },
+                          "description": "The Diver’s whole logbook, not narrowed by search, site or filters"
+                        },
+                        "months": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "required": [
+                              "month",
+                              "dives",
+                              "durationSeconds"
+                            ],
+                            "properties": {
+                              "month": {
+                                "type": "string",
+                                "pattern": "^\\d{4}-\\d{2}$",
+                                "description": "The local month, YYYY-MM"
+                              },
+                              "dives": {
+                                "type": "integer"
+                              },
+                              "durationSeconds": {
+                                "type": "number"
+                              }
+                            }
+                          },
+                          "description": "Only while sorted by date: the months of this page in page order, each with all the matching Dives of that month"
                         }
-                      },
-                      "description": "Only while sorted by date: the months of this page in page order, each with all the matching Dives of that month"
+                      }
                     }
-                  }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
                 }
               }
             }

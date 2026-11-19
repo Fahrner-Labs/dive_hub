@@ -4,7 +4,7 @@
 > `pnpm check` fails when this map is stale. Symbols are ranked by how widely the code references them;
 > each module shows its most-referenced ones (exported symbols rank higher). Search here before walking the tree.
 
-Files: 400 · symbols: 3668 · shown: 255
+Files: 401 · symbols: 3673 · shown: 255
 
 ### server/(root)
 apps/server/src/vocabulary.ts:13 type SiteWaterType
@@ -48,10 +48,10 @@ apps/server/src/backups/backup-archive.ts:96 iface BackupManifest
 
 ### server/centres
 apps/server/src/centres/centre-view.ts:24 const CentreView
+apps/server/src/centres/centre-service.ts:254 type CentreService
 apps/server/src/centres/centre-service.ts:12 const CENTRE_SOURCES
 apps/server/src/centres/centre-service.ts:18 class CentreError
 apps/server/src/centres/centre-view.ts:7 const Source
-apps/server/src/centres/centre-service.ts:254 type CentreService
 apps/server/src/centres/routes.ts:61 const errors
 … 24 more symbols in this module
 
@@ -83,7 +83,7 @@ apps/server/src/divers/dive-numbers.ts:34 fn renumber
 apps/server/src/divers/diver-view.ts:5 const DiverSource
 apps/server/src/divers/diver-error.ts:3 class DiverError
 apps/server/src/divers/management.ts:17 fn managementOf
-apps/server/src/divers/management.ts:25 const managesDiveDiver
+apps/server/src/divers/diver-service.ts:528 type DiverService
 … 51 more symbols in this module
 
 ### server/dives
@@ -96,17 +96,17 @@ apps/server/src/dives/cylinders.ts:9 iface ProviderCylinder
 apps/server/src/dives/matching.ts:83 const MAX_OFFSET_MS
 apps/server/src/dives/weighting.ts:17 fn leadOf
 apps/server/src/dives/provider-port.ts:33 iface DivePushes
+apps/server/src/dives/logbook-service.ts:298 type LogbookService
 apps/server/src/dives/waiting-push-view.ts:20 const WaitingPushView
+apps/server/src/dives/weighting.ts:106 const suitOf
+apps/server/src/dives/dive-values.ts:6 iface DiveValues
 apps/server/src/dives/checks/logbook-check-rules.ts:201 fn probablyNoDive
 apps/server/src/dives/assessment-refresh.ts:7 iface AssessmentRefresh
 apps/server/src/dives/provider-port.ts:47 iface DiveWaitingPushes
 apps/server/src/dives/recording-units.ts:9 const isUnit
 apps/server/src/dives/weighting.ts:23 const leadTotalKg
 apps/server/src/dives/weighting.ts:96 iface Suit
-apps/server/src/dives/matching.ts:81 const DAY_MS
-apps/server/src/dives/logbook-service.ts:298 type LogbookService
-apps/server/src/dives/calc/sac.ts:52 fn sacOfDive
-… 305 more symbols in this module
+… 310 more symbols in this module
 
 ### server/equipment
 apps/server/src/equipment/usage.ts:37 fn usageMap
