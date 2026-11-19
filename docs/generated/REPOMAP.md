@@ -4,7 +4,7 @@
 > `pnpm check` fails when this map is stale. Symbols are ranked by how widely the code references them;
 > each module shows its most-referenced ones (exported symbols rank higher). Search here before walking the tree.
 
-Files: 401 · symbols: 3673 · shown: 255
+Files: 405 · symbols: 3687 · shown: 261
 
 ### server/(root)
 apps/server/src/vocabulary.ts:13 type SiteWaterType
@@ -12,7 +12,7 @@ apps/server/src/errors.ts:2 const errorMessage
 apps/server/src/vocabulary.ts:12 const SITE_WATER_TYPES
 apps/server/src/vocabulary.ts:51 type ImportSource
 apps/server/src/compose.ts:76 fn createServices
-apps/server/src/app.ts:75 fn buildApp
+apps/server/src/app.ts:79 fn buildApp
 … 40 more symbols in this module
 
 ### server/assessment
@@ -121,9 +121,9 @@ apps/server/src/equipment/due.ts:36 iface ScheduleDue
 apps/server/src/http/schemas.ts:10 const Nullable
 apps/server/src/http/schemas.ts:5 const DateTime
 apps/server/src/http/schemas.ts:4 const IdParams
-apps/server/src/http/problems.ts:193 const Problem
-apps/server/src/http/problems.ts:196 const problem
-apps/server/src/http/problems.ts:220 const answerErrors
+apps/server/src/http/problems.ts:194 const Problem
+apps/server/src/http/problems.ts:197 const problem
+apps/server/src/http/problems.ts:221 const answerErrors
 … 24 more symbols in this module
 
 ### server/imports
@@ -269,6 +269,15 @@ apps/server/src/users/tokens.ts:5 const sha256
 apps/server/src/users/user-admin-service.ts:10 class UserAdminError
 apps/server/src/users/tokens.ts:4 const newToken
 … 59 more symbols in this module
+
+### server/version
+apps/server/src/version/min-client-versions.ts:25 type ClientVersionRegistry
+apps/server/src/version/user-agent.ts:26 fn parseSemanticVersion
+apps/server/src/version/user-agent.ts:74 fn parseAndroidUserAgent
+apps/server/src/version/user-agent.ts:15 iface SemanticVersion
+apps/server/src/version/gate.ts:10 fn clientVersionGate
+apps/server/src/version/request-log.ts:7 fn clientRequestSerializer
+… 8 more symbols in this module
 
 ### web/(root)
 apps/web/src/ToolsLead.tsx:45 fn Panel
