@@ -40,9 +40,11 @@ release-signed APK attached to GitHub Releases, signed with a self-managed key h
 | `ANDROID_RELEASE_KEY_PASSWORD` | Key password |
 | `ANDROID_RELEASE_KEY_ALIAS` | Key alias |
 
-The Android release lane (the next task) stores these as GitHub Actions secrets and exports them for the
-`assembleRelease` step; nothing reads them from a file in the repository. To check the build locally, use a throwaway
-keystore outside the tree — never the release key:
+The Android release lane ([`.github/workflows/android-release.yml`](../../.github/workflows/android-release.yml))
+holds them as the GitHub Actions secrets `ANDROID_RELEASE_KEYSTORE_BASE64` (the JKS, base64-encoded),
+`ANDROID_RELEASE_KEYSTORE_PASSWORD`, `ANDROID_RELEASE_KEY_ALIAS` and `ANDROID_RELEASE_KEY_PASSWORD`; it decodes the
+keystore to `$RUNNER_TEMP` and exports the four variables for the `assembleRelease` step. Nothing reads them from a
+file in the repository. To check the build locally, use a throwaway keystore outside the tree — never the release key:
 
 ```sh
 keytool -genkeypair -keystore /tmp/throwaway.jks -storepass throwaway -keypass throwaway \
@@ -65,6 +67,13 @@ lines the helper prints:
 node scripts/android-version-code.mjs android-v0.1.0-rc1
 # tag=android-v0.1.0-rc1 versionName=0.1.0-rc1 versionCode=1001 prerelease=true
 ```
+
+### Cutting a release
+
+After the owner merges the release-lane change and confirms the cold backup (ADR 0077 D2), push
+`android-vX.Y.Z` or `android-vX.Y.Z-rcN` on main. The lane verifies the tag, builds and signs the APK, checks the
+signature and attaches it to the GitHub Release. Repair a failed run with *Run workflow* and the existing tag as
+`version`; the release is edited and the APK replaced, never recreated.
 
 ## Commands
 
