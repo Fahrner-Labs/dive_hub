@@ -21,6 +21,15 @@ join when the iOS app starts; the module's source sets are already common.
 - The Gradle wrapper downloads Gradle 9.6.0; the first build also downloads the Android Gradle plugin, Kotlin and
   Compose dependencies.
 
+## Signing
+
+Debug builds are signed with the committed [`debug.keystore`](debug.keystore) and the conventional
+`android` / `androiddebugkey` credentials, wired in [`app/build.gradle.kts`](app/build.gradle.kts). Because every
+machine and CI use the same key, debug APKs install over each other without uninstalling and wiping the SQLDelight
+store or the Android Keystore-wrapped session token. A debug key is not a secret and is never used for release.
+
+Release signing does not exist yet; it follows an ADR once the distribution channel is decided ([FAH-281](https://paperclip/FAH/issues/FAH-281)).
+
 ## Commands
 
 ```sh
