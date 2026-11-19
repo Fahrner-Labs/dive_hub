@@ -28,6 +28,9 @@ import dev.divehub.api.models.ApiDiversIdLoadingsGet200ResponseOtu
 import dev.divehub.shared.planning.CylinderMaterial
 import dev.divehub.shared.planning.SuitType
 import dev.divehub.shared.tools.WEIGHT_CHECK_STEPS
+import java.util.TimeZone
+import org.junit.After
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -47,6 +50,19 @@ class PersonalizedScreenshotTest {
     @get:Rule
     val compose = createComposeRule()
 
+    private var previousZone: TimeZone = TimeZone.getDefault()
+
+    @Before
+    fun pinZone() {
+        previousZone = TimeZone.getDefault()
+        TimeZone.setDefault(TimeZone.getTimeZone("Europe/Berlin"))
+    }
+
+    @After
+    fun restoreZone() {
+        TimeZone.setDefault(previousZone)
+    }
+
     @Test
     fun `the lead estimate carries the staleness label and the profiles marker`() {
         renderLead(
@@ -59,7 +75,7 @@ class PersonalizedScreenshotTest {
                 answer = leadAnswer(),
             ),
         )
-        compose.onNodeWithText("Based on dives synced as of 18 Nov 2026, 08:00. (profiles still syncing)").assertIsDisplayed()
+        compose.onNodeWithText("Based on dives synced as of 18 Nov 2026, 09:00. (profiles still syncing)").assertIsDisplayed()
         compose.onNodeWithText("Starting point").assertIsDisplayed()
         compose.onNodeWithText("8.5 kg").assertIsDisplayed()
         compose.onNodeWithText("Range 7.0 kg to 10.0 kg").assertIsDisplayed()
@@ -114,7 +130,7 @@ class PersonalizedScreenshotTest {
                 answer = loadingsAnswer(),
             ),
         )
-        compose.onNodeWithText("Based on dives synced as of 18 Nov 2026, 08:00. (profiles still syncing)").assertIsDisplayed()
+        compose.onNodeWithText("Based on dives synced as of 18 Nov 2026, 09:00. (profiles still syncing)").assertIsDisplayed()
         compose.onNodeWithText("42.3 % of the limit at GF 85").assertIsDisplayed()
         compose.onNodeWithText("20.0 % now · 40.0 % at the end of the last dive").assertIsDisplayed()
         compose.onNodeWithText("12.5").assertIsDisplayed()

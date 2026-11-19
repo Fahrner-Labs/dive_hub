@@ -27,6 +27,9 @@ import dev.divehub.api.models.NeighboursViewPrevious
 import dev.divehub.api.models.RecordingSamplesView
 import dev.divehub.api.models.RecordingSamplesViewSeriesItem
 import dev.divehub.shared.logbook.ProviderDirectory
+import java.util.TimeZone
+import org.junit.After
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -45,6 +48,19 @@ import org.robolectric.annotation.GraphicsMode
 class DiveDetailScreenshotTest {
     @get:Rule
     val compose = createComposeRule()
+
+    private var previousZone: TimeZone = TimeZone.getDefault()
+
+    @Before
+    fun pinZone() {
+        previousZone = TimeZone.getDefault()
+        TimeZone.setDefault(TimeZone.getTimeZone("Europe/Berlin"))
+    }
+
+    @After
+    fun restoreZone() {
+        TimeZone.setDefault(previousZone)
+    }
 
     @Test
     fun `an edited value says what the recording had`() {
@@ -132,14 +148,14 @@ class DiveDetailScreenshotTest {
     @Test
     fun `the sync line says when the store was last filled`() {
         render(state(dive = dive(), syncedAt = "2026-11-18T12:00:00Z"))
-        compose.onNodeWithText("Last synced 18 Nov 2026, 12:00.").assertIsDisplayed()
+        compose.onNodeWithText("Last synced 18 Nov 2026, 13:00.").assertIsDisplayed()
         capture("dive_synced.png")
     }
 
     @Test
     fun `offline with a cached dive shows it and its age`() {
         render(state(dive = dive(), syncedAt = "2026-11-18T12:00:00Z", offline = true))
-        compose.onNodeWithText("No connection. Showing this dive synced as of 18 Nov 2026, 12:00.").assertIsDisplayed()
+        compose.onNodeWithText("No connection. Showing this dive synced as of 18 Nov 2026, 13:00.").assertIsDisplayed()
         compose.onNodeWithText("Dive 42").assertIsDisplayed()
         capture("dive_offline_cached.png")
     }

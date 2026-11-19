@@ -16,6 +16,9 @@ import dev.divehub.shared.tools.GasNumbersInput
 import dev.divehub.shared.tools.ToolSources
 import dev.divehub.shared.tools.bottomTime
 import dev.divehub.shared.tools.gasNumbers
+import java.util.TimeZone
+import org.junit.After
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -34,6 +37,19 @@ import org.robolectric.annotation.GraphicsMode
 class ToolsScreenshotTest {
     @get:Rule
     val compose = createComposeRule()
+
+    private var previousZone: TimeZone = TimeZone.getDefault()
+
+    @Before
+    fun pinZone() {
+        previousZone = TimeZone.getDefault()
+        TimeZone.setDefault(TimeZone.getTimeZone("Europe/Berlin"))
+    }
+
+    @After
+    fun restoreZone() {
+        TimeZone.setDefault(previousZone)
+    }
 
     @Test
     fun `the notice is above the inputs`() {
@@ -55,7 +71,7 @@ class ToolsScreenshotTest {
         )
         render(state(inputs(o2 = "32", depth = "30", volume = "12", pressure = "200"), sources))
         compose.onNode(hasScrollAction()).performScrollToNode(hasText("GF high 80, from your latest recording."))
-        compose.onNodeWithText("Based on dives synced as of 18 Nov 2026, 08:00.").assertIsDisplayed()
+        compose.onNodeWithText("Based on dives synced as of 18 Nov 2026, 09:00.").assertIsDisplayed()
         compose.onNodeWithText("GF high 80, from your latest recording.").assertIsDisplayed()
         compose.onNode(hasScrollAction()).performScrollToNode(hasText("SAC 17.5, from your logbook, based on 12 dives."))
         compose.onNodeWithText("SAC 17.5, from your logbook, based on 12 dives.").assertIsDisplayed()

@@ -20,6 +20,9 @@ import dev.divehub.shared.tools.RULE_THIRDS
 import dev.divehub.shared.tools.ToolDiverSource
 import dev.divehub.shared.tools.ToolSources
 import dev.divehub.shared.tools.gasPlan
+import java.util.TimeZone
+import org.junit.After
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -38,6 +41,19 @@ import org.robolectric.annotation.GraphicsMode
 class GasPlanScreenshotTest {
     @get:Rule
     val compose = createComposeRule()
+
+    private var previousZone: TimeZone = TimeZone.getDefault()
+
+    @Before
+    fun pinZone() {
+        previousZone = TimeZone.getDefault()
+        TimeZone.setDefault(TimeZone.getTimeZone("Europe/Berlin"))
+    }
+
+    @After
+    fun restoreZone() {
+        TimeZone.setDefault(previousZone)
+    }
 
     @Test
     fun `the notice is above the inputs and an empty plan says what it needs`() {
