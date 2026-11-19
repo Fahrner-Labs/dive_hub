@@ -95,6 +95,18 @@ data class BottomTimeToolInput(
 )
 
 /**
+ * A Diver the synced store knows, for the plan's picker: the User's own first. Their planning SAC and recent Dive are
+ * present only when Dives of theirs are synced; the API reads the same values of a Diver the User manages.
+ */
+data class ToolDiverSource(
+    val id: String,
+    val name: String,
+    val isOwn: Boolean,
+    val planningSac: PlanningSacResult? = null,
+    val recentDiveEndedAt: String? = null,
+)
+
+/**
  * What the synced store knows about the User's own Diver: the values the route reads from the logbook. Absent when
  * there is no own Diver or nothing has synced yet, which is what the tools screen says as an empty state.
  */
@@ -110,6 +122,8 @@ data class ToolSources(
     val storeEmpty: Boolean = true,
     /** The store's last full sync, for the staleness line (client contract, Offline reads). */
     val syncedAt: String? = null,
+    /** Every synced Diver, for the plan's picker; the own Diver comes first. */
+    val divers: List<ToolDiverSource> = emptyList(),
 )
 
 /** Gas numbers for a mix: MOD, ppO2, best mix, EAD and END (ADR 0032). */

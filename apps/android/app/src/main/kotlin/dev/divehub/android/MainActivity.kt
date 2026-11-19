@@ -10,6 +10,7 @@ import dev.divehub.android.ui.DiveHubTheme
 import dev.divehub.android.ui.MainViewModel
 import dev.divehub.android.ui.dive.DiveDetailViewModel
 import dev.divehub.android.ui.logbook.LogbookViewModel
+import dev.divehub.android.ui.tools.GasPlanViewModel
 import dev.divehub.android.ui.tools.ToolsViewModel
 
 class MainActivity : ComponentActivity() {
@@ -23,7 +24,8 @@ class MainActivity : ComponentActivity() {
                 val logbook: LogbookViewModel = viewModel(factory = LogbookViewModel.factory(container))
                 val dive: DiveDetailViewModel = viewModel(factory = DiveDetailViewModel.factory(container))
                 val tools: ToolsViewModel = viewModel(factory = ToolsViewModel.factory(container))
-                DiveHubApp(viewModel, logbook, dive, tools)
+                val gasPlan: GasPlanViewModel = viewModel(factory = GasPlanViewModel.factory(container))
+                DiveHubApp(viewModel, logbook, dive, tools, gasPlan)
             }
         }
     }

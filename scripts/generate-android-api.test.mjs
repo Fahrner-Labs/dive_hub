@@ -52,6 +52,30 @@ test('an anyOf with null is one nullable type; a wider union is JsonElement', ()
   assert.match(source, /val optional: String\? = null/);
 });
 
+test('an anyOf of object shapes is one class, with every variant field', () => {
+  const files = generateModels(document({
+    Answer: {
+      anyOf: [
+        {
+          type: 'object',
+          required: ['status', 'minutes'],
+          properties: { status: { type: 'string' }, minutes: { type: 'integer' } },
+        },
+        {
+          type: 'object',
+          required: ['status', 'reason'],
+          properties: { status: { type: 'string' }, reason: { type: 'string' } },
+        },
+      ],
+    },
+  }), [], ['Answer']);
+
+  const source = files.get('Answer.kt');
+  assert.match(source, /val status: String,/);
+  assert.match(source, /val minutes: Int\? = null/);
+  assert.match(source, /val reason: String\? = null/);
+});
+
 test('allOf flattens to one data class', () => {
   const files = generateModels(document({
     Base: { type: 'object', required: ['id'], properties: { id: { type: 'string' } } },

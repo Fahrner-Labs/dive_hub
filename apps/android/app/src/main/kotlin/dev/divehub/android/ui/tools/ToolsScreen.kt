@@ -30,7 +30,11 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -42,7 +46,6 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.divehub.android.R
@@ -62,20 +65,36 @@ import java.util.Locale
 
 /** The tools route: opens the synced store once so a Diver's values are there before the first keystroke. */
 @Composable
-fun ToolsRoute(viewModel: ToolsViewModel, units: String?, onBack: () -> Unit) {
+fun ToolsRoute(
+    viewModel: ToolsViewModel,
+    planViewModel: GasPlanViewModel,
+    units: String?,
+    onBack: () -> Unit,
+) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val locale = context.resources.configuration.locales[0] ?: Locale.getDefault()
     val imperial = Formats.imperial(units, locale)
+    var plan by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(Unit) { viewModel.start(imperial) }
     LaunchedEffect(imperial) { viewModel.setUnits(imperial) }
-    ToolsScreen(
-        state = state,
-        imperial = imperial,
-        onBack = onBack,
-        onChange = viewModel::update,
-        onReload = viewModel::reload,
-    )
+    BackHandler(enabled = plan) { plan = false }
+    if (plan) {
+        GasPlanRoute(
+            viewModel = planViewModel,
+            units = units,
+            onBack = { plan = false },
+        )
+    } else {
+        ToolsScreen(
+            state = state,
+            imperial = imperial,
+            onBack = onBack,
+            onOpenPlan = { plan = true },
+            onChange = viewModel::update,
+            onReload = viewModel::reload,
+        )
+    }
 }
 
 /**
@@ -89,6 +108,7 @@ fun ToolsScreen(
     state: ToolsUiState,
     imperial: Boolean,
     onBack: () -> Unit,
+    onOpenPlan: () -> Unit,
     onChange: ((ToolsInputs) -> ToolsInputs) -> Unit,
     onReload: () -> Unit,
 ) {
@@ -97,6 +117,9 @@ fun ToolsScreen(
             TopAppBar(
                 title = { Text(stringResource(R.string.tools_title)) },
                 navigationIcon = { TextButton(onClick = onBack) { Text(stringResource(R.string.tools_back)) } },
+                actions = {
+                    TextButton(onClick = onOpenPlan) { Text(stringResource(R.string.tools_plan_title)) }
+                },
             )
         },
     ) { padding ->
@@ -157,7 +180,7 @@ fun ToolsScreen(
 }
 
 @Composable
-private fun Notice(text: String) {
+internal fun Notice(text: String) {
     Surface(
         color = MaterialTheme.colorScheme.secondaryContainer,
         shape = RoundedCornerShape(12.dp),
@@ -172,7 +195,7 @@ private fun Notice(text: String) {
 }
 
 @Composable
-private fun Card(content: @Composable () -> Unit) {
+internal fun Card(content: @Composable () -> Unit) {
     Surface(
         color = MaterialTheme.colorScheme.surfaceVariant,
         shape = RoundedCornerShape(12.dp),
@@ -329,7 +352,7 @@ private fun WaterChip(name: String, inputs: ToolsInputs, onChange: ((ToolsInputs
 }
 
 @Composable
-private fun NumberField(
+internal fun NumberField(
     value: String,
     label: String,
     unit: String,
@@ -340,7 +363,7 @@ private fun NumberField(
         value = value,
         onValueChange = onChange,
         modifier = modifier,
-        label = { Text("$label ($unit)") },
+        label = { Text(if (unit.isBlank()) label else "$label ($unit)") },
         singleLine = true,
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
     )
@@ -578,7 +601,7 @@ private fun GasBody(answer: ApiToolsGasGet200Response, imperial: Boolean, locale
 }
 
 @Composable
-private fun Fact(label: String, value: String) {
+internal fun Fact(label: String, value: String) {
     Row(Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
         Text(label, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
         Text(value, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
@@ -603,7 +626,7 @@ private fun RuleExplanation(rule: String) {
 }
 
 @Composable
-private fun ErrorText(code: String) {
+internal fun ErrorText(code: String) {
     Text(
         stringResource(
             when (code) {
@@ -619,7 +642,7 @@ private fun ErrorText(code: String) {
 }
 
 @Composable
-private fun Heading(text: String) {
+internal fun Heading(text: String) {
     Text(
         text,
         modifier = Modifier.semantics { heading() },
@@ -628,7 +651,7 @@ private fun Heading(text: String) {
 }
 
 @Composable
-private fun HeadingSmall(text: String) {
+internal fun HeadingSmall(text: String) {
     Text(
         text,
         modifier = Modifier.semantics { heading() },
@@ -637,17 +660,17 @@ private fun HeadingSmall(text: String) {
 }
 
 @Composable
-private fun Muted(text: String) {
+internal fun Muted(text: String) {
     Text(text, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
 }
 
 @Composable
-private fun depthUnit(imperial: Boolean): String = stringResource(
+internal fun depthUnit(imperial: Boolean): String = stringResource(
     if (imperial) R.string.tools_unit_depth_imperial else R.string.tools_unit_depth_metric,
 )
 
 @Composable
-private fun pressureUnit(imperial: Boolean): String = stringResource(
+internal fun pressureUnit(imperial: Boolean): String = stringResource(
     if (imperial) R.string.tools_unit_pressure_imperial else R.string.tools_unit_pressure_metric,
 )
 
@@ -669,7 +692,7 @@ private fun limitWord(limit: String, context: Context): String = context.getStri
 )
 
 @Composable
-private fun source(source: String): String = stringResource(
+internal fun source(source: String): String = stringResource(
     when (source) {
         "request" -> R.string.tools_source_request
         "recording" -> R.string.tools_source_recording

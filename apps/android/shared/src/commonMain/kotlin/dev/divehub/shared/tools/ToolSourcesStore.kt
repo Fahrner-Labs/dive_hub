@@ -5,6 +5,7 @@ package dev.divehub.shared.tools
 
 import dev.divehub.api.models.DiveViewRecordingsItemSummary
 import dev.divehub.shared.planning.PlanningSacDive
+import dev.divehub.shared.planning.PlanningSacResult
 import dev.divehub.shared.planning.SacCylinder
 import dev.divehub.shared.planning.SacDive
 import dev.divehub.shared.planning.planningSac
@@ -24,20 +25,16 @@ private val SUMMARY = Json { ignoreUnknownKeys = true }
 /**
  * The store's values for the tools, read in one transaction so a concurrent sync cannot mix two snapshots. The reads
  * are the server's: the latest 100 Dives for the SAC, the latest 100 Recordings for the GF, and the Diver's Dives for
- * the 48-hour warning; the three bulk queries are filtered here rather than one query per Dive.
+ * the 48-hour warning; the three bulk queries are filtered here rather than one query per Dive. Every synced Diver is
+ * named for the plan's picker, and any of them whose Dives are in the store brings their planning SAC.
  */
 fun assembleToolSources(store: DiveStore, nowMs: Long): ToolSources = store.transaction {
-    val own = store.divers().firstOrNull { it.isOwn }
+    val allDivers = store.divers().sortedByDescending { it.isOwn }
     val dives = store.allDives().filter { it.deletedAt == null }
     val empty = dives.isEmpty()
     val syncedAt = store.syncState().lastFullSyncAt
-    if (own == null) return@transaction ToolSources(storeEmpty = empty)
-
-    val ownDives = dives
-        .filter { it.diverId == own.id }
-        .sortedByDescending { epochMs(it.startsAt) ?: Long.MIN_VALUE }
-    val recentDives = ownDives.take(SAC_LOOKBACK_DIVES)
-    val diveIds = ownDives.mapTo(HashSet()) { it.id }
+    val divesByDiver = dives.groupBy { it.diverId }
+    val diveIds = dives.mapTo(HashSet()) { it.id }
     val recordings = store.allRecordings()
         .filter { it.deletedAt == null && it.diveId in diveIds }
         .sortedByDescending { epochMs(it.startsAt) ?: Long.MIN_VALUE }
@@ -46,15 +43,44 @@ fun assembleToolSources(store: DiveStore, nowMs: Long): ToolSources = store.tran
         .filter { it.diveId in diveIds }
         .groupBy { it.diveId }
 
+    fun sacOfDiver(diverId: String): PlanningSacResult {
+        val recent = divesByDiver[diverId].orEmpty()
+            .sortedByDescending { epochMs(it.startsAt) ?: Long.MIN_VALUE }
+            .take(SAC_LOOKBACK_DIVES)
+        return planningSac(
+            recent.map { PlanningSacDive(sacOf(it, summaries[it.id].orEmpty(), cylinders[it.id].orEmpty())) },
+        )
+    }
+
+    fun recentEndOfDiver(diverId: String): String? = recentDiveEnd(
+        divesByDiver[diverId].orEmpty().sortedByDescending { epochMs(it.startsAt) ?: Long.MIN_VALUE },
+        nowMs,
+    )
+
+    val divers = allDivers.map { diver ->
+        ToolDiverSource(
+            id = diver.id,
+            name = diver.name,
+            isOwn = diver.isOwn,
+            planningSac = divesByDiver[diver.id]?.takeIf { it.isNotEmpty() }?.let { sacOfDiver(diver.id) },
+            recentDiveEndedAt = recentEndOfDiver(diver.id),
+        )
+    }
+    val own = allDivers.firstOrNull { it.isOwn }
+    if (own == null) return@transaction ToolSources(storeEmpty = empty, syncedAt = syncedAt, divers = divers)
+
+    val ownDives = divesByDiver[own.id].orEmpty()
+        .sortedByDescending { epochMs(it.startsAt) ?: Long.MIN_VALUE }
+    val ownIds = ownDives.mapTo(HashSet()) { it.id }
+    val ownRecordings = recordings.filter { it.diveId in ownIds }
     ToolSources(
         ownDiverId = own.id,
-        gfHigh = recordings.take(GF_LOOKBACK_RECORDINGS).asSequence().mapNotNull { summaryOf(it)?.gfHigh }.firstOrNull(),
-        planningSac = planningSac(
-            recentDives.map { PlanningSacDive(sacOf(it, summaries[it.id].orEmpty(), cylinders[it.id].orEmpty())) },
-        ),
-        recentDiveEndedAt = recentDiveEnd(ownDives, nowMs),
+        gfHigh = ownRecordings.take(GF_LOOKBACK_RECORDINGS).asSequence().mapNotNull { summaryOf(it)?.gfHigh }.firstOrNull(),
+        planningSac = sacOfDiver(own.id),
+        recentDiveEndedAt = recentEndOfDiver(own.id),
         storeEmpty = empty,
         syncedAt = syncedAt,
+        divers = divers,
     )
 }
 

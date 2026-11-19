@@ -28,10 +28,10 @@ class ToolSourcesStoreTest {
         Diver(id = "diver", name = "Elena", isOwn = true, external = false, apneaCounts = false, divesBefore = 0),
     )
 
-    private fun dive(id: String, startsAt: String, sacLpm: Double? = null) = store.upsertDive(
+    private fun dive(id: String, startsAt: String, sacLpm: Double? = null, diverId: String = "diver") = store.upsertDive(
         Dive(
             id = id,
-            diverId = "diver",
+            diverId = diverId,
             startsAt = startsAt,
             durationSeconds = 2_700,
             avgDepthM = 18.0,
@@ -143,6 +143,34 @@ class ToolSourcesStoreTest {
         val sac = assertNotNull(assembleToolSources(store, nowMs = 1_700_000_000_000).planningSac)
         assertEquals(PlanningSacSource.logbook, sac.source)
         assertEquals(16.0, sac.lpm)
+    }
+
+    @Test
+    fun `every synced Diver is named, with a planning SAC where their Dives allow`() {
+        ownDiver()
+        store.upsertDiver(
+            Diver(id = "buddy", name = "Bob", isOwn = false, external = false, apneaCounts = false, divesBefore = 0),
+        )
+        store.upsertDiver(
+            Diver(id = "quiet", name = "Quiet", isOwn = false, external = false, apneaCounts = false, divesBefore = 0),
+        )
+        listOf(10.0, 12.0, 14.0, 16.0, 18.0).forEachIndexed { index, sac ->
+            dive("own$index", "2026-11-${(18 - index).toString().padStart(2, '0')}T09:00:00.000Z", sac)
+            dive("buddy$index", "2026-11-${(18 - index).toString().padStart(2, '0')}T10:00:00.000Z", sac + 2, diverId = "buddy")
+        }
+
+        val sources = assembleToolSources(store, nowMs = 1_700_000_000_000)
+        val own = assertNotNull(sources.divers.firstOrNull { it.id == "diver" })
+        val buddy = assertNotNull(sources.divers.firstOrNull { it.id == "buddy" })
+        val quiet = assertNotNull(sources.divers.firstOrNull { it.id == "quiet" })
+        assertTrue(own.isOwn)
+        assertFalse(buddy.isOwn)
+        assertEquals("Bob", buddy.name)
+        assertEquals(PlanningSacSource.logbook, own.planningSac?.source)
+        assertEquals(PlanningSacSource.logbook, buddy.planningSac?.source)
+        assertEquals(16.8, own.planningSac?.lpm)
+        assertEquals(18.8, buddy.planningSac?.lpm)
+        assertNull(quiet.planningSac)
     }
 
     @Test

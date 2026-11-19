@@ -25,4 +25,6 @@ object ToolRanges {
     val ALTITUDE_M = 0.0..5000.0
     val PPO2 = 1.0..2.0
     val RULE_BAR = 0.0..350.0
+    val DESCENT_RATE_MPM = 3.0..30.0
+    val ASCENT_RATE_MPM = 3.0..18.0
 }

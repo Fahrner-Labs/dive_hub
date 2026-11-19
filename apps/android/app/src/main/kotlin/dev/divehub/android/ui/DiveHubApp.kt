@@ -50,13 +50,20 @@ import dev.divehub.android.ui.dive.DiveDetailRoute
 import dev.divehub.android.ui.dive.DiveDetailViewModel
 import dev.divehub.android.ui.logbook.LogbookRoute
 import dev.divehub.android.ui.logbook.LogbookViewModel
+import dev.divehub.android.ui.tools.GasPlanViewModel
 import dev.divehub.android.ui.tools.ToolsRoute
 import dev.divehub.android.ui.tools.ToolsViewModel
 import dev.divehub.shared.logbook.LogbookPaging
 import dev.divehub.shared.ErrorCodes
 
 @Composable
-fun DiveHubApp(viewModel: MainViewModel, logbook: LogbookViewModel, dive: DiveDetailViewModel, tools: ToolsViewModel) {
+fun DiveHubApp(
+    viewModel: MainViewModel,
+    logbook: LogbookViewModel,
+    dive: DiveDetailViewModel,
+    tools: ToolsViewModel,
+    gasPlan: GasPlanViewModel,
+) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     // The open Dive is the app's only navigation state; the logbook keeps its filters underneath and back lands on
     // the page the Dive is on (ADR 0042).
@@ -68,6 +75,7 @@ fun DiveHubApp(viewModel: MainViewModel, logbook: LogbookViewModel, dive: DiveDe
             logbook.forget()
             dive.forget()
             tools.forget()
+            gasPlan.forget()
             openDiveId = null
             showTools = false
         } else {
@@ -98,6 +106,7 @@ fun DiveHubApp(viewModel: MainViewModel, logbook: LogbookViewModel, dive: DiveDe
             )
             state.user != null && showTools -> ToolsRoute(
                 viewModel = tools,
+                planViewModel = gasPlan,
                 units = state.units,
                 onBack = { showTools = false },
             )

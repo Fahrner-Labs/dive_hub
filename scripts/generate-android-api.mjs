@@ -33,6 +33,8 @@ export const OPERATIONS = [
   // The offline tools (slice U1): their answers are the contract the phone's service layer shapes to.
   { name: 'ApiToolsGasGet200Response', path: '/api/tools/gas', method: 'get', kind: 'response', status: '200' },
   { name: 'ApiToolsBottomTimeGet200Response', path: '/api/tools/bottom-time', method: 'get', kind: 'response', status: '200' },
+  // The gas plan (slice U2): the route's answer, both of its shapes in one class (see registerUnionClass).
+  { name: 'ApiToolsGasPlanPost200Response', path: '/api/tools/gas-plan', method: 'post', kind: 'response', status: '200' },
 ];
 
 /** Named component schemas the app uses outside an operation body. Refusals decode through the tolerant ApiErrorBody. */
@@ -131,6 +133,14 @@ export function generateModels(document, operations = OPERATIONS, seeds = MODEL_
 
   function registerClass(hint, rawSchema) {
     if (rawSchema.$ref) return typeOf(rawSchema, hint).type;
+    if (rawSchema.anyOf) {
+      const shapes = rawSchema.anyOf
+        .filter((variant) => !nullableOf(variant))
+        .map((variant) => flattenSchema(document, refSchema(document, variant)));
+      if (shapes.length > 0 && shapes.every((shape) => shape.type === 'object' && Object.keys(shape.properties ?? {}).length > 0)) {
+        return registerUnionClass(hint, shapes);
+      }
+    }
     let name = className(hint);
     if (usedNames.has(name)) {
       for (let index = 2; ; index += 1) {
@@ -161,6 +171,72 @@ export function generateModels(document, operations = OPERATIONS, seeds = MODEL_
     return name;
   }
 
+  /** What a schema looks like, for telling the same shape apart from two that only differ in an enum's values. */
+  function shapeKey(rawSchema) {
+    if (!rawSchema) return 'any';
+    if (rawSchema.$ref) return `ref:${rawSchema.$ref}`;
+    if (rawSchema.enum) {
+      const values = rawSchema.enum;
+      if (values.every((value) => typeof value === 'boolean')) return 'boolean';
+      if (values.every((value) => Number.isInteger(value))) return 'integer';
+      if (values.every((value) => typeof value === 'number')) return 'number';
+      return 'string';
+    }
+    if (rawSchema.anyOf) return `anyOf:${rawSchema.anyOf.map(shapeKey).join('|')}`;
+    if (rawSchema.allOf) return `allOf:${JSON.stringify(flattenSchema(document, rawSchema))}`;
+    if (rawSchema.type === 'array') return `array:${shapeKey(rawSchema.items)}`;
+    if (rawSchema.type === 'object' || rawSchema.properties) return `object:${JSON.stringify(rawSchema)}`;
+    return rawSchema.type ?? 'any';
+  }
+
+  /**
+   * An `anyOf` of object shapes (the gas plan's ok and outside_limits answers) is one class: the union of their fields.
+   * A field is required only when every variant requires it; a variant's own fields stay optional and nullable.
+   */
+  function registerUnionClass(hint, schemas) {
+    let name = className(hint);
+    if (usedNames.has(name)) {
+      for (let index = 2; ; index += 1) {
+        if (!usedNames.has(`${name}${index}`)) {
+          name = `${name}${index}`;
+          break;
+        }
+      }
+    }
+    usedNames.add(name);
+    const entry = { name, properties: [], description: '' };
+    classes.set(name, entry);
+    entry.description = escape(schemas.find((schema) => schema.description)?.description ?? '');
+    const requiredEverywhere = schemas
+      .map((schema) => new Set(schema.required ?? []))
+      .reduce((left, right) => new Set([...left].filter((property) => right.has(property))));
+    const fields = new Map();
+    for (const schema of schemas) {
+      for (const [property, propertySchema] of Object.entries(schema.properties ?? {})) {
+        fields.set(property, [...(fields.get(property) ?? []), propertySchema]);
+      }
+    }
+    for (const [property, propertySchemas] of fields) {
+      // A field every variant shares with one shape (the status, a string enum in each) keeps that type; a real clash
+      // between shapes stays a JsonElement. The shape, not the class name, decides: the same inline object registered
+      // twice would otherwise look like two types.
+      const shapes = propertySchemas.map((propertySchema) => shapeKey(propertySchema));
+      const type = shapes.every((shape) => shape === shapes[0])
+        ? typeOf(propertySchemas[0], `${name}${pascal(property)}`)
+        : { type: 'JsonElement', nullable: true };
+      const isRequired = requiredEverywhere.has(property);
+      entry.properties.push({
+        jsonName: property,
+        name: identifier(property),
+        type: type.type,
+        nullable: !isRequired || nullableOf(propertySchemas[0]) || type.nullable,
+        optional: !isRequired,
+        description: escape(propertySchemas[0].description ?? refSchema(document, propertySchemas[0]).description),
+      });
+    }
+    return name;
+  }
+
   function typeOf(rawSchema, hint) {
     if (!rawSchema) return { type: 'JsonElement', nullable: true };
     // `allOf` is one object also when it sits in a property (the tools' `sacLpm`): merge before typing it.
@@ -179,6 +255,10 @@ export function generateModels(document, operations = OPERATIONS, seeds = MODEL_
       if (nonNull.length === 1) {
         const type = typeOf(nonNull[0], hint);
         return { type: type.type, nullable: hadNull || type.nullable };
+      }
+      const shapes = nonNull.map((variant) => flattenSchema(document, refSchema(document, variant)));
+      if (shapes.every((shape) => shape.type === 'object' && Object.keys(shape.properties ?? {}).length > 0)) {
+        return { type: registerUnionClass(hint, shapes), nullable: hadNull };
       }
       const types = nonNull.map((variant) => typeOf(variant, hint));
       if (types.every((type) => type.type === types[0].type)) {
