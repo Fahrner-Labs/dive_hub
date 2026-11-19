@@ -63,6 +63,7 @@ class ToolsError(val code: String) : Exception(code) {
     companion object {
         const val INVALID_INPUT = "invalid_input"
         const val GAS_NOT_BREATHABLE = "gas_not_breathable"
+        const val SUIT_INVALID = "suit_invalid"
     }
 }
 

@@ -11,6 +11,8 @@ import dev.divehub.android.ui.MainViewModel
 import dev.divehub.android.ui.dive.DiveDetailViewModel
 import dev.divehub.android.ui.logbook.LogbookViewModel
 import dev.divehub.android.ui.tools.GasPlanViewModel
+import dev.divehub.android.ui.tools.LeadEstimateViewModel
+import dev.divehub.android.ui.tools.LoadingsViewModel
 import dev.divehub.android.ui.tools.ToolsViewModel
 
 class MainActivity : ComponentActivity() {
@@ -25,7 +27,9 @@ class MainActivity : ComponentActivity() {
                 val dive: DiveDetailViewModel = viewModel(factory = DiveDetailViewModel.factory(container))
                 val tools: ToolsViewModel = viewModel(factory = ToolsViewModel.factory(container))
                 val gasPlan: GasPlanViewModel = viewModel(factory = GasPlanViewModel.factory(container))
-                DiveHubApp(viewModel, logbook, dive, tools, gasPlan)
+                val lead: LeadEstimateViewModel = viewModel(factory = LeadEstimateViewModel.factory(container))
+                val loadings: LoadingsViewModel = viewModel(factory = LoadingsViewModel.factory(container))
+                DiveHubApp(viewModel, logbook, dive, tools, gasPlan, lead, loadings)
             }
         }
     }

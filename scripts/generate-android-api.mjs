@@ -39,6 +39,9 @@ export const OPERATIONS = [
   { name: 'ApiToolsBottomTimeGet200Response', path: '/api/tools/bottom-time', method: 'get', kind: 'response', status: '200' },
   // The gas plan (slice U2): the route's answer, both of its shapes in one class (see registerUnionClass).
   { name: 'ApiToolsGasPlanPost200Response', path: '/api/tools/gas-plan', method: 'post', kind: 'response', status: '200' },
+  // The personalized tools (slice U3): the answers the phone shapes from the synced store.
+  { name: 'ApiDiversIdLeadEstimateGet200Response', path: '/api/divers/{id}/lead-estimate', method: 'get', kind: 'response', status: '200' },
+  { name: 'ApiDiversIdLoadingsGet200Response', path: '/api/divers/{id}/loadings', method: 'get', kind: 'response', status: '200' },
 ];
 
 /** Named component schemas the app uses outside an operation body. Refusals decode through the tolerant ApiErrorBody. */
