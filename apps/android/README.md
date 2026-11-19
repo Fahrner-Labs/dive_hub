@@ -126,7 +126,8 @@ detail, then marks its profiles pending; a `site` hint refetches that site. On e
 again, because hints are not replayed. When the stream is down the foreground poll re-runs phase 1 every minute, and
 WorkManager runs the same refresh every 15 minutes; the scheduler is the `PeriodicSyncScheduler` interface in
 `shared/`, implemented in `app/` so `shared/` stays Android-free. Deleted Dives come from `GET /api/dives/deleted`,
-paged by `nextCursor`, and become local tombstones (`deletedAt`); nothing is hard-deleted. `sync_state` keeps
+paged by `nextCursor`, and become local tombstones (`deletedAt`); nothing is hard-deleted, and a Dive the server
+restores clears its tombstone on the next list or detail read. `sync_state` keeps
 `lastFullSyncAt` and `lastHintAt` for the staleness label and the settings sync line.
 
 The sync engine is serialized with a mutex, so the initial sync, a connect resync and a hint cannot write interleaved

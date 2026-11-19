@@ -20,9 +20,13 @@ import dev.divehub.shared.sync.SyncResult
 import io.ktor.client.engine.okhttp.OkHttp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancelChildren
+import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 
 /** The app's small object graph: one HTTP engine, the stores, and the session they serve. */
@@ -39,10 +43,13 @@ class AppContainer(context: Context) {
     /** A change of User drops both the cache and the offline read store (client contract §1 Security). */
     private val userData = object : UserScopedStore {
         override suspend fun forget() {
-            // Stop first: a sync still in flight must not write the previous User's rows back after the wipe.
-            stopSync()
-            cache.forget()
-            withContext(Dispatchers.IO) { diveStore.forget() }
+            // Stop first: a sync still in flight must not write the previous User's rows back after the wipe. The
+            // scheduled worker runs outside `syncScope`, so it shares `wipeLock` with the wipe instead.
+            stopSyncAndJoin()
+            wipeLock.withLock {
+                cache.forget()
+                withContext(Dispatchers.IO) { diveStore.forget() }
+            }
         }
     }
 
@@ -57,6 +64,7 @@ class AppContainer(context: Context) {
     private val refresher = SyncRefresher(sync, SseLiveHints(session.client))
     private val periodicSync = WorkManagerPeriodicSync(application)
     private val syncScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val wipeLock = Mutex()
     private var syncing = false
 
     /**
@@ -70,7 +78,7 @@ class AppContainer(context: Context) {
         periodicSync.schedule()
         syncScope.launch {
             if (sync.sync() == SyncResult.SessionEnded) return@launch
-            sync.syncProfiles()
+            refresher.profilesOnce()
         }
     }
 
@@ -82,11 +90,26 @@ class AppContainer(context: Context) {
         syncScope.coroutineContext.cancelChildren()
     }
 
-    /** One scheduled run (WorkManager): phase 1 and tombstones, only when this device holds a session. */
+    /** Stop and wait for the sync jobs; a wipe must not run while a page or hint is still being written. */
+    private suspend fun stopSyncAndJoin() {
+        stopSync()
+        val job = syncScope.coroutineContext[Job] ?: return
+        job.children.toList().joinAll()
+    }
+
+    /**
+     * One scheduled run (WorkManager): phase 1, tombstones and pending profiles, only when this device holds a
+     * session. [wipeLock] keeps it from writing after a sign-out wipe.
+     */
     suspend fun refreshNow() {
         val url = session.knownInstance() ?: return
         session.client.baseUrl = url
         if (!session.hasSession()) return
-        sync.refresh()
+        wipeLock.withLock {
+            // Re-checked inside the lock: a sign-out may have cleared the token while this run waited.
+            if (!session.hasSession()) return@withLock
+            refresher.refreshOnce()
+            refresher.profilesOnce()
+        }
     }
 }

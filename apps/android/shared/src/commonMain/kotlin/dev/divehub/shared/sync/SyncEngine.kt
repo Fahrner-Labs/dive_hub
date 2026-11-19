@@ -180,6 +180,9 @@ class SyncEngine(
     fun profileSynced(diveId: String): Boolean =
         store.checkpoint(profileEntity(diveId), PHASE_PROFILES)?.done == true
 
+    /** Whether any live Dive still needs its profiles, so a refresh can hand the background phase some work. */
+    fun hasPendingProfiles(): Boolean = store.allDives().any { it.deletedAt == null && !profileSynced(it.id) }
+
     /** The store's per-phase counts, read in one transaction so a concurrent write cannot mix two snapshots. */
     fun progress(): SyncProgress = store.transaction {
         val active = store.allDives().filter { it.deletedAt == null }

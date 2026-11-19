@@ -388,6 +388,37 @@ class SyncRefreshTest {
     }
 
     @Test
+    fun `a restored Dive on the server clears its local tombstone`() = runTest {
+        val harness = seeded()
+        store.markDiveDeleted("dive-1", "2026-11-18T00:00:00Z")
+        assertEquals(0, store.dives().size)
+        harness.paths.clear()
+
+        assertEquals(SyncResult.Complete, harness.engine.refresh())
+
+        assertNotNull(store.dive("dive-1"))
+        assertNull(store.dive("dive-1")!!.deletedAt)
+        assertEquals(1, store.dives().size)
+    }
+
+    @Test
+    fun `a dive hint makes the profiles phase fetch that Dive again`() = runTest {
+        val harness = seeded()
+        harness.engine.syncProfiles()
+        RefreshData.samplePeak["recording-dive-1"] = 40.0
+
+        assertEquals(SyncResult.Complete, harness.engine.applyDiveHint("dive-1"))
+        assertFalse(harness.engine.profileSynced("dive-1"))
+
+        harness.paths.clear()
+        harness.refresher.profilesOnce()
+
+        assertTrue(harness.paths.any { it.startsWith("/api/recordings/recording-dive-1/samples") })
+        assertTrue(store.series("recording-dive-1", "depth")!!.valuesJson.contains("40.0"))
+        assertTrue(harness.engine.profileSynced("dive-1"))
+    }
+
+    @Test
     fun `a site hint refetches that site`() = runTest {
         val harness = seeded()
         RefreshData.sites[0] = refreshSiteJson(name = "New Reef")

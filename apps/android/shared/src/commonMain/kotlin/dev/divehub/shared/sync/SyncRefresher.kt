@@ -33,6 +33,8 @@ class SyncRefresher(
 
     private var liveJob: Job? = null
     private var pollJob: Job? = null
+    private var profilesJob: Job? = null
+    private var scope: CoroutineScope? = null
 
     /**
      * One event from the stream. A connect re-runs phase 1 (hints are not replayed, so this is the resync); a Dive hint
@@ -43,15 +45,21 @@ class SyncRefresher(
             LiveEvent.Connected -> {
                 _streamHealthy.value = true
                 if (engine.refresh() != SyncResult.SessionEnded) bump()
+                profilesSoon()
             }
             is LiveEvent.Hint -> {
                 _streamHealthy.value = true
+                val dive = event.hint.kind == "dive"
                 val result = when (event.hint.kind) {
                     "dive" -> engine.applyDiveHint(event.hint.id)
                     "site" -> engine.applySiteHint(event.hint.id)
                     else -> return
                 }
-                if (result != SyncResult.SessionEnded) bump()
+                if (result != SyncResult.SessionEnded) {
+                    bump()
+                    // A dive hint marked its profiles pending; the background phase picks that work up.
+                    if (dive) profilesSoon()
+                }
             }
         }
     }
@@ -59,7 +67,19 @@ class SyncRefresher(
     /** The polling fallback: phase 1 again, but only while the stream is down (a healthy stream is fresher). */
     suspend fun pollOnce() {
         if (_streamHealthy.value) return
+        refreshOnce()
+        profilesSoon()
+    }
+
+    /** One refresh regardless of stream health; the WorkManager worker runs this without a foreground poll. */
+    suspend fun refreshOnce() {
         if (engine.refresh() != SyncResult.SessionEnded) bump()
+    }
+
+    /** Drain the pending profiles phase and tell open screens; a no-op when every Dive already has its profiles. */
+    suspend fun profilesOnce() {
+        if (!engine.hasPendingProfiles()) return
+        if (engine.syncProfiles() != SyncResult.SessionEnded) bump()
     }
 
     /** Collect one connection to the end; returns when the stream drops, and [streamHealthy] turns false. */
@@ -75,6 +95,7 @@ class SyncRefresher(
     /** Start the live reconnect loop and the foreground poll in [scope]; both end with [stop] or the scope. */
     fun start(scope: CoroutineScope) {
         if (liveJob != null || pollJob != null) return
+        this.scope = scope
         if (live != null) {
             liveJob = scope.launch {
                 while (isActive) {
@@ -106,9 +127,27 @@ class SyncRefresher(
     fun stop() {
         liveJob?.cancel()
         pollJob?.cancel()
+        profilesJob?.cancel()
         liveJob = null
         pollJob = null
+        profilesJob = null
+        scope = null
         _streamHealthy.value = false
+    }
+
+    /** Start phase 3 in the background without delaying the hint stream or the poll that asked for it. */
+    private fun profilesSoon() {
+        val scope = scope ?: return
+        if (profilesJob?.isActive == true || !engine.hasPendingProfiles()) return
+        profilesJob = scope.launch {
+            try {
+                profilesOnce()
+            } catch (error: CancellationException) {
+                throw error
+            } catch (_: Exception) {
+                // A later connect, hint or poll tries again; the per-Dive checkpoint keeps the resume point.
+            }
+        }
     }
 
     private fun bump() = _revision.update { it + 1 }

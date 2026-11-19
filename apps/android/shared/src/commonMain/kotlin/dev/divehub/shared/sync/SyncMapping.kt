@@ -59,6 +59,8 @@ internal fun ApiDiverBodyWeightsGet200ResponseItem.toStore(diverId: String): Bod
 internal fun ApiDivesGet200ResponseDivesItem.toStore(existing: Dive?): Dive {
     if (existing?.version != null) {
         return existing.copy(
+            // A live list row means the Dive is back (a restore): its tombstone must not outlive the server state.
+            deletedAt = null,
             diverId = diverId,
             startsAt = startsAt,
             utcOffsetSeconds = utcOffsetSeconds?.toLong() ?: existing.utcOffsetSeconds,
@@ -76,7 +78,7 @@ internal fun ApiDivesGet200ResponseDivesItem.toStore(existing: Dive?): Dive {
         id = id,
         diverId = diverId,
         version = null,
-        deletedAt = existing?.deletedAt,
+        deletedAt = null,
         startsAt = startsAt,
         utcOffsetSeconds = utcOffsetSeconds?.toLong(),
         utcOffsetSource = utcOffsetSource,
@@ -105,7 +107,8 @@ internal fun DiveView.toStore(existing: Dive?): Dive = Dive(
     id = id,
     diverId = diverId,
     version = version.toLong(),
-    deletedAt = existing?.deletedAt,
+    // A detail is only readable while the Dive is live: a successful fetch clears any tombstone.
+    deletedAt = null,
     startsAt = values.startsAt.at,
     utcOffsetSeconds = values.startsAt.utcOffsetSeconds?.toLong() ?: existing?.utcOffsetSeconds,
     utcOffsetSource = utcOffsetSource,
