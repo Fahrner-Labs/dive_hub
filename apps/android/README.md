@@ -21,6 +21,17 @@ join when the iOS app starts; the module's source sets are already common.
 - The Gradle wrapper downloads Gradle 9.6.0; the first build also downloads the Android Gradle plugin, Kotlin and
   Compose dependencies.
 
+## Typography
+
+The app's UI font is Poppins, the brand font for the wordmark and the UI (CEO decision on FAH-305). The OFL TTFs for
+weights 400, 500, 600 and 700 live in `app/src/main/res/font/`, the license text in
+`app/src/main/assets/licenses/Poppins-OFL.txt`, and [`Type.kt`](app/src/main/kotlin/dev/divehub/android/ui/Type.kt)
+builds `DiveHubTypography` from them for `DiveHubTheme`.
+
+Poppins has no italic, so Compose synthesizes italic where a style asks for it; nothing in the app asks today. Its
+figures are proportional (the bundled files have no `tnum` feature), so numeric columns are not digit-aligned the way
+Roboto's default tabular figures were.
+
 ## Signing
 
 Debug builds are signed with the committed [`debug.keystore`](debug.keystore) and the conventional
