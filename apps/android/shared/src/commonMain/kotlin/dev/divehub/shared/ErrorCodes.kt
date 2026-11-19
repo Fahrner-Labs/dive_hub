@@ -10,4 +10,6 @@ object ErrorCodes {
     const val INVALID_INSTANCE_URL = "invalid_instance_url"
     const val MISSING_TOKEN = "missing_token"
     const val SERVER_ERROR = "internal_error"
+    /** The server refuses this app's version (ADR 0076): the session is fine, the app is old. */
+    const val CLIENT_TOO_OLD = "client_too_old"
 }

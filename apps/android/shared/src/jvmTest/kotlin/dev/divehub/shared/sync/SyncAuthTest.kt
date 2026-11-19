@@ -78,6 +78,7 @@ class SyncAuthTest {
         tokens = tokens,
         instances = FakeInstances(),
         userData = store,
+        versionName = "0.1.0-dev",
     )
 
     @Test
@@ -116,6 +117,7 @@ class SyncAuthTest {
             tokens = tokens,
             instances = FakeInstances(),
             userData = store,
+            versionName = "0.1.0-dev",
         )
 
         session.restore()

@@ -66,7 +66,7 @@ class AppContainer(context: Context) {
         }
     }
 
-    val session = SessionRepository(httpEngine, tokens, instances, userData)
+    val session = SessionRepository(httpEngine, tokens, instances, userData, versionName = BuildConfig.VERSION_NAME)
 
     /** The logbook's and dive page's read sides share the session's HTTP layer (instance URL and bearer token). */
     val logbook = LogbookRepository(session.client)

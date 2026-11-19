@@ -57,6 +57,7 @@ private class RefreshHarness(
                 }
             }
         },
+        versionName = "0.1.0-dev",
         token = { "token" },
         onUnauthorized = { unauthorized += 1 },
         json = RefreshJson,

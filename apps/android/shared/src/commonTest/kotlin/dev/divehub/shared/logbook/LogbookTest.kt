@@ -220,6 +220,7 @@ private const val EMPTY_PAGE = """{"dives":[],"total":0,"counts":{"noRecording":
 private class RepositoryHarness(handler: suspend MockRequestHandleScope.(HttpRequestData) -> HttpResponseData) {
     private val api = dev.divehub.shared.ApiClient(
         engine = MockEngine(handler),
+        versionName = "0.1.0-dev",
         token = { "token" },
         onUnauthorized = {},
         json = Json { ignoreUnknownKeys = true; explicitNulls = false },

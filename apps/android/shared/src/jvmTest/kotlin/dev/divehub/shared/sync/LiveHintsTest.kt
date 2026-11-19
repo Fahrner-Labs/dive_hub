@@ -20,6 +20,7 @@ class LiveHintsTest {
         engine = MockEngine {
             respond(body, status, headersOf(HttpHeaders.ContentType, "text/event-stream"))
         },
+        versionName = "0.1.0-dev",
         token = { "token" },
         onUnauthorized = {},
         json = JSON,
