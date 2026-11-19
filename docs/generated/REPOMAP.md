@@ -4,7 +4,7 @@
 > `pnpm check` fails when this map is stale. Symbols are ranked by how widely the code references them;
 > each module shows its most-referenced ones (exported symbols rank higher). Search here before walking the tree.
 
-Files: 405 · symbols: 3687 · shown: 261
+Files: 405 · symbols: 3687 · shown: 256
 
 ### server/(root)
 apps/server/src/vocabulary.ts:13 type SiteWaterType
@@ -43,8 +43,7 @@ apps/server/src/backups/backup-service.ts:48 class BackupError
 apps/server/src/backups/backup-archive.ts:145 const encryptionKeyFingerprint
 apps/server/src/backups/backup-service.ts:86 const isUniqueViolation
 apps/server/src/backups/backup-service.ts:461 type BackupService
-apps/server/src/backups/backup-archive.ts:96 iface BackupManifest
-… 148 more symbols in this module
+… 149 more symbols in this module
 
 ### server/centres
 apps/server/src/centres/centre-view.ts:24 const CentreView
@@ -130,14 +129,13 @@ apps/server/src/http/problems.ts:221 const answerErrors
 apps/server/src/imports/parsed-recording.ts:36 iface ParsedRecording
 apps/server/src/imports/parsed-recording.ts:10 class ParseError
 apps/server/src/imports/parsed-recording.ts:28 iface ParsedEvent
-apps/server/src/imports/parsed-recording.ts:21 iface ParsedSeries
 apps/server/src/imports/import-view.ts:47 const ImportView
 apps/server/src/imports/formats/suunto/suunto-json.ts:40 const round
 apps/server/src/imports/formats/uddf/uddf.ts:38 const round
 apps/server/src/imports/formats.ts:8 iface FileFormat
 apps/server/src/imports/import-service.ts:16 const PROCESS_IMPORT_TASK
 apps/server/src/imports/formats/uddf/xml.ts:141 const child
-… 147 more symbols in this module
+… 148 more symbols in this module
 
 ### server/lead
 apps/server/src/lead/test-vectors.ts:45 const dive
@@ -182,8 +180,7 @@ apps/server/src/planning/gas-plan.ts:86 fn planGas
 apps/server/src/planning/loadings.ts:82 fn tissuesAfterDives
 apps/server/src/planning/planning-sac.ts:17 fn planningSac
 apps/server/src/planning/tissues.ts:28 fn surfaceSaturatedTissues
-apps/server/src/planning/loadings-service.ts:17 const DAY_MS
-… 183 more symbols in this module
+… 184 more symbols in this module
 
 ### server/providers
 apps/server/src/providers/registry.ts:70 class ProviderServiceError
@@ -243,8 +240,7 @@ apps/server/src/sites/import/site-source.ts:27 iface SourceSite
 apps/server/src/sites/sources.ts:10 const SITE_SOURCES
 apps/server/src/sites/sources.ts:33 const SOURCE_INFO
 apps/server/src/sites/sources.ts:14 const IMPORT_SOURCES
-apps/server/src/sites/site-ids.ts:26 fn accountOf
-… 165 more symbols in this module
+… 166 more symbols in this module
 
 ### server/social
 apps/server/src/social/suggestion-service.ts:18 class SuggestionError
@@ -313,8 +309,7 @@ apps/web/src/api/providers.ts:7 type ProviderView
 apps/web/src/api/dives.ts:15 type RecordingSummary
 apps/web/src/api/sites.ts:8 type Position
 apps/web/src/api/providers.ts:8 type ConnectionView
-apps/web/src/api/account.ts:17 const meQuery
-… 177 more symbols in this module
+… 178 more symbols in this module
 
 ### web/i18n
 apps/web/src/i18n/languages.ts:6 fn pickLanguage
