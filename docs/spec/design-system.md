@@ -78,7 +78,7 @@ Leonardo is the dev-time aid, never a runtime dependency.
 
 ### Type, space, shape
 
-- **Typeface:** IBM Plex Sans (variable, OFL, bundled, never from a CDN), one family.
+- **Typeface:** Poppins (OFL, bundled, never from a CDN), one family.
   Numbers in tables and facts use tabular figures.
 - **Scale:** six sizes in rem: `--text-xs` 12, `--text-sm` 14, `--text-md` 16 (body and inputs), `--text-lg` 20
   (section heading), `--text-title` 28 (page title; `--text-xl` and `--text-2xl` are the same), `--text-hero` 32

@@ -212,7 +212,7 @@ Deliberate simplifications, to revisit:
 
 Implemented:
 - Design tokens (light and dark, contrast measured to WCAG 2.2 AA) and a component set on React Aria
-  Components; every page moved onto them. IBM Plex Sans bundled; the depth profile is filled with a depth gradient.
+  Components; every page moved onto them. IBM Plex Sans bundled (Poppins since FAH-309); the depth profile is filled with a depth gradient.
 - English and German with i18next and typed keys; language from the User's preference or the browser.
 - Every API refusal carries a `code`; Import outcomes a `reason`, failed Imports an `errorCode`;
   server errors no longer show internals.

@@ -64,7 +64,7 @@ Where a skill and this project disagree, these rules win.
   test-first examples follow the test rules in [AGENTS.md](../AGENTS.md#tests).
 - **frontend-design**: the brief is already written — the [design system](spec/design-system.md) with
   [ADR 0019](decisions/0019-tonal-surfaces.md) and [ADR 0064](decisions/0064-ui-overhaul.md). Skip its
-  "identify the subject matter" step, and don't re-open palette, typeface (IBM Plex Sans) or tokens
+  "identify the subject matter" step, and don't re-open palette, typeface (Poppins) or tokens
   (`design/tokens.css`): use the skill to critique a new or reshaped screen against the generic defaults it
   names. Its copy guidance applies to the English source strings (i18next; German ships alongside), where
   sentence case is already the rule.

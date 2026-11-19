@@ -42,8 +42,8 @@
   --color-ascent-2: #c2570c;
   --color-ascent-3: #8a2f0a;
 
-  /* Type: IBM Plex Sans, six sizes 12/14/16/20/28/32 (xl and 2xl are the title size) */
-  --font-sans: 'IBM Plex Sans Variable', 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  /* Type: Poppins, six sizes 12/14/16/20/28/32 (xl and 2xl are the title size) */
+  --font-sans: 'Poppins', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --text-xs: 0.75rem;
   --text-sm: 0.875rem;
   --text-md: 1rem;
