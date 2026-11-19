@@ -167,12 +167,12 @@ export function Table({ label, head, children, cards, stacked, className }: {
   );
 }
 
-/** The diver-down flag: red with a white diagonal, flown above divers in the water. */
+/** The Waypoint mark: the diver-down flag with its stripe knocked out and the hub bead threaded on it. */
 export function BrandMark({ size = 28 }: { size?: number }) {
   return (
-    <svg className="brand-mark" width={size} height={(size * 3) / 4} viewBox="0 0 40 30" aria-hidden="true" focusable="false">
-      <rect width="40" height="30" rx="2" fill="var(--color-brand-flag)" />
-      <path d="M0 4 L4 0 L40 26 L36 30 Z" fill="#fff" />
+    <svg className="brand-mark" width={size} height={size} viewBox="0 0 256 256" fill="var(--color-brand-flag)" aria-hidden="true" focusable="false">
+      <path fillRule="evenodd" d="M 50 32 H 206 A 18 18 0 0 1 224 50 V 206 A 18 18 0 0 1 206 224 H 50 A 18 18 0 0 1 32 206 V 50 A 18 18 0 0 1 50 32 Z M 32 56 V 50 A 18 18 0 0 1 50 32 H 56 L 224 200 V 206 A 18 18 0 0 1 206 224 H 200 Z" />
+      <circle cx="128" cy="128" r="38" />
     </svg>
   );
 }
