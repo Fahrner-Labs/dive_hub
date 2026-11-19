@@ -86,6 +86,12 @@ class SyncRefresher(
     /** The app's first sync result: mark a no-answer run and let open screens reread what landed. */
     fun initialFinished(result: SyncResult) = mark(result)
 
+    /** The opened Dive's detail again, so a change missed while the stream was down is not shown as fresh. */
+    suspend fun refreshDiveOnce(id: String) {
+        mark(engine.applyDiveHint(id))
+        profilesSoon()
+    }
+
     /** One refresh regardless of stream health; the WorkManager worker runs this without a foreground poll. */
     suspend fun refreshOnce() {
         mark(engine.refresh())

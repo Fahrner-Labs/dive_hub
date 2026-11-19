@@ -119,6 +119,18 @@ class AppContainer(context: Context) {
         job.children.toList().joinAll()
     }
 
+    /** The dive page's refresh: that Dive's detail and profiles, only when this device holds a session. */
+    suspend fun refreshDiveNow(id: String) {
+        val url = session.knownInstance() ?: return
+        session.client.baseUrl = url
+        if (!session.hasSession()) return
+        wipeLock.withLock {
+            if (!session.hasSession()) return@withLock
+            refresher.refreshDiveOnce(id)
+            refresher.profilesOnce()
+        }
+    }
+
     /**
      * One scheduled run (WorkManager): phase 1, tombstones and pending profiles, only when this device holds a
      * session. [wipeLock] keeps it from writing after a sign-out wipe.

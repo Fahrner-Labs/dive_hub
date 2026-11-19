@@ -104,7 +104,7 @@ class LogbookViewModel(
         }
     }
 
-    fun retry() = load(_state.value.page, _state.value.filters)
+    fun retry() = refresh()
 
     fun showPage(page: Int) = load(page, _state.value.filters)
 

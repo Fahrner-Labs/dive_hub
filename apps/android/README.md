@@ -71,9 +71,11 @@ uses and regenerates. Refusals are read through `ApiErrorBody`, which accepts bo
 ### The logbook and dive page read the store (slice D4)
 
 From FAH-277 the screens never fetch logbook data themselves: `GET /api/dives`, `GET /api/dives/{id}` and
-`GET /api/recordings/{id}/samples` only fill the store during sync. `shared/logbook/StoreLogbook.kt` reads the stored
-list rows and Dive views (the API's own JSON, beside the typed columns) and computes the totals and month figures from
-the same rows the server does. The list and the dive page show "Last synced …" from `sync_state.lastFullSyncAt`, and a
+`GET /api/recordings/{id}/samples` fill the store during sync. The two Push-backed filters (`changed-since-sent` and
+`not-at-provider`) are the exception the client contract names: they are fetched online because the store holds no
+Push state, and offline the cached list is shown without them. `shared/logbook/StoreLogbook.kt` reads the stored list
+rows and Dive views (the API's own JSON, beside the typed columns) and computes the totals and month figures from the
+same rows the server does. The list and the dive page show "Last synced …" from `sync_state.lastFullSyncAt`, and a
 Dive whose profile series are still missing from phase 3 says "Profile syncing"/"still syncing" from its
 `profiles:<id>` checkpoint.
 

@@ -222,8 +222,8 @@ V1 of the native client reads offline: phones lose signal where dives are, and t
   including depth and temperature, and `ndl`. Every logbook read the store holds is served from it, online or
   not, and a live hint refreshes it. The API stays the source of truth: an offline read is data as of the last
   sync, not the "no answer at all" of a request that failed. A read that needs server-computed data the store
-  does not hold (the stored-fingerprint counts of `changed-since-sent`) is fetched online and never shown from an
-  incomplete store; offline, the client says it is unavailable.
+  does not hold (the stored-fingerprint counts of `changed-since-sent`, and `not-at-provider`'s Push state) is fetched
+  online and never shown from an incomplete store; offline, the client says it is unavailable.
 - **Refresh keeps the store current.** While online the client opens the live hint stream; a Dive or site hint
   refetches that thing through the normal API, and every (re)connect re-runs the list sync because hints are not
   replayed (ADR 0066). Polling remains the automatic fallback. Deleted Dives arrive as tombstones (`deletedAt`),

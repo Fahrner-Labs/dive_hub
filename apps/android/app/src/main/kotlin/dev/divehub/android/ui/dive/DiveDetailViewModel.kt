@@ -9,6 +9,8 @@ import dev.divehub.android.AppContainer
 import dev.divehub.api.models.DiveView
 import dev.divehub.api.models.NeighboursView
 import dev.divehub.api.models.RecordingSamplesView
+import dev.divehub.shared.DiveHubException
+import dev.divehub.shared.NoAnswerException
 import dev.divehub.shared.dive.DiveRepository
 import dev.divehub.shared.dive.profileRecording
 import dev.divehub.shared.logbook.LogbookFilter
@@ -56,7 +58,7 @@ class DiveDetailViewModel(
     private val api: DiveRepository,
     private val revision: StateFlow<Long>,
     private val offlineState: StateFlow<Boolean>,
-    private val refreshSync: suspend () -> Unit,
+    private val refreshDive: suspend (String) -> Unit,
 ) : ViewModel() {
     private val _state = MutableStateFlow(DiveDetailUiState())
     val state: StateFlow<DiveDetailUiState> = _state.asStateFlow()
@@ -72,20 +74,32 @@ class DiveDetailViewModel(
         this.filters = filters
         observe()
         load(diveId)
+        refresh(diveId)
     }
 
-    fun openNeighbour(diveId: String) = load(diveId)
+    fun openNeighbour(diveId: String) {
+        load(diveId)
+        refresh(diveId)
+    }
 
     fun retry() {
         val diveId = _state.value.diveId ?: return
         loadJob?.cancel()
         loadJob = viewModelScope.launch {
-            try {
-                refreshSync()
-            } catch (_: Exception) {
-                // The store stays the source; the cached page below is still worth showing.
-            }
+            refreshNow(diveId)
             read(diveId)
+        }
+    }
+
+    private fun refresh(diveId: String) {
+        viewModelScope.launch { refreshNow(diveId) }
+    }
+
+    private suspend fun refreshNow(diveId: String) {
+        try {
+            refreshDive(diveId)
+        } catch (_: Exception) {
+            // The store stays the source; the cached page below is still worth showing.
         }
     }
 
@@ -138,9 +152,15 @@ class DiveDetailViewModel(
         // The page stands without these: neighbours that cannot be read just hide the controls, and a profile that
         // is not in the store yet says it is still syncing.
         try {
-            val neighbours = withContext(Dispatchers.IO) { store.neighbours(diveId, filters) }
+            val neighbours = if (store.canAnswer(filters)) {
+                withContext(Dispatchers.IO) { store.neighbours(diveId, filters) }
+            } else {
+                // The Push-backed filters only the API can apply (client contract, Offline reads).
+                api.neighbours(diveId, filters)
+            }
             _state.update { it.copy(neighbours = neighbours) }
-        } catch (_: Exception) {
+        } catch (_: DiveHubException) {
+        } catch (_: NoAnswerException) {
         }
 
         val recording = profileRecording(dive.recordings)
@@ -178,7 +198,7 @@ class DiveDetailViewModel(
                     api = container.dive,
                     revision = container.syncRevision,
                     offlineState = container.syncOffline,
-                    refreshSync = { container.refreshNow() },
+                    refreshDive = { id -> container.refreshDiveNow(id) },
                 )
             }
         }
