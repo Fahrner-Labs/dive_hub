@@ -427,6 +427,23 @@ class SyncRefreshTest {
     }
 
     @Test
+    fun `a server without the deleted-dives route still refreshes the logbook`() = runTest {
+        val harness = seeded { path ->
+            if (path.startsWith("/api/dives/deleted?")) {
+                RefreshReply.Status(HttpStatusCode.NotFound)
+            } else {
+                refreshRoutes(path)
+            }
+        }
+        RefreshData.dives += refreshDiveListItem(id = "dive-2", startsAt = "2026-10-01T10:00:00Z", number = 2)
+
+        assertEquals(SyncResult.Complete, harness.engine.refresh())
+
+        assertTrue(harness.paths.any { it.startsWith("/api/dives/deleted?") })
+        assertNotNull(store.dive("dive-2"))
+    }
+
+    @Test
     fun `a dive hint refetches list page one and the detail and marks profiles stale`() = runTest {
         val harness = seeded()
         harness.engine.syncProfiles()
