@@ -76,8 +76,11 @@ class PersonalizedScreenshotTest {
             ),
         )
         compose.onNodeWithText("Based on dives synced as of 18 Nov 2026, 09:00. (profiles still syncing)").assertIsDisplayed()
+        compose.onNode(hasScrollAction()).performScrollToNode(hasText("Starting point"))
         compose.onNodeWithText("Starting point").assertIsDisplayed()
+        compose.onNode(hasScrollAction()).performScrollToNode(hasText("8.5 kg"))
         compose.onNodeWithText("8.5 kg").assertIsDisplayed()
+        compose.onNode(hasScrollAction()).performScrollToNode(hasText("Range 7.0 kg to 10.0 kg"))
         compose.onNodeWithText("Range 7.0 kg to 10.0 kg").assertIsDisplayed()
         compose.onNode(hasScrollAction()).performScrollToNode(hasText("Confidence: medium"))
         compose.onNodeWithText("Confidence: medium").assertIsDisplayed()
