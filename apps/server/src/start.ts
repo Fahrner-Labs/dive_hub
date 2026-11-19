@@ -16,6 +16,7 @@ import { createGarminClient, DEFAULT_GARMIN_URL } from './providers/garmin/garmi
 import { createSsiAdapter } from './providers/ssi/ssi-adapter.js';
 import { createSsiClient } from './providers/ssi/ssi-client.js';
 import { createLocalBlobStore } from './storage/blob-store.js';
+import { clientRequestSerializer } from './version/request-log.js';
 import { startWorker } from './worker.js';
 
 export async function start(config: Config) {
@@ -26,9 +27,10 @@ export async function start(config: Config) {
   const app = createServer({
     logger: {
       level: config.logLevel,
-      // A native client's bearer token is the session token (ADR 0074). Fastify's request serializer logs no headers
-      // today; this also keeps the token out if one ever adds them.
+      // A native client's bearer token is the session token (ADR 0074). The request serializer logs the parsed Android
+      // client instead of headers, and this redaction keeps the token out if one ever adds them.
       redact: { paths: ['req.headers.authorization'], censor: '[redacted]' },
+      serializers: { req: clientRequestSerializer },
     },
     // Reverse proxies whose X-Forwarded-For is believed; none unless configured.
     ...(config.trustedProxies.length > 0 && { trustProxy: config.trustedProxies }),

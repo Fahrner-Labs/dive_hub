@@ -55,6 +55,8 @@ import { adminRoutes } from './users/admin-routes.js';
 import { backupRoutes } from './backups/backup-routes.js';
 import { setupRestoreRoutes } from './users/setup-restore-routes.js';
 import { userRoutes } from './users/routes.js';
+import { clientVersionGate } from './version/gate.js';
+import type { ClientVersionRegistry } from './version/min-client-versions.js';
 
 /** Every service, as createServices (compose.ts) builds them, and the instance's settings. */
 export type AppDeps = Services & {
@@ -64,6 +66,8 @@ export type AppDeps = Services & {
   webDir?: string | undefined;
   /** Called once the setup screen has restored an instance and its answer is written: the process exits (FAH-175). */
   onRestored?: (() => void) | undefined;
+  /** Replaces the production min-client-version registry; tests use a fixture entry, production is empty (ADR 0076). */
+  clientVersions?: ClientVersionRegistry | undefined;
 };
 
 /** The Fastify instance, logger included, before any route: main.ts hands its logger to the services first. */
@@ -76,6 +80,7 @@ export async function buildApp(deps: AppDeps, app: Server = createServer()) {
   app.decorateRequest('user', null);
   app.decorateRequest('sessionId', null);
   useProblemErrors(app);
+  app.addHook('onRequest', clientVersionGate(deps.clientVersions));
 
   await app.register(swagger, {
     openapi: {
