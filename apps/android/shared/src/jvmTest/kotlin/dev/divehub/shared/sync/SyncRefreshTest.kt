@@ -212,6 +212,18 @@ class SyncRefreshTest {
     }
 
     @Test
+    fun `an opened Dive's refresh rereads its detail and marks its profiles pending`() = runTest {
+        val harness = seeded()
+        RefreshData.details["dive-1"] = refreshDetailJson(version = 4, notes = "Changed elsewhere")
+
+        harness.refresher.refreshDiveOnce("dive-1")
+
+        assertEquals(4L, store.dive("dive-1")!!.version)
+        assertEquals("Changed elsewhere", store.dive("dive-1")!!.notes)
+        assertFalse(harness.engine.profileSynced("dive-1"))
+    }
+
+    @Test
     fun `a no-answer refresh marks offline and a later success clears it`() = runTest {
         var offline = false
         val harness = seeded { path -> if (offline) RefreshReply.Offline else refreshRoutes(path) }

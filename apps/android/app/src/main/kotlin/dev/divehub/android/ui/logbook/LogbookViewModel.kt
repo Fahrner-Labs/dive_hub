@@ -47,9 +47,6 @@ data class LogbookUiState(
     val range: IntRange? get() = data?.let { LogbookPaging.range(page, it.total) }
 }
 
-/** `changed-since-sent` and `not-at-provider` need Push state the store does not hold (client contract, Offline reads). */
-private val SERVER_ONLY_FILTERS = setOf(LogbookFilter.CHANGED_SINCE_SENT, LogbookFilter.NOT_AT_PROVIDER)
-
 /**
  * The read-only logbook (ADR 0040): one page at a time, the "Show only" filters and the Provider names they and the
  * rows show. The store is the source (FAH-277); the two Push-backed filters are fetched online and said unavailable
@@ -138,7 +135,7 @@ class LogbookViewModel(
             return
         } catch (_: NoAnswerException) {
             // The server-only filter needs a connection; show the stored list without it rather than "no connection".
-            val cached = withContext(Dispatchers.IO) { store.page(page, filters - SERVER_ONLY_FILTERS) }
+            val cached = withContext(Dispatchers.IO) { store.page(page, store.storedFilters(filters)) }
             _state.update {
                 it.copy(
                     loading = false,
@@ -147,7 +144,7 @@ class LogbookViewModel(
                     syncedAt = cached.syncedAt,
                     profilePending = cached.profilePending,
                     offline = true,
-                    filterUnavailable = filters.any(SERVER_ONLY_FILTERS::contains),
+                    filterUnavailable = !store.canAnswer(filters),
                 )
             }
             return

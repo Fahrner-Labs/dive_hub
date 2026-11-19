@@ -33,9 +33,8 @@ data class DiveDetailUiState(
     val providers: ProviderDirectory = ProviderDirectory.EMPTY,
     val neighbours: NeighboursView? = null,
     val samples: RecordingSamplesView? = null,
-    /** A profile that failed on its own leaves the rest of the page standing. */
+    /** A stored profile that no longer decodes leaves the rest of the page standing. */
     val samplesError: String? = null,
-    val samplesOffline: Boolean = false,
     /** The profiles phase has not stored this Dive's series yet; the page says it is still syncing. */
     val samplesPending: Boolean = false,
     val error: String? = null,
@@ -166,10 +165,11 @@ class DiveDetailViewModel(
         val recording = profileRecording(dive.recordings)
         if (recording != null) {
             val samples = withContext(Dispatchers.IO) { store.samples(recording.id) }
-            if (samples != null) {
-                _state.update { it.copy(samples = samples) }
-            } else if (stored.profilePending) {
-                _state.update { it.copy(samplesPending = true) }
+            when {
+                samples != null -> _state.update { it.copy(samples = samples) }
+                stored.profilePending -> _state.update { it.copy(samplesPending = true) }
+                withContext(Dispatchers.IO) { store.hasSeries(recording.id) } ->
+                    _state.update { it.copy(samplesError = "internal_error") }
             }
         }
     }

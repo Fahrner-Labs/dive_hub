@@ -463,7 +463,6 @@ private fun Profile(
         }
         val failure = when {
             state.samplesError != null -> errorText(context, state.samplesError)
-            state.samplesOffline -> context.getString(R.string.dive_offline)
             samples != null -> context.getString(R.string.dive_profile_failed)
             else -> return
         }

@@ -81,7 +81,10 @@ class SyncEngine(
     private val lock = Mutex()
     private val json = Json { ignoreUnknownKeys = true; explicitNulls = false }
 
-    /** Run or resume the initial phases 1–2. A completed sync is a no-op; [refresh] owns the later triggers. */
+    /**
+     * Run or resume the initial phases 1–2. A completed sync is a no-op except for backfilling a v1 store's missing API
+     * payloads; [refresh] owns the later triggers.
+     */
     suspend fun sync(): SyncResult = lock.withLock {
         if (store.syncState().lastFullSyncAt != null) return@withLock backfillPayloadsIfMissing()
         var phase = SyncPhase.Meta
@@ -566,7 +569,8 @@ class SyncEngine(
      */
     private fun writeDetail(detail: DiveView) {
         val diveId = detail.id
-        store.upsertDive(detail.toStore(store.diveIncludingDeleted(diveId)))
+        val existing = store.diveIncludingDeleted(diveId)
+        store.upsertDive(detail.toStore(existing).copy(listJson = detail.toListRow(existing?.listJson)))
         val kept = detail.recordings.mapTo(mutableSetOf()) { it.id }
         store.allRecordingsForDive(diveId).filter { it.id !in kept }.forEach { recording ->
             store.deleteSeries(recording.id)

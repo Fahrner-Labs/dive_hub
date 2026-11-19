@@ -80,8 +80,13 @@ class StoreLogbook(private val store: DiveStore) {
     }
 
     /** Whether every filter can be answered from the store; false means the caller needs the API. */
-    fun canAnswer(filters: Set<LogbookFilter>): Boolean =
-        filters.none { it == LogbookFilter.CHANGED_SINCE_SENT || it == LogbookFilter.NOT_AT_PROVIDER }
+    fun canAnswer(filters: Set<LogbookFilter>): Boolean = filters.none(::needsApi)
+
+    /** The filters the store can still apply when a server-only one cannot be fetched offline. */
+    fun storedFilters(filters: Set<LogbookFilter>): Set<LogbookFilter> = filters.filterNot(::needsApi).toSet()
+
+    private fun needsApi(filter: LogbookFilter): Boolean =
+        filter == LogbookFilter.CHANGED_SINCE_SENT || filter == LogbookFilter.NOT_AT_PROVIDER
 
     fun page(page: Int, filters: Set<LogbookFilter>): StoredLogbookPage = store.transaction {
         val rows = store.allDives().filter { it.deletedAt == null }
@@ -133,6 +138,9 @@ class StoreLogbook(private val store: DiveStore) {
             )
         }
     }
+
+    /** Whether the store holds any series row for this Recording, even one that no longer decodes. */
+    fun hasSeries(recordingId: String): Boolean = store.series(recordingId).isNotEmpty()
 
     /** The stored depth and temperature series, or null when the profiles phase has not written them yet. */
     fun samples(recordingId: String): RecordingSamplesView? = store.transaction {

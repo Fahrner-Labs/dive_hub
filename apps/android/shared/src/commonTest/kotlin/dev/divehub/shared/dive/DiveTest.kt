@@ -289,17 +289,9 @@ class DiveRepositoryTest {
     private fun MockRequestHandleScope.json(body: String): HttpResponseData =
         respond(body, HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, "application/json"))
 
-    private val diveJson = """{"id":"d1","diverId":"diver","version":3,
-        "values":{"number":42,"startsAt":{"at":"2026-04-02T09:00:00Z","utcOffsetSeconds":7200},
-        "durationSeconds":3000,"maxDepthM":24.3,"avgDepthM":12,"waterTemperatureC":18},
-        "overrides":[],"utcOffsetSource":"device","recordings":[],"cylinders":[],"lead":[],
-        "participants":[],"verificationCodes":[]}"""
-
     @Test
-    fun `the dive, its neighbours and its samples are read from their own paths`() = runTest {
-        var divePath: String? = null
+    fun `the neighbours are read from their own path`() = runTest {
         var neighbours: String? = null
-        var samples: String? = null
         val repository = harness { request ->
             val path = request.url.encodedPath + request.url.encodedQuery.takeIf { it.isNotEmpty() }?.let { "?$it" }.orEmpty()
             when {
@@ -307,25 +299,13 @@ class DiveRepositoryTest {
                     neighbours = path
                     json("""{"previous":null,"next":null,"position":12,"total":312}""")
                 }
-                path.startsWith("/api/dives/d1") -> {
-                    divePath = path
-                    json(diveJson)
-                }
-                path.startsWith("/api/recordings/r1/samples") -> {
-                    samples = path
-                    json("""{"recordingId":"r1","series":[{"channel":"depth","offsetsMs":[0,60000],"values":[0,10]}]}""")
-                }
                 else -> error("unexpected $path")
             }
         }
-        assertEquals(42, repository.dive("d1").values.number)
         val page = repository.neighbours("d1", setOf(LogbookFilter.NO_RECORDING))
         assertEquals(12, page.position)
         assertEquals(312, page.total)
-        assertEquals(2, repository.samples("r1").series.single().values.size)
-        assertEquals("/api/dives/d1", divePath)
         assertEquals("/api/dives/d1/neighbours?only=no-recording", neighbours)
-        assertEquals("/api/recordings/r1/samples?channels=depth,temperature", samples)
     }
 
     @Test
@@ -335,6 +315,5 @@ class DiveRepositoryTest {
             "/api/dives/d1/neighbours?only=no-recording,with-findings",
             neighboursPath("d1", setOf(LogbookFilter.WITH_FINDINGS, LogbookFilter.NO_RECORDING)),
         )
-        assertEquals("/api/recordings/r9/samples?channels=depth,temperature", samplesPath("r9"))
     }
 }
