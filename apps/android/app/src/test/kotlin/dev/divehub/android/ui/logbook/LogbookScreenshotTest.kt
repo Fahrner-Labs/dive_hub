@@ -70,6 +70,7 @@ class LogbookScreenshotTest {
                     onPage = {},
                     onToggleFilter = {},
                     onSignOut = {},
+                    onOpenTools = {},
                     onOpenDive = {},
                 )
             }

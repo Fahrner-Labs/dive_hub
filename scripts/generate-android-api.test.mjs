@@ -69,6 +69,33 @@ test('allOf flattens to one data class', () => {
   assert.equal(files.has('Base.kt'), false, 'a flattened reference is not a separate class');
 });
 
+test('an allOf property is a named type too, not a JsonElement', () => {
+  const files = generateModels(document({
+    Answer: {
+      type: 'object',
+      required: ['used'],
+      properties: {
+        used: {
+          type: 'object',
+          required: ['sac'],
+          properties: {
+            sac: {
+              allOf: [
+                { type: 'object', required: ['value'], properties: { value: { type: 'number' } } },
+                { type: 'object', properties: { basedOn: { type: 'integer' } } },
+              ],
+            },
+          },
+        },
+      },
+    },
+  }), [], ['Answer']);
+
+  assert.match(files.get('AnswerUsed.kt'), /val sac: AnswerUsedSac/);
+  assert.match(files.get('AnswerUsedSac.kt'), /val value: Double/);
+  assert.match(files.get('AnswerUsedSac.kt'), /val basedOn: Int\? = null/);
+});
+
 test('only what the operations reach is generated', () => {
   const files = generateModels(document({
     Used: { type: 'object', required: ['id'], properties: { id: { type: 'string' } } },

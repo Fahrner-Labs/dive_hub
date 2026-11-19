@@ -3,6 +3,8 @@ package dev.divehub.android.ui
 import android.content.Context
 import dev.divehub.android.R
 import dev.divehub.shared.logbook.durationMinutes
+import dev.divehub.shared.tools.depthIn
+import dev.divehub.shared.tools.pressureIn
 import java.text.NumberFormat
 import java.util.Locale
 
@@ -11,7 +13,6 @@ import java.util.Locale
  * minutes and hours, depths in metres or feet, and a Diver's role. A page adds only what is its own.
  */
 internal object Formats {
-    private const val FEET_PER_METRE = 1 / 0.3048
     private val IMPERIAL_REGIONS = setOf("US", "LR", "MM")
 
     fun number(locale: Locale, value: Int): String = NumberFormat.getIntegerInstance(locale).format(value)
@@ -37,10 +38,25 @@ internal object Formats {
 
     /** "18.5 m", "60.7 ft". */
     fun depth(context: Context, metres: Double, locale: Locale, imperial: Boolean): String {
-        val value = if (imperial) metres * FEET_PER_METRE else metres
-        val text = String.format(locale, "%.1f", value)
+        val text = String.format(locale, "%.1f", depthIn(metres, imperial))
         return context.getString(if (imperial) R.string.logbook_depth_feet else R.string.logbook_depth_metres, text)
     }
+
+    /** "200 bar", "2,901 psi": whole numbers, as a gauge is read. */
+    fun pressure(context: Context, bar: Double, locale: Locale, imperial: Boolean): String {
+        val text = NumberFormat.getIntegerInstance(locale).format(pressureIn(bar, imperial))
+        return context.getString(
+            if (imperial) R.string.tools_pressure_psi else R.string.tools_pressure_bar,
+            text,
+        )
+    }
+
+    /** A number with the given decimals in the UI language. */
+    fun decimal(locale: Locale, value: Double, places: Int): String =
+        NumberFormat.getNumberInstance(locale).apply {
+            minimumFractionDigits = places
+            maximumFractionDigits = places
+        }.format(value)
 
     fun role(context: Context, role: String): String = when (role) {
         "buddy" -> context.getString(R.string.participant_role_buddy)

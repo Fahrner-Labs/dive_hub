@@ -144,3 +144,23 @@ Read-only, from `GET /api/dives/{id}`, `GET /api/dives/{id}/neighbours` and `GET
 
 The dive page's contract-visible states are screenshots (`DiveDetailScreenshotTest`): an edited value, the timezone
 note, a Dive without a Recording, the water mismatch, and Surface breaks in the profile.
+
+## The tools (slice U1)
+
+Gas numbers and a bottom time, typed in and computed on the device from the ported kernels (client contract, Tools;
+ADR 0032). `shared/tools/` assembles the inputs, calls `shared/planning/` and shapes the answer exactly like the API's
+service shells: the same defaults, `used`/`source`, binding limits, `outside_limits` and rounding. The generated
+OpenAPI models for `GET /api/tools/gas` and `GET /api/tools/bottom-time` are the contract.
+
+- The notice is above the inputs and every answer repeats it: an estimate, not advice.
+- The User's own Diver comes from the synced store: the GF high from their latest Recording, the planning SAC from
+  their Dives (with `basedOn`), and a Dive within the last 48 hours. A personalized answer says "Based on dives synced
+  as of …"; without a sync the screen says so as an empty state and the numbers use only what is typed.
+- Residual nitrogen is **not** seeded offline yet: `residualN2` is null and the recent-Dive notice says the limit
+  starts from clean tissues. `recentDiveEndedAt` and the rest of the shape match the API.
+- `outside_limits` shows the reason and the MOD, never a number; MODs are rounded down to 0.1 m, never up.
+- Errors are codes the screen translates; units follow the User's metric/imperial setting (depths and pressures are
+  converted for display and back before the kernels see them).
+
+The contract-visible states are screenshots (`ToolsScreenshotTest`): the notice, assumptions with sources and
+`basedOn`, the binding limit, `outside_limits`, and the empty store.

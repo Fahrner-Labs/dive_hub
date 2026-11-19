@@ -163,4 +163,116 @@
         <item quantity="one">%1$d finding</item>
         <item quantity="other">%1$d findings</item>
     </plurals>
+
+    <string name="tools_title">Tools</string>
+    <string name="tools_back">Logbook</string>
+    <string name="tools_notice">An estimate, not advice: the dive computer and your training govern. No model guarantees safety.</string>
+    <string name="tools_estimate_short">An estimate, not advice.</string>
+    <string name="tools_empty_store">No dives are synced on this device yet. The numbers use only what you type; your logbook syncs when you are online.</string>
+
+    <string name="tools_inputs_title">The dive</string>
+    <string name="tools_oxygen">Oxygen</string>
+    <string name="tools_helium">Helium</string>
+    <string name="tools_depth">Depth</string>
+    <string name="tools_cylinder_title">Cylinder (optional)</string>
+    <string name="tools_volume">Volume</string>
+    <string name="tools_start_pressure">Start pressure</string>
+    <string name="tools_settings_title">Settings</string>
+    <string name="tools_water">Water</string>
+    <string name="tools_altitude">Altitude</string>
+    <string name="tools_gas_rule">Gas rule</string>
+    <string name="tools_rule_rock_bottom">Rock bottom</string>
+    <string name="tools_rule_reserve">Reserve</string>
+    <string name="tools_rule_ascent_pressure">Ascent pressure</string>
+    <string name="tools_rule_bar_reserve">Bar left at the end</string>
+    <string name="tools_rule_bar_ascent">Bar where the ascent starts</string>
+    <string name="tools_sac">SAC</string>
+    <string name="tools_gf_high">GF high</string>
+    <string name="tools_ppo2_working">Working ppO2</string>
+    <string name="tools_ppo2_contingency">Contingency ppO2</string>
+    <string name="tools_oxygen_narcotic">Oxygen counts as narcotic for END</string>
+    <string name="tools_unit_percent">%</string>
+    <string name="tools_unit_depth_metric">m</string>
+    <string name="tools_unit_depth_imperial">ft</string>
+    <string name="tools_unit_pressure_metric">bar</string>
+    <string name="tools_unit_pressure_imperial">psi</string>
+    <string name="tools_unit_litres">L</string>
+    <string name="tools_unit_sac">L/min</string>
+
+    <string name="tools_gas_numbers">Gas numbers</string>
+    <string name="tools_gas_empty">Enter the mix’s oxygen to see its limits.</string>
+    <string name="tools_gas_mod_working">MOD at %1$s bar</string>
+    <string name="tools_gas_mod_contingency">MOD at %1$s bar</string>
+    <string name="tools_gas_ppo2">ppO2 at %1$s</string>
+    <string name="tools_gas_best_mix">Best mix at %1$s</string>
+    <string name="tools_gas_ead">Equivalent air depth</string>
+    <string name="tools_gas_end">Equivalent narcotic depth</string>
+    <string name="tools_gas_hypoxic">This mix is hypoxic: under 18 % oxygen at the surface.</string>
+    <string name="tools_gas_rounded">Depths from the MOD are rounded down to 0.1 m, never up.</string>
+
+    <string name="tools_bottom_time">Bottom time</string>
+    <string name="tools_bottom_empty">Enter a depth and the mix’s oxygen to see the bottom time.</string>
+    <string name="tools_bottom_minutes">%1$d min</string>
+    <string name="tools_bottom_limited_by">Limited by %1$s.</string>
+    <string name="tools_bottom_and">and</string>
+    <string name="tools_limit_ndl">the no-decompression limit</string>
+    <string name="tools_limit_oxygen">the oxygen limit</string>
+    <string name="tools_limit_gas">the gas limit</string>
+    <string name="tools_limits_title">The three limits</string>
+    <string name="tools_limit_name_ndl">No-decompression</string>
+    <string name="tools_limit_name_oxygen">Oxygen</string>
+    <string name="tools_limit_name_gas">Gas</string>
+    <string name="tools_limit_none">No limit</string>
+    <string name="tools_limit_no_cylinder">No cylinder</string>
+    <string name="tools_bottom_ascent">The gas limit ends at %1$s, where you start up.</string>
+    <string name="tools_bottom_otu">OTU %1$d</string>
+    <string name="tools_bottom_above_working">ppO2 at depth is %1$s bar, above the working limit.</string>
+    <string name="tools_bottom_outside">No bottom time.</string>
+    <string name="tools_bottom_reason_depth">The plan is deeper than 40 m.</string>
+    <string name="tools_bottom_reason_mod">The plan is beyond the MOD of %1$s at the contingency ppO2.</string>
+    <string name="tools_bottom_reason_gas">The mix is not air or nitrox 21–40 %.</string>
+    <string name="tools_bottom_recent">A dive ended %1$s, within 48 hours. This limit starts from clean tissues, so the real one is likely shorter.</string>
+
+    <string name="tools_assumptions">What the answer assumes</string>
+    <string name="tools_assumed_gf">GF high %1$s, %2$s.</string>
+    <string name="tools_assumed_sac">SAC %1$s, %2$s.</string>
+    <plurals name="tools_assumed_sac_based">
+        <item quantity="one">SAC %1$s, %2$s, based on %3$d dive.</item>
+        <item quantity="other">SAC %1$s, %2$s, based on %3$d dives.</item>
+    </plurals>
+    <string name="tools_assumed_water">Water: %1$s, %2$s.</string>
+    <string name="tools_assumed_altitude">Altitude %1$s, %2$s.</string>
+    <string name="tools_assumed_no_altitude">Sea level.</string>
+    <string name="tools_assumed_rule">Gas rule: %1$s, %2$s.</string>
+    <string name="tools_assumed_model">Bühlmann ZHL-16C at the GF high above.</string>
+    <string name="tools_source_request">from your input</string>
+    <string name="tools_source_recording">from your latest recording</string>
+    <string name="tools_source_logbook">from your logbook</string>
+    <string name="tools_source_site">from the dive site</string>
+    <string name="tools_source_default">the default</string>
+
+    <string name="tools_rule_title">The gas rule</string>
+    <string name="tools_rule_rock_bottom_explanation">Rock bottom: you come up with enough gas for a stressed diver and their rescuer, and never below 50 bar. It is what most training teaches. It is not enough when you must come back the way you went.</string>
+    <string name="tools_rule_reserve_explanation">Reserve: you finish the dive with the bar you set. It is not enough when the way back is longer than the way out.</string>
+    <string name="tools_rule_ascent_explanation">Ascent pressure: you start up when the cylinder reaches the pressure you set.</string>
+    <string name="tools_rule_rock_bottom_always">Rock bottom is the default and is always shown, never below 50 bar.</string>
+    <string name="tools_flying">Flying after diving: DAN’s guideline only. This page has no countdown.</string>
+
+    <string name="tools_error_invalid_input">Check the values: one is outside the range this page accepts.</string>
+    <string name="tools_error_gas_not_breathable">Under 16 % oxygen is not breathable.</string>
+    <string name="tools_error_unknown">Something went wrong. Check the values and try again.</string>
+
+    <string name="tools_pressure_bar">%1$s bar</string>
+    <string name="tools_pressure_psi">%1$s psi</string>
+
+    <string name="tools_bottom_mod">MOD %1$s</string>
+
+    <string name="tools_percent_value">%1$s %%</string>
+    <string name="tools_bottom_ascent_rock_bottom">The gas limit ends at %1$s, the rock bottom, where you start up.</string>
+    <string name="tools_date_pattern">d MMM yyyy, HH:mm</string>
+
+    <string name="tools_synced_at">Based on dives synced as of %1$s.</string>
+    <string name="tools_store_unreadable">The local logbook could not be read. Try again.</string>
+
+    <string name="tools_not_synced">Not synced yet; this answer uses what you type.</string>
 </resources>

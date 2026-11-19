@@ -163,4 +163,116 @@
         <item quantity="one">%1$d Hinweis</item>
         <item quantity="other">%1$d Hinweise</item>
     </plurals>
+
+    <string name="tools_title">Werkzeuge</string>
+    <string name="tools_back">Logbuch</string>
+    <string name="tools_notice">Eine Schätzung, kein Rat: Tauchcomputer und Ausbildung entscheiden. Kein Modell garantiert Sicherheit.</string>
+    <string name="tools_estimate_short">Eine Schätzung, kein Rat.</string>
+    <string name="tools_empty_store">Auf diesem Gerät sind noch keine Tauchgänge synchronisiert. Die Zahlen nutzen nur deine Eingaben; dein Logbuch wird synchronisiert, sobald du online bist.</string>
+
+    <string name="tools_inputs_title">Der Tauchgang</string>
+    <string name="tools_oxygen">Sauerstoff</string>
+    <string name="tools_helium">Helium</string>
+    <string name="tools_depth">Tiefe</string>
+    <string name="tools_cylinder_title">Flasche (optional)</string>
+    <string name="tools_volume">Volumen</string>
+    <string name="tools_start_pressure">Fülldruck</string>
+    <string name="tools_settings_title">Einstellungen</string>
+    <string name="tools_water">Wasser</string>
+    <string name="tools_altitude">Höhe</string>
+    <string name="tools_gas_rule">Gasregel</string>
+    <string name="tools_rule_rock_bottom">Rock Bottom</string>
+    <string name="tools_rule_reserve">Reserve</string>
+    <string name="tools_rule_ascent_pressure">Aufstiegsdruck</string>
+    <string name="tools_rule_bar_reserve">Restdruck am Ende</string>
+    <string name="tools_rule_bar_ascent">Druck beim Aufstieg</string>
+    <string name="tools_sac">AMV</string>
+    <string name="tools_gf_high">GF high</string>
+    <string name="tools_ppo2_working">Arbeits-ppO2</string>
+    <string name="tools_ppo2_contingency">Notfall-ppO2</string>
+    <string name="tools_oxygen_narcotic">Sauerstoff zählt für END als narkotisch</string>
+    <string name="tools_unit_percent">%</string>
+    <string name="tools_unit_depth_metric">m</string>
+    <string name="tools_unit_depth_imperial">ft</string>
+    <string name="tools_unit_pressure_metric">bar</string>
+    <string name="tools_unit_pressure_imperial">psi</string>
+    <string name="tools_unit_litres">L</string>
+    <string name="tools_unit_sac">L/min</string>
+
+    <string name="tools_gas_numbers">Gaszahlen</string>
+    <string name="tools_gas_empty">Gib den Sauerstoff des Gemischs ein, um die Grenzen zu sehen.</string>
+    <string name="tools_gas_mod_working">MOD bei %1$s bar</string>
+    <string name="tools_gas_mod_contingency">MOD bei %1$s bar</string>
+    <string name="tools_gas_ppo2">ppO2 bei %1$s</string>
+    <string name="tools_gas_best_mix">Bestes Gemisch bei %1$s</string>
+    <string name="tools_gas_ead">Äquivalente Lufttiefe</string>
+    <string name="tools_gas_end">Äquivalente narkotische Tiefe</string>
+    <string name="tools_gas_hypoxic">Dieses Gemisch ist hypoxisch: unter 18 % Sauerstoff an der Oberfläche.</string>
+    <string name="tools_gas_rounded">Tiefen aus dem MOD werden auf 0,1 m abgerundet, nie aufgerundet.</string>
+
+    <string name="tools_bottom_time">Grundzeit</string>
+    <string name="tools_bottom_empty">Gib eine Tiefe und den Sauerstoff des Gemischs ein, um die Grundzeit zu sehen.</string>
+    <string name="tools_bottom_minutes">%1$d min</string>
+    <string name="tools_bottom_limited_by">Begrenzt durch %1$s.</string>
+    <string name="tools_bottom_and">und</string>
+    <string name="tools_limit_ndl">die Nullzeitgrenze</string>
+    <string name="tools_limit_oxygen">die Sauerstoffgrenze</string>
+    <string name="tools_limit_gas">die Gasgrenze</string>
+    <string name="tools_limits_title">Die drei Grenzen</string>
+    <string name="tools_limit_name_ndl">Nullzeit</string>
+    <string name="tools_limit_name_oxygen">Sauerstoff</string>
+    <string name="tools_limit_name_gas">Gas</string>
+    <string name="tools_limit_none">Keine Grenze</string>
+    <string name="tools_limit_no_cylinder">Keine Flasche</string>
+    <string name="tools_bottom_ascent">Die Gasgrenze endet bei %1$s, wo du aufsteigst.</string>
+    <string name="tools_bottom_otu">OTU %1$d</string>
+    <string name="tools_bottom_above_working">Der ppO2 in der Tiefe ist %1$s bar, über der Arbeitsgrenze.</string>
+    <string name="tools_bottom_outside">Keine Grundzeit.</string>
+    <string name="tools_bottom_reason_depth">Der Plan ist tiefer als 40 m.</string>
+    <string name="tools_bottom_reason_mod">Der Plan liegt jenseits des MOD von %1$s beim Notfall-ppO2.</string>
+    <string name="tools_bottom_reason_gas">Das Gemisch ist nicht Luft oder Nitrox 21–40 %.</string>
+    <string name="tools_bottom_recent">Ein Tauchgang endete %1$s, innerhalb von 48 Stunden. Diese Grenze startet mit sauberem Gewebe, die echte ist also wahrscheinlich kürzer.</string>
+
+    <string name="tools_assumptions">Was die Antwort annimmt</string>
+    <string name="tools_assumed_gf">GF high %1$s, %2$s.</string>
+    <string name="tools_assumed_sac">AMV %1$s, %2$s.</string>
+    <plurals name="tools_assumed_sac_based">
+        <item quantity="one">AMV %1$s, %2$s, auf %3$d Tauchgang gestützt.</item>
+        <item quantity="other">AMV %1$s, %2$s, auf %3$d Tauchgänge gestützt.</item>
+    </plurals>
+    <string name="tools_assumed_water">Wasser: %1$s, %2$s.</string>
+    <string name="tools_assumed_altitude">Höhe %1$s, %2$s.</string>
+    <string name="tools_assumed_no_altitude">Meereshöhe.</string>
+    <string name="tools_assumed_rule">Gasregel: %1$s, %2$s.</string>
+    <string name="tools_assumed_model">Bühlmann ZHL-16C mit dem obigen GF high.</string>
+    <string name="tools_source_request">aus deiner Eingabe</string>
+    <string name="tools_source_recording">aus deiner letzten Aufzeichnung</string>
+    <string name="tools_source_logbook">aus deinem Logbuch</string>
+    <string name="tools_source_site">vom Tauchplatz</string>
+    <string name="tools_source_default">die Vorgabe</string>
+
+    <string name="tools_rule_title">Die Gasregel</string>
+    <string name="tools_rule_rock_bottom_explanation">Rock Bottom: Du kommst mit genug Gas für einen gestressten Taucher und dessen Retter hoch, nie unter 50 bar. Das lehrt die meisten Ausbildung. Es reicht nicht, wenn du denselben Weg zurückmusst.</string>
+    <string name="tools_rule_reserve_explanation">Reserve: Du beendest den Tauchgang mit dem eingestellten Druck. Es reicht nicht, wenn der Rückweg länger ist als der Hinweg.</string>
+    <string name="tools_rule_ascent_explanation">Aufstiegsdruck: Du steigst auf, wenn die Flasche den eingestellten Druck erreicht.</string>
+    <string name="tools_rule_rock_bottom_always">Rock Bottom ist die Vorgabe und wird immer gezeigt, nie unter 50 bar.</string>
+    <string name="tools_flying">Fliegen nach dem Tauchen: nur DANs Richtlinie. Diese Seite hat keinen Countdown.</string>
+
+    <string name="tools_error_invalid_input">Prüfe die Werte: einer liegt außerhalb des Bereichs dieser Seite.</string>
+    <string name="tools_error_gas_not_breathable">Unter 16 % Sauerstoff ist nicht atembar.</string>
+    <string name="tools_error_unknown">Etwas ist schiefgelaufen. Prüfe die Werte und versuche es erneut.</string>
+
+    <string name="tools_pressure_bar">%1$s bar</string>
+    <string name="tools_pressure_psi">%1$s psi</string>
+
+    <string name="tools_bottom_mod">MOD %1$s</string>
+
+    <string name="tools_percent_value">%1$s %%</string>
+    <string name="tools_bottom_ascent_rock_bottom">Die Gasgrenze endet bei %1$s, dem Rock Bottom, wo du aufsteigst.</string>
+    <string name="tools_date_pattern">d. MMM yyyy, HH:mm</string>
+
+    <string name="tools_synced_at">Beruht auf Tauchgängen, synchronisiert bis %1$s.</string>
+    <string name="tools_store_unreadable">Das lokale Logbuch konnte nicht gelesen werden. Versuche es erneut.</string>
+
+    <string name="tools_not_synced">Noch nicht synchronisiert; diese Antwort nutzt nur deine Eingaben.</string>
 </resources>
