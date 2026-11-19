@@ -508,6 +508,29 @@ class SyncEngineTest {
     }
 
     @Test
+    fun `a stale v1 detail the pages no longer carry is tombstoned by the repair path`() = runTest {
+        store.upsertDive(
+            Dive(
+                id = "dive-1",
+                diverId = "diver-1",
+                version = 3,
+                startsAt = "2026-10-01T10:00:00Z",
+            ),
+        )
+        val base = routes(RouteData(dives = listOf(diveListItem(id = "dive-2", startsAt = "2026-11-02T10:00:00Z"))))
+        val harness = Harness(store) { path ->
+            if (path == "/api/dives/dive-1") status(HttpStatusCode.NotFound) else base(path)
+        }
+
+        assertEquals(SyncResult.Complete, harness.engine.sync())
+
+        assertNull(store.dive("dive-1"))
+        assertNotNull(store.diveIncludingDeleted("dive-1")!!.deletedAt)
+        assertEquals(3L, store.dive("dive-2")!!.version)
+        assertTrue(harness.paths.contains("/api/dives/dive-1"))
+    }
+
+    @Test
     fun `batched details map suit lead and water type like the per-dive repair path`() = runTest {
         val data = RouteData(dives = listOf(diveListItem()))
         assertEquals(SyncResult.Complete, Harness(store, routes(data)).engine.sync())

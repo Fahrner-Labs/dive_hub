@@ -334,15 +334,16 @@ class SyncEngine(
         }
         // The per-Dive fetch stays the repair path (ADR 0066): a Dive phase 1 stored but the details pages did not
         // return (deleted meanwhile, or a page boundary moved) is fetched on its own, and a 404 leaves a tombstone.
-        // Its per-Dive progress is not a page, so the phase stays open until each miss is written or tombstoned.
-        val missing = store.allDives().filter { it.deletedAt == null && it.version == null }
+        // The same goes for a v1 row whose version is known but whose API payload is still missing. Their progress is
+        // not a page, so the phase stays open until each miss is written or tombstoned.
+        val missing = store.allDives().filter { it.deletedAt == null && (it.version == null || it.detailJson == null) }
         if (missing.isEmpty()) return
         store.transaction {
             store.saveCheckpoint(checkpoint(ENTITY_DIVE_DETAILS, PHASE_DETAILS, cursor = null, pageOffset = total, done = false, now = now))
         }
         for (dive in missing) fetchAndStoreDetail(dive.id, now)
         store.transaction {
-            val repaired = store.allDives().none { it.deletedAt == null && it.version == null }
+            val repaired = store.allDives().none { it.deletedAt == null && (it.version == null || it.detailJson == null) }
             store.saveCheckpoint(checkpoint(ENTITY_DIVE_DETAILS, PHASE_DETAILS, cursor = null, pageOffset = total, done = repaired, now = now))
         }
     }
