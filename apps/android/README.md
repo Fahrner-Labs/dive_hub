@@ -131,8 +131,9 @@ restores clears its tombstone on the next list or detail read. `sync_state` keep
 `lastFullSyncAt` and `lastHintAt` for the staleness label and the settings sync line.
 
 The sync engine is serialized with a mutex, so the initial sync, a connect resync and a hint cannot write interleaved
-pages. `startSync()` runs when a User signs in; `stopSync()` runs first on sign-out or a 401 wipe, so an in-flight sync
-cannot write the previous User's rows back after the store is cleared.
+pages. `startSync()` runs when a User signs in; `stopSync()` runs first on sign-out and waits for an in-flight sync
+before the store is cleared, so it cannot write the previous User's rows back. A 401 only clears the token and leaves
+the store readable (client contract, Offline reads), so it does not wipe.
 
 ## The logbook list (slice C1)
 

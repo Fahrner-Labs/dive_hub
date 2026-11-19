@@ -86,6 +86,14 @@ class DiveStore internal constructor(private val database: DiveHubDatabase) : Us
 
     fun allRecordings(): List<Recording> = queries.selectAllRecordings().executeAsList().map(RecordingRow::toModel)
 
+    /** Every Recording of a Dive, tombstones included: the detail pass reconciles what the server still lists. */
+    fun allRecordingsForDive(diveId: String): List<Recording> =
+        queries.selectAnyRecordingsByDive(diveId).executeAsList().map(RecordingRow::toModel)
+
+    fun deleteRecording(id: String) {
+        queries.deleteRecording(id)
+    }
+
     fun upsertRecording(recording: Recording) {
         queries.upsertRecording(
             id = recording.id,
@@ -130,6 +138,10 @@ class DiveStore internal constructor(private val database: DiveHubDatabase) : Us
         queries.selectCylindersByDive(diveId).executeAsList().map(CylinderRow::toModel)
 
     fun allCylinders(): List<Cylinder> = queries.selectAllCylinders().executeAsList().map(CylinderRow::toModel)
+
+    fun deleteCylinders(diveId: String) {
+        queries.deleteCylindersForDive(diveId)
+    }
 
     fun upsertCylinder(cylinder: Cylinder) {
         queries.upsertCylinder(

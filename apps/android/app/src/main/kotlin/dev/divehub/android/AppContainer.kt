@@ -18,6 +18,7 @@ import dev.divehub.shared.sync.SyncEngine
 import dev.divehub.shared.sync.SyncRefresher
 import dev.divehub.shared.sync.SyncResult
 import io.ktor.client.engine.okhttp.OkHttp
+import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -53,7 +54,18 @@ class AppContainer(context: Context) {
         }
     }
 
-    val session = SessionRepository(OkHttp.create(), tokens, instances, userData)
+    /**
+     * The live hint stream is silent between hints (the server's heartbeat is 15 s), so the read timeout must sit
+     * above it or every stream would look dropped (ADR 0066). This applies to ordinary requests too, harmlessly.
+     */
+    private val httpEngine = OkHttp.create {
+        config {
+            connectTimeout(15, TimeUnit.SECONDS)
+            readTimeout(60, TimeUnit.SECONDS)
+        }
+    }
+
+    val session = SessionRepository(httpEngine, tokens, instances, userData)
 
     /** The logbook's and dive page's read sides share the session's HTTP layer (instance URL and bearer token). */
     val logbook = LogbookRepository(session.client)

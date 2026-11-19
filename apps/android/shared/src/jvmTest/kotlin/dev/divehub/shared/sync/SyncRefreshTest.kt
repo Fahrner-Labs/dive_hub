@@ -419,6 +419,42 @@ class SyncRefreshTest {
     }
 
     @Test
+    fun `a completed tombstone walk stops at the first unchanged page`() = runTest {
+        RefreshData.dives += refreshDiveListItem(id = "dive-2", startsAt = "2026-10-01T10:00:00Z", number = 2)
+        RefreshData.details["dive-2"] = refreshDetailJson(id = "dive-2", startsAt = "2026-10-01T10:00:00Z")
+        RefreshData.deletedPages = listOf(
+            listOf("dive-1") to "c1",
+            listOf("dive-2") to null,
+        )
+        val harness = seeded()
+        harness.engine.refresh()
+        RefreshData.dives.clear()
+        harness.paths.clear()
+
+        assertEquals(SyncResult.Complete, harness.engine.refresh())
+
+        assertEquals(1, harness.paths.count { it.startsWith("/api/dives/deleted?") })
+        assertTrue(harness.paths.contains("/api/dives/deleted?limit=200"))
+    }
+
+    @Test
+    fun `a detail refetch drops a Recording the server no longer lists`() = runTest {
+        RefreshData.details["dive-1"] = refreshDetailJson(
+            recordings = listOf(refreshRecordingJson("recording-a"), refreshRecordingJson("recording-b", primary = false)),
+        )
+        val harness = seeded()
+        harness.engine.syncProfiles()
+        assertNotNull(store.series("recording-b"))
+        RefreshData.details["dive-1"] = refreshDetailJson(version = 4, recordings = listOf(refreshRecordingJson("recording-a")))
+
+        assertEquals(SyncResult.Complete, harness.engine.applyDiveHint("dive-1"))
+
+        assertNull(store.recordingIncludingDeleted("recording-b"))
+        assertTrue(store.series("recording-b").isEmpty())
+        assertNotNull(store.recordingIncludingDeleted("recording-a"))
+    }
+
+    @Test
     fun `a site hint refetches that site`() = runTest {
         val harness = seeded()
         RefreshData.sites[0] = refreshSiteJson(name = "New Reef")

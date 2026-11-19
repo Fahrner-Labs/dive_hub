@@ -31,9 +31,13 @@ class SyncRefresher(
     private val _streamHealthy = MutableStateFlow(false)
     val streamHealthy: StateFlow<Boolean> = _streamHealthy.asStateFlow()
 
+    /** Started between [start] and [stop]; a listener cannot launch work after a wipe once this is false. */
+    private val running = MutableStateFlow(false)
+
     private var liveJob: Job? = null
     private var pollJob: Job? = null
     private var profilesJob: Job? = null
+    private var profilesAgain = false
     private var scope: CoroutineScope? = null
 
     /**
@@ -79,7 +83,20 @@ class SyncRefresher(
     /** Drain the pending profiles phase and tell open screens; a no-op when every Dive already has its profiles. */
     suspend fun profilesOnce() {
         if (!engine.hasPendingProfiles()) return
-        if (engine.syncProfiles() != SyncResult.SessionEnded) bump()
+        var changed = false
+        while (true) {
+            when (engine.syncProfiles()) {
+                SyncResult.Complete -> changed = true
+                SyncResult.SessionEnded -> return
+                is SyncResult.Stopped -> {
+                    changed = true
+                    break
+                }
+            }
+            // A hint that arrived during the run may have marked another Dive pending after the snapshot.
+            if (!engine.hasPendingProfiles()) break
+        }
+        if (changed) bump()
     }
 
     /** Collect one connection to the end; returns when the stream drops, and [streamHealthy] turns false. */
@@ -96,6 +113,8 @@ class SyncRefresher(
     fun start(scope: CoroutineScope) {
         if (liveJob != null || pollJob != null) return
         this.scope = scope
+        running.value = true
+        profilesAgain = false
         if (live != null) {
             liveJob = scope.launch {
                 while (isActive) {
@@ -125,28 +144,41 @@ class SyncRefresher(
     }
 
     fun stop() {
+        running.value = false
         liveJob?.cancel()
         pollJob?.cancel()
         profilesJob?.cancel()
         liveJob = null
         pollJob = null
         profilesJob = null
+        profilesAgain = false
         scope = null
         _streamHealthy.value = false
     }
 
     /** Start phase 3 in the background without delaying the hint stream or the poll that asked for it. */
     private fun profilesSoon() {
+        if (!running.value) return
         val scope = scope ?: return
-        if (profilesJob?.isActive == true || !engine.hasPendingProfiles()) return
+        if (profilesJob?.isActive == true) {
+            // A hint arrived while the phase was running; run once more after it finishes.
+            profilesAgain = true
+            return
+        }
+        if (!engine.hasPendingProfiles()) return
         profilesJob = scope.launch {
-            try {
-                profilesOnce()
-            } catch (error: CancellationException) {
-                throw error
-            } catch (_: Exception) {
-                // A later connect, hint or poll tries again; the per-Dive checkpoint keeps the resume point.
-            }
+            do {
+                // Re-checked inside the job: a stop between the launch and this line must not write after a wipe.
+                if (!running.value) return@launch
+                profilesAgain = false
+                try {
+                    profilesOnce()
+                } catch (error: CancellationException) {
+                    throw error
+                } catch (_: Exception) {
+                    // A later connect, hint or poll tries again; the per-Dive checkpoint keeps the resume point.
+                }
+            } while (profilesAgain && running.value)
         }
     }
 

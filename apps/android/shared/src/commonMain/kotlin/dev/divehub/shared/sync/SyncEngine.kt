@@ -305,11 +305,7 @@ class SyncEngine(
             try {
                 val detail = fetchJson<DiveView>("/api/dives/${dive.id}")
                 store.transaction {
-                    store.upsertDive(detail.toStore(store.diveIncludingDeleted(dive.id)))
-                    detail.recordings.forEach { store.upsertRecording(it.toStore(dive.id)) }
-                    detail.cylinders.forEachIndexed { position, cylinder ->
-                        store.upsertCylinder(cylinder.toStore(dive.id, position.toLong()))
-                    }
+                    writeDetail(detail)
                     store.saveCheckpoint(
                         checkpoint(ENTITY_DIVE_DETAILS, PHASE_DETAILS, dive.id, next.toLong(), done, now),
                     )
@@ -368,9 +364,19 @@ class SyncEngine(
         val channels = channelsOf(recording)
         if (channels.isEmpty()) return
         val wanted = channels.joinToString(",") { it.encodeURLParameter() }
-        val samples = fetchJson<RecordingSamplesView>(
-            "/api/recordings/${recording.id.encodeURLParameter()}/samples?channels=$wanted&maxPoints=$MAX_PROFILE_POINTS",
-        )
+        val samples = try {
+            fetchJson<RecordingSamplesView>(
+                "/api/recordings/${recording.id.encodeURLParameter()}/samples?channels=$wanted&maxPoints=$MAX_PROFILE_POINTS",
+            )
+        } catch (error: DiveHubException) {
+            if (error.status != 404) throw error
+            // The Recording is gone: drop it and its series rather than failing this phase forever on a 404.
+            store.transaction {
+                store.deleteSeries(recording.id)
+                store.deleteRecording(recording.id)
+            }
+            return
+        }
         store.transaction {
             // A refetch replaces the Recording's channels: one the server no longer reports must not linger.
             store.deleteSeries(recording.id)
@@ -455,24 +461,30 @@ class SyncEngine(
     private suspend fun syncTombstones(now: String) {
         val existing = store.checkpoint(ENTITY_DELETED_DIVES, PHASE_TOMBSTONES)
         var cursor = existing?.takeUnless { it.done }?.cursor
+        val resuming = cursor != null
         while (true) {
             val query = cursor?.let { "&cursor=${it.encodeURLParameter()}" }.orEmpty()
             val page = fetchJson<DeletedDivesPage>("/api/dives/deleted?limit=${DiveStore.DEFAULT_PAGE_SIZE}$query")
             val next = page.nextCursor
+            // Newest first: on a fresh walk an unchanged page means every older page is unchanged too, so the
+            // common "no new deletions" refresh costs one request instead of the whole history. A resumed walk
+            // must not stop early: deletions added at the top since the interrupted run were not seen.
+            val unchanged = page.dives.all { it.deletedAt == store.diveIncludingDeleted(it.id)?.deletedAt }
+            val done = next == null || (unchanged && !resuming)
             store.transaction {
                 page.dives.forEach { store.markDiveDeleted(it.id, it.deletedAt, it.version.toLong()) }
                 store.saveCheckpoint(
                     SyncCheckpoint(
                         entity = ENTITY_DELETED_DIVES,
                         phase = PHASE_TOMBSTONES,
-                        cursor = next,
+                        cursor = if (done) null else next,
                         pageOffset = null,
-                        done = next == null,
+                        done = done,
                         updatedAt = now,
                     ),
                 )
             }
-            if (next == null) return
+            if (done) return
             cursor = next
         }
     }
@@ -502,11 +514,7 @@ class SyncEngine(
     private suspend fun fetchAndStoreDetail(diveId: String, now: String): Boolean = try {
         val detail = fetchJson<DiveView>("/api/dives/${diveId.encodeURLParameter()}")
         store.transaction {
-            store.upsertDive(detail.toStore(store.diveIncludingDeleted(diveId)))
-            detail.recordings.forEach { store.upsertRecording(it.toStore(diveId)) }
-            detail.cylinders.forEachIndexed { position, cylinder ->
-                store.upsertCylinder(cylinder.toStore(diveId, position.toLong()))
-            }
+            writeDetail(detail)
             store.saveCheckpoint(pendingProfileCheckpoint(diveId, now))
         }
         true
@@ -517,6 +525,26 @@ class SyncEngine(
             store.saveCheckpoint(pendingProfileCheckpoint(diveId, now))
         }
         false
+    }
+
+    /**
+     * One Dive's detail into the store, inside the caller's transaction. The detail is authoritative: Recordings and
+     * Cylinders it no longer lists are removed with their series, so a stale Recording cannot make the profiles phase
+     * fail on a 404 forever.
+     */
+    private fun writeDetail(detail: DiveView) {
+        val diveId = detail.id
+        store.upsertDive(detail.toStore(store.diveIncludingDeleted(diveId)))
+        val kept = detail.recordings.mapTo(mutableSetOf()) { it.id }
+        store.allRecordingsForDive(diveId).filter { it.id !in kept }.forEach { recording ->
+            store.deleteSeries(recording.id)
+            store.deleteRecording(recording.id)
+        }
+        detail.recordings.forEach { store.upsertRecording(it.toStore(diveId)) }
+        store.deleteCylinders(diveId)
+        detail.cylinders.forEachIndexed { position, cylinder ->
+            store.upsertCylinder(cylinder.toStore(diveId, position.toLong()))
+        }
     }
 
     private fun pendingProfileCheckpoint(diveId: String, now: String): SyncCheckpoint = SyncCheckpoint(

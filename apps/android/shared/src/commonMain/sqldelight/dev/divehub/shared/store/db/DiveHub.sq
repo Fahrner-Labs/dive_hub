@@ -163,6 +163,12 @@ SELECT * FROM recording WHERE diveId = ? AND deletedAt IS NULL ORDER BY isPrimar
 selectAllRecordings:
 SELECT * FROM recording ORDER BY diveId, isPrimary DESC, startsAt, id;
 
+selectAnyRecordingsByDive:
+SELECT * FROM recording WHERE diveId = ? ORDER BY isPrimary DESC, startsAt, id;
+
+deleteRecording:
+DELETE FROM recording WHERE id = ?;
+
 upsertRecording:
 INSERT OR REPLACE INTO recording(
     id, diveId, isPrimary, deviceJson, startsAt, durationSeconds, maxDepthM, parser, partOf, deletedAt, summaryJson, channelsJson
@@ -204,6 +210,9 @@ INSERT OR REPLACE INTO cylinder(
 ) VALUES (
     :diveId, :position, :volumeL, :material, :o2, :he, :startPressureBar, :endPressureBar, :fromPod, :seriesJson
 );
+
+deleteCylindersForDive:
+DELETE FROM cylinder WHERE diveId = ?;
 
 deleteAllCylinders:
 DELETE FROM cylinder;
