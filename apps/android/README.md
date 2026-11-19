@@ -207,6 +207,11 @@ pages. `startSync()` runs when a User signs in; `stopSync()` runs first on sign-
 before the store is cleared, so it cannot write the previous User's rows back. A 401 only clears the token and leaves
 the store readable (client contract, Offline reads), so it does not wipe.
 
+While the first sync runs, `SyncRefresher.progress` follows the phases, and the logbook's pre-sync loading state shows
+how many Dives phase 1 has found and how many details phase 2 has stored ("Syncing your dives… 42 of 130"). The bar is
+indeterminate until the first detail lands. Progress never holds back already-synced content: a cached list renders as
+soon as the store has one, and the tools keep working from the store while a sync continues.
+
 ## The logbook list (slice C1)
 
 Read-only, from the synced store ([ADR 0040](../../docs/decisions/0040-logbook-rows-and-filters.md)); the rows and

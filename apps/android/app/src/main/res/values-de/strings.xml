@@ -151,6 +151,8 @@
     <string name="logbook_offline_cached">Keine Verbindung. Die Tauchgänge sind synchronisiert bis %1$s.</string>
     <string name="logbook_filter_offline">Dieser Filter braucht eine Verbindung. Gezeigt werden die auf diesem Gerät synchronisierten Tauchgänge.</string>
     <string name="logbook_profile_pending">Profil wird synchronisiert</string>
+    <string name="logbook_sync_progress_starting">Deine Tauchgänge werden synchronisiert…</string>
+    <string name="logbook_sync_progress">Deine Tauchgänge werden synchronisiert… %1$d von %2$d</string>
     <string name="logbook_retry">Erneut versuchen</string>
     <string name="logbook_refresh_failed">Die Liste konnte nicht aktualisiert werden.</string>
     <string name="dive_air">Luft</string>

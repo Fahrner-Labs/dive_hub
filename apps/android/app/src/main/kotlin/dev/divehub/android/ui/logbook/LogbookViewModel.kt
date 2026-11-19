@@ -16,6 +16,7 @@ import dev.divehub.shared.logbook.ProviderDirectory
 import dev.divehub.shared.logbook.StoreLogbook
 import dev.divehub.shared.logbook.StoredLogbookPage
 import dev.divehub.shared.logbook.toggleFilter
+import dev.divehub.shared.sync.SyncProgress
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -42,6 +43,8 @@ data class LogbookUiState(
     val profilePending: Set<String> = emptySet(),
     /** A server-only filter was applied offline, so the stored list is shown without it. */
     val filterUnavailable: Boolean = false,
+    /** The sync's phase counts while the first page is still syncing; null until the first report. */
+    val syncProgress: SyncProgress? = null,
 ) {
     val pageCount: Int get() = data?.let { LogbookPaging.pageCount(it.total) } ?: 0
     val range: IntRange? get() = data?.let { LogbookPaging.range(page, it.total) }
@@ -57,6 +60,7 @@ class LogbookViewModel(
     private val api: LogbookRepository,
     private val revision: StateFlow<Long>,
     private val offlineState: StateFlow<Boolean>,
+    private val syncProgress: StateFlow<SyncProgress>,
     private val refreshSync: suspend () -> Unit,
 ) : ViewModel() {
     private val _state = MutableStateFlow(LogbookUiState())
@@ -65,6 +69,7 @@ class LogbookViewModel(
     private var loadJob: Job? = null
     private var observing: Job? = null
     private var offlineJob: Job? = null
+    private var progressJob: Job? = null
     private var providers: ProviderDirectory? = null
     private var loadedFor: String? = null
 
@@ -85,6 +90,7 @@ class LogbookViewModel(
         loadJob?.cancel()
         observing?.cancel()
         offlineJob?.cancel()
+        progressJob?.cancel()
         _state.value = LogbookUiState()
     }
 
@@ -191,6 +197,7 @@ class LogbookViewModel(
     private fun observe() {
         observing?.cancel()
         offlineJob?.cancel()
+        progressJob?.cancel()
         observing = viewModelScope.launch {
             var last = revision.value
             revision.collect { value ->
@@ -203,6 +210,9 @@ class LogbookViewModel(
         offlineJob = viewModelScope.launch {
             offlineState.collect { offline -> _state.update { it.copy(offline = offline) } }
         }
+        progressJob = viewModelScope.launch {
+            syncProgress.collect { progress -> _state.update { it.copy(syncProgress = progress) } }
+        }
     }
 
     companion object {
@@ -213,6 +223,7 @@ class LogbookViewModel(
                     api = container.logbook,
                     revision = container.syncRevision,
                     offlineState = container.syncOffline,
+                    syncProgress = container.syncProgress,
                     refreshSync = { container.refreshNow() },
                 )
             }
