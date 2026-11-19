@@ -59,7 +59,24 @@ data class SyncProgress(
     val storedDives: Long,
     val detailedDives: Long,
     val divesAwaitingProfiles: Long,
-)
+) {
+    companion object {
+        /** Nothing is in the store yet; the flow's value before the first phase writes anything. */
+        val EMPTY = SyncProgress(
+            lastFullSyncAt = null,
+            lastHintAt = null,
+            metaDone = false,
+            detailsDone = false,
+            profilesDone = false,
+            storedDivers = 0,
+            storedBodyWeights = 0,
+            storedDiveSites = 0,
+            storedDives = 0,
+            detailedDives = 0,
+            divesAwaitingProfiles = 0,
+        )
+    }
+}
 
 /**
  * The checkpointed sync loop (FAH-265 plan §3–§4): the initial phases 1–2, the background profiles phase, and the
@@ -82,17 +99,27 @@ class SyncEngine(
     private val json = Json { ignoreUnknownKeys = true; explicitNulls = false }
 
     /**
+     * Called with the store's new counts after a phase advances, so the app can show determinate progress. The
+     * callback runs on the sync coroutine, after the write's transaction, and must not suspend.
+     */
+    var onProgress: ((SyncProgress) -> Unit)? = null
+
+    /**
      * Run or resume the initial phases 1–2. A completed sync is a no-op except for backfilling a v1 store's missing API
      * payloads; [refresh] owns the later triggers.
      */
     suspend fun sync(): SyncResult = lock.withLock {
+        emitProgress()
         if (store.syncState().lastFullSyncAt != null) return@withLock backfillPayloadsIfMissing()
         var phase = SyncPhase.Meta
         return@withLock try {
             syncMeta(now = clock())
+            emitProgress()
             phase = SyncPhase.Details
             syncDetails(now = clock())
+            emitProgress()
             markFullSync(now = clock())
+            emitProgress()
             SyncResult.Complete
         } catch (error: CancellationException) {
             throw error
@@ -129,8 +156,10 @@ class SyncEngine(
      * recordings are stored, so the UI can mark profiles "not yet synced" per Dive and the next run resumes there.
      */
     suspend fun syncProfiles(): SyncResult = lock.withLock {
+        emitProgress()
         try {
             syncProfilesInternal(now = clock())
+            emitProgress()
             SyncResult.Complete
         } catch (error: CancellationException) {
             throw error
@@ -146,8 +175,10 @@ class SyncEngine(
      * cursor. It marks a full sync when it ends, because the store is then current as of now.
      */
     suspend fun refresh(): SyncResult = lock.withLock {
+        emitProgress()
         try {
             refreshInternal(now = clock())
+            emitProgress()
             SyncResult.Complete
         } catch (error: CancellationException) {
             throw error
@@ -165,10 +196,12 @@ class SyncEngine(
      */
     suspend fun applyDiveHint(id: String): SyncResult = lock.withLock {
         val now = clock()
+        emitProgress()
         try {
             refreshDiveListPageOne(now)
             fetchAndStoreDetail(id, now)
             markHint(now)
+            emitProgress()
             SyncResult.Complete
         } catch (error: CancellationException) {
             throw error
@@ -182,6 +215,7 @@ class SyncEngine(
     /** A `site` hint: refetch that one Dive site through the normal API. A site gone meanwhile leaves the cache as is. */
     suspend fun applySiteHint(id: String): SyncResult = lock.withLock {
         val now = clock()
+        emitProgress()
         try {
             try {
                 val site = fetchJson<SiteView>("/api/dive-sites/${id.encodeURLParameter()}")
@@ -190,6 +224,7 @@ class SyncEngine(
                 if (error.status != 404) throw error
             }
             markHint(now)
+            emitProgress()
             SyncResult.Complete
         } catch (error: CancellationException) {
             throw error
@@ -226,6 +261,11 @@ class SyncEngine(
             detailedDives = active.count { it.version != null }.toLong(),
             divesAwaitingProfiles = awaiting.toLong(),
         )
+    }
+
+    /** Hands the current counts to [onProgress], always outside a store transaction. */
+    private fun emitProgress() {
+        onProgress?.invoke(progress())
     }
 
     private suspend fun syncMeta(now: String) {
@@ -300,6 +340,7 @@ class SyncEngine(
                 store.saveLogbookCounts(json.encodeToString(page.counts))
                 store.saveCheckpoint(checkpoint(ENTITY_DIVES, PHASE_META, cursor = null, pageOffset = next, done = done, now = now))
             }
+            emitProgress()
             if (done) return
             offset = next
         }
@@ -329,6 +370,7 @@ class SyncEngine(
                     checkpoint(ENTITY_DIVE_DETAILS, PHASE_DETAILS, cursor = null, pageOffset = next, done = done, now = now),
                 )
             }
+            emitProgress()
             if (done) break
             offset = next
         }
@@ -341,11 +383,15 @@ class SyncEngine(
         store.transaction {
             store.saveCheckpoint(checkpoint(ENTITY_DIVE_DETAILS, PHASE_DETAILS, cursor = null, pageOffset = total, done = false, now = now))
         }
-        for (dive in missing) fetchAndStoreDetail(dive.id, now)
+        for (dive in missing) {
+            fetchAndStoreDetail(dive.id, now)
+            emitProgress()
+        }
         store.transaction {
             val repaired = store.allDives().none { it.deletedAt == null && (it.version == null || it.detailJson == null) }
             store.saveCheckpoint(checkpoint(ENTITY_DIVE_DETAILS, PHASE_DETAILS, cursor = null, pageOffset = total, done = repaired, now = now))
         }
+        emitProgress()
     }
 
     private suspend fun syncProfilesInternal(now: String) {
@@ -355,6 +401,7 @@ class SyncEngine(
             if (dive.deletedAt != null || dive.version == null) continue
             if (profileSynced(dive.id)) continue
             syncDiveProfiles(dive.id, now)
+            emitProgress()
         }
     }
 

@@ -151,6 +151,8 @@
     <string name="logbook_offline_cached">No connection. Showing dives synced as of %1$s.</string>
     <string name="logbook_filter_offline">This filter needs a connection. Showing the dives synced on this device.</string>
     <string name="logbook_profile_pending">Profile syncing</string>
+    <string name="logbook_sync_progress_starting">Syncing your dives…</string>
+    <string name="logbook_sync_progress">Syncing your dives… %1$d of %2$d</string>
     <string name="logbook_retry">Try again</string>
     <string name="logbook_refresh_failed">The list could not be refreshed.</string>
     <string name="dive_air">Air</string>

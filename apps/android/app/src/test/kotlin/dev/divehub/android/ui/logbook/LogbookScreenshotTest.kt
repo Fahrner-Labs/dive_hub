@@ -17,6 +17,7 @@ import dev.divehub.api.models.ApiDivesGet200ResponseTotals
 import dev.divehub.api.models.DiveProfileView
 import dev.divehub.shared.logbook.LogbookFilter
 import dev.divehub.shared.logbook.ProviderDirectory
+import dev.divehub.shared.sync.SyncProgress
 import kotlinx.serialization.json.JsonPrimitive
 import java.util.TimeZone
 import org.junit.After
@@ -94,6 +95,18 @@ class LogbookScreenshotTest {
         render(LogbookUiState(loading = false, offline = true))
         compose.onNodeWithText("No connection. Check your connection and try again.").assertIsDisplayed()
         capture("logbook_offline_empty.png")
+    }
+
+    @Test
+    fun `the pre-sync loading state counts the dives being synced`() {
+        render(
+            LogbookUiState(
+                loading = true,
+                syncProgress = SyncProgress.EMPTY.copy(storedDives = 130, detailedDives = 42),
+            ),
+        )
+        compose.onNodeWithText("Syncing your dives… 42 of 130").assertIsDisplayed()
+        capture("logbook_sync_progress.png")
     }
 
     @Test

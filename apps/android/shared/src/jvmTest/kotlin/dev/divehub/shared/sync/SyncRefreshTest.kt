@@ -10,6 +10,7 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.http.headersOf
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.CancellationException
 import kotlinx.serialization.json.Json
@@ -646,5 +647,30 @@ class SyncRefreshTest {
         assertEquals(0L, after.divesAwaitingProfiles)
         assertTrue(after.profilesDone)
         assertEquals(RefreshNow, after.lastHintAt)
+    }
+
+    @Test
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    fun `the progress flow follows the initial sync from phase one to the details`() = runTest {
+        val harness = RefreshHarness(store, ::refreshRoutes)
+        val seen = mutableListOf<SyncProgress>()
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+            harness.refresher.progress.collect { seen += it }
+        }
+
+        assertEquals(SyncResult.Complete, harness.engine.sync())
+
+        // The first page lands before any detail, so the logbook can say how many dives it is syncing.
+        assertTrue(seen.contains(SyncProgress.EMPTY), "the flow starts empty")
+        assertTrue(
+            seen.any { it.storedDives == 1L && it.detailedDives == 0L && !it.detailsDone },
+            "phase one reports the dives before their details",
+        )
+        assertTrue(
+            seen.any { it.storedDives == 1L && it.detailedDives == 1L && it.detailsDone },
+            "the details phase advances the count",
+        )
+        assertEquals(RefreshNow, seen.last().lastFullSyncAt)
+        assertEquals(seen.last(), harness.refresher.progress.value)
     }
 }

@@ -29,6 +29,18 @@ class SyncRefresher(
     /** Bumped after each hint or refresh that left the store changed; open screens read it to refetch. */
     val revision: StateFlow<Long> = _revision.asStateFlow()
 
+    private val _progress = MutableStateFlow(SyncProgress.EMPTY)
+
+    /**
+     * The store's counts after each syncing phase advances; the logbook's pre-sync state draws a determinate bar from
+     * it. [SyncProgress.EMPTY] until the first phase reports.
+     */
+    val progress: StateFlow<SyncProgress> = _progress.asStateFlow()
+
+    init {
+        engine.onProgress = { _progress.value = it }
+    }
+
     private val _streamHealthy = MutableStateFlow(false)
     val streamHealthy: StateFlow<Boolean> = _streamHealthy.asStateFlow()
 
@@ -165,6 +177,7 @@ class SyncRefresher(
     fun stop() {
         running.value = false
         _offline.value = false
+        _progress.value = SyncProgress.EMPTY
         liveJob?.cancel()
         pollJob?.cancel()
         profilesJob?.cancel()
@@ -208,5 +221,8 @@ class SyncRefresher(
         if (result != SyncResult.SessionEnded) bump()
     }
 
-    private fun bump() = _revision.update { it + 1 }
+    private fun bump() {
+        _revision.update { it + 1 }
+        _progress.value = engine.progress()
+    }
 }

@@ -59,6 +59,7 @@ import dev.divehub.shared.logbook.initials
 import dev.divehub.shared.logbook.mixName
 import dev.divehub.shared.logbook.monthGroups
 import dev.divehub.shared.logbook.sketchScale
+import dev.divehub.shared.sync.SyncProgress
 import java.util.Locale
 
 /** The logbook route: the list keeps its page and filters in the view model, not in an address. */
@@ -117,7 +118,7 @@ fun LogbookScreen(
     ) { padding ->
         val modifier = Modifier.padding(padding).fillMaxSize()
         when {
-            state.loading && state.data == null -> Loading(modifier)
+            state.loading && state.data == null -> Loading(modifier, state.syncProgress)
             state.offline && state.data == null -> Offline(modifier, onRetry)
             state.error != null && state.data == null -> Error(modifier, state.error, onRetry)
             else -> PullToRefreshBox(
@@ -132,10 +133,35 @@ fun LogbookScreen(
 }
 
 @Composable
-private fun Loading(modifier: Modifier) {
-    val label = stringResource(R.string.loading)
+private fun Loading(modifier: Modifier, progress: SyncProgress?) {
+    val total = progress?.storedDives ?: 0
+    val done = progress?.detailedDives ?: 0
+    // Phase 1 only knows how many Dives there are; the count of detailed Dives makes the bar determinate.
+    val countable = total > 0 && done > 0
+    val label = if (countable) {
+        stringResource(R.string.logbook_sync_progress, done, total)
+    } else {
+        stringResource(R.string.logbook_sync_progress_starting)
+    }
     Box(modifier, contentAlignment = Alignment.Center) {
-        CircularProgressIndicator(Modifier.semantics { contentDescription = label })
+        Column(
+            modifier = Modifier.padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+        ) {
+            if (countable) {
+                CircularProgressIndicator(progress = { (done.toFloat() / total).coerceIn(0f, 1f) })
+            } else {
+                CircularProgressIndicator()
+            }
+            Spacer(Modifier.height(16.dp))
+            Text(
+                label,
+                modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+                style = MaterialTheme.typography.bodyLarge,
+                textAlign = TextAlign.Center,
+            )
+        }
     }
 }
 
