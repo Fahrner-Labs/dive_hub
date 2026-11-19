@@ -3102,7 +3102,8 @@
         "apps/server/src/assessment/series-rules.ts",
         "apps/server/src/planning/loadings-service.ts",
         "apps/server/src/mcp/tools-assessment.ts",
-        "apps/server/src/assessment/texts.ts"
+        "apps/server/src/assessment/texts.ts",
+        "apps/server/src/planning/test-vectors.ts"
       ],
       "orphan": false,
       "valid": true
@@ -3176,7 +3177,8 @@
       "dependents": [
         "apps/server/src/assessment/assessment-service.ts",
         "apps/server/src/planning/loadings-service.ts",
-        "apps/server/src/assessment/texts.ts"
+        "apps/server/src/assessment/texts.ts",
+        "apps/server/src/planning/test-vectors.ts"
       ],
       "orphan": false,
       "valid": true
@@ -12917,7 +12919,8 @@
       "dependents": [
         "apps/server/src/planning/bottom-time-service.ts",
         "apps/server/src/planning/loading-dives.ts",
-        "apps/server/src/planning/loadings-service.ts"
+        "apps/server/src/planning/loadings-service.ts",
+        "apps/server/src/planning/test-vectors.ts"
       ],
       "orphan": false,
       "valid": true
@@ -20806,7 +20809,8 @@
       "dependencies": [],
       "dependents": [
         "apps/server/src/dives/logbook-routes.ts",
-        "apps/server/src/mcp/tools-logbook.ts"
+        "apps/server/src/mcp/tools-logbook.ts",
+        "apps/server/src/planning/test-vectors.ts"
       ],
       "orphan": false,
       "valid": true
@@ -30622,6 +30626,57 @@
       "dependencies": [
         {
           "dynamic": false,
+          "module": "../assessment/rules.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/assessment/rules.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../assessment/series-rules.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/assessment/series-rules.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../dives/calc/downsample.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/dives/calc/downsample.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "../dives/calc/real-gas.js",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -30715,6 +30770,23 @@
             "import"
           ],
           "resolved": "apps/server/src/planning/gas.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./loadings.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/planning/loadings.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -48850,7 +48922,7 @@
     "baselineStale": 0,
     "advisedExitCode": 0,
     "totalCruised": 463,
-    "totalDependenciesCruised": 2437,
+    "totalDependenciesCruised": 2441,
     "optionsUsed": {
       "baseDir": "/home/runner/work/dive_hub/dive_hub",
       "combinedDependencies": false,
