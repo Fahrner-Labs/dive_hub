@@ -148,6 +148,10 @@ class PersonalizedScreenshotTest {
         compose.onNode(hasScrollAction()).performScrollToNode(hasText("This rests on what is already on the device", substring = true))
         compose.onNodeWithText("This rests on what is already on the device", substring = true).assertIsDisplayed()
         compose.onNodeWithText("There is no dive with this suit", substring = true).assertDoesNotExist()
+        compose.onNode(hasScrollAction()).performScrollToNode(hasText("What is missing"))
+        compose.onNodeWithText("What is missing").assertIsDisplayed()
+        compose.onNode(hasScrollAction()).performScrollToNode(hasText("No body weight is set", substring = true))
+        compose.onNodeWithText("No body weight is set", substring = true).assertIsDisplayed()
         capture("lead_no_number_syncing.png")
     }
 

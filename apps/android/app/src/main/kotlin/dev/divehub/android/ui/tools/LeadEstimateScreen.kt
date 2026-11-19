@@ -392,7 +392,7 @@ private fun Answer(
         ),
     )
 
-    Missing(answer.missing, skipBodyWeight = total == null)
+    Missing(answer.missing, skipBodyWeight = total == null && detailsComplete)
     if (answer.leftOut.noWaterType > 0) {
         Spacer(Modifier.height(8.dp))
         Notice(

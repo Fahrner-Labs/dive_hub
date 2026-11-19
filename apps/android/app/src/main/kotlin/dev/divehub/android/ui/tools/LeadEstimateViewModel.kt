@@ -136,7 +136,9 @@ class LeadEstimateViewModel(
         progressJob?.cancel()
         progressJob = viewModelScope.launch {
             progress.collect { report ->
-                _state.update { it.copy(detailsComplete = report == SyncProgress.EMPTY || report.detailsDone) }
+                _state.update {
+                    it.copy(detailsComplete = report == SyncProgress.EMPTY || (report.metaDone && report.detailsDone))
+                }
             }
         }
     }
