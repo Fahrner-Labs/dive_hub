@@ -31,7 +31,8 @@ data class UiState(
     val error: String? = null,
 )
 
-class MainViewModel(private val session: SessionRepository) : ViewModel() {
+class MainViewModel(private val container: AppContainer) : ViewModel() {
+    private val session: SessionRepository = container.session
     private val _state = MutableStateFlow(UiState())
     val state: StateFlow<UiState> = _state.asStateFlow()
 
@@ -39,6 +40,7 @@ class MainViewModel(private val session: SessionRepository) : ViewModel() {
         // A 401 anywhere ends the session in the repository; the screen follows it without a second source of truth.
         viewModelScope.launch {
             session.state.collect { state ->
+                if (state is SessionState.SignedIn) container.startSync() else container.stopSync()
                 _state.update {
                     when (state) {
                         is SessionState.SignedIn -> it.copy(loading = false, instanceUrl = state.instanceUrl, user = state.user, units = state.preferences.units)
@@ -105,7 +107,7 @@ class MainViewModel(private val session: SessionRepository) : ViewModel() {
         const val NO_ANSWER = "no_answer"
 
         fun factory(container: AppContainer): ViewModelProvider.Factory = viewModelFactory {
-            initializer { MainViewModel(container.session) }
+            initializer { MainViewModel(container) }
         }
     }
 }

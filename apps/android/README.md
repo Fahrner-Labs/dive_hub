@@ -109,6 +109,32 @@ and commits the PNGs; CI fails when the drawing no longer matches them.
 - **Cleartext HTTP** is allowed only for `localhost`, `127.0.0.1` and the emulator's `10.0.2.2`
   (`res/xml/network_security_config.xml`). A self-hosted instance reachable over the network must use HTTPS.
 
+## Sync and refresh (slice D3)
+
+The sync engine ([`shared/sync/SyncEngine.kt`](shared/src/commonMain/kotlin/dev/divehub/shared/sync/SyncEngine.kt)) fills
+the read store in three phases, in order:
+
+1. **Meta** — Divers, body weights, Dive sites and the paged Dive list. The logbook list renders offline after this.
+2. **Details** — one `GET /api/dives/{id}` per Dive (Dive, Recordings, Cylinders). The dive page renders offline after this.
+3. **Profiles** — one `GET /api/recordings/{id}/samples` per Recording with all its listed channels and the explicit
+   `maxPoints=20000` cap the server verified (FAH-269). This runs in the background, is cancellable, and records
+   completion per Dive in `sync_checkpoint` (`profiles:<diveId>`), so `SyncEngine.profileSynced(diveId)` and
+   `SyncProgress.divesAwaitingProfiles` let a screen mark profiles "not yet synced" for one Dive only.
+
+While online the app opens `GET /api/live` with the bearer token. A `dive` hint refetches list page 1 and that Dive's
+detail, then marks its profiles pending; a `site` hint refetches that site. On every (re)connect the list sync runs
+again, because hints are not replayed. When the stream is down the foreground poll re-runs phase 1 every minute, and
+WorkManager runs the same refresh every 15 minutes; the scheduler is the `PeriodicSyncScheduler` interface in
+`shared/`, implemented in `app/` so `shared/` stays Android-free. Deleted Dives come from `GET /api/dives/deleted`,
+paged by `nextCursor`, and become local tombstones (`deletedAt`); nothing is hard-deleted, and a Dive the server
+restores clears its tombstone on the next list or detail read. `sync_state` keeps
+`lastFullSyncAt` and `lastHintAt` for the staleness label and the settings sync line.
+
+The sync engine is serialized with a mutex, so the initial sync, a connect resync and a hint cannot write interleaved
+pages. `startSync()` runs when a User signs in; `stopSync()` runs first on sign-out and waits for an in-flight sync
+before the store is cleared, so it cannot write the previous User's rows back. A 401 only clears the token and leaves
+the store readable (client contract, Offline reads), so it does not wipe.
+
 ## The logbook list (slice C1)
 
 Read-only, from `GET /api/dives` ([ADR 0040](../../docs/decisions/0040-logbook-rows-and-filters.md)):

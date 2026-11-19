@@ -68,6 +68,14 @@ class DiveStore internal constructor(private val database: DiveHubDatabase) : Us
         )
     }
 
+    /**
+     * Write a deletion tombstone without touching the row's detail: a Dive deleted elsewhere leaves the logbook but
+     * keeps its cached values, and is never hard-deleted locally (sync slice D3). An unknown id writes nothing.
+     */
+    fun markDiveDeleted(id: String, deletedAt: String, version: Long? = null) {
+        queries.markDiveDeleted(deletedAt = deletedAt, version = version, id = id)
+    }
+
     fun recording(id: String): Recording? = queries.selectRecordingById(id).executeAsOneOrNull()?.toModel()
 
     fun recordingIncludingDeleted(id: String): Recording? =
@@ -77,6 +85,14 @@ class DiveStore internal constructor(private val database: DiveHubDatabase) : Us
         queries.selectRecordingsByDive(diveId).executeAsList().map(RecordingRow::toModel)
 
     fun allRecordings(): List<Recording> = queries.selectAllRecordings().executeAsList().map(RecordingRow::toModel)
+
+    /** Every Recording of a Dive, tombstones included: the detail pass reconciles what the server still lists. */
+    fun allRecordingsForDive(diveId: String): List<Recording> =
+        queries.selectAnyRecordingsByDive(diveId).executeAsList().map(RecordingRow::toModel)
+
+    fun deleteRecording(id: String) {
+        queries.deleteRecording(id)
+    }
 
     fun upsertRecording(recording: Recording) {
         queries.upsertRecording(
@@ -113,10 +129,19 @@ class DiveStore internal constructor(private val database: DiveHubDatabase) : Us
         )
     }
 
+    /** Drop a Recording's series before a refetch writes the channels the server now reports. */
+    fun deleteSeries(recordingId: String) {
+        queries.deleteSeriesFor(recordingId)
+    }
+
     fun cylinders(diveId: String): List<Cylinder> =
         queries.selectCylindersByDive(diveId).executeAsList().map(CylinderRow::toModel)
 
     fun allCylinders(): List<Cylinder> = queries.selectAllCylinders().executeAsList().map(CylinderRow::toModel)
+
+    fun deleteCylinders(diveId: String) {
+        queries.deleteCylindersForDive(diveId)
+    }
 
     fun upsertCylinder(cylinder: Cylinder) {
         queries.upsertCylinder(

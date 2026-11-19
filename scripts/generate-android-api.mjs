@@ -26,6 +26,8 @@ export const OPERATIONS = [
   { name: 'DiverView', path: '/api/divers', method: 'get', kind: 'response', status: '200' },
   { name: 'ApiDiverBodyWeightsGet200ResponseItem', path: '/api/divers/{id}/body-weights', method: 'get', kind: 'response', status: '200' },
   { name: 'ApiDiveSitesGet200Response', path: '/api/dive-sites', method: 'get', kind: 'response', status: '200' },
+  // The refresh slice (D3): deleted Dives, paged by nextCursor, become tombstones in the store.
+  { name: 'DeletedDivesPage', path: '/api/dives/deleted', method: 'get', kind: 'response', status: '200' },
   // The dive page (slice C2): the Dive itself, its neighbours in the list it was opened from (ADR 0042), and the
   // Primary recording's samples for the depth profile.
   { name: 'DiveView', path: '/api/dives/{id}', method: 'get', kind: 'response', status: '200' },

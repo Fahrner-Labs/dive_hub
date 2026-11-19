@@ -18,6 +18,7 @@ import kotlinx.serialization.json.Json
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -74,8 +75,23 @@ private const val SIGN_IN_PATH = "/api/auth/sign-in/email"
 
 class SessionRepositoryTest {
 
-@Test
-fun `signing in stores the token from set-auth-token and proves it with me`() = runTest {
+    @Test
+    fun `hasSession needs both the instance URL and the token`() = runTest {
+        val harness = Harness(tokens = FakeTokens(null), instances = FakeInstances("https://dive.example")) {
+            error("no request expected")
+        }
+
+        assertFalse(harness.session.hasSession())
+
+        harness.tokens.value = "token"
+        assertTrue(harness.session.hasSession())
+
+        harness.instances.value = null
+        assertFalse(harness.session.hasSession())
+    }
+
+    @Test
+    fun `signing in stores the token from set-auth-token and proves it with me`() = runTest {
     var meAuthorization: String? = null
     var signInAuthorization: String? = null
     val harness = Harness { request ->
@@ -145,7 +161,7 @@ fun `signing in forgets the previous User before the new token is stored`() = ru
 
     session.signIn("https://dive.example", "ada@example.com", "correct horse battery")
 
-    assertEquals(listOf("forget-cache", "clear-token", "save"), events)
+    assertEquals(listOf("clear-token", "forget-cache", "save"), events)
 }
 
 @Test
