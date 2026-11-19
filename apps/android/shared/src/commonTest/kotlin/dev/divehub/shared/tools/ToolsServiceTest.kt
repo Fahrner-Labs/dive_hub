@@ -231,4 +231,146 @@ class ToolsServiceTest {
         )
         assertEquals(ToolsError.INVALID_INPUT, errorCode { bottomTime(BottomTimeToolInput(20.0, 60.0, he = 50.0)) })
     }
+
+    private fun plan(
+        divers: List<GasPlanToolDiver> = listOf(GasPlanToolDiver("Elena", 12.0, 200.0)),
+        levels: List<GasPlanToolLevel> = listOf(GasPlanToolLevel(20.0, 20.0)),
+        sources: ToolSources = ToolSources(),
+        o2: Double = 21.0,
+        rule: String? = null,
+        bar: Double? = null,
+    ) = gasPlan(
+        GasPlanToolInput(o2 = o2, levels = levels, divers = divers, rule = rule, bar = bar),
+        sources,
+    )
+
+    @Test
+    fun `a plan answers the route's defaults`() {
+        val answer = plan()
+
+        assertEquals("ok", answer.status)
+        assertEquals("default", answer.used.water.source)
+        assertEquals("salt", answer.used.water.value)
+        assertEquals("default", answer.used.altitudeM.source)
+        assertEquals(0.0, answer.used.altitudeM.value)
+        assertEquals("default", answer.used.gasRule.source)
+        assertEquals("rock_bottom", answer.used.gasRule.value.kind)
+        assertNull(answer.used.gasRule.value.bar)
+        assertEquals("default", answer.used.descentRateMPerMin.source)
+        assertEquals(18.0, answer.used.descentRateMPerMin.value)
+        assertEquals("default", answer.used.ascentRateMPerMin.source)
+        assertEquals(9.0, answer.used.ascentRateMPerMin.value)
+
+        val diver = answer.divers!!.single()
+        assertEquals("default", diver.sacLpm.source)
+        assertEquals(20.0, diver.sacLpm.value)
+        assertNull(diver.sacLpm.basedOn)
+        assertTrue(diver.controlling)
+        assertTrue(diver.rockBottom.isNotEmpty())
+        assertEquals(0, answer.controllingIndex)
+        assertEquals(listOf("descent", "level", "ascent", "safety_stop", "ascent"), answer.segments!!.map { it.kind })
+    }
+
+    @Test
+    fun `a synced Diver brings their planning SAC and recent Dive`() {
+        val sources = ToolSources(
+            divers = listOf(
+                ToolDiverSource(
+                    id = "diver",
+                    name = "Elena",
+                    isOwn = true,
+                    planningSac = PlanningSacResult(17.5, 12, PlanningSacSource.logbook),
+                    recentDiveEndedAt = "2026-11-18T09:00:00Z",
+                ),
+            ),
+        )
+        val answer = plan(divers = listOf(GasPlanToolDiver("Elena", 12.0, 200.0, diverId = "diver")), sources = sources)
+
+        val diver = answer.divers!!.single()
+        assertEquals("logbook", diver.sacLpm.source)
+        assertEquals(17.5, diver.sacLpm.value)
+        assertEquals(12, diver.sacLpm.basedOn)
+        assertEquals("2026-11-18T09:00:00Z", diver.recentDiveEndedAt)
+    }
+
+    @Test
+    fun `a typed SAC wins and a guest has no logbook value`() {
+        val sources = ToolSources(
+            divers = listOf(
+                ToolDiverSource(id = "diver", name = "Elena", isOwn = true, planningSac = PlanningSacResult(17.5, 12, PlanningSacSource.logbook)),
+            ),
+        )
+        val typed = plan(
+            divers = listOf(GasPlanToolDiver("Elena", 12.0, 200.0, sacLpm = 14.0, diverId = "diver")),
+            sources = sources,
+        ).divers!!.single()
+        assertEquals("request", typed.sacLpm.source)
+        assertEquals(14.0, typed.sacLpm.value)
+        assertNull(typed.sacLpm.basedOn)
+
+        val guest = plan(divers = listOf(GasPlanToolDiver("Bob", 12.0, 200.0, diverId = "stranger")), sources = sources)
+            .divers!!.single()
+        assertEquals("default", guest.sacLpm.source)
+        assertNull(guest.sacLpm.basedOn)
+        assertNull(guest.recentDiveEndedAt)
+    }
+
+    @Test
+    fun `a default SAC with a synced Diver says how many Dives it rests on`() {
+        val sources = ToolSources(
+            divers = listOf(
+                ToolDiverSource(
+                    id = "diver",
+                    name = "Elena",
+                    isOwn = true,
+                    planningSac = PlanningSacResult(20.0, 3, PlanningSacSource.default),
+                ),
+            ),
+        )
+        val diver = plan(divers = listOf(GasPlanToolDiver("Elena", 12.0, 200.0, diverId = "diver")), sources = sources)
+            .divers!!.single()
+        assertEquals("default", diver.sacLpm.source)
+        assertEquals(3, diver.sacLpm.basedOn)
+    }
+
+    @Test
+    fun `a turn rule gives a turn pressure and keeps rock bottom`() {
+        val answer = plan(rule = RULE_THIRDS)
+        assertEquals("request", answer.used.gasRule.source)
+        assertEquals(RULE_THIRDS, answer.used.gasRule.value.kind)
+        val diver = answer.divers!!.single()
+        assertNotNull(diver.turnPressureBar)
+        assertTrue(diver.rockBottom.isNotEmpty())
+    }
+
+    @Test
+    fun `a plan outside the limits has no figures`() {
+        val answer = plan(o2 = 50.0)
+        assertEquals("outside_limits", answer.status)
+        assertEquals("gas", answer.reason)
+        assertNull(answer.levelIndex)
+        assertNull(answer.divers)
+        assertNull(answer.segments)
+        assertNull(answer.runtimeMinutes)
+    }
+
+    @Test
+    fun `a plan refuses the inputs the route refuses`() {
+        assertEquals(
+            ToolsError.INVALID_INPUT,
+            errorCode {
+                gasPlan(
+                    GasPlanToolInput(
+                        o2 = 60.0,
+                        he = 50.0,
+                        levels = listOf(GasPlanToolLevel(20.0, 20.0)),
+                        divers = listOf(GasPlanToolDiver("Elena", 12.0, 200.0)),
+                    ),
+                )
+            },
+        )
+        assertEquals(ToolsError.INVALID_INPUT, errorCode { plan(rule = RULE_RESERVE) })
+        assertEquals(ToolsError.INVALID_INPUT, errorCode { plan(rule = "unknown") })
+        assertEquals(ToolsError.INVALID_INPUT, errorCode { plan(divers = emptyList()) })
+    }
 }

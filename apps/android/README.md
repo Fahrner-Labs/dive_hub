@@ -164,3 +164,27 @@ OpenAPI models for `GET /api/tools/gas` and `GET /api/tools/bottom-time` are the
 
 The contract-visible states are screenshots (`ToolsScreenshotTest`): the notice, assumptions with sources and
 `basedOn`, the binding limit, `outside_limits`, and the empty store.
+
+## The gas plan (slice U2)
+
+Plan the gas of up to eight levels for up to eight Divers, offline, from `shared/tools` and the ported kernel
+(client contract, Gas plans; ADR 0033). The answer is the generated `POST /api/tools/gas-plan` model;
+nothing is stored.
+
+- The User's synced Divers are offered by name. One whose Dives are on the device brings their planning SAC (with
+  `basedOn`) and a Dive within 48 hours; a typed SAC wins, and a guest or a Diver with no synced Dives plans with the
+  stated 20 L/min. The screen says where each SAC came from.
+- Every rule is explained in words (rock bottom, fixed reserve, fixed ascent pressure, halves, thirds, sixths); rock
+  bottom is always shown per level, whichever rule is chosen, and a rule that leaves less than rock bottom says so.
+- The answer marks the controlling Diver, gives each Diver's gas, end, rock bottom, turn (under a turn rule), ascent
+  pressure and margin, the briefing ("everyone follows …"), and when the plan does not fit: the run time by which to
+  leave the last level.
+- The stretches between the levels are shown in words in the order they are dived (descent, level, ascent, safety
+  stop, with minutes and run time), because the plan does not draw a profile.
+- The plan says it does not check the no-decompression limit over several levels; the gas, the MOD and 40 m are what
+  it checks. Errors are codes the screen translates, and the notice sits above every input.
+- The mix, levels, Divers, water, rule and rates are typed in the User's units (metres and bar are converted before the
+  kernel), and the assumptions list the mix, water, rule, rates and each SAC with its source.
+
+The contract-visible states are screenshots (`GasPlanScreenshotTest`): the notice with an empty plan, a plan that
+fits, one that does not, a rule below rock bottom, `outside_limits`, and a turn rule's briefing.
