@@ -9,12 +9,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
@@ -31,6 +33,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.autofill.ContentType
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.contentDescription
@@ -40,6 +44,7 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.toggleableState
 import androidx.compose.ui.state.ToggleableState
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -107,7 +112,7 @@ fun DiveHubApp(
     BackHandler(enabled = openDiveId == null && showTools) { showTools = false }
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         when {
-            state.loading -> Loading()
+            state.loading -> LoadingScreen()
             state.updateRequired -> UpdateRequiredScreen()
             state.user != null && openDiveId != null -> DiveDetailRoute(
                 viewModel = dive,
@@ -154,11 +159,42 @@ fun DiveHubApp(
     }
 }
 
+/**
+ * The branded loading screen while session restore runs (FAH-315): the Waypoint tile, the wordmark and the slogan.
+ * Every colour comes from the Material scheme, so the screen follows the system theme and the dark start gets the
+ * reversed white mark on ink instead of a light flash.
+ */
 @Composable
-private fun Loading() {
+internal fun LoadingScreen(modifier: Modifier = Modifier) {
+    val scheme = MaterialTheme.colorScheme
     val label = stringResource(R.string.loading)
-    Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-        CircularProgressIndicator(Modifier.semantics { contentDescription = label })
+    val markColor = if (scheme.background.luminance() < 0.5f) scheme.onBackground else scheme.tertiary
+    Column(
+        modifier.fillMaxSize().padding(horizontal = 32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Icon(
+            painter = painterResource(R.drawable.ic_splash_mark),
+            contentDescription = label,
+            tint = markColor,
+            modifier = Modifier.size(96.dp),
+        )
+        Spacer(Modifier.height(24.dp))
+        Text(
+            stringResource(R.string.splash_wordmark),
+            style = MaterialTheme.typography.displaySmall,
+            fontWeight = FontWeight.SemiBold,
+            color = scheme.onBackground,
+        )
+        Spacer(Modifier.height(12.dp))
+        Text(
+            stringResource(R.string.loading_slogan),
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Medium,
+            color = scheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
     }
 }
 
