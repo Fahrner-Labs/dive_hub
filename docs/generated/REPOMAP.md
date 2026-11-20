@@ -4,7 +4,7 @@
 > `pnpm check` fails when this map is stale. Symbols are ranked by how widely the code references them;
 > each module shows its most-referenced ones (exported symbols rank higher). Search here before walking the tree.
 
-Files: 414 · symbols: 3774 · shown: 247
+Files: 417 · symbols: 3809 · shown: 247
 
 ### server/(root)
 apps/server/src/vocabulary.ts:13 type SiteWaterType
@@ -290,11 +290,11 @@ apps/web/src/ImportPanel.tsx:39 const ImportContext
 apps/web/src/ReviewRows.tsx:6 iface Fact
 apps/web/src/SignedOut.tsx:20 fn useUserChanged
 apps/web/src/ProfilePlot.tsx:14 fn withAlpha
-… 516 more symbols in this module
+… 520 more symbols in this module
 
 ### web/api
-apps/web/src/api/request.ts:59 fn unwrap
 apps/web/src/api/request.ts:3 const api
+apps/web/src/api/request.ts:59 fn unwrap
 apps/web/src/api/keys.ts:2 const keys
 apps/web/src/api/request.ts:28 class ApiError
 apps/web/src/api/request.ts:6 type Problem
@@ -304,7 +304,7 @@ apps/web/src/api/providers.ts:7 type ProviderView
 apps/web/src/api/dives.ts:16 type RecordingSummary
 apps/web/src/api/sites.ts:8 type Position
 apps/web/src/api/providers.ts:8 type ConnectionView
-… 180 more symbols in this module
+… 184 more symbols in this module
 
 ### web/i18n
 apps/web/src/i18n/languages.ts:6 fn pickLanguage
@@ -333,7 +333,7 @@ apps/web/src/lib/form.ts:4 const formValues
 apps/web/src/lib/devices.ts:18 const deviceName
 apps/web/src/lib/review.ts:16 fn reviewHref
 apps/web/src/lib/providers.ts:55 fn useProviderOf
-… 364 more symbols in this module
+… 391 more symbols in this module
 
 ### web/ui
 apps/web/src/ui/Layout.tsx:85 fn Notice
