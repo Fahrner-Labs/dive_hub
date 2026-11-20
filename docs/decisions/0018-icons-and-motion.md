@@ -79,8 +79,8 @@ Anything else that wants an icon alone needs its own amendment. `source-rules.te
 ## Amendment (2026-11-20): icon-only navigation in the Android dive header
 The native Android client's dive page keeps its navigator in one top app bar
 ([ADR 0073](0073-android-app-in-monorepo-kotlin-compose.md)): a back arrow at the start, the Dive's title centred, and
-previous/next chevrons as trailing actions (FAH-344, from the 2026-11-20 direction). They are icon-only, as the
-platform's top-app-bar convention, each with a full accessible name: the back arrow "Logbook", the chevrons "Previous
-dive" / "Next dive", saying "(unavailable)" and disabled at the ends of the list. The web client keeps its icons beside
-text; this exception is the Android top bar only. The swipe's spring-back at the ends is the gesture's end-stop
-feedback, not a page-change transition.
+previous/next chevrons as trailing actions ([FAH-344](/FAH/issues/FAH-344), from the 2026-11-20 direction). They are
+icon-only, as the platform's top-app-bar convention, each with a full accessible name: the back arrow "Logbook", the
+chevrons "Previous dive" / "Next dive", saying "(unavailable)" and disabled at the ends of the list. The web client
+keeps its icons beside text; this exception is the Android top bar only. The swipe's spring-back at the ends is the
+gesture's end-stop feedback, not a page-change transition.

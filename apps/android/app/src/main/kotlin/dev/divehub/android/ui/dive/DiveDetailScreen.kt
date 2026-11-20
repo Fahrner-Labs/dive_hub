@@ -189,8 +189,8 @@ fun DiveDetailScreen(
 
 /**
  * The Dive page as a three-page pager: the current Dive in the middle, an empty page on either side for the neighbour
- * a swipe opens. Once a swipe settles, [onOpenDive] moves the page and the pager springs back to the middle; at either
- * end of the list the spring-back is the end-stop hint. The buttons in the top bar keep the same transition explicitly.
+ * a swipe opens. Once a swipe settles, [onOpenDive] moves the page and the pager snaps back to the middle; at either end
+ * of the list the spring-back is the end-stop hint. The buttons in the top bar open the same neighbour directly.
  */
 @Composable
 private fun DivePager(
@@ -212,8 +212,13 @@ private fun DivePager(
             } else {
                 currentNeighbours?.next?.id
             }
-            target?.let(currentOnOpenDive)
-            pagerState.animateScrollToPage(CURRENT_DIVE_PAGE)
+            if (target != null) {
+                currentOnOpenDive(target)
+                pagerState.scrollToPage(CURRENT_DIVE_PAGE)
+            } else {
+                // The ends of the list: the spring-back says there is nothing further (FAH-344).
+                pagerState.animateScrollToPage(CURRENT_DIVE_PAGE)
+            }
         }
     }
     HorizontalPager(
