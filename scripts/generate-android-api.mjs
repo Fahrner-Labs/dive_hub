@@ -44,6 +44,9 @@ export const OPERATIONS = [
   // The personalized tools (slice U3): the answers the phone shapes from the synced store.
   { name: 'ApiDiversIdLeadEstimateGet200Response', path: '/api/divers/{id}/lead-estimate', method: 'get', kind: 'response', status: '200' },
   { name: 'ApiDiversIdLoadingsGet200Response', path: '/api/divers/{id}/loadings', method: 'get', kind: 'response', status: '200' },
+  // Client diagnostics (FAH-325): the status the app reads and the upload it sends, so contract drift here is gated too.
+  { name: 'ApiClientDiagnosticsStatusGet200Response', path: '/api/client-diagnostics/status', method: 'get', kind: 'response', status: '200' },
+  { name: 'ApiClientDiagnosticsPostRequest', path: '/api/client-diagnostics', method: 'post', kind: 'request' },
 ];
 
 /** Named component schemas the app uses outside an operation body. Refusals decode through the tolerant ApiErrorBody. */

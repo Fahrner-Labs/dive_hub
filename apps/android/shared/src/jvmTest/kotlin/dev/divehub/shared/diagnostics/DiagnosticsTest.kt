@@ -1,6 +1,8 @@
 package dev.divehub.shared.diagnostics
 
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
+import dev.divehub.api.models.ApiClientDiagnosticsPostRequest
+import dev.divehub.api.models.ApiClientDiagnosticsPostRequestEntriesItem
 import dev.divehub.shared.ApiClient
 import dev.divehub.shared.ErrorCodes
 import dev.divehub.shared.store.db.DiveHubDatabase
@@ -120,6 +122,40 @@ class DiagnosticsTest {
         assertEquals(Diagnostics.MAX_UPLOAD, entries.size)
         assertEquals("e10", entries.first().jsonObject["code"]!!.jsonPrimitive.content)
         assertEquals("e59", entries.last().jsonObject["code"]!!.jsonPrimitive.content)
+    }
+
+    @Test
+    fun `the upload body decodes as the generated contract model`() = runTest {
+        capture(1)
+        var body: String? = null
+        val engine = MockEngine { request ->
+            body = (request.body as TextContent).text
+            respond("", HttpStatusCode.NoContent)
+        }
+
+        diagnostics(engine).reportProblem()
+
+        val upload = json.decodeFromString<ApiClientDiagnosticsPostRequest>(body!!)
+        assertEquals("android", upload.client.name)
+        assertEquals("1.2.3", upload.client.version)
+        assertEquals(FIXED_NOW.toString(), upload.capturedAt)
+        val entry = upload.entries.single()
+        assertEquals("e1", entry.code)
+        assertEquals("error", entry.level)
+        assertEquals("message 1", entry.message)
+        assertEquals(mapOf("where" to "logbook"), entry.context)
+    }
+
+    @Test
+    fun `an exported line decodes as the generated entry model`() {
+        capture(1)
+
+        val line = diagnostics(MockEngine { error("no request expected") }).exportNdjson().trimEnd('\n')
+
+        val entry = json.decodeFromString<ApiClientDiagnosticsPostRequestEntriesItem>(line)
+        assertEquals("e1", entry.code)
+        assertEquals("error", entry.level)
+        assertEquals("message 1", entry.message)
     }
 
     @Test

@@ -1,8 +1,9 @@
 // Tests of the Kotlin model generator (scripts/generate-android-api.mjs): the naming and type rules the Android
 // core depends on, and that modules only reachable from the app's operations are generated.
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
-import { className, generateModels, identifier, pascal } from './generate-android-api.mjs';
+import { OPERATIONS, className, generateModels, identifier, pascal } from './generate-android-api.mjs';
 
 const document = (schemas, paths = {}) => ({ components: { schemas }, paths });
 
@@ -210,4 +211,51 @@ test('a list response registers its item class under the operation name', () => 
   assert.match(files.get('InlineItem.kt'), /val name: String/);
   assert.equal(files.has('Ref.kt'), true, 'a list of a named schema is that model');
   assert.equal(files.has('IgnoredName.kt'), false, 'the reference keeps its own name');
+});
+
+test('the client diagnostics operations are pinned', () => {
+  const pinned = new Map(OPERATIONS.map((operation) => [`${operation.method.toUpperCase()} ${operation.path}`, operation]));
+
+  assert.deepEqual(pinned.get('GET /api/client-diagnostics/status'), {
+    name: 'ApiClientDiagnosticsStatusGet200Response',
+    path: '/api/client-diagnostics/status',
+    method: 'get',
+    kind: 'response',
+    status: '200',
+  });
+  assert.deepEqual(pinned.get('POST /api/client-diagnostics'), {
+    name: 'ApiClientDiagnosticsPostRequest',
+    path: '/api/client-diagnostics',
+    method: 'post',
+    kind: 'request',
+  });
+});
+
+test('the real document generates the diagnostics models the Android client sends and reads', () => {
+  const openApiDocument = JSON.parse(readFileSync(new URL('../packages/api-client/openapi.json', import.meta.url), 'utf8'));
+  const files = generateModels(openApiDocument);
+
+  const status = files.get('ApiClientDiagnosticsStatusGet200Response.kt');
+  assert.ok(status, 'the status response is generated');
+  assert.match(status, /val enabled: Boolean/);
+
+  const upload = files.get('ApiClientDiagnosticsPostRequest.kt');
+  assert.ok(upload, 'the upload request is generated');
+  assert.match(upload, /val client: ApiClientDiagnosticsPostRequestClient,/);
+  assert.match(upload, /val capturedAt: String,/);
+  assert.match(upload, /val entries: List<ApiClientDiagnosticsPostRequestEntriesItem>/);
+
+  const client = files.get('ApiClientDiagnosticsPostRequestClient.kt');
+  assert.ok(client, 'the client info is generated');
+  assert.match(client, /val name: String,/);
+  assert.match(client, /val version: String/);
+
+  const entry = files.get('ApiClientDiagnosticsPostRequestEntriesItem.kt');
+  assert.ok(entry, 'the entry payload is generated');
+  assert.match(entry, /val occurredAt: String,/);
+  assert.match(entry, /val level: String,/);
+  assert.match(entry, /val code: String\? = null,/);
+  assert.match(entry, /val message: String,/);
+  assert.match(entry, /val stack: String\? = null,/);
+  assert.match(entry, /val context: Map<String, String>\? = null/);
 });
