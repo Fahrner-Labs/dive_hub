@@ -98,6 +98,8 @@
 @media (max-width: 30rem) {
   .shell-nav-full { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
   .shell-nav-short { display: inline; }
+  /* Poppins is a little wider than IBM Plex Sans: at 320 px the German "Logbuch" needs the item's 2 px side margins. */
+  .shell-nav a { margin-inline: 0; }
 }
 
 /* ---------- Panels, notices, text ---------- */
