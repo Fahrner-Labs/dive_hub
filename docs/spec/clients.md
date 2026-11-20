@@ -68,7 +68,9 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
 - **Client diagnostics stay on the device until the User sends them.** Keep a small local error ring buffer
   (web: localStorage, 50 entries / 64 KiB; Android: 200 entries) at all times, but upload only when the User presses
   *Report a problem*, and only when `GET /api/client-diagnostics/status` says `enabled`. `POST
-  /api/client-diagnostics` carries the buffer (at most 50 entries); on 403 `client_diagnostics_disabled` treat the
+  /api/client-diagnostics` carries `{ client: { name: 'web' | 'android', version }, capturedAt, entries }`, where each
+  entry is `{ occurredAt, level: 'error' | 'warn', code?, message, stack?, context? }` and the buffer holds at most 50
+  entries; on 403 `client_diagnostics_disabled` treat the
   setting as turned off meanwhile and **keep the local buffer** instead of retrying. On 429
   `client_diagnostics_limited` say to try again later. The server truncates and re-redacts every entry, so the
   client's own hygiene (no dive contents, tokens or URLs with query strings) is the first line, not the only one.
@@ -365,7 +367,8 @@ V1 of the native client reads offline: phones lose signal where dives are, and t
 - **Support bundle** (`GET /api/admin/support-bundle/preview`, `GET /api/admin/support-bundle/download`): an admin
   previews what an on-demand support archive would contain, then downloads it to send to the developer. The preview
   reports app and schema version, log coverage (`oldestAt`–`newestAt`, entries, dropped entries, size), the redaction
-  counts, failed jobs, and health (uptime, database latency, worker, queue depth). The bundle stays on the instance
+  counts, failed jobs, health (uptime, database latency, worker, queue depth) and the client-diagnostics count
+  (`clientDiagnostics.entries`). The bundle stays on the instance
   until the admin downloads it; **e-mail addresses, IP addresses and secrets are masked**. The download is a file
   handoff through a plain authenticated link, its filename set by `Content-Disposition`. Non-admins are refused
   (`admins_only`). *Web:* `SupportBundlePage.tsx` (`#/settings/admin/support-bundle`).

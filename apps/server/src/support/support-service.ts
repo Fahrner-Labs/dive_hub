@@ -176,7 +176,8 @@ export function createSupportService(deps: SupportServiceDeps) {
       const entries = await deps.clientDiagnostics.entries();
       return entries.map((entry) => redactValue(entry, undefined, counters));
     } catch {
-      return undefined;
+      // Once wired, every v2 bundle carries the member: a failed read makes it empty, not absent.
+      return [];
     }
   }
 
