@@ -530,6 +530,8 @@
     <string name="settings_close">Schließen</string>
 
     <string name="settings_section_debug">Debug</string>
+    <string name="settings_debug_summary">Diagnose, Meldungen und lokale Protokolle.</string>
+    <string name="settings_debug_back">Zurück</string>
     <string name="settings_debug_diagnostics">Diagnose</string>
     <string name="settings_debug_checking">Es wird geprüft, ob dieser Dive Hub Diagnosen annimmt…</string>
     <string name="settings_debug_on">Dieser Dive Hub nimmt Diagnosen an.</string>

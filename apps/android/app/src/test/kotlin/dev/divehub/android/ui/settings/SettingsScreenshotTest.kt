@@ -1,6 +1,5 @@
 package dev.divehub.android.ui.settings
 
-import androidx.compose.material3.Surface
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
@@ -20,8 +19,9 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
 /**
- * The settings screen's contract-visible shape (FAH-317): the four grouped sections, in both languages and both
- * schemes. Only Material colours and type are used, so the dark frames read as the same list on ink.
+ * The settings screen's and Debug subscreen's contract-visible shapes (FAH-317, FAH-343): the grouped sections and the
+ * folded Debug detail, in both languages and both schemes. Only Material colours and type are used, so the dark frames
+ * read as the same list on ink.
  */
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
@@ -89,7 +89,7 @@ class SettingsScreenshotTest {
     }
 
     @Test
-    fun `debug group with diagnostics on in English and light`() {
+    fun `debug screen with diagnostics on in English and light`() {
         renderDebug(darkTheme = false, enabled = true)
 
         compose.onNodeWithText("This Dive Hub accepts diagnostics.").assertIsDisplayed()
@@ -98,7 +98,7 @@ class SettingsScreenshotTest {
 
     @Test
     @Config(qualifiers = "de-rDE-w411dp-h891dp-xxhdpi")
-    fun `debug group with diagnostics off in German and light`() {
+    fun `debug screen with diagnostics off in German and light`() {
         renderDebug(darkTheme = false, enabled = false)
 
         compose.onNodeWithText("Die Client-Diagnose ist auf diesem Dive Hub ausgeschaltet.").assertIsDisplayed()
@@ -107,7 +107,7 @@ class SettingsScreenshotTest {
 
     @Test
     @Config(qualifiers = "en-rUS-w411dp-h891dp-night-xxhdpi")
-    fun `debug group with diagnostics on in English and dark`() {
+    fun `debug screen with diagnostics on in English and dark`() {
         renderDebug(darkTheme = true, enabled = true)
 
         compose.onNodeWithText("This Dive Hub accepts diagnostics.").assertIsDisplayed()
@@ -116,7 +116,7 @@ class SettingsScreenshotTest {
 
     @Test
     @Config(qualifiers = "de-rDE-w411dp-h891dp-night-xxhdpi")
-    fun `debug group with diagnostics off in German and dark`() {
+    fun `debug screen with diagnostics off in German and dark`() {
         renderDebug(darkTheme = true, enabled = false)
 
         compose.onNodeWithText("Die Client-Diagnose ist auf diesem Dive Hub ausgeschaltet.").assertIsDisplayed()
@@ -138,8 +138,7 @@ class SettingsScreenshotTest {
                     onChangeInstance = {},
                     onSyncNow = {},
                     onSignOut = {},
-                    onReportProblem = {},
-                    onShareLogs = {},
+                    onOpenDebug = {},
                 )
             }
         }
@@ -166,9 +165,12 @@ class SettingsScreenshotTest {
         )
         compose.setContent {
             DiveHubTheme(darkTheme = darkTheme) {
-                Surface {
-                    SettingsDebugSection(diagnostics, onReportProblem = {}, onShareLogs = {})
-                }
+                SettingsDebugScreen(
+                    diagnostics = diagnostics,
+                    onBack = {},
+                    onReportProblem = {},
+                    onShareLogs = {},
+                )
             }
         }
     }
