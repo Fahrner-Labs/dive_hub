@@ -130,6 +130,26 @@ class AppNavHostTest {
     }
 
     @Test
+    fun `the restored stack survives the session becoming ready`() {
+        val restoration = StateRestorationTester(compose)
+        val destination = mutableStateOf<Any?>(null)
+        restoration.setContent { start(destination = destination.value) }
+        compose.runOnIdle {
+            controller.navigate(MainRoute)
+            controller.navigate(DiveRoute("dive-9"))
+        }
+        compose.waitForIdle()
+
+        restoration.emulateSavedInstanceStateRestore()
+        compose.runOnIdle { destination.value = MainRoute }
+
+        assertRoute<DiveRoute>()
+        compose.runOnIdle { assertEquals("dive-9", controller.currentBackStackEntry?.toRoute<DiveRoute>()?.id) }
+        compose.waitForIdle()
+        assertEquals("dive-9", screens.diveId)
+    }
+
+    @Test
     fun `stepping to a neighbour keeps one dive and the logbook page of the current one`() {
         setContent(divePage = 2)
         compose.runOnIdle {

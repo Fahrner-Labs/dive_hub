@@ -15,7 +15,7 @@ Proposed – 2026-11-20. Implements task T2 of the Android v0.1.0 plan on the Pa
 
 ## Context
 The whole Android UI graph is hand-rolled in `apps/android/app/src/main/kotlin/dev/divehub/android/ui/DiveHubApp.kt`:
-`rememberSaveable` flags, a `when` switch, and three manual `BackHandler`s, plus a hoisted `toolPage` flag added for
+`rememberSaveable` flags, a `when` switch, and five manual `BackHandler`s, plus a hoisted `toolPage` flag added for
 one nested flow ([FAH-276](https://paperclip.privatenode.de/FAH/issues/FAH-276)). It works, but every new screen adds
 ad-hoc state; there are no deep links, no type safety, and the back rules (ADR 0042) live in comments. The next two
 tasks add a settings destination and a bottom bar (T3) and a diagnostics section (T4), which would multiply that
