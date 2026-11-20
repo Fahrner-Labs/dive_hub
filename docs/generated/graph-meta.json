@@ -1,8 +1,8 @@
 {
   "tool": "graphify 0.9.103",
-  "commit": "c82130d604f8c5624d287056aa4aba2a1e0ef889",
+  "commit": "ec6d959378918525ab28b0b18cb8479e01ce52ad",
   "branch": "main",
-  "committedAt": "2026-11-20T10:59:19+07:00",
+  "committedAt": "2026-11-20T12:34:40+07:00",
   "graph": "graph.json",
   "report": "GRAPH_REPORT.md",
   "boundaries": "dependency-graph.json"
