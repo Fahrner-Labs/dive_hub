@@ -1,7 +1,10 @@
 package dev.divehub.shared.diagnostics
 
+import dev.divehub.api.models.ApiClientDiagnosticsPostRequest
+import dev.divehub.api.models.ApiClientDiagnosticsPostRequestClient
+import dev.divehub.api.models.ApiClientDiagnosticsPostRequestEntriesItem
+import dev.divehub.api.models.ApiClientDiagnosticsStatusGet200Response
 import dev.divehub.shared.ApiClient
-import dev.divehub.shared.DiveHubException
 import dev.divehub.shared.ErrorCodes
 import dev.divehub.shared.NoAnswerException
 import io.ktor.http.HttpStatusCode
@@ -9,7 +12,6 @@ import io.ktor.http.isSuccess
 import kotlin.time.Clock
 import kotlinx.coroutines.CancellationException
 import kotlinx.datetime.Instant
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
@@ -67,7 +69,7 @@ class Diagnostics(
     /** Whether the instance's admin has enabled client diagnostics (ADR 0080 D1). Any failure reads as off. */
     override suspend fun instanceEnabled(): Boolean = try {
         val response = client.get(STATUS_PATH)
-        response.status.isSuccess() && client.decode<StatusResponse>(response).enabled
+        response.status.isSuccess() && client.decode<ApiClientDiagnosticsStatusGet200Response>(response).enabled
     } catch (error: CancellationException) {
         throw error
     } catch (_: Exception) {
@@ -81,8 +83,8 @@ class Diagnostics(
     override suspend fun reportProblem(): ReportProblemResult {
         val entries = buffer.newest(MAX_UPLOAD).reversed()
         val body = json.encodeToString(
-            Upload(
-                client = ClientInfo(name = CLIENT_NAME, version = versionName),
+            ApiClientDiagnosticsPostRequest(
+                client = ApiClientDiagnosticsPostRequestClient(name = CLIENT_NAME, version = versionName),
                 capturedAt = clock().toString(),
                 entries = entries.map { it.toPayload() },
             ),
@@ -93,8 +95,6 @@ class Diagnostics(
             throw error
         } catch (_: NoAnswerException) {
             return ReportProblemResult.Failed(ErrorCodes.NO_ANSWER)
-        } catch (error: DiveHubException) {
-            return ReportProblemResult.Failed(error.code)
         }
         if (response.status.value == HttpStatusCode.NoContent.value) {
             buffer.clear()
@@ -103,14 +103,15 @@ class Diagnostics(
         return ReportProblemResult.Failed(client.failure(response).code)
     }
 
-    private fun DiagnosticEntry.toPayload(): DiagnosticEntryPayload = DiagnosticEntryPayload(
-        occurredAt = occurredAt,
-        level = level.wire,
-        code = code,
-        message = message.orEmpty().take(DiagnosticsBuffer.MESSAGE_LIMIT),
-        stack = stack?.take(DiagnosticsBuffer.STACK_LIMIT),
-        context = context.takeIf { it.isNotEmpty() },
-    )
+    private fun DiagnosticEntry.toPayload(): ApiClientDiagnosticsPostRequestEntriesItem =
+        ApiClientDiagnosticsPostRequestEntriesItem(
+            occurredAt = occurredAt,
+            level = level.wire,
+            code = code,
+            message = message.orEmpty().take(DiagnosticsBuffer.MESSAGE_LIMIT),
+            stack = stack?.take(DiagnosticsBuffer.STACK_LIMIT),
+            context = context.takeIf { it.isNotEmpty() },
+        )
 
     companion object {
         /** The ingest contract's per-upload cap (ADR 0080 D2). */
@@ -121,29 +122,6 @@ class Diagnostics(
         const val CLIENT_DIAGNOSTICS_PATH: String = "/api/client-diagnostics"
     }
 }
-
-@Serializable
-private data class StatusResponse(val enabled: Boolean)
-
-@Serializable
-private data class ClientInfo(val name: String, val version: String)
-
-@Serializable
-private data class Upload(
-    val client: ClientInfo,
-    val capturedAt: String,
-    val entries: List<DiagnosticEntryPayload>,
-)
-
-@Serializable
-private data class DiagnosticEntryPayload(
-    val occurredAt: String,
-    val level: String,
-    val code: String? = null,
-    val message: String,
-    val stack: String? = null,
-    val context: Map<String, String>? = null,
-)
 
 /** Client-side hygiene before anything reaches the local buffer or the share sheet (ADR 0080 D1/D2). */
 internal object DiagnosticHygiene {
