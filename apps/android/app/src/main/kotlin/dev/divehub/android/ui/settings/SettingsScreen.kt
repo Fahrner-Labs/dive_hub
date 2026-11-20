@@ -37,8 +37,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
@@ -50,6 +48,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.divehub.android.R
 import dev.divehub.android.ui.formatSyncTime
+import dev.divehub.android.ui.successColor
 import dev.divehub.shared.ErrorCodes
 import dev.divehub.shared.diagnostics.DiagnosticEntry
 import dev.divehub.shared.diagnostics.ReportProblemResult
@@ -282,7 +281,7 @@ internal fun ConnectionStatus(connected: Boolean, syncedAt: String?, modifier: M
         else -> stringResource(R.string.settings_connection_never)
     }
     val dot = if (connected) {
-        if (MaterialTheme.colorScheme.background.luminance() < 0.5f) Color(0xFF7BD88F) else Color(0xFF2E7D32)
+        successColor()
     } else {
         MaterialTheme.colorScheme.outline
     }
