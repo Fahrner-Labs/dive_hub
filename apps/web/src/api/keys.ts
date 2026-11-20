@@ -48,6 +48,8 @@ export const keys = {
   /** Admin backups (plan FAH-175): the run list, and the scheduled-backup setting under it. */
   backups: ['backups'] as const,
   backupSettings: ['backups', 'settings'] as const,
+  /** The on-demand support bundle's preview (FAH-291); built fresh each time an admin asks. */
+  supportBundlePreview: ['support-bundle', 'preview'] as const,
   providers: ['providers'] as const,
   connections: ['connections'] as const,
   /** Dives gone at a Provider, waiting for the User's choice (ADR 0051). */

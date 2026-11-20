@@ -349,6 +349,13 @@ V1 of the native client reads offline: phones lose signal where dives are, and t
   deletes a manual run or the last successful one, and that the operator must keep the private key to restore. On
   `backup_recipient_missing` / `backup_recipient_invalid` say what to paste; on `backup_settings_invalid` show the
   allowed ranges. *Web:* `BackupsPage.tsx` (both manual and scheduled backups, `#/settings/admin/backups`).
+- **Support bundle** (`GET /api/admin/support-bundle/preview`, `GET /api/admin/support-bundle/download`): an admin
+  previews what an on-demand support archive would contain, then downloads it to send to the developer. The preview
+  reports app and schema version, log coverage (`oldestAt`–`newestAt`, entries, dropped entries, size), the redaction
+  counts, failed jobs, and health (uptime, database latency, worker, queue depth). The bundle stays on the instance
+  until the admin downloads it; **e-mail addresses, IP addresses and secrets are masked**. The download is a file
+  handoff through a plain authenticated link, its filename set by `Content-Disposition`. Non-admins are refused
+  (`admins_only`). *Web:* `SupportBundlePage.tsx` (`#/settings/admin/support-bundle`).
 - **Users:**
   - Don't offer to demote, disable or delete the last enabled admin, or to disable or delete oneself; the
     server refuses those too (ADR 0013).
