@@ -388,7 +388,7 @@ private fun Cylinders(dive: DiveView, locale: Locale, imperial: Boolean) {
                 )
                 sac.barPerMinute?.let { barPerMinute ->
                     Text(
-                        context.getString(R.string.dive_sac_bar, Formats.pressure(context, barPerMinute, locale, imperial)),
+                        context.getString(R.string.dive_sac_bar, Formats.pressureRate(context, barPerMinute, locale, imperial)),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )

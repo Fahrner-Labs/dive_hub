@@ -225,6 +225,7 @@ class DiveDetailScreenshotTest {
         compose.onNodeWithText("12 L · Steel · 232 bar working pressure · Air").assertIsDisplayed()
         compose.onNodeWithText("200 bar → 50 bar (150 bar used)").assertIsDisplayed()
         compose.onNodeWithText("SAC 16.5 L/min").assertIsDisplayed()
+        compose.onNodeWithText("SAC 11.0 bar/min").assertIsDisplayed()
         list.performScrollToNode(hasText("Weighting"))
         compose.onNodeWithText("Wetsuit, 5 mm, with hood").assertIsDisplayed()
         compose.onNodeWithText("4.0 kg on a belt\n1.0 kg trim\nTotal 5.0 kg").assertIsDisplayed()
@@ -234,12 +235,38 @@ class DiveDetailScreenshotTest {
         capture("dive_gear_weighting_notes.png")
     }
 
-    private fun render(state: DiveDetailUiState) {
+    @Test
+    fun `the SAC rate is whole psi and a decimal in bar`() {
+        render(
+            state(
+                dive = dive(
+                    cylinders = listOf(
+                        DiveViewCylindersItem(
+                            volumeL = 12.0,
+                            workingPressureBar = 232.0,
+                            material = "steel",
+                            gas = DiveViewCylindersItemGas(o2 = 21.0, he = 0.0),
+                            startPressureBar = 200.0,
+                            endPressureBar = 50.0,
+                            fromPod = false,
+                            series = null,
+                        ),
+                    ),
+                    sac = DiveViewSac(litresPerMinute = 16.5, barPerMinute = 11.0),
+                ),
+            ),
+            units = "imperial",
+        )
+        compose.onNode(hasScrollAction()).performScrollToNode(hasText("SAC 160 psi/min"))
+        compose.onNodeWithText("SAC 160 psi/min").assertIsDisplayed()
+    }
+
+    private fun render(state: DiveDetailUiState, units: String = "metric") {
         compose.setContent {
             DiveHubTheme(darkTheme = false) {
                 DiveDetailScreen(
                     state = state,
-                    units = "metric",
+                    units = units,
                     onBack = {},
                     onRetry = {},
                     onOpenDive = {},

@@ -51,6 +51,14 @@ internal object Formats {
         )
     }
 
+    /** A pressure rate: a decimal in bar, whole psi (a SAC's barPerMinute, clients.md). */
+    fun pressureRate(context: Context, bar: Double, locale: Locale, imperial: Boolean): String =
+        if (imperial) {
+            pressure(context, bar, locale, true)
+        } else {
+            context.getString(R.string.tools_pressure_bar, decimal(locale, bar, 1))
+        }
+
     /** A number with the given decimals in the UI language. */
     fun decimal(locale: Locale, value: Double, places: Int): String =
         NumberFormat.getNumberInstance(locale).apply {

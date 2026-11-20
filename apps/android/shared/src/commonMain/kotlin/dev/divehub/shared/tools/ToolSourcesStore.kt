@@ -20,8 +20,7 @@ import kotlinx.serialization.json.Json
 private const val SAC_LOOKBACK_DIVES = 100
 private const val GF_LOOKBACK_RECORDINGS = 100
 private const val RECENT_DIVE_HOURS = 48L
-// The sync writes the API's JSON with nulls omitted (SyncMapping), so a null field is absent rather than `null`.
-private val SUMMARY = Json { ignoreUnknownKeys = true; explicitNulls = false }
+private val SUMMARY = Json { ignoreUnknownKeys = true }
 
 /**
  * The store's values for the tools, read in one transaction so a concurrent sync cannot mix two snapshots. The reads
