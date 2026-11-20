@@ -1383,6 +1383,9 @@ A client **must**:
 - **Say what is missing** (`missing`: `body_weight`, `cylinder_material`, `cylinder`, `suit_thickness`, `suit_undergarment`) and
   where to add it. With `total` and `range` both `null` there is no number: no Dive with this suit and no body weight; lead
   to the body weight, never show 0.
+- **Do not claim there is no Dive while the details are still syncing.** Until the client's own details phase has every
+  Dive's detail, a no-number answer says it rests on what is already on the device, and a rule-of-thumb answer says the
+  Dive with this suit may still arrive. The no-Dive wording waits for a complete details phase.
 - **Say what was left out:** `leftOut.noWaterType` Dives with lead and a suit were not used because their site has no water type
   (ADR 0025); lead to the site.
 - **Say which reserve it is for** (`reserve.bar`, `fromDives`: the median of the Diver's logged end pressures, else 50 bar).

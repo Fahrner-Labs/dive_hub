@@ -141,12 +141,17 @@ fun LeadEstimateScreen(
             Spacer(Modifier.height(20.dp))
             Heading(stringResource(R.string.tools_lead_answer))
             if (state.personalized) {
-                StalenessLabel(state.syncedAt, state.profilesComplete, R.string.tools_not_fully_synced)
+                StalenessLabel(
+                    state.syncedAt,
+                    state.profilesComplete,
+                    R.string.tools_not_fully_synced,
+                    detailsComplete = state.detailsComplete,
+                )
             }
             when {
                 state.error != null -> ErrorText(state.error)
                 state.answer == null -> Muted(stringResource(R.string.tools_lead_empty))
-                else -> Answer(state.answer, imperial, onOpenDive)
+                else -> Answer(state.answer, imperial, state.detailsComplete, onOpenDive)
             }
             Spacer(Modifier.height(20.dp))
             WeightCheck(state.answer, imperial)
@@ -275,7 +280,12 @@ private fun Conditions(
 }
 
 @Composable
-private fun Answer(answer: ApiDiversIdLeadEstimateGet200Response, imperial: Boolean, onOpenDive: (String) -> Unit) {
+private fun Answer(
+    answer: ApiDiversIdLeadEstimateGet200Response,
+    imperial: Boolean,
+    detailsComplete: Boolean,
+    onOpenDive: (String) -> Unit,
+) {
     val context = LocalContext.current
     val locale = context.resources.configuration.locales[0] ?: Locale.getDefault()
     val unit = answer.unit
@@ -283,9 +293,12 @@ private fun Answer(answer: ApiDiversIdLeadEstimateGet200Response, imperial: Bool
     val range = answer.range
     if (total == null || range == null) {
         Card {
-            Text(stringResource(R.string.tools_lead_no_number), style = MaterialTheme.typography.titleSmall)
             Text(
-                stringResource(R.string.tools_lead_no_number_body),
+                stringResource(if (detailsComplete) R.string.tools_lead_no_number else R.string.tools_lead_syncing),
+                style = MaterialTheme.typography.titleSmall,
+            )
+            Text(
+                stringResource(if (detailsComplete) R.string.tools_lead_no_number_body else R.string.tools_lead_syncing_body),
                 modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
                 style = MaterialTheme.typography.bodyMedium,
             )
@@ -345,7 +358,10 @@ private fun Answer(answer: ApiDiversIdLeadEstimateGet200Response, imperial: Bool
     } else if (basis?.kind == "rule_of_thumb" && rule != null) {
         Spacer(Modifier.height(8.dp))
         Text(
-            stringResource(R.string.tools_lead_basis_rule, amount(locale, rule, unit)),
+            stringResource(
+                if (detailsComplete) R.string.tools_lead_basis_rule else R.string.tools_lead_basis_rule_syncing,
+                amount(locale, rule, unit),
+            ),
             style = MaterialTheme.typography.bodyMedium,
         )
         if (personalOffset != null && offsetFromSuits != null) {
@@ -376,7 +392,7 @@ private fun Answer(answer: ApiDiversIdLeadEstimateGet200Response, imperial: Bool
         ),
     )
 
-    Missing(answer.missing, skipBodyWeight = total == null)
+    Missing(answer.missing, skipBodyWeight = total == null && detailsComplete)
     if (answer.leftOut.noWaterType > 0) {
         Spacer(Modifier.height(8.dp))
         Notice(

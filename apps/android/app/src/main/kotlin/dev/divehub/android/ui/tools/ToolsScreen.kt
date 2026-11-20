@@ -737,14 +737,16 @@ internal fun dayDate(iso: String): String {
 }
 
 /**
- * "Based on dives synced as of <date-time>", with "(profiles still syncing)" while the profiles phase is incomplete
- * (client contract, Offline reads; FAH-276). Every personalized result carries it.
+ * "Based on dives synced as of <date-time>", with "(dive details still syncing)" while the details phase is
+ * incomplete and "(profiles still syncing)" while the profiles phase is (client contract, Offline reads; FAH-276,
+ * FAH-299). Every personalized result carries it.
  */
 @Composable
 internal fun StalenessLabel(
     syncedAt: String?,
     profilesComplete: Boolean,
     @StringRes notSynced: Int = R.string.tools_not_synced,
+    detailsComplete: Boolean = true,
 ) {
     val context = LocalContext.current
     val locale = context.resources.configuration.locales[0] ?: Locale.getDefault()
@@ -754,7 +756,11 @@ internal fun StalenessLabel(
     } else {
         stringResource(notSynced)
     }
-    Muted(if (profilesComplete) text else "$text ${stringResource(R.string.tools_profiles_syncing)}")
+    val markers = buildList {
+        if (!detailsComplete) add(stringResource(R.string.tools_details_syncing))
+        if (!profilesComplete) add(stringResource(R.string.tools_profiles_syncing))
+    }
+    Muted(if (markers.isEmpty()) text else "$text ${markers.joinToString(" ")}")
 }
 
 /**

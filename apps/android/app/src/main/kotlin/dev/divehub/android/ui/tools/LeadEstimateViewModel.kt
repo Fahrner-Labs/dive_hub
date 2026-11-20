@@ -16,12 +16,14 @@ import dev.divehub.shared.planning.Suit
 import dev.divehub.shared.planning.SuitType
 import dev.divehub.shared.planning.SuitUndergarment
 import dev.divehub.shared.store.DiveStore
+import dev.divehub.shared.sync.SyncProgress
 import dev.divehub.shared.tools.MAX_CYLINDER_LITRES
 import dev.divehub.shared.tools.MAX_PLAN_CYLINDERS
 import dev.divehub.shared.tools.PersonalizedSources
 import dev.divehub.shared.tools.ToolsError
 import dev.divehub.shared.tools.assemblePersonalizedSources
 import dev.divehub.shared.tools.leadEstimate
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -53,6 +55,8 @@ data class LeadEstimateUiState(
     val syncedAt: String? = null,
     /** Whether the profiles phase has every listed channel; the staleness label says it is still syncing. */
     val profilesComplete: Boolean = true,
+    /** Whether the details phase has every Dive's detail; until then a no-number answer must not claim there is none. */
+    val detailsComplete: Boolean = true,
     val storeError: String? = null,
     val inputs: LeadInputs = LeadInputs(),
     val answer: ApiDiversIdLeadEstimateGet200Response? = null,
@@ -63,16 +67,24 @@ data class LeadEstimateUiState(
  * The offline lead estimate (FAH-276; ADR 0031): conditions typed here, the Diver's dive history, body weight and
  * sites read from the synced store. The answer is the API's shape, so the screen can hold its whole contract.
  */
-class LeadEstimateViewModel(private val store: DiveStore) : ViewModel() {
+class LeadEstimateViewModel(
+    private val store: DiveStore,
+    private val revision: StateFlow<Long>,
+    private val progress: StateFlow<SyncProgress>,
+    private val computeDispatcher: CoroutineDispatcher = Dispatchers.Default,
+) : ViewModel() {
     private val _state = MutableStateFlow(LeadEstimateUiState())
     val state: StateFlow<LeadEstimateUiState> = _state.asStateFlow()
 
     private var sources = PersonalizedSources()
     private var unit = LeadUnit.kg
     private var loadJob: Job? = null
+    private var revisionJob: Job? = null
+    private var progressJob: Job? = null
 
     fun start(imperial: Boolean) {
         unit = if (imperial) LeadUnit.lb else LeadUnit.kg
+        observe()
         load()
     }
 
@@ -85,6 +97,8 @@ class LeadEstimateViewModel(private val store: DiveStore) : ViewModel() {
 
     fun forget() {
         loadJob?.cancel()
+        revisionJob?.cancel()
+        progressJob?.cancel()
         sources = PersonalizedSources()
         _state.value = LeadEstimateUiState(loading = false)
     }
@@ -107,9 +121,31 @@ class LeadEstimateViewModel(private val store: DiveStore) : ViewModel() {
 
     fun reload() = load()
 
+    /** A sync that writes the store bumps the revision; reread once per bump, never on a timer. */
+    private fun observe() {
+        revisionJob?.cancel()
+        revisionJob = viewModelScope.launch {
+            var last = revision.value
+            revision.collect { value ->
+                if (value != last) {
+                    last = value
+                    load()
+                }
+            }
+        }
+        progressJob?.cancel()
+        progressJob = viewModelScope.launch {
+            progress.collect { report ->
+                _state.update {
+                    it.copy(detailsComplete = report == SyncProgress.EMPTY || (report.metaDone && report.detailsDone))
+                }
+            }
+        }
+    }
+
     private fun load() {
         loadJob?.cancel()
-        loadJob = viewModelScope.launch(Dispatchers.Default) {
+        loadJob = viewModelScope.launch(computeDispatcher) {
             try {
                 val read = assemblePersonalizedSources(store, System.currentTimeMillis())
                 sources = read
@@ -148,7 +184,13 @@ class LeadEstimateViewModel(private val store: DiveStore) : ViewModel() {
         const val STORE_UNREADABLE = "store_unreadable"
 
         fun factory(container: AppContainer): ViewModelProvider.Factory = viewModelFactory {
-            initializer { LeadEstimateViewModel(container.diveStore) }
+            initializer {
+                LeadEstimateViewModel(
+                    store = container.diveStore,
+                    revision = container.syncRevision,
+                    progress = container.syncProgress,
+                )
+            }
         }
     }
 }
