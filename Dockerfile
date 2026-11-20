@@ -2,6 +2,9 @@
 # One image for API + web client + worker (ADR 0004). Multi-arch: docker buildx build --platform linux/amd64,linux/arm64 .
 
 FROM node:24-alpine AS build
+# The web client reports its version with client diagnostics (FAH-292); the release workflow passes the tag here too.
+ARG DIVEHUB_VERSION=dev
+ENV VITE_DIVEHUB_VERSION=$DIVEHUB_VERSION
 RUN npm install -g pnpm@12.8.1
 WORKDIR /repo
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./

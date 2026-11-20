@@ -7,6 +7,7 @@ export type { ProblemCode, ProblemDetails, UnmetView } from './api/request.ts';
 export * from './api/keys.ts';
 export * from './api/account.ts';
 export * from './api/admin.ts';
+export * from './api/diagnostics.ts';
 export * from './api/dives.ts';
 export * from './api/divers.ts';
 export * from './api/equipment.ts';

@@ -6,12 +6,15 @@ import { useTranslation } from 'react-i18next';
 import { App } from './App.tsx';
 import { isUnauthorized, keys, shouldRetry } from './api.ts';
 import { initI18n } from './i18n/index.ts';
+import { installDiagnostics } from './lib/diagnostics.ts';
 import './design/tokens.css';
 import './design/base.css';
 import './ui/ui.css';
 import './pages.css';
 
 initI18n(navigator.languages);
+// Capture errors from the moment the app starts, so a failure before the first render is reportable too (FAH-292).
+installDiagnostics();
 
 // A 401 from any call means the session ended (expired or signed out elsewhere): show sign-in.
 const onError = (error: unknown) => {

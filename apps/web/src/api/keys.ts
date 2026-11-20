@@ -50,6 +50,10 @@ export const keys = {
   backupSettings: ['backups', 'settings'] as const,
   /** The on-demand support bundle's preview (FAH-291); built fresh each time an admin asks. */
   supportBundlePreview: ['support-bundle', 'preview'] as const,
+  /** Whether this instance accepts client diagnostics (ADR 0080), re-read before every upload. */
+  clientDiagnosticsStatus: ['client-diagnostics', 'status'] as const,
+  /** Admins: the instance's client-diagnostics switch. */
+  clientDiagnosticsSetting: ['admin', 'client-diagnostics'] as const,
   providers: ['providers'] as const,
   connections: ['connections'] as const,
   /** Dives gone at a Provider, waiting for the User's choice (ADR 0051). */

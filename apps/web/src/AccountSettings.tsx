@@ -8,6 +8,7 @@ import { LANGUAGES } from './i18n/languages.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
 import { announce } from './lib/announce.ts';
 import { refocusAfterRemoval } from './lib/focus.ts';
+import { ReportProblem } from './ReportProblem.tsx';
 import { Button, ConfirmButton, Form, Notice, Panel, PasswordField, RadioGroup, Table } from './ui/index.ts';
 
 const AUTO = 'auto';
@@ -64,6 +65,21 @@ export function SecuritySettings() {
       <ChangePassword />
       <Sessions />
     </>
+  );
+}
+
+/**
+ * Settings' Report a problem section (FAH-292, ADR 0080): errors stay on this device until the User sends them to the
+ * instance they are signed in to. The section's name is the h1.
+ */
+export function ReportProblemSettings() {
+  const { t } = useTranslation();
+  return (
+    <Panel>
+      <p>{t('clientDiagnostics.report.lead')}</p>
+      <ReportProblem />
+      <p className="muted">{t('clientDiagnostics.report.privacy')}</p>
+    </Panel>
   );
 }
 

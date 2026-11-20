@@ -140,6 +140,7 @@
       "connections": "Verbindungen",
       "ai-access": "KI-Zugang",
       "devices": "Geräte",
+      "report-problem": "Problem melden",
       "admin": "Verwaltung"
     }
   },
@@ -273,6 +274,32 @@
     "workerStopped": "läuft nicht",
     "queueDepth": "Warteschlangentiefe",
     "unknown": "Unbekannt"
+  },
+  "clientDiagnostics": {
+    "report": {
+      "title": "Problem melden",
+      "lead": "Fehler bleiben auf diesem Gerät, damit du sie an die Leute senden kannst, die diesen Dive Hub betreiben. Nichts verlässt das Gerät, bis du auf Diagnose senden drückst.",
+      "privacy": "Gesendet werden nur Fehlermeldungen und Stack-Traces, niemals Tauchgangsinhalte, Tokens oder vollständige Webadressen. E-Mail-Adressen und Geheimnisse werden auf dem Server erneut maskiert.",
+      "checking": "Es wird geprüft, ob dieser Dive Hub Diagnosen annimmt…",
+      "on": "Dieser Dive Hub nimmt Diagnosen an.",
+      "off": "Die Client-Diagnose ist auf diesem Dive Hub ausgeschaltet. Ein Admin kann sie einschalten.",
+      "offHint": "Solange ein Admin die Client-Diagnose ausgeschaltet hat, kann nichts gesendet werden. Die Fehler bleiben auf diesem Gerät.",
+      "nothing": "Auf diesem Gerät wurden noch keine Fehler erfasst.",
+      "count_one": "1 Fehler wird auf diesem Gerät aufbewahrt.",
+      "count_other": "{{count}} Fehler werden auf diesem Gerät aufbewahrt.",
+      "send": "Diagnose senden",
+      "sent": "Diagnose gesendet. Danke."
+    },
+    "admin": {
+      "title": "Client-Diagnose",
+      "lead": "Standardmäßig aus. Wenn sie an ist, können angemeldete Personen die Fehler senden, die ihr Browser auf diesem Gerät aufbewahrt hat.",
+      "stored": "Einträge bleiben auf dieser Instanz, werden redigiert und nach 90 Tagen entfernt. Sie landen im Support-Bundle, das ein Admin herunterlädt.",
+      "toggle": "Client-Diagnose erfassen",
+      "on": "An",
+      "off": "Aus",
+      "savedOn": "Die Client-Diagnose ist jetzt an.",
+      "savedOff": "Die Client-Diagnose ist jetzt aus. Gespeicherte Einträge bleiben bis zum Ablauf."
+    }
   },
   "import": {
     "title": "Import",

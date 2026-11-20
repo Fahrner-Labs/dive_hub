@@ -12,6 +12,7 @@ import { DeletedNotices } from './DeletedDives.tsx';
 import { EquipmentDueNotice } from './EquipmentDue.tsx';
 import { ImportFilesButton, ImportPanel, ImportProvider, RecentImports } from './ImportPanel.tsx';
 import { PushRunStrip, RunMark } from './PushRun.tsx';
+import { ReportProblem } from './ReportProblem.tsx';
 import { ReviewMore, ReviewStrip } from './ReviewStrip.tsx';
 import { useErrorText } from './lib/display.ts';
 import { mayLeave } from './lib/leave-guard.ts';
@@ -107,7 +108,7 @@ export function App() {
 
   // Keyed by the page, not its query: a search or filter in the address must not rebuild the page (focus, table).
   const page = (
-    <ErrorBoundary key={route.split('?')[0]} fallback={<Notice tone="danger">{t('errors.unknown')}</Notice>}>
+    <ErrorBoundary key={route.split('?')[0]} fallback={<><Notice tone="danger">{t('errors.unknown')}</Notice><ReportProblem /></>}>
       <Suspense fallback={<RowsSkeleton rows={3} />}>
         <Main route={route} me={me} />
       </Suspense>

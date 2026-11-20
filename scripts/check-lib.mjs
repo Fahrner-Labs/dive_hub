@@ -55,7 +55,9 @@ const AREAS = [
   [/^apps\/web\/src\/BodyWeight\.tsx$/, ['@divers']],
   // A Diver certification cards (ADR 0050), a section of a Diver's page (slice 25c); their server side also takes part in the import.
   [/^apps\/web\/src\/Certifications\.tsx$|^apps\/server\/src\/certifications\//, ['@divers', '@account']],
-  [/^apps\/web\/src\/(SignedOut|SetupRestore|AccountSettings|Connections|ProviderBuddies)\.tsx$|^apps\/web\/src\/lib\/form\.ts$/, ['@account']],
+  // Client diagnostics (FAH-292, ADR 0080): the local buffer, the report surface, its API calls and the admin switch.
+  [/^apps\/web\/src\/(AccountSettings|ReportProblem)\.tsx$|^apps\/web\/src\/(lib\/diagnostics|api\/diagnostics)\.ts$/, ['@client-diagnostics', '@account']],
+  [/^apps\/web\/src\/(SignedOut|SetupRestore|Connections|ProviderBuddies)\.tsx$|^apps\/web\/src\/lib\/form\.ts$/, ['@account']],
   [/^apps\/web\/src\/SettingsPage\.tsx$/, ['@account', '@admin']],
   // The Settings addresses: also the links to a Connection's settings from a Dive's panels, an Import and a push run.
   [/^apps\/web\/src\/lib\/settings\.ts$/, ['@account', '@admin', '@dives']],
@@ -67,7 +69,7 @@ const AREAS = [
   [/^apps\/web\/src\/(NumberChain|ProviderDiveNumbers)\.tsx$/, ['@dives', '@account']],
   // Providers in the web client (ADR 0027): the account's Connections and each Dive's panels read them.
   [/^apps\/web\/src\/lib\/providers\.ts$/, ['@dives', '@account']],
-  [/^apps\/web\/src\/AdminSettings.tsx$/, ['@admin']],
+  [/^apps\/web\/src\/AdminSettings.tsx$/, ['@admin', '@client-diagnostics']],
   // The Tools page (ADR 0032): gas numbers and bottom time; its server computation and the MCP tool that answers the same.
   [/^apps\/web\/src\/Tools(Page|Plan|PlanProfile|Lead)\.tsx$|^apps\/web\/src\/ProfilePlot\.tsx$|^apps\/web\/src\/lib\/tools\.ts$|^apps\/server\/src\/planning\/|^apps\/server\/src\/lead\/|^apps\/server\/src\/mcp\/tools-planning(-gas-plan)?.ts$/, ['@tools']],
   // AI accesses to the MCP endpoint (ADR 0035): on the account page, their switch on the admin page.
@@ -103,7 +105,7 @@ const AREAS = [
 export const QUIET = /^(docs\/|samples\/|\.claude\/|\.github\/|\.githooks\/|AGENTS\.md$|CLAUDE\.md$|README\.md$|SECURITY\.md$|LICENSE$|NOTICE$|skills-lock\.json$|\.gitignore$|\.gitattributes$|\.dockerignore$|\.env\.example$|compose(\.dev)?\.yaml$|Dockerfile$|apps\/server\/test\/fixtures\/site-sources\/record\.ts$|apps\/server\/test\/fixtures\/ssi\/round-trip\.ts$|apps\/server\/test\/fixtures\/write-assessment-fixture\.ts$|apps\/server\/test\/fixtures\/write-suunto-fixture\.ts$|apps\/server\/test\/fixtures\/write-merge-fixture\.ts$|apps\/server\/test\/fixtures\/write-account-export-fixture\.ts$|apps\/server\/test\/fixtures\/write-live-fixtures\.ts$|scripts\/token-report\.mjs$|scripts\/fit-compressibility\.mjs$)/;
 
 /** The area tags a browser test can have; a test with none of them would run only in the full check. */
-export const TAGS = ['@dives', '@divers', '@equipment', '@sites', '@account', '@admin', '@layout', '@tools', '@live', '@support-bundle'];
+export const TAGS = ['@dives', '@divers', '@equipment', '@sites', '@account', '@admin', '@layout', '@tools', '@live', '@support-bundle', '@client-diagnostics'];
 
 /** The tag of browser tests that only the full check runs: ui-quality's two variants without axe (small phone, tablet). */
 export const FULL_ONLY = '@full';

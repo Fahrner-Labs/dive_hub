@@ -140,6 +140,7 @@
       "connections": "Connections",
       "ai-access": "AI access",
       "devices": "Devices",
+      "report-problem": "Report a problem",
       "admin": "Administration"
     }
   },
@@ -273,6 +274,32 @@
     "workerStopped": "not running",
     "queueDepth": "Queue depth",
     "unknown": "Unknown"
+  },
+  "clientDiagnostics": {
+    "report": {
+      "title": "Report a problem",
+      "lead": "Errors are kept on this device so you can send them to the people who run this Dive Hub. Nothing leaves the device until you press Send diagnostics.",
+      "privacy": "Only error messages and stack traces are sent, never dive contents, tokens or full web addresses. E-mail addresses and secrets are masked again on the server.",
+      "checking": "Checking whether this Dive Hub accepts diagnostics…",
+      "on": "This Dive Hub accepts diagnostics.",
+      "off": "Client diagnostics are switched off on this Dive Hub. An admin can switch them on.",
+      "offHint": "Nothing can be sent while an admin has client diagnostics switched off. Errors stay on this device.",
+      "nothing": "No errors have been captured on this device yet.",
+      "count_one": "1 error is kept on this device.",
+      "count_other": "{{count}} errors are kept on this device.",
+      "send": "Send diagnostics",
+      "sent": "Diagnostics sent. Thank you."
+    },
+    "admin": {
+      "title": "Client diagnostics",
+      "lead": "Off by default. When it is on, signed-in people can send the errors their browser kept on this device.",
+      "stored": "Entries stay on this instance, are redacted, and are removed after 90 days. They join the support bundle an admin downloads.",
+      "toggle": "Collect client diagnostics",
+      "on": "On",
+      "off": "Off",
+      "savedOn": "Client diagnostics are now on.",
+      "savedOff": "Client diagnostics are now off. Stored entries stay until they expire."
+    }
   },
   "import": {
     "title": "Import",

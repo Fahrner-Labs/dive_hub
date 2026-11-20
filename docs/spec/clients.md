@@ -75,6 +75,8 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   `client_diagnostics_limited` say to try again later. The server truncates and re-redacts every entry, so the
   client's own hygiene (no dive contents, tokens or URLs with query strings) is the first line, not the only one.
   Android's *Share local logs* share sheet stays available whether the setting is on or off.
+  *Web:* `lib/diagnostics.ts` (the local buffer and browser capture points), `ReportProblem.tsx` (the status line and
+  *Send diagnostics*, also in a failing page's fallback), `#/settings/report-problem`.
 
 ### Security
 - **Must forget everything about the previous User** when the User changes: on sign-in as someone else, an
@@ -364,6 +366,7 @@ V1 of the native client reads offline: phones lose signal where dives are, and t
   entries are stored redacted for at most 90 days and keep at most the newest 500 rows, and that switching it off refuses new uploads
   but keeps rows already stored until their purge or the next support bundle. The bundle's member is
   `client-diagnostics.ndjson` (`formatVersion` 2), empty while the switch is off.
+  *Web:* `AdminSettings.tsx` (the *Client diagnostics* panel beside *Support bundle*, `#/settings/admin`).
 - **Support bundle** (`GET /api/admin/support-bundle/preview`, `GET /api/admin/support-bundle/download`): an admin
   previews what an on-demand support archive would contain, then downloads it to send to the developer. The preview
   reports app and schema version, log coverage (`oldestAt`–`newestAt`, entries, dropped entries, size), the redaction
