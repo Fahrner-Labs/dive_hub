@@ -1673,6 +1673,106 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/admin/support-bundle/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Preview what an on-demand support bundle contains (admins only) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: date-time */
+                            generatedAt: string;
+                            appVersion: string;
+                            schemaHead: null | string;
+                            logs: {
+                                entries: number;
+                                droppedEntries: number;
+                                oldestAt: null | string;
+                                newestAt: null | string;
+                                bytes: number;
+                            };
+                            redaction: {
+                                keysCensored: number;
+                                emailsMasked: number;
+                                ipsMasked: number;
+                            };
+                            jobs: {
+                                failed: number;
+                            };
+                            health: {
+                                uptimeSec: number;
+                                dbLatencyMs: null | number;
+                                workerRunning: boolean;
+                                queueDepth: null | number;
+                            };
+                            estimatedBytes: number;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/support-bundle/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Download a redacted on-demand support bundle (admins only)
+         * @description The gzip archive is built in memory from the current logs, redacted configuration, failed jobs and health stats.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/imports": {
         parameters: {
             query?: never;

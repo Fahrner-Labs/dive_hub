@@ -3,11 +3,12 @@
 import { createHash } from 'node:crypto';
 import { execFile } from 'node:child_process';
 import { createReadStream } from 'node:fs';
-import { chmod, mkdir, readFile, readdir, rm, stat } from 'node:fs/promises';
+import { chmod, mkdir, readdir, rm, stat } from 'node:fs/promises';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
 import { and, desc, eq, gt, inArray, sql } from 'drizzle-orm';
 import type { Db, Tx } from '../db/client.js';
+import { appliedMigrationHead } from '../db/migrate.js';
 import { backupRun, backupSettings } from '../db/schema.js';
 import { PROBLEMS } from '../http/problems.js';
 import type { BlobStore } from '../storage/blob-store.js';
@@ -131,15 +132,6 @@ export function createBackupService({ db, blobs, dataDir, databaseUrl, migration
       counts[name] = count?.n ?? 0;
     }
     return counts;
-  }
-
-  /** The Drizzle journal tag of the newest migration the database has applied. */
-  async function migrationHead(): Promise<string | null> {
-    const [row] = (await db.execute(sql`select count(*)::int as n from drizzle.__drizzle_migrations`)).rows as { n: number }[];
-    const applied = row?.n ?? 0;
-    if (applied === 0) return null;
-    const journal = JSON.parse(await readFile(join(migrationsFolder, 'meta', '_journal.json'), 'utf8')) as { entries: { tag: string }[] };
-    return journal.entries[applied - 1]?.tag ?? null;
   }
 
   async function fail(id: string, error: string): Promise<void> {
@@ -424,7 +416,7 @@ export function createBackupService({ db, blobs, dataDir, databaseUrl, migration
         const filesPath = join(workDir, 'files.tar.gz');
         await tarDirectory(dataDir, filesPath, BACKUP_SKIPPED_DIRS);
         const [databasePart, filesPart, filesTree, counts, head] = await Promise.all([
-          fileDigest(databasePath), fileDigest(filesPath), fileTreeChecksum(dataDir, BACKUP_SKIPPED_DIRS), tableCounts(db), migrationHead(),
+          fileDigest(databasePath), fileDigest(filesPath), fileTreeChecksum(dataDir, BACKUP_SKIPPED_DIRS), tableCounts(db), appliedMigrationHead(db, migrationsFolder),
         ]);
         // The manifest records the envelope the encryption will write; its salt and ephemeral key are chosen there.
         const manifest = buildManifest({

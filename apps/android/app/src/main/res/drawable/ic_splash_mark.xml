@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="256dp"
+    android:height="256dp"
+    android:viewportWidth="256"
+    android:viewportHeight="256">
+    <!-- The Waypoint mark (FAH-305): the tile with its diagonal stripe knocked out and the bead threaded on it.
+         The stripe stays transparent so the splash background shows through. -->
+    <path
+        android:fillColor="#FFC8102E"
+        android:fillType="evenOdd"
+        android:pathData="M 50 32 H 206 A 18 18 0 0 1 224 50 V 206 A 18 18 0 0 1 206 224 H 50 A 18 18 0 0 1 32 206 V 50 A 18 18 0 0 1 50 32 Z M 32 56 V 50 A 18 18 0 0 1 50 32 H 56 L 224 200 V 206 A 18 18 0 0 1 206 224 H 200 Z" />
+    <path
+        android:fillColor="#FFC8102E"
+        android:pathData="M128,90 a38,38 0 1,1 0,76 a38,38 0 1,1 0,-76 Z" />
+</vector>

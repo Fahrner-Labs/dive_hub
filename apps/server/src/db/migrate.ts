@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { sql } from 'drizzle-orm';
 import { readMigrationFiles } from 'drizzle-orm/migrator';
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import type pg from 'pg';
@@ -41,4 +42,13 @@ export async function findChangedMigrations(pool: pg.Pool, migrationsFolder: str
     const hash = applied.get(file.folderMillis);
     return hash !== undefined && hash !== file.hash ? [journal.entries[i]!.tag] : [];
   });
+}
+
+/** The Drizzle journal tag of the newest migration the database has applied. */
+export async function appliedMigrationHead(db: Db, migrationsFolder: string): Promise<string | null> {
+  const [row] = (await db.execute(sql`select count(*)::int as n from drizzle.__drizzle_migrations`)).rows as { n: number }[];
+  const applied = row?.n ?? 0;
+  if (applied === 0) return null;
+  const journal = JSON.parse(readFileSync(join(migrationsFolder, 'meta', '_journal.json'), 'utf8')) as { entries: { tag: string }[] };
+  return journal.entries[applied - 1]?.tag ?? null;
 }
