@@ -49962,7 +49962,7 @@
       "version": "18.7.0",
       "nodeVersionSupported": "^22||^24||>=26",
       "nodeVersionFound": "v24.22.2",
-      "osVersionFound": "x64 linux@7.0.0-1019-azure",
+      "osVersionFound": "x64 linux@7.0.0-1016-aws",
       "transpilersFound": [
         {
           "name": "javascript",
