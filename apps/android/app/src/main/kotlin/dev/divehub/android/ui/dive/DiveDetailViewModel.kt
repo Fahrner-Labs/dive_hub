@@ -191,6 +191,8 @@ class DiveDetailViewModel(
                 withContext(ioDispatcher) { store.hasSeries(recording.id) } ->
                     _state.update { it.copy(samplesPending = false, samplesError = "internal_error") }
             }
+        } else if (!reset) {
+            _state.update { it.copy(samples = null, samplesPending = false, samplesError = null) }
         }
     }
 
