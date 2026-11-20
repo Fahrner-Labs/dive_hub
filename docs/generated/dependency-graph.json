@@ -32684,6 +32684,7 @@
       "dependents": [
         "apps/web/src/api/request.ts",
         "apps/web/src/api/divers.ts",
+        "apps/web/src/api/dives.ts",
         "apps/web/src/lib/answer.ts"
       ],
       "orphan": false,
@@ -32911,6 +32912,22 @@
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@dive-hub/api-client",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "unknown"
+          ],
+          "resolved": "@dive-hub/api-client",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": true,
           "matchesDoNotFollow": false,
           "circular": false,
           "valid": true
@@ -49528,7 +49545,7 @@
     "baselineStale": 0,
     "advisedExitCode": 0,
     "totalCruised": 469,
-    "totalDependenciesCruised": 2471,
+    "totalDependenciesCruised": 2472,
     "optionsUsed": {
       "baseDir": "/home/runner/work/dive_hub/dive_hub",
       "combinedDependencies": false,
@@ -49944,8 +49961,8 @@
     "environment": {
       "version": "18.7.0",
       "nodeVersionSupported": "^22||^24||>=26",
-      "nodeVersionFound": "v24.22.3",
-      "osVersionFound": "x64 linux@7.0.0-1020-azure",
+      "nodeVersionFound": "v24.22.2",
+      "osVersionFound": "x64 linux@7.0.0-1019-azure",
       "transpilersFound": [
         {
           "name": "javascript",
