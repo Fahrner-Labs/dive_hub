@@ -350,6 +350,37 @@ class AppNavHostTest {
     }
 
     @Test
+    fun `a fresh start clears saved tab states without touching the graph`() {
+        compose.setContent { start(destination = null) }
+
+        compose.runOnIdle { controller.clearSavedTabStates() }
+
+        assertRoute<InstanceRoute>()
+    }
+
+    @Test
+    fun `clearing saved tab states from outside the main graph drops the previous tool page`() {
+        compose.setContent { start(destination = null) }
+        compose.runOnIdle { controller.navigate(MainRoute) }
+        compose.onNodeWithText("Tools").performClick()
+        compose.runOnIdle { screens.toolsOnPage!!.invoke(ToolPage.Plan) }
+        compose.onNodeWithText("Logbook").performClick()
+        // A sign-out leaves the main graph; the wipe must not need the destination it is clearing to be reachable.
+        compose.runOnIdle {
+            controller.navigate(InstanceRoute) { popUpTo(controller.graph.id) { inclusive = true } }
+        }
+        compose.waitForIdle()
+        assertRoute<InstanceRoute>()
+
+        compose.runOnIdle { controller.clearSavedTabStates() }
+        compose.runOnIdle { controller.navigate(MainRoute) }
+        compose.onNodeWithText("Tools").performClick()
+
+        assertRoute<ToolsRoute>()
+        compose.runOnIdle { assertEquals(ToolPage.Gas, controller.currentBackStackEntry?.toRoute<ToolsRoute>()?.page) }
+    }
+
+    @Test
     fun `clearing saved tab states drops the previous tool page`() {
         compose.setContent { start(destination = null) }
         compose.runOnIdle { controller.navigate(MainRoute) }
