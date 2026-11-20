@@ -33,7 +33,7 @@ class Diagnostics(
         encodeDefaults = false
     },
     private val clock: () -> Instant = { Clock.System.now() },
-) {
+) : DiagnosticsAccess {
     /** Record one entry locally. Best effort: a full or broken store must never break the app. */
     fun capture(
         level: DiagnosticLevel,
@@ -54,18 +54,18 @@ class Diagnostics(
         )
     }
 
-    fun count(): Int = buffer.count()
+    override fun count(): Int = buffer.count()
 
     /** The newest [limit] entries, newest first (the settings preview; T4 consumes it). */
-    fun preview(limit: Int): List<DiagnosticEntry> = buffer.newest(limit)
+    override fun preview(limit: Int): List<DiagnosticEntry> = buffer.newest(limit)
 
     /** Every held entry as NDJSON, oldest first (the *Share local logs* accessor; T4 consumes it). */
-    fun exportNdjson(): String = buffer.oldest().joinToString("") { entry ->
+    override fun exportNdjson(): String = buffer.oldest().joinToString("") { entry ->
         json.encodeToString(entry.toPayload()) + "\n"
     }
 
     /** Whether the instance's admin has enabled client diagnostics (ADR 0080 D1). Any failure reads as off. */
-    suspend fun instanceEnabled(): Boolean = try {
+    override suspend fun instanceEnabled(): Boolean = try {
         val response = client.get(STATUS_PATH)
         response.status.isSuccess() && client.decode<StatusResponse>(response).enabled
     } catch (error: CancellationException) {
@@ -78,7 +78,7 @@ class Diagnostics(
      * Upload the newest [MAX_UPLOAD] entries. A 204 means the server stored them, so the local buffer is cleared. A
      * 403/429, a 401 or no answer keeps the buffer and returns the code (ADR 0080 D1/D2).
      */
-    suspend fun reportProblem(): ReportProblemResult {
+    override suspend fun reportProblem(): ReportProblemResult {
         val entries = buffer.newest(MAX_UPLOAD).reversed()
         val body = json.encodeToString(
             Upload(

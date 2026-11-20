@@ -519,4 +519,26 @@
     <string name="settings_licenses">Open-Source-Lizenzen</string>
     <string name="settings_licenses_title">Poppins (SIL Open Font License 1.1)</string>
     <string name="settings_close">Schließen</string>
+
+    <string name="settings_section_debug">Debug</string>
+    <string name="settings_debug_diagnostics">Diagnose</string>
+    <string name="settings_debug_checking">Es wird geprüft, ob dieser Dive Hub Diagnosen annimmt…</string>
+    <string name="settings_debug_on">Dieser Dive Hub nimmt Diagnosen an.</string>
+    <string name="settings_debug_off">Die Client-Diagnose ist auf diesem Dive Hub ausgeschaltet.</string>
+    <string name="settings_debug_capture">Die lokale Erfassung ist an. Auf diesem Gerät aufbewahrte Einträge: %1$d.</string>
+    <string name="settings_debug_report">Problem melden</string>
+    <string name="settings_debug_report_off">Ein Admin kann die Diagnose einschalten. Die Fehler bleiben auf diesem Gerät.</string>
+    <string name="settings_debug_report_nothing">Auf diesem Gerät wurden noch keine Fehler erfasst.</string>
+    <string name="settings_debug_report_body">Sendet die auf diesem Gerät aufbewahrten Fehler an diesen Dive Hub.</string>
+    <string name="settings_debug_reporting">Wird gesendet…</string>
+    <string name="settings_debug_sent">Diagnose gesendet. Danke.</string>
+    <string name="settings_debug_report_disabled">Die Client-Diagnose wurde inzwischen ausgeschaltet. Die Fehler bleiben auf diesem Gerät.</string>
+    <string name="settings_debug_report_limited">Zu viele Meldungen von diesem Konto. Versuche es später erneut.</string>
+    <string name="settings_debug_report_offline">Keine Verbindung zu diesem Dive Hub. Versuche es später erneut.</string>
+    <string name="settings_debug_report_failed">Die Diagnose konnte nicht gesendet werden. Versuche es später erneut.</string>
+    <string name="settings_debug_share">Lokale Protokolle teilen</string>
+    <string name="settings_debug_share_body">Speichert oder sendet die Protokolldatei, wohin du möchtest.</string>
+    <string name="settings_debug_share_empty">Es gibt noch keine Einträge zum Teilen.</string>
+    <string name="settings_debug_share_title">Lokale Protokolle teilen</string>
+    <string name="settings_debug_share_subject">DiveHub-Diagnose</string>
 </resources>

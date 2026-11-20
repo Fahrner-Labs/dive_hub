@@ -1,11 +1,14 @@
 package dev.divehub.android.ui.settings
 
+import androidx.compose.material3.Surface
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import com.github.takahirom.roborazzi.captureRoboImage
 import dev.divehub.android.ui.DiveHubTheme
+import dev.divehub.shared.diagnostics.DiagnosticEntry
+import dev.divehub.shared.diagnostics.DiagnosticLevel
 import java.util.TimeZone
 import org.junit.After
 import org.junit.Before
@@ -77,6 +80,41 @@ class SettingsScreenshotTest {
         capture("settings_de_dark.png")
     }
 
+    @Test
+    fun `debug group with diagnostics on in English and light`() {
+        renderDebug(darkTheme = false, enabled = true)
+
+        compose.onNodeWithText("This Dive Hub accepts diagnostics.").assertIsDisplayed()
+        capture("settings_debug_on_en_light.png")
+    }
+
+    @Test
+    @Config(qualifiers = "de-rDE-w411dp-h891dp-xxhdpi")
+    fun `debug group with diagnostics off in German and light`() {
+        renderDebug(darkTheme = false, enabled = false)
+
+        compose.onNodeWithText("Die Client-Diagnose ist auf diesem Dive Hub ausgeschaltet.").assertIsDisplayed()
+        capture("settings_debug_off_de_light.png")
+    }
+
+    @Test
+    @Config(qualifiers = "en-rUS-w411dp-h891dp-night-xxhdpi")
+    fun `debug group with diagnostics on in English and dark`() {
+        renderDebug(darkTheme = true, enabled = true)
+
+        compose.onNodeWithText("This Dive Hub accepts diagnostics.").assertIsDisplayed()
+        capture("settings_debug_on_en_dark.png")
+    }
+
+    @Test
+    @Config(qualifiers = "de-rDE-w411dp-h891dp-night-xxhdpi")
+    fun `debug group with diagnostics off in German and dark`() {
+        renderDebug(darkTheme = true, enabled = false)
+
+        compose.onNodeWithText("Die Client-Diagnose ist auf diesem Dive Hub ausgeschaltet.").assertIsDisplayed()
+        capture("settings_debug_off_de_dark.png")
+    }
+
     private fun render(darkTheme: Boolean) {
         compose.setContent {
             DiveHubTheme(darkTheme = darkTheme) {
@@ -91,7 +129,37 @@ class SettingsScreenshotTest {
                     onChangeInstance = {},
                     onSyncNow = {},
                     onSignOut = {},
+                    onReportProblem = {},
+                    onShareLogs = {},
                 )
+            }
+        }
+    }
+
+    private fun renderDebug(darkTheme: Boolean, enabled: Boolean) {
+        val diagnostics = SettingsDiagnosticsState(
+            enabled = enabled,
+            count = 2,
+            preview = listOf(
+                DiagnosticEntry(
+                    occurredAt = "2026-11-18T12:00:00Z",
+                    level = DiagnosticLevel.ERROR,
+                    code = "http_500",
+                    message = "Server error on /api/dives",
+                ),
+                DiagnosticEntry(
+                    occurredAt = "2026-11-18T11:00:00Z",
+                    level = DiagnosticLevel.WARN,
+                    code = "offline",
+                    message = "No answer while syncing",
+                ),
+            ),
+        )
+        compose.setContent {
+            DiveHubTheme(darkTheme = darkTheme) {
+                Surface {
+                    SettingsDebugSection(diagnostics, onReportProblem = {}, onShareLogs = {})
+                }
             }
         }
     }

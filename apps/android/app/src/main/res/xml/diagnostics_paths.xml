@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- The exported diagnostics NDJSON handed to the share sheet (FAH-318), overwritten on every share. -->
+    <cache-path name="diagnostics" path="diagnostics/" />
+</paths>
