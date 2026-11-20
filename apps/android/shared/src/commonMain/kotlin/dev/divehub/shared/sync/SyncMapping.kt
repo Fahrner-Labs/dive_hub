@@ -1,10 +1,10 @@
 package dev.divehub.shared.sync
 
 import dev.divehub.api.models.ApiDiverBodyWeightsGet200ResponseItem
-import dev.divehub.api.models.ApiDivesGet200ResponseDivesItem
-import dev.divehub.api.models.ApiDivesGet200ResponseDivesItemGasesItem
-import dev.divehub.api.models.ApiDivesGet200ResponseDivesItemParticipantsItem
-import dev.divehub.api.models.ApiDivesGet200ResponseDivesItemSite
+import dev.divehub.api.models.DiveListViewDivesItem
+import dev.divehub.api.models.DiveListViewDivesItemGasesItem
+import dev.divehub.api.models.DiveListViewDivesItemParticipantsItem
+import dev.divehub.api.models.DiveListViewDivesItemSite
 import dev.divehub.api.models.DiverView
 import dev.divehub.api.models.DiveView
 import dev.divehub.api.models.DiveViewCylindersItem
@@ -16,22 +16,10 @@ import dev.divehub.shared.store.Dive
 import dev.divehub.shared.store.DiveSite
 import dev.divehub.shared.store.Diver
 import dev.divehub.shared.store.Recording
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 private val JSON = Json { ignoreUnknownKeys = true; explicitNulls = false }
-
-/**
- * One page of `GET /api/dives?include=details` (FAH-297): the list envelope with a whole [DiveView] per row. Only the
- * rows and total matter to the sync. The envelope is local because the OpenAPI document still describes the list's
- * 200 as the summary page; the rows themselves are the generated [DiveView], so the Dive's shape is not duplicated.
- */
-@Serializable
-internal data class DiveDetailsPage(
-    val dives: List<DiveView>,
-    val total: Long,
-)
 
 /**
  * The API's values into the store's rows (ADR 0075). The generated models are the contract: complex values keep
@@ -71,7 +59,7 @@ internal fun ApiDiverBodyWeightsGet200ResponseItem.toStore(diverId: String): Bod
  * must survive: `version` is null in a list row, so a wholesale list write would erase the row's detail. The list's
  * current summary fields (number, times, findings, site) still win, because that is what the logbook shows.
  */
-internal fun ApiDivesGet200ResponseDivesItem.toStore(existing: Dive?): Dive {
+internal fun DiveListViewDivesItem.toStore(existing: Dive?): Dive {
     if (existing?.version != null) {
         return existing.copy(
             // A live list row means the Dive is back (a restore): its tombstone must not outlive the server state.
@@ -157,13 +145,13 @@ internal fun DiveView.toStore(existing: Dive?): Dive = Dive(
 internal fun DiveView.toListRow(existing: String?): String {
     val old = existing?.let {
         try {
-            JSON.decodeFromString(ApiDivesGet200ResponseDivesItem.serializer(), it)
+            JSON.decodeFromString(DiveListViewDivesItem.serializer(), it)
         } catch (_: Exception) {
             null
         }
     }
     val primary = recordings.firstOrNull { it.isPrimary } ?: recordings.firstOrNull()
-    val row = ApiDivesGet200ResponseDivesItem(
+    val row = DiveListViewDivesItem(
         id = id,
         diverId = diverId,
         number = values.number,
@@ -173,21 +161,21 @@ internal fun DiveView.toListRow(existing: String?): String {
         durationSeconds = values.durationSeconds,
         maxDepthM = values.maxDepthM,
         avgDepthM = values.avgDepthM,
-        site = site?.let { ApiDivesGet200ResponseDivesItemSite(id = it.id, name = it.name) },
+        site = site?.let { DiveListViewDivesItemSite(id = it.id, name = it.name) },
         findings = old?.findings ?: 0,
         recordings = recordings.size,
         fromProvider = fromProvider,
         gases = primary?.summary?.gases.orEmpty().map {
-            ApiDivesGet200ResponseDivesItemGasesItem(o2 = it.o2, he = it.he)
+            DiveListViewDivesItemGasesItem(o2 = it.o2, he = it.he)
         },
         surfaceIntervalSeconds = primary?.summary?.surfaceIntervalSeconds,
         participants = participants.map {
-            ApiDivesGet200ResponseDivesItemParticipantsItem(diverId = it.diverId, name = it.name, role = it.role)
+            DiveListViewDivesItemParticipantsItem(diverId = it.diverId, name = it.name, role = it.role)
         },
         waiting = old?.waiting.orEmpty(),
         profile = old?.profile,
     )
-    return JSON.encodeToString(ApiDivesGet200ResponseDivesItem.serializer(), row)
+    return JSON.encodeToString(DiveListViewDivesItem.serializer(), row)
 }
 
 internal fun DiveViewRecordingsItem.toStore(diveId: String): Recording = Recording(

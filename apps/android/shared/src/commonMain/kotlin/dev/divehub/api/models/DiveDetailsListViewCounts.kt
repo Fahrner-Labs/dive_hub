@@ -10,7 +10,7 @@ import kotlinx.serialization.json.JsonElement
  * How many Dives each filter would show for the Diver and the search, whatever filters are applied (ADR 0040)
  */
 @Serializable
-data class ApiDivesGet200ResponseCounts(
+data class DiveDetailsListViewCounts(
     @SerialName("noRecording") val noRecording: Int,
     @SerialName("noSite") val noSite: Int,
     @SerialName("withFindings") val withFindings: Int,

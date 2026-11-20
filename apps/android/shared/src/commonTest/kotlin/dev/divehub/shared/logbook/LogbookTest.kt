@@ -1,12 +1,12 @@
 package dev.divehub.shared.logbook
 
-import dev.divehub.api.models.ApiDivesGet200Response
-import dev.divehub.api.models.ApiDivesGet200ResponseCounts
-import dev.divehub.api.models.ApiDivesGet200ResponseDivesItem
-import dev.divehub.api.models.ApiDivesGet200ResponseDivesItemGasesItem
-import dev.divehub.api.models.ApiDivesGet200ResponseDivesItemParticipantsItem
-import dev.divehub.api.models.ApiDivesGet200ResponseMonthsItem
-import dev.divehub.api.models.ApiDivesGet200ResponseTotals
+import dev.divehub.api.models.DiveListView
+import dev.divehub.api.models.DiveListViewCounts
+import dev.divehub.api.models.DiveListViewDivesItem
+import dev.divehub.api.models.DiveListViewDivesItemGasesItem
+import dev.divehub.api.models.DiveListViewDivesItemParticipantsItem
+import dev.divehub.api.models.DiveListViewMonthsItem
+import dev.divehub.api.models.DiveListViewTotals
 import dev.divehub.api.models.DiveProfileView
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.MockRequestHandleScope
@@ -33,10 +33,10 @@ private fun dive(
     recordings: Int = 1,
     findings: Int = 0,
     fromProvider: String? = null,
-    gases: List<ApiDivesGet200ResponseDivesItemGasesItem> = emptyList(),
-    participants: List<ApiDivesGet200ResponseDivesItemParticipantsItem> = emptyList(),
+    gases: List<DiveListViewDivesItemGasesItem> = emptyList(),
+    participants: List<DiveListViewDivesItemParticipantsItem> = emptyList(),
     profile: DiveProfileView? = null,
-) = ApiDivesGet200ResponseDivesItem(
+) = DiveListViewDivesItem(
     id = id,
     diverId = "diver",
     number = 12,
@@ -58,7 +58,7 @@ private fun dive(
 )
 
 private fun counts(noRecording: Int = 0, noSite: Int = 0, withFindings: Int = 0, notAtProvider: Int = 0, changed: Int = 0) =
-    ApiDivesGet200ResponseCounts(noRecording, noSite, withFindings, notAtProvider, changed)
+    DiveListViewCounts(noRecording, noSite, withFindings, notAtProvider, changed)
 
 class LogbookPagingTest {
     @Test
@@ -135,7 +135,7 @@ class MonthGroupsTest {
 
     @Test
     fun `consecutive dives group under their month with the API's figures`() {
-        val figures = listOf(ApiDivesGet200ResponseMonthsItem("2026-04", 9, 27000.0))
+        val figures = listOf(DiveListViewMonthsItem("2026-04", 9, 27000.0))
         val groups = monthGroups(
             listOf(dive("a"), dive("b", startsAt = "2026-04-01T09:00:00Z"), dive("c", startsAt = "2026-03-30T09:00:00Z")),
             figures,

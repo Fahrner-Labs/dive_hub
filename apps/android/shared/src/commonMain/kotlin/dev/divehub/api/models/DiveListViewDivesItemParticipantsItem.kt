@@ -6,13 +6,9 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
 
-/**
- * The Diver’s whole logbook, not narrowed by search, site or filters
- */
 @Serializable
-data class ApiDivesGet200ResponseTotals(
-    @SerialName("dives") val dives: Int,
-    @SerialName("durationSeconds") val durationSeconds: Double,
-    @SerialName("deepestM") val deepestM: Double?,
-    @SerialName("lastDiveAt") val lastDiveAt: String?
+data class DiveListViewDivesItemParticipantsItem(
+    @SerialName("diverId") val diverId: String,
+    @SerialName("name") val name: String,
+    @SerialName("role") val role: String
 )

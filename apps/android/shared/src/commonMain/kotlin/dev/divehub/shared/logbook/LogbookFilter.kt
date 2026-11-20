@@ -1,6 +1,6 @@
 package dev.divehub.shared.logbook
 
-import dev.divehub.api.models.ApiDivesGet200ResponseCounts
+import dev.divehub.api.models.DiveListViewCounts
 
 /** The logbook's "Show only" filters (ADR 0040), in the order they are offered. All pressed filters must fit. */
 enum class LogbookFilter(val wire: String) {
@@ -13,7 +13,7 @@ enum class LogbookFilter(val wire: String) {
 }
 
 /** How many Dives this filter would show, whatever filters are pressed (ADR 0040): the counts never narrow. */
-fun ApiDivesGet200ResponseCounts.countOf(filter: LogbookFilter): Int = when (filter) {
+fun DiveListViewCounts.countOf(filter: LogbookFilter): Int = when (filter) {
     LogbookFilter.NO_RECORDING -> noRecording
     LogbookFilter.NO_SITE -> noSite
     LogbookFilter.WITH_FINDINGS -> withFindings
@@ -25,7 +25,7 @@ fun ApiDivesGet200ResponseCounts.countOf(filter: LogbookFilter): Int = when (fil
 data class FilterChip(val filter: LogbookFilter, val count: Int, val applied: Boolean)
 
 /** The filters to offer: a count of 0 hides one unless it is pressed (ADR 0040). */
-fun filterChips(counts: ApiDivesGet200ResponseCounts, applied: Set<LogbookFilter>): List<FilterChip> =
+fun filterChips(counts: DiveListViewCounts, applied: Set<LogbookFilter>): List<FilterChip> =
     LogbookFilter.entries
         .map { FilterChip(it, counts.countOf(it), it in applied) }
         .filter { it.count > 0 || it.applied }

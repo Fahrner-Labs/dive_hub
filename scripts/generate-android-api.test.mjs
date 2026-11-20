@@ -76,6 +76,41 @@ test('an anyOf of object shapes is one class, with every variant field', () => {
   assert.match(source, /val reason: String\? = null/);
 });
 
+test('an anyOf of named schemas is one model per variant, not a merged JsonElement', () => {
+  const files = generateModels(document({
+    SummaryPage: {
+      type: 'object',
+      required: ['dives', 'total'],
+      properties: {
+        dives: {
+          type: 'array',
+          items: { type: 'object', required: ['id', 'findings'], properties: { id: { type: 'string' }, findings: { type: 'integer' } } },
+        },
+        total: { type: 'integer' },
+      },
+    },
+    DetailsPage: {
+      type: 'object',
+      required: ['dives', 'total'],
+      properties: {
+        dives: { type: 'array', items: { $ref: '#/components/schemas/DiveView' } },
+        total: { type: 'integer' },
+      },
+    },
+    DiveView: { type: 'object', required: ['id', 'version'], properties: { id: { type: 'string' }, version: { type: 'integer' } } },
+  }, {
+    '/api/dives': {
+      get: { responses: { 200: { content: { 'application/json': { schema: {
+        anyOf: [{ $ref: '#/components/schemas/SummaryPage' }, { $ref: '#/components/schemas/DetailsPage' }],
+      } } } } } },
+    },
+  }), [{ name: 'ApiDivesGet200Response', path: '/api/dives', method: 'get', kind: 'response', status: '200' }], []);
+
+  assert.match(files.get('SummaryPage.kt'), /val dives: List<SummaryPageDivesItem>/);
+  assert.match(files.get('DetailsPage.kt'), /val dives: List<DiveView>/);
+  assert.equal(files.has('ApiDivesGet200Response.kt'), false, 'the operation names no merged class');
+});
+
 test('allOf flattens to one data class', () => {
   const files = generateModels(document({
     Base: { type: 'object', required: ['id'], properties: { id: { type: 'string' } } },

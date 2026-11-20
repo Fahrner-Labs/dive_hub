@@ -7,8 +7,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
 
 @Serializable
-data class ApiDivesGet200ResponseDivesItemParticipantsItem(
-    @SerialName("diverId") val diverId: String,
-    @SerialName("name") val name: String,
-    @SerialName("role") val role: String
+data class DiveListViewDivesItemSite(
+    @SerialName("id") val id: String,
+    @SerialName("name") val name: String
 )

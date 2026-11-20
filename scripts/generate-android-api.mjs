@@ -319,6 +319,14 @@ export function generateModels(document, operations = OPERATIONS, seeds = MODEL_
     }
   }
 
+  /**
+   * A response `anyOf` whose variants are all named object schemas (the logbook's summary and details pages): the
+   * caller knows which it asked for, so each variant becomes its own class instead of one merged class whose clashing
+   * field (`dives`) would collapse to `JsonElement`.
+   */
+  const namedVariants = (rawSchema) => Array.isArray(rawSchema?.anyOf) && rawSchema.anyOf.length > 1
+    && rawSchema.anyOf.every((variant) => variant.$ref && document.components.schemas[variant.$ref.split('/').pop()]);
+
   for (const name of seeds) {
     if (!document.components.schemas[name]) throw new Error(`unknown model seed ${name}`);
     registerClass(name, document.components.schemas[name]);
@@ -327,6 +335,7 @@ export function generateModels(document, operations = OPERATIONS, seeds = MODEL_
     const schema = schemaAt(document, operation);
     // A list operation (ADR 0060's bare arrays) is its item's model: the caller decodes List<operation.name>.
     if (schema.type === 'array') typeOf(schema.items, operation.name);
+    else if (namedVariants(schema)) schema.anyOf.forEach((variant) => typeOf(variant, operation.name));
     else registerClass(operation.name, schema);
   }
 
