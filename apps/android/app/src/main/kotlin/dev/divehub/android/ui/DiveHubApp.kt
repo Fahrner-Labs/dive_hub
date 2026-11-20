@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -11,9 +12,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -134,18 +137,27 @@ private class DiveHubScreens(
     @Composable
     override fun instance() {
         val state by viewModel.state.collectAsStateWithLifecycle()
-        InstanceForm(state.error, viewModel::useInstance)
+        val error = (state.reachability as? Reachability.Unreachable)?.code
+        InstanceForm(
+            checking = state.reachability is Reachability.Checking,
+            error = error,
+            onContinue = viewModel::useInstance,
+        )
     }
 
     @Composable
     override fun signIn() {
         val state by viewModel.state.collectAsStateWithLifecycle()
         val instanceUrl = state.instanceUrl ?: return
+        // The instance line is re-checked whenever this screen is shown, not only when the address was first entered.
+        LaunchedEffect(instanceUrl) { viewModel.checkInstance() }
         SignInForm(
             instanceUrl = instanceUrl,
             busy = state.busy,
+            reachability = state.reachability,
             error = state.error,
             onChangeInstance = viewModel::changeInstance,
+            onCheckInstance = viewModel::checkInstance,
             onSignIn = viewModel::signIn,
         )
     }
@@ -293,7 +305,7 @@ fun UpdateRequiredScreen(modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun InstanceForm(error: String?, onContinue: (String) -> Unit) {
+internal fun InstanceForm(checking: Boolean, error: String?, onContinue: (String) -> Unit) {
     var address by remember { mutableStateOf("") }
     Column(
         Modifier
@@ -323,18 +335,24 @@ private fun InstanceForm(error: String?, onContinue: (String) -> Unit) {
         )
         ErrorText(error)
         Spacer(Modifier.height(16.dp))
-        PrimaryButton(onClick = { onContinue(address) }, enabled = address.isNotBlank()) {
+        PrimaryButton(onClick = { onContinue(address) }, enabled = !checking && address.isNotBlank()) {
+            if (checking) {
+                Spinner()
+                Spacer(Modifier.width(8.dp))
+            }
             Text(stringResource(R.string.instance_continue))
         }
     }
 }
 
 @Composable
-private fun SignInForm(
+internal fun SignInForm(
     instanceUrl: String,
     busy: Boolean,
+    reachability: Reachability,
     error: String?,
     onChangeInstance: () -> Unit,
+    onCheckInstance: () -> Unit,
     onSignIn: (String, String) -> Unit,
 ) {
     var email by remember { mutableStateOf("") }
@@ -354,7 +372,16 @@ private fun SignInForm(
             style = MaterialTheme.typography.headlineMedium,
         )
         Spacer(Modifier.height(4.dp))
-        Text(instanceUrl, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                instanceUrl,
+                modifier = Modifier.weight(1f),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(Modifier.width(8.dp))
+            InstanceStatus(reachability, onCheckInstance)
+        }
         TextButton(onClick = onChangeInstance) { Text(stringResource(R.string.instance_change)) }
         Spacer(Modifier.height(8.dp))
         Text(stringResource(R.string.sign_in_about), style = MaterialTheme.typography.bodyLarge)
@@ -396,6 +423,21 @@ private fun SignInForm(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
+}
+
+/** The sign-in screen's instance line: connected, checking, or why the last check failed; tapping checks again. */
+@Composable
+private fun InstanceStatus(reachability: Reachability, onCheck: () -> Unit) {
+    val label = when (reachability) {
+        Reachability.Unknown, Reachability.Checking -> stringResource(R.string.instance_checking)
+        Reachability.Reachable -> stringResource(R.string.instance_reachable)
+        is Reachability.Unreachable -> stringResource(R.string.instance_unreachable)
+    }
+    AssistChip(
+        onClick = onCheck,
+        label = { Text(label) },
+        modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+    )
 }
 
 /** A password field with the eye button (client contract §5): its label names the field and says what the button does. */
@@ -459,6 +501,7 @@ private fun ErrorText(code: String?) {
                 ErrorCodes.USER_DISABLED -> R.string.error_user_disabled
                 ErrorCodes.SIGN_IN_REQUIRED -> R.string.error_sign_in_required
                 ErrorCodes.INVALID_INSTANCE_URL -> R.string.error_invalid_instance_url
+                ErrorCodes.NOT_DIVEHUB -> R.string.error_not_divehub
                 ErrorCodes.MISSING_TOKEN -> R.string.error_missing_token
                 ErrorCodes.SERVER_ERROR -> R.string.error_server
                 MainViewModel.NO_ANSWER -> R.string.error_no_answer

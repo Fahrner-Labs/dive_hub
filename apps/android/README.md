@@ -166,7 +166,9 @@ offline-with-cache versus offline-empty on both screens. An intended visual chan
 ## Behaviour in this slice
 
 - **Instance URL first.** A first start asks for the self-hosted instance; its origin is stored in preferences. The
-  URL has no path (the API lives under `/api` on the same origin).
+  URL has no path (the API lives under `/api` on the same origin). Before credentials are asked, the app probes
+  `GET /api/health/live` (5 s timeout): a typo, an offline phone or a host that is not a Dive Hub keeps the address
+  form with the reason, and the sign-in screen shows the reachability chip and checks again whenever it is shown.
 - **Sign-in** is the ordinary `POST /api/auth/sign-in/email`; the session token comes from `set-auth-token` and is
   stored encrypted with an AES-GCM key in the Android Keystore. Every request sends `Authorization: Bearer`.
 - **No previous User.** Sign-in, sign-out and a 401 anywhere clear the token, the cached preferences and the cache

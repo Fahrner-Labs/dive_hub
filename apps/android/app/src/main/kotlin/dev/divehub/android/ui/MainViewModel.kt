@@ -9,16 +9,27 @@ import dev.divehub.android.AppContainer
 import dev.divehub.api.models.UserView
 import dev.divehub.shared.DiveHubException
 import dev.divehub.shared.ErrorCodes
+import dev.divehub.shared.InstanceProbeResult
 import dev.divehub.shared.InstanceUrl
 import dev.divehub.shared.NoAnswerException
 import dev.divehub.shared.SessionRepository
 import dev.divehub.shared.SessionState
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+
+/** How onboarding last found the instance it is about to ask credentials for (FAH-332). */
+sealed interface Reachability {
+    data object Unknown : Reachability
+    data object Checking : Reachability
+    data object Reachable : Reachability
+    /** [code] is a translated [ErrorCodes] value, never the server's English text. */
+    data class Unreachable(val code: String) : Reachability
+}
 
 /** What the one screen shows; `error` is a code the UI translates, never the server's English text. */
 data class UiState(
@@ -29,20 +40,29 @@ data class UiState(
     /** "metric", "imperial" or null: the User's choice, else the device's region. */
     val units: String? = null,
     val error: String? = null,
+    /** The onboarding probe's last answer; [Reachability.Unreachable] carries what the instance form or chip shows. */
+    val reachability: Reachability = Reachability.Unknown,
     /** The server refuses this app's release (ADR 0076): a terminal screen, never the sign-in form. */
     val updateRequired: Boolean = false,
 )
 
-class MainViewModel(private val container: AppContainer) : ViewModel() {
-    private val session: SessionRepository = container.session
+class MainViewModel(
+    private val session: SessionRepository,
+    private val startSync: () -> Unit,
+    private val stopSync: () -> Unit,
+    private val probeInstance: suspend (String) -> InstanceProbeResult = session::probeInstance,
+) : ViewModel() {
+    constructor(container: AppContainer) : this(container.session, container::startSync, container::stopSync)
+
     private val _state = MutableStateFlow(UiState())
     val state: StateFlow<UiState> = _state.asStateFlow()
+    private var probe: Job? = null
 
     init {
         // A 401 anywhere ends the session in the repository; the screen follows it without a second source of truth.
         viewModelScope.launch {
             session.state.collect { state ->
-                if (state is SessionState.SignedIn) container.startSync() else container.stopSync()
+                if (state is SessionState.SignedIn) startSync() else stopSync()
                 _state.update {
                     when (state) {
                         is SessionState.SignedIn -> it.copy(loading = false, instanceUrl = state.instanceUrl, user = state.user, units = state.preferences.units, updateRequired = false)
@@ -56,18 +76,47 @@ class MainViewModel(private val container: AppContainer) : ViewModel() {
         viewModelScope.launch { restore() }
     }
 
+    /** Probe the address first; only an instance that answers lets the shell move on to sign-in (FAH-332). */
     fun useInstance(raw: String) {
         val url = InstanceUrl.normalize(raw)
         if (url == null) {
-            _state.update { it.copy(error = ErrorCodes.INVALID_INSTANCE_URL) }
+            probe?.cancel()
+            _state.update { it.copy(reachability = Reachability.Unreachable(ErrorCodes.INVALID_INSTANCE_URL)) }
             return
         }
-        _state.update { it.copy(instanceUrl = url, error = null) }
+        probeAddress(url)
+    }
+
+    /** The sign-in screen's instance line checks again whenever the screen is shown. */
+    fun checkInstance() {
+        _state.value.instanceUrl?.let(::probeAddress)
+    }
+
+    private fun probeAddress(url: String) {
+        probe?.cancel()
+        _state.update { it.copy(reachability = Reachability.Checking) }
+        probe = viewModelScope.launch {
+            val result = probeInstance(url)
+            _state.update { current ->
+                // A newer address or "Change instance" won the race; leave its state alone.
+                if (current.instanceUrl != null && current.instanceUrl != url) {
+                    current
+                } else {
+                    when (result) {
+                        is InstanceProbeResult.Reachable ->
+                            current.copy(instanceUrl = url, reachability = Reachability.Reachable)
+                        is InstanceProbeResult.Unreachable ->
+                            current.copy(reachability = Reachability.Unreachable(result.code))
+                    }
+                }
+            }
+        }
     }
 
     /** The sign-in form's "Change instance": asks for a new address; there is no session to end there. */
     fun changeInstance() {
-        _state.update { it.copy(instanceUrl = null, error = null) }
+        probe?.cancel()
+        _state.update { it.copy(instanceUrl = null, error = null, reachability = Reachability.Unknown) }
     }
 
     /** Settings' "Change instance": end the session, wipe its local data, forget the address, then ask for one. */
@@ -75,7 +124,9 @@ class MainViewModel(private val container: AppContainer) : ViewModel() {
         viewModelScope.launch {
             _state.update { it.copy(busy = true, error = null) }
             session.changeInstance()
-            _state.update { it.copy(busy = false, instanceUrl = null, user = null, units = null, error = null) }
+            _state.update {
+                it.copy(busy = false, instanceUrl = null, user = null, units = null, error = null, reachability = Reachability.Unknown)
+            }
         }
     }
 

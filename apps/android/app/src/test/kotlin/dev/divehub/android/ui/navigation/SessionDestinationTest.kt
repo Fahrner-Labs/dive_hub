@@ -1,7 +1,9 @@
 package dev.divehub.android.ui.navigation
 
+import dev.divehub.android.ui.Reachability
 import dev.divehub.android.ui.UiState
 import dev.divehub.api.models.UserView
+import dev.divehub.shared.ErrorCodes
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
@@ -21,6 +23,12 @@ class SessionDestinationTest {
     @Test
     fun `no instance yet opens the instance form`() {
         assertEquals(InstanceRoute, sessionDestination(UiState(loading = false)))
+    }
+
+    @Test
+    fun `an instance that did not answer never opens sign-in`() {
+        val state = UiState(loading = false, reachability = Reachability.Unreachable(ErrorCodes.NO_ANSWER))
+        assertEquals(InstanceRoute, sessionDestination(state))
     }
 
     @Test

@@ -10,6 +10,9 @@
     <string name="instance_hint">https://dive.example</string>
     <string name="instance_continue">Continue</string>
     <string name="instance_change">Change instance</string>
+    <string name="instance_checking">Checking…</string>
+    <string name="instance_reachable">Connected</string>
+    <string name="instance_unreachable">Not reachable</string>
 
     <string name="sign_in_title">Sign in</string>
     <string name="sign_in_about">Use the e-mail and password of your Dive Hub account.</string>
@@ -32,6 +35,7 @@
     <string name="error_user_disabled">This account is disabled. Ask an admin.</string>
     <string name="error_sign_in_required">Your session ended. Sign in again.</string>
     <string name="error_invalid_instance_url">Enter the address of your Dive Hub instance, e.g. https://dive.example.</string>
+    <string name="error_not_divehub">That address answered, but it is not a Dive Hub instance.</string>
     <string name="error_missing_token">The instance handed out no session token. Check that it is up to date.</string>
     <string name="error_no_answer">No answer from the instance. Check the address and your connection.</string>
     <string name="error_server">The instance had a problem. Try again later.</string>
