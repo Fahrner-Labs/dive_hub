@@ -1,0 +1,11 @@
+-- v3 adds the local diagnostics ring buffer (ADR 0080 D1). It is user-scoped: a change of User wipes it with the
+-- read store. The id is the arrival order, which is also the FIFO eviction order.
+CREATE TABLE diagnosticEntry (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    occurredAt TEXT NOT NULL,
+    level TEXT NOT NULL,
+    code TEXT,
+    message TEXT,
+    stack TEXT,
+    contextJson TEXT
+);

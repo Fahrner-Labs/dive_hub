@@ -12,4 +12,13 @@ object ErrorCodes {
     const val SERVER_ERROR = "internal_error"
     /** The server refuses this app's version (ADR 0076): the session is fine, the app is old. */
     const val CLIENT_TOO_OLD = "client_too_old"
+
+    /** A request got no answer at all (offline, unreachable); not a server refusal. */
+    const val NO_ANSWER = "no_answer"
+
+    /** The instance's admin does not allow client diagnostics uploads (ADR 0080 D1). */
+    const val CLIENT_DIAGNOSTICS_DISABLED = "client_diagnostics_disabled"
+
+    /** Too many diagnostics uploads from this User in the last hour (ADR 0080 D2). */
+    const val CLIENT_DIAGNOSTICS_LIMITED = "client_diagnostics_limited"
 }
