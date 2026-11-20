@@ -10,6 +10,9 @@
     <string name="instance_hint">https://tauchen.beispiel</string>
     <string name="instance_continue">Weiter</string>
     <string name="instance_change">Instanz ändern</string>
+    <string name="instance_checking">Wird geprüft…</string>
+    <string name="instance_reachable">Verbunden</string>
+    <string name="instance_unreachable">Nicht erreichbar</string>
 
     <string name="sign_in_title">Anmelden</string>
     <string name="sign_in_about">Nutze die E-Mail-Adresse und das Passwort deines Dive-Hub-Kontos.</string>
@@ -32,6 +35,7 @@
     <string name="error_user_disabled">Dieses Konto ist deaktiviert. Bitte die Administration fragen.</string>
     <string name="error_sign_in_required">Deine Sitzung ist beendet. Melde dich erneut an.</string>
     <string name="error_invalid_instance_url">Gib die Adresse deiner Dive-Hub-Instanz ein, z. B. https://tauchen.beispiel.</string>
+    <string name="error_not_divehub">Diese Adresse antwortet, ist aber keine Dive-Hub-Instanz.</string>
     <string name="error_missing_token">Die Instanz hat kein Sitzungs-Token ausgegeben. Prüfe, ob sie aktuell ist.</string>
     <string name="error_no_answer">Keine Antwort von der Instanz. Prüfe die Adresse und deine Verbindung.</string>
     <string name="error_server">Die Instanz hatte ein Problem. Versuche es später erneut.</string>
