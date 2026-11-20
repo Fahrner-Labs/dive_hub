@@ -6,7 +6,7 @@ import dev.divehub.shared.store.db.DiveHubDatabase
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
-/** The levels the server's ingest contract accepts (ADR 0080 D3); it has no "info". */
+/** The levels the server's ingest contract accepts (ADR 0080 D2); it has no "info". */
 enum class DiagnosticLevel(val wire: String) {
     ERROR("error"),
     WARN("warn"),

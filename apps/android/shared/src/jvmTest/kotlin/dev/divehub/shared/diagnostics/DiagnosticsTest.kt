@@ -202,13 +202,18 @@ class DiagnosticsTest {
         diagnostics.capture(
             level = DiagnosticLevel.ERROR,
             code = "e1",
-            message = "GET https://dive.example/api/dives?token=secret failed",
+            message = "GET https://dive.example/api/dives?token=secret failed; retry /api/dives?offset=1",
             stack = "at Kt.run(https://dive.example/cb?code=abc)",
-            context = mapOf("token" to "secret", "screen" to "logbook?tab=all"),
+            context = mapOf(
+                "token" to "secret",
+                "passphrase" to "secret",
+                "credential" to "secret",
+                "screen" to "logbook?tab=all",
+            ),
         )
 
         val entry = diagnostics.preview(1).single()
-        assertEquals("GET https://dive.example/api/dives failed", entry.message)
+        assertEquals("GET https://dive.example/api/dives failed; retry /api/dives", entry.message)
         assertEquals("at Kt.run(https://dive.example/cb)", entry.stack)
         assertEquals(mapOf("screen" to "logbook"), entry.context)
     }

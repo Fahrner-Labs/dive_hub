@@ -64,7 +64,7 @@ class Diagnostics(
         json.encodeToString(entry.toPayload()) + "\n"
     }
 
-    /** Whether the instance's admin has enabled client diagnostics (ADR 0080 D2). Any failure reads as off. */
+    /** Whether the instance's admin has enabled client diagnostics (ADR 0080 D1). Any failure reads as off. */
     suspend fun instanceEnabled(): Boolean = try {
         val response = client.get(STATUS_PATH)
         response.status.isSuccess() && client.decode<StatusResponse>(response).enabled
@@ -145,17 +145,17 @@ private data class DiagnosticEntryPayload(
     val context: Map<String, String>? = null,
 )
 
-/** Client-side hygiene before anything reaches the local buffer or the share sheet (ADR 0080 D1, FAH-292 plan D10). */
+/** Client-side hygiene before anything reaches the local buffer or the share sheet (ADR 0080 D1/D2). */
 internal object DiagnosticHygiene {
-    private val urlQuery = Regex("""(https?://[^\s?#]+)\?[^\s#)\]]*""")
-    private val relativeQuery = Regex("""^([^\s?#]+)\?[^\s#]*""")
-    private val secretKey = Regex("""(?i)token|secret|password|authorization|cookie|api[_-]?key""")
+    private val queryInText = Regex("""((?:https?://|/|\.{1,2}/|[^\s?#/]+/)[^\s?#]*)\?[^\s#)\]]*""")
+    private val queryInContext = Regex("""^([^\s?#]+)\?[^\s#]*""")
+    private val secretKey = Regex("""(?i)token|secret|passphrase|password|credential|authorization|cookie|api[_-]?key""")
 
     /** Drop query strings from URLs: parameters can carry tokens or other people's data. */
-    fun redact(text: String): String = urlQuery.replace(text, "$1")
+    fun redact(text: String): String = queryInText.replace(text, "$1")
 
     /** Keep only context a crash report needs; a key that names a credential is never captured. */
     fun context(values: Map<String, String>): Map<String, String> = values
         .filterKeys { !secretKey.containsMatchIn(it) }
-        .mapValues { (_, value) -> relativeQuery.replace(redact(value), "$1") }
+        .mapValues { (_, value) -> queryInContext.replace(redact(value), "$1") }
 }

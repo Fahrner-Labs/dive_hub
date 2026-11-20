@@ -48,7 +48,7 @@ class AppContainer(context: Context) {
     val diveStore: DiveStore get() = androidStore.store
 
     /** The always-on local error buffer (ADR 0080 D1); the settings Debug section consumes it in FAH-318. */
-    val diagnosticsBuffer: DiagnosticsBuffer get() = androidStore.diagnosticsBuffer
+    internal val diagnosticsBuffer: DiagnosticsBuffer get() = androidStore.diagnosticsBuffer
 
     /** A change of User drops both the cache and the offline read store (client contract §1 Security). */
     private val userData = object : UserScopedStore {

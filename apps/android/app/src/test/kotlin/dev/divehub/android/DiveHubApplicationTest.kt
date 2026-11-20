@@ -10,7 +10,7 @@ import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 
 /**
- * The crash hook (ADR 0080 D10): an uncaught exception is recorded in the local diagnostics buffer and then handed to
+ * The crash hook (ADR 0080 D1): an uncaught exception is recorded in the local diagnostics buffer and then handed to
  * the previous handler, so the app still crashes the way it did before.
  */
 @RunWith(RobolectricTestRunner::class)
