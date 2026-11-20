@@ -27,8 +27,8 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 /**
- * The settings route is a saved tab (ADR 0079), so its ViewModel outlives a visit; each entry must re-read the
- * diagnostics capability and buffer (FAH-318), not only the first composition.
+ * The Debug subscreen (FAH-343) reads the diagnostics capability and buffer on each entry (FAH-318), not only the
+ * first composition, so a buffer filled while the User was elsewhere still offers *Report a problem*.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
@@ -53,7 +53,7 @@ class SettingsRouteTest {
     }
 
     @Test
-    fun `entering the route re-reads diagnostics after a tab switch`() {
+    fun `entering the debug route re-reads diagnostics after a tab switch`() {
         val diagnostics = FakeDiagnostics(entries = mutableListOf(entry("e0")))
         val viewModel = SettingsViewModel(
             settings = SettingsRepository(FakeInstances(), DiveStore.create(driver)),
@@ -68,14 +68,7 @@ class SettingsRouteTest {
         compose.setContent {
             DiveHubTheme(darkTheme = false) {
                 if (entered) {
-                    SettingsRoute(
-                        viewModel = viewModel,
-                        email = "elena@example.com",
-                        versionName = "0.1.0",
-                        versionCode = 1001,
-                        onChangeInstance = {},
-                        onSignOut = {},
-                    )
+                    SettingsDebugRoute(viewModel = viewModel, onBack = {})
                 } else {
                     Text("elsewhere")
                 }

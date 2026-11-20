@@ -66,6 +66,7 @@ import dev.divehub.android.ui.navigation.AppNavHost
 import dev.divehub.android.ui.navigation.AppScreens
 import dev.divehub.android.ui.navigation.clearSavedTabStates
 import dev.divehub.android.ui.navigation.sessionDestination
+import dev.divehub.android.ui.settings.SettingsDebugRoute
 import dev.divehub.android.ui.settings.SettingsRoute
 import dev.divehub.android.ui.settings.SettingsViewModel
 import dev.divehub.android.ui.tools.GasPlanViewModel
@@ -182,7 +183,7 @@ private class DiveHubScreens(
     }
 
     @Composable
-    override fun settings() {
+    override fun settings(onOpenDebug: () -> Unit) {
         val state by viewModel.state.collectAsStateWithLifecycle()
         val settings: SettingsViewModel = viewModel(factory = SettingsViewModel.factory(container))
         SettingsRoute(
@@ -192,7 +193,14 @@ private class DiveHubScreens(
             versionCode = BuildConfig.VERSION_CODE,
             onChangeInstance = viewModel::signOutAndChangeInstance,
             onSignOut = viewModel::signOut,
+            onOpenDebug = onOpenDebug,
         )
+    }
+
+    @Composable
+    override fun settingsDebug(onBack: () -> Unit) {
+        val settings: SettingsViewModel = viewModel(factory = SettingsViewModel.factory(container))
+        SettingsDebugRoute(viewModel = settings, onBack = onBack)
     }
 
     @Composable

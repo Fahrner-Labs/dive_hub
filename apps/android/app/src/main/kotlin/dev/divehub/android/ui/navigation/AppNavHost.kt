@@ -51,13 +51,17 @@ internal interface AppScreens {
     fun tools(page: ToolPage, onPage: (ToolPage) -> Unit, onBack: () -> Unit, onOpenDive: (String) -> Unit)
 
     @Composable
-    fun settings()
+    fun settings(onOpenDebug: () -> Unit)
+
+    @Composable
+    fun settingsDebug(onBack: () -> Unit)
 }
 
 /**
  * The signed-in/out graph (ADR 0079): `instance` and `signin` at the root, the `main` nested graph with `logbook` as
- * its start destination, `dive/{id}` above it, `tools` and `settings` beside it. The bottom bar exposes the three
- * top-level signed-in places and saves each tab's state; a Dive is pushed above its origin, not into the bar.
+ * its start destination, `dive/{id}` above it, `tools` and `settings` beside it, and `settings/debug` above settings.
+ * The bottom bar exposes the three top-level signed-in places and saves each tab's state; a Dive is pushed above its
+ * origin, not into the bar.
  */
 @Composable
 internal fun AppNavHost(
@@ -133,7 +137,20 @@ internal fun AppNavHost(
                         )
                     }
                 }
-                composable<SettingsRoute> { MainShell(navController) { currentScreens.value.settings() } }
+                composable<SettingsRoute> {
+                    MainShell(navController) {
+                        currentScreens.value.settings(
+                            onOpenDebug = {
+                                navController.navigate(SettingsDebugRoute) { launchSingleTop = true }
+                            },
+                        )
+                    }
+                }
+                composable<SettingsDebugRoute> {
+                    MainShell(navController) {
+                        currentScreens.value.settingsDebug(onBack = { navController.popBackStack() })
+                    }
+                }
             }
         }
     }
@@ -183,6 +200,7 @@ private fun tabOf(destination: NavDestination): AppTab? = when {
     destination.hasRoute(LogbookRoute::class) -> AppTab.Logbook
     destination.hasRoute(ToolsRoute::class) -> AppTab.Tools
     destination.hasRoute(SettingsRoute::class) -> AppTab.Settings
+    destination.hasRoute(SettingsDebugRoute::class) -> AppTab.Settings
     else -> null
 }
 
@@ -216,7 +234,7 @@ private fun NavHostController.navigateToTab(tab: AppTab, onLeaveDive: () -> Unit
                 popBackStack(LogbookRoute, inclusive = false)
             }
             AppTab.Tools -> popBackStack(ToolsRoute(), inclusive = false)
-            AppTab.Settings -> Unit
+            AppTab.Settings -> popBackStack(SettingsRoute, inclusive = false)
         }
         return
     }
@@ -244,6 +262,7 @@ internal fun NavHostController.clearSavedTabStates() {
     clearBackStack(LogbookRoute::class)
     clearBackStack(ToolsRoute::class)
     clearBackStack(SettingsRoute::class)
+    clearBackStack(SettingsDebugRoute::class)
 }
 
 /**

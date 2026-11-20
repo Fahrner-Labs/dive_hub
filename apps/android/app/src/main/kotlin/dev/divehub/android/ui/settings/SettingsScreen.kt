@@ -16,10 +16,14 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -27,11 +31,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -43,23 +45,17 @@ import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.divehub.android.R
 import dev.divehub.android.ui.formatSyncTime
 import dev.divehub.android.ui.successColor
-import dev.divehub.shared.ErrorCodes
-import dev.divehub.shared.diagnostics.DiagnosticEntry
-import dev.divehub.shared.diagnostics.ReportProblemResult
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import java.util.Locale
 
 /**
  * The settings route: the account e-mail and app version come from the session and the build, the rest from the
- * view model. [onChangeInstance] must sign out and wipe before the destination asks for a new instance.
+ * view model. [onChangeInstance] must sign out and wipe before the destination asks for a new instance. The Debug
+ * details live one tap away in [SettingsDebugRoute] (FAH-343).
  */
 @Composable
 fun SettingsRoute(
@@ -69,13 +65,9 @@ fun SettingsRoute(
     versionCode: Int,
     onChangeInstance: () -> Unit,
     onSignOut: () -> Unit,
+    onOpenDebug: () -> Unit,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    val context = LocalContext.current
-    val scope = rememberCoroutineScope()
-    // The ViewModel survives a tab switch (ADR 0079 saved tabs): re-read each time the route comes back, so a buffer
-    // filled while the User was elsewhere still offers *Report a problem*.
-    LaunchedEffect(Unit) { viewModel.refreshDiagnostics() }
     SettingsScreen(
         state = state,
         email = email,
@@ -84,22 +76,13 @@ fun SettingsRoute(
         onChangeInstance = onChangeInstance,
         onSyncNow = viewModel::syncNow,
         onSignOut = onSignOut,
-        onReportProblem = viewModel::reportProblem,
-        onShareLogs = {
-            viewModel.shareLogs { ndjson ->
-                // The export can hold 200 entries: write the file off the main thread, then only the chooser runs here.
-                scope.launch {
-                    val chooser = withContext(Dispatchers.IO) { logShareChooser(context, ndjson) }
-                    context.startActivity(chooser)
-                }
-            }
-        },
+        onOpenDebug = onOpenDebug,
     )
 }
 
 /**
- * The grouped settings list (M3 list layout): connection, account, sync, about and the quiet Debug group, in that
- * order. It draws only [state], so its EN/DE and light/dark shapes have screenshot tests (ADR 0064, ADR 0079).
+ * The grouped settings list (M3 list layout): connection, account, sync, about and the Debug entry, in that order. It
+ * draws only [state], so its EN/DE and light/dark shapes have screenshot tests (ADR 0064, ADR 0079).
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -111,8 +94,7 @@ fun SettingsScreen(
     onChangeInstance: () -> Unit,
     onSyncNow: () -> Unit,
     onSignOut: () -> Unit,
-    onReportProblem: () -> Unit,
-    onShareLogs: () -> Unit,
+    onOpenDebug: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var confirmingChangeInstance by rememberSaveable { mutableStateOf(false) }
@@ -138,6 +120,7 @@ fun SettingsScreen(
             Section(R.string.settings_section_connection)
 
             ListItem(
+                modifier = Modifier.clickable { confirmingChangeInstance = true },
                 headlineContent = { Text(stringResource(R.string.settings_instance)) },
                 supportingContent = {
                     Column {
@@ -145,10 +128,13 @@ fun SettingsScreen(
                         ConnectionStatus(connected = state.connected, syncedAt = state.syncedAt)
                     }
                 },
-            )
-            Action(
-                title = R.string.instance_change,
-                onClick = { confirmingChangeInstance = true },
+                trailingContent = {
+                    Icon(
+                        Icons.Filled.Edit,
+                        contentDescription = stringResource(R.string.instance_change),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                },
             )
 
             HorizontalDivider()
@@ -190,10 +176,19 @@ fun SettingsScreen(
                 onClick = { showingLicenses = true },
             )
 
-            SettingsDebugSection(
-                diagnostics = state.diagnostics,
-                onReportProblem = onReportProblem,
-                onShareLogs = onShareLogs,
+            HorizontalDivider()
+
+            ListItem(
+                modifier = Modifier.clickable(onClick = onOpenDebug),
+                headlineContent = { Text(stringResource(R.string.settings_section_debug)) },
+                supportingContent = { Text(stringResource(R.string.settings_debug_summary)) },
+                trailingContent = {
+                    Icon(
+                        Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                },
             )
         }
     }
@@ -299,9 +294,9 @@ internal fun ConnectionStatus(connected: Boolean, syncedAt: String?, modifier: M
     }
 }
 
-/** A grouped section's heading; visible text, not just a divider (ADR 0064). The Debug group is quiet, not primary. */
+/** A grouped section's heading; visible text, not just a divider (ADR 0064). */
 @Composable
-private fun Section(@StringRes title: Int, quiet: Boolean = false) {
+private fun Section(@StringRes title: Int) {
     Text(
         stringResource(title),
         modifier = Modifier
@@ -309,124 +304,9 @@ private fun Section(@StringRes title: Int, quiet: Boolean = false) {
             .padding(start = 16.dp, end = 16.dp, top = 20.dp, bottom = 4.dp)
             .semantics { heading() },
         style = MaterialTheme.typography.titleSmall,
-        color = if (quiet) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.primary,
+        color = MaterialTheme.colorScheme.primary,
     )
 }
-
-/**
- * The Debug group at the bottom of settings (FAH-318, ADR 0080 D1): a read-only status line, *Report a problem* for an
- * instance that allows uploads, and *Share local logs*, which stays available whatever the instance setting says. It
- * only draws [diagnostics]; the capture layer and the upload live in `:shared` (FAH-321).
- */
-@Composable
-internal fun SettingsDebugSection(
-    diagnostics: SettingsDiagnosticsState,
-    onReportProblem: () -> Unit,
-    onShareLogs: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val canReport = diagnostics.enabled == true && diagnostics.count > 0 && !diagnostics.reporting
-    Column(modifier.fillMaxWidth()) {
-        Section(R.string.settings_section_debug, quiet = true)
-
-        ListItem(
-            headlineContent = { Text(stringResource(R.string.settings_debug_diagnostics)) },
-            supportingContent = {
-                Column {
-                    Text(
-                        stringResource(
-                            when (diagnostics.enabled) {
-                                null -> R.string.settings_debug_checking
-                                true -> R.string.settings_debug_on
-                                false -> R.string.settings_debug_off
-                            },
-                        ),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    Text(
-                        stringResource(R.string.settings_debug_capture, diagnostics.count),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            },
-        )
-
-        diagnostics.preview.forEach { entry ->
-            Text(
-                entry.label(),
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 2.dp),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-        }
-
-        ListItem(
-            modifier = Modifier.clickable(enabled = canReport, onClick = onReportProblem),
-            headlineContent = { Text(stringResource(R.string.settings_debug_report)) },
-            supportingContent = {
-                Text(
-                    stringResource(
-                        when {
-                            diagnostics.reporting -> R.string.settings_debug_reporting
-                            diagnostics.enabled == false -> R.string.settings_debug_report_off
-                            diagnostics.count == 0 -> R.string.settings_debug_report_nothing
-                            else -> R.string.settings_debug_report_body
-                        },
-                    ),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            },
-            trailingContent = {
-                if (diagnostics.reporting) CircularProgressIndicator(Modifier.size(20.dp))
-            },
-        )
-
-        diagnostics.reportResult?.let { result ->
-            Text(
-                stringResource(
-                    when (result) {
-                        ReportProblemResult.Sent -> R.string.settings_debug_sent
-                        is ReportProblemResult.Failed -> when (result.code) {
-                            ErrorCodes.CLIENT_DIAGNOSTICS_DISABLED -> R.string.settings_debug_report_disabled
-                            ErrorCodes.CLIENT_DIAGNOSTICS_LIMITED -> R.string.settings_debug_report_limited
-                            ErrorCodes.NO_ANSWER -> R.string.settings_debug_report_offline
-                            else -> R.string.settings_debug_report_failed
-                        }
-                    },
-                ),
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
-                style = MaterialTheme.typography.bodySmall,
-                color = if (result == ReportProblemResult.Sent) {
-                    MaterialTheme.colorScheme.primary
-                } else {
-                    MaterialTheme.colorScheme.error
-                },
-            )
-        }
-
-        ListItem(
-            modifier = Modifier.clickable(onClick = onShareLogs),
-            headlineContent = { Text(stringResource(R.string.settings_debug_share)) },
-            supportingContent = {
-                Text(
-                    stringResource(
-                        if (diagnostics.shareEmpty) {
-                            R.string.settings_debug_share_empty
-                        } else {
-                            R.string.settings_debug_share_body
-                        },
-                    ),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            },
-        )
-    }
-}
-
-/** One preview line: what the person could report, without the timestamps that add nothing at this size. */
-private fun DiagnosticEntry.label(): String = message?.takeIf { it.isNotBlank() } ?: code ?: level.wire
 
 /** A settings row whose whole width is the action. */
 @Composable
