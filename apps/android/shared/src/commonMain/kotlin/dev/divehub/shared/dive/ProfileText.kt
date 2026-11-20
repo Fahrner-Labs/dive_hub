@@ -6,6 +6,7 @@ import dev.divehub.api.models.RecordingSamplesView
 import dev.divehub.api.models.RecordingSamplesViewSeriesItem
 import kotlin.math.abs
 import kotlin.math.floor
+import kotlin.math.roundToInt
 
 /** The depth profile in words (WCAG 1.1.1): what the picture shows, and the samples per minute as rows. */
 data class ProfileSummary(
@@ -30,6 +31,13 @@ fun temperatureSeries(samples: RecordingSamplesView): RecordingSamplesViewSeries
 
 private const val DEPTH_CHANNEL = "depth"
 private const val TEMPERATURE_CHANNEL = "temperature"
+private val PRESSURE_CHANNEL = Regex("^tankPressure(?::(\\d+))?$")
+
+/** A Recording's tank-pressure series, first pod first; series without samples are left out (ADR 0045). */
+fun pressureSeries(samples: RecordingSamplesView): List<RecordingSamplesViewSeriesItem> =
+    samples.series
+        .filter { it.values.isNotEmpty() && PRESSURE_CHANNEL.matches(it.channel) }
+        .sortedBy { PRESSURE_CHANNEL.matchEntire(it.channel)?.groupValues?.get(1)?.toIntOrNull() ?: 0 }
 
 /** Deepest point and when, total time, and the temperature range when it was recorded. Null without samples. */
 fun summarize(depth: RecordingSamplesViewSeriesItem, temperature: RecordingSamplesViewSeriesItem? = null): ProfileSummary? {
@@ -48,15 +56,23 @@ fun summarize(depth: RecordingSamplesViewSeriesItem, temperature: RecordingSampl
     )
 }
 
-/** The value of the sample nearest to a moment; null for a series without samples. */
-fun nearest(series: RecordingSamplesViewSeriesItem?, milliseconds: Int): Double? {
+/** The index of the sample nearest to a moment; a tie keeps the earlier sample. Null without samples. */
+fun nearestIndex(series: RecordingSamplesViewSeriesItem?, milliseconds: Int): Int? {
     if (series == null || series.offsetsMs.isEmpty() || series.values.isEmpty()) return null
     var best = 0
     for (index in 1 until series.offsetsMs.size) {
         if (abs(series.offsetsMs[index] - milliseconds) < abs(series.offsetsMs[best] - milliseconds)) best = index
     }
-    return series.values.getOrNull(best)
+    return best
 }
+
+/** The value of the sample nearest to a moment; null for a series without samples. */
+fun nearest(series: RecordingSamplesViewSeriesItem?, milliseconds: Int): Double? =
+    nearestIndex(series, milliseconds)?.let { series?.values?.getOrNull(it) }
+
+/** The offset on the profile's time axis under a touch at [fraction] (0 at the start, 1 at the end). */
+fun timeAtFraction(fraction: Double, spanMs: Int): Int =
+    (fraction.coerceIn(0.0, 1.0) * spanMs).roundToInt()
 
 /** One row per whole minute: the sample nearest to it (depth, and temperature when recorded). */
 fun perMinute(depth: RecordingSamplesViewSeriesItem, temperature: RecordingSamplesViewSeriesItem? = null): List<ProfileRow> {
