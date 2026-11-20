@@ -56,7 +56,7 @@ class DiveStoreTest {
     fun `schema has every v1 table`() {
         assertEquals(
             setOf(
-                "body_weight", "cylinder", "dive", "dive_site", "diver", "recording",
+                "body_weight", "cylinder", "diagnosticEntry", "dive", "dive_site", "diver", "recording",
                 "recording_series", "sync_checkpoint", "sync_state",
             ),
             DiveHubDatabase.allTableNames().toSet(),
@@ -360,7 +360,7 @@ class DiveStoreTest {
 
     @Test
     fun `migration from v1 adds the API payload columns and keeps the store usable`() {
-        assertEquals(2L, DiveStore.schemaVersion)
+        assertEquals(3L, DiveStore.schemaVersion)
         assertContains(DiveHubDatabase.allTableNames(), "sync_checkpoint")
 
         val old = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)

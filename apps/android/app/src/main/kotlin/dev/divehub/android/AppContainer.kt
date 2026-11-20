@@ -10,6 +10,8 @@ import dev.divehub.shared.InstanceUrlStore
 import dev.divehub.shared.SessionRepository
 import dev.divehub.shared.store.DiveStore
 import dev.divehub.shared.TokenStore
+import dev.divehub.shared.diagnostics.Diagnostics
+import dev.divehub.shared.diagnostics.DiagnosticsBuffer
 import dev.divehub.shared.dive.DiveRepository
 import dev.divehub.shared.logbook.LogbookRepository
 import dev.divehub.shared.logbook.StoreLogbook
@@ -39,8 +41,14 @@ class AppContainer(context: Context) {
     private val instances: InstanceUrlStore = PreferencesInstanceUrlStore(application)
     private val cache = UserCacheStore(application)
 
+    /** The one database file, opened on first use: the read store and the diagnostics ring buffer. */
+    private val androidStore: AndroidDiveStore by lazy { AndroidDiveStore(application) }
+
     /** Opened on first use; the logbook screens read it from D4 on. */
-    val diveStore: DiveStore by lazy { AndroidDiveStore(application).store }
+    val diveStore: DiveStore get() = androidStore.store
+
+    /** The always-on local error buffer (ADR 0080 D1/D10); the settings Debug section consumes it in FAH-318. */
+    val diagnosticsBuffer: DiagnosticsBuffer get() = androidStore.diagnosticsBuffer
 
     /** A change of User drops both the cache and the offline read store (client contract §1 Security). */
     private val userData = object : UserScopedStore {
@@ -50,7 +58,10 @@ class AppContainer(context: Context) {
             stopSyncAndJoin()
             wipeLock.withLock {
                 cache.forget()
-                withContext(Dispatchers.IO) { diveStore.forget() }
+                withContext(Dispatchers.IO) {
+                    diveStore.forget()
+                    diagnosticsBuffer.forget()
+                }
             }
         }
     }
@@ -70,6 +81,11 @@ class AppContainer(context: Context) {
 
     /** The logbook's and dive page's read sides share the session's HTTP layer (instance URL and bearer token). */
     val logbook = LogbookRepository(session.client)
+
+    /** Capture, export and report-a-problem upload (ADR 0080); the crash hook records into the same facade. */
+    val diagnostics: Diagnostics by lazy {
+        Diagnostics(diagnosticsBuffer, session.client, BuildConfig.VERSION_NAME)
+    }
     val dive = DiveRepository(session.client)
 
     /** The D4 read side: the list, one Dive, its neighbours and its profiles come from the store, never a request. */
