@@ -324,6 +324,43 @@ class AppNavHostTest {
     }
 
     @Test
+    fun `tapping the selected Tools tab on its root keeps the same entry`() {
+        compose.setContent { start(destination = null) }
+        compose.runOnIdle { controller.navigate(MainRoute) }
+        compose.onNodeWithText("Tools").performClick()
+        assertRoute<ToolsRoute>()
+        val root = compose.runOnIdle { controller.currentBackStackEntry }
+
+        compose.onNodeWithText("Tools").performClick()
+
+        assertRoute<ToolsRoute>()
+        compose.runOnIdle {
+            assertEquals(root?.id, controller.currentBackStackEntry?.id)
+            assertEquals(ToolPage.Gas, controller.currentBackStackEntry?.toRoute<ToolsRoute>()?.page)
+        }
+    }
+
+    @Test
+    fun `tapping the selected Tools tab on a tool page returns to the same root entry`() {
+        compose.setContent { start(destination = null) }
+        compose.runOnIdle { controller.navigate(MainRoute) }
+        compose.onNodeWithText("Tools").performClick()
+        compose.runOnIdle { screens.toolsOnPage!!.invoke(ToolPage.Plan) }
+        assertRoute<ToolsRoute>()
+        compose.runOnIdle { assertEquals(ToolPage.Plan, controller.currentBackStackEntry?.toRoute<ToolsRoute>()?.page) }
+        val root = compose.runOnIdle { controller.currentBackStack.value.first { it.destination.hasRoute(ToolsRoute::class) } }
+
+        compose.onNodeWithText("Tools").performClick()
+
+        assertRoute<ToolsRoute>()
+        compose.runOnIdle {
+            assertEquals(ToolPage.Gas, controller.currentBackStackEntry?.toRoute<ToolsRoute>()?.page)
+            assertEquals(root.id, controller.currentBackStackEntry?.id)
+            assertEquals(root.id, controller.currentBackStack.value.first { it.destination.hasRoute(ToolsRoute::class) }.id)
+        }
+    }
+
+    @Test
     fun `tapping the selected Logbook tab leaves a dive for the list`() {
         compose.setContent { start(destination = null) }
         compose.runOnIdle { controller.navigate(MainRoute) }
