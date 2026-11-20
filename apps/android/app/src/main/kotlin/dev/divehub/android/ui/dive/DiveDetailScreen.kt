@@ -138,6 +138,9 @@ fun DiveDetailScreen(
     val context = LocalContext.current
     val locale = context.resources.configuration.locales[0] ?: Locale.getDefault()
     val neighbours = state.neighbours
+    val inList = neighbours?.position != null
+    val previous = neighbours?.previous?.id
+    val next = neighbours?.next?.id
     val backLabel = stringResource(R.string.dive_back)
     Scaffold(
         topBar = {
@@ -152,20 +155,23 @@ fun DiveDetailScreen(
                     }
                 },
                 actions = {
-                    NeighbourAction(
-                        direction = Direction.Left,
-                        target = neighbours?.previous?.id,
-                        label = stringResource(R.string.dive_previous),
-                        unavailable = stringResource(R.string.dive_previous_unavailable),
-                        onOpenDive = onOpenDive,
-                    )
-                    NeighbourAction(
-                        direction = Direction.Right,
-                        target = neighbours?.next?.id,
-                        label = stringResource(R.string.dive_next),
-                        unavailable = stringResource(R.string.dive_next_unavailable),
-                        onOpenDive = onOpenDive,
-                    )
+                    // A Dive outside the list the page was opened from has no neighbours to name (ADR 0042).
+                    if (inList) {
+                        NeighbourAction(
+                            direction = Direction.Left,
+                            target = previous,
+                            label = stringResource(R.string.dive_previous),
+                            unavailable = stringResource(R.string.dive_previous_unavailable),
+                            onOpenDive = onOpenDive,
+                        )
+                        NeighbourAction(
+                            direction = Direction.Right,
+                            target = next,
+                            label = stringResource(R.string.dive_next),
+                            unavailable = stringResource(R.string.dive_next_unavailable),
+                            onOpenDive = onOpenDive,
+                        )
+                    }
                 },
             )
         },

@@ -44,7 +44,7 @@
     <string name="update_required_title">Update DiveHub</string>
     <string name="update_required_body">This server needs a newer version of the app. Update DiveHub to keep using it.</string>
 
-    <string name="dive_back">Back</string>
+    <string name="dive_back">Logbook</string>
     <string name="dive_title_number">Dive %1$d</string>
     <string name="dive_previous">Previous dive</string>
     <string name="dive_next">Next dive</string>

@@ -288,7 +288,27 @@ class DiveDetailScreenshotTest {
         )
         compose.onNodeWithContentDescription("Previous dive (unavailable)").assertIsNotEnabled()
         compose.onNodeWithContentDescription("Next dive (unavailable)").assertIsNotEnabled()
-        compose.onNodeWithContentDescription("Back").assertIsEnabled()
+        compose.onNodeWithContentDescription("Logbook").assertIsEnabled()
+    }
+
+    @Test
+    fun `a dive outside the list shows no neighbour arrows`() {
+        render(
+            state(
+                dive = dive(),
+                neighbours = NeighboursView(previous = null, next = null, position = null, total = 0),
+            ),
+        )
+        compose.onNodeWithContentDescription("Previous dive (unavailable)").assertDoesNotExist()
+        compose.onNodeWithContentDescription("Next dive (unavailable)").assertDoesNotExist()
+    }
+
+    @Test
+    fun `the header's back arrow returns to the logbook`() {
+        var backs = 0
+        render(state(dive = dive()), onBack = { backs++ })
+        compose.onNodeWithContentDescription("Logbook").performClick()
+        assertEquals(1, backs)
     }
 
     @Test

@@ -223,9 +223,10 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   logbook keeps the list's settings with it and asks `GET /api/dives/{id}/neighbours` with them (no `limit`/`offset`).
   "Previous" is the row above in that list (with the newest first, the newer dive), "next" the row below. *Web:* show the
   position (`position` of `total`), keep the control at the ends but say it is unavailable, and show nothing when
-  `position` is `null`. *Android:* the top bar's back arrow, the Dive's title and a chevron either side, disabled at the
-  ends; a horizontal swipe on the page opens the same neighbour and springs back at the ends (FAH-344). "Back to the
-  logbook" returns to the list as it was, on page `ceil(position / 25)`. Without a list, the whole logbook newest first.
+  `position` is `null`. *Android:* the top bar's back arrow, the Dive's title centred and previous/next chevrons in the
+  trailing actions, disabled at the ends and absent when `position` is `null`; a horizontal swipe on the page opens the
+  same neighbour and springs back at the ends (FAH-344). "Back to the logbook" returns to the list as it was, on page
+  `ceil(position / 25)`. Without a list, the whole logbook newest first.
   *Web:* `DivePage.tsx` (`Neighbours`), `lib/logbook.ts` (`diveHref`, `neighbourParams`). *Android:* `DiveDetailScreen.kt`
   (`DivePager`, `NeighbourAction`).
 - **Follow merged sites:** a site with `mergedInto` is gone. Open the kept site instead (ADR 0022).
@@ -1511,7 +1512,8 @@ An LLM client is an API client Dive Hub can't make follow this contract, so the 
   heading; when a form closes, back to the button that opened it. *Web:* `lib/focus.ts`.
 - **Buttons repeated per row name their row** in their accessible name ("Revoke: anna@example.com").
 - **Icons always beside text,** never icon-only controls ([ADR 0018](../decisions/0018-icons-and-motion.md)), but a
-  dialog's close button and a password field's eye, each with its full accessible name (amendment 2026-11-02).
+  dialog's close button, a password field's eye and the Android dive header's back arrow and previous/next chevrons,
+  each with its full accessible name (amendments 2026-11-02 and 2026-11-20).
 - **A password or secret field has a button that shows it:** one name ("Show: <field label>") and its state as pressed
   or not; the field keeps its name and autofill hints so password managers fill it; sending the form hides it again.
   Never shown by default. *Web:* `ui/TextField.tsx` (`PasswordField`).
