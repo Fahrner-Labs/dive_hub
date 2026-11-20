@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import dev.divehub.android.AppContainer
+import dev.divehub.android.ui.followStoreWrites
 import dev.divehub.api.models.DiveListView
 import dev.divehub.shared.DiveHubException
 import dev.divehub.shared.NoAnswerException
@@ -17,6 +18,7 @@ import dev.divehub.shared.logbook.StoreLogbook
 import dev.divehub.shared.logbook.StoredLogbookPage
 import dev.divehub.shared.logbook.toggleFilter
 import dev.divehub.shared.sync.SyncProgress
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -62,16 +64,22 @@ class LogbookViewModel(
     private val offlineState: StateFlow<Boolean>,
     private val syncProgress: StateFlow<SyncProgress>,
     private val refreshSync: suspend () -> Unit,
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) : ViewModel() {
     private val _state = MutableStateFlow(LogbookUiState())
     val state: StateFlow<LogbookUiState> = _state.asStateFlow()
 
     private var loadJob: Job? = null
+    private var followJob: Job? = null
     private var observing: Job? = null
     private var offlineJob: Job? = null
     private var progressJob: Job? = null
     private var providers: ProviderDirectory? = null
     private var loadedFor: String? = null
+
+    /** A pull-to-refresh owns the spinner and reads once at its end; revisions it writes are not followed again. */
+    private var gesture = false
+    private var followedRevision = 0L
 
     /**
      * Reads the first page for this User once; a different User (or a sign-in again) starts from nothing. [page] is
@@ -81,6 +89,7 @@ class LogbookViewModel(
         if (loadedFor == userId) return
         loadedFor = userId
         providers = null
+        gesture = false
         val first = page.coerceAtLeast(1)
         _state.value = LogbookUiState(page = first)
         observe()
@@ -91,7 +100,9 @@ class LogbookViewModel(
     fun forget() {
         loadedFor = null
         providers = null
+        gesture = false
         loadJob?.cancel()
+        followJob?.cancel()
         observing?.cancel()
         offlineJob?.cancel()
         progressJob?.cancel()
@@ -100,14 +111,27 @@ class LogbookViewModel(
 
     fun refresh() {
         loadJob?.cancel()
+        followJob?.cancel()
         loadJob = viewModelScope.launch {
+            gesture = true
             _state.update { it.copy(refreshing = true, error = null) }
             try {
                 refreshSync()
             } catch (_: Exception) {
                 // The store stays the source; the cached page below is still worth showing.
             }
-            read(_state.value.page, _state.value.filters, refreshing = true)
+            // Everything this gesture wrote is read below; the debounced follow-up would read it again.
+            followedRevision = revision.value
+            try {
+                read(_state.value.page, _state.value.filters, refreshing = true, keepData = true)
+            } finally {
+                gesture = false
+            }
+            // A write that landed while this gesture's read ran was skipped by the guard; reread it once.
+            if (revision.value > followedRevision) {
+                followedRevision = revision.value
+                read(_state.value.page, _state.value.filters, refreshing = false, keepData = true)
+            }
         }
     }
 
@@ -119,25 +143,26 @@ class LogbookViewModel(
 
     fun showAll() = load(page = 1, filters = emptySet())
 
-    private fun load(page: Int, filters: Set<LogbookFilter>, refreshing: Boolean = false) {
+    private fun load(page: Int, filters: Set<LogbookFilter>) {
         loadJob?.cancel()
-        loadJob = viewModelScope.launch { read(page, filters, refreshing) }
+        followJob?.cancel()
+        loadJob = viewModelScope.launch { read(page, filters, refreshing = false, keepData = false) }
     }
 
-    private suspend fun read(page: Int, filters: Set<LogbookFilter>, refreshing: Boolean) {
+    private suspend fun read(page: Int, filters: Set<LogbookFilter>, refreshing: Boolean, keepData: Boolean) {
         _state.update {
             it.copy(
-                loading = !refreshing && it.data == null,
+                loading = if (keepData) it.loading && it.data == null else it.data == null,
                 refreshing = refreshing,
                 page = page,
                 filters = filters,
-                data = if (refreshing) it.data else null,
+                data = if (keepData) it.data else null,
                 error = null,
                 filterUnavailable = false,
             )
         }
         val result = try {
-            withContext(Dispatchers.IO) {
+            withContext(ioDispatcher) {
                 if (store.canAnswer(filters)) store.page(page, filters) else readServerFiltered(page, filters)
             }
         } catch (error: DiveHubException) {
@@ -145,7 +170,7 @@ class LogbookViewModel(
             return
         } catch (_: NoAnswerException) {
             // The server-only filter needs a connection; show the stored list without it rather than "no connection".
-            val cached = withContext(Dispatchers.IO) { store.page(page, store.storedFilters(filters)) }
+            val cached = withContext(ioDispatcher) { store.page(page, store.storedFilters(filters)) }
             val preSync = cached.syncedAt == null && cached.data.total == 0
             _state.update {
                 it.copy(
@@ -160,6 +185,8 @@ class LogbookViewModel(
             }
             return
         }
+        // A page change or a new User since this read started owns the state now.
+        if (_state.value.page != page || _state.value.filters != filters) return
         // Before the first sync there is nothing to show: keep the loading state, or the pre-sync offline state.
         if (result.syncedAt == null && result.data.total == 0) {
             _state.update {
@@ -174,9 +201,6 @@ class LogbookViewModel(
             }
             return
         }
-        val directory = providers ?: api.providers().also {
-            if (it.names.isNotEmpty() || it.connected.isNotEmpty()) providers = it
-        }
         _state.update {
             it.copy(
                 loading = false,
@@ -184,11 +208,15 @@ class LogbookViewModel(
                 data = result.data,
                 syncedAt = result.syncedAt,
                 profilePending = result.profilePending,
-                providers = directory,
                 offline = offlineState.value,
                 error = null,
             )
         }
+        val directory = providers ?: api.providers().also {
+            if (it.names.isNotEmpty() || it.connected.isNotEmpty()) providers = it
+        }
+        if (_state.value.page != page || _state.value.filters != filters) return
+        _state.update { it.copy(providers = directory) }
     }
 
     /** The two Push-backed filters go to the API; everything else, including the page's rows, comes from the store. */
@@ -202,12 +230,15 @@ class LogbookViewModel(
         observing?.cancel()
         offlineJob?.cancel()
         progressJob?.cancel()
+        followedRevision = revision.value
         observing = viewModelScope.launch {
-            var last = revision.value
-            revision.collect { value ->
-                if (value != last) {
-                    last = value
-                    load(_state.value.page, _state.value.filters, refreshing = true)
+            revision.followStoreWrites().collect { value ->
+                if (gesture || value <= followedRevision) return@collect
+                followedRevision = value
+                // A page or filter change cancels this read: it belongs to the page that asked for it.
+                followJob?.cancel()
+                followJob = viewModelScope.launch {
+                    read(_state.value.page, _state.value.filters, refreshing = false, keepData = true)
                 }
             }
         }
