@@ -722,6 +722,23 @@
         },
         {
           "dynamic": false,
+          "module": "./support/support-routes.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/support/support-routes.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./users/account-routes.js",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -1058,6 +1075,7 @@
         "apps/server/src/sites/import/site-import-routes.ts",
         "apps/server/src/sites/routes.ts",
         "apps/server/src/social/routes.ts",
+        "apps/server/src/support/support-routes.ts",
         "apps/server/src/users/account-routes.ts",
         "apps/server/src/users/admin-routes.ts",
         "apps/server/src/users/routes.ts",
@@ -1084,6 +1102,7 @@
         "apps/server/src/assessment/assessment-service.ts",
         "apps/server/src/divers/management.ts",
         "apps/server/src/backups/backup-service.ts",
+        "apps/server/src/db/migrate.ts",
         "apps/server/src/centres/centre-service.ts",
         "apps/server/src/sites/site-service.ts",
         "apps/server/src/sites/site-ids.ts",
@@ -1140,6 +1159,7 @@
         "apps/server/src/providers/waiting-push/waiting-push-service.ts",
         "apps/server/src/sites/import/site-import-service.ts",
         "apps/server/src/social/suggestion-service.ts",
+        "apps/server/src/support/support-service.ts",
         "apps/server/src/users/invitation-service.ts",
         "apps/server/src/users/password-reset-service.ts",
         "apps/server/src/users/profile-service.ts",
@@ -1206,9 +1226,9 @@
         "apps/server/src/backups/backup-routes.ts",
         "apps/server/src/backups/backup-archive.ts",
         "apps/server/src/backups/backup-service.ts",
+        "apps/server/src/db/migrate.ts",
         "apps/server/src/storage/blob-store.ts",
         "apps/server/src/imports/archive.ts",
-        "apps/server/src/db/migrate.ts",
         "apps/server/src/scripts/write-openapi.ts",
         "apps/server/src/scripts/write-planning-vectors.ts"
       ],
@@ -1445,6 +1465,7 @@
         "apps/server/src/sites/site-view.ts",
         "apps/server/src/social/routes.ts",
         "apps/server/src/social/suggestion-view.ts",
+        "apps/server/src/support/support-routes.ts",
         "apps/server/src/users/account-routes.ts",
         "apps/server/src/users/views.ts",
         "apps/server/src/users/admin-routes.ts",
@@ -1679,6 +1700,7 @@
         "apps/server/src/sites/import/site-import-routes.ts",
         "apps/server/src/sites/routes.ts",
         "apps/server/src/social/routes.ts",
+        "apps/server/src/support/support-routes.ts",
         "apps/server/src/users/account-routes.ts",
         "apps/server/src/users/admin-routes.ts",
         "apps/server/src/users/routes.ts",
@@ -1896,6 +1918,7 @@
         "apps/server/src/assessment/assessment-service.ts",
         "apps/server/src/divers/management.ts",
         "apps/server/src/backups/backup-service.ts",
+        "apps/server/src/db/migrate.ts",
         "apps/server/src/centres/centre-service.ts",
         "apps/server/src/revisions/revisions.ts",
         "apps/server/src/sites/site-service.ts",
@@ -1957,6 +1980,7 @@
         "apps/server/src/sites/import/site-import-service.ts",
         "apps/server/src/social/suggestion-changes.ts",
         "apps/server/src/social/suggestion-service.ts",
+        "apps/server/src/support/support-service.ts",
         "apps/server/src/users/invitation-service.ts",
         "apps/server/src/users/password-reset-service.ts",
         "apps/server/src/users/profile-service.ts",
@@ -1968,7 +1992,6 @@
         "apps/server/src/mcp/tool.ts",
         "apps/server/src/equipment/read.ts",
         "apps/server/src/auth/cli-config.ts",
-        "apps/server/src/db/migrate.ts",
         "apps/server/src/start.ts",
         "apps/server/src/scripts/write-openapi.ts"
       ],
@@ -2006,10 +2029,10 @@
       "dependencies": [],
       "dependents": [
         "apps/server/src/db/client.ts",
+        "apps/server/src/db/migrate.ts",
         "apps/server/src/backups/restore-service.ts",
         "apps/server/src/live/listener.ts",
-        "apps/server/src/worker.ts",
-        "apps/server/src/db/migrate.ts"
+        "apps/server/src/worker.ts"
       ],
       "orphan": false,
       "valid": true
@@ -2500,6 +2523,7 @@
         "apps/server/src/sites/import/site-import-routes.ts",
         "apps/server/src/sites/routes.ts",
         "apps/server/src/social/routes.ts",
+        "apps/server/src/support/support-routes.ts",
         "apps/server/src/users/account-routes.ts",
         "apps/server/src/users/admin-routes.ts",
         "apps/server/src/users/routes.ts"
@@ -2617,6 +2641,7 @@
         "apps/server/src/sites/import/site-import-view.ts",
         "apps/server/src/sites/routes.ts",
         "apps/server/src/social/routes.ts",
+        "apps/server/src/support/support-routes.ts",
         "apps/server/src/users/account-routes.ts",
         "apps/server/src/users/views.ts",
         "apps/server/src/users/admin-routes.ts",
@@ -2691,6 +2716,7 @@
         "apps/server/src/sites/site-view.ts",
         "apps/server/src/social/routes.ts",
         "apps/server/src/social/suggestion-view.ts",
+        "apps/server/src/support/support-routes.ts",
         "apps/server/src/users/account-routes.ts",
         "apps/server/src/users/views.ts",
         "apps/server/src/users/admin-routes.ts",
@@ -3667,6 +3693,7 @@
         "apps/server/src/secrets/secret-box.ts",
         "apps/server/src/providers/connection-service.ts",
         "apps/server/src/providers/lease-service.ts",
+        "apps/server/src/support/support-service.ts",
         "apps/server/src/users/tokens.ts",
         "apps/server/src/users/setup-service.ts",
         "apps/server/src/auth/secret.ts",
@@ -3689,13 +3716,13 @@
       "dependents": [
         "apps/server/src/backups/backup-archive.ts",
         "apps/server/src/backups/backup-service.ts",
+        "apps/server/src/db/migrate.ts",
         "apps/server/src/storage/blob-store.ts",
         "apps/server/src/backups/restore-service.ts",
         "apps/server/src/imports/archive.ts",
         "apps/server/src/auth/secret.ts",
         "apps/server/src/backups/app-lock.ts",
         "apps/server/src/config.ts",
-        "apps/server/src/db/migrate.ts",
         "apps/server/src/providers/garmin/garmin-client.ts"
       ],
       "orphan": false,
@@ -3716,6 +3743,7 @@
         "apps/server/src/backups/backup-archive.ts",
         "apps/server/src/storage/blob-store.ts",
         "apps/server/src/imports/import-service.ts",
+        "apps/server/src/support/log-ring-buffer.ts",
         "apps/server/src/mcp/endpoint.ts"
       ],
       "orphan": false,
@@ -3775,6 +3803,23 @@
             "import"
           ],
           "resolved": "apps/server/src/db/client.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../db/migrate.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/db/migrate.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -4016,6 +4061,210 @@
         "apps/server/src/compose.ts",
         "apps/server/src/worker.ts",
         "apps/server/src/backups/backup-task.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/server/src/db/migrate.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./client.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/db/client.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "drizzle-orm",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "npm",
+            "import"
+          ],
+          "resolved": "apps/server/node_modules/drizzle-orm/index.cjs",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": true,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "drizzle-orm/migrator",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "npm",
+            "import"
+          ],
+          "resolved": "apps/server/node_modules/drizzle-orm/migrator.js",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": true,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "drizzle-orm/node-postgres/migrator",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "npm",
+            "import"
+          ],
+          "resolved": "apps/server/node_modules/drizzle-orm/node-postgres/migrator.js",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": true,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "fs",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "core",
+            "import"
+          ],
+          "protocol": "node:",
+          "resolved": "fs",
+          "coreModule": true,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "graphile-worker",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "npm",
+            "import"
+          ],
+          "resolved": "apps/server/node_modules/graphile-worker/dist/index.js",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": true,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "path",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "core",
+            "import"
+          ],
+          "protocol": "node:",
+          "resolved": "path",
+          "coreModule": true,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "pg",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "npm",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/node_modules/pg/lib/index.js",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": true,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/server/src/backups/backup-service.ts",
+        "apps/server/src/support/support-service.ts",
+        "apps/server/src/start.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/server/node_modules/drizzle-orm/migrator.js",
+      "followable": false,
+      "coreModule": false,
+      "couldNotResolve": false,
+      "matchesDoNotFollow": true,
+      "dependencyTypes": [
+        "npm",
+        "import"
+      ],
+      "dependencies": [],
+      "dependents": [
+        "apps/server/src/db/migrate.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/server/node_modules/drizzle-orm/node-postgres/migrator.js",
+      "followable": false,
+      "coreModule": false,
+      "couldNotResolve": false,
+      "matchesDoNotFollow": true,
+      "dependencyTypes": [
+        "npm",
+        "import"
+      ],
+      "dependencies": [],
+      "dependents": [
+        "apps/server/src/db/migrate.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/server/node_modules/graphile-worker/dist/index.js",
+      "followable": false,
+      "coreModule": false,
+      "couldNotResolve": false,
+      "matchesDoNotFollow": true,
+      "dependencyTypes": [
+        "npm",
+        "import"
+      ],
+      "dependencies": [],
+      "dependents": [
+        "apps/server/src/db/migrate.ts",
+        "apps/server/src/worker.ts"
       ],
       "orphan": false,
       "valid": true
@@ -7228,6 +7477,40 @@
             "import"
           ],
           "resolved": "apps/server/src/storage/blob-store.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./support/log-ring-buffer.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/support/log-ring-buffer.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./support/support-service.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/support/support-service.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -19045,6 +19328,259 @@
       "valid": true
     },
     {
+      "source": "apps/server/src/support/log-ring-buffer.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./redact.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/support/redact.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "stream",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "core",
+            "import"
+          ],
+          "protocol": "node:",
+          "resolved": "stream",
+          "coreModule": true,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/server/src/compose.ts",
+        "apps/server/src/support/support-service.ts",
+        "apps/server/src/start.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/server/src/support/redact.ts",
+      "dependencies": [],
+      "dependents": [
+        "apps/server/src/support/log-ring-buffer.ts",
+        "apps/server/src/support/support-service.ts",
+        "apps/server/src/support/support-bundle.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/server/src/support/support-service.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../db/client.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/db/client.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../db/migrate.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/db/migrate.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./log-ring-buffer.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/support/log-ring-buffer.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./redact.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/support/redact.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./support-bundle.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/support/support-bundle.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "crypto",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "core",
+            "import"
+          ],
+          "protocol": "node:",
+          "resolved": "crypto",
+          "coreModule": true,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "drizzle-orm",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "npm",
+            "import"
+          ],
+          "resolved": "apps/server/node_modules/drizzle-orm/index.cjs",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": true,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/server/src/compose.ts",
+        "apps/server/src/support/support-routes.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/server/src/support/support-bundle.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./redact.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/support/redact.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "zlib",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "core",
+            "import"
+          ],
+          "protocol": "node:",
+          "resolved": "zlib",
+          "coreModule": true,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/server/src/support/support-service.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "zlib",
+      "followable": false,
+      "coreModule": true,
+      "couldNotResolve": false,
+      "matchesDoNotFollow": false,
+      "dependencyTypes": [
+        "core",
+        "import"
+      ],
+      "dependencies": [],
+      "dependents": [
+        "apps/server/src/support/support-bundle.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "apps/server/src/users/invitation-service.ts",
       "dependencies": [
         {
@@ -19880,24 +20416,6 @@
       "dependents": [
         "apps/server/src/compose.ts",
         "apps/server/src/start.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "apps/server/node_modules/graphile-worker/dist/index.js",
-      "followable": false,
-      "coreModule": false,
-      "couldNotResolve": false,
-      "matchesDoNotFollow": true,
-      "dependencyTypes": [
-        "npm",
-        "import"
-      ],
-      "dependencies": [],
-      "dependents": [
-        "apps/server/src/worker.ts",
-        "apps/server/src/db/migrate.ts"
       ],
       "orphan": false,
       "valid": true
@@ -27849,6 +28367,137 @@
       "valid": true
     },
     {
+      "source": "apps/server/src/support/support-routes.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../auth/auth.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/auth/auth.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../auth/fastify.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/auth/fastify.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../http/problems.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/http/problems.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../http/schemas.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/http/schemas.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./support-service.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/support/support-service.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@fastify/type-provider-typebox",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "npm",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/node_modules/@fastify/type-provider-typebox/dist/cjs/index.js",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": true,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "typebox",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "unknown"
+          ],
+          "resolved": "typebox",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": true,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/server/src/app.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "apps/server/src/users/account-routes.ts",
       "dependencies": [
         {
@@ -29269,173 +29918,6 @@
       "valid": true
     },
     {
-      "source": "apps/server/src/db/migrate.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./client.js",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "import"
-          ],
-          "resolved": "apps/server/src/db/client.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "drizzle-orm/migrator",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "npm",
-            "import"
-          ],
-          "resolved": "apps/server/node_modules/drizzle-orm/migrator.js",
-          "coreModule": false,
-          "followable": false,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": true,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "drizzle-orm/node-postgres/migrator",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "npm",
-            "import"
-          ],
-          "resolved": "apps/server/node_modules/drizzle-orm/node-postgres/migrator.js",
-          "coreModule": false,
-          "followable": false,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": true,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "fs",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "core",
-            "import"
-          ],
-          "protocol": "node:",
-          "resolved": "fs",
-          "coreModule": true,
-          "followable": false,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "graphile-worker",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "npm",
-            "import"
-          ],
-          "resolved": "apps/server/node_modules/graphile-worker/dist/index.js",
-          "coreModule": false,
-          "followable": false,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": true,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "path",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "core",
-            "import"
-          ],
-          "protocol": "node:",
-          "resolved": "path",
-          "coreModule": true,
-          "followable": false,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "pg",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "npm",
-            "type-only",
-            "import"
-          ],
-          "resolved": "apps/server/node_modules/pg/lib/index.js",
-          "coreModule": false,
-          "followable": false,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": true,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "apps/server/src/start.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "apps/server/node_modules/drizzle-orm/migrator.js",
-      "followable": false,
-      "coreModule": false,
-      "couldNotResolve": false,
-      "matchesDoNotFollow": true,
-      "dependencyTypes": [
-        "npm",
-        "import"
-      ],
-      "dependencies": [],
-      "dependents": [
-        "apps/server/src/db/migrate.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "apps/server/node_modules/drizzle-orm/node-postgres/migrator.js",
-      "followable": false,
-      "coreModule": false,
-      "couldNotResolve": false,
-      "matchesDoNotFollow": true,
-      "dependencyTypes": [
-        "npm",
-        "import"
-      ],
-      "dependencies": [],
-      "dependents": [
-        "apps/server/src/db/migrate.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
       "source": "apps/server/src/lead/test-vectors.ts",
       "dependencies": [
         {
@@ -30112,6 +30594,23 @@
             "import"
           ],
           "resolved": "apps/server/src/storage/blob-store.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./support/log-ring-buffer.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/support/log-ring-buffer.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -32032,6 +32531,7 @@
         "apps/web/src/SitesPage.tsx",
         "apps/web/src/SiteCentres.tsx",
         "apps/web/src/SiteHistory.tsx",
+        "apps/web/src/SupportBundlePage.tsx",
         "apps/web/src/ToolsPage.tsx",
         "apps/web/src/ToolsLead.tsx",
         "apps/web/src/ToolsPlan.tsx",
@@ -32132,6 +32632,7 @@
         "apps/web/src/SitesPage.tsx",
         "apps/web/src/SiteCentres.tsx",
         "apps/web/src/SiteHistory.tsx",
+        "apps/web/src/SupportBundlePage.tsx",
         "apps/web/src/ToolsPage.tsx",
         "apps/web/src/ToolsLead.tsx",
         "apps/web/src/ToolsPlan.tsx",
@@ -32227,6 +32728,7 @@
         "apps/web/src/SitesPage.tsx",
         "apps/web/src/SiteCentres.tsx",
         "apps/web/src/SiteHistory.tsx",
+        "apps/web/src/SupportBundlePage.tsx",
         "apps/web/src/ToolsPage.tsx",
         "apps/web/src/ToolsLead.tsx",
         "apps/web/src/ToolsPlan.tsx",
@@ -32516,6 +33018,7 @@
         "apps/web/src/lib/site-origin.ts",
         "apps/web/src/SiteCentres.tsx",
         "apps/web/src/SiteHistory.tsx",
+        "apps/web/src/SupportBundlePage.tsx",
         "apps/web/src/ToolsPage.tsx",
         "apps/web/src/ToolsLead.tsx",
         "apps/web/src/ToolsPlan.tsx",
@@ -33845,6 +34348,7 @@
         "apps/web/src/SitesPage.tsx",
         "apps/web/src/SiteCentres.tsx",
         "apps/web/src/SiteHistory.tsx",
+        "apps/web/src/SupportBundlePage.tsx",
         "apps/web/src/ToolsPage.tsx",
         "apps/web/src/ToolsLead.tsx",
         "apps/web/src/ToolsPlan.tsx",
@@ -34243,6 +34747,7 @@
         "apps/web/src/SettingsPage.tsx",
         "apps/web/src/SiteImportPage.tsx",
         "apps/web/src/SitesPage.tsx",
+        "apps/web/src/SupportBundlePage.tsx",
         "apps/web/src/ToolsPage.tsx"
       ],
       "orphan": false,
@@ -34764,6 +35269,7 @@
         "apps/web/src/SitesPage.tsx",
         "apps/web/src/SiteCentres.tsx",
         "apps/web/src/SiteHistory.tsx",
+        "apps/web/src/SupportBundlePage.tsx",
         "apps/web/src/ToolsPage.tsx",
         "apps/web/src/ToolsLead.tsx",
         "apps/web/src/ToolsPlan.tsx",
@@ -36242,7 +36748,8 @@
         "apps/web/src/ImportPanel.tsx",
         "apps/web/src/SettingsPage.tsx",
         "apps/web/src/SiteImportPage.tsx",
-        "apps/web/src/SitesPage.tsx"
+        "apps/web/src/SitesPage.tsx",
+        "apps/web/src/SupportBundlePage.tsx"
       ],
       "orphan": false,
       "valid": true
@@ -36853,6 +37360,23 @@
         },
         {
           "dynamic": true,
+          "module": "./SupportBundlePage.tsx",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "dynamic-import"
+          ],
+          "resolved": "apps/web/src/SupportBundlePage.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": true,
           "module": "./ToolsPage.tsx",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -37161,7 +37685,8 @@
       "source": "apps/web/src/lib/backups.ts",
       "dependencies": [],
       "dependents": [
-        "apps/web/src/BackupsPage.tsx"
+        "apps/web/src/BackupsPage.tsx",
+        "apps/web/src/SupportBundlePage.tsx"
       ],
       "orphan": false,
       "valid": true
@@ -48151,6 +48676,195 @@
       "valid": true
     },
     {
+      "source": "apps/web/src/SupportBundlePage.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./api.ts",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/web/src/api.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./lib/backups.ts",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/web/src/lib/backups.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./lib/display.ts",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/web/src/lib/display.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./lib/page.ts",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/web/src/lib/page.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./lib/settings.ts",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/web/src/lib/settings.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./lib/support-bundle.ts",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/web/src/lib/support-bundle.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./ui/index.ts",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/web/src/ui/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@tanstack/react-query",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "npm",
+            "import"
+          ],
+          "resolved": "apps/web/node_modules/@tanstack/react-query/build/legacy/index.cjs",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": true,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "react",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "npm",
+            "import"
+          ],
+          "resolved": "apps/web/node_modules/react/index.js",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": true,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "react-i18next",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "npm",
+            "import"
+          ],
+          "resolved": "apps/web/node_modules/react-i18next/dist/commonjs/index.js",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": true,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/web/src/App.tsx"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/web/src/lib/support-bundle.ts",
+      "dependencies": [],
+      "dependents": [
+        "apps/web/src/SupportBundlePage.tsx"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "apps/web/src/ToolsPage.tsx",
       "dependencies": [
         {
@@ -49544,8 +50258,8 @@
     "baselineSize": 0,
     "baselineStale": 0,
     "advisedExitCode": 0,
-    "totalCruised": 469,
-    "totalDependenciesCruised": 2472,
+    "totalCruised": 477,
+    "totalDependenciesCruised": 2507,
     "optionsUsed": {
       "baseDir": "/home/runner/work/dive_hub/dive_hub",
       "combinedDependencies": false,
@@ -49607,7 +50321,7 @@
             "path": "^apps/server/src/revisions/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|backups|centres|certifications|divers|dives|equipment|imports|lead|mcp|planning|providers|sites|social|live|users|version)/"
+            "path": "^apps/server/src/(assessment|backups|centres|certifications|divers|dives|equipment|imports|lead|mcp|planning|providers|sites|social|support|live|users|version)/"
           },
           "scope": "module"
         },
@@ -49619,7 +50333,7 @@
             "path": "^apps/server/src/assessment/"
           },
           "to": {
-            "path": "^apps/server/src/(revisions|backups|centres|certifications|dives|equipment|lead|mcp|planning|providers|sites|social|live|users|version)/"
+            "path": "^apps/server/src/(revisions|backups|centres|certifications|dives|equipment|lead|mcp|planning|providers|sites|social|support|live|users|version)/"
           },
           "scope": "module"
         },
@@ -49631,7 +50345,7 @@
             "path": "^apps/server/src/backups/"
           },
           "to": {
-            "path": "^apps/server/src/(revisions|assessment|centres|certifications|divers|dives|equipment|imports|lead|mcp|planning|providers|sites|social|live|users|version)/"
+            "path": "^apps/server/src/(revisions|assessment|centres|certifications|divers|dives|equipment|imports|lead|mcp|planning|providers|sites|social|support|live|users|version)/"
           },
           "scope": "module"
         },
@@ -49643,7 +50357,7 @@
             "path": "^apps/server/src/centres/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|backups|certifications|dives|equipment|imports|lead|mcp|planning|providers|social|live|users|version)/"
+            "path": "^apps/server/src/(assessment|backups|certifications|dives|equipment|imports|lead|mcp|planning|providers|social|support|live|users|version)/"
           },
           "scope": "module"
         },
@@ -49655,7 +50369,7 @@
             "path": "^apps/server/src/certifications/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|backups|centres|equipment|imports|lead|mcp|planning|providers|sites|social|users|version)/"
+            "path": "^apps/server/src/(assessment|backups|centres|equipment|imports|lead|mcp|planning|providers|sites|social|support|users|version)/"
           },
           "scope": "module"
         },
@@ -49667,7 +50381,7 @@
             "path": "^apps/server/src/divers/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|backups|centres|certifications|dives|equipment|imports|lead|mcp|planning|providers|sites|social|live|users|version)/"
+            "path": "^apps/server/src/(assessment|backups|centres|certifications|dives|equipment|imports|lead|mcp|planning|providers|sites|social|support|live|users|version)/"
           },
           "scope": "module"
         },
@@ -49679,7 +50393,7 @@
             "path": "^apps/server/src/dives/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|backups|certifications|equipment|imports|lead|mcp|planning|providers|social|live|users|version)/"
+            "path": "^apps/server/src/(assessment|backups|certifications|equipment|imports|lead|mcp|planning|providers|social|support|live|users|version)/"
           },
           "scope": "module"
         },
@@ -49691,7 +50405,7 @@
             "path": "^apps/server/src/equipment/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|backups|centres|certifications|dives|imports|lead|mcp|planning|providers|sites|social|live|users|version)/"
+            "path": "^apps/server/src/(assessment|backups|centres|certifications|dives|imports|lead|mcp|planning|providers|sites|social|support|live|users|version)/"
           },
           "scope": "module"
         },
@@ -49703,7 +50417,7 @@
             "path": "^apps/server/src/imports/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|backups|centres|certifications|lead|mcp|planning|providers|social|users|version)/"
+            "path": "^apps/server/src/(assessment|backups|centres|certifications|lead|mcp|planning|providers|social|support|users|version)/"
           },
           "scope": "module"
         },
@@ -49715,7 +50429,7 @@
             "path": "^apps/server/src/lead/"
           },
           "to": {
-            "path": "^apps/server/src/(revisions|assessment|backups|centres|certifications|equipment|imports|mcp|providers|sites|social|live|users|version)/"
+            "path": "^apps/server/src/(revisions|assessment|backups|centres|certifications|equipment|imports|mcp|providers|sites|social|support|live|users|version)/"
           },
           "scope": "module"
         },
@@ -49742,7 +50456,7 @@
             "path": "^apps/server/src/mcp/"
           },
           "to": {
-            "path": "^apps/server/src/(revisions|backups|centres|certifications|imports|lead|providers|social|live|users|version)/"
+            "path": "^apps/server/src/(revisions|backups|centres|certifications|imports|lead|providers|social|support|live|users|version)/"
           },
           "scope": "module"
         },
@@ -49754,7 +50468,7 @@
             "path": "^apps/server/src/planning/"
           },
           "to": {
-            "path": "^apps/server/src/(revisions|backups|centres|certifications|equipment|imports|lead|mcp|providers|sites|social|live|users|version)/"
+            "path": "^apps/server/src/(revisions|backups|centres|certifications|equipment|imports|lead|mcp|providers|sites|social|support|live|users|version)/"
           },
           "scope": "module"
         },
@@ -49766,7 +50480,7 @@
             "path": "^apps/server/src/providers/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|backups|centres|equipment|lead|mcp|planning|social|users|version)/"
+            "path": "^apps/server/src/(assessment|backups|centres|equipment|lead|mcp|planning|social|support|users|version)/"
           },
           "scope": "module"
         },
@@ -49778,7 +50492,7 @@
             "path": "^apps/server/src/sites/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|backups|centres|certifications|divers|dives|equipment|imports|lead|mcp|planning|providers|social|users|version)/"
+            "path": "^apps/server/src/(assessment|backups|centres|certifications|divers|dives|equipment|imports|lead|mcp|planning|providers|social|support|users|version)/"
           },
           "scope": "module"
         },
@@ -49790,7 +50504,19 @@
             "path": "^apps/server/src/social/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|backups|centres|certifications|equipment|imports|lead|mcp|planning|providers|sites|users|version)/"
+            "path": "^apps/server/src/(assessment|backups|centres|certifications|equipment|imports|lead|mcp|planning|providers|sites|support|users|version)/"
+          },
+          "scope": "module"
+        },
+        {
+          "name": "module-imports-support",
+          "severity": "error",
+          "comment": "support/ may import only these domain modules:  (MODULE_IMPORTS in .dependency-cruiser.cjs, ADR 0053).",
+          "from": {
+            "path": "^apps/server/src/support/"
+          },
+          "to": {
+            "path": "^apps/server/src/(revisions|assessment|backups|centres|certifications|divers|dives|equipment|imports|lead|mcp|planning|providers|sites|social|live|users|version)/"
           },
           "scope": "module"
         },
@@ -49802,7 +50528,7 @@
             "path": "^apps/server/src/live/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|backups|centres|certifications|divers|dives|equipment|imports|lead|mcp|planning|providers|sites|social|users|version)/"
+            "path": "^apps/server/src/(assessment|backups|centres|certifications|divers|dives|equipment|imports|lead|mcp|planning|providers|sites|social|support|users|version)/"
           },
           "scope": "module"
         },
@@ -49829,7 +50555,7 @@
             "path": "^apps/server/src/users/"
           },
           "to": {
-            "path": "^apps/server/src/(revisions|assessment|backups|centres|certifications|dives|equipment|imports|lead|mcp|planning|providers|sites|social|live|version)/"
+            "path": "^apps/server/src/(revisions|assessment|backups|centres|certifications|dives|equipment|imports|lead|mcp|planning|providers|sites|social|support|live|version)/"
           },
           "scope": "module"
         },
@@ -49841,7 +50567,7 @@
             "path": "^apps/server/src/version/"
           },
           "to": {
-            "path": "^apps/server/src/(revisions|assessment|backups|centres|certifications|divers|dives|equipment|imports|lead|mcp|planning|providers|sites|social|live|users)/"
+            "path": "^apps/server/src/(revisions|assessment|backups|centres|certifications|divers|dives|equipment|imports|lead|mcp|planning|providers|sites|social|support|live|users)/"
           },
           "scope": "module"
         },
