@@ -90,26 +90,28 @@ export function createSupportService(deps: SupportServiceDeps) {
   const now = deps.now ?? (() => new Date());
   const workerRunning = deps.workerRunning ?? (() => false);
 
+  const setting = (name: string): string | undefined => env[name]?.trim() || undefined;
+
   function configSection(): Record<string, unknown> {
-    const port = env.DIVEHUB_PORT ?? '3000';
+    const port = setting('DIVEHUB_PORT') ?? '3000';
     const keyFingerprint = deps.encryptionKey === undefined
       ? null
       : createHash('sha256').update(deps.encryptionKey).digest('hex').slice(0, 16);
     return {
-      DIVEHUB_HOST: env.DIVEHUB_HOST ?? '127.0.0.1',
+      DIVEHUB_HOST: setting('DIVEHUB_HOST') ?? '127.0.0.1',
       DIVEHUB_PORT: port,
-      DIVEHUB_LOG_LEVEL: env.DIVEHUB_LOG_LEVEL ?? 'info',
-      DIVEHUB_WORKER: env.DIVEHUB_WORKER ?? 'in-process',
-      DIVEHUB_MAX_UPLOAD_MB: env.DIVEHUB_MAX_UPLOAD_MB ?? '512',
-      DIVEHUB_BASE_URL: env.DIVEHUB_BASE_URL ?? `http://localhost:${port}`,
-      DIVEHUB_TRUSTED_PROXIES: env.DIVEHUB_TRUSTED_PROXIES ?? null,
-      DIVEHUB_DATA_DIR: env.DIVEHUB_DATA_DIR ?? deps.dataDir,
-      DIVEHUB_OVERPASS_URL: env.DIVEHUB_OVERPASS_URL ?? null,
-      DIVEHUB_WIKIDATA_SPARQL_URL: env.DIVEHUB_WIKIDATA_SPARQL_URL ?? null,
-      DIVEHUB_SSI_SITES_URL: env.DIVEHUB_SSI_SITES_URL ?? null,
+      DIVEHUB_LOG_LEVEL: setting('DIVEHUB_LOG_LEVEL') ?? 'info',
+      DIVEHUB_WORKER: setting('DIVEHUB_WORKER') ?? 'in-process',
+      DIVEHUB_MAX_UPLOAD_MB: setting('DIVEHUB_MAX_UPLOAD_MB') ?? '512',
+      DIVEHUB_BASE_URL: setting('DIVEHUB_BASE_URL') ?? `http://localhost:${port}`,
+      DIVEHUB_TRUSTED_PROXIES: setting('DIVEHUB_TRUSTED_PROXIES') ?? null,
+      DIVEHUB_DATA_DIR: setting('DIVEHUB_DATA_DIR') ?? deps.dataDir,
+      DIVEHUB_OVERPASS_URL: setting('DIVEHUB_OVERPASS_URL') ?? null,
+      DIVEHUB_WIKIDATA_SPARQL_URL: setting('DIVEHUB_WIKIDATA_SPARQL_URL') ?? null,
+      DIVEHUB_SSI_SITES_URL: setting('DIVEHUB_SSI_SITES_URL') ?? null,
       DATABASE_URL: maskDatabaseUrl(deps.databaseUrl),
-      DIVEHUB_AUTH_SECRET: env.DIVEHUB_AUTH_SECRET ? 'set' : 'generated',
-      DIVEHUB_CONTACT: env.DIVEHUB_CONTACT ? 'set' : 'unset',
+      DIVEHUB_AUTH_SECRET: setting('DIVEHUB_AUTH_SECRET') ? 'set' : 'generated',
+      DIVEHUB_CONTACT: setting('DIVEHUB_CONTACT') ? 'set' : 'unset',
       DIVEHUB_ENCRYPTION_KEY: { sha256: keyFingerprint, plaintextCredentials: deps.encryptionKey === undefined },
     };
   }
@@ -189,7 +191,7 @@ export function createSupportService(deps: SupportServiceDeps) {
       createdAt,
       appVersion: deps.appVersion,
       schemaHead: await appliedMigrationHead(deps.db, deps.migrationsFolder).catch(() => null),
-      logLevel: env.DIVEHUB_LOG_LEVEL ?? 'info',
+      logLevel: setting('DIVEHUB_LOG_LEVEL') ?? 'info',
       buffer: {
         capacityEntries: LOG_BUFFER_CAPACITY_ENTRIES,
         capacityBytes: LOG_BUFFER_CAPACITY_BYTES,
