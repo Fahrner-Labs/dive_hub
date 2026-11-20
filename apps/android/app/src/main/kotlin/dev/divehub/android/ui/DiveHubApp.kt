@@ -75,8 +75,8 @@ fun DiveHubApp(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val navController = rememberNavController()
-    val screens = remember(state) {
-        DiveHubScreens(state, viewModel, logbook, dive, tools, gasPlan, lead, loadings)
+    val screens = remember(viewModel, logbook, dive, tools, gasPlan, lead, loadings) {
+        DiveHubScreens(viewModel, logbook, dive, tools, gasPlan, lead, loadings)
     }
     // A sign-out (or another User) drops the logbook's pages with the session (client contract §1 Security).
     LaunchedEffect(state.user?.id) {
@@ -110,7 +110,6 @@ fun DiveHubApp(
 
 /** The screens bound to the shell; the navigation decisions live in [AppNavHost]. */
 private class DiveHubScreens(
-    private val state: UiState,
     private val viewModel: MainViewModel,
     private val logbook: LogbookViewModel,
     private val dive: DiveDetailViewModel,
@@ -121,11 +120,13 @@ private class DiveHubScreens(
 ) : AppScreens {
     @Composable
     override fun instance() {
+        val state by viewModel.state.collectAsStateWithLifecycle()
         InstanceForm(state.error, viewModel::useInstance)
     }
 
     @Composable
     override fun signIn() {
+        val state by viewModel.state.collectAsStateWithLifecycle()
         val instanceUrl = state.instanceUrl ?: return
         SignInForm(
             instanceUrl = instanceUrl,
@@ -138,6 +139,7 @@ private class DiveHubScreens(
 
     @Composable
     override fun logbook(page: Int, onPage: (Int) -> Unit, onOpenTools: () -> Unit, onOpenDive: (String) -> Unit) {
+        val state by viewModel.state.collectAsStateWithLifecycle()
         val logbookState by logbook.state.collectAsStateWithLifecycle()
         LaunchedEffect(page) { if (page != logbookState.page) logbook.showPage(page) }
         LaunchedEffect(logbookState.page) { onPage(logbookState.page) }
@@ -155,6 +157,7 @@ private class DiveHubScreens(
 
     @Composable
     override fun dive(id: String, onBack: () -> Unit, onOpenDive: (String) -> Unit) {
+        val state by viewModel.state.collectAsStateWithLifecycle()
         // After process death the id is back from the route but the page was never read in this process.
         LaunchedEffect(id) { if (dive.state.value.diveId != id) dive.open(id) }
         DiveDetailRoute(
@@ -170,6 +173,7 @@ private class DiveHubScreens(
 
     @Composable
     override fun tools(page: ToolPage, onPage: (ToolPage) -> Unit, onBack: () -> Unit, onOpenDive: (String) -> Unit) {
+        val state by viewModel.state.collectAsStateWithLifecycle()
         ToolsRoute(
             viewModel = tools,
             planViewModel = gasPlan,

@@ -130,6 +130,61 @@ class AppNavHostTest {
     }
 
     @Test
+    fun `stepping to a neighbour keeps one dive and the logbook page of the current one`() {
+        setContent(divePage = 2)
+        compose.runOnIdle {
+            controller.navigate(MainRoute)
+            controller.navigate(DiveRoute("dive-1"))
+        }
+        compose.waitForIdle()
+
+        compose.runOnIdle { screens.diveOpenDive!!.invoke("dive-2") }
+        assertRoute<DiveRoute>()
+        compose.runOnIdle {
+            assertEquals("dive-2", controller.currentBackStackEntry?.toRoute<DiveRoute>()?.id)
+            assertEquals(1, controller.currentBackStack.value.count { it.destination.hasRoute(DiveRoute::class) })
+        }
+
+        compose.runOnIdle { screens.diveBack!!.invoke() }
+        assertRoute<LogbookRoute>()
+        compose.waitForIdle()
+        assertEquals(2, screens.logbookPage)
+    }
+
+    @Test
+    fun `a neighbour opened from a tool returns to that tool page`() {
+        setContent()
+        compose.runOnIdle {
+            controller.navigate(MainRoute)
+            controller.navigate(ToolsRoute(ToolPage.Lead))
+        }
+        compose.runOnIdle { screens.toolsOpenDive!!.invoke("dive-1") }
+        compose.runOnIdle { screens.diveOpenDive!!.invoke("dive-2") }
+        compose.runOnIdle { screens.diveBack!!.invoke() }
+
+        assertRoute<ToolsRoute>()
+        compose.runOnIdle { assertEquals(ToolPage.Lead, controller.currentBackStackEntry?.toRoute<ToolsRoute>()?.page) }
+    }
+
+    @Test
+    fun `a screens change does not reset the back stack`() {
+        val replacement = FakeScreens()
+        val active = mutableStateOf<AppScreens>(screens)
+        compose.setContent { start(screens = active.value, destination = null) }
+        compose.runOnIdle {
+            controller.navigate(MainRoute)
+            controller.navigate(DiveRoute("dive-1"))
+        }
+        assertRoute<DiveRoute>()
+
+        compose.runOnIdle { active.value = replacement }
+
+        assertRoute<DiveRoute>()
+        compose.waitForIdle()
+        assertEquals("dive-1", replacement.diveId)
+    }
+
+    @Test
     fun `process death restores the logbook page`() {
         val restoration = StateRestorationTester(compose)
         restoration.setContent { start(destination = null) }
@@ -168,7 +223,11 @@ class AppNavHostTest {
     }
 
     @Composable
-    private fun start(divePage: Int? = null, destination: Any? = InstanceRoute) {
+    private fun start(
+        divePage: Int? = null,
+        destination: Any? = InstanceRoute,
+        screens: AppScreens = this.screens,
+    ) {
         controller = rememberNavController()
         AppNavHost(
             navController = controller,

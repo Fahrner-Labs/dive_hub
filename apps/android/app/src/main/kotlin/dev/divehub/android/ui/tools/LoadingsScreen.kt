@@ -1,6 +1,5 @@
 package dev.divehub.android.ui.tools
 
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -60,7 +59,6 @@ private val LOADING_SOURCES = listOf(
 fun LoadingsRoute(viewModel: LoadingsViewModel, onBack: () -> Unit) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     LaunchedEffect(Unit) { viewModel.start() }
-    BackHandler { onBack() }
     LoadingsScreen(state = state, onBack = onBack, onReload = viewModel::reload)
 }
 

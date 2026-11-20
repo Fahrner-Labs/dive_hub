@@ -5,11 +5,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavController
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavHostController
+import androidx.navigation.createGraph
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
@@ -55,6 +58,69 @@ internal fun AppNavHost(
     onLogbookPage: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    // NavHost remembers its graph: rebuild it only when the controller changes, never for a recomposition. The latest
+    // screens and callbacks are read through State so a state change updates the content without resetting the stack.
+    val currentScreens = rememberUpdatedState(screens)
+    val currentDivePage = rememberUpdatedState(divePage)
+    val currentOnLogbookPage = rememberUpdatedState(onLogbookPage)
+    val graph = remember(navController) {
+        navController.createGraph(startDestination = InstanceRoute) {
+            composable<InstanceRoute> { currentScreens.value.instance() }
+            composable<SignInRoute> { currentScreens.value.signIn() }
+            navigation<MainRoute>(startDestination = LogbookRoute) {
+                composable<LogbookRoute> { entry ->
+                    val page by entry.savedStateHandle.getStateFlow(LOGBOOK_PAGE_KEY, 1).collectAsState()
+                    currentScreens.value.logbook(
+                        page = page,
+                        onPage = { entry.savedStateHandle[LOGBOOK_PAGE_KEY] = it },
+                        onOpenTools = { navController.navigate(ToolsRoute()) },
+                        onOpenDive = { id -> navController.navigate(DiveRoute(id)) },
+                    )
+                }
+                composable<DiveRoute> { entry ->
+                    val route = entry.toRoute<DiveRoute>()
+                    // ADR 0042: stepping to a neighbour moves the Dive; back still returns to the list on that Dive's page.
+                    val onBack: () -> Unit = {
+                        val previous = navController.previousBackStackEntry
+                        if (previous?.destination?.hasRoute(LogbookRoute::class) == true) {
+                            currentDivePage.value()?.let { page ->
+                                previous.savedStateHandle[LOGBOOK_PAGE_KEY] = page
+                                currentOnLogbookPage.value(page)
+                            }
+                        }
+                        navController.popBackStack()
+                    }
+                    BackHandler(onBack = onBack)
+                    currentScreens.value.dive(
+                        id = route.id,
+                        onBack = onBack,
+                        onOpenDive = { id ->
+                            if (id != route.id) {
+                                navController.navigate(DiveRoute(id)) {
+                                    popUpTo<DiveRoute> { inclusive = true }
+                                }
+                            }
+                        },
+                    )
+                }
+                composable<ToolsRoute> { entry ->
+                    val route = entry.toRoute<ToolsRoute>()
+                    currentScreens.value.tools(
+                        page = route.page,
+                        onPage = { page ->
+                            when {
+                                page == route.page -> Unit
+                                page == ToolPage.Gas -> navController.popBackStack()
+                                else -> navController.navigate(ToolsRoute(page))
+                            }
+                        },
+                        onBack = { navController.popBackStack() },
+                        onOpenDive = { id -> navController.navigate(DiveRoute(id)) },
+                    )
+                }
+            }
+        }
+    }
     // The session state decides the top-level destination; Navigation only renders it (ADR 0079). A null destination
     // (loading, or the update gate) leaves the restored back stack alone.
     LaunchedEffect(destination) {
@@ -64,62 +130,7 @@ internal fun AppNavHost(
             }
         }
     }
-    NavHost(navController = navController, startDestination = InstanceRoute, modifier = modifier) {
-        composable<InstanceRoute> { screens.instance() }
-        composable<SignInRoute> { screens.signIn() }
-        navigation<MainRoute>(startDestination = LogbookRoute) {
-            composable<LogbookRoute> { entry ->
-                val page by entry.savedStateHandle.getStateFlow(LOGBOOK_PAGE_KEY, 1).collectAsState()
-                screens.logbook(
-                    page = page,
-                    onPage = { entry.savedStateHandle[LOGBOOK_PAGE_KEY] = it },
-                    onOpenTools = { navController.navigate(ToolsRoute()) },
-                    onOpenDive = { id -> navController.navigate(DiveRoute(id)) },
-                )
-            }
-            composable<DiveRoute> { entry ->
-                val route = entry.toRoute<DiveRoute>()
-                // ADR 0042: stepping to a neighbour moves the Dive; back still returns to the list on that Dive's page.
-                val onBack: () -> Unit = {
-                    val previous = navController.previousBackStackEntry
-                    if (previous?.destination?.hasRoute(LogbookRoute::class) == true) {
-                        divePage()?.let { page ->
-                            previous.savedStateHandle[LOGBOOK_PAGE_KEY] = page
-                            onLogbookPage(page)
-                        }
-                    }
-                    navController.popBackStack()
-                }
-                BackHandler(onBack = onBack)
-                screens.dive(
-                    id = route.id,
-                    onBack = onBack,
-                    onOpenDive = { id ->
-                        if (id != route.id) {
-                            navController.navigate(DiveRoute(id)) {
-                                popUpTo<DiveRoute> { inclusive = true }
-                            }
-                        }
-                    },
-                )
-            }
-            composable<ToolsRoute> { entry ->
-                val route = entry.toRoute<ToolsRoute>()
-                screens.tools(
-                    page = route.page,
-                    onPage = { page ->
-                        when {
-                            page == route.page -> Unit
-                            page == ToolPage.Gas -> navController.popBackStack()
-                            else -> navController.navigate(ToolsRoute(page))
-                        }
-                    },
-                    onBack = { navController.popBackStack() },
-                    onOpenDive = { id -> navController.navigate(DiveRoute(id)) },
-                )
-            }
-        }
-    }
+    NavHost(navController = navController, graph = graph, modifier = modifier)
 }
 
 /**
