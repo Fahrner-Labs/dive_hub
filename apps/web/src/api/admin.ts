@@ -6,6 +6,8 @@ import { api, request, type Ok } from './request.ts';
 export type BackupRunView = Ok<'/api/admin/backups'>[number];
 /** The instance's scheduled-backup setting. */
 export type BackupSettingsView = Ok<'/api/admin/backups/settings'>;
+/** What an on-demand support bundle would contain, as an admin reviews it before downloading (FAH-291). */
+export type SupportBundlePreviewView = Ok<'/api/admin/support-bundle/preview'>;
 export type SiteDataView = Ok<'/api/admin/provider-site-data'>[number];
 
 /** Admin backups (plan FAH-175): poll while a run is queued or running, as no live hint carries their progress. */
@@ -20,6 +22,12 @@ export const backupSettingsQuery = () =>
   queryOptions({
     queryKey: keys.backupSettings,
     queryFn: async () => request(api.GET('/api/admin/backups/settings')),
+  });
+/** The support bundle's preview: built on demand, so the page asks only after the admin starts it (FAH-291). */
+export const supportBundlePreviewQuery = () =>
+  queryOptions({
+    queryKey: keys.supportBundlePreview,
+    queryFn: async () => request(api.GET('/api/admin/support-bundle/preview')),
   });
 
 /** Admins: per Provider whose dives Users import, whether new Dive sites may be made from its site data (ADR 0030). */

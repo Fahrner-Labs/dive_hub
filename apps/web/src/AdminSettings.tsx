@@ -7,7 +7,7 @@ import { announce } from './lib/announce.ts';
 import { useProviders, useProviderText } from './lib/providers.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
 import { focusHeading } from './lib/focus.ts';
-import { BACKUPS_HREF, SITE_IMPORTS_HREF } from './lib/settings.ts';
+import { BACKUPS_HREF, SITE_IMPORTS_HREF, SUPPORT_BUNDLE_HREF } from './lib/settings.ts';
 import { ActionMenu, Badge, Button, Checkbox, ConfirmButton, ConfirmDialog, CopyField, Dialog, Form, Icon, Notice, Panel, Table, TextField } from './ui/index.ts';
 
 /**
@@ -28,6 +28,10 @@ export function AdminSettings() {
       <Panel title={t('backups.title')}>
         <p>{t('backups.adminLead')}</p>
         <a href={BACKUPS_HREF} className="btn btn-secondary"><Icon name="download" />{t('backups.open')}</a>
+      </Panel>
+      <Panel title={t('support.title')}>
+        <p>{t('support.adminLead')}</p>
+        <a href={SUPPORT_BUNDLE_HREF} className="btn btn-secondary"><Icon name="download" />{t('support.open')}</a>
       </Panel>
       <ProviderSiteData />
       <AiAccessSetting />

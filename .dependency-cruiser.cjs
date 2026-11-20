@@ -28,6 +28,8 @@ const MODULE_IMPORTS = {
   // overlapping Dive, use the one place for Diver management and Dive numbering, write the acceptance Revision, and ask
   // the live layer for a hint's audience.
   social: ['dives', 'divers', 'live', 'revisions'],
+  // The support bundle reads shared infrastructure only, like backups: no domain module (ADR 0078).
+  support: [],
   // Live hints (ADR 0066) read Dive and site Revisions only through revisions/revisions.ts's type.
   live: ['revisions:type'],
   users: ['divers'],

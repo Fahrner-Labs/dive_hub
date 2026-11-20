@@ -8359,6 +8359,176 @@
         }
       }
     },
+    "/api/admin/support-bundle/preview": {
+      "get": {
+        "summary": "Preview what an on-demand support bundle contains (admins only)",
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "generatedAt",
+                    "appVersion",
+                    "schemaHead",
+                    "logs",
+                    "redaction",
+                    "jobs",
+                    "health",
+                    "estimatedBytes"
+                  ],
+                  "properties": {
+                    "generatedAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "appVersion": {
+                      "type": "string"
+                    },
+                    "schemaHead": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "string"
+                        }
+                      ]
+                    },
+                    "logs": {
+                      "type": "object",
+                      "required": [
+                        "entries",
+                        "droppedEntries",
+                        "oldestAt",
+                        "newestAt",
+                        "bytes"
+                      ],
+                      "properties": {
+                        "entries": {
+                          "type": "integer"
+                        },
+                        "droppedEntries": {
+                          "type": "integer"
+                        },
+                        "oldestAt": {
+                          "anyOf": [
+                            {
+                              "type": "null"
+                            },
+                            {
+                              "type": "string",
+                              "format": "date-time"
+                            }
+                          ]
+                        },
+                        "newestAt": {
+                          "anyOf": [
+                            {
+                              "type": "null"
+                            },
+                            {
+                              "type": "string",
+                              "format": "date-time"
+                            }
+                          ]
+                        },
+                        "bytes": {
+                          "type": "integer"
+                        }
+                      }
+                    },
+                    "redaction": {
+                      "type": "object",
+                      "required": [
+                        "keysCensored",
+                        "emailsMasked",
+                        "ipsMasked"
+                      ],
+                      "properties": {
+                        "keysCensored": {
+                          "type": "integer"
+                        },
+                        "emailsMasked": {
+                          "type": "integer"
+                        },
+                        "ipsMasked": {
+                          "type": "integer"
+                        }
+                      }
+                    },
+                    "jobs": {
+                      "type": "object",
+                      "required": [
+                        "failed"
+                      ],
+                      "properties": {
+                        "failed": {
+                          "type": "integer"
+                        }
+                      }
+                    },
+                    "health": {
+                      "type": "object",
+                      "required": [
+                        "uptimeSec",
+                        "dbLatencyMs",
+                        "workerRunning",
+                        "queueDepth"
+                      ],
+                      "properties": {
+                        "uptimeSec": {
+                          "type": "integer"
+                        },
+                        "dbLatencyMs": {
+                          "anyOf": [
+                            {
+                              "type": "null"
+                            },
+                            {
+                              "type": "integer"
+                            }
+                          ]
+                        },
+                        "workerRunning": {
+                          "type": "boolean"
+                        },
+                        "queueDepth": {
+                          "anyOf": [
+                            {
+                              "type": "null"
+                            },
+                            {
+                              "type": "integer"
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    "estimatedBytes": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/support-bundle/download": {
+      "get": {
+        "summary": "Download a redacted on-demand support bundle (admins only)",
+        "description": "The gzip archive is built in memory from the current logs, redacted configuration, failed jobs and health stats.",
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
     "/api/imports": {
       "post": {
         "summary": "Upload a FIT file or a zip archive (e.g. Garmin \"Export Original\") for import",

@@ -43,6 +43,8 @@ import type { ImportSource } from './sites/sources.js';
 import { createSuggestionService } from './social/suggestion-service.js';
 import { withSuggestionChanges } from './social/suggestion-changes.js';
 import type { BlobStore } from './storage/blob-store.js';
+import { createLogRingBuffer, type LogRingBuffer } from './support/log-ring-buffer.js';
+import { createSupportService } from './support/support-service.js';
 import { createInvitationService } from './users/invitation-service.js';
 import { createPasswordResetService } from './users/password-reset-service.js';
 import { createProfileService } from './users/profile-service.js';
@@ -71,10 +73,15 @@ export interface ServiceParts {
   log?: ProviderLog;
   /** Where the live layer's LISTEN connection comes from (ADR 0066); without it, the live route is not mounted. */
   live?: { connectionString: string };
+  /** The log stream the support bundle captures; start.ts passes the one it gives Fastify. */
+  logBuffer?: LogRingBuffer;
+  /** Whether this process runs the worker, for the support bundle's health section. */
+  workerRunning?: () => boolean;
 }
 
 export function createServices({
   db, blobs, auth, secrets, adapters, siteSources, clock, log, live: liveSettings, dataDir, databaseUrl, encryptionKey,
+  logBuffer = createLogRingBuffer({ stdout: { write: () => true } }), workerRunning,
 }: ServiceParts) {
   const assessments = createAssessmentService(db);
   const backupLog: BackupLog = {
@@ -86,6 +93,11 @@ export function createServices({
     db, blobs, dataDir, databaseUrl,
     migrationsFolder: fileURLToPath(new URL('../drizzle', import.meta.url)), appVersion: process.env.DIVEHUB_VERSION ?? 'dev',
     encryptionKey, log: backupLog, now: clock ? () => clock.now() : undefined,
+  });
+  const support = createSupportService({
+    db, buffer: logBuffer, migrationsFolder: fileURLToPath(new URL('../drizzle', import.meta.url)),
+    appVersion: process.env.DIVEHUB_VERSION ?? 'dev', databaseUrl, dataDir, encryptionKey,
+    ...(workerRunning && { workerRunning }),
   });
   const providers = createProviderLayer({ db, blobs, secrets, adapters, ...(clock && { clock }), ...(log && { log }) });
   // Dive and site Revisions also tell open pages (ADR 0066), through the same listener seam as the Waiting pushes.
@@ -102,7 +114,7 @@ export function createServices({
   // Restoring a Dive an append took undoes the append (ADR 0063).
   const dives = createDiveService(db, continuation);
   return {
-    db, blobs, auth, assessments, backups, providers, imports,
+    db, blobs, auth, assessments, backups, support, providers, imports, logBuffer,
     siteImports: createSiteImportService({ db, sources: siteSources }),
     aiAccesses: createAiAccessService(db, auth),
     setup: createSetupService(db, clock ? () => clock.now() : undefined),

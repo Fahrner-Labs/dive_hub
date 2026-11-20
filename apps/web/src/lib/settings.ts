@@ -21,6 +21,9 @@ export const SITE_IMPORTS_HREF = `${settingsHref('admin')}/site-imports`;
 /** Manual backups and their schedule, an admin's page under Administration (plan FAH-175). */
 export const BACKUPS_HREF = `${settingsHref('admin')}/backups`;
 
+/** The on-demand support bundle, an admin's page under Administration (FAH-291). */
+export const SUPPORT_BUNDLE_HREF = `${settingsHref('admin')}/support-bundle`;
+
 /** A Connection's settings ("#/settings/connections?connection=<id>"): the section goes to them. */
 export function connectionHref(connectionId: string): string {
   return settingsHref('connections', { connection: connectionId });

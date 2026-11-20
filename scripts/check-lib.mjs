@@ -76,6 +76,9 @@ const AREAS = [
   // Backup runs (plan FAH-175): the admin's page triggers them, downloads an archive and sets the schedule.
   [/^apps\/web\/src\/BackupsPage\.tsx$|^apps\/web\/src\/lib\/backups\.ts$/, ['@admin']],
   [/^apps\/server\/src\/backups\//, ['@admin']],
+  // The on-demand support bundle (FAH-291): the admin's page previews and downloads a redacted archive.
+  [/^apps\/web\/src\/SupportBundlePage\.tsx$|^apps\/web\/src\/lib\/support-bundle\.ts$/, ['@support-bundle']],
+  [/^apps\/server\/src\/support\//, ['@support-bundle', '@admin']],
   [/^apps\/server\/src\/sites\/import\/|^apps\/server\/src\/(site-sources|providers\/ssi\/ssi-sites)\.ts$/, ['@admin', '@sites']],
   [/^apps\/server\/src\/sites\//, ['@sites', '@dives']],
   [/^apps\/server\/src\/centres\//, ['@sites', '@dives']],
@@ -100,7 +103,7 @@ const AREAS = [
 export const QUIET = /^(docs\/|samples\/|\.claude\/|\.github\/|\.githooks\/|AGENTS\.md$|CLAUDE\.md$|README\.md$|SECURITY\.md$|LICENSE$|NOTICE$|skills-lock\.json$|\.gitignore$|\.gitattributes$|\.dockerignore$|\.env\.example$|compose(\.dev)?\.yaml$|Dockerfile$|apps\/server\/test\/fixtures\/site-sources\/record\.ts$|apps\/server\/test\/fixtures\/ssi\/round-trip\.ts$|apps\/server\/test\/fixtures\/write-assessment-fixture\.ts$|apps\/server\/test\/fixtures\/write-suunto-fixture\.ts$|apps\/server\/test\/fixtures\/write-merge-fixture\.ts$|apps\/server\/test\/fixtures\/write-account-export-fixture\.ts$|apps\/server\/test\/fixtures\/write-live-fixtures\.ts$|scripts\/token-report\.mjs$|scripts\/fit-compressibility\.mjs$)/;
 
 /** The area tags a browser test can have; a test with none of them would run only in the full check. */
-export const TAGS = ['@dives', '@divers', '@equipment', '@sites', '@account', '@admin', '@layout', '@tools', '@live'];
+export const TAGS = ['@dives', '@divers', '@equipment', '@sites', '@account', '@admin', '@layout', '@tools', '@live', '@support-bundle'];
 
 /** The tag of browser tests that only the full check runs: ui-quality's two variants without axe (small phone, tablet). */
 export const FULL_ONLY = '@full';
