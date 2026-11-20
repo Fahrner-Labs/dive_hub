@@ -48,7 +48,7 @@ internal interface AppScreens {
     fun dive(id: String, onBack: () -> Unit, onOpenDive: (String) -> Unit)
 
     @Composable
-    fun tools(page: ToolPage, onPage: (ToolPage) -> Unit, onBack: () -> Unit, onOpenDive: (String) -> Unit)
+    fun tools(page: ToolPage, onPage: (ToolPage) -> Unit, onOpenDive: (String) -> Unit)
 
     @Composable
     fun settings()
@@ -128,7 +128,6 @@ internal fun AppNavHost(
                                     else -> navController.navigate(ToolsRoute(page))
                                 }
                             },
-                            onBack = { navController.popBackStack() },
                             onOpenDive = { id -> navController.navigate(DiveRoute(id)) { launchSingleTop = true } },
                         )
                     }

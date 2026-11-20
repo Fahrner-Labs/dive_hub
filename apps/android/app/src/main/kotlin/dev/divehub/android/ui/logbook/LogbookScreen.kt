@@ -27,7 +27,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import android.content.Context
 import androidx.compose.runtime.Composable
@@ -47,6 +46,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.divehub.android.R
+import dev.divehub.android.ui.DiveHubTopBar
 import dev.divehub.android.ui.SyncLine
 import dev.divehub.api.models.DiveListView
 import dev.divehub.api.models.DiveListViewDivesItem
@@ -114,9 +114,7 @@ fun LogbookScreen(
 ) {
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.logbook_title)) },
-            )
+            DiveHubTopBar(title = stringResource(R.string.logbook_title))
         },
     ) { padding ->
         val modifier = Modifier.padding(padding).fillMaxSize()

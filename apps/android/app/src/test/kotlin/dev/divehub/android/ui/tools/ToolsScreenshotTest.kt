@@ -4,9 +4,11 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onRoot
+import org.junit.Assert.assertEquals
 import com.github.takahirom.roborazzi.captureRoboImage
 import dev.divehub.android.ui.DiveHubTheme
 import dev.divehub.shared.planning.PlanningSacResult
@@ -108,10 +110,33 @@ class ToolsScreenshotTest {
         capture("tools_offline_empty.png")
     }
 
+    @Test
+    fun `the root lists the sibling tools and keeps no leftover logbook nav`() {
+        var opened: ToolPage? = null
+        compose.setContent {
+            DiveHubTheme(darkTheme = false) {
+                ToolsScreen(
+                    state = ToolsUiState(loading = false),
+                    imperial = false,
+                    onOpenPlan = { opened = ToolPage.Plan },
+                    onOpenLead = {},
+                    onOpenLoadings = {},
+                    onChange = {},
+                    onReload = {},
+                )
+            }
+        }
+
+        compose.onNodeWithText("Logbook").assertDoesNotExist()
+        compose.onNodeWithText("Gas plan").assertIsDisplayed().performClick()
+
+        assertEquals(ToolPage.Plan, opened)
+    }
+
     private fun render(state: ToolsUiState) {
         compose.setContent {
             DiveHubTheme(darkTheme = false) {
-                ToolsScreen(state = state, imperial = false, onBack = {}, onOpenPlan = {}, onOpenLead = {}, onOpenLoadings = {}, onChange = {}, onReload = {})
+                ToolsScreen(state = state, imperial = false, onOpenPlan = {}, onOpenLead = {}, onOpenLoadings = {}, onChange = {}, onReload = {})
             }
         }
     }

@@ -96,7 +96,7 @@ class AppNavHostTest {
         compose.runOnIdle { screens.toolsOnPage!!.invoke(ToolPage.Gas) }
         compose.runOnIdle { assertEquals(ToolPage.Gas, controller.currentBackStackEntry?.toRoute<ToolsRoute>()?.page) }
 
-        compose.runOnIdle { screens.toolsBack!!.invoke() }
+        compose.runOnIdle { assertTrue(controller.popBackStack()) }
         assertRoute<LogbookRoute>()
     }
 
@@ -472,7 +472,6 @@ class AppNavHostTest {
         var diveBack: (() -> Unit)? = null
         var diveOpenDive: ((String) -> Unit)? = null
         var toolsOnPage: ((ToolPage) -> Unit)? = null
-        var toolsBack: (() -> Unit)? = null
         var toolsOpenDive: ((String) -> Unit)? = null
         var settingsShown = false
 
@@ -510,12 +509,10 @@ class AppNavHostTest {
         override fun tools(
             page: ToolPage,
             onPage: (ToolPage) -> Unit,
-            onBack: () -> Unit,
             onOpenDive: (String) -> Unit,
         ) {
             toolsPage = page
             toolsOnPage = onPage
-            toolsBack = onBack
             toolsOpenDive = onOpenDive
             Text("tools:${page.name}")
         }

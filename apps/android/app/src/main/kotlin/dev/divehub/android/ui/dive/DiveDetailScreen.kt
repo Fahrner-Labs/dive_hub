@@ -23,7 +23,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -47,6 +46,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.divehub.android.R
+import dev.divehub.android.ui.DiveHubTopBar
 import dev.divehub.android.ui.SyncLine
 import dev.divehub.android.ui.Formats
 import dev.divehub.api.models.DiveView
@@ -113,11 +113,9 @@ fun DiveDetailScreen(
     val locale = context.resources.configuration.locales[0] ?: Locale.getDefault()
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(state.dive?.let { title(context, it, locale) } ?: "") },
-                navigationIcon = {
-                    TextButton(onClick = onBack) { Text(stringResource(R.string.dive_back)) }
-                },
+            DiveHubTopBar(
+                title = state.dive?.let { title(context, it, locale) } ?: "",
+                onBack = onBack,
             )
         },
     ) { padding ->

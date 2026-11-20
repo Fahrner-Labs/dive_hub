@@ -1,6 +1,7 @@
 package dev.divehub.android.ui.tools
 
 import android.content.Context
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -21,19 +22,21 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.contentDescription
@@ -46,6 +49,7 @@ import androidx.compose.ui.unit.dp
 import androidx.annotation.StringRes
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.divehub.android.R
+import dev.divehub.android.ui.DiveHubTopBar
 import dev.divehub.android.ui.Formats
 import dev.divehub.android.ui.dive.DiveDetailText
 import dev.divehub.android.ui.formatSyncTime
@@ -74,7 +78,6 @@ fun ToolsRoute(
     units: String?,
     page: ToolPage,
     onPage: (ToolPage) -> Unit,
-    onBack: () -> Unit,
     onOpenDive: (String) -> Unit,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -102,7 +105,6 @@ fun ToolsRoute(
         ToolPage.Gas -> ToolsScreen(
             state = state,
             imperial = imperial,
-            onBack = onBack,
             onOpenPlan = { onPage(ToolPage.Plan) },
             onOpenLead = { onPage(ToolPage.Lead) },
             onOpenLoadings = { onPage(ToolPage.Loadings) },
@@ -122,7 +124,6 @@ fun ToolsRoute(
 fun ToolsScreen(
     state: ToolsUiState,
     imperial: Boolean,
-    onBack: () -> Unit,
     onOpenPlan: () -> Unit,
     onOpenLead: () -> Unit,
     onOpenLoadings: () -> Unit,
@@ -130,17 +131,7 @@ fun ToolsScreen(
     onReload: () -> Unit,
 ) {
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.tools_title)) },
-                navigationIcon = { TextButton(onClick = onBack) { Text(stringResource(R.string.tools_back)) } },
-                actions = {
-                    TextButton(onClick = onOpenPlan) { Text(stringResource(R.string.tools_plan_title)) }
-                    TextButton(onClick = onOpenLead) { Text(stringResource(R.string.tools_lead_title_short)) }
-                    TextButton(onClick = onOpenLoadings) { Text(stringResource(R.string.tools_loadings_title_short)) }
-                },
-            )
-        },
+        topBar = { DiveHubTopBar(title = stringResource(R.string.tools_title)) },
     ) { padding ->
         when {
             state.loading -> Column(
@@ -180,6 +171,8 @@ fun ToolsScreen(
                     }
                 }
                 Spacer(Modifier.height(16.dp))
+                ToolLinks(onOpenPlan, onOpenLead, onOpenLoadings)
+                Spacer(Modifier.height(20.dp))
                 Inputs(state.inputs, imperial, onChange)
                 Spacer(Modifier.height(20.dp))
                 BottomTimeAnswer(state, imperial)
@@ -196,6 +189,30 @@ fun ToolsScreen(
             }
         }
     }
+}
+
+/**
+ * The Tools root is where a Diver moves between tools (FAH-335): the sibling tools are a list here, not text buttons
+ * in every subpage's app bar.
+ */
+@Composable
+private fun ToolLinks(onOpenPlan: () -> Unit, onOpenLead: () -> Unit, onOpenLoadings: () -> Unit) {
+    Heading(stringResource(R.string.tools_more_tools))
+    Spacer(Modifier.height(4.dp))
+    ToolLink(stringResource(R.string.tools_plan_title), onOpenPlan)
+    ToolLink(stringResource(R.string.tools_lead_title), onOpenLead)
+    ToolLink(stringResource(R.string.tools_loadings_title), onOpenLoadings)
+}
+
+@Composable
+private fun ToolLink(title: String, onClick: () -> Unit) {
+    ListItem(
+        headlineContent = { Text(title) },
+        trailingContent = {
+            Icon(painterResource(R.drawable.ic_chevron_right), contentDescription = null)
+        },
+        modifier = Modifier.clickable(onClick = onClick),
+    )
 }
 
 @Composable

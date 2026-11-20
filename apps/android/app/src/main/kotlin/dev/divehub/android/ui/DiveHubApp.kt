@@ -215,7 +215,7 @@ private class DiveHubScreens(
     }
 
     @Composable
-    override fun tools(page: ToolPage, onPage: (ToolPage) -> Unit, onBack: () -> Unit, onOpenDive: (String) -> Unit) {
+    override fun tools(page: ToolPage, onPage: (ToolPage) -> Unit, onOpenDive: (String) -> Unit) {
         val state by viewModel.state.collectAsStateWithLifecycle()
         ToolsRoute(
             viewModel = tools,
@@ -225,7 +225,6 @@ private class DiveHubScreens(
             units = state.units,
             page = page,
             onPage = onPage,
-            onBack = onBack,
             onOpenDive = { id ->
                 dive.open(id)
                 onOpenDive(id)
