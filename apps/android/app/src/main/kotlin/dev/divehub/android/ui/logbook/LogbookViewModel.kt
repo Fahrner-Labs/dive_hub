@@ -73,14 +73,18 @@ class LogbookViewModel(
     private var providers: ProviderDirectory? = null
     private var loadedFor: String? = null
 
-    /** Reads the first page for this User once; a different User (or a sign-in again) starts from nothing. */
-    fun start(userId: String) {
+    /**
+     * Reads the first page for this User once; a different User (or a sign-in again) starts from nothing. [page] is
+     * the page restored from the destination after process death, so the list comes back where the User left it.
+     */
+    fun start(userId: String, page: Int = 1) {
         if (loadedFor == userId) return
         loadedFor = userId
         providers = null
-        _state.value = LogbookUiState()
+        val first = page.coerceAtLeast(1)
+        _state.value = LogbookUiState(page = first)
         observe()
-        load(page = 1, filters = emptySet())
+        load(page = first, filters = emptySet())
     }
 
     /** Forgets everything about the previous User (client contract §1 Security). */

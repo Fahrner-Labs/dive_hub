@@ -62,7 +62,10 @@ import dev.divehub.shared.logbook.sketchScale
 import dev.divehub.shared.sync.SyncProgress
 import java.util.Locale
 
-/** The logbook route: the list keeps its page and filters in the view model, not in an address. */
+/**
+ * The logbook route: the list keeps its page and filters in the view model, not in an address. [onPage] tells the
+ * destination when the User changed the page, so the route can save it for process death.
+ */
 @Composable
 fun LogbookRoute(
     viewModel: LogbookViewModel,
@@ -70,6 +73,7 @@ fun LogbookRoute(
     onSignOut: () -> Unit,
     onOpenTools: () -> Unit,
     onOpenDive: (String, Set<LogbookFilter>) -> Unit,
+    onPage: (Int) -> Unit = {},
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     LogbookScreen(
@@ -77,9 +81,18 @@ fun LogbookRoute(
         units = units,
         onRefresh = viewModel::refresh,
         onRetry = viewModel::retry,
-        onShowAll = viewModel::showAll,
-        onPage = viewModel::showPage,
-        onToggleFilter = viewModel::toggle,
+        onShowAll = {
+            viewModel.showAll()
+            onPage(1)
+        },
+        onPage = { page ->
+            viewModel.showPage(page)
+            onPage(page)
+        },
+        onToggleFilter = { filter ->
+            viewModel.toggle(filter)
+            onPage(1)
+        },
         onSignOut = onSignOut,
         onOpenTools = onOpenTools,
         onOpenDive = { dive -> onOpenDive(dive.id, state.filters) },

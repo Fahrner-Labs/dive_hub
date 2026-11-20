@@ -31,7 +31,6 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.activity.compose.BackHandler
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -84,7 +83,6 @@ fun ToolsRoute(
     val imperial = Formats.imperial(units, locale)
     LaunchedEffect(Unit) { viewModel.start(imperial) }
     LaunchedEffect(imperial) { viewModel.setUnits(imperial) }
-    BackHandler(enabled = page != ToolPage.Gas) { onPage(ToolPage.Gas) }
     when (page) {
         ToolPage.Plan -> GasPlanRoute(
             viewModel = planViewModel,

@@ -1,6 +1,7 @@
 package dev.divehub.android.ui
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -22,13 +23,11 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -51,11 +50,15 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.compose.rememberNavController
 import dev.divehub.android.R
 import dev.divehub.android.ui.dive.DiveDetailRoute
 import dev.divehub.android.ui.dive.DiveDetailViewModel
 import dev.divehub.android.ui.logbook.LogbookRoute
 import dev.divehub.android.ui.logbook.LogbookViewModel
+import dev.divehub.android.ui.navigation.AppNavHost
+import dev.divehub.android.ui.navigation.AppScreens
+import dev.divehub.android.ui.navigation.sessionDestination
 import dev.divehub.android.ui.tools.GasPlanViewModel
 import dev.divehub.android.ui.tools.LeadEstimateViewModel
 import dev.divehub.android.ui.tools.LoadingsViewModel
@@ -76,13 +79,11 @@ fun DiveHubApp(
     loadings: LoadingsViewModel,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    // The open Dive is the app's only navigation state; the logbook keeps its filters underneath and back lands on
-    // the page the Dive is on (ADR 0042).
-    var openDiveId by rememberSaveable { mutableStateOf<String?>(null) }
-    var showTools by rememberSaveable { mutableStateOf(false) }
-    // Hoisted above the Dive page: opening a Dive from the lead estimate returns to the same tools page (FAH-276).
-    var toolPage by rememberSaveable { mutableStateOf(ToolPage.Gas) }
-    // A sign-out (or another User) drops the logbook's pages with the session (client contract §1 Security).
+    val navController = rememberNavController()
+    val screens = remember(viewModel, logbook, dive, tools, gasPlan, lead, loadings) {
+        DiveHubScreens(viewModel, logbook, dive, tools, gasPlan, lead, loadings)
+    }
+    // A sign-out (or another User) drops the saved screens with the session (client contract §1 Security).
     LaunchedEffect(state.user?.id) {
         if (state.user == null) {
             logbook.forget()
@@ -91,71 +92,119 @@ fun DiveHubApp(
             gasPlan.forget()
             lead.forget()
             loadings.forget()
-            openDiveId = null
-            showTools = false
-            toolPage = ToolPage.Gas
-        } else {
-            logbook.start(state.user!!.id)
-            // After process death the id is back but the page was never read in this process.
-            openDiveId?.let(dive::open)
         }
     }
-    // ADR 0042: the logbook returns on the page the Dive is on, so stepping across a page boundary stays right.
-    val closeDive = {
-        if (!showTools) {
-            val page = dive.state.value.neighbours?.position?.let(LogbookPaging::pageOf)
-            if (page != null && page != logbook.state.value.page) logbook.showPage(page)
-        }
-        openDiveId = null
-    }
-    BackHandler(enabled = openDiveId != null) { closeDive() }
-    BackHandler(enabled = openDiveId == null && showTools) { showTools = false }
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-        when {
-            state.loading -> LoadingScreen()
-            state.updateRequired -> UpdateRequiredScreen()
-            state.user != null && openDiveId != null -> DiveDetailRoute(
-                viewModel = dive,
-                units = state.units,
-                onBack = closeDive,
-                onOpenDive = { id ->
-                    dive.openNeighbour(id)
-                    openDiveId = id
-                },
+        Box(Modifier.fillMaxSize()) {
+            AppNavHost(
+                navController = navController,
+                screens = screens,
+                destination = sessionDestination(state),
+                divePage = { dive.state.value.neighbours?.position?.let(LogbookPaging::pageOf) },
+                onLogbookPage = logbook::showPage,
             )
-            state.user != null && showTools -> ToolsRoute(
-                viewModel = tools,
-                planViewModel = gasPlan,
-                leadViewModel = lead,
-                loadingsViewModel = loadings,
-                units = state.units,
-                page = toolPage,
-                onPage = { toolPage = it },
-                onBack = { showTools = false },
-                onOpenDive = { id ->
-                    dive.open(id)
-                    openDiveId = id
-                },
-            )
-            state.user != null -> LogbookRoute(
-                viewModel = logbook,
-                units = state.units,
-                onSignOut = viewModel::signOut,
-                onOpenTools = { showTools = true },
-                onOpenDive = { id, filters ->
-                    dive.open(id, filters)
-                    openDiveId = id
-                },
-            )
-            state.instanceUrl == null -> InstanceForm(state.error, viewModel::useInstance)
-            else -> SignInForm(
-                instanceUrl = state.instanceUrl!!,
-                busy = state.busy,
-                error = state.error,
-                onChangeInstance = viewModel::changeInstance,
-                onSignIn = viewModel::signIn,
-            )
+            when {
+                state.loading -> Gate { LoadingScreen() }
+                state.updateRequired -> Gate { UpdateRequiredScreen() }
+            }
         }
+    }
+}
+
+/** The screens bound to the shell; the navigation decisions live in [AppNavHost]. */
+private class DiveHubScreens(
+    private val viewModel: MainViewModel,
+    private val logbook: LogbookViewModel,
+    private val dive: DiveDetailViewModel,
+    private val tools: ToolsViewModel,
+    private val gasPlan: GasPlanViewModel,
+    private val lead: LeadEstimateViewModel,
+    private val loadings: LoadingsViewModel,
+) : AppScreens {
+    @Composable
+    override fun instance() {
+        val state by viewModel.state.collectAsStateWithLifecycle()
+        InstanceForm(state.error, viewModel::useInstance)
+    }
+
+    @Composable
+    override fun signIn() {
+        val state by viewModel.state.collectAsStateWithLifecycle()
+        val instanceUrl = state.instanceUrl ?: return
+        SignInForm(
+            instanceUrl = instanceUrl,
+            busy = state.busy,
+            error = state.error,
+            onChangeInstance = viewModel::changeInstance,
+            onSignIn = viewModel::signIn,
+        )
+    }
+
+    @Composable
+    override fun logbook(page: Int, onPage: (Int) -> Unit, onOpenTools: () -> Unit, onOpenDive: (String) -> Unit) {
+        val state by viewModel.state.collectAsStateWithLifecycle()
+        // The page is back from the route after process death; start the logbook there once the session is ready.
+        LaunchedEffect(state.user?.id, page) {
+            val userId = state.user?.id ?: return@LaunchedEffect
+            logbook.start(userId, page)
+        }
+        LogbookRoute(
+            viewModel = logbook,
+            units = state.units,
+            onSignOut = viewModel::signOut,
+            onOpenTools = onOpenTools,
+            onOpenDive = { id, filters ->
+                dive.open(id, filters)
+                onOpenDive(id)
+            },
+            onPage = onPage,
+        )
+    }
+
+    @Composable
+    override fun dive(id: String, onBack: () -> Unit, onOpenDive: (String) -> Unit) {
+        val state by viewModel.state.collectAsStateWithLifecycle()
+        // After process death the id is back from the route but the page was never read in this process. Wait for the
+        // session: `open` reaches the API for the Provider names, and the instance URL is only set once restore is done.
+        LaunchedEffect(id, state.user?.id) {
+            if (state.user != null && dive.state.value.diveId != id) dive.open(id)
+        }
+        DiveDetailRoute(
+            viewModel = dive,
+            units = state.units,
+            onBack = onBack,
+            onOpenDive = { next ->
+                dive.openNeighbour(next)
+                onOpenDive(next)
+            },
+        )
+    }
+
+    @Composable
+    override fun tools(page: ToolPage, onPage: (ToolPage) -> Unit, onBack: () -> Unit, onOpenDive: (String) -> Unit) {
+        val state by viewModel.state.collectAsStateWithLifecycle()
+        ToolsRoute(
+            viewModel = tools,
+            planViewModel = gasPlan,
+            leadViewModel = lead,
+            loadingsViewModel = loadings,
+            units = state.units,
+            page = page,
+            onPage = onPage,
+            onBack = onBack,
+            onOpenDive = { id ->
+                dive.open(id)
+                onOpenDive(id)
+            },
+        )
+    }
+}
+
+/** A full-screen gate above the graph: the app is loading, or the server refuses this release. */
+@Composable
+private fun Gate(content: @Composable () -> Unit) {
+    Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+        content()
     }
 }
 

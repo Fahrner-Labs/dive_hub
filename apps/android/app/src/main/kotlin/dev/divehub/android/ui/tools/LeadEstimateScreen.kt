@@ -1,6 +1,5 @@
 package dev.divehub.android.ui.tools
 
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -60,7 +59,6 @@ fun LeadEstimateRoute(
     val imperial = Formats.imperial(units, locale)
     LaunchedEffect(Unit) { viewModel.start(imperial) }
     LaunchedEffect(imperial) { viewModel.setUnits(imperial) }
-    BackHandler { onBack() }
     LeadEstimateScreen(
         state = state,
         imperial = imperial,
