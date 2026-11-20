@@ -293,12 +293,12 @@
     "admin": {
       "title": "Client diagnostics",
       "lead": "Off by default. When it is on, signed-in people can send the errors their browser kept on this device.",
-      "stored": "Entries stay on this instance, are redacted, and are removed after 90 days. They join the support bundle an admin downloads.",
+      "stored": "Entries stay on this instance, are redacted, only the newest 500 are kept, and they are removed after 90 days. They join the support bundle an admin downloads.",
       "toggle": "Collect client diagnostics",
       "on": "On",
       "off": "Off",
       "savedOn": "Client diagnostics are now on.",
-      "savedOff": "Client diagnostics are now off. Stored entries stay until they expire."
+      "savedOff": "Client diagnostics are now off. New uploads are refused; stored entries stay until they expire or the next support bundle."
     }
   },
   "import": {

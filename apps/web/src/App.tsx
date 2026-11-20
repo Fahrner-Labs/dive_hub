@@ -108,7 +108,7 @@ export function App() {
 
   // Keyed by the page, not its query: a search or filter in the address must not rebuild the page (focus, table).
   const page = (
-    <ErrorBoundary key={route.split('?')[0]} fallback={<><Notice tone="danger">{t('errors.unknown')}</Notice><ReportProblem /></>}>
+    <ErrorBoundary key={route.split('?')[0]} fallback={<><Notice tone="danger">{t('errors.unknown')}</Notice>{signedIn && <ReportProblem />}</>}>
       <Suspense fallback={<RowsSkeleton rows={3} />}>
         <Main route={route} me={me} />
       </Suspense>

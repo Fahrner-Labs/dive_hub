@@ -17,7 +17,7 @@ test('an admin switches client diagnostics on and off again', { tag: ['@client-d
 
   const panel = page.locator('section', { has: page.getByRole('heading', { name: 'Client diagnostics', exact: true }) });
   await expect(panel.getByText('Off by default. When it is on, signed-in people can send the errors their browser kept on this device.')).toBeVisible();
-  await expect(panel.getByText('Entries stay on this instance, are redacted, and are removed after 90 days. They join the support bundle an admin downloads.')).toBeVisible();
+  await expect(panel.getByText('Entries stay on this instance, are redacted, only the newest 500 are kept, and they are removed after 90 days. They join the support bundle an admin downloads.')).toBeVisible();
   const toggle = panel.getByRole('switch', { name: 'Collect client diagnostics' });
   await expect(toggle).not.toBeChecked();
   await expect(panel.getByText('Off', { exact: true })).toBeVisible();
@@ -71,6 +71,24 @@ test('the account section sends the captured errors and confirms', { tag: ['@cli
   await expect(page.getByText('Diagnostics sent. Thank you.')).toBeVisible();
   expect(await page.evaluate(() => localStorage.getItem('divehub.diagnostics.v1'))).toBeNull();
   await expect(page.getByText('No errors have been captured on this device yet.')).toBeVisible();
+});
+
+test('a switched-off instance keeps the captured errors when the setting changes meanwhile', { tag: ['@client-diagnostics'] }, async ({ page, request }) => {
+  await setEnabled(request, true);
+  await page.goto('/#/settings/report-problem');
+  const send = page.getByRole('button', { name: 'Send diagnostics' });
+  await expect(send).toBeDisabled();
+
+  await page.evaluate(() => { setTimeout(() => { throw new Error('E2E kept diagnostic'); }, 0); });
+  await expect(page.getByText('1 error is kept on this device.')).toBeVisible();
+  await expect(send).toBeEnabled();
+
+  // The admin switches collection off after the panel opened; the upload re-checks and refuses instead of clearing.
+  await setEnabled(request, false);
+  await send.click();
+  await expect(page.getByText('Client diagnostics are switched off on this Dive Hub. An admin can switch them on.').first()).toBeVisible();
+  const kept = await page.evaluate(() => (JSON.parse(localStorage.getItem('divehub.diagnostics.v1') ?? '[]') as unknown[]).length);
+  expect(kept).toBe(1);
 });
 
 test('a switched-off instance explains why nothing can be sent', { tag: ['@client-diagnostics'] }, async ({ page }) => {

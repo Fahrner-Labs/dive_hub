@@ -1,7 +1,7 @@
 // Local client diagnostics (ADR 0080): errors stay in a small ring buffer on the device until the User presses
 // "Send diagnostics". Capture is always on; only the upload is gated by the instance setting. Every storage failure is
 // swallowed: a browser with localStorage turned off must never break the app it is meant to report on.
-import { ApiError } from '../api/request.ts';
+import { ApiError } from '../api.ts';
 
 /** The one localStorage key; its version lets a future shape clear the old one instead of reading it. */
 export const DIAGNOSTICS_KEY = 'divehub.diagnostics.v1';

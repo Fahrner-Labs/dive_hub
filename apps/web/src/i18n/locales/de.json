@@ -293,12 +293,12 @@
     "admin": {
       "title": "Client-Diagnose",
       "lead": "Standardmäßig aus. Wenn sie an ist, können angemeldete Personen die Fehler senden, die ihr Browser auf diesem Gerät aufbewahrt hat.",
-      "stored": "Einträge bleiben auf dieser Instanz, werden redigiert und nach 90 Tagen entfernt. Sie landen im Support-Bundle, das ein Admin herunterlädt.",
+      "stored": "Einträge bleiben auf dieser Instanz, werden redigiert, nur die neuesten 500 werden behalten und sie werden nach 90 Tagen entfernt. Sie landen im Support-Bundle, das ein Admin herunterlädt.",
       "toggle": "Client-Diagnose erfassen",
       "on": "An",
       "off": "Aus",
       "savedOn": "Die Client-Diagnose ist jetzt an.",
-      "savedOff": "Die Client-Diagnose ist jetzt aus. Gespeicherte Einträge bleiben bis zum Ablauf."
+      "savedOff": "Die Client-Diagnose ist jetzt aus. Neue Uploads werden abgelehnt; gespeicherte Einträge bleiben bis zum Ablauf oder zum nächsten Support-Bundle."
     }
   },
   "import": {
