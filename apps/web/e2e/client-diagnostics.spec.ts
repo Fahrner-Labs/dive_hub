@@ -19,15 +19,16 @@ test('an admin switches client diagnostics on and off again', { tag: ['@client-d
   await expect(panel.getByText('Off by default. When it is on, signed-in people can send the errors their browser kept on this device.')).toBeVisible();
   await expect(panel.getByText('Entries stay on this instance, are redacted, only the newest 500 are kept, and they are removed after 90 days. They join the support bundle an admin downloads.')).toBeVisible();
   const toggle = panel.getByRole('switch', { name: 'Collect client diagnostics' });
+  const label = panel.getByText('Collect client diagnostics', { exact: true });
   await expect(toggle).not.toBeChecked();
   await expect(panel.getByText('Off', { exact: true })).toBeVisible();
   await expectGoodPage(page, 'Administration', { axe: false });
 
-  await toggle.click();
+  await label.click();
   await expect(toggle).toBeChecked();
   await expect(panel.getByText('On', { exact: true })).toBeVisible();
 
-  await toggle.click();
+  await label.click();
   await expect(toggle).not.toBeChecked();
   await expect(panel.getByText('Off', { exact: true })).toBeVisible();
 });
