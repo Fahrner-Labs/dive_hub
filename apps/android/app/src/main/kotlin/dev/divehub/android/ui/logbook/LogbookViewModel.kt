@@ -37,6 +37,8 @@ data class LogbookUiState(
     val error: String? = null,
     /** No answer at all: offline, or the instance cannot be reached (client contract §2). */
     val offline: Boolean = false,
+    /** The live hint stream is delivering; the list stays quiet instead of showing "Last synced …". */
+    val connected: Boolean = false,
     /** The store's last successful sync; the list's "Last synced …" line. Null before the first sync. */
     val syncedAt: String? = null,
     /** Dives with Recordings whose sample series are still syncing (phase 3); the per-row marker reads it. */
@@ -60,6 +62,7 @@ class LogbookViewModel(
     private val api: LogbookRepository,
     private val revision: StateFlow<Long>,
     private val offlineState: StateFlow<Boolean>,
+    private val connectedState: StateFlow<Boolean>,
     private val syncProgress: StateFlow<SyncProgress>,
     private val refreshSync: suspend () -> Unit,
 ) : ViewModel() {
@@ -69,6 +72,7 @@ class LogbookViewModel(
     private var loadJob: Job? = null
     private var observing: Job? = null
     private var offlineJob: Job? = null
+    private var connectedJob: Job? = null
     private var progressJob: Job? = null
     private var providers: ProviderDirectory? = null
     private var loadedFor: String? = null
@@ -94,6 +98,7 @@ class LogbookViewModel(
         loadJob?.cancel()
         observing?.cancel()
         offlineJob?.cancel()
+        connectedJob?.cancel()
         progressJob?.cancel()
         _state.value = LogbookUiState()
     }
@@ -201,6 +206,7 @@ class LogbookViewModel(
     private fun observe() {
         observing?.cancel()
         offlineJob?.cancel()
+        connectedJob?.cancel()
         progressJob?.cancel()
         observing = viewModelScope.launch {
             var last = revision.value
@@ -213,6 +219,9 @@ class LogbookViewModel(
         }
         offlineJob = viewModelScope.launch {
             offlineState.collect { offline -> _state.update { it.copy(offline = offline) } }
+        }
+        connectedJob = viewModelScope.launch {
+            connectedState.collect { connected -> _state.update { it.copy(connected = connected) } }
         }
         progressJob = viewModelScope.launch {
             syncProgress.collect { progress -> _state.update { it.copy(syncProgress = progress) } }
@@ -227,6 +236,7 @@ class LogbookViewModel(
                     api = container.logbook,
                     revision = container.syncRevision,
                     offlineState = container.syncOffline,
+                    connectedState = container.syncConnected,
                     syncProgress = container.syncProgress,
                     refreshSync = { container.refreshNow() },
                 )

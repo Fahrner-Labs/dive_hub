@@ -237,6 +237,13 @@ class DiveDetailScreenshotTest {
     }
 
     @Test
+    fun `while connected the sync line stays quiet`() {
+        render(state(dive = dive(), syncedAt = "2026-11-18T12:00:00Z", connected = true))
+        compose.onNodeWithText("Last synced", substring = true).assertDoesNotExist()
+        capture("dive_connected.png")
+    }
+
+    @Test
     fun `offline with a cached dive shows it and its age`() {
         render(state(dive = dive(), syncedAt = "2026-11-18T12:00:00Z", offline = true))
         compose.onNodeWithText("No connection. Showing this dive synced as of 18 Nov 2026, 13:00.").assertIsDisplayed()
@@ -299,6 +306,7 @@ class DiveDetailScreenshotTest {
         samplesPending: Boolean = false,
         syncedAt: String? = null,
         offline: Boolean = false,
+        connected: Boolean = false,
     ) = DiveDetailUiState(
         diveId = dive.id,
         loading = false,
@@ -310,6 +318,7 @@ class DiveDetailScreenshotTest {
         samplesPending = samplesPending,
         syncedAt = syncedAt,
         offline = offline,
+        connected = connected,
     )
 
     private fun dive(

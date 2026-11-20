@@ -232,7 +232,7 @@ private fun LogbookList(
 
     LazyColumn(Modifier.fillMaxSize()) {
         item {
-            SyncLine(state.syncedAt, state.offline, R.string.logbook_offline_cached)
+            SyncLine(state.syncedAt, state.connected, state.offline, R.string.logbook_offline_cached)
             if (state.filterUnavailable) {
                 Text(
                     stringResource(R.string.logbook_filter_offline),

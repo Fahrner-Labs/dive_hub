@@ -14,7 +14,7 @@ data class LiveHint(val kind: String, val id: String)
 
 /** What the live stream tells the client: each (re)connect, then the hints it receives. */
 sealed interface LiveEvent {
-    /** A stream opened. Hints are not replayed, so this is the resync point (ADR 0066). */
+    /** The stream delivered its first line. Hints are not replayed, so this is the resync point (ADR 0066). */
     data object Connected : LiveEvent
 
     data class Hint(val hint: LiveHint) : LiveEvent
@@ -28,6 +28,8 @@ fun interface LiveHints {
 /**
  * `GET /api/live` with the bearer token (ADR 0074): one `text/event-stream` of hint frames. A body that ends or fails
  * closes the flow, which the refresher treats as a dropped stream and reconnects; polling covers the gap meanwhile.
+ * Headers alone are not a connection: a proxy can accept the response and buffer the body forever, so the stream counts
+ * as connected only once it has framed its first line.
  */
 class SseLiveHints(
     private val api: ApiClient,
@@ -36,12 +38,16 @@ class SseLiveHints(
     override fun events(): Flow<LiveEvent> = flow {
         val response = api.stream("/api/live")
         if (!response.status.isSuccess()) throw api.failure(response)
-        emit(LiveEvent.Connected)
 
         val channel = response.bodyAsChannel()
         var event = ""
+        var connected = false
         while (true) {
             val line = channel.readUTF8Line() ?: break
+            if (!connected) {
+                connected = true
+                emit(LiveEvent.Connected)
+            }
             when {
                 line.startsWith("event:") -> event = line.substringAfter(':').trim()
                 line.startsWith("data:") -> {

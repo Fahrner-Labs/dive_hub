@@ -1,15 +1,20 @@
 package dev.divehub.android.ui.settings
 
 import androidx.annotation.StringRes
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
@@ -29,22 +34,28 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.divehub.android.R
-import dev.divehub.android.ui.SyncLine
+import dev.divehub.android.ui.formatSyncTime
+import dev.divehub.android.ui.successColor
 import dev.divehub.shared.ErrorCodes
 import dev.divehub.shared.diagnostics.DiagnosticEntry
 import dev.divehub.shared.diagnostics.ReportProblemResult
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.util.Locale
 
 /**
  * The settings route: the account e-mail and app version come from the session and the build, the rest from the
@@ -128,7 +139,12 @@ fun SettingsScreen(
 
             ListItem(
                 headlineContent = { Text(stringResource(R.string.settings_instance)) },
-                supportingContent = { state.instanceUrl?.let { Text(it) } },
+                supportingContent = {
+                    Column {
+                        state.instanceUrl?.let { Text(it) }
+                        ConnectionStatus(connected = state.connected, syncedAt = state.syncedAt)
+                    }
+                },
             )
             Action(
                 title = R.string.instance_change,
@@ -151,16 +167,6 @@ fun SettingsScreen(
             HorizontalDivider()
 
             Section(R.string.settings_section_sync)
-            if (state.syncedAt == null) {
-                Text(
-                    stringResource(R.string.settings_sync_never),
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            } else {
-                SyncLine(state.syncedAt, state.offline, R.string.settings_sync_offline)
-            }
             ListItem(
                 modifier = Modifier.clickable(enabled = !state.syncing, onClick = onSyncNow),
                 headlineContent = { Text(stringResource(R.string.settings_sync_now)) },
@@ -252,6 +258,43 @@ fun SettingsScreen(
                     Text(stringResource(R.string.settings_close))
                 }
             },
+        )
+    }
+}
+
+/**
+ * The instance row's permanent connection state (FAH-342): a green dot and "Connected" while the live stream is
+ * delivering, or a muted dot and "Offline — last synced …" when it is down. Only the stream state counts; a reachable
+ * network is not evidence.
+ */
+@Composable
+internal fun ConnectionStatus(connected: Boolean, syncedAt: String?, modifier: Modifier = Modifier) {
+    val context = LocalContext.current
+    val locale = context.resources.configuration.locales[0] ?: Locale.getDefault()
+    val pattern = stringResource(R.string.sync_date_pattern)
+    val text = when {
+        connected -> stringResource(R.string.settings_connection_connected)
+        syncedAt != null -> stringResource(
+            R.string.settings_connection_offline,
+            formatSyncTime(syncedAt, locale, pattern),
+        )
+        else -> stringResource(R.string.settings_connection_never)
+    }
+    val dot = if (connected) {
+        successColor()
+    } else {
+        MaterialTheme.colorScheme.outline
+    }
+    Row(
+        modifier = modifier.semantics { liveRegion = LiveRegionMode.Polite },
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(Modifier.size(8.dp).clip(CircleShape).background(dot))
+        Spacer(Modifier.width(6.dp))
+        Text(
+            text,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
 }

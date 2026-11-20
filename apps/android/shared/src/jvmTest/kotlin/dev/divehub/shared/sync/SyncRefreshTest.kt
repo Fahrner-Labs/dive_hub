@@ -2,6 +2,7 @@ package dev.divehub.shared.sync
 
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import dev.divehub.shared.ApiClient
+import dev.divehub.shared.NoAnswerException
 import dev.divehub.shared.store.DiveStore
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
@@ -9,14 +10,17 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.headersOf
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.CancellationException
 import kotlinx.serialization.json.Json
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
@@ -588,6 +592,45 @@ class SyncRefreshTest {
         assertEquals(RefreshNow, store.syncState().lastFullSyncAt)
         assertTrue(harness.refresher.streamHealthy.value)
         assertEquals(1L, harness.refresher.revision.value)
+    }
+
+    @Test
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    fun `a stream that ends turns the connection off`() = runTest {
+        val harness = seeded()
+        val gate = CompletableDeferred<Unit>()
+        val live = LiveHints {
+            flow {
+                emit(LiveEvent.Connected)
+                gate.await()
+            }
+        }
+        val refresher = SyncRefresher(harness.engine, live)
+        assertFalse(refresher.streamHealthy.value)
+
+        val job = launch { refresher.runLive() }
+
+        advanceUntilIdle()
+        assertTrue(refresher.streamHealthy.value)
+        gate.complete(Unit)
+        job.join()
+        assertFalse(refresher.streamHealthy.value)
+    }
+
+    @Test
+    fun `a stream failure turns the connection off`() = runTest {
+        val harness = seeded()
+        val live = LiveHints {
+            flow {
+                emit(LiveEvent.Connected)
+                throw NoAnswerException()
+            }
+        }
+        val refresher = SyncRefresher(harness.engine, live)
+
+        assertFailsWith<NoAnswerException> { refresher.runLive() }
+
+        assertFalse(refresher.streamHealthy.value)
     }
 
     @Test

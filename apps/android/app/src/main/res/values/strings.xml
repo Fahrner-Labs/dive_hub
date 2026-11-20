@@ -509,6 +509,9 @@
     <string name="settings_title">Settings</string>
     <string name="settings_section_connection">Connection</string>
     <string name="settings_instance">Instance</string>
+    <string name="settings_connection_connected">Connected</string>
+    <string name="settings_connection_offline">Offline — last synced %1$s.</string>
+    <string name="settings_connection_never">Offline — not synced yet.</string>
     <string name="settings_change_instance_title">Change instance?</string>
     <string name="settings_change_instance_body">Changing the instance signs you out and clears the local data on this device.</string>
     <string name="settings_cancel">Cancel</string>
@@ -517,8 +520,6 @@
     <string name="settings_sign_out_title">Sign out?</string>
     <string name="settings_sign_out_body">Signing out removes the session and the local data from this device.</string>
     <string name="settings_section_sync">Sync</string>
-    <string name="settings_sync_never">Not synced yet. Your dives sync when you are online.</string>
-    <string name="settings_sync_offline">No connection. Last synced as of %1$s.</string>
     <string name="settings_sync_now">Sync now</string>
     <string name="settings_syncing">Syncing…</string>
     <string name="settings_section_about">About</string>
