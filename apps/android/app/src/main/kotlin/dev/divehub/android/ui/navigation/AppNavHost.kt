@@ -89,17 +89,17 @@ internal fun AppNavHost(
                     }
                 }
                 composable<DiveRoute> { entry ->
-                    MainShell(navController) {
+                    MainShell(
+                        navController,
+                        // Leaving the Dive for the Logbook tab writes the page too, as back does.
+                        onLeaveDive = {
+                            navController.leaveDiveForLogbook(currentDivePage.value(), currentOnLogbookPage.value)
+                        },
+                    ) {
                         val route = entry.toRoute<DiveRoute>()
                         // ADR 0042: stepping to a neighbour moves the Dive; back still returns to the list on that Dive's page.
                         val onBack: () -> Unit = {
-                            val previous = navController.previousBackStackEntry
-                            if (previous?.destination?.hasRoute(LogbookRoute::class) == true) {
-                                currentDivePage.value()?.let { page ->
-                                    previous.savedStateHandle[LOGBOOK_PAGE_KEY] = page
-                                    currentOnLogbookPage.value(page)
-                                }
-                            }
+                            navController.leaveDiveForLogbook(currentDivePage.value(), currentOnLogbookPage.value)
                             navController.popBackStack()
                         }
                         BackHandler(onBack = onBack)
@@ -155,7 +155,11 @@ internal fun AppNavHost(
  * screen selected, so it stays on a Dive; instance and sign-in never enter this shell.
  */
 @Composable
-private fun MainShell(navController: NavHostController, content: @Composable () -> Unit) {
+private fun MainShell(
+    navController: NavHostController,
+    onLeaveDive: () -> Unit = {},
+    content: @Composable () -> Unit,
+) {
     val backStack by navController.currentBackStack.collectAsState()
     val selectedTab = backStack.asReversed().firstNotNullOfOrNull { tabOf(it.destination) }
     Scaffold(
@@ -165,7 +169,7 @@ private fun MainShell(navController: NavHostController, content: @Composable () 
             if (selectedTab != null) {
                 DiveHubBottomBar(
                     selected = selectedTab,
-                    onSelect = { tab -> navController.navigateToTab(tab) },
+                    onSelect = { tab -> navController.navigateToTab(tab, onLeaveDive) },
                 )
             }
         },
@@ -183,15 +187,33 @@ private fun tabOf(destination: NavDestination): AppTab? = when {
 }
 
 /**
+ * Put a Dive's position into the logbook entry below it before leaving, so the list returns on that page (ADR 0042).
+ * Only a Dive opened from the logbook has such an entry; one opened from a tool keeps its tool page.
+ */
+private fun NavController.leaveDiveForLogbook(page: Int?, onLogbookPage: (Int) -> Unit) {
+    val previous = previousBackStackEntry
+    if (previous?.destination?.hasRoute(LogbookRoute::class) == true) {
+        page?.let {
+            previous.savedStateHandle[LOGBOOK_PAGE_KEY] = it
+            onLogbookPage(it)
+        }
+    }
+}
+
+/**
  * A bottom-bar switch keeps the logbook as the main graph's start destination and saves the tab being left, so a
  * return restores its scroll/page and back from the start destination leaves the app instead of showing sign-in.
  */
-private fun NavHostController.navigateToTab(tab: AppTab) {
+private fun NavHostController.navigateToTab(tab: AppTab, onLeaveDive: () -> Unit = {}) {
     val active = currentBackStack.value.asReversed().firstNotNullOfOrNull { tabOf(it.destination) }
     if (tab == active) {
         // Reselecting a place returns to its root without restoring the stack above it (a Dive or a tool subpage).
         when (tab) {
-            AppTab.Logbook -> popBackStack(LogbookRoute, inclusive = false)
+            AppTab.Logbook -> {
+                // A Dive's page must reach the list, as it does on the Dive's own back path (ADR 0042).
+                if (currentDestination?.hasRoute(DiveRoute::class) == true) onLeaveDive()
+                popBackStack(LogbookRoute, inclusive = false)
+            }
             AppTab.Tools -> navigate(ToolsRoute()) {
                 popUpTo<LogbookRoute> { inclusive = false }
                 launchSingleTop = true

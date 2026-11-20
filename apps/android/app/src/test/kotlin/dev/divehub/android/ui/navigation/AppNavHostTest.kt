@@ -336,6 +336,20 @@ class AppNavHostTest {
     }
 
     @Test
+    fun `tapping the selected Logbook tab while on a dive returns to its page`() {
+        setContent(divePage = 4)
+        compose.runOnIdle { controller.navigate(MainRoute) }
+        compose.runOnIdle { screens.logbookOpenDive!!.invoke("dive-1") }
+        assertRoute<DiveRoute>()
+
+        compose.onNodeWithText("Logbook").performClick()
+
+        assertRoute<LogbookRoute>()
+        compose.waitForIdle()
+        assertEquals(4, screens.logbookPage)
+    }
+
+    @Test
     fun `clearing saved tab states drops the previous tool page`() {
         compose.setContent { start(destination = null) }
         compose.runOnIdle { controller.navigate(MainRoute) }
