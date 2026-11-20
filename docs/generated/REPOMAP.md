@@ -4,15 +4,15 @@
 > `pnpm check` fails when this map is stale. Symbols are ranked by how widely the code references them;
 > each module shows its most-referenced ones (exported symbols rank higher). Search here before walking the tree.
 
-Files: 412 · symbols: 3751 · shown: 247
+Files: 414 · symbols: 3774 · shown: 247
 
 ### server/(root)
 apps/server/src/vocabulary.ts:13 type SiteWaterType
 apps/server/src/errors.ts:2 const errorMessage
 apps/server/src/vocabulary.ts:12 const SITE_WATER_TYPES
 apps/server/src/vocabulary.ts:51 type ImportSource
-apps/server/src/compose.ts:82 fn createServices
-… 41 more symbols in this module
+apps/server/src/compose.ts:83 fn createServices
+… 42 more symbols in this module
 
 ### server/assessment
 apps/server/src/assessment/rules.ts:50 const RULES
@@ -69,7 +69,7 @@ apps/server/src/db/schema.ts:75 const diverManagement
 apps/server/src/db/auth-schema.ts:20 const user
 apps/server/src/db/import-types.ts:12 iface ImportedValues
 apps/server/src/db/import-types.ts:6 type ImportArea
-… 154 more symbols in this module
+… 156 more symbols in this module
 
 ### server/divers
 apps/server/src/divers/management.ts:8 fn managedDiverIds
@@ -114,8 +114,8 @@ apps/server/src/equipment/due.ts:36 iface ScheduleDue
 apps/server/src/http/schemas.ts:10 const Nullable
 apps/server/src/http/schemas.ts:5 const DateTime
 apps/server/src/http/schemas.ts:4 const IdParams
-apps/server/src/http/problems.ts:194 const Problem
-apps/server/src/http/problems.ts:197 const problem
+apps/server/src/http/problems.ts:196 const Problem
+apps/server/src/http/problems.ts:199 const problem
 … 25 more symbols in this module
 
 ### server/imports
@@ -247,12 +247,12 @@ apps/server/src/storage/blob-store.ts:9 iface StoredBlob
 apps/server/src/storage/blob-store.ts:39 fn createLocalBlobStore
 
 ### server/support
+apps/server/src/support/redact.ts:68 fn redactValue
 apps/server/src/support/redact.ts:1 iface RedactionCounters
 apps/server/src/support/log-ring-buffer.ts:30 class LogRingBuffer
-apps/server/src/support/redact.ts:68 fn redactValue
 apps/server/src/support/redact.ts:23 const emptyRedactionCounters
-apps/server/src/support/support-service.ts:88 fn createSupportService
-… 48 more symbols in this module
+apps/server/src/support/client-diagnostics-service.ts:21 class ClientDiagnosticsError
+… 68 more symbols in this module
 
 ### server/users
 apps/server/src/users/views.ts:23 const UserView

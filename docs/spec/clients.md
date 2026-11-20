@@ -65,6 +65,14 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   the buddy list routes give only those; say so where the list is shown. *Web:* `ProviderBuddies.tsx` (`provider.buddiesKept`).
 - **Must not send positions anywhere by itself.** "Open in maps" is a plain link the User follows. A map with
   tiles needs its own ADR first (tile source, privacy).
+- **Client diagnostics stay on the device until the User sends them.** Keep a small local error ring buffer
+  (web: localStorage, 50 entries / 64 KiB; Android: 200 entries) at all times, but upload only when the User presses
+  *Report a problem*, and only when `GET /api/client-diagnostics/status` says `enabled`. `POST
+  /api/client-diagnostics` carries the buffer (at most 50 entries); on 403 `client_diagnostics_disabled` treat the
+  setting as turned off meanwhile and **keep the local buffer** instead of retrying. On 429
+  `client_diagnostics_limited` say to try again later. The server truncates and re-redacts every entry, so the
+  client's own hygiene (no dive contents, tokens or URLs with query strings) is the first line, not the only one.
+  Android's *Share local logs* share sheet stays available whether the setting is on or off.
 
 ### Security
 - **Must forget everything about the previous User** when the User changes: on sign-in as someone else, an
@@ -349,6 +357,11 @@ V1 of the native client reads offline: phones lose signal where dives are, and t
   deletes a manual run or the last successful one, and that the operator must keep the private key to restore. On
   `backup_recipient_missing` / `backup_recipient_invalid` say what to paste; on `backup_settings_invalid` show the
   allowed ranges. *Web:* `BackupsPage.tsx` (both manual and scheduled backups, `#/settings/admin/backups`).
+- **Client diagnostics** (`GET`/`PATCH /api/admin/client-diagnostics`): one instance switch, off by default. Say that
+  switching it on lets signed-in clients upload their local error buffer when a user chooses *Report a problem*, that
+  entries are stored redacted for at most 90 days and keep at most the newest 500 rows, and that switching it off refuses new uploads
+  but keeps rows already stored until their purge or the next support bundle. The bundle's member is
+  `client-diagnostics.ndjson` (`formatVersion` 2), empty while the switch is off.
 - **Support bundle** (`GET /api/admin/support-bundle/preview`, `GET /api/admin/support-bundle/download`): an admin
   previews what an on-demand support archive would contain, then downloads it to send to the developer. The preview
   reports app and schema version, log coverage (`oldestAt`–`newestAt`, entries, dropped entries, size), the redaction

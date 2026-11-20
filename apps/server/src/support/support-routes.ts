@@ -38,6 +38,7 @@ const PreviewView = Type.Object({
     workerRunning: Type.Boolean(),
     queueDepth: Nullable(Type.Integer()),
   }),
+  clientDiagnostics: Type.Object({ entries: Type.Integer() }),
   estimatedBytes: Type.Integer(),
 });
 

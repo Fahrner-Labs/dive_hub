@@ -13,6 +13,7 @@ import { CERTIFICATION_IMAGE_TASK, type CertificationService } from './certifica
 import type { PurgeService } from './dives/purge-service.js';
 import type { AiAccessService } from './mcp/access-service.js';
 import type { AssessmentService } from './assessment/assessment-service.js';
+import type { ClientDiagnosticsService } from './support/client-diagnostics-service.js';
 
 // These two values stay kebab-case, unlike the snake_case of the others: queued jobs and the crontab's record carry them.
 
@@ -24,6 +25,9 @@ const PURGE_AI_ACCESS_LOG_TASK = 'purge-ai-access-log';
 
 /** Hard-deletes old deleted Dives that no longer track anything (ADR 0072). */
 const PURGE_DELETED_DIVES_TASK = 'purge-deleted-dives';
+
+/** Drops client-diagnostic rows older than 90 days (ADR 0080). */
+const PURGE_CLIENT_DIAGNOSTICS_TASK = 'purge-client-diagnostics';
 
 /** What the tasks log for the operator (the app's logger). */
 export interface TaskLog {
@@ -80,11 +84,12 @@ export interface WorkerDeps {
   scheduledFetch: ScheduledFetch;
   certifications: CertificationService;
   purges: PurgeService;
+  clientDiagnostics: ClientDiagnosticsService;
   log: FastifyBaseLogger;
 }
 
 export async function startWorker(pool: pg.Pool, deps: WorkerDeps): Promise<Runner> {
-  const { backups, imports, siteImports, aiAccesses, assessments, pushRuns, waitingPushes, scheduledFetch, certifications, purges, log } = deps;
+  const { backups, imports, siteImports, aiAccesses, assessments, pushRuns, waitingPushes, scheduledFetch, certifications, purges, clientDiagnostics, log } = deps;
   // A backup still "running" now was cut off when the worker last stopped; its passphrase is gone with the process.
   await backups.reconcileOrphans();
   // An import still "running" now was cut off when the worker last stopped.
@@ -95,8 +100,8 @@ export async function startWorker(pool: pg.Pool, deps: WorkerDeps): Promise<Runn
     pgPool: pool,
     concurrency: 2,
     noHandleSignals: true,
-    // Every night at 03:17 and 03:37 (UTC), the waiting Imports every hour, and automation every minute (ADR 0056).
-    crontab: `17 3 * * * ${PURGE_AI_ACCESS_LOG_TASK}\n37 3 * * * ${PURGE_DELETED_DIVES_TASK}\n47 * * * * ${EXPIRE_WAITING_IMPORTS_TASK}\n* * * * * ${AUTOMATION_TICK_TASK}`,
+    // Every night at 03:17, 03:37 and 03:57 (UTC), the waiting Imports every hour, and automation every minute (ADR 0056).
+    crontab: `17 3 * * * ${PURGE_AI_ACCESS_LOG_TASK}\n37 3 * * * ${PURGE_DELETED_DIVES_TASK}\n57 3 * * * ${PURGE_CLIENT_DIAGNOSTICS_TASK}\n47 * * * * ${EXPIRE_WAITING_IMPORTS_TASK}\n* * * * * ${AUTOMATION_TICK_TASK}`,
     taskList: {
       [BACKUP_RUN_TASK]: backupTask(backups, log),
       [PROCESS_IMPORT_TASK]: processImportTask(imports, waitingPushes, scheduledFetch, log),
@@ -152,6 +157,10 @@ export async function startWorker(pool: pg.Pool, deps: WorkerDeps): Promise<Runn
       [PURGE_DELETED_DIVES_TASK]: async () => {
         const purged = await purges.purge();
         if (purged > 0) log.info({ purged }, 'purged deleted Dives');
+      },
+      [PURGE_CLIENT_DIAGNOSTICS_TASK]: async () => {
+        const purged = await clientDiagnostics.purge();
+        if (purged > 0) log.info({ purged }, 'purged old client diagnostics');
       },
       [ASSESS_DIVES_TASK]: async () => {
         const divers = await assessments.refreshAll();

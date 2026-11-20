@@ -676,6 +676,8 @@
     "diver_not_external": "Nur ein Taucher, den kein User führt, kann in einen anderen zusammengeführt werden.",
     "ai_access_not_found": "Diesen KI-Zugang gibt es nicht mehr.",
     "ai_access_off": "Der KI-Zugang ist auf diesem Dive Hub ausgeschaltet. Ein Admin kann ihn einschalten.",
+    "client_diagnostics_disabled": "Die Client-Diagnose ist auf diesem Dive Hub ausgeschaltet. Ein Admin kann sie einschalten.",
+    "client_diagnostics_limited": "Zu viele Diagnose-Uploads in der letzten Stunde. Versuche es später erneut.",
     "finding_not_found": "Diesen Hinweis hat der Tauchgang nicht mehr. Lade die Seite neu.",
     "centre_not_found": "Diese Tauchbasis gibt es nicht (mehr).",
     "centre_changed": "Jemand hat die Tauchbasis inzwischen umbenannt. Lade die Seite neu und versuche es noch einmal.",

@@ -74,6 +74,7 @@ describe.skipIf(!(await databaseReachable()))('the admin support-bundle API', ()
       redaction: { keysCensored: expect.any(Number), emailsMasked: expect.any(Number), ipsMasked: expect.any(Number) },
       jobs: { failed: 2 },
       health: { uptimeSec: expect.any(Number), dbLatencyMs: expect.any(Number), workerRunning: false, queueDepth: expect.any(Number) },
+      clientDiagnostics: { entries: 0 },
       estimatedBytes: expect.any(Number),
     });
     expect(preview.json().redaction.emailsMasked).toBeGreaterThanOrEqual(2);
@@ -87,10 +88,11 @@ describe.skipIf(!(await databaseReachable()))('the admin support-bundle API', ()
     expect(download.headers['content-type']).toBe('application/gzip');
     expect(download.headers['content-disposition']).toMatch(/^attachment; filename="divehub-support-bundle-\d{8}-\d{6}\.tar\.gz"$/);
     const files = parseTar(gunzipSync(download.rawPayload));
-    expect([...files.keys()]).toEqual(['manifest.json', 'logs.ndjson', 'config.json', 'jobs.json', 'health.json']);
+    expect([...files.keys()]).toEqual(['manifest.json', 'logs.ndjson', 'config.json', 'jobs.json', 'health.json', 'client-diagnostics.ndjson']);
     const manifest = JSON.parse(files.get('manifest.json')!);
-    expect(manifest).toMatchObject({ format: 'divehub-support-bundle', formatVersion: 1, appVersion: 'dev' });
-    expect(manifest.sections.map((section: { name: string }) => section.name)).toEqual(['logs.ndjson', 'config.json', 'jobs.json', 'health.json']);
+    expect(manifest).toMatchObject({ format: 'divehub-support-bundle', formatVersion: 2, appVersion: 'dev' });
+    expect(manifest.sections.map((section: { name: string }) => section.name)).toEqual(['logs.ndjson', 'config.json', 'jobs.json', 'health.json', 'client-diagnostics.ndjson']);
+    expect(files.get('client-diagnostics.ndjson')).toBe('');
   });
 
   it('masks the seeded e-mail, IP and token in the log member', async () => {
@@ -133,6 +135,45 @@ describe.skipIf(!(await databaseReachable()))('the admin support-bundle API', ()
     expect(jobsText).not.toContain('"payload"');
     expect(jobsText).not.toContain('user-secret-1');
     expect(jobsText).not.toContain('/data/private');
+  });
+
+  it('includes redacted client diagnostics and counts them in the preview', async () => {
+    const patched = await ctx.app.inject({
+      method: 'PATCH', url: '/api/admin/client-diagnostics',
+      headers: { cookie: admin, origin: BASE_URL }, payload: { enabled: true },
+    });
+    expect(patched.statusCode).toBe(200);
+
+    const upload = await ctx.app.inject({
+      method: 'POST', url: '/api/client-diagnostics',
+      headers: { cookie: member, origin: BASE_URL },
+      payload: {
+        client: { name: 'web', version: '1.2.3' },
+        capturedAt: new Date('2026-11-20T10:00:00.000Z').toISOString(),
+        entries: [{
+          occurredAt: new Date('2026-11-20T09:59:00.000Z').toISOString(),
+          level: 'error', code: 'E_TEST', message: 'failure for ops@example.com from 203.0.113.9',
+          context: { token: 'raw-token' },
+        }],
+      },
+    });
+    expect(upload.statusCode).toBe(204);
+
+    const preview = await call('GET', '/api/admin/support-bundle/preview', admin);
+    expect(preview.json().clientDiagnostics).toEqual({ entries: 1 });
+
+    const download = await call('GET', '/api/admin/support-bundle/download', admin);
+    const memberFile = parseTar(gunzipSync(download.rawPayload)).get('client-diagnostics.ndjson')!;
+    const entries = memberFile.trim().split('\n').map((line) => JSON.parse(line));
+    expect(entries).toHaveLength(1);
+    expect(entries[0]).toMatchObject({
+      client: { name: 'web', version: '1.2.3' },
+      level: 'error', code: 'E_TEST', message: 'failure for ‹email› from ‹ip›',
+      context: { token: '‹redacted›' },
+    });
+    expect(memberFile).not.toContain('ops@example.com');
+    expect(memberFile).not.toContain('203.0.113.9');
+    expect(memberFile).not.toContain('raw-token');
   });
 
   it('reports health stats and leaves DB-unavailable fields out of the bundle', async () => {
