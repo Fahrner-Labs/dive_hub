@@ -51,7 +51,7 @@ function CreateBundle() {
           <a className="btn btn-secondary" href={SUPPORT_BUNDLE_DOWNLOAD_HREF}>{t('support.download')}</a>
         )}
       </div>
-      {preview.isPending ? <RowsSkeleton rows={4} /> : preview.data && <Summary data={preview.data} />}
+      {started && preview.isPending ? <RowsSkeleton rows={4} /> : preview.data && <Summary data={preview.data} />}
     </Panel>
   );
 }
