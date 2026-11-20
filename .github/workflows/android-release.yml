@@ -1,14 +1,15 @@
-# Publishes the Android app: the android-vX.Y.Z or android-vX.Y.Z-rcN tag is the only input (ADR 0077 D7). The tag
-# must point at a commit on main; the release APK is signed with the release key from GitHub Actions secrets,
-# checked with apksigner and attached to the GitHub Release as DiveHub-<versionName>.apk (for example
-# DiveHub-0.1.0-rc1.apk). An rc publishes a non-latest prerelease; a stable tag publishes a latest release. A tag
-# that fails the checks publishes nothing.
+# Publishes the Android app: the android-vX.Y.Z or android-vX.Y.Z-rcN tag is the only input (ADR 0077 D7) and
+# workflow_dispatch is the only trigger (ADR 0081: a tag pushed with the automation token starts no workflow run, so
+# relying on the push event meant repairing every cut by hand). The tag must point at a commit on main; the release
+# APK is signed with the release key from GitHub Actions secrets, checked with apksigner and attached to the GitHub
+# Release as DiveHub-<versionName>.apk (for example DiveHub-0.1.0-rc1.apk). An rc publishes a non-latest prerelease;
+# a stable tag publishes a latest release. A tag that fails the checks publishes nothing.
 name: android release
 
 on:
-  push:
-    tags: ['android-v*']
-  # Re-runs and repairs: give the existing release tag, e.g. android-v0.1.0. The job checks out that tag.
+  # Cut the tag on main, push it, then dispatch this workflow with that tag (docs/releases.md):
+  #   gh workflow run android-release.yml -f version=android-vX.Y.Z
+  # Re-dispatching the same tag is also the repair path: every step is idempotent.
   workflow_dispatch:
     inputs:
       version:
@@ -21,11 +22,11 @@ permissions:
 
 concurrency:
   # One run per tag; never cancel half way through an upload.
-  group: android-release-${{ github.event_name == 'workflow_dispatch' && inputs.version || github.ref_name }}
+  group: android-release-${{ inputs.version }}
   cancel-in-progress: false
 
 env:
-  RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.version || github.ref_name }}
+  RELEASE_TAG: ${{ inputs.version }}
 
 jobs:
   verify:
