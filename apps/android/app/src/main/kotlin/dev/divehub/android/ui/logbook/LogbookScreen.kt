@@ -466,13 +466,6 @@ private fun DiveRow(
                 dive.surfaceIntervalSeconds?.takeIf { it < SAME_DAY_SECONDS }?.let {
                     Fact(stringResource(R.string.logbook_surface_interval, LogbookText.duration(context, it)))
                 }
-                if (dive.findings > 0) {
-                    Text(
-                        context.resources.getQuantityString(R.plurals.logbook_findings, dive.findings, dive.findings),
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.error,
-                    )
-                }
                 if (profilePending && dive.recordings > 0) {
                     Fact(stringResource(R.string.logbook_profile_pending))
                 }

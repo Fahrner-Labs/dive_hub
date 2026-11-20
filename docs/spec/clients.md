@@ -651,10 +651,13 @@ returns findings from fixed rules; the client words them.
 - **Show where on the profile** a finding is (`startSeconds`, `endSeconds`, on the Recording `recordingId`, the Primary
   one); findings about the dive as a whole have none. When `sampleIntervalSeconds` is 5 or more, say that short fast
   stretches can be missing.
-- **Dismiss and mute:** `dismissed` findings and those of a `muted` rule leave the main list and the logbook's mark, and
-  stay reachable with a way back; muting asks first and names the Diver. Neither changes what was computed.
-- **The logbook's mark** is `findings` on each Dive of `GET /api/dives` (notes and cautions not put aside); show it as
-  text, not as a colour or an icon alone.
+- **Dismiss and mute:** `dismissed` findings and those of a `muted` rule leave the main list and the logbook's mark
+  where a client shows one, and stay reachable with a way back; muting asks first and names the Diver. Neither
+  changes what was computed.
+- **The logbook's mark is optional:** `findings` on each Dive of `GET /api/dives` counts the notes and cautions not put
+  aside. A client that shows it shows text, not a colour or an icon alone, and never in an alarm colour. The Android
+  client leaves it off the list rows, where findings are not actionable; the Dive page shows them. The `with-findings`
+  filter and its count stay on both clients.
 - **The no-fly time** (`noFly`, on the last dive of a diving day, else null) is information beside the findings: show it
   apart from them with its `source`, don't count it, and offer nothing to dismiss.
 - **Muted rules are listed with their Diver** (`mutedRules` of `GET /api/divers`), each with a way to show it again: a

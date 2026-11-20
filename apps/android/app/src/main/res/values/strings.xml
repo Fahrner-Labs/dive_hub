@@ -174,10 +174,6 @@
         <item quantity="one">%1$d dive · %2$s</item>
         <item quantity="other">%1$d dives · %2$s</item>
     </plurals>
-    <plurals name="logbook_findings">
-        <item quantity="one">%1$d finding</item>
-        <item quantity="other">%1$d findings</item>
-    </plurals>
 
     <string name="tools_title">Tools</string>
     <string name="tools_back">Logbook</string>
