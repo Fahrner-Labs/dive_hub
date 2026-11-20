@@ -9,6 +9,7 @@ import { changeListener, writeRevision, type Changes } from '../revisions/revisi
 import type { Position, SiteWaterType } from '../vocabulary.js';
 import { IMPORTED_FIELDS, type ImportedValues } from './import/site-source.js';
 import { isUniqueViolation, SiteError } from './site-error.js';
+import { createSiteIdDecisionService } from './site-decisions.js';
 import { accountsOfUser, clearId, diversOf, idsOf, moveIds, storeId, takeOffer } from './site-ids.js';
 import { revisionKey, SITE_SOURCES, SOURCE_INFO, typedId, type SiteSource } from './sources.js';
 
@@ -83,6 +84,7 @@ const FILLED = ['position', 'country', 'waterBody', 'description', 'maxDepthM', 
 export const NEARBY_M = 2000;
 
 export function createSiteService(db: Db) {
+  const siteIdDecisions = createSiteIdDecisionService(db);
   /**
    * The columns every site view needs, for the signed-in User. The subqueries name their tables: in a
    * single-table select Drizzle leaves columns unqualified, so `${dive.siteId}` would be ambiguous.
@@ -317,6 +319,18 @@ export function createSiteService(db: Db) {
         if (externalId === null) await clearId(tx, id, source, null, by);
         else await storeId(tx, { siteId: id, source, externalId, accountId: null, actor: by });
       });
+    },
+
+    /** Offers to move an account's Dives from its private site ID to the site's public one (FAH-121). */
+    async privateIdDecisions(actor: Caller) {
+      return siteIdDecisions.waiting(actor.userId);
+    },
+
+    /** Answers one of those offers: `move` removes the account's private ID, `keep` silences it (FAH-121). */
+    async decidePrivateId(
+      actor: Caller, siteId: string, source: SiteSource, diverId: string, privateExternalId: string, choice: 'move' | 'keep',
+    ) {
+      await siteIdDecisions.decide(actor.userId, siteId, source, diverId, privateExternalId, choice);
     },
 
     /**

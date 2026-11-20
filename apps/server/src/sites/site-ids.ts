@@ -84,6 +84,42 @@ export function pickId(rows: SiteIdRow[], source: SiteSource, account: string | 
   return (usable.find((r) => r.accountId === null) ?? usable[0])?.externalId ?? null;
 }
 
+/** A site's private ID for an account while the same site and Source also have a public ID. */
+export interface PrivateIdWithPublic {
+  siteId: string;
+  source: SiteSource;
+  accountId: string;
+  privateExternalId: string;
+  publicExternalId: string;
+}
+
+/**
+ * For these accounts: their private IDs on sites that also have a public ID at the same Source (FAH-121). Each offer is
+ * one row; a site with a public ID at another Source is not one.
+ */
+export async function privateIdsWithPublicIds(q: Queryable, accounts: string[]): Promise<PrivateIdWithPublic[]> {
+  if (accounts.length === 0) return [];
+  const privateRows = await q.select({
+    siteId: diveSiteExternalId.siteId, source: diveSiteExternalId.source,
+    accountId: diveSiteExternalId.accountId, externalId: diveSiteExternalId.externalId,
+  }).from(diveSiteExternalId).innerJoin(diveSite, eq(diveSite.id, diveSiteExternalId.siteId))
+    .where(and(inArray(diveSiteExternalId.accountId, accounts), isNull(diveSite.deletedAt)));
+  if (privateRows.length === 0) return [];
+  const publicRows = await q.select({
+    siteId: diveSiteExternalId.siteId, source: diveSiteExternalId.source, externalId: diveSiteExternalId.externalId,
+  }).from(diveSiteExternalId).where(and(
+    isNull(diveSiteExternalId.accountId),
+    inArray(diveSiteExternalId.siteId, [...new Set(privateRows.map((r) => r.siteId))]),
+  ));
+  const publicId = new Map(publicRows.map((r) => [`${r.siteId} ${r.source}`, r.externalId]));
+  return privateRows.flatMap((r) => {
+    const publicExternalId = publicId.get(`${r.siteId} ${r.source}`);
+    return publicExternalId === undefined || r.accountId === null ? [] : [{
+      siteId: r.siteId, source: r.source, accountId: r.accountId, privateExternalId: r.externalId, publicExternalId,
+    }];
+  });
+}
+
 /** The site that holds an ID, whoever's it is, and whether that site is deleted (or merged). */
 export async function holderOf(q: Queryable, source: SiteSource, externalId: string): Promise<{ siteId: string; accountId: string | null; deleted: boolean } | null> {
   const [r] = await q.select({ siteId: diveSiteExternalId.siteId, accountId: diveSiteExternalId.accountId, deletedAt: diveSite.deletedAt })
@@ -96,6 +132,26 @@ const sameKey = (siteId: string, source: SiteSource, accountId: string | null) =
   eq(diveSiteExternalId.siteId, siteId), eq(diveSiteExternalId.source, source),
   accountId === null ? isNull(diveSiteExternalId.accountId) : eq(diveSiteExternalId.accountId, accountId),
 );
+
+/** The account's private ID on the site at the Source, or null. */
+export async function privateIdOf(q: Queryable, siteId: string, source: SiteSource, accountId: string): Promise<string | null> {
+  const [row] = await q.select({ externalId: diveSiteExternalId.externalId }).from(diveSiteExternalId)
+    .where(sameKey(siteId, source, accountId));
+  return row?.externalId ?? null;
+}
+
+/**
+ * The account's private ID while the site also has a public ID at the Source, both locked for the decision's
+ * transaction; null when either is gone (another tab moved it, or the public counterpart vanished).
+ */
+export async function lockPrivateIdWithPublic(tx: Tx, siteId: string, source: SiteSource, accountId: string): Promise<string | null> {
+  const [own] = await tx.select({ externalId: diveSiteExternalId.externalId }).from(diveSiteExternalId)
+    .where(sameKey(siteId, source, accountId)).for('update');
+  if (!own) return null;
+  const [pub] = await tx.select({ id: diveSiteExternalId.id }).from(diveSiteExternalId)
+    .where(sameKey(siteId, source, null)).for('update');
+  return pub ? own.externalId : null;
+}
 
 /**
  * Sets the site's ID at a Source for an account (null: public), replacing the row of the same site, Source and account.

@@ -317,10 +317,11 @@ export async function disconnectSsi(api: APIRequestContext) {
 /**
  * The Dive ready to go to SSI, but not there: at the site "SSI test reef" without an SSI site ID, and with
  * no SSI dive (deleted there if an earlier test sent it). Needs a Connection. `positioned: false`: the site without its
- * position, so that sending can't find or make it at SSI and the site's ID is still needed first (piece 4).
+ * position, so that sending can't find or make it at SSI and the site's ID is still needed first (piece 4). `name`: a
+ * site of its own, for a spec whose decisions must not meet another's (FAH-121).
  */
-export async function readyForSsi(api: APIRequestContext, diveId: string, options: { positioned?: boolean } = {}) {
-  const name = 'SSI test reef';
+export async function readyForSsi(api: APIRequestContext, diveId: string, options: { positioned?: boolean; name?: string } = {}) {
+  const name = options.name ?? 'SSI test reef';
   const position = options.positioned === false ? null : { latitude: 47.851, longitude: 13.5512 };
   const { sites } = await (await api.get(`/api/dive-sites?q=${encodeURIComponent(name)}`)).json() as { sites: { id: string; name: string; version: number }[] };
   let site = sites.find((s) => s.name === name);

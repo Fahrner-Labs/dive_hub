@@ -4,7 +4,7 @@
 export class SiteError extends Error {
   constructor(readonly code:
     | 'site_not_found' | 'site_changed' | 'site_in_use' | 'site_not_deletable' | 'external_id_taken' | 'site_merge_self'
-    | 'site_offer_not_found' | 'site_source_not_typed' | 'invalid_input') {
+    | 'site_offer_not_found' | 'site_source_not_typed' | 'invalid_input' | 'site_id_decision_not_waiting') {
     super(code);
   }
 }

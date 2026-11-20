@@ -99,9 +99,30 @@ const SiteRevisionView = Type.Object({
 
 const STATUS: Record<SiteError['code'], number> = {
   site_not_found: 404, site_changed: 409, site_in_use: 409, site_not_deletable: 403, external_id_taken: 409, site_merge_self: 400,
-  site_offer_not_found: 404, site_source_not_typed: 400, invalid_input: 400,
+  site_offer_not_found: 404, site_source_not_typed: 400, invalid_input: 400, site_id_decision_not_waiting: 409,
 };
 const errors = { 400: Problem, 403: Problem, 404: Problem, 409: Problem };
+
+/** One site and account whose private ID now has a public counterpart (FAH-121). */
+const SiteIdDecisionView = Type.Object({
+  siteId: Type.String(),
+  siteName: Type.String(),
+  source: Type.Enum([...SITE_SOURCES]),
+  providerName: Type.String({ description: 'The Source\'s name, e.g. "SSI"' }),
+  diverId: Type.String(),
+  diverName: Type.String(),
+  privateExternalId: Type.String({ description: 'The account\'s private ID on the site; only its Users see it' }),
+  publicExternalId: Type.String(),
+});
+
+const PrivateIdDecisionBody = Type.Object({
+  source: Type.Enum([...SITE_SOURCES]),
+  diverId: Type.String({ format: 'uuid', description: 'The Diver whose account holds the private ID' }),
+  privateExternalId: Type.String({ description: 'The private ID as the offer showed it; a decision about another value is refused' }),
+  choice: Type.Enum(['move', 'keep'], {
+    description: 'move: remove the private ID, so the account\'s Dives use the public one from the next send on. keep: leave them private and don\'t ask again for this site and account',
+  }),
+}, { additionalProperties: false });
 
 /** Blank text is no text. */
 const text = (v: string | null | undefined) => (v === undefined ? undefined : v?.trim() || null);
@@ -177,6 +198,30 @@ export const siteRoutes: FastifyPluginAsyncTypebox<SiteRouteDeps> = async (app, 
   }, async (request) => {
     await sites.setExternalId(callerOf(request), request.params.id, request.params.source, request.body.externalId);
     return toSiteView(await sites.get(callerOf(request), request.params.id));
+  });
+
+  app.get('/dive-site-decisions', {
+    schema: {
+      summary: 'Offers to move an account\'s Dives from a private site ID to the site\'s public counterpart (FAH-121)',
+      description: 'One entry per site and account of a Diver the User manages: the site has both the account\'s private ID and a public ID at the same Source. '
+        + 'No call to a Provider. Clients show "Move your dives at <site> to <Source>\'s public site" and "Keep them on your private site"; '
+        + 'an entry answered with keep is not listed again for that site and account.',
+      response: { 200: Type.Array(SiteIdDecisionView) },
+    },
+  }, async (request) => sites.privateIdDecisions(callerOf(request)));
+
+  app.post('/dive-site-decisions/:id', {
+    schema: {
+      summary: 'Answer an offer to move an account\'s Dives to the site\'s public ID (FAH-121)',
+      description: '"move" changes only Dive Hub\'s side: the account\'s private ID is removed, so its Dives at the site use the public one from the next send on '
+        + '(by hand, a Push run or an automatic send). "keep" leaves the private ID and silences the offer for this site and account. '
+        + '409 site_id_decision_not_waiting when there is no such offer for the Diver.',
+      params: IdParams, body: PrivateIdDecisionBody, response: { 204: Type.Null(), ...errors },
+    },
+  }, async (request, reply) => {
+    const { source, diverId, privateExternalId, choice } = request.body;
+    await sites.decidePrivateId(callerOf(request), request.params.id, source, diverId, privateExternalId, choice);
+    return reply.code(204).send(null);
   });
 
   app.post('/dive-sites/:id/merge', {

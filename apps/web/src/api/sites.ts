@@ -12,6 +12,8 @@ export type VerificationCodeView = NonNullable<CentreView['verificationCode']>;
 export type SiteRevisionView = Ok<'/api/dive-sites/{id}/revisions'>[number];
 export type SiteImportView = Ok<'/api/admin/site-imports/{id}'>;
 export type SiteImportArea = SiteImportView['area'];
+/** An offer to move one account's Dives from its private site ID to the site's public one (FAH-121). */
+export type SiteIdDecisionView = Ok<'/api/dive-site-decisions'>[number];
 
 /** Dive sites (ADR 0020): searched by words, or the ones near a position, nearest first. */
 export const sitesQuery = (p: SitesParams & { near?: Position | undefined; within?: number | undefined } = {}) => queryOptions({
@@ -29,6 +31,12 @@ export const sitesQuery = (p: SitesParams & { near?: Position | undefined; withi
   placeholderData: keepPreviousData,
 });
 export const siteQuery = (id: string) => queryOptions({ queryKey: keys.site(id), queryFn: async () => request(api.GET('/api/dive-sites/{id}', { params: { path: { id } } })) });
+
+/** Offers to move an account's Dives from a private site ID to the site's public one (FAH-121); stored, no call to a Provider. */
+export const siteIdDecisionsQuery = () => queryOptions({
+  queryKey: keys.siteIdDecisions,
+  queryFn: async () => request(api.GET('/api/dive-site-decisions')),
+});
 
 /** Dive centres (ADR 0043) by name: the ones matching words, or the ones of a Dive site. */
 export const centresQuery = (p: { q?: string | undefined; siteId?: string | undefined } = {}) => queryOptions({

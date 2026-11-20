@@ -4,6 +4,7 @@ import { DeletedDives } from './DeletedDives.tsx';
 import { DiscardedRecordings, RecordingDecisions } from './Decisions.tsx';
 import { GoneDivesSections } from './GoneDives.tsx';
 import { ProviderConflictsSection } from './ProviderConflictsSection.tsx';
+import { SiteIdDecisionSections } from './SiteIdDecisions.tsx';
 import { ImportHistory } from './ImportPanel.tsx';
 import { AnsweredChecks, KeptDives, PairDecisions, ShortDiveDecisions } from './LogbookChecks.tsx';
 import { usePageTitle } from './lib/page.ts';
@@ -47,6 +48,7 @@ function ToDecide() {
       <PairDecisions />
       <ShortDiveDecisions />
       <RecordingDecisions />
+      <SiteIdDecisionSections />
       <GoneDivesSections />
       <ProviderConflictsSection />
       {total === 0 && <Muted>{t('review.nothingWaits')}</Muted>}

@@ -1,7 +1,8 @@
 // Picking or typing a site's ID through the Connection (piece 4, Task 5): the Provider is asked about the ID first.
 // Public → stored public (with a Revision); the account's own private → stored private; another account's private or an
 // unknown or deleted ID → provider_site_unknown, nothing stored; a Provider that doesn't say, or can't be asked → private,
-// never public (Review Focus 4). Clearing removes only the account's private row.
+// never public (Review Focus 4). Clearing removes only the account's private row. A different public ID stays beside that
+// private row and offers to move the account's Dives (FAH-121); the same ID made public replaces it.
 import { and, eq } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { diveSiteExternalId, diverExternalId, revision } from '../src/db/schema.js';
@@ -178,7 +179,7 @@ describe.skipIf(!(await databaseReachable()))('picking a site ID through the Con
     expect(response.json()).toMatchObject({ code: 'external_id_taken' });
   });
 
-  it('stores a public ID over the account\'s own private row on the site, with a Revision', async () => {
+  it('makes the same ID public over the account\'s private row, and keeps a different public ID beside it', async () => {
     const same = await newSite('Now public');
     await t.db.transaction((tx) => storeId(tx, { siteId: same, source: 'ssi', externalId: '4121', accountId: account, actor: null }));
     ssiSite(4121, { odin_dive_sites_is_private: 0 });
@@ -186,11 +187,15 @@ describe.skipIf(!(await databaseReachable()))('picking a site ID through the Con
     expect(await rowsOf(same)).toEqual([{ externalId: '4121', accountId: null }]);
     expect(await revisionsOf(same)).toHaveLength(1);
 
-    const other = await newSite('Replaced private');
+    // A different public ID does not move the account's dives by itself: both rows stay and the User is offered the move.
+    const other = await newSite('Public counterpart');
     await t.db.transaction((tx) => storeId(tx, { siteId: other, source: 'ssi', externalId: '4122', accountId: account, actor: null }));
     ssiSite(4123, { odin_dive_sites_is_private: 0 });
     expect((await pick(other, '4123')).json()).toEqual({ externalId: '4123', private: false });
-    expect(await rowsOf(other)).toEqual([{ externalId: '4123', accountId: null }]);
+    expect(await rowsOf(other)).toEqual(expect.arrayContaining([
+      { externalId: '4122', accountId: account },
+      { externalId: '4123', accountId: null },
+    ]));
   });
 
   it('refuses an ID that doesn\'t match SSI\'s pattern', async () => {

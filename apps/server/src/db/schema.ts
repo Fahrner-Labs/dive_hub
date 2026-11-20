@@ -521,6 +521,30 @@ export const diveSiteExternalId = pgTable(
   ],
 );
 
+export const siteIdDecisionChoice = pgEnum('site_id_decision_choice', ['move', 'keep']);
+
+/**
+ * The User's answer when a site an account holds privately at a Source also gets a public ID (FAH-121): one row per
+ * site, Source and account. The offer itself is worked out from the two IDs and not stored; a `keep` row remembers that
+ * the account's Dives stay on its private ID and the offer is not raised again, and a `move` row records that the
+ * private ID was removed, so its Dives use the public one from the next send on.
+ */
+export const siteIdDecision = pgTable(
+  'site_id_decision',
+  {
+    siteId: uuid('site_id').notNull().references(() => diveSite.id, { onDelete: 'cascade' }),
+    source: siteSource('source').notNull(),
+    accountId: uuid('account_id').notNull().references((): AnyPgColumn => diverExternalId.id, { onDelete: 'cascade' }),
+    choice: siteIdDecisionChoice('choice').notNull(),
+    decidedBy: uuid('decided_by').references(() => user.id, { onDelete: 'set null' }),
+    decidedAt: timestamp('decided_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.siteId, t.source, t.accountId] }),
+    index('site_id_decision_account_idx').on(t.accountId),
+  ],
+);
+
 /**
  * A business that runs dives, shared by every User of the instance like a Dive site (ADR 0043): any User creates and
  * edits it (with `version` and Revisions), its creator or an admin deletes it. The name is kept as typed, since

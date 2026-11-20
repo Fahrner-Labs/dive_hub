@@ -434,6 +434,7 @@
               "site_source_not_typed",
               "site_merge_self",
               "site_offer_not_found",
+              "site_id_decision_not_waiting",
               "centre_not_found",
               "centre_changed",
               "centre_not_deletable",
@@ -3843,6 +3844,7 @@
                   "site_source_not_typed",
                   "site_merge_self",
                   "site_offer_not_found",
+                  "site_id_decision_not_waiting",
                   "centre_not_found",
                   "centre_changed",
                   "centre_not_deletable",
@@ -4068,6 +4070,7 @@
                   "site_source_not_typed",
                   "site_merge_self",
                   "site_offer_not_found",
+                  "site_id_decision_not_waiting",
                   "centre_not_found",
                   "centre_changed",
                   "centre_not_deletable",
@@ -4900,6 +4903,7 @@
                         "site_source_not_typed",
                         "site_merge_self",
                         "site_offer_not_found",
+                        "site_id_decision_not_waiting",
                         "centre_not_found",
                         "centre_changed",
                         "centre_not_deletable",
@@ -21113,6 +21117,173 @@
         }
       }
     },
+    "/api/dive-site-decisions": {
+      "get": {
+        "summary": "Offers to move an account's Dives from a private site ID to the site's public counterpart (FAH-121)",
+        "description": "One entry per site and account of a Diver the User manages: the site has both the account's private ID and a public ID at the same Source. No call to a Provider. Clients show \"Move your dives at <site> to <Source>'s public site\" and \"Keep them on your private site\"; an entry answered with keep is not listed again for that site and account.",
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "siteId",
+                      "siteName",
+                      "source",
+                      "providerName",
+                      "diverId",
+                      "diverName",
+                      "privateExternalId",
+                      "publicExternalId"
+                    ],
+                    "properties": {
+                      "siteId": {
+                        "type": "string"
+                      },
+                      "siteName": {
+                        "type": "string"
+                      },
+                      "source": {
+                        "enum": [
+                          "osm",
+                          "wikidata",
+                          "ssi"
+                        ]
+                      },
+                      "providerName": {
+                        "type": "string",
+                        "description": "The Source's name, e.g. \"SSI\""
+                      },
+                      "diverId": {
+                        "type": "string"
+                      },
+                      "diverName": {
+                        "type": "string"
+                      },
+                      "privateExternalId": {
+                        "type": "string",
+                        "description": "The account's private ID on the site; only its Users see it"
+                      },
+                      "publicExternalId": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/dive-site-decisions/{id}": {
+      "post": {
+        "summary": "Answer an offer to move an account's Dives to the site's public ID (FAH-121)",
+        "description": "\"move\" changes only Dive Hub's side: the account's private ID is removed, so its Dives at the site use the public one from the next send on (by hand, a Push run or an automatic send). \"keep\" leaves the private ID and silences the offer for this site and account. 409 site_id_decision_not_waiting when there is no such offer for the Diver.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "source",
+                  "diverId",
+                  "privateExternalId",
+                  "choice"
+                ],
+                "properties": {
+                  "source": {
+                    "enum": [
+                      "osm",
+                      "wikidata",
+                      "ssi"
+                    ]
+                  },
+                  "diverId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "The Diver whose account holds the private ID"
+                  },
+                  "privateExternalId": {
+                    "type": "string",
+                    "description": "The private ID as the offer showed it; a decision about another value is refused"
+                  },
+                  "choice": {
+                    "enum": [
+                      "move",
+                      "keep"
+                    ],
+                    "description": "move: remove the private ID, so the account's Dives use the public one from the next send on. keep: leave them private and don't ask again for this site and account"
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Default Response"
+          },
+          "400": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/dive-sites/{id}/merge": {
       "post": {
         "summary": "Merge this Dive site into another (any User; no undo)",
@@ -29442,7 +29613,7 @@
     "/api/connections/{id}/dive-sites/{siteId}": {
       "put": {
         "summary": "Set or clear a Dive site's ID at the Connection's Provider: picked from its sites or typed, after asking the Provider",
-        "description": "The Provider is asked about the ID first. One it calls public is stored public (with a Revision); the account's own private one is stored private to the Connection's account; an ID it has no site for (also another account's private site) is 422 provider_site_unknown and nothing is stored. When it does not say or cannot be asked, the ID is stored private, never public. A public ID replaces the account's private ID of the site. 409 provider_not_connected when the Connection's Diver has no account there; 502 provider_unavailable when the Provider cannot be asked and another account holds the ID privately. null clears the account's private ID of the site only (the public ID is cleared with PUT /api/dive-sites/{id}/external-ids/{source}). 409 external_id_taken when another site has the ID.",
+        "description": "The Provider is asked about the ID first. One it calls public is stored public (with a Revision); the account's own private one is stored private to the Connection's account; an ID it has no site for (also another account's private site) is 422 provider_site_unknown and nothing is stored. When it does not say or cannot be asked, the ID is stored private, never public. A public ID that is the account's own private ID made public replaces it (the Dives keep using it); another public ID stays beside the private one and offers to move the account's Dives (GET /api/dive-site-decisions, FAH-121). 409 provider_not_connected when the Connection's Diver has no account there; 502 provider_unavailable when the Provider cannot be asked and another account holds the ID privately. null clears the account's private ID of the site only (the public ID is cleared with PUT /api/dive-sites/{id}/external-ids/{source}). 409 external_id_taken when another site has the ID.",
         "requestBody": {
           "required": true,
           "content": {

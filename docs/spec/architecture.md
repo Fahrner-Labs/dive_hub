@@ -629,6 +629,12 @@ Implemented:
   `PUT /api/dive-sites/{id}/external-ids/{source}` still stores a public ID without asking.
 - **Web:** the Dive panel sends with `bySend`; the picker marks private sites; the site page shows and edits "Your
   private SSI site ID" when the User has a Connection for that Source.
+- **A public counterpart (FAH-121; `sites/site-decisions.ts`):** when a site has an account's private ID and a public ID at
+  the same Source, "Needs your decision" offers one entry per site and account (`GET /api/dive-site-decisions`), from the
+  two rows rather than a stored finding. `move` removes only the private row (the site's Dives go stale, and the next
+  send's `pickId` uses the public ID); `keep` stores the answer in `site_id_decision` and silences the offer for that
+  site and account. A typed public ID different from the account's private one stays beside it instead of replacing it; the
+  same ID made public replaces it. The Site import, a typed ID and a logbook site read as public all lead there.
 
 Deliberate simplifications, to revisit:
 - **No Connection Diver mappings:** a buddy entry without an SSI account can't be sent (none seen in the owner's list).

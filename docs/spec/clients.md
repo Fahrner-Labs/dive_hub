@@ -685,7 +685,7 @@ Each change there answers the new status, so the panel needs no second fetch: "S
     for the Source, pick and type through it: `PUT /api/connections/{id}/dive-sites/{siteId}` with `{ externalId }` asks the
     Provider first and answers `{ externalId, private }` (`null` clears the account's private ID); `provider_site_unknown`
     (422) means the Provider has no site with that ID (also another account's private one), and nothing is stored; an ID
-    the Provider doesn't say about, or can't be asked about, is stored private; so `private: true` can also mean the Provider didn't confirm the site public (unknown or unreachable), and clients don't present it as the Provider's statement. A public ID replaces the account's private one on the site. `external_id_taken` as below; while the Provider can't be asked, an ID another account holds privately answers `provider_unavailable` (502: try again later) instead. `provider_not_connected` (409) means the Connection's Diver has no account at the Provider. Without a
+    the Provider doesn't say about, or can't be asked about, is stored private; so `private: true` can also mean the Provider didn't confirm the site public (unknown or unreachable), and clients don't present it as the Provider's statement. A public ID that is the account's own private ID made public replaces it; a different public ID on the site stays beside the private one, and the User is offered to move the account's Dives there ([a site's private ID gets a public counterpart](#a-sites-private-id-gets-a-public-counterpart)). `external_id_taken` as below; while the Provider can't be asked, an ID another account holds privately answers `provider_unavailable` (502: try again later) instead. `provider_not_connected` (409) means the Connection's Diver has no account at the Provider. Without a
     Connection, save it on the site (`PUT /api/dive-sites/{id}/external-ids/{source}`), which stores a public ID without
     asking the Provider. When not `typed`, say it can't be fixed here.
   - **`diver_mapping`:** one item per Participant (`diverName`) the Provider can't identify; say they will be left out
@@ -922,6 +922,21 @@ device shows the same). A Conflict found again after the choice has `queued: fal
 the Dive with a link to its page.
 *Web:* `ProviderConflicts.tsx` (the choice per field, on the Dive's page where the send button was, and on the Review
 page), `ProviderConflictsSection.tsx` (the Review section), `PushRun.tsx` (the run report's line).
+
+### A site's private ID gets a public counterpart
+(`GET /api/dive-site-decisions`, no call to a Provider; FAH-121.) A site an account holds privately at a Source (a private
+site ID, ADR 0057) later gets a public ID at the same Source, through the Site import, a typed ID or a logbook site read
+as public. One entry per site and account waits under "Needs your decision" on the Review page, for the accounts of the
+Divers the User manages: `siteId`, `siteName`, `source`, `providerName`, `diverId`, `diverName`, `privateExternalId` and
+`publicExternalId` (the two IDs only to that account's Users). Say "Move your dives at {{site}} to {{provider}}'s public
+site" with **"Move my dives"** and **"Keep them on my private site"**; name the Diver when several entries share a
+Provider. Answer with `POST /api/dive-site-decisions/{siteId}` and `{ source, diverId, privateExternalId, choice }` (204):
+send the `privateExternalId` the offer showed, so a decision about an ID that changed meanwhile is refused; `move` removes
+only Dive Hub's private ID, so the account's Dives at the site use the public ID from the next send on (by hand, a Push
+run or an automatic send; no bulk send inside the decision); `keep` leaves the private ID and does not raise the offer
+again for that site and account. Neither choice sends anything. 409 `site_id_decision_not_waiting` when that offer is
+gone. A `keep` entry leaves the list; a site whose private or public ID is gone has none.
+*Web:* `SiteIdDecisionSections` (`SiteIdDecisions.tsx`, the Review section).
 
 ### Sending by itself
 ([ADR 0056](../decisions/0056-two-way-exchange-and-automation.md); the settings of a Connection, the queue of Waiting

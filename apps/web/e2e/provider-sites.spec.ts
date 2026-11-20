@@ -120,3 +120,54 @@ test('the site form has no private ID field without a Connection for that Source
     await leaveSsi(request, dive.id);
   }
 });
+
+/** A Dive sent at a positioned site of its own with no SSI ID: the send makes it at SSI as the account's private one. */
+async function sendToPrivateSite(
+  page: import('@playwright/test').Page, request: import('@playwright/test').APIRequestContext, name: string, publicId: string,
+) {
+  const dive = await resetDive(request);
+  await connectSsi(request);
+  await readyForSsi(request, dive.id, { name });
+  await page.goto(`/#/dives/${dive.id}`);
+  const panel = page.locator('section', { has: page.getByRole('heading', { name: 'SSI', exact: true }) });
+  await openLine(page, 'SSI');
+  await panel.getByRole('button', { name: 'Send to SSI' }).click();
+  await expect(panel.getByText(/In SSI as dive \d+, sent/)).toBeVisible();
+  const site = await siteOf(request, dive.id);
+  const own = site.externalIds.find((e) => e.source === 'ssi' && e.privateTo);
+  expect(own, 'the send stores the site it made as the account’s private one').toBeTruthy();
+  return { dive, site, own: own!, publicId };
+}
+
+test('a private site with a public counterpart waits under Needs your decision; Keep stops the offer', { tag: ['@sites', '@dives'] }, async ({ page, request }) => {
+  const name = 'Decision keep reef';
+  const { dive, site, own, publicId } = await sendToPrivateSite(page, request, name, '888801');
+  expect((await request.put(`/api/dive-sites/${site.id}/external-ids/ssi`, { data: { externalId: publicId } })).ok()).toBeTruthy();
+
+  await page.goto('/#/review');
+  await expect(page.getByRole('heading', { name: 'Dives on a private SSI site (1)' })).toBeVisible();
+  await expect(page.getByText(`Move your dives at ${name} to SSI’s public site?`)).toBeVisible();
+  await page.getByRole('button', { name: `Keep dives at ${name} on your private site` }).click();
+  await expect(page.getByRole('heading', { name: 'Dives on a private SSI site (1)' })).toHaveCount(0);
+  await expect(page.getByText(`Your dives at ${name} stay on your private SSI site.`)).toBeVisible();
+  // Only Dive Hub's answer is stored: the private ID stays.
+  expect((await siteOf(request, dive.id)).externalIds).toEqual(expect.arrayContaining([
+    expect.objectContaining({ externalId: own.externalId, privateTo: { diverId: own.privateTo!.diverId } }),
+  ]));
+  await leaveSsi(request, dive.id);
+});
+
+test('Move takes the private ID away, so the site keeps only the public one', { tag: ['@sites', '@dives'] }, async ({ page, request }) => {
+  const name = 'Decision move reef';
+  const { dive, site, publicId } = await sendToPrivateSite(page, request, name, '888802');
+  expect((await request.put(`/api/dive-sites/${site.id}/external-ids/ssi`, { data: { externalId: publicId } })).ok()).toBeTruthy();
+
+  await page.goto('/#/review');
+  await page.getByRole('button', { name: `Move dives at ${name} to SSI’s public site` }).click();
+  await expect(page.getByText(`Your dives at ${name} move to SSI’s public site with the next send.`)).toBeVisible();
+  const after = await siteOf(request, dive.id);
+  expect(after.externalIds.filter((e) => e.source === 'ssi')).toEqual([
+    expect.objectContaining({ externalId: publicId, privateTo: null }),
+  ]);
+  await leaveSsi(request, dive.id);
+});

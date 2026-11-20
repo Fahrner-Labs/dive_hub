@@ -3,6 +3,7 @@
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import {
   buddySuggestionsQuery, candidatesQuery, deletedDivesQuery, deletedDivesTotal, goneDivesQuery, isPairCheck, logbookChecksQuery, providerConflictsQuery,
+  siteIdDecisionsQuery,
 } from '../api.ts';
 
 export const REVIEW_TABS = ['decide', 'imports', 'decided', 'deleted'] as const;
@@ -37,9 +38,11 @@ export function useToDecideCounts() {
   const conflicts = entries.filter((e) => e.kind === 'conflict').length;
   // Dives the Provider already has a dive for: the send waits for the User's choice.
   const exists = entries.length - conflicts;
+  // Sites whose private IDs gained a public counterpart: one offer per site and account (FAH-121).
+  const siteMoves = useQuery(siteIdDecisionsQuery()).data?.length ?? 0;
   return {
-    suggestions, recordings, pairs, surfaceBreaks, shortDives, goneAt, gone, conflicts, exists,
-    total: suggestions + recordings + checks.length + gone + conflicts + exists,
+    suggestions, recordings, pairs, surfaceBreaks, shortDives, goneAt, gone, conflicts, exists, siteMoves,
+    total: suggestions + recordings + checks.length + gone + conflicts + exists + siteMoves,
   };
 }
 

@@ -87,6 +87,7 @@ export const PROBLEMS = {
   site_source_not_typed: 'IDs of this source come only from a site import',
   site_merge_self: 'A dive site can\'t be merged into itself',
   site_offer_not_found: 'This dive site has no data on offer from that source (anymore)',
+  site_id_decision_not_waiting: 'This site and account have no private ID to move to a public one (anymore)',
   centre_not_found: 'Dive centre not found',
   centre_changed: 'The dive centre was renamed meanwhile; reload it and apply your change again',
   centre_not_deletable: 'Only whoever created the dive centre, or an admin, can delete it',
