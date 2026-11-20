@@ -1,6 +1,7 @@
 package dev.divehub.shared
 
 import io.ktor.client.HttpClient
+import io.ktor.client.call.NoTransformationFoundException
 import io.ktor.client.call.body
 import io.ktor.client.engine.HttpClientEngine
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
@@ -13,6 +14,7 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
 import io.ktor.http.contentType
+import io.ktor.serialization.ContentConvertException
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.CancellationException
 import kotlinx.io.IOException
@@ -60,7 +62,22 @@ class ApiClient(
     suspend fun stream(path: String, authenticated: Boolean = true): HttpResponse =
         send(HttpMethod.Get, path, null, authenticated, retry = false)
 
-    suspend inline fun <reified T> decode(response: HttpResponse): T = response.body()
+    /**
+     * Decode a response body. A body that does not decode is a [DecodeException], not a serializer exception escaping
+     * the caller's refusal handling (client contract §2); cancellation is never turned into one.
+     */
+    suspend inline fun <reified T> decode(response: HttpResponse): T = try {
+        response.body()
+    } catch (error: NoTransformationFoundException) {
+        throw DecodeException(error)
+    } catch (error: ContentConvertException) {
+        val causes = generateSequence<Throwable>(error) { it.cause }.toList()
+        causes.firstOrNull { it is CancellationException }?.let { throw it }
+        causes.firstOrNull { it is IOException }?.let { throw NoAnswerException(it) }
+        throw DecodeException(error)
+    } catch (error: IOException) {
+        throw NoAnswerException(error)
+    }
 
     /** The body of a refusal, if it has one; never used for a message to the person. */
     suspend fun errorBody(response: HttpResponse): ApiErrorBody? {

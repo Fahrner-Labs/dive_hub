@@ -2,6 +2,8 @@ package dev.divehub.shared.sync
 
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import dev.divehub.shared.ApiClient
+import dev.divehub.shared.DecodeException
+import dev.divehub.shared.NoAnswerException
 import dev.divehub.shared.store.Dive
 import dev.divehub.shared.store.DiveStore
 import dev.divehub.shared.store.SyncState
@@ -11,6 +13,12 @@ import io.ktor.client.request.HttpRequestData
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.headersOf
+import io.ktor.utils.io.ByteChannel
+import kotlinx.coroutines.CoroutineExceptionHandler
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import kotlinx.io.IOException
 import kotlinx.serialization.json.Json
@@ -29,6 +37,7 @@ private sealed interface Reply {
     data class Body(val text: String, val status: HttpStatusCode = HttpStatusCode.OK) : Reply
     data class Status(val status: HttpStatusCode) : Reply
     data object Offline : Reply
+    data object BrokenBody : Reply
 }
 
 private fun json(text: String): Reply = Reply.Body(text)
@@ -55,6 +64,11 @@ private class Harness(val store: DiveStore, handler: (String) -> Reply) {
                     headersOf(HttpHeaders.ContentType, "application/json"),
                 )
                 Reply.Offline -> throw IOException("offline")
+                Reply.BrokenBody -> {
+                    val channel = ByteChannel(autoFlush = false)
+                    channel.cancel(IOException("body read failed"))
+                    respond(channel, HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, "application/json"))
+                }
             }
         },
         versionName = "0.1.0-dev",
@@ -191,6 +205,15 @@ class SyncEngineTest {
 
     @AfterTest
     fun close() = driver.close()
+
+    /** Runs [block] in the app's scope shape (a SupervisorJob), recording anything that escapes the sync. */
+    private suspend fun runInAppScope(block: suspend () -> Unit) {
+        val escaped = mutableListOf<Throwable>()
+        val scope = CoroutineScope(SupervisorJob() + CoroutineExceptionHandler { _, error -> escaped += error })
+        scope.launch { block() }.join()
+        scope.cancel()
+        assertTrue(escaped.isEmpty(), "sync threw into the app scope: $escaped")
+    }
 
     @Test
     fun `phase one makes the logbook list readable and phase two the dive page`() = runTest {
@@ -339,6 +362,120 @@ class SyncEngineTest {
         assertEquals(120, store.dives().count { it.version != null })
         assertTrue(harness.paths.none { it.startsWith("/api/dives?") && query(it, "include") == "details" && query(it, "offset") == "0" })
         assertTrue(harness.paths.contains("/api/dives?include=details&limit=50&offset=50"))
+    }
+
+    @Test
+    fun `a summary list answer to include details stops the sync without falling back to per-Dive requests`() = runTest {
+        val dives = listOf(
+            diveListItem(id = "dive-1", startsAt = "2026-11-03T10:00:00Z"),
+            diveListItem(id = "dive-2", startsAt = "2026-11-02T10:00:00Z"),
+        )
+        val base = routes(RouteData(dives = dives))
+        val harness = Harness(store) { path ->
+            if (path.startsWith("/api/dives?") && query(path, "include") == "details") {
+                // A pre-FAH-297 server answers the summary list, which does not decode as DiveDetailsListView, so the
+                // details phase stops with a decode failure instead of falling back (FAH-324 scope change).
+                json(divePage(dives, dives.size))
+            } else {
+                base(path)
+            }
+        }
+        var result: SyncResult? = null
+
+        runInAppScope { result = harness.engine.sync() }
+
+        val stopped = assertIs<SyncResult.Stopped>(result)
+        assertEquals(SyncPhase.Details, stopped.phase)
+        assertIs<DecodeException>(stopped.error)
+        assertTrue(harness.paths.none { it.startsWith("/api/dives/") })
+        assertNull(store.dive("dive-1")!!.version)
+        assertNull(store.syncState().lastFullSyncAt)
+    }
+
+    @Test
+    fun `a decode failure in the meta phase stops the sync without escaping`() = runTest {
+        val harness = Harness(store) { path ->
+            if (path == "/api/divers") json("{}") else error("unexpected $path")
+        }
+        var result: SyncResult? = null
+
+        runInAppScope { result = harness.engine.sync() }
+
+        val stopped = assertIs<SyncResult.Stopped>(result)
+        assertEquals(SyncPhase.Meta, stopped.phase)
+        assertIs<DecodeException>(stopped.error)
+    }
+
+    @Test
+    fun `a failed body read in a fetchJson site is a no-answer, not an escape`() = runTest {
+        val harness = Harness(store) { path ->
+            if (path == "/api/divers") Reply.BrokenBody else error("unexpected $path")
+        }
+        var result: SyncResult? = null
+
+        runInAppScope { result = harness.engine.sync() }
+
+        val stopped = assertIs<SyncResult.Stopped>(result)
+        assertEquals(SyncPhase.Meta, stopped.phase)
+        assertIs<NoAnswerException>(stopped.error)
+    }
+
+    @Test
+    fun `a decode failure in the per-dive repair stops the sync without escaping`() = runTest {
+        val dives = listOf(
+            diveListItem(id = "dive-1", startsAt = "2026-11-03T10:00:00Z"),
+            diveListItem(id = "dive-2", startsAt = "2026-11-02T10:00:00Z"),
+        )
+        val base = routes(RouteData(dives = dives))
+        val harness = Harness(store) { path ->
+            when {
+                // The details page covers dive-1; dive-2 is left for the per-Dive repair path.
+                path.startsWith("/api/dives?") && query(path, "include") == "details" ->
+                    json(diveDetailsPage(listOf("dive-1" to "2026-11-03T10:00:00Z"), total = 1))
+                path == "/api/dives/dive-2" -> json("{}")
+                else -> base(path)
+            }
+        }
+        var result: SyncResult? = null
+
+        runInAppScope { result = harness.engine.sync() }
+
+        val stopped = assertIs<SyncResult.Stopped>(result)
+        assertEquals(SyncPhase.Details, stopped.phase)
+        assertIs<DecodeException>(stopped.error)
+        assertTrue(harness.paths.contains("/api/dives/dive-2"))
+    }
+
+    @Test
+    fun `a decode failure in the profiles phase stops the profile sync without escaping`() = runTest {
+        val base = routes()
+        val harness = Harness(store) { path ->
+            if (path.startsWith("/api/recordings/") && path.contains("/samples?")) json("{}") else base(path)
+        }
+        assertEquals(SyncResult.Complete, harness.engine.sync())
+        var result: SyncResult? = null
+
+        runInAppScope { result = harness.engine.syncProfiles() }
+
+        val stopped = assertIs<SyncResult.Stopped>(result)
+        assertEquals(SyncPhase.Profiles, stopped.phase)
+        assertIs<DecodeException>(stopped.error)
+    }
+
+    @Test
+    fun `a decode failure in the tombstones refresh stops the refresh without escaping`() = runTest {
+        val base = routes()
+        val harness = Harness(store) { path ->
+            if (path.startsWith("/api/dives/deleted?")) json("{}") else base(path)
+        }
+        assertEquals(SyncResult.Complete, harness.engine.sync())
+        var result: SyncResult? = null
+
+        runInAppScope { result = harness.engine.refresh() }
+
+        val stopped = assertIs<SyncResult.Stopped>(result)
+        assertEquals(SyncPhase.Meta, stopped.phase)
+        assertIs<DecodeException>(stopped.error)
     }
 
     @Test
