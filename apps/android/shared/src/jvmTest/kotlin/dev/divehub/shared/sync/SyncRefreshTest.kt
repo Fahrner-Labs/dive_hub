@@ -177,7 +177,9 @@ private fun refreshDetailsPage(items: List<String>): String {
         val id = refreshDiveId(dive)
         RefreshData.details[id] ?: refreshDetailJson(id, refreshDiveStartsAt(dive))
     }
-    return """{"dives":[${details.joinToString(",")}],"total":${RefreshData.dives.size}}"""
+    return """{"dives":[${details.joinToString(",")}],"total":${RefreshData.dives.size},
+    "counts":{"noRecording":0,"noSite":0,"withFindings":0,"notAtProvider":0,"changedSinceSent":0},
+    "totals":{"dives":${RefreshData.dives.size},"durationSeconds":0,"deepestM":null,"lastDiveAt":null},"months":[]}"""
 }
 
 private fun refreshRoutes(path: String): RefreshReply = when {
@@ -324,7 +326,9 @@ class SyncRefreshTest {
                 path.startsWith("/api/dives?") && refreshQuery(path, "include") == "details" -> {
                     val offset = refreshQuery(path, "offset")?.toInt() ?: 0
                     val rows = if (offset == 0) listOf(RefreshData.details["dive-1"]!!) else emptyList()
-                    refreshJson("""{"dives":[${rows.joinToString(",")}],"total":${RefreshData.dives.size}}""")
+                    refreshJson("""{"dives":[${rows.joinToString(",")}],"total":${RefreshData.dives.size},
+                    "counts":{"noRecording":0,"noSite":0,"withFindings":0,"notAtProvider":0,"changedSinceSent":0},
+                    "totals":{"dives":${RefreshData.dives.size},"durationSeconds":0,"deepestM":null,"lastDiveAt":null},"months":[]}""")
                 }
                 path == "/api/dives/dive-2" && detailFails -> RefreshReply.Status(HttpStatusCode.InternalServerError)
                 else -> refreshRoutes(path)
