@@ -17,29 +17,39 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
@@ -127,35 +137,120 @@ fun DiveDetailScreen(
 ) {
     val context = LocalContext.current
     val locale = context.resources.configuration.locales[0] ?: Locale.getDefault()
+    val neighbours = state.neighbours
+    val backLabel = stringResource(R.string.dive_back)
     Scaffold(
         topBar = {
-            TopAppBar(
+            CenterAlignedTopAppBar(
                 title = { Text(state.dive?.let { title(context, it, locale) } ?: "") },
                 navigationIcon = {
-                    TextButton(onClick = onBack) { Text(stringResource(R.string.dive_back)) }
+                    IconButton(
+                        onClick = onBack,
+                        modifier = Modifier.semantics { contentDescription = backLabel },
+                    ) {
+                        DirectionIcon(Direction.Back)
+                    }
+                },
+                actions = {
+                    NeighbourAction(
+                        direction = Direction.Left,
+                        target = neighbours?.previous?.id,
+                        label = stringResource(R.string.dive_previous),
+                        unavailable = stringResource(R.string.dive_previous_unavailable),
+                        onOpenDive = onOpenDive,
+                    )
+                    NeighbourAction(
+                        direction = Direction.Right,
+                        target = neighbours?.next?.id,
+                        label = stringResource(R.string.dive_next),
+                        unavailable = stringResource(R.string.dive_next_unavailable),
+                        onOpenDive = onOpenDive,
+                    )
                 },
             )
         },
     ) { padding ->
-        val modifier = Modifier.padding(padding).fillMaxSize()
-        when {
-            state.loading && state.dive == null -> Loading(modifier)
-            state.offline && state.dive == null -> Notice(
-                modifier = modifier,
-                text = stringResource(R.string.dive_offline),
-                retry = stringResource(R.string.dive_retry),
-                onRetry = onRetry,
-            )
-            state.error != null && state.dive == null -> Notice(
-                modifier = modifier,
-                text = errorText(context, state.error),
-                retry = stringResource(R.string.dive_retry),
-                onRetry = onRetry,
-            )
-            state.dive != null -> DiveBody(state, state.dive, units, onOpenDive, modifier)
+        DivePager(
+            state = state,
+            units = units,
+            neighbours = neighbours,
+            onRetry = onRetry,
+            onOpenDive = onOpenDive,
+            modifier = Modifier.padding(padding).fillMaxSize(),
+        )
+    }
+}
+
+/**
+ * The Dive page as a three-page pager: the current Dive in the middle, an empty page on either side for the neighbour
+ * a swipe opens. Once a swipe settles, [onOpenDive] moves the page and the pager springs back to the middle; at either
+ * end of the list the spring-back is the end-stop hint. The buttons in the top bar keep the same transition explicitly.
+ */
+@Composable
+private fun DivePager(
+    state: DiveDetailUiState,
+    units: String?,
+    neighbours: NeighboursView?,
+    onRetry: () -> Unit,
+    onOpenDive: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val pagerState = rememberPagerState(initialPage = CURRENT_DIVE_PAGE) { PAGER_PAGES }
+    val currentNeighbours by rememberUpdatedState(neighbours)
+    val currentOnOpenDive by rememberUpdatedState(onOpenDive)
+    LaunchedEffect(pagerState) {
+        snapshotFlow { pagerState.settledPage }.collect { page ->
+            if (page == CURRENT_DIVE_PAGE) return@collect
+            val target = if (page < CURRENT_DIVE_PAGE) {
+                currentNeighbours?.previous?.id
+            } else {
+                currentNeighbours?.next?.id
+            }
+            target?.let(currentOnOpenDive)
+            pagerState.animateScrollToPage(CURRENT_DIVE_PAGE)
+        }
+    }
+    HorizontalPager(
+        state = pagerState,
+        modifier = modifier.testTag("dive_pager"),
+    ) { page ->
+        if (page == CURRENT_DIVE_PAGE) {
+            DiveContent(state, units, onRetry, Modifier.fillMaxSize())
+        } else {
+            Box(Modifier.fillMaxSize())
         }
     }
 }
+
+@Composable
+private fun DiveContent(
+    state: DiveDetailUiState,
+    units: String?,
+    onRetry: () -> Unit,
+    modifier: Modifier,
+) {
+    val context = LocalContext.current
+    when {
+        state.loading && state.dive == null -> Loading(modifier)
+        state.offline && state.dive == null -> Notice(
+            modifier = modifier,
+            text = stringResource(R.string.dive_offline),
+            retry = stringResource(R.string.dive_retry),
+            onRetry = onRetry,
+        )
+        state.error != null && state.dive == null -> Notice(
+            modifier = modifier,
+            text = errorText(context, state.error),
+            retry = stringResource(R.string.dive_retry),
+            onRetry = onRetry,
+        )
+        state.dive != null -> DiveBody(state, state.dive, units, modifier)
+    }
+}
+
+/** The pager draws the current Dive in the middle, so either adjacent page is one swipe away. (FAH-344) */
+private const val CURRENT_DIVE_PAGE = 1
+private const val PAGER_PAGES = 3
 
 private fun title(context: Context, dive: DiveView, locale: Locale): String = dive.values.number?.let {
     context.getString(R.string.dive_title_number, it)
@@ -199,7 +294,6 @@ private fun DiveBody(
     state: DiveDetailUiState,
     dive: DiveView,
     units: String?,
-    onOpenDive: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -207,9 +301,8 @@ private fun DiveBody(
     val imperial = Formats.imperial(units, locale)
     val primary = profileRecording(dive.recordings)
 
-    LazyColumn(modifier) {
+    LazyColumn(modifier.testTag("dive_scroll")) {
         item { SyncLine(state.syncedAt, state.offline, R.string.dive_offline_cached) }
-        item { Neighbours(state.neighbours, onOpenDive) }
         item { Facts(dive, locale, imperial) }
         item { Recordings(dive, locale, state.providers) }
         if (primary != null) {
@@ -224,52 +317,56 @@ private fun DiveBody(
     }
 }
 
-/**
- * Previous and next in the order of the list the Dive was opened from (ADR 0042). "Previous" is the row above. At the
- * ends of the list the control stays, so the others don't move, and says it is unavailable. Nothing when the list
- * doesn't show this Dive.
- */
+/** A neighbour in the top bar: enabled by its id, so at the ends of the list the greying is the end-stop (FAH-344). */
 @Composable
-private fun Neighbours(neighbours: NeighboursView?, onOpenDive: (String) -> Unit) {
-    val n = neighbours ?: return
-    val position = n.position ?: return
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically,
+private fun NeighbourAction(
+    direction: Direction,
+    target: String?,
+    label: String,
+    unavailable: String,
+    onOpenDive: (String) -> Unit,
+) {
+    IconButton(
+        onClick = { target?.let(onOpenDive) },
+        enabled = target != null,
+        modifier = Modifier.semantics { contentDescription = if (target == null) unavailable else label },
     ) {
-        NeighbourButton(
-            label = stringResource(R.string.dive_previous),
-            unavailable = stringResource(R.string.dive_previous_unavailable),
-            target = n.previous?.id,
-            onOpenDive = onOpenDive,
-        )
-        Text(
-            stringResource(R.string.dive_position_of, position, n.total),
-            modifier = Modifier.weight(1f),
-            textAlign = TextAlign.Center,
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        NeighbourButton(
-            label = stringResource(R.string.dive_next),
-            unavailable = stringResource(R.string.dive_next_unavailable),
-            target = n.next?.id,
-            onOpenDive = onOpenDive,
-        )
+        DirectionIcon(direction)
     }
 }
 
+private enum class Direction { Back, Left, Right }
+
+/** The header's arrows, drawn here so the app needs no separate icon dependency. */
 @Composable
-private fun NeighbourButton(label: String, unavailable: String, target: String?, onOpenDive: (String) -> Unit) {
-    TextButton(
-        onClick = { target?.let(onOpenDive) },
-        enabled = target != null,
-        modifier = if (target == null) Modifier.semantics { contentDescription = unavailable } else Modifier,
-    ) {
-        Text(label)
+private fun DirectionIcon(direction: Direction) {
+    val color = LocalContentColor.current
+    Canvas(Modifier.size(24.dp)) {
+        val stroke = Stroke(width = 2.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round)
+        val width = size.width
+        val height = size.height
+        val path = Path().apply {
+            when (direction) {
+                Direction.Back -> {
+                    moveTo(width * 0.72f, height * 0.5f)
+                    lineTo(width * 0.28f, height * 0.5f)
+                    moveTo(width * 0.46f, height * 0.28f)
+                    lineTo(width * 0.28f, height * 0.5f)
+                    lineTo(width * 0.46f, height * 0.72f)
+                }
+                Direction.Left -> {
+                    moveTo(width * 0.62f, height * 0.25f)
+                    lineTo(width * 0.38f, height * 0.5f)
+                    lineTo(width * 0.62f, height * 0.75f)
+                }
+                Direction.Right -> {
+                    moveTo(width * 0.38f, height * 0.25f)
+                    lineTo(width * 0.62f, height * 0.5f)
+                    lineTo(width * 0.38f, height * 0.75f)
+                }
+            }
+        }
+        drawPath(path, color, style = stroke)
     }
 }
 

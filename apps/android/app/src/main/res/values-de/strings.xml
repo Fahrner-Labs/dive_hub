@@ -44,9 +44,8 @@
     <string name="update_required_title">DiveHub aktualisieren</string>
     <string name="update_required_body">Dieser Server braucht eine neuere Version der App. Aktualisiere DiveHub, um sie weiter zu nutzen.</string>
 
-    <string name="dive_back">Logbuch</string>
+    <string name="dive_back">Zurück</string>
     <string name="dive_title_number">Tauchgang %1$d</string>
-    <string name="dive_position_of">Tauchgang %1$d von %2$d</string>
     <string name="dive_previous">Vorheriger Tauchgang</string>
     <string name="dive_next">Nächster Tauchgang</string>
     <string name="dive_previous_unavailable">Vorheriger Tauchgang (nicht verfügbar)</string>

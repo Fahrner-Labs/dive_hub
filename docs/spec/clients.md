@@ -221,10 +221,13 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   *Web:* `DiveList.tsx`, `ProfileSketch.tsx`, `lib/sketch.ts`.
 - **Previous and next dive** ([ADR 0042](../decisions/0042-dive-neighbours-and-list-in-address.md)): a Dive opened from the
   logbook keeps the list's settings with it and asks `GET /api/dives/{id}/neighbours` with them (no `limit`/`offset`).
-  "Previous" is the row above in that list (with the newest first, the newer dive), "next" the row below; show the position
-  (`position` of `total`), keep the control at the ends but say it is unavailable, and show nothing when `position` is
-  `null`. "Back to the logbook" returns to the list as it was, on page `ceil(position / 25)`. Without a list, the whole
-  logbook newest first. *Web:* `DivePage.tsx` (`Neighbours`), `lib/logbook.ts` (`diveHref`, `neighbourParams`).
+  "Previous" is the row above in that list (with the newest first, the newer dive), "next" the row below. *Web:* show the
+  position (`position` of `total`), keep the control at the ends but say it is unavailable, and show nothing when
+  `position` is `null`. *Android:* the top bar's back arrow, the Dive's title and a chevron either side, disabled at the
+  ends; a horizontal swipe on the page opens the same neighbour and springs back at the ends (FAH-344). "Back to the
+  logbook" returns to the list as it was, on page `ceil(position / 25)`. Without a list, the whole logbook newest first.
+  *Web:* `DivePage.tsx` (`Neighbours`), `lib/logbook.ts` (`diveHref`, `neighbourParams`). *Android:* `DiveDetailScreen.kt`
+  (`DivePager`, `NeighbourAction`).
 - **Follow merged sites:** a site with `mergedInto` is gone. Open the kept site instead (ADR 0022).
 - **Render Providers from `GET /api/providers`** ([ADR 0027](../decisions/0027-providers-as-adapters.md)): its list is
   the instance's, and it changes only with the server (cache it for the session). Offer a Connection panel per Provider
