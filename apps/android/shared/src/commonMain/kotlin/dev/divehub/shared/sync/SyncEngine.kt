@@ -17,12 +17,14 @@ import dev.divehub.shared.store.Recording
 import dev.divehub.shared.store.RecordingSeries
 import dev.divehub.shared.store.SyncCheckpoint
 import io.ktor.client.statement.HttpResponse
+import io.ktor.client.statement.bodyAsText
 import io.ktor.http.encodeURLParameter
 import io.ktor.http.isSuccess
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlin.time.Clock
@@ -359,9 +361,11 @@ class SyncEngine(
         var total = 0L
         while (true) {
             // A details page is a whole Dive per row, so the server caps it lower than the summary list (FAH-297).
-            val page = fetchJson<DiveDetailsListView>(
+            // A pre-FAH-297 server accepts the unknown query parameter but answers the summary list; that is an old
+            // server, not a failed sync, so fall through to the per-Dive repair path below.
+            val page = fetchDetailsPage(
                 "/api/dives?include=details&limit=$DETAILS_PAGE_SIZE&offset=$offset",
-            )
+            ) ?: break
             total = page.total.toLong()
             val next = offset + page.dives.size
             val done = page.dives.isEmpty() || next >= total
@@ -643,6 +647,27 @@ class SyncEngine(
         json.decodeFromString<List<String>>(recording.channelsJson)
     } catch (_: Exception) {
         emptyList()
+    }
+
+    /**
+     * One details page. A pre-FAH-297 server accepts `include=details` but answers the summary list, which does not
+     * decode as [DiveDetailsListView]; that body is not a failed sync, so the caller falls back to one request per
+     * Dive. Any other decode failure is real and rethrown.
+     */
+    private suspend fun fetchDetailsPage(path: String): DiveDetailsListView? {
+        val body = fetch(path).bodyAsText()
+        return try {
+            api.decode(body, DiveDetailsListView.serializer())
+        } catch (error: SerializationException) {
+            if (decodesAsSummaryList(body)) null else throw error
+        }
+    }
+
+    private fun decodesAsSummaryList(body: String): Boolean = try {
+        api.decode(body, DiveListView.serializer())
+        true
+    } catch (_: SerializationException) {
+        false
     }
 
     private fun profileEntity(diveId: String): String = "$ENTITY_PROFILE_PREFIX$diveId"

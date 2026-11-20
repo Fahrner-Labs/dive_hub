@@ -11,12 +11,19 @@ import io.ktor.client.request.HttpRequestData
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.headersOf
+import kotlinx.coroutines.CoroutineExceptionHandler
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import kotlinx.io.IOException
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
@@ -339,6 +346,55 @@ class SyncEngineTest {
         assertEquals(120, store.dives().count { it.version != null })
         assertTrue(harness.paths.none { it.startsWith("/api/dives?") && query(it, "include") == "details" && query(it, "offset") == "0" })
         assertTrue(harness.paths.contains("/api/dives?include=details&limit=50&offset=50"))
+    }
+
+    @Test
+    fun `an old server answering include details with the summary list falls back to per-dive details`() = runTest {
+        val dives = listOf(
+            diveListItem(id = "dive-1", startsAt = "2026-11-03T10:00:00Z"),
+            diveListItem(id = "dive-2", startsAt = "2026-11-02T10:00:00Z"),
+        )
+        val base = routes(RouteData(dives = dives))
+        val harness = Harness(store) { path ->
+            if (path.startsWith("/api/dives?") && query(path, "include") == "details") {
+                // A pre-FAH-297 server accepts the query and answers the summary list, which does not decode as
+                // DiveDetailsListView. That is an old server, not a failed sync.
+                json(divePage(dives, dives.size))
+            } else {
+                base(path)
+            }
+        }
+        val escaped = mutableListOf<Throwable>()
+        val scope = CoroutineScope(SupervisorJob() + CoroutineExceptionHandler { _, error -> escaped += error })
+        var result: SyncResult? = null
+
+        scope.launch { result = harness.engine.sync() }.join()
+        scope.cancel()
+
+        assertTrue(escaped.isEmpty(), "sync threw into the app scope: $escaped")
+        assertEquals(SyncResult.Complete, result)
+        assertEquals(setOf("dive-1", "dive-2"), store.dives().map { it.id }.toSet())
+        assertTrue(store.dives().all { it.version != null && it.detailJson != null })
+        assertTrue(harness.paths.contains("/api/dives/dive-1"))
+        assertTrue(harness.paths.contains("/api/dives/dive-2"))
+        assertEquals(NOW, store.syncState().lastFullSyncAt)
+        assertTrue(store.checkpoint("dive_details", "details")!!.done)
+    }
+
+    @Test
+    fun `a details page that is neither shape is a real decode failure, not an old server`() = runTest {
+        val base = routes()
+        val harness = Harness(store) { path ->
+            if (path.startsWith("/api/dives?") && query(path, "include") == "details") {
+                json("""{"not":"a dive list"}""")
+            } else {
+                base(path)
+            }
+        }
+
+        assertFailsWith<SerializationException> { harness.engine.sync() }
+
+        assertTrue(harness.paths.none { it.startsWith("/api/dives/") })
     }
 
     @Test

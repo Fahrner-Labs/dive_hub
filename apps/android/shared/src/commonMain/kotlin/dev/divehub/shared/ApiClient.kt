@@ -16,6 +16,7 @@ import io.ktor.http.contentType
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.CancellationException
 import kotlinx.io.IOException
+import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
@@ -61,6 +62,13 @@ class ApiClient(
         send(HttpMethod.Get, path, null, authenticated, retry = false)
 
     suspend inline fun <reified T> decode(response: HttpResponse): T = response.body()
+
+    /**
+     * Decode a body the caller has already read, for a response whose shape decides the next step, with the same
+     * JSON configuration as [decode].
+     */
+    fun <T> decode(body: String, serializer: DeserializationStrategy<T>): T =
+        json.decodeFromString(serializer, body)
 
     /** The body of a refusal, if it has one; never used for a message to the person. */
     suspend fun errorBody(response: HttpResponse): ApiErrorBody? {
