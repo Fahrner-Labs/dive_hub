@@ -11,10 +11,10 @@ test('an admin creates a support bundle, reviews the summary, and downloads it',
   // Nothing is built before the admin asks; the preview then reports what the archive would hold.
   await expect(page.getByRole('link', { name: 'Download bundle' })).toHaveCount(0);
   await page.getByRole('button', { name: 'Create support bundle' }).click();
-  await expect(page.getByText('Application version')).toBeVisible();
-  await expect(page.getByText('Schema version')).toBeVisible();
-  await expect(page.getByText('Failed jobs')).toBeVisible();
-  await expect(page.getByText('Database latency')).toBeVisible();
+  await expect(page.getByText('Application version', { exact: true })).toBeVisible();
+  await expect(page.getByText('Schema version', { exact: true })).toBeVisible();
+  await expect(page.getByText('Failed jobs', { exact: true })).toBeVisible();
+  await expect(page.getByText('Database latency', { exact: true })).toBeVisible();
 
   // The archive leaves as a file, named by the server's Content-Disposition.
   const download = page.waitForEvent('download');
