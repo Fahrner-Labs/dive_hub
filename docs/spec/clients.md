@@ -171,12 +171,12 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   `User-Agent: divehub-android/<version>` (the app's release version,
   [ADR 0076](../decisions/0076-api-versioning-policy.md)). The server logs it and, only for a hard break, uses it
   to answer 400 `client_too_old`: say that the app must be updated, do not retry and do not show sign-in.
-- **Onboarding probes the instance before asking for credentials** (FAH-332). `GET /api/health/live` is
-  unauthenticated and answers `{ status: 'ok', version }`; a native client checks it after the address is entered
-  (timeout about 5 s, cancellable). Show the status beside the instance and only ask for credentials once it
-  answers; a host that answers otherwise is not a Dive Hub, never a wrong password. Re-check when the sign-in form
-  is shown again. The client-version gate covers this route too, so a 400 `client_too_old` stays the
-  update-required state.
+- **Onboarding probes the instance before moving from the address to sign-in** (FAH-332).
+  `GET /api/health/live` is unauthenticated and answers `{ status: 'ok', version }`; a native client checks it
+  after the address is entered (timeout about 5 s, cancellable) and only leaves the address form once that status
+  answers. A 404 or a body that is not a health answer is not a Dive Hub, never a wrong password; a 5xx keeps its
+  server-error code. Show the status beside the instance on the sign-in screen and re-check when it is shown again.
+  If the version gate is configured for this route, its 400 `client_too_old` stays the update-required state.
 - **Live hints (`GET /api/live`, [ADR 0066](../decisions/0066-live-updates-via-sse-hints.md)).** A client may open
   one `text/event-stream` per signed-in User with the session cookie, or (native) the session token as
   `Authorization: Bearer`; the browser's `EventSource` sends the cookie same-origin. The stream carries only

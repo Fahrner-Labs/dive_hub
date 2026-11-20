@@ -7,6 +7,7 @@ import dev.divehub.shared.SessionRepository
 import dev.divehub.shared.TokenStore
 import dev.divehub.shared.UserScopedStore
 import io.ktor.client.engine.okhttp.OkHttp
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -57,7 +58,7 @@ class MainViewModelTest {
         var probed: String? = null
         val viewModel = viewModel { url ->
             probed = url
-            InstanceProbeResult.Reachable("1.4.2")
+            InstanceProbeResult.Reachable
         }
         advanceUntilIdle()
 
@@ -100,7 +101,7 @@ class MainViewModelTest {
         var probes = 0
         val viewModel = viewModel {
             probes += 1
-            InstanceProbeResult.Reachable(null)
+            InstanceProbeResult.Reachable
         }
         advanceUntilIdle()
 
@@ -118,7 +119,7 @@ class MainViewModelTest {
         val instances = FakeInstances("https://dive.example")
         val viewModel = viewModel(instances) {
             probes += 1
-            InstanceProbeResult.Reachable("1.4.2")
+            InstanceProbeResult.Reachable
         }
         advanceUntilIdle()
         assertEquals("https://dive.example", viewModel.state.value.instanceUrl)
@@ -153,6 +154,22 @@ class MainViewModelTest {
 
         assertNull(viewModel.state.value.instanceUrl)
         assertEquals(Reachability.Unreachable(ErrorCodes.CLIENT_TOO_OLD), viewModel.state.value.reachability)
+    }
+
+    @Test
+    fun `a late answer cannot revive an address that was left`() = runTest(dispatcher) {
+        val answer = CompletableDeferred<InstanceProbeResult>()
+        val instances = FakeInstances("https://dive.example")
+        val viewModel = viewModel(instances) { answer.await() }
+        advanceUntilIdle()
+
+        viewModel.checkInstance()
+        viewModel.changeInstance()
+        answer.complete(InstanceProbeResult.Reachable)
+        advanceUntilIdle()
+
+        assertNull(viewModel.state.value.instanceUrl)
+        assertEquals(Reachability.Unknown, viewModel.state.value.reachability)
     }
 
     private fun viewModel(

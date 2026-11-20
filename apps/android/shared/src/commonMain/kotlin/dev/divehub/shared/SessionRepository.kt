@@ -17,7 +17,7 @@ import kotlinx.serialization.json.Json
 
 /** The answer to the onboarding probe: the instance is a Dive Hub, or why it could not be confirmed (FAH-332). */
 sealed interface InstanceProbeResult {
-    data class Reachable(val version: String?) : InstanceProbeResult
+    data object Reachable : InstanceProbeResult
     data class Unreachable(val code: String) : InstanceProbeResult
 }
 
@@ -104,7 +104,7 @@ class SessionRepository(
                     return@withTimeoutOrNull InstanceProbeResult.Unreachable(ErrorCodes.NOT_DIVEHUB)
                 }
                 if (health.status == HEALTHY_STATUS) {
-                    InstanceProbeResult.Reachable(health.version)
+                    InstanceProbeResult.Reachable
                 } else {
                     InstanceProbeResult.Unreachable(ErrorCodes.NOT_DIVEHUB)
                 }
@@ -250,9 +250,9 @@ class SessionRepository(
     }
 }
 
-/** `GET /api/health/live`'s shape (FAH-332); the version is informational, the status proves the host. */
+/** `GET /api/health/live`'s shape (FAH-332): only the status proves the host is a Dive Hub. */
 @Serializable
-private data class HealthView(val status: String, val version: String? = null)
+private data class HealthView(val status: String)
 
 private const val HEALTH_LIVE_PATH = "/api/health/live"
 private const val HEALTHY_STATUS = "ok"

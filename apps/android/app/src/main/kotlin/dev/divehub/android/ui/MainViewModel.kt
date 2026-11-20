@@ -57,12 +57,19 @@ class MainViewModel(
     private val _state = MutableStateFlow(UiState())
     val state: StateFlow<UiState> = _state.asStateFlow()
     private var probe: Job? = null
+    /** Bumped by every check and by leaving the address, so a late answer never revives a superseded one. */
+    private var probeGeneration = 0
 
     init {
         // A 401 anywhere ends the session in the repository; the screen follows it without a second source of truth.
         viewModelScope.launch {
             session.state.collect { state ->
-                if (state is SessionState.SignedIn) startSync() else stopSync()
+                if (state is SessionState.SignedIn) {
+                    cancelProbe()
+                    startSync()
+                } else {
+                    stopSync()
+                }
                 _state.update {
                     when (state) {
                         is SessionState.SignedIn -> it.copy(loading = false, instanceUrl = state.instanceUrl, user = state.user, units = state.preferences.units, updateRequired = false)
@@ -80,7 +87,7 @@ class MainViewModel(
     fun useInstance(raw: String) {
         val url = InstanceUrl.normalize(raw)
         if (url == null) {
-            probe?.cancel()
+            cancelProbe()
             _state.update { it.copy(reachability = Reachability.Unreachable(ErrorCodes.INVALID_INSTANCE_URL)) }
             return
         }
@@ -93,10 +100,12 @@ class MainViewModel(
     }
 
     private fun probeAddress(url: String) {
+        val generation = ++probeGeneration
         probe?.cancel()
         _state.update { it.copy(reachability = Reachability.Checking) }
         probe = viewModelScope.launch {
             val result = probeInstance(url)
+            if (generation != probeGeneration) return@launch
             _state.update { current ->
                 // A newer address or "Change instance" won the race; leave its state alone.
                 if (current.instanceUrl != null && current.instanceUrl != url) {
@@ -115,12 +124,18 @@ class MainViewModel(
 
     /** The sign-in form's "Change instance": asks for a new address; there is no session to end there. */
     fun changeInstance() {
-        probe?.cancel()
+        cancelProbe()
         _state.update { it.copy(instanceUrl = null, error = null, reachability = Reachability.Unknown) }
+    }
+
+    private fun cancelProbe() {
+        probeGeneration += 1
+        probe?.cancel()
     }
 
     /** Settings' "Change instance": end the session, wipe its local data, forget the address, then ask for one. */
     fun signOutAndChangeInstance() {
+        cancelProbe()
         viewModelScope.launch {
             _state.update { it.copy(busy = true, error = null) }
             session.changeInstance()

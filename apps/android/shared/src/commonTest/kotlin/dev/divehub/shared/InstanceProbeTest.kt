@@ -64,7 +64,7 @@ class InstanceProbeTest {
 
         val result = probe(repository)
 
-        assertEquals(InstanceProbeResult.Reachable("1.4.2"), result)
+        assertEquals(InstanceProbeResult.Reachable, result)
         assertEquals(null, authorization)
     }
 
