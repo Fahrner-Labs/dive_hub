@@ -51,13 +51,29 @@ class SettingsScreenTest {
     }
 
     @Test
-    fun `the screen shows the instance, the account and the app version`() {
+    fun `the screen shows the instance, the account, the app version and the connection state`() {
         render()
 
         compose.onNodeWithText("https://dive.example").assertIsDisplayed()
+        compose.onNodeWithText("Connected").assertIsDisplayed()
         compose.onNodeWithText("elena@example.com").assertIsDisplayed()
         compose.onNodeWithText("0.1.0 (1001)").assertIsDisplayed()
-        compose.onNodeWithText("Last synced 18 Nov 2026, 13:00.").assertIsDisplayed()
+        compose.onNodeWithText("Last synced", substring = true).assertDoesNotExist()
+    }
+
+    @Test
+    fun `offline shows the last sync beside the instance`() {
+        render(connected = false)
+
+        compose.onNodeWithText("Offline — last synced 18 Nov 2026, 13:00.").assertIsDisplayed()
+        compose.onNodeWithText("Last synced 18 Nov 2026, 13:00.").assertDoesNotExist()
+    }
+
+    @Test
+    fun `offline before the first sync says so beside the instance`() {
+        render(connected = false, syncedAt = null)
+
+        compose.onNodeWithText("Offline — not synced yet.").assertIsDisplayed()
     }
 
     @Test
@@ -209,13 +225,18 @@ class SettingsScreenTest {
             .assertIsDisplayed()
     }
 
-    private fun render(diagnostics: SettingsDiagnosticsState = SettingsDiagnosticsState()) {
+    private fun render(
+        diagnostics: SettingsDiagnosticsState = SettingsDiagnosticsState(),
+        connected: Boolean = true,
+        syncedAt: String? = "2026-11-18T12:00:00Z",
+    ) {
         compose.setContent {
             DiveHubTheme(darkTheme = false) {
                 SettingsScreen(
                     state = SettingsUiState(
                         instanceUrl = "https://dive.example",
-                        syncedAt = "2026-11-18T12:00:00Z",
+                        syncedAt = syncedAt,
+                        connected = connected,
                         diagnostics = diagnostics,
                     ),
                     email = "elena@example.com",

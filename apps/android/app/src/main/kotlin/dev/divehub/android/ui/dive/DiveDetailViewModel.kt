@@ -40,6 +40,8 @@ data class DiveDetailUiState(
     val error: String? = null,
     /** No answer at all: offline, or the instance cannot be reached (client contract §2). */
     val offline: Boolean = false,
+    /** The live hint stream is delivering; the page stays quiet instead of showing "Last synced …". */
+    val connected: Boolean = false,
     /** The store's last successful sync; the page's "Last synced …" line. Null before the first sync. */
     val syncedAt: String? = null,
 )
@@ -64,6 +66,7 @@ class DiveDetailViewModel(
     private var loadJob: Job? = null
     private var observing: Job? = null
     private var offlineJob: Job? = null
+    private var connectedJob: Job? = null
     private var filters: Set<LogbookFilter> = emptySet()
     private var providers: ProviderDirectory? = null
 
@@ -106,8 +109,10 @@ class DiveDetailViewModel(
         loadJob?.cancel()
         observing?.cancel()
         offlineJob?.cancel()
+        connectedJob?.cancel()
         observing = null
         offlineJob = null
+        connectedJob = null
         providers = null
         filters = emptySet()
         _state.value = DiveDetailUiState()
@@ -125,9 +130,9 @@ class DiveDetailViewModel(
             val synced = withContext(Dispatchers.IO) { store.context().hasSync }
             _state.update {
                 if (synced) {
-                    it.copy(loading = false, error = "not_found")
+                    it.copy(loading = false, error = "not_found", connected = connectedState.value)
                 } else {
-                    it.copy(loading = false, offline = true)
+                    it.copy(loading = false, offline = true, connected = connectedState.value)
                 }
             }
             return
@@ -143,6 +148,7 @@ class DiveDetailViewModel(
                 providers = directory,
                 syncedAt = stored.syncedAt,
                 offline = offlineState.value,
+                connected = connectedState.value,
             )
         }
 
@@ -186,10 +192,11 @@ class DiveDetailViewModel(
         offlineJob = viewModelScope.launch {
             offlineState.collect { offline -> _state.update { it.copy(offline = offline) } }
         }
-        viewModelScope.launch {
+        connectedJob = viewModelScope.launch {
             // ADR 0066: on every (re)connect, refetch what is on screen. Hints are not replayed.
             var wasConnected = connectedState.value
             connectedState.collect { connected ->
+                _state.update { it.copy(connected = connected) }
                 if (connected && !wasConnected) _state.value.diveId?.let { refresh(it) }
                 wasConnected = connected
             }

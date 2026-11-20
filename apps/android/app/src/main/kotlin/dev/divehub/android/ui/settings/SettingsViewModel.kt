@@ -25,10 +25,10 @@ import kotlinx.coroutines.withContext
 /** What the settings screen draws; the email and the app version come from the session and the build. */
 data class SettingsUiState(
     val instanceUrl: String? = null,
-    /** The store's last full sync; the same source as the logbook's line. Null before the first sync. */
+    /** The store's last full sync; the instance row's "Offline — last synced …" when the stream is down. */
     val syncedAt: String? = null,
-    /** The last sync attempt got no answer (client contract, Offline reads). */
-    val offline: Boolean = false,
+    /** The live hint stream is delivering; the instance row says "Connected". */
+    val connected: Boolean = false,
     val syncing: Boolean = false,
     val diagnostics: SettingsDiagnosticsState = SettingsDiagnosticsState(),
 )
@@ -55,7 +55,7 @@ data class SettingsDiagnosticsState(
 class SettingsViewModel(
     private val settings: SettingsRepository,
     private val revision: StateFlow<Long>,
-    private val offlineState: StateFlow<Boolean>,
+    private val connectedState: StateFlow<Boolean>,
     private val refreshSync: suspend () -> Unit,
     private val diagnostics: DiagnosticsAccess,
     private val io: CoroutineDispatcher = Dispatchers.IO,
@@ -77,7 +77,7 @@ class SettingsViewModel(
             revision.collect { readSync() }
         }
         viewModelScope.launch {
-            offlineState.collect { offline -> _state.update { it.copy(offline = offline) } }
+            connectedState.collect { connected -> _state.update { it.copy(connected = connected) } }
         }
     }
 
@@ -179,7 +179,7 @@ class SettingsViewModel(
                 SettingsViewModel(
                     settings = container.settings,
                     revision = container.syncRevision,
-                    offlineState = container.syncOffline,
+                    connectedState = container.syncConnected,
                     refreshSync = container::refreshNow,
                     diagnostics = container.diagnostics,
                 )

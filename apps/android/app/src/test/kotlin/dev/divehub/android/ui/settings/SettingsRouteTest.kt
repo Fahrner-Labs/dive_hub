@@ -58,7 +58,7 @@ class SettingsRouteTest {
         val viewModel = SettingsViewModel(
             settings = SettingsRepository(FakeInstances(), DiveStore.create(driver)),
             revision = MutableStateFlow(0L),
-            offlineState = MutableStateFlow(false),
+            connectedState = MutableStateFlow(true),
             refreshSync = {},
             diagnostics = diagnostics,
             io = Dispatchers.Unconfined,
