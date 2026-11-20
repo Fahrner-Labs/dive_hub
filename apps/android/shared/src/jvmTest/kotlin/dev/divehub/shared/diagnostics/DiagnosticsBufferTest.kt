@@ -6,6 +6,7 @@ import kotlinx.coroutines.test.runTest
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
 class DiagnosticsBufferTest {
@@ -52,6 +53,17 @@ class DiagnosticsBufferTest {
 
         assertEquals(0, buffer.count())
         assertTrue(buffer.newest(10).isEmpty())
+    }
+
+    @Test
+    fun `a failed wipe surfaces instead of silently keeping the previous user's entries`() = runTest {
+        val closed = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
+        DiveHubDatabase.Schema.create(closed)
+        val failing = DiagnosticsBuffer(DiveHubDatabase(closed))
+        failing.capture(entry(1))
+        closed.close()
+
+        assertFailsWith<Exception> { failing.forget() }
     }
 
     @Test

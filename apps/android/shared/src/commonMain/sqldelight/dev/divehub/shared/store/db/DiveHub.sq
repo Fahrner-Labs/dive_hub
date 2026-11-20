@@ -119,7 +119,7 @@ CREATE TABLE sync_state (
     countsJson TEXT
 );
 
--- The local diagnostics ring buffer (ADR 0080 D1/D10). It is not read by the logbook: `DiagnosticsBuffer` owns the
+-- The local diagnostics ring buffer (ADR 0080 D1). It is not read by the logbook: `DiagnosticsBuffer` owns the
 -- FIFO cap and the wipe-on-user-change, and `id` gives the arrival order the eviction needs.
 CREATE TABLE diagnosticEntry (
     id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,

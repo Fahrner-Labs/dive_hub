@@ -23,7 +23,7 @@ class DiveHubApplication : Application(), Configuration.Provider {
 
     /**
      * Record an uncaught exception in the local buffer best-effort, then hand it to the previous handler so the app
-     * still crashes normally (ADR 0080 D10). No third-party crash SDK.
+     * still crashes normally (ADR 0080 D1). No third-party crash SDK.
      */
     internal fun installCrashHandler() {
         val previous = Thread.getDefaultUncaughtExceptionHandler()

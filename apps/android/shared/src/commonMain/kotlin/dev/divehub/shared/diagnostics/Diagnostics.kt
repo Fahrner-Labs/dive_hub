@@ -4,9 +4,10 @@ import dev.divehub.shared.ApiClient
 import dev.divehub.shared.DiveHubException
 import dev.divehub.shared.ErrorCodes
 import dev.divehub.shared.NoAnswerException
+import io.ktor.http.HttpStatusCode
 import io.ktor.http.isSuccess
-import kotlinx.coroutines.CancellationException
 import kotlin.time.Clock
+import kotlinx.coroutines.CancellationException
 import kotlinx.datetime.Instant
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
@@ -19,7 +20,7 @@ sealed interface ReportProblemResult {
 }
 
 /**
- * The Android side of client diagnostics (ADR 0080 D2/D10): capture into the local buffer, export that buffer, ask
+ * The Android side of client diagnostics (ADR 0080 D1/D2): capture into the local buffer, export that buffer, ask
  * whether the instance allows uploads, and upload on an explicit user action. There is no automatic egress.
  */
 class Diagnostics(
@@ -46,9 +47,9 @@ class Diagnostics(
                 occurredAt = clock().toString(),
                 level = level,
                 code = code,
-                message = message,
-                stack = stack,
-                context = context,
+                message = message?.let(DiagnosticHygiene::redact),
+                stack = stack?.let(DiagnosticHygiene::redact),
+                context = DiagnosticHygiene.context(context),
             ),
         )
     }
@@ -75,7 +76,7 @@ class Diagnostics(
 
     /**
      * Upload the newest [MAX_UPLOAD] entries. A 204 means the server stored them, so the local buffer is cleared. A
-     * 403/429, a 401 or no answer keeps the buffer and returns the code (ADR 0080 D1/D3).
+     * 403/429, a 401 or no answer keeps the buffer and returns the code (ADR 0080 D1/D2).
      */
     suspend fun reportProblem(): ReportProblemResult {
         val entries = buffer.newest(MAX_UPLOAD).reversed()
@@ -95,7 +96,7 @@ class Diagnostics(
         } catch (error: DiveHubException) {
             return ReportProblemResult.Failed(error.code)
         }
-        if (response.status.isSuccess()) {
+        if (response.status.value == HttpStatusCode.NoContent.value) {
             buffer.clear()
             return ReportProblemResult.Sent
         }
@@ -112,7 +113,7 @@ class Diagnostics(
     )
 
     companion object {
-        /** The ingest contract's per-upload cap (ADR 0080 D3). */
+        /** The ingest contract's per-upload cap (ADR 0080 D2). */
         const val MAX_UPLOAD: Int = 50
         const val CLIENT_NAME: String = "android"
 
@@ -143,3 +144,18 @@ private data class DiagnosticEntryPayload(
     val stack: String? = null,
     val context: Map<String, String>? = null,
 )
+
+/** Client-side hygiene before anything reaches the local buffer or the share sheet (ADR 0080 D1, FAH-292 plan D10). */
+internal object DiagnosticHygiene {
+    private val urlQuery = Regex("""(https?://[^\s?#]+)\?[^\s#)\]]*""")
+    private val relativeQuery = Regex("""^([^\s?#]+)\?[^\s#]*""")
+    private val secretKey = Regex("""(?i)token|secret|password|authorization|cookie|api[_-]?key""")
+
+    /** Drop query strings from URLs: parameters can carry tokens or other people's data. */
+    fun redact(text: String): String = urlQuery.replace(text, "$1")
+
+    /** Keep only context a crash report needs; a key that names a credential is never captured. */
+    fun context(values: Map<String, String>): Map<String, String> = values
+        .filterKeys { !secretKey.containsMatchIn(it) }
+        .mapValues { (_, value) -> relativeQuery.replace(redact(value), "$1") }
+}

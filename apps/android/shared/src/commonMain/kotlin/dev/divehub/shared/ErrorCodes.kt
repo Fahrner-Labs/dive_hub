@@ -16,9 +16,9 @@ object ErrorCodes {
     /** A request got no answer at all (offline, unreachable); not a server refusal. */
     const val NO_ANSWER = "no_answer"
 
-    /** The instance's admin does not allow client diagnostics uploads (ADR 0080 D2). */
+    /** The instance's admin does not allow client diagnostics uploads (ADR 0080 D1). */
     const val CLIENT_DIAGNOSTICS_DISABLED = "client_diagnostics_disabled"
 
-    /** Too many diagnostics uploads from this User in the last hour (ADR 0080 D5). */
+    /** Too many diagnostics uploads from this User in the last hour (ADR 0080 D2). */
     const val CLIENT_DIAGNOSTICS_LIMITED = "client_diagnostics_limited"
 }

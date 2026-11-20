@@ -28,8 +28,8 @@ data class DiagnosticEntry(
 )
 
 /**
- * The always-on local diagnostics ring buffer (ADR 0080 D1/D10): a SQLDelight table in the offline store, capped FIFO
- * at [CAP] entries, wiped when the signed-in User changes. Capture must never break the app, so a failed write is
+ * The always-on local diagnostics ring buffer (ADR 0080 D1): a SQLDelight table in the offline store, capped FIFO at
+ * [CAP] entries, wiped when the signed-in User changes. Capture must never break the app, so a failed write is
  * swallowed; the log is a debugging aid, not a product feature.
  */
 class DiagnosticsBuffer(private val database: DiveHubDatabase) : UserScopedStore {
@@ -80,12 +80,18 @@ class DiagnosticsBuffer(private val database: DiveHubDatabase) : UserScopedStore
         }.getOrDefault(emptyList())
     }
 
-    /** Drop every entry. A failed wipe is swallowed: the next User change tries again. */
+    /** Drop every entry best-effort: the upload's success path must not fail because the clear did. */
     fun clear() {
         runCatching { queries.deleteAllDiagnosticEntries() }
     }
 
-    override suspend fun forget() = clear()
+    /**
+     * The client contract's wipe-on-user-change (client contract §1 Security). Unlike [clear], a failure is not
+     * swallowed: leaving the previous User's diagnostic text behind is a privacy failure, not a lost debugging aid.
+     */
+    override suspend fun forget() {
+        queries.deleteAllDiagnosticEntries()
+    }
 
     private fun DiagnosticEntryRow.toModel(): DiagnosticEntry = DiagnosticEntry(
         occurredAt = occurredAt,

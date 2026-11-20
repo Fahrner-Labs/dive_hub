@@ -115,6 +115,19 @@ class DiagnosticsTest {
     }
 
     @Test
+    fun `a 200 answer that did not store the entries keeps the buffer`() = runTest {
+        capture(1)
+        val engine = MockEngine {
+            respond("""{"stored":true}""", HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, "application/json"))
+        }
+
+        val result = diagnostics(engine).reportProblem()
+
+        assertEquals(ReportProblemResult.Failed("http_200"), result)
+        assertEquals(1, buffer.count())
+    }
+
+    @Test
     fun `a 403 keeps the buffer and returns the code`() = runTest {
         repeat(2) { capture(it) }
         val engine = MockEngine {
@@ -180,6 +193,24 @@ class DiagnosticsTest {
         val entry = Json.parseToJsonElement(body!!).jsonObject["entries"]!!.jsonArray.single().jsonObject
         assertEquals(DiagnosticsBuffer.MESSAGE_LIMIT, entry["message"]!!.jsonPrimitive.content.length)
         assertEquals(DiagnosticsBuffer.STACK_LIMIT, entry["stack"]!!.jsonPrimitive.content.length)
+    }
+
+    @Test
+    fun `capture strips URL query strings and credential-named context keys`() = runTest {
+        val diagnostics = diagnostics(MockEngine { error("no request expected") })
+
+        diagnostics.capture(
+            level = DiagnosticLevel.ERROR,
+            code = "e1",
+            message = "GET https://dive.example/api/dives?token=secret failed",
+            stack = "at Kt.run(https://dive.example/cb?code=abc)",
+            context = mapOf("token" to "secret", "screen" to "logbook?tab=all"),
+        )
+
+        val entry = diagnostics.preview(1).single()
+        assertEquals("GET https://dive.example/api/dives failed", entry.message)
+        assertEquals("at Kt.run(https://dive.example/cb)", entry.stack)
+        assertEquals(mapOf("screen" to "logbook"), entry.context)
     }
 
     @Test
