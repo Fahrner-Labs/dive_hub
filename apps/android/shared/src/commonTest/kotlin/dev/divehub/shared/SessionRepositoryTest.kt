@@ -46,6 +46,10 @@ private class FakeInstances(initial: String? = null) : InstanceUrlStore {
     override suspend fun save(url: String) {
         value = url
     }
+
+    override suspend fun clear() {
+        value = null
+    }
 }
 
 private class FakeCache : UserScopedStore {
@@ -208,6 +212,20 @@ fun `signing out clears the token and the cache but keeps the instance`() = runT
     assertEquals(1, harness.cache.forgets)
     assertEquals("https://dive.example", harness.instances.value)
     assertIs<SessionState.SignedOut>(harness.session.state.value)
+}
+
+@Test
+fun `changing the instance signs out, wipes and forgets the address`() = runTest {
+    val harness = Harness(tokens = FakeTokens("old-token")) { _ -> json("""{"success":true}""") }
+
+    harness.session.changeInstance()
+
+    assertNull(harness.tokens.value)
+    assertEquals(1, harness.cache.forgets)
+    assertNull(harness.instances.value)
+    val state = harness.session.state.value
+    assertIs<SessionState.SignedOut>(state)
+    assertNull(state.instanceUrl)
 }
 
 @Test

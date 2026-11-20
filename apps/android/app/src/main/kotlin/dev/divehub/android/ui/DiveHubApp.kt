@@ -50,7 +50,10 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
+import dev.divehub.android.AppContainer
+import dev.divehub.android.BuildConfig
 import dev.divehub.android.R
 import dev.divehub.android.ui.dive.DiveDetailRoute
 import dev.divehub.android.ui.dive.DiveDetailViewModel
@@ -58,7 +61,10 @@ import dev.divehub.android.ui.logbook.LogbookRoute
 import dev.divehub.android.ui.logbook.LogbookViewModel
 import dev.divehub.android.ui.navigation.AppNavHost
 import dev.divehub.android.ui.navigation.AppScreens
+import dev.divehub.android.ui.navigation.clearSavedTabStates
 import dev.divehub.android.ui.navigation.sessionDestination
+import dev.divehub.android.ui.settings.SettingsRoute
+import dev.divehub.android.ui.settings.SettingsViewModel
 import dev.divehub.android.ui.tools.GasPlanViewModel
 import dev.divehub.android.ui.tools.LeadEstimateViewModel
 import dev.divehub.android.ui.tools.LoadingsViewModel
@@ -70,6 +76,7 @@ import dev.divehub.shared.ErrorCodes
 
 @Composable
 fun DiveHubApp(
+    container: AppContainer,
     viewModel: MainViewModel,
     logbook: LogbookViewModel,
     dive: DiveDetailViewModel,
@@ -80,11 +87,12 @@ fun DiveHubApp(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val navController = rememberNavController()
-    val screens = remember(viewModel, logbook, dive, tools, gasPlan, lead, loadings) {
-        DiveHubScreens(viewModel, logbook, dive, tools, gasPlan, lead, loadings)
+    val screens = remember(container, viewModel, logbook, dive, tools, gasPlan, lead, loadings) {
+        DiveHubScreens(container, viewModel, logbook, dive, tools, gasPlan, lead, loadings)
     }
-    // A sign-out (or another User) drops the saved screens with the session (client contract §1 Security).
-    LaunchedEffect(state.user?.id) {
+    // A sign-out (or another User) drops the saved screens with the session (client contract §1 Security). Once the
+    // restore has resolved (not while loading), it also drops Navigation's saved tab stacks.
+    LaunchedEffect(state.user?.id, state.loading) {
         if (state.user == null) {
             logbook.forget()
             dive.forget()
@@ -92,6 +100,7 @@ fun DiveHubApp(
             gasPlan.forget()
             lead.forget()
             loadings.forget()
+            if (!state.loading) navController.clearSavedTabStates()
         }
     }
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
@@ -113,6 +122,7 @@ fun DiveHubApp(
 
 /** The screens bound to the shell; the navigation decisions live in [AppNavHost]. */
 private class DiveHubScreens(
+    private val container: AppContainer,
     private val viewModel: MainViewModel,
     private val logbook: LogbookViewModel,
     private val dive: DiveDetailViewModel,
@@ -141,7 +151,7 @@ private class DiveHubScreens(
     }
 
     @Composable
-    override fun logbook(page: Int, onPage: (Int) -> Unit, onOpenTools: () -> Unit, onOpenDive: (String) -> Unit) {
+    override fun logbook(page: Int, onPage: (Int) -> Unit, onOpenDive: (String) -> Unit) {
         val state by viewModel.state.collectAsStateWithLifecycle()
         // The page is back from the route after process death; start the logbook there once the session is ready.
         LaunchedEffect(state.user?.id, page) {
@@ -151,13 +161,25 @@ private class DiveHubScreens(
         LogbookRoute(
             viewModel = logbook,
             units = state.units,
-            onSignOut = viewModel::signOut,
-            onOpenTools = onOpenTools,
             onOpenDive = { id, filters ->
                 dive.open(id, filters)
                 onOpenDive(id)
             },
             onPage = onPage,
+        )
+    }
+
+    @Composable
+    override fun settings() {
+        val state by viewModel.state.collectAsStateWithLifecycle()
+        val settings: SettingsViewModel = viewModel(factory = SettingsViewModel.factory(container))
+        SettingsRoute(
+            viewModel = settings,
+            email = state.user?.email,
+            versionName = BuildConfig.VERSION_NAME,
+            versionCode = BuildConfig.VERSION_CODE,
+            onChangeInstance = viewModel::signOutAndChangeInstance,
+            onSignOut = viewModel::signOut,
         )
     }
 

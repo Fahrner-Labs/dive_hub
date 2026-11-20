@@ -497,4 +497,26 @@
     <string name="tools_loadings_source_otu">Garmin Descent: Oberflächenintervall</string>
     <string name="tools_not_fully_synced">Noch nicht synchronisiert: Das beruht auf dem, was schon auf dem Gerät ist.</string>
     <string name="tools_loadings_n2_downsampled">Die synchronisierten Profile sind heruntergerechnet: Die volle Auflösung des Servers kann leicht abweichen.</string>
+
+    <string name="settings_title">Einstellungen</string>
+    <string name="settings_section_connection">Verbindung</string>
+    <string name="settings_instance">Instanz</string>
+    <string name="settings_change_instance_title">Instanz wechseln?</string>
+    <string name="settings_change_instance_body">Beim Wechsel der Instanz wirst du abgemeldet und die lokalen Daten auf diesem Gerät werden gelöscht.</string>
+    <string name="settings_cancel">Abbrechen</string>
+    <string name="settings_section_account">Konto</string>
+    <string name="settings_signed_in_as">Angemeldet als</string>
+    <string name="settings_sign_out_title">Abmelden?</string>
+    <string name="settings_sign_out_body">Beim Abmelden werden die Sitzung und die lokalen Daten von diesem Gerät entfernt.</string>
+    <string name="settings_section_sync">Synchronisierung</string>
+    <string name="settings_sync_never">Noch nicht synchronisiert. Deine Tauchgänge werden synchronisiert, sobald du online bist.</string>
+    <string name="settings_sync_offline">Keine Verbindung. Zuletzt synchronisiert bis %1$s.</string>
+    <string name="settings_sync_now">Jetzt synchronisieren</string>
+    <string name="settings_syncing">Wird synchronisiert…</string>
+    <string name="settings_section_about">Über</string>
+    <string name="settings_version">Version</string>
+    <string name="settings_version_value">%1$s (%2$d)</string>
+    <string name="settings_licenses">Open-Source-Lizenzen</string>
+    <string name="settings_licenses_title">Poppins (SIL Open Font License 1.1)</string>
+    <string name="settings_close">Schließen</string>
 </resources>

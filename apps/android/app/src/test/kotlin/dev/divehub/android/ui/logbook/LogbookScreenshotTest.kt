@@ -127,8 +127,6 @@ class LogbookScreenshotTest {
                     onShowAll = {},
                     onPage = {},
                     onToggleFilter = {},
-                    onSignOut = {},
-                    onOpenTools = {},
                     onOpenDive = {},
                 )
             }

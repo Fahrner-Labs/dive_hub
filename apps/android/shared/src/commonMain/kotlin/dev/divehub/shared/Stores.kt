@@ -11,6 +11,9 @@ interface TokenStore {
 interface InstanceUrlStore {
     suspend fun load(): String?
     suspend fun save(url: String)
+
+    /** Forget the address when the User changes instance; the next start asks for one again. */
+    suspend fun clear()
 }
 
 /**

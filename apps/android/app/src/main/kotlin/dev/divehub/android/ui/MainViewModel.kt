@@ -65,8 +65,18 @@ class MainViewModel(private val container: AppContainer) : ViewModel() {
         _state.update { it.copy(instanceUrl = url, error = null) }
     }
 
+    /** The sign-in form's "Change instance": asks for a new address; there is no session to end there. */
     fun changeInstance() {
         _state.update { it.copy(instanceUrl = null, error = null) }
+    }
+
+    /** Settings' "Change instance": end the session, wipe its local data, forget the address, then ask for one. */
+    fun signOutAndChangeInstance() {
+        viewModelScope.launch {
+            _state.update { it.copy(busy = true, error = null) }
+            session.changeInstance()
+            _state.update { it.copy(busy = false, instanceUrl = null, user = null, units = null, error = null) }
+        }
     }
 
     fun signIn(email: String, password: String) {
