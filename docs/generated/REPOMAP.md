@@ -4,7 +4,7 @@
 > `pnpm check` fails when this map is stale. Symbols are ranked by how widely the code references them;
 > each module shows its most-referenced ones (exported symbols rank higher). Search here before walking the tree.
 
-Files: 405 · symbols: 3687 · shown: 256
+Files: 405 · symbols: 3689 · shown: 256
 
 ### server/(root)
 apps/server/src/vocabulary.ts:13 type SiteWaterType
@@ -105,7 +105,7 @@ apps/server/src/dives/provider-port.ts:47 iface DiveWaitingPushes
 apps/server/src/dives/recording-units.ts:9 const isUnit
 apps/server/src/dives/weighting.ts:23 const leadTotalKg
 apps/server/src/dives/weighting.ts:96 iface Suit
-… 310 more symbols in this module
+… 312 more symbols in this module
 
 ### server/equipment
 apps/server/src/equipment/usage.ts:37 fn usageMap
@@ -304,9 +304,9 @@ apps/web/src/api/keys.ts:2 const keys
 apps/web/src/api/request.ts:28 class ApiError
 apps/web/src/api/request.ts:6 type Problem
 apps/web/src/api/divers.ts:18 const diversQuery
-apps/web/src/api/dives.ts:11 type DiveView
+apps/web/src/api/dives.ts:12 type DiveView
 apps/web/src/api/providers.ts:7 type ProviderView
-apps/web/src/api/dives.ts:15 type RecordingSummary
+apps/web/src/api/dives.ts:16 type RecordingSummary
 apps/web/src/api/sites.ts:8 type Position
 apps/web/src/api/providers.ts:8 type ConnectionView
 … 178 more symbols in this module

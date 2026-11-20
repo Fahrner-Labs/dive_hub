@@ -1,12 +1,13 @@
 import { infiniteQueryOptions, keepPreviousData, queryOptions, type InfiniteData } from '@tanstack/react-query';
+import type { components } from '@dive-hub/api-client';
 import { neighbourParams, type LogbookParams } from '../lib/logbook.ts';
 import { liveHealthy } from '../lib/live.ts';
 import { pollUntilDue } from '../lib/waiting-push.ts';
 import { keys } from './keys.ts';
-import { api, request, type Ok } from './request.ts';
+import { api, request, type Ok, type Read } from './request.ts';
 
-/** A page of the logbook with its counts, totals and months (ADR 0040). */
-export type LogbookPage = Ok<'/api/dives'>;
+/** A page of the logbook with its counts, totals and months (ADR 0040); `include=details` is the other answer. */
+export type LogbookPage = Read<components['schemas']['DiveListView']>;
 export type DiveSummary = LogbookPage['dives'][number];
 export type DiveView = Ok<'/api/dives/{id}'>;
 export type DiveValues = DiveView['values'];
@@ -43,9 +44,9 @@ export const PAGE_SIZE = 25;
 /** One page of the logbook. The previous page stays on screen while the next one loads. */
 export const divesQuery = (p: LogbookParams = {}) => queryOptions({
   queryKey: [...keys.dives, { ...p }],
-  queryFn: async () => request(api.GET('/api/dives', {
+  queryFn: async () => (await request(api.GET('/api/dives', {
     params: { query: { ...neighbourParams(p), limit: PAGE_SIZE, offset: ((p.page ?? 1) - 1) * PAGE_SIZE } },
-  })),
+  }))) as LogbookPage,
   placeholderData: keepPreviousData,
   // The channel carries new Dives; without it, the list falls back to asking again (ADR 0066). Never while healthy.
   refetchInterval: () => (liveHealthy() ? false : 5_000),

@@ -2,8 +2,9 @@ package dev.divehub.shared.sync
 
 import dev.divehub.api.models.ApiDiveSitesGet200Response
 import dev.divehub.api.models.ApiDiverBodyWeightsGet200ResponseItem
-import dev.divehub.api.models.ApiDivesGet200Response
 import dev.divehub.api.models.DeletedDivesPage
+import dev.divehub.api.models.DiveDetailsListView
+import dev.divehub.api.models.DiveListView
 import dev.divehub.api.models.DiverView
 import dev.divehub.api.models.DiveView
 import dev.divehub.api.models.RecordingSamplesView
@@ -332,7 +333,7 @@ class SyncEngine(
         if (existing?.done == true) return
         var offset = existing?.pageOffset ?: 0
         while (true) {
-            val page = fetchJson<ApiDivesGet200Response>("/api/dives?limit=${DiveStore.DEFAULT_PAGE_SIZE}&offset=$offset")
+            val page = fetchJson<DiveListView>("/api/dives?limit=${DiveStore.DEFAULT_PAGE_SIZE}&offset=$offset")
             val next = offset + page.dives.size
             val done = page.dives.isEmpty() || next >= page.total
             store.transaction {
@@ -358,10 +359,10 @@ class SyncEngine(
         var total = 0L
         while (true) {
             // A details page is a whole Dive per row, so the server caps it lower than the summary list (FAH-297).
-            val page = fetchJson<DiveDetailsPage>(
+            val page = fetchJson<DiveDetailsListView>(
                 "/api/dives?include=details&limit=$DETAILS_PAGE_SIZE&offset=$offset",
             )
-            total = page.total
+            total = page.total.toLong()
             val next = offset + page.dives.size
             val done = page.dives.isEmpty() || next >= total
             store.transaction {
@@ -523,7 +524,7 @@ class SyncEngine(
     private suspend fun refreshDives(now: String) {
         var offset = 0L
         while (true) {
-            val page = fetchJson<ApiDivesGet200Response>("/api/dives?limit=${DiveStore.DEFAULT_PAGE_SIZE}&offset=$offset")
+            val page = fetchJson<DiveListView>("/api/dives?limit=${DiveStore.DEFAULT_PAGE_SIZE}&offset=$offset")
             val next = offset + page.dives.size
             val done = page.dives.isEmpty() || next >= page.total
             store.transaction {
@@ -579,7 +580,7 @@ class SyncEngine(
     }
 
     private suspend fun refreshDiveListPageOne(now: String) {
-        val page = fetchJson<ApiDivesGet200Response>("/api/dives?limit=${DiveStore.DEFAULT_PAGE_SIZE}&offset=0")
+        val page = fetchJson<DiveListView>("/api/dives?limit=${DiveStore.DEFAULT_PAGE_SIZE}&offset=0")
         store.transaction {
             page.dives.forEach { store.upsertDive(it.toStore(store.diveIncludingDeleted(it.id))) }
             store.saveLogbookCounts(json.encodeToString(page.counts))

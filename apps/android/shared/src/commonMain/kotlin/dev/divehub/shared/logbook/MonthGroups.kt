@@ -1,7 +1,7 @@
 package dev.divehub.shared.logbook
 
-import dev.divehub.api.models.ApiDivesGet200ResponseDivesItem
-import dev.divehub.api.models.ApiDivesGet200ResponseMonthsItem
+import dev.divehub.api.models.DiveListViewDivesItem
+import dev.divehub.api.models.DiveListViewMonthsItem
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.plus
@@ -12,8 +12,8 @@ import kotlin.time.Instant
 data class LogbookMonth(
     /** Local `YYYY-MM`, or null when the list is not sorted by date. */
     val month: String?,
-    val figures: ApiDivesGet200ResponseMonthsItem?,
-    val dives: List<ApiDivesGet200ResponseDivesItem>,
+    val figures: DiveListViewMonthsItem?,
+    val dives: List<DiveListViewDivesItem>,
 )
 
 /** The local month of a Dive: its start plus its UTC offset; an unknown offset keeps the wall-clock time (ADR 0040). */
@@ -29,8 +29,8 @@ fun localMonthOf(startsAt: String, utcOffsetSeconds: Int?): String? = runCatchin
  * one group without a heading. Figures come from the API, so a month on page 2 counts all its Dives, not its share.
  */
 fun monthGroups(
-    dives: List<ApiDivesGet200ResponseDivesItem>,
-    months: List<ApiDivesGet200ResponseMonthsItem>,
+    dives: List<DiveListViewDivesItem>,
+    months: List<DiveListViewMonthsItem>,
 ): List<LogbookMonth> {
     if (months.isEmpty()) return listOf(LogbookMonth(null, null, dives))
     val figures = months.associateBy { it.month }

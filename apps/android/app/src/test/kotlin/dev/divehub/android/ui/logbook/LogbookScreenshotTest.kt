@@ -6,14 +6,14 @@ import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.assertIsDisplayed
 import com.github.takahirom.roborazzi.captureRoboImage
 import dev.divehub.android.ui.DiveHubTheme
-import dev.divehub.api.models.ApiDivesGet200Response
-import dev.divehub.api.models.ApiDivesGet200ResponseCounts
-import dev.divehub.api.models.ApiDivesGet200ResponseDivesItem
-import dev.divehub.api.models.ApiDivesGet200ResponseDivesItemGasesItem
-import dev.divehub.api.models.ApiDivesGet200ResponseDivesItemParticipantsItem
-import dev.divehub.api.models.ApiDivesGet200ResponseDivesItemSite
-import dev.divehub.api.models.ApiDivesGet200ResponseMonthsItem
-import dev.divehub.api.models.ApiDivesGet200ResponseTotals
+import dev.divehub.api.models.DiveListView
+import dev.divehub.api.models.DiveListViewCounts
+import dev.divehub.api.models.DiveListViewDivesItem
+import dev.divehub.api.models.DiveListViewDivesItemGasesItem
+import dev.divehub.api.models.DiveListViewDivesItemParticipantsItem
+import dev.divehub.api.models.DiveListViewDivesItemSite
+import dev.divehub.api.models.DiveListViewMonthsItem
+import dev.divehub.api.models.DiveListViewTotals
 import dev.divehub.api.models.DiveProfileView
 import dev.divehub.shared.logbook.LogbookFilter
 import dev.divehub.shared.logbook.ProviderDirectory
@@ -139,29 +139,29 @@ class LogbookScreenshotTest {
         compose.onRoot().captureRoboImage("src/test/screenshots/$name")
     }
 
-    private fun page(dives: List<ApiDivesGet200ResponseDivesItem>, filters: Set<LogbookFilter>) = LogbookUiState(
+    private fun page(dives: List<DiveListViewDivesItem>, filters: Set<LogbookFilter>) = LogbookUiState(
         loading = false,
         page = 1,
         filters = filters,
-        data = ApiDivesGet200Response(
+        data = DiveListView(
             dives = dives,
             total = 312,
-            counts = ApiDivesGet200ResponseCounts(
+            counts = DiveListViewCounts(
                 noRecording = 3,
                 noSite = 1,
                 withFindings = 2,
                 notAtProvider = 5,
                 changedSinceSent = 7,
             ),
-            totals = ApiDivesGet200ResponseTotals(
+            totals = DiveListViewTotals(
                 dives = 312,
                 durationSeconds = 648_000.0,
                 deepestM = 40.2,
                 lastDiveAt = "2026-04-02T09:00:00Z",
             ),
             months = listOf(
-                ApiDivesGet200ResponseMonthsItem("2026-04", 9, 27_000.0),
-                ApiDivesGet200ResponseMonthsItem("2026-03", 12, 36_000.0),
+                DiveListViewMonthsItem("2026-04", 9, 27_000.0),
+                DiveListViewMonthsItem("2026-03", 12, 36_000.0),
             ),
         ),
         providers = ProviderDirectory(names = mapOf("ssi" to "SSI"), connected = listOf("SSI")),
@@ -173,10 +173,10 @@ class LogbookScreenshotTest {
         startsAt = "2026-04-02T09:00:00Z",
         site = "Lighthouse Reef",
         maxDepthM = 24.3,
-        gases = listOf(ApiDivesGet200ResponseDivesItemGasesItem(o2 = 32.0, he = 0.0)),
+        gases = listOf(DiveListViewDivesItemGasesItem(o2 = 32.0, he = 0.0)),
         participants = listOf(
-            ApiDivesGet200ResponseDivesItemParticipantsItem("diver-2", "Ada Byron", "buddy"),
-            ApiDivesGet200ResponseDivesItemParticipantsItem("diver-3", "Bo Chen", "guide"),
+            DiveListViewDivesItemParticipantsItem("diver-2", "Ada Byron", "buddy"),
+            DiveListViewDivesItemParticipantsItem("diver-3", "Bo Chen", "guide"),
         ),
         profile = DiveProfileView(
             depthsM = listOf(0.0, 5.0, 14.0, 24.3, 18.0, 9.0, 3.0, 0.0),
@@ -223,10 +223,10 @@ class LogbookScreenshotTest {
         fromProvider: String? = null,
         findings: Int = 0,
         surfaceIntervalSeconds: Double? = null,
-        gases: List<ApiDivesGet200ResponseDivesItemGasesItem> = emptyList(),
-        participants: List<ApiDivesGet200ResponseDivesItemParticipantsItem> = emptyList(),
+        gases: List<DiveListViewDivesItemGasesItem> = emptyList(),
+        participants: List<DiveListViewDivesItemParticipantsItem> = emptyList(),
         profile: DiveProfileView?,
-    ) = ApiDivesGet200ResponseDivesItem(
+    ) = DiveListViewDivesItem(
         id = id,
         diverId = "diver",
         number = number,
@@ -236,7 +236,7 @@ class LogbookScreenshotTest {
         durationSeconds = 3_000.0,
         maxDepthM = maxDepthM,
         avgDepthM = maxDepthM / 2,
-        site = site?.let { ApiDivesGet200ResponseDivesItemSite(id = "site-$id", name = it) },
+        site = site?.let { DiveListViewDivesItemSite(id = "site-$id", name = it) },
         findings = findings,
         recordings = recordings,
         fromProvider = fromProvider,

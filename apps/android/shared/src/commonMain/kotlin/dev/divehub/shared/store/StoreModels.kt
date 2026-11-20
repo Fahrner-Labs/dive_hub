@@ -120,6 +120,6 @@ data class SyncState(
     val lastFullSyncAt: String? = null,
     val lastHintAt: String? = null,
     val schemaVersion: Long,
-    /** The last list page's per-filter counts, JSON as `ApiDivesGet200ResponseCounts`; null before the first list sync. */
+    /** The last list page's per-filter counts, JSON as `DiveListViewCounts`; null before the first list sync. */
     val countsJson: String? = null,
 )

@@ -26,7 +26,7 @@ import { ConnectionViewSchema } from './providers/connection-view.js';
 import { DiveProviderStatusSchema } from './providers/dive-provider-view.js';
 import { PushRunViewSchema } from './providers/push/push-run-view.js';
 import { UserViewSchema } from './users/views.js';
-import { logbookRoutes } from './dives/logbook-routes.js';
+import { DiveDetailsListViewSchema, DiveListViewSchema, logbookRoutes } from './dives/logbook-routes.js';
 import { importRoutes } from './imports/routes.js';
 import { candidateRoutes } from './dives/candidates/candidate-routes.js';
 import { diveRoutes } from './dives/routes.js';
@@ -100,7 +100,7 @@ export async function buildApp(deps: AppDeps, app: Server = createServer()) {
   for (const schema of [
     UnmetViewSchema, ConflictFieldViewSchema, WaitingPushViewSchema,
     ProblemSchema, ProviderProblemSchema, DeleteProblemSchema,
-    UserViewSchema, ImportViewSchema, DiveViewSchema, DiveProfileViewSchema, DiverViewSchema, DiverDetailsViewSchema, ExternalDiverViewSchema, CertificationViewSchema,
+    UserViewSchema, ImportViewSchema, DiveViewSchema, DiveProfileViewSchema, DiveListViewSchema, DiveDetailsListViewSchema, DiverViewSchema, DiverDetailsViewSchema, ExternalDiverViewSchema, CertificationViewSchema,
     SiteViewSchema, CentreViewSchema, SiteImportViewSchema, PushRunViewSchema, ConnectionViewSchema, DiveProviderStatusSchema,
     ServiceScheduleViewSchema, ServiceRecordViewSchema, DiveGearItemViewSchema, EquipmentItemViewSchema, EquipmentDetailViewSchema,
     EquipmentDueViewSchema, DiveGearViewSchema,
