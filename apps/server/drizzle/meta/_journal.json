@@ -435,6 +435,13 @@
       "when": 1794927742638,
       "tag": "0061_futuristic_lilith",
       "breakpoints": true
+    },
+    {
+      "idx": 62,
+      "version": "7",
+      "when": 1795166600869,
+      "tag": "0062_condemned_giant_man",
+      "breakpoints": true
     }
   ]
 }

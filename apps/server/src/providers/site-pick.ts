@@ -6,7 +6,7 @@ import { and, eq, isNull } from 'drizzle-orm';
 import type { Db } from '../db/client.js';
 import { diveSite } from '../db/schema.js';
 import { SiteError } from '../sites/site-error.js';
-import { accountOf, clearId, holderOf, storeId } from '../sites/site-ids.js';
+import { accountOf, clearId, holderOf, privateIdOf, storeId } from '../sites/site-ids.js';
 import { typedId, type SiteSource } from '../sites/sources.js';
 import type { ConnectionService } from './connection-service.js';
 import type { ProviderAdapter } from './provider.js';
@@ -71,8 +71,11 @@ export function createSitePickService(deps: { db: Db; registry: ProviderRegistry
       const isPrivate = visibility !== 'public';
       try {
         await db.transaction(async (tx) => {
-          // A public ID replaces the account's private one on this site (SSI made it public, or the User typed another).
-          if (!isPrivate) await clearId(tx, siteId, source, account, null);
+          // The same ID made public is a visibility change: the private row becomes the public one. A different public
+          // ID leaves the account's private row in place, so its Dives stay there until the User answers the offer
+          // (FAH-121) and removing it makes them use the public ID.
+          const own = await privateIdOf(tx, siteId, source, account);
+          if (!isPrivate && own === externalId) await clearId(tx, siteId, source, account, null);
           await storeId(tx, {
             siteId, source, externalId, accountId: isPrivate ? account : null, actor: isPrivate ? null : { type: 'user', id: userId },
           });

@@ -641,6 +641,7 @@
     "site_import_interrupted": "Der Server wurde während des Imports gestoppt. Starte ihn noch einmal.",
     "site_merge_self": "Ein Tauchplatz kann nicht mit sich selbst zusammengeführt werden.",
     "site_offer_not_found": "Für diesen Tauchplatz bietet diese Quelle (inzwischen) keine Daten an. Lade die Seite neu.",
+    "site_id_decision_not_waiting": "Für diesen Tauchplatz und dieses Konto gibt es (inzwischen) keine private ID zum Verschieben. Lade die Seite neu.",
     "connection_not_found": "Diese Verbindung gibt es nicht (mehr).",
     "encryption_key_missing": "Dieser Server kann keine Passwörter speichern. Wähle „Passwort nicht speichern“.",
     "provider_already_connected": "Dieser Taucher ist schon mit {{name}} verbunden. Trenne zuerst, um ein anderes Konto zu verbinden.",
@@ -1176,6 +1177,18 @@
     "link": "Damit verknüpfen",
     "create": "Neuen anlegen"
   },
+  "siteIdDecisions": {
+    "title": "Tauchgänge an einem privaten {{name}}-Tauchplatz ({{count}})",
+    "intro": "{{name}} hat jetzt eine öffentliche Seite für einen Tauchplatz, an dem deine Tauchgänge deinen eigenen privaten Platz nutzen. Verschiebe deine Tauchgänge dorthin oder lass sie, wo sie sind.",
+    "question": "Deine Tauchgänge bei {{site}} auf {{name}}s öffentlichen Tauchplatz verschieben?",
+    "diver": "Für {{diver}}.",
+    "move": "Meine Tauchgänge verschieben",
+    "keep": "Auf meinem privaten Platz lassen",
+    "moveFor": "Tauchgänge bei {{site}} auf {{name}}s öffentlichen Tauchplatz verschieben",
+    "keepFor": "Tauchgänge bei {{site}} auf deinem privaten Platz lassen",
+    "moved": "Deine Tauchgänge bei {{site}} wechseln mit dem nächsten Senden auf {{name}}s öffentlichen Tauchplatz.",
+    "kept": "Deine Tauchgänge bei {{site}} bleiben auf deinem privaten {{name}}-Tauchplatz."
+  },
   "review": {
     "title": "Durchsicht",
     "parts": "Teile der Durchsicht",
@@ -1201,6 +1214,8 @@
       "surfaceBreaks_other": "{{count}} durch einen Oberflächenaufenthalt geteilte Tauchgänge",
       "shortDives_one": "{{count}} Tauchgang, der wahrscheinlich keiner ist",
       "shortDives_other": "{{count}} Tauchgänge, die wahrscheinlich keine sind",
+      "siteMoves_one": "{{count}} Tauchplatz, dessen Tauchgänge auf einen öffentlichen wechseln können",
+      "siteMoves_other": "{{count}} Tauchplätze, deren Tauchgänge auf einen öffentlichen wechseln können",
       "gone_one": "{{count}} Tauchgang nicht mehr in {{name}}",
       "gone_other": "{{count}} Tauchgänge nicht mehr in {{name}}",
       "conflicts_one": "{{count}} Tauchgang mit an beiden Stellen geänderten Werten",

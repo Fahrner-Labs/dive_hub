@@ -381,7 +381,7 @@ _Avoid_: Foreign key, remote ID, reference number
 _German_: externe ID (on screen: "SSI-Tauchplatz-ID")
 
 **Private site ID**:
-A Dive site's External ID at a Source that belongs to one Diver's account there, such as a private site in that Diver's SSI logbook. The site's data stays shared; only the ID is the account's, and a send never uses another account's. Without an account an External ID is public.
+A Dive site's External ID at a Source that belongs to one Diver's account there, such as a private site in that Diver's SSI logbook. The site's data stays shared; only the ID is the account's, and a send never uses another account's. Without an account an External ID is public. When the same site gets a public ID, "Needs your decision" offers to move the account's Dives to it or keep them on the private one.
 _Avoid_: Personal site ID, hidden ID
 _German_: private Tauchplatz-ID
 

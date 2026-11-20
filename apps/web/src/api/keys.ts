@@ -41,6 +41,8 @@ export const keys = {
   sites: ['sites'] as const,
   site: (id: string) => ['sites', id] as const,
   siteRevisions: (id: string) => ['sites', id, 'revisions'] as const,
+  /** Offers to move an account's Dives from a private site ID to the site's public one (FAH-121). */
+  siteIdDecisions: ['site-id-decisions'] as const,
   /** Dive centres (ADR 0043). A Dive's codes follow them: whatever changes a centre also refreshes ['dives']. */
   centres: ['centres'] as const,
   centre: (id: string) => ['centres', id] as const,

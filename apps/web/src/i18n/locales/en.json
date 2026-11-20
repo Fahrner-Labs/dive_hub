@@ -641,6 +641,7 @@
     "site_import_interrupted": "The server stopped during the import. Start it again.",
     "site_merge_self": "A dive site can’t be merged into itself.",
     "site_offer_not_found": "This dive site has no data on offer from that source (anymore). Reload the page.",
+    "site_id_decision_not_waiting": "This site and account have no private ID to move to a public one (anymore). Reload the page.",
     "connection_not_found": "This connection doesn’t exist (anymore).",
     "encryption_key_missing": "This server can’t keep passwords. Choose “Don’t store my password”.",
     "provider_already_connected": "This Diver is already connected to {{name}}. Disconnect first to connect another account.",
@@ -1176,6 +1177,18 @@
     "link": "Link to it",
     "create": "Create a new one"
   },
+  "siteIdDecisions": {
+    "title": "Dives on a private {{name}} site ({{count}})",
+    "intro": "{{name}} now has a public page for a site where your dives use your own private site. Move your dives there, or keep them where they are.",
+    "question": "Move your dives at {{site}} to {{name}}’s public site?",
+    "diver": "For {{diver}}.",
+    "move": "Move my dives",
+    "keep": "Keep them on my private site",
+    "moveFor": "Move dives at {{site}} to {{name}}’s public site",
+    "keepFor": "Keep dives at {{site}} on your private site",
+    "moved": "Your dives at {{site}} move to {{name}}’s public site with the next send.",
+    "kept": "Your dives at {{site}} stay on your private {{name}} site."
+  },
   "review": {
     "title": "Review",
     "parts": "Parts of the review",
@@ -1201,6 +1214,8 @@
       "surfaceBreaks_other": "{{count}} dives cut by a surface break",
       "shortDives_one": "{{count}} dive that is probably no dive",
       "shortDives_other": "{{count}} dives that are probably no dives",
+      "siteMoves_one": "{{count}} site whose dives can move to a public counterpart",
+      "siteMoves_other": "{{count}} sites whose dives can move to a public counterpart",
       "gone_one": "{{count}} dive no longer in {{name}}",
       "gone_other": "{{count}} dives no longer in {{name}}",
       "conflicts_one": "{{count}} dive with values changed in both places",
