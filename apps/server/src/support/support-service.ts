@@ -67,6 +67,7 @@ export interface SupportPreview {
   redaction: RedactionCounters;
   jobs: { failed: number };
   health: { uptimeSec: number; dbLatencyMs: number | null; workerRunning: boolean; queueDepth: number | null };
+  clientDiagnostics: { entries: number };
   estimatedBytes: number;
 }
 
@@ -175,7 +176,8 @@ export function createSupportService(deps: SupportServiceDeps) {
       const entries = await deps.clientDiagnostics.entries();
       return entries.map((entry) => redactValue(entry, undefined, counters));
     } catch {
-      return undefined;
+      // Once wired, every v2 bundle carries the member: a failed read makes it empty, not absent.
+      return [];
     }
   }
 
@@ -217,6 +219,10 @@ export function createSupportService(deps: SupportServiceDeps) {
       const jobRows = jobs ? JSON.parse(jobs.data) as JobsSection : { available: false };
       const healthMember = bundle.members.find((member) => member.name === 'health.json');
       const health = healthMember ? JSON.parse(healthMember.data) as HealthSection : { available: false };
+      const diagnosticsMember = bundle.members.find((member) => member.name === 'client-diagnostics.ndjson');
+      const diagnosticsEntries = diagnosticsMember && diagnosticsMember.data.trim() !== ''
+        ? diagnosticsMember.data.trim().split('\n').length
+        : 0;
       const failed = jobRows.available ? (jobRows.jobs?.length ?? 0) + (jobRows.backups?.length ?? 0) : 0;
       return {
         generatedAt: bundle.manifest.createdAt,
@@ -231,6 +237,7 @@ export function createSupportService(deps: SupportServiceDeps) {
           workerRunning: health.workerRunning ?? workerRunning(),
           queueDepth: health.available ? (health.queueDepth ?? null) : null,
         },
+        clientDiagnostics: { entries: diagnosticsEntries },
         estimatedBytes: bundle.archive.length,
       };
     },

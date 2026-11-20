@@ -1629,3 +1629,50 @@ export const backupSettings = pgTable(
     check('backup_settings_recipient_ck', sql`not ${t.enabled} or ${t.recipientPublicKey} is not null`),
   ],
 );
+
+/**
+ * Whether this instance accepts client diagnostics (ADR 0080): one row once an admin decides, none means off.
+ * Off refuses every upload at once; stored entries stay until their 90-day purge or the next bundle.
+ */
+export const clientDiagnosticsSettings = pgTable(
+  'client_diagnostics_settings',
+  {
+    /** Always true: the table holds one row. */
+    id: boolean('id').primaryKey().default(true),
+    enabled: boolean('enabled').notNull().default(false),
+    updatedAt: updatedAt(),
+  },
+  (t) => [check('client_diagnostics_settings_one_row_ck', sql`${t.id}`)],
+);
+
+/**
+ * One error or warning a client reported from its local ring buffer (ADR 0080), stored only while an admin enabled
+ * client diagnostics. Fields are truncated and redacted before they get here; the table keeps the 500 newest rows
+ * and the worker purges rows older than 90 days. The row goes when its User does.
+ */
+export const clientDiagnostic = pgTable(
+  'client_diagnostic',
+  {
+    id: id(),
+    userId: uuid('user_id').notNull().references(() => user.id, { onDelete: 'cascade' }),
+    /** The client that reported it: `web` or `android` (validated by the route; native clients share this table). */
+    clientName: text('client_name').notNull(),
+    clientVersion: text('client_version').notNull(),
+    /** When the client took the upload's snapshot. */
+    capturedAt: timestamp('captured_at', { withTimezone: true }).notNull(),
+    /** When the reported error or warning happened. */
+    occurredAt: timestamp('occurred_at', { withTimezone: true }).notNull(),
+    level: text('level').notNull(),
+    /** A stable client code, e.g. `sync_failed`; clients translate what they know. */
+    code: text('code'),
+    message: text('message').notNull(),
+    stack: text('stack'),
+    /** Client-supplied context, already redacted by the server; keys such as `token` hold `‹redacted›`. */
+    contextJson: jsonb('context_json').$type<Record<string, string>>(),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    check('client_diagnostic_level_ck', sql`${t.level} in ('error', 'warn')`),
+    index('client_diagnostic_created_idx').on(sql`${t.createdAt} desc`),
+  ],
+);

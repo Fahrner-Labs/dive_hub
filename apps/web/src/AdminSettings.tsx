@@ -1,14 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRef, useState, type FormEvent } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
-import { api, invitationsQuery, keys, meQuery, siteDataQuery, unwrap, usersQuery, type SiteDataView, type UserView } from './api.ts';
+import { api, clientDiagnosticsSettingQuery, invitationsQuery, keys, meQuery, siteDataQuery, unwrap, usersQuery, type SiteDataView, type UserView } from './api.ts';
 import { AiAccessSetting } from './AiAccess.tsx';
 import { announce } from './lib/announce.ts';
 import { useProviders, useProviderText } from './lib/providers.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
 import { focusHeading } from './lib/focus.ts';
 import { BACKUPS_HREF, SITE_IMPORTS_HREF, SUPPORT_BUNDLE_HREF } from './lib/settings.ts';
-import { ActionMenu, Badge, Button, Checkbox, ConfirmButton, ConfirmDialog, CopyField, Dialog, Form, Icon, Notice, Panel, Table, TextField } from './ui/index.ts';
+import { ActionMenu, Badge, Button, Checkbox, ConfirmButton, ConfirmDialog, CopyField, Dialog, Form, Icon, Notice, Panel, Switch, Table, TextField } from './ui/index.ts';
 
 /**
  * Settings' Administration section: admins invite people (copy the link, there's no mail yet) and manage Users (ADR 0012,
@@ -33,9 +33,46 @@ export function AdminSettings() {
         <p>{t('support.adminLead')}</p>
         <a href={SUPPORT_BUNDLE_HREF} className="btn btn-secondary"><Icon name="download" />{t('support.open')}</a>
       </Panel>
+      <ClientDiagnosticsSetting />
       <ProviderSiteData />
       <AiAccessSetting />
     </>
+  );
+}
+
+/**
+ * The instance's client-diagnostics switch (FAH-292, ADR 0080): off by default, and it only allows signed-in clients to
+ * send the errors they captured when a User asks to. Off refuses new uploads; stored rows stay until their purge.
+ */
+function ClientDiagnosticsSetting() {
+  const { t } = useTranslation();
+  const errorText = useErrorText();
+  const queryClient = useQueryClient();
+  const setting = useQuery(clientDiagnosticsSettingQuery());
+  const set = useMutation({
+    mutationFn: async (enabled: boolean) => unwrap(await api.PATCH('/api/admin/client-diagnostics', { body: { enabled } })),
+    onSuccess: (data) => {
+      queryClient.setQueryData(keys.clientDiagnosticsSetting, data);
+      queryClient.setQueryData(keys.clientDiagnosticsStatus, data);
+      announce(t(data.enabled ? 'clientDiagnostics.admin.savedOn' : 'clientDiagnostics.admin.savedOff'));
+    },
+  });
+  const s = setting.data;
+  if (!s) {
+    return setting.error
+      ? <Panel title={t('clientDiagnostics.admin.title')}><Notice tone="danger">{errorText(setting.error)}</Notice></Panel>
+      : null;
+  }
+  return (
+    <Panel title={t('clientDiagnostics.admin.title')}>
+      <p>{t('clientDiagnostics.admin.lead')}</p>
+      <p>{t('clientDiagnostics.admin.stored')}</p>
+      <p><Badge tone={s.enabled ? 'success' : 'neutral'}>{t(s.enabled ? 'clientDiagnostics.admin.on' : 'clientDiagnostics.admin.off')}</Badge></p>
+      {set.error && <Notice tone="danger">{errorText(set.error)}</Notice>}
+      <Switch isSelected={s.enabled} isPending={set.isPending} onChange={(enabled) => set.mutate(enabled)}>
+        {t('clientDiagnostics.admin.toggle')}
+      </Switch>
+    </Panel>
   );
 }
 

@@ -2,7 +2,7 @@ import { gzipSync } from 'node:zlib';
 import type { RedactionCounters } from './redact.js';
 
 export const SUPPORT_BUNDLE_FORMAT = 'divehub-support-bundle';
-export const SUPPORT_BUNDLE_FORMAT_VERSION = 1;
+export const SUPPORT_BUNDLE_FORMAT_VERSION = 2;
 
 const BLOCK = 512;
 

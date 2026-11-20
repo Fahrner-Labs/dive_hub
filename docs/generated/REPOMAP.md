@@ -4,15 +4,15 @@
 > `pnpm check` fails when this map is stale. Symbols are ranked by how widely the code references them;
 > each module shows its most-referenced ones (exported symbols rank higher). Search here before walking the tree.
 
-Files: 412 · symbols: 3751 · shown: 247
+Files: 417 · symbols: 3809 · shown: 247
 
 ### server/(root)
 apps/server/src/vocabulary.ts:13 type SiteWaterType
 apps/server/src/errors.ts:2 const errorMessage
 apps/server/src/vocabulary.ts:12 const SITE_WATER_TYPES
 apps/server/src/vocabulary.ts:51 type ImportSource
-apps/server/src/compose.ts:82 fn createServices
-… 41 more symbols in this module
+apps/server/src/compose.ts:83 fn createServices
+… 42 more symbols in this module
 
 ### server/assessment
 apps/server/src/assessment/rules.ts:50 const RULES
@@ -69,7 +69,7 @@ apps/server/src/db/schema.ts:75 const diverManagement
 apps/server/src/db/auth-schema.ts:20 const user
 apps/server/src/db/import-types.ts:12 iface ImportedValues
 apps/server/src/db/import-types.ts:6 type ImportArea
-… 154 more symbols in this module
+… 156 more symbols in this module
 
 ### server/divers
 apps/server/src/divers/management.ts:8 fn managedDiverIds
@@ -114,8 +114,8 @@ apps/server/src/equipment/due.ts:36 iface ScheduleDue
 apps/server/src/http/schemas.ts:10 const Nullable
 apps/server/src/http/schemas.ts:5 const DateTime
 apps/server/src/http/schemas.ts:4 const IdParams
-apps/server/src/http/problems.ts:194 const Problem
-apps/server/src/http/problems.ts:197 const problem
+apps/server/src/http/problems.ts:196 const Problem
+apps/server/src/http/problems.ts:199 const problem
 … 25 more symbols in this module
 
 ### server/imports
@@ -247,12 +247,12 @@ apps/server/src/storage/blob-store.ts:9 iface StoredBlob
 apps/server/src/storage/blob-store.ts:39 fn createLocalBlobStore
 
 ### server/support
+apps/server/src/support/redact.ts:68 fn redactValue
 apps/server/src/support/redact.ts:1 iface RedactionCounters
 apps/server/src/support/log-ring-buffer.ts:30 class LogRingBuffer
-apps/server/src/support/redact.ts:68 fn redactValue
 apps/server/src/support/redact.ts:23 const emptyRedactionCounters
-apps/server/src/support/support-service.ts:88 fn createSupportService
-… 48 more symbols in this module
+apps/server/src/support/client-diagnostics-service.ts:21 class ClientDiagnosticsError
+… 68 more symbols in this module
 
 ### server/users
 apps/server/src/users/views.ts:23 const UserView
@@ -290,11 +290,11 @@ apps/web/src/ImportPanel.tsx:39 const ImportContext
 apps/web/src/ReviewRows.tsx:6 iface Fact
 apps/web/src/SignedOut.tsx:20 fn useUserChanged
 apps/web/src/ProfilePlot.tsx:14 fn withAlpha
-… 516 more symbols in this module
+… 520 more symbols in this module
 
 ### web/api
-apps/web/src/api/request.ts:59 fn unwrap
 apps/web/src/api/request.ts:3 const api
+apps/web/src/api/request.ts:59 fn unwrap
 apps/web/src/api/keys.ts:2 const keys
 apps/web/src/api/request.ts:28 class ApiError
 apps/web/src/api/request.ts:6 type Problem
@@ -304,7 +304,7 @@ apps/web/src/api/providers.ts:7 type ProviderView
 apps/web/src/api/dives.ts:16 type RecordingSummary
 apps/web/src/api/sites.ts:8 type Position
 apps/web/src/api/providers.ts:8 type ConnectionView
-… 180 more symbols in this module
+… 184 more symbols in this module
 
 ### web/i18n
 apps/web/src/i18n/languages.ts:6 fn pickLanguage
@@ -333,7 +333,7 @@ apps/web/src/lib/form.ts:4 const formValues
 apps/web/src/lib/devices.ts:18 const deviceName
 apps/web/src/lib/review.ts:16 fn reviewHref
 apps/web/src/lib/providers.ts:55 fn useProviderOf
-… 364 more symbols in this module
+… 391 more symbols in this module
 
 ### web/ui
 apps/web/src/ui/Layout.tsx:85 fn Notice

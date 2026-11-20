@@ -500,6 +500,8 @@
               "finding_not_found",
               "ai_access_not_found",
               "ai_access_off",
+              "client_diagnostics_disabled",
+              "client_diagnostics_limited",
               "provider_site_unknown",
               "provider_buddy_not_found",
               "provider_site_data_not_confirmed"
@@ -3909,6 +3911,8 @@
                   "finding_not_found",
                   "ai_access_not_found",
                   "ai_access_off",
+                  "client_diagnostics_disabled",
+                  "client_diagnostics_limited",
                   "provider_site_unknown",
                   "provider_buddy_not_found",
                   "provider_site_data_not_confirmed"
@@ -4134,6 +4138,8 @@
                   "finding_not_found",
                   "ai_access_not_found",
                   "ai_access_off",
+                  "client_diagnostics_disabled",
+                  "client_diagnostics_limited",
                   "provider_site_unknown",
                   "provider_buddy_not_found",
                   "provider_site_data_not_confirmed"
@@ -4966,6 +4972,8 @@
                         "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
+                        "client_diagnostics_disabled",
+                        "client_diagnostics_limited",
                         "provider_site_unknown",
                         "provider_buddy_not_found",
                         "provider_site_data_not_confirmed"
@@ -8377,6 +8385,7 @@
                     "redaction",
                     "jobs",
                     "health",
+                    "clientDiagnostics",
                     "estimatedBytes"
                   ],
                   "properties": {
@@ -8507,6 +8516,17 @@
                         }
                       }
                     },
+                    "clientDiagnostics": {
+                      "type": "object",
+                      "required": [
+                        "entries"
+                      ],
+                      "properties": {
+                        "entries": {
+                          "type": "integer"
+                        }
+                      }
+                    },
                     "estimatedBytes": {
                       "type": "integer"
                     }
@@ -8525,6 +8545,266 @@
         "responses": {
           "200": {
             "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/api/client-diagnostics/status": {
+      "get": {
+        "summary": "Whether this instance accepts client diagnostics (off by default)",
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "enabled"
+                  ],
+                  "properties": {
+                    "enabled": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/client-diagnostics": {
+      "post": {
+        "summary": "Upload a client's local error report (at most 50 entries)",
+        "description": "Refused with 403 client_diagnostics_disabled while an admin has collection off, and with 429 client_diagnostics_limited after five uploads in an hour. The server truncates and re-redacts every entry before storing it.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "client",
+                  "capturedAt",
+                  "entries"
+                ],
+                "properties": {
+                  "client": {
+                    "type": "object",
+                    "required": [
+                      "name",
+                      "version"
+                    ],
+                    "properties": {
+                      "name": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "enum": [
+                              "web"
+                            ]
+                          },
+                          {
+                            "type": "string",
+                            "enum": [
+                              "android"
+                            ]
+                          }
+                        ]
+                      },
+                      "version": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 100
+                      }
+                    },
+                    "additionalProperties": false
+                  },
+                  "capturedAt": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "entries": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "occurredAt",
+                        "level",
+                        "message"
+                      ],
+                      "properties": {
+                        "occurredAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "level": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "enum": [
+                                "error"
+                              ]
+                            },
+                            {
+                              "type": "string",
+                              "enum": [
+                                "warn"
+                              ]
+                            }
+                          ]
+                        },
+                        "code": {
+                          "type": "string",
+                          "maxLength": 200,
+                          "description": "A stable client code; clients translate what they know"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "stack": {
+                          "type": "string"
+                        },
+                        "context": {
+                          "type": "object",
+                          "description": "Client context; the server re-redacts keys such as token and strings such as e-mail addresses",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    "maxItems": 50
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Default Response"
+          },
+          "400": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/client-diagnostics": {
+      "get": {
+        "summary": "Admins: whether this instance collects client diagnostics",
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "enabled"
+                  ],
+                  "properties": {
+                    "enabled": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "summary": "Admins: switch client-diagnostics collection on or off for the instance (off by default)",
+        "description": "Off refuses every new upload at once; rows already stored stay until their 90-day purge or the next support bundle.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "enabled"
+                ],
+                "properties": {
+                  "enabled": {
+                    "type": "boolean"
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "enabled"
+                  ],
+                  "properties": {
+                    "enabled": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
           }
         }
       }

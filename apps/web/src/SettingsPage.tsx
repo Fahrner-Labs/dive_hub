@@ -1,7 +1,7 @@
 import { lazy, Suspense, useLayoutEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Me } from './api.ts';
-import { DisplaySettings, SecuritySettings } from './AccountSettings.tsx';
+import { DisplaySettings, ReportProblemSettings, SecuritySettings } from './AccountSettings.tsx';
 import { AiAccess } from './AiAccess.tsx';
 import { Connections } from './Connections.tsx';
 import { Devices } from './Devices.tsx';
@@ -70,6 +70,7 @@ function SectionView({ section, admin, params }: { section: SettingsSection; adm
     case 'connections': return <Connections focus={params.get('connection') ?? undefined} />;
     case 'ai-access': return <AiAccess />;
     case 'devices': return <Devices />;
+    case 'report-problem': return <ReportProblemSettings />;
     case 'admin': return admin
       ? <Suspense fallback={<RowsSkeleton rows={3} />}><AdminSettings /></Suspense>
       : <Notice tone="danger">{t('errors.admins_only')}</Notice>;

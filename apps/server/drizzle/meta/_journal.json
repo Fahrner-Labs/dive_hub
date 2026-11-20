@@ -435,6 +435,13 @@
       "when": 1794927742638,
       "tag": "0061_futuristic_lilith",
       "breakpoints": true
+    },
+    {
+      "idx": 62,
+      "version": "7",
+      "when": 1795156929069,
+      "tag": "0062_living_scarlet_witch",
+      "breakpoints": true
     }
   ]
 }
