@@ -96,6 +96,10 @@
     <string name="dive_profile_temperature">Wasser %1$s.</string>
     <string name="dive_profile_temperature_range">%1$s – %2$s</string>
     <string name="dive_profile_table">Profil als Tabelle</string>
+    <string name="dive_tank_gas_size">%1$s, %2$s</string>
+    <string name="dive_tank_pressure">Flaschendruck</string>
+    <string name="dive_tank_numbered_gas">Flasche %1$d (%2$s)</string>
+    <string name="dive_tank_numbered">Flasche %1$d</string>
     <string name="dive_time">Zeit</string>
     <string name="dive_depth">Tiefe</string>
     <string name="dive_temperature">Temperatur</string>
