@@ -66,6 +66,7 @@ import androidx.compose.ui.semantics.setProgress
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.filter
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.divehub.android.R
 import dev.divehub.android.ui.SyncLine
@@ -206,23 +207,27 @@ private fun DivePager(
     val currentNeighbours by rememberUpdatedState(neighbours)
     val currentOnOpenDive by rememberUpdatedState(onOpenDive)
     LaunchedEffect(pagerState) {
-        // collectLatest keeps the collector alive when a drag wins the pager's mutex and cancels the spring-back:
-        // the cancelled block does not cancel this effect, so the next swipe is still observed (FAH-344 review).
-        snapshotFlow { pagerState.settledPage }.collectLatest { page ->
-            if (page == CURRENT_DIVE_PAGE) return@collectLatest
-            val target = if (page < CURRENT_DIVE_PAGE) {
-                currentNeighbours?.previous?.id
-            } else {
-                currentNeighbours?.next?.id
+        // Gate on the gesture ending, not the page changing: an interrupted end-stop can settle back on the same
+        // page, which emits no settledPage change but must still run the spring-back again (FAH-344 review). The
+        // scroll this block starts is filtered upstream, so collectLatest only cancels the block on a new drag.
+        snapshotFlow { pagerState.isScrollInProgress }
+            .filter { !it }
+            .collectLatest {
+                val page = pagerState.currentPage
+                if (page == CURRENT_DIVE_PAGE) return@collectLatest
+                val target = if (page < CURRENT_DIVE_PAGE) {
+                    currentNeighbours?.previous?.id
+                } else {
+                    currentNeighbours?.next?.id
+                }
+                if (target != null) {
+                    currentOnOpenDive(target)
+                    pagerState.scrollToPage(CURRENT_DIVE_PAGE)
+                } else {
+                    // The ends of the list: the spring-back says there is nothing further (FAH-344).
+                    pagerState.animateScrollToPage(CURRENT_DIVE_PAGE)
+                }
             }
-            if (target != null) {
-                currentOnOpenDive(target)
-                pagerState.scrollToPage(CURRENT_DIVE_PAGE)
-            } else {
-                // The ends of the list: the spring-back says there is nothing further (FAH-344).
-                pagerState.animateScrollToPage(CURRENT_DIVE_PAGE)
-            }
-        }
     }
     HorizontalPager(
         state = pagerState,

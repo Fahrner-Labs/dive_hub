@@ -329,6 +329,44 @@ class DiveDetailScreenshotTest {
     }
 
     @Test
+    fun `a swipe that interrupts the end-stop spring-back still re-springs onto the dive`() {
+        val opened = mutableListOf<String>()
+        render(
+            state(
+                dive = dive(),
+                neighbours = NeighboursView(
+                    previous = null,
+                    next = NeighboursViewNext("d2"),
+                    position = 1,
+                    total = 312,
+                ),
+            ),
+            onOpenDive = opened::add,
+        )
+        compose.mainClock.autoAdvance = false
+        // The start-of-list end-stop; stop the clock while its spring-back is under way.
+        compose.onNodeWithTag("dive_pager").performTouchInput {
+            swipe(start = Offset(width * 0.1f, height / 2f), end = Offset(width * 0.9f, height / 2f), durationMillis = 200)
+        }
+        compose.mainClock.advanceTimeBy(250)
+        // A second end-stop drag interrupts the spring-back and settles back on the same empty page.
+        compose.onNodeWithTag("dive_pager").performTouchInput {
+            swipe(start = Offset(width * 0.1f, height / 2f), end = Offset(width * 0.9f, height / 2f), durationMillis = 200)
+        }
+        compose.mainClock.autoAdvance = true
+        compose.waitForIdle()
+        assertTrue(opened.isEmpty())
+        compose.onNodeWithTag("dive_scroll").assertIsDisplayed()
+
+        // The interrupted spring-back still leaves the gesture listener alive.
+        compose.onNodeWithTag("dive_pager").performTouchInput {
+            swipe(start = Offset(width * 0.9f, height / 2f), end = Offset(width * 0.1f, height / 2f), durationMillis = 200)
+        }
+        compose.waitForIdle()
+        assertEquals(listOf("d2"), opened)
+    }
+
+    @Test
     fun `the header's arrows open the neighbouring dives`() {
         val opened = mutableListOf<String>()
         render(state(dive = dive()), onOpenDive = opened::add)
