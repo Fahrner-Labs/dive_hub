@@ -249,9 +249,6 @@ V1 of the native client reads offline: phones lose signal where dives are, and t
   `GET /api/recordings/{id}/samples`. A details page is capped at 50 Dives a page because each row is a whole Dive,
   not a summary: page with `limit=50` until `offset` reaches `total`. Without `include=details` the list answers the
   summary row, unchanged. The OpenAPI document names the two answers `DiveListView` and `DiveDetailsListView`.
-  A server older than this mode accepts the query parameter but answers the summary list; a client reads that as an
-  old server and fetches each Dive through `GET /api/dives/{id}` for that sync instead of failing
-  ([ADR 0076](../decisions/0076-api-versioning-policy.md)).
 - **Refresh keeps the store current.** While online the client opens the live hint stream; a Dive or site hint
   refetches that thing through the normal API, and every (re)connect re-runs the list sync because hints are not
   replayed (ADR 0066). Polling remains the automatic fallback. Deleted Dives arrive as tombstones (`deletedAt`),

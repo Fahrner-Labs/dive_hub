@@ -18,8 +18,6 @@ import io.ktor.serialization.ContentConvertException
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.CancellationException
 import kotlinx.io.IOException
-import kotlinx.serialization.DeserializationStrategy
-import kotlinx.serialization.SerializationException
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
@@ -79,28 +77,6 @@ class ApiClient(
         throw DecodeException(error)
     } catch (error: IOException) {
         throw NoAnswerException(error)
-    }
-
-    /**
-     * The body as text. A transport failure while the body is read is [NoAnswerException], like a failed request;
-     * cancellation is not swallowed.
-     */
-    suspend fun bodyText(response: HttpResponse): String = try {
-        response.bodyAsText()
-    } catch (error: CancellationException) {
-        throw error
-    } catch (error: IOException) {
-        throw NoAnswerException(error)
-    }
-
-    /**
-     * Decode a body the caller has already read, for a response whose shape decides the next step, with the same
-     * JSON configuration as [decode].
-     */
-    fun <T> decode(body: String, serializer: DeserializationStrategy<T>): T = try {
-        json.decodeFromString(serializer, body)
-    } catch (error: SerializationException) {
-        throw DecodeException(error)
     }
 
     /** The body of a refusal, if it has one; never used for a message to the person. */
