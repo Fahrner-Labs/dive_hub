@@ -73,8 +73,8 @@ internal fun AppNavHost(
                     currentScreens.value.logbook(
                         page = page,
                         onPage = { entry.savedStateHandle[LOGBOOK_PAGE_KEY] = it },
-                        onOpenTools = { navController.navigate(ToolsRoute()) },
-                        onOpenDive = { id -> navController.navigate(DiveRoute(id)) },
+                        onOpenTools = { navController.navigate(ToolsRoute()) { launchSingleTop = true } },
+                        onOpenDive = { id -> navController.navigate(DiveRoute(id)) { launchSingleTop = true } },
                     )
                 }
                 composable<DiveRoute> { entry ->
@@ -115,7 +115,7 @@ internal fun AppNavHost(
                             }
                         },
                         onBack = { navController.popBackStack() },
-                        onOpenDive = { id -> navController.navigate(DiveRoute(id)) },
+                        onOpenDive = { id -> navController.navigate(DiveRoute(id)) { launchSingleTop = true } },
                     )
                 }
             }
@@ -127,6 +127,7 @@ internal fun AppNavHost(
         if (destination != null && !navController.isShowing(destination)) {
             navController.navigate(destination) {
                 popUpTo(navController.graph.id) { inclusive = true }
+                launchSingleTop = true
             }
         }
     }

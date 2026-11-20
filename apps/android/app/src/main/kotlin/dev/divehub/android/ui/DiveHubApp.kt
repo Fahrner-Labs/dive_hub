@@ -78,7 +78,7 @@ fun DiveHubApp(
     val screens = remember(viewModel, logbook, dive, tools, gasPlan, lead, loadings) {
         DiveHubScreens(viewModel, logbook, dive, tools, gasPlan, lead, loadings)
     }
-    // A sign-out (or another User) drops the logbook's pages with the session (client contract §1 Security).
+    // A sign-out (or another User) drops the saved screens with the session (client contract §1 Security).
     LaunchedEffect(state.user?.id) {
         if (state.user == null) {
             logbook.forget()
@@ -87,8 +87,6 @@ fun DiveHubApp(
             gasPlan.forget()
             lead.forget()
             loadings.forget()
-        } else {
-            logbook.start(state.user!!.id)
         }
     }
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
@@ -140,9 +138,11 @@ private class DiveHubScreens(
     @Composable
     override fun logbook(page: Int, onPage: (Int) -> Unit, onOpenTools: () -> Unit, onOpenDive: (String) -> Unit) {
         val state by viewModel.state.collectAsStateWithLifecycle()
-        val logbookState by logbook.state.collectAsStateWithLifecycle()
-        LaunchedEffect(page) { if (page != logbookState.page) logbook.showPage(page) }
-        LaunchedEffect(logbookState.page) { onPage(logbookState.page) }
+        // The page is back from the route after process death; start the logbook there once the session is ready.
+        LaunchedEffect(state.user?.id, page) {
+            val userId = state.user?.id ?: return@LaunchedEffect
+            logbook.start(userId, page)
+        }
         LogbookRoute(
             viewModel = logbook,
             units = state.units,
@@ -152,14 +152,18 @@ private class DiveHubScreens(
                 dive.open(id, filters)
                 onOpenDive(id)
             },
+            onPage = onPage,
         )
     }
 
     @Composable
     override fun dive(id: String, onBack: () -> Unit, onOpenDive: (String) -> Unit) {
         val state by viewModel.state.collectAsStateWithLifecycle()
-        // After process death the id is back from the route but the page was never read in this process.
-        LaunchedEffect(id) { if (dive.state.value.diveId != id) dive.open(id) }
+        // After process death the id is back from the route but the page was never read in this process. Wait for the
+        // session: `open` reaches the API for the Provider names, and the instance URL is only set once restore is done.
+        LaunchedEffect(id, state.user?.id) {
+            if (state.user != null && dive.state.value.diveId != id) dive.open(id)
+        }
         DiveDetailRoute(
             viewModel = dive,
             units = state.units,
