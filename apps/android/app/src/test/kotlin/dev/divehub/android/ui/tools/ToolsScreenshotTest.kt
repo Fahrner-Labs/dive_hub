@@ -133,6 +133,28 @@ class ToolsScreenshotTest {
         assertEquals(ToolPage.Plan, opened)
     }
 
+    @Test
+    fun `the sibling tools stay reachable while the gas store loads`() {
+        var opened: ToolPage? = null
+        compose.setContent {
+            DiveHubTheme(darkTheme = false) {
+                ToolsScreen(
+                    state = ToolsUiState(loading = true),
+                    imperial = false,
+                    onOpenPlan = {},
+                    onOpenLead = {},
+                    onOpenLoadings = { opened = ToolPage.Loadings },
+                    onChange = {},
+                    onReload = {},
+                )
+            }
+        }
+
+        compose.onNodeWithText("Current loadings").assertIsDisplayed().performClick()
+
+        assertEquals(ToolPage.Loadings, opened)
+    }
+
     private fun render(state: ToolsUiState) {
         compose.setContent {
             DiveHubTheme(darkTheme = false) {

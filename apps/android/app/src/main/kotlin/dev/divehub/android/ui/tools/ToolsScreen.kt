@@ -3,6 +3,7 @@ package dev.divehub.android.ui.tools
 import android.content.Context
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -133,22 +134,14 @@ fun ToolsScreen(
     Scaffold(
         topBar = { DiveHubTopBar(title = stringResource(R.string.tools_title)) },
     ) { padding ->
-        when {
-            state.loading -> Column(
-                Modifier.padding(padding).fillMaxSize(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center,
-            ) {
-                val label = stringResource(R.string.loading)
-                CircularProgressIndicator(Modifier.semantics { contentDescription = label })
-            }
-            else -> Column(
-                Modifier
-                    .padding(padding)
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-            ) {
+        Column(
+            Modifier
+                .padding(padding)
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+        ) {
+            if (!state.loading) {
                 Notice(stringResource(R.string.tools_notice))
                 if (state.storeError != null) {
                     Spacer(Modifier.height(8.dp))
@@ -170,9 +163,19 @@ fun ToolsScreen(
                         )
                     }
                 }
-                Spacer(Modifier.height(16.dp))
-                ToolLinks(onOpenPlan, onOpenLead, onOpenLoadings)
-                Spacer(Modifier.height(20.dp))
+            }
+            Spacer(Modifier.height(16.dp))
+            ToolLinks(onOpenPlan, onOpenLead, onOpenLoadings)
+            Spacer(Modifier.height(20.dp))
+            if (state.loading) {
+                Box(
+                    Modifier.fillMaxWidth().padding(vertical = 48.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    val label = stringResource(R.string.loading)
+                    CircularProgressIndicator(Modifier.semantics { contentDescription = label })
+                }
+            } else {
                 Inputs(state.inputs, imperial, onChange)
                 Spacer(Modifier.height(20.dp))
                 BottomTimeAnswer(state, imperial)
