@@ -1,6 +1,6 @@
 package dev.divehub.shared.logbook
 
-import dev.divehub.api.models.ApiDivesGet200Response
+import dev.divehub.api.models.DiveListView
 import dev.divehub.api.models.ConnectionView
 import dev.divehub.api.models.ProviderSummary
 import dev.divehub.shared.ApiClient
@@ -30,7 +30,7 @@ data class ProviderDirectory(
  * show. All paging and filter maths lives beside it in this package, so the Compose screen only draws.
  */
 class LogbookRepository(private val api: ApiClient) {
-    suspend fun page(page: Int, filters: Set<LogbookFilter> = emptySet()): ApiDivesGet200Response {
+    suspend fun page(page: Int, filters: Set<LogbookFilter> = emptySet()): DiveListView {
         val response = api.get(logbookPath(page, filters))
         if (!response.status.isSuccess()) throw api.failure(response)
         return api.decode(response)

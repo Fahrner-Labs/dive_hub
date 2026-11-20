@@ -656,6 +656,7 @@
     "gas_not_breathable": "A mix with under 16 % oxygen can’t be breathed at the surface.",
     "too_many_live_streams": "Too many live connections are open for this account; close another tab or wait a moment.",
     "live_unavailable": "Live updates are unavailable; the page keeps checking for changes.",
+    "client_too_old": "This app is too old for this Dive Hub. Update it to continue.",
     "backup_not_found": "This backup doesn’t exist (anymore).",
     "backup_in_progress": "A backup is already queued or running. Wait until it is done.",
     "backup_running": "This backup is still being written.",

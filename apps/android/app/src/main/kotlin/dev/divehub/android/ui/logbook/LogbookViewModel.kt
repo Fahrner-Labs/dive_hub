@@ -6,7 +6,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import dev.divehub.android.AppContainer
-import dev.divehub.api.models.ApiDivesGet200Response
+import dev.divehub.api.models.DiveListView
 import dev.divehub.shared.DiveHubException
 import dev.divehub.shared.NoAnswerException
 import dev.divehub.shared.logbook.LogbookFilter
@@ -32,7 +32,7 @@ data class LogbookUiState(
     val refreshing: Boolean = false,
     val page: Int = 1,
     val filters: Set<LogbookFilter> = emptySet(),
-    val data: ApiDivesGet200Response? = null,
+    val data: DiveListView? = null,
     val providers: ProviderDirectory = ProviderDirectory.EMPTY,
     val error: String? = null,
     /** No answer at all: offline, or the instance cannot be reached (client contract §2). */

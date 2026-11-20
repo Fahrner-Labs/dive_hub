@@ -1,9 +1,9 @@
 package dev.divehub.shared.logbook
 
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
-import dev.divehub.api.models.ApiDivesGet200ResponseCounts
-import dev.divehub.api.models.ApiDivesGet200ResponseDivesItem
-import dev.divehub.api.models.ApiDivesGet200ResponseDivesItemSite
+import dev.divehub.api.models.DiveListViewCounts
+import dev.divehub.api.models.DiveListViewDivesItem
+import dev.divehub.api.models.DiveListViewDivesItemSite
 import dev.divehub.api.models.DiveView
 import dev.divehub.api.models.DiveViewRecordingsItem
 import dev.divehub.api.models.DiveViewRecordingsItemSummary
@@ -62,7 +62,7 @@ class StoreLogbookTest {
         insert("plain", item("plain", recordings = 1, findings = 0, site = "Reef"))
         store.saveLogbookCounts(
             JSON.encodeToString(
-                ApiDivesGet200ResponseCounts(
+                DiveListViewCounts(
                     noRecording = 1, noSite = 1, withFindings = 1, notAtProvider = 3, changedSinceSent = 4,
                 ),
             ),
@@ -185,7 +185,7 @@ class StoreLogbookTest {
 
     private fun insert(
         diveId: String,
-        list: ApiDivesGet200ResponseDivesItem,
+        list: DiveListViewDivesItem,
         detail: DiveView? = null,
         startsAt: String = list.startsAt,
         duration: Long = list.durationSeconds.toLong(),
@@ -203,7 +203,7 @@ class StoreLogbookTest {
                 siteId = listRow.site?.id,
                 utcOffsetSeconds = listRow.utcOffsetSeconds?.toLong(),
                 utcOffsetSource = listRow.utcOffsetSource,
-                listJson = JSON.encodeToString(ApiDivesGet200ResponseDivesItem.serializer(), listRow),
+                listJson = JSON.encodeToString(DiveListViewDivesItem.serializer(), listRow),
                 detailJson = detail?.let { JSON.encodeToString(DiveView.serializer(), it) },
             ),
         )
@@ -215,7 +215,7 @@ class StoreLogbookTest {
         recordings: Int = 1,
         findings: Int = 0,
         site: String? = "Reef",
-    ) = ApiDivesGet200ResponseDivesItem(
+    ) = DiveListViewDivesItem(
         id = id,
         diverId = "diver-1",
         number = 1,
@@ -225,7 +225,7 @@ class StoreLogbookTest {
         durationSeconds = 3_000.0,
         maxDepthM = 20.0,
         avgDepthM = 12.0,
-        site = site?.let { ApiDivesGet200ResponseDivesItemSite("site-1", it) },
+        site = site?.let { DiveListViewDivesItemSite("site-1", it) },
         findings = findings,
         recordings = recordings,
         fromProvider = null,

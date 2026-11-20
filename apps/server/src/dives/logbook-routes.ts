@@ -6,7 +6,7 @@ import type { Auth } from '../auth/auth.js';
 import { requireUser, userOf } from '../auth/fastify.js';
 import { PARTICIPANT_ROLES, UTC_OFFSET_SOURCES, dive } from '../db/schema.js';
 import { Problem, problem } from '../http/problems.js';
-import { DateTime, IdParams, Nullable } from '../http/schemas.js';
+import { DateTime, IdParams, Nullable, refTo } from '../http/schemas.js';
 import type { DivePushes, DiveWaitingPushes } from './provider-port.js';
 import { WaitingPushView } from './waiting-push-view.js';
 import { DiveProfileView } from './profile-view.js';
@@ -102,13 +102,16 @@ const DiveListMeta = {
   }), { description: 'Only while sorted by date: the months of this page in page order, each with all the matching Dives of that month' }),
 };
 
-const DiveListView = Type.Object({ dives: Type.Array(DiveSummaryView), ...DiveListMeta });
+/** The summary list: a page and its total, each row the summary of a Dive. Registered with app.addSchema; the route answers the reference. */
+export const DiveListViewSchema = Type.Object({ dives: Type.Array(DiveSummaryView), ...DiveListMeta }, { $id: 'DiveListView' });
+export const DiveListView = refTo(DiveListViewSchema);
 
 /** `include=details`: the same page and total, each row the full view GET /api/dives/{id} answers (FAH-297). */
-const DiveDetailsListView = Type.Object({
+export const DiveDetailsListViewSchema = Type.Object({
   dives: Type.Array(DiveView, { description: 'Each Dive as GET /api/dives/{id} answers it' }),
   ...DiveListMeta,
-});
+}, { $id: 'DiveDetailsListView' });
+export const DiveDetailsListView = refTo(DiveDetailsListViewSchema);
 
 
 const DiveNeighboursView = Type.Object({

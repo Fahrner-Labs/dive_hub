@@ -656,6 +656,7 @@
     "gas_not_breathable": "Ein Gemisch mit unter 16 % Sauerstoff ist an der Oberfläche nicht atembar.",
     "too_many_live_streams": "Für dieses Konto sind zu viele Live-Verbindungen offen; schließe einen anderen Tab oder warte einen Moment.",
     "live_unavailable": "Live-Aktualisierungen sind nicht verfügbar; die Seite prüft weiterhin auf Änderungen.",
+    "client_too_old": "Diese App ist zu alt für diesen Dive Hub. Aktualisiere sie, um fortzufahren.",
     "backup_not_found": "Dieses Backup gibt es nicht (mehr).",
     "backup_in_progress": "Ein Backup ist bereits eingeplant oder läuft. Warte, bis es fertig ist.",
     "backup_running": "Dieses Backup wird noch geschrieben.",

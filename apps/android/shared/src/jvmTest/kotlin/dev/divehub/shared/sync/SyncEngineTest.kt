@@ -129,7 +129,9 @@ private fun diveStartsAtOf(listItem: String): String =
     Regex("\"startsAt\":\"([^\"]+)\"").find(listItem)?.groupValues?.get(1) ?: error("no startsAt in $listItem")
 
 private fun diveDetailsPage(ids: List<Pair<String, String>>, total: Int): String =
-    """{"dives":[${ids.joinToString(",") { (id, startsAt) -> detailJson(id, startsAt) }}],"total":$total}"""
+    """{"dives":[${ids.joinToString(",") { (id, startsAt) -> detailJson(id, startsAt) }}],"total":$total,
+    "counts":{"noRecording":0,"noSite":0,"withFindings":0,"notAtProvider":0,"changedSinceSent":0},
+    "totals":{"dives":$total,"durationSeconds":0,"deepestM":null,"lastDiveAt":null},"months":[]}"""
 
 private class RouteData(
     val divers: List<String> = listOf(diverJson()),

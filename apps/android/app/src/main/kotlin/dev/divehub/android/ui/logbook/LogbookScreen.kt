@@ -48,9 +48,9 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.divehub.android.R
 import dev.divehub.android.ui.SyncLine
-import dev.divehub.api.models.ApiDivesGet200Response
-import dev.divehub.api.models.ApiDivesGet200ResponseDivesItem
-import dev.divehub.api.models.ApiDivesGet200ResponseDivesItemParticipantsItem
+import dev.divehub.api.models.DiveListView
+import dev.divehub.api.models.DiveListViewDivesItem
+import dev.divehub.api.models.DiveListViewDivesItemParticipantsItem
 import dev.divehub.shared.ErrorCodes
 import dev.divehub.shared.logbook.LogbookFilter
 import dev.divehub.shared.logbook.SAME_DAY_SECONDS
@@ -103,7 +103,7 @@ fun LogbookScreen(
     onToggleFilter: (LogbookFilter) -> Unit,
     onSignOut: () -> Unit,
     onOpenTools: () -> Unit,
-    onOpenDive: (ApiDivesGet200ResponseDivesItem) -> Unit,
+    onOpenDive: (DiveListViewDivesItem) -> Unit,
 ) {
     Scaffold(
         topBar = {
@@ -216,7 +216,7 @@ private fun LogbookList(
     onShowAll: () -> Unit,
     onPage: (Int) -> Unit,
     onToggleFilter: (LogbookFilter) -> Unit,
-    onOpenDive: (ApiDivesGet200ResponseDivesItem) -> Unit,
+    onOpenDive: (DiveListViewDivesItem) -> Unit,
 ) {
     val context = LocalContext.current
     val locale = context.resources.configuration.locales[0] ?: Locale.getDefault()
@@ -310,7 +310,7 @@ private fun LogbookList(
 }
 
 @Composable
-private fun Totals(data: ApiDivesGet200Response, locale: Locale, imperial: Boolean) {
+private fun Totals(data: DiveListView, locale: Locale, imperial: Boolean) {
     val context = LocalContext.current
     val totals = data.totals
     val text = if (totals.dives == 0) {
@@ -419,7 +419,7 @@ private fun MonthHead(context: Context, month: String, dives: Int?, durationSeco
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun DiveRow(
-    dive: ApiDivesGet200ResponseDivesItem,
+    dive: DiveListViewDivesItem,
     scaleM: Double,
     providerName: (String) -> String,
     profilePending: Boolean,
@@ -491,7 +491,7 @@ private fun Fact(text: String) {
  * are the row's accessible text (client contract §2), so the circle alone never carries the meaning.
  */
 @Composable
-private fun Participants(people: List<ApiDivesGet200ResponseDivesItemParticipantsItem>) {
+private fun Participants(people: List<DiveListViewDivesItemParticipantsItem>) {
     if (people.isEmpty()) return
     val context = LocalContext.current
     val description = context.getString(
@@ -519,7 +519,7 @@ private fun Participants(people: List<ApiDivesGet200ResponseDivesItemParticipant
 }
 
 @Composable
-private fun AvatarCircle(person: ApiDivesGet200ResponseDivesItemParticipantsItem) {
+private fun AvatarCircle(person: DiveListViewDivesItemParticipantsItem) {
     val tones = listOf(
         MaterialTheme.colorScheme.primaryContainer,
         MaterialTheme.colorScheme.surfaceVariant,

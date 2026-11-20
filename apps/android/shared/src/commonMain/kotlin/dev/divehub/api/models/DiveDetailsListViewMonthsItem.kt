@@ -7,7 +7,9 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
 
 @Serializable
-data class ApiDivesGet200ResponseDivesItemSite(
-    @SerialName("id") val id: String,
-    @SerialName("name") val name: String
+data class DiveDetailsListViewMonthsItem(
+    /** The local month, YYYY-MM */
+    @SerialName("month") val month: String,
+    @SerialName("dives") val dives: Int,
+    @SerialName("durationSeconds") val durationSeconds: Double
 )

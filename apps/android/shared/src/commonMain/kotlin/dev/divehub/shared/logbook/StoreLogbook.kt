@@ -1,12 +1,12 @@
 package dev.divehub.shared.logbook
 
-import dev.divehub.api.models.ApiDivesGet200Response
-import dev.divehub.api.models.ApiDivesGet200ResponseCounts
-import dev.divehub.api.models.ApiDivesGet200ResponseDivesItem
-import dev.divehub.api.models.ApiDivesGet200ResponseDivesItemGasesItem
-import dev.divehub.api.models.ApiDivesGet200ResponseDivesItemSite
-import dev.divehub.api.models.ApiDivesGet200ResponseMonthsItem
-import dev.divehub.api.models.ApiDivesGet200ResponseTotals
+import dev.divehub.api.models.DiveListView
+import dev.divehub.api.models.DiveListViewCounts
+import dev.divehub.api.models.DiveListViewDivesItem
+import dev.divehub.api.models.DiveListViewDivesItemGasesItem
+import dev.divehub.api.models.DiveListViewDivesItemSite
+import dev.divehub.api.models.DiveListViewMonthsItem
+import dev.divehub.api.models.DiveListViewTotals
 import dev.divehub.api.models.DiveView
 import dev.divehub.api.models.DiveViewCylindersItem
 import dev.divehub.api.models.DiveViewCylindersItemGas
@@ -45,7 +45,7 @@ data class StoreLogbookContext(
 
 /** One logbook page read from the store: the API's shape, plus what the sync line and the per-Dive marker need. */
 data class StoredLogbookPage(
-    val data: ApiDivesGet200Response,
+    val data: DiveListView,
     val syncedAt: String?,
     val profilePending: Set<String>,
 ) {
@@ -97,7 +97,7 @@ class StoreLogbook(private val store: DiveStore) {
         val pageItems = matching.drop(offset).take(LOGBOOK_PAGE_SIZE)
         val counts = storedCounts() ?: countsOf(items)
         StoredLogbookPage(
-            data = ApiDivesGet200Response(
+            data = DiveListView(
                 dives = pageItems,
                 total = total,
                 counts = counts,
@@ -165,11 +165,11 @@ class StoreLogbook(private val store: DiveStore) {
     private fun profileSynced(diveId: String): Boolean =
         store.checkpoint(PROFILE_ENTITY_PREFIX + diveId, PROFILE_PHASE)?.done == true
 
-    private fun storedCounts(): ApiDivesGet200ResponseCounts? =
+    private fun storedCounts(): DiveListViewCounts? =
         store.syncState().countsJson?.let { decode(it) }
 
-    private fun countsOf(items: List<ApiDivesGet200ResponseDivesItem>): ApiDivesGet200ResponseCounts =
-        ApiDivesGet200ResponseCounts(
+    private fun countsOf(items: List<DiveListViewDivesItem>): DiveListViewCounts =
+        DiveListViewCounts(
             noRecording = items.count { it.recordings == 0 },
             noSite = items.count { it.site == null },
             withFindings = items.count { it.findings > 0 },
@@ -178,8 +178,8 @@ class StoreLogbook(private val store: DiveStore) {
             changedSinceSent = 0,
         )
 
-    private fun totalsOf(rows: List<Dive>): ApiDivesGet200ResponseTotals =
-        ApiDivesGet200ResponseTotals(
+    private fun totalsOf(rows: List<Dive>): DiveListViewTotals =
+        DiveListViewTotals(
             dives = rows.size,
             durationSeconds = rows.sumOf { it.durationSeconds ?: 0L }.toDouble(),
             deepestM = rows.mapNotNull { it.maxDepthM }.maxOrNull(),
@@ -187,15 +187,15 @@ class StoreLogbook(private val store: DiveStore) {
         )
 
     private fun monthsOf(
-        pageItems: List<ApiDivesGet200ResponseDivesItem>,
-        matching: List<ApiDivesGet200ResponseDivesItem>,
-    ): List<ApiDivesGet200ResponseMonthsItem> {
+        pageItems: List<DiveListViewDivesItem>,
+        matching: List<DiveListViewDivesItem>,
+    ): List<DiveListViewMonthsItem> {
         val byMonth = matching.groupBy { localMonthOf(it.startsAt, it.utcOffsetSeconds) }
         return pageItems.mapNotNull { localMonthOf(it.startsAt, it.utcOffsetSeconds) }
             .distinct()
             .mapNotNull { month ->
                 byMonth[month]?.let { dives ->
-                    ApiDivesGet200ResponseMonthsItem(
+                    DiveListViewMonthsItem(
                         month = month,
                         dives = dives.size,
                         durationSeconds = dives.sumOf { it.durationSeconds },
@@ -204,7 +204,7 @@ class StoreLogbook(private val store: DiveStore) {
             }
     }
 
-    private fun matches(item: ApiDivesGet200ResponseDivesItem, filters: Set<LogbookFilter>): Boolean =
+    private fun matches(item: DiveListViewDivesItem, filters: Set<LogbookFilter>): Boolean =
         filters.all { filter ->
             when (filter) {
                 LogbookFilter.NO_RECORDING -> item.recordings == 0
@@ -214,13 +214,13 @@ class StoreLogbook(private val store: DiveStore) {
             }
         }
 
-    private fun Dive.toListItem(): ApiDivesGet200ResponseDivesItem {
-        listJson?.let { decode<ApiDivesGet200ResponseDivesItem>(it) }?.let { return it }
+    private fun Dive.toListItem(): DiveListViewDivesItem {
+        listJson?.let { decode<DiveListViewDivesItem>(it) }?.let { return it }
         val recordings = store.recordings(id)
         val primary = recordings.firstOrNull { it.isPrimary } ?: recordings.firstOrNull()
         val summary = primary?.summary()
         val site = siteId?.let { store.diveSite(it) }
-        return ApiDivesGet200ResponseDivesItem(
+        return DiveListViewDivesItem(
             id = id,
             diverId = diverId,
             number = number?.toInt(),
@@ -230,12 +230,12 @@ class StoreLogbook(private val store: DiveStore) {
             durationSeconds = (durationSeconds ?: 0L).toDouble(),
             maxDepthM = maxDepthM,
             avgDepthM = avgDepthM,
-            site = site?.let { ApiDivesGet200ResponseDivesItemSite(id = it.id, name = it.name) },
+            site = site?.let { DiveListViewDivesItemSite(id = it.id, name = it.name) },
             findings = (findingsCount ?: 0L).toInt(),
             recordings = recordings.size,
             fromProvider = fromProvider,
             gases = summary?.gases.orEmpty().map {
-                ApiDivesGet200ResponseDivesItemGasesItem(o2 = it.o2, he = it.he)
+                DiveListViewDivesItemGasesItem(o2 = it.o2, he = it.he)
             },
             surfaceIntervalSeconds = summary?.surfaceIntervalSeconds,
             participants = emptyList(),
