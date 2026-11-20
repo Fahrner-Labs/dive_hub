@@ -130,7 +130,15 @@ class SessionRepository(
      * Ends the session here whatever the server answers; the server call is best effort. The instance URL stays, so
      * the next person sees the sign-in form rather than the first-start question again.
      */
-    suspend fun signOut() {
+    suspend fun signOut() = endSession(keepAddress = true)
+
+    /**
+     * The settings screen's "Change instance": sign out (which wipes the previous User's local data) and forget the
+     * address too, so the next start asks for an instance instead of falling back to the old one.
+     */
+    suspend fun changeInstance() = endSession(keepAddress = false)
+
+    private suspend fun endSession(keepAddress: Boolean) {
         try {
             val url = instances.load()
             if (url != null && tokens.load() != null) {
@@ -144,6 +152,7 @@ class SessionRepository(
         } catch (_: NoAnswerException) {
             // Offline: forget the token here anyway.
         } finally {
+            if (!keepAddress) instances.clear()
             forgetUser()
         }
     }

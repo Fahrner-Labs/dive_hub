@@ -70,8 +70,6 @@ import java.util.Locale
 fun LogbookRoute(
     viewModel: LogbookViewModel,
     units: String?,
-    onSignOut: () -> Unit,
-    onOpenTools: () -> Unit,
     onOpenDive: (String, Set<LogbookFilter>) -> Unit,
     onPage: (Int) -> Unit = {},
 ) {
@@ -93,8 +91,6 @@ fun LogbookRoute(
             viewModel.toggle(filter)
             onPage(1)
         },
-        onSignOut = onSignOut,
-        onOpenTools = onOpenTools,
         onOpenDive = { dive -> onOpenDive(dive.id, state.filters) },
     )
 }
@@ -114,18 +110,12 @@ fun LogbookScreen(
     onShowAll: () -> Unit,
     onPage: (Int) -> Unit,
     onToggleFilter: (LogbookFilter) -> Unit,
-    onSignOut: () -> Unit,
-    onOpenTools: () -> Unit,
     onOpenDive: (DiveListViewDivesItem) -> Unit,
 ) {
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.logbook_title)) },
-                actions = {
-                    TextButton(onClick = onOpenTools) { Text(stringResource(R.string.tools_title)) }
-                    TextButton(onClick = onSignOut) { Text(stringResource(R.string.sign_out)) }
-                },
             )
         },
     ) { padding ->

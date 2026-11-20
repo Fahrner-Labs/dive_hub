@@ -38,7 +38,7 @@ class MainActivity : ComponentActivity() {
                 val gasPlan: GasPlanViewModel = viewModel(factory = GasPlanViewModel.factory(container))
                 val lead: LeadEstimateViewModel = viewModel(factory = LeadEstimateViewModel.factory(container))
                 val loadings: LoadingsViewModel = viewModel(factory = LoadingsViewModel.factory(container))
-                DiveHubApp(viewModel, logbook, dive, tools, gasPlan, lead, loadings)
+                DiveHubApp(container, viewModel, logbook, dive, tools, gasPlan, lead, loadings)
             }
         }
     }

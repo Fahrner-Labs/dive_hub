@@ -3,8 +3,11 @@ package dev.divehub.android.ui.navigation
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
@@ -40,7 +43,7 @@ class AppNavHostTest {
         compose.runOnIdle { controller.navigate(MainRoute) }
         assertRoute<LogbookRoute>()
 
-        compose.runOnIdle { screens.logbookOpenTools!!.invoke() }
+        compose.onNodeWithText("Tools").performClick()
         assertRoute<ToolsRoute>()
 
         compose.runOnIdle { screens.toolsOpenDive!!.invoke("dive-1") }
@@ -86,7 +89,7 @@ class AppNavHostTest {
     fun `a tool page pushes and pops without losing the gas page underneath`() {
         setContent()
         compose.runOnIdle { controller.navigate(MainRoute) }
-        compose.runOnIdle { screens.logbookOpenTools!!.invoke() }
+        compose.onNodeWithText("Tools").performClick()
         compose.runOnIdle { screens.toolsOnPage!!.invoke(ToolPage.Plan) }
         compose.runOnIdle { assertEquals(ToolPage.Plan, controller.currentBackStackEntry?.toRoute<ToolsRoute>()?.page) }
 
@@ -238,6 +241,115 @@ class AppNavHostTest {
         assertEquals(ToolPage.Loadings, screens.toolsPage)
     }
 
+    @Test
+    fun `the bottom bar opens settings and keeps it after process death`() {
+        val restoration = StateRestorationTester(compose)
+        restoration.setContent { start(destination = null) }
+        compose.runOnIdle { controller.navigate(MainRoute) }
+        compose.waitForIdle()
+
+        compose.onNodeWithText("Settings").performClick()
+        assertRoute<SettingsRoute>()
+
+        restoration.emulateSavedInstanceStateRestore()
+
+        assertRoute<SettingsRoute>()
+    }
+
+    @Test
+    fun `a bottom-bar switch saves and restores the logbook page`() {
+        setContent()
+        compose.runOnIdle { controller.navigate(MainRoute) }
+        compose.runOnIdle { screens.logbookOnPage!!.invoke(3) }
+        compose.waitForIdle()
+        assertEquals(3, screens.logbookPage)
+
+        compose.onNodeWithText("Tools").performClick()
+        assertRoute<ToolsRoute>()
+        compose.onNodeWithText("Logbook").performClick()
+
+        assertRoute<LogbookRoute>()
+        compose.waitForIdle()
+        assertEquals(3, screens.logbookPage)
+    }
+
+    @Test
+    fun `back from a tool tab returns to the logbook and leaves no sign-in below it`() {
+        compose.setContent { start(destination = null) }
+        compose.runOnIdle { controller.navigate(MainRoute) }
+        compose.onNodeWithText("Tools").performClick()
+        assertRoute<ToolsRoute>()
+
+        compose.runOnIdle { assertTrue(controller.popBackStack()) }
+
+        assertRoute<LogbookRoute>()
+        compose.runOnIdle {
+            assertFalse(controller.currentBackStack.value.any { it.destination.hasRoute(SignInRoute::class) })
+        }
+    }
+
+    @Test
+    fun `the bar stays on a dive with the tab that opened it selected`() {
+        compose.setContent { start(destination = null) }
+        compose.runOnIdle { controller.navigate(MainRoute) }
+        compose.onNodeWithText("Tools").performClick()
+        compose.runOnIdle { screens.toolsOpenDive!!.invoke("dive-1") }
+        assertRoute<DiveRoute>()
+
+        compose.onNodeWithText("Tools").assertIsSelected()
+    }
+
+    @Test
+    fun `the bar is absent outside the main graph`() {
+        val destination = mutableStateOf<Any?>(InstanceRoute)
+        compose.setContent { start(destination = destination.value) }
+        compose.onNodeWithText("Settings").assertDoesNotExist()
+
+        compose.runOnIdle { destination.value = SignInRoute }
+        compose.onNodeWithText("Settings").assertDoesNotExist()
+    }
+
+    @Test
+    fun `tapping the selected Tools tab leaves a dive for the gas page`() {
+        compose.setContent { start(destination = null) }
+        compose.runOnIdle { controller.navigate(MainRoute) }
+        compose.onNodeWithText("Tools").performClick()
+        compose.runOnIdle { screens.toolsOpenDive!!.invoke("dive-1") }
+        assertRoute<DiveRoute>()
+
+        compose.onNodeWithText("Tools").performClick()
+
+        assertRoute<ToolsRoute>()
+        compose.runOnIdle { assertEquals(ToolPage.Gas, controller.currentBackStackEntry?.toRoute<ToolsRoute>()?.page) }
+    }
+
+    @Test
+    fun `tapping the selected Logbook tab leaves a dive for the list`() {
+        compose.setContent { start(destination = null) }
+        compose.runOnIdle { controller.navigate(MainRoute) }
+        compose.runOnIdle { screens.logbookOpenDive!!.invoke("dive-1") }
+        assertRoute<DiveRoute>()
+
+        compose.onNodeWithText("Logbook").performClick()
+
+        assertRoute<LogbookRoute>()
+    }
+
+    @Test
+    fun `clearing saved tab states drops the previous tool page`() {
+        compose.setContent { start(destination = null) }
+        compose.runOnIdle { controller.navigate(MainRoute) }
+        compose.onNodeWithText("Tools").performClick()
+        compose.runOnIdle { screens.toolsOnPage!!.invoke(ToolPage.Plan) }
+        compose.onNodeWithText("Logbook").performClick()
+
+        compose.runOnIdle { controller.clearSavedTabStates() }
+        compose.onNodeWithText("Tools").performClick()
+
+        assertRoute<ToolsRoute>()
+        compose.runOnIdle { assertEquals(ToolPage.Gas, controller.currentBackStackEntry?.toRoute<ToolsRoute>()?.page) }
+    }
+
     private fun setContent(divePage: Int? = null) {
         compose.setContent { start(divePage) }
     }
@@ -274,13 +386,13 @@ class AppNavHostTest {
         var diveId: String? = null
         var toolsPage: ToolPage? = null
         var logbookOnPage: ((Int) -> Unit)? = null
-        var logbookOpenTools: (() -> Unit)? = null
         var logbookOpenDive: ((String) -> Unit)? = null
         var diveBack: (() -> Unit)? = null
         var diveOpenDive: ((String) -> Unit)? = null
         var toolsOnPage: ((ToolPage) -> Unit)? = null
         var toolsBack: (() -> Unit)? = null
         var toolsOpenDive: ((String) -> Unit)? = null
+        var settingsShown = false
 
         @Composable
         override fun instance() {
@@ -296,12 +408,10 @@ class AppNavHostTest {
         override fun logbook(
             page: Int,
             onPage: (Int) -> Unit,
-            onOpenTools: () -> Unit,
             onOpenDive: (String) -> Unit,
         ) {
             logbookPage = page
             logbookOnPage = onPage
-            logbookOpenTools = onOpenTools
             logbookOpenDive = onOpenDive
             Text("logbook:$page")
         }
@@ -326,6 +436,12 @@ class AppNavHostTest {
             toolsBack = onBack
             toolsOpenDive = onOpenDive
             Text("tools:${page.name}")
+        }
+
+        @Composable
+        override fun settings() {
+            settingsShown = true
+            Text("settings")
         }
     }
 }

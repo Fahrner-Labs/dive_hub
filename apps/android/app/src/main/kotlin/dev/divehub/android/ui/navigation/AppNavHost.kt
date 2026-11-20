@@ -1,6 +1,12 @@
 package dev.divehub.android.ui.navigation
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -9,6 +15,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavController
+import androidx.navigation.NavDestination
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavHostController
@@ -35,19 +42,22 @@ internal interface AppScreens {
     fun signIn()
 
     @Composable
-    fun logbook(page: Int, onPage: (Int) -> Unit, onOpenTools: () -> Unit, onOpenDive: (String) -> Unit)
+    fun logbook(page: Int, onPage: (Int) -> Unit, onOpenDive: (String) -> Unit)
 
     @Composable
     fun dive(id: String, onBack: () -> Unit, onOpenDive: (String) -> Unit)
 
     @Composable
     fun tools(page: ToolPage, onPage: (ToolPage) -> Unit, onBack: () -> Unit, onOpenDive: (String) -> Unit)
+
+    @Composable
+    fun settings()
 }
 
 /**
  * The signed-in/out graph (ADR 0079): `instance` and `signin` at the root, the `main` nested graph with `logbook` as
- * its start destination, `dive/{id}` above it, and `tools` beside it. Adding the settings destination in T3 adds one
- * destination here; it does not change the shell.
+ * its start destination, `dive/{id}` above it, `tools` and `settings` beside it. The bottom bar exposes the three
+ * top-level signed-in places and saves each tab's state; a Dive is pushed above its origin, not into the bar.
  */
 @Composable
 internal fun AppNavHost(
@@ -69,55 +79,61 @@ internal fun AppNavHost(
             composable<SignInRoute> { currentScreens.value.signIn() }
             navigation<MainRoute>(startDestination = LogbookRoute) {
                 composable<LogbookRoute> { entry ->
-                    val page by entry.savedStateHandle.getStateFlow(LOGBOOK_PAGE_KEY, 1).collectAsState()
-                    currentScreens.value.logbook(
-                        page = page,
-                        onPage = { entry.savedStateHandle[LOGBOOK_PAGE_KEY] = it },
-                        onOpenTools = { navController.navigate(ToolsRoute()) { launchSingleTop = true } },
-                        onOpenDive = { id -> navController.navigate(DiveRoute(id)) { launchSingleTop = true } },
-                    )
+                    MainShell(navController) {
+                        val page by entry.savedStateHandle.getStateFlow(LOGBOOK_PAGE_KEY, 1).collectAsState()
+                        currentScreens.value.logbook(
+                            page = page,
+                            onPage = { entry.savedStateHandle[LOGBOOK_PAGE_KEY] = it },
+                            onOpenDive = { id -> navController.navigate(DiveRoute(id)) { launchSingleTop = true } },
+                        )
+                    }
                 }
                 composable<DiveRoute> { entry ->
-                    val route = entry.toRoute<DiveRoute>()
-                    // ADR 0042: stepping to a neighbour moves the Dive; back still returns to the list on that Dive's page.
-                    val onBack: () -> Unit = {
-                        val previous = navController.previousBackStackEntry
-                        if (previous?.destination?.hasRoute(LogbookRoute::class) == true) {
-                            currentDivePage.value()?.let { page ->
-                                previous.savedStateHandle[LOGBOOK_PAGE_KEY] = page
-                                currentOnLogbookPage.value(page)
-                            }
-                        }
-                        navController.popBackStack()
-                    }
-                    BackHandler(onBack = onBack)
-                    currentScreens.value.dive(
-                        id = route.id,
-                        onBack = onBack,
-                        onOpenDive = { id ->
-                            if (id != route.id) {
-                                navController.navigate(DiveRoute(id)) {
-                                    popUpTo<DiveRoute> { inclusive = true }
+                    MainShell(navController) {
+                        val route = entry.toRoute<DiveRoute>()
+                        // ADR 0042: stepping to a neighbour moves the Dive; back still returns to the list on that Dive's page.
+                        val onBack: () -> Unit = {
+                            val previous = navController.previousBackStackEntry
+                            if (previous?.destination?.hasRoute(LogbookRoute::class) == true) {
+                                currentDivePage.value()?.let { page ->
+                                    previous.savedStateHandle[LOGBOOK_PAGE_KEY] = page
+                                    currentOnLogbookPage.value(page)
                                 }
                             }
-                        },
-                    )
+                            navController.popBackStack()
+                        }
+                        BackHandler(onBack = onBack)
+                        currentScreens.value.dive(
+                            id = route.id,
+                            onBack = onBack,
+                            onOpenDive = { id ->
+                                if (id != route.id) {
+                                    navController.navigate(DiveRoute(id)) {
+                                        popUpTo<DiveRoute> { inclusive = true }
+                                    }
+                                }
+                            },
+                        )
+                    }
                 }
                 composable<ToolsRoute> { entry ->
-                    val route = entry.toRoute<ToolsRoute>()
-                    currentScreens.value.tools(
-                        page = route.page,
-                        onPage = { page ->
-                            when {
-                                page == route.page -> Unit
-                                page == ToolPage.Gas -> navController.popBackStack()
-                                else -> navController.navigate(ToolsRoute(page))
-                            }
-                        },
-                        onBack = { navController.popBackStack() },
-                        onOpenDive = { id -> navController.navigate(DiveRoute(id)) { launchSingleTop = true } },
-                    )
+                    MainShell(navController) {
+                        val route = entry.toRoute<ToolsRoute>()
+                        currentScreens.value.tools(
+                            page = route.page,
+                            onPage = { page ->
+                                when {
+                                    page == route.page -> Unit
+                                    page == ToolPage.Gas -> navController.popBackStack()
+                                    else -> navController.navigate(ToolsRoute(page))
+                                }
+                            },
+                            onBack = { navController.popBackStack() },
+                            onOpenDive = { id -> navController.navigate(DiveRoute(id)) { launchSingleTop = true } },
+                        )
+                    }
                 }
+                composable<SettingsRoute> { MainShell(navController) { currentScreens.value.settings() } }
             }
         }
     }
@@ -132,6 +148,75 @@ internal fun AppNavHost(
         }
     }
     NavHost(navController = navController, graph = graph, modifier = modifier)
+}
+
+/**
+ * The signed-in shell around a `main` destination (ADR 0079 D2). The bottom bar keeps the tab that opened the current
+ * screen selected, so it stays on a Dive; instance and sign-in never enter this shell.
+ */
+@Composable
+private fun MainShell(navController: NavHostController, content: @Composable () -> Unit) {
+    val backStack by navController.currentBackStack.collectAsState()
+    val selectedTab = backStack.asReversed().firstNotNullOfOrNull { tabOf(it.destination) }
+    Scaffold(
+        // The screens draw their own insets; the scaffold only makes room for the bar it draws.
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
+        bottomBar = {
+            if (selectedTab != null) {
+                DiveHubBottomBar(
+                    selected = selectedTab,
+                    onSelect = { tab -> navController.navigateToTab(tab) },
+                )
+            }
+        },
+    ) { padding ->
+        Box(Modifier.padding(padding).consumeWindowInsets(padding).fillMaxSize()) { content() }
+    }
+}
+
+/** The bottom bar's place for [destination], or null outside the three top-level signed-in screens. */
+private fun tabOf(destination: NavDestination): AppTab? = when {
+    destination.hasRoute(LogbookRoute::class) -> AppTab.Logbook
+    destination.hasRoute(ToolsRoute::class) -> AppTab.Tools
+    destination.hasRoute(SettingsRoute::class) -> AppTab.Settings
+    else -> null
+}
+
+/**
+ * A bottom-bar switch keeps the logbook as the main graph's start destination and saves the tab being left, so a
+ * return restores its scroll/page and back from the start destination leaves the app instead of showing sign-in.
+ */
+private fun NavHostController.navigateToTab(tab: AppTab) {
+    val active = currentBackStack.value.asReversed().firstNotNullOfOrNull { tabOf(it.destination) }
+    if (tab == active) {
+        // Reselecting a place returns to its root without restoring the stack above it (a Dive or a tool subpage).
+        when (tab) {
+            AppTab.Logbook -> popBackStack(LogbookRoute, inclusive = false)
+            AppTab.Tools -> navigate(ToolsRoute()) {
+                popUpTo<LogbookRoute> { inclusive = false }
+                launchSingleTop = true
+            }
+            AppTab.Settings -> Unit
+        }
+        return
+    }
+    val options: androidx.navigation.NavOptionsBuilder.() -> Unit = {
+        popUpTo<LogbookRoute> { saveState = true }
+        launchSingleTop = true
+        restoreState = true
+    }
+    when (tab) {
+        AppTab.Logbook -> navigate(LogbookRoute, options)
+        AppTab.Tools -> navigate(ToolsRoute(), options)
+        AppTab.Settings -> navigate(SettingsRoute, options)
+    }
+}
+
+/** Drop the saved tab stacks when the User changes, so the next person never restores the previous one's screens. */
+internal fun NavHostController.clearSavedTabStates() {
+    clearBackStack(LogbookRoute)
+    clearBackStack(ToolsRoute())
+    clearBackStack(SettingsRoute)
 }
 
 /**

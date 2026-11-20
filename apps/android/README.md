@@ -327,3 +327,22 @@ contract. Nothing is fetched from the API for these results.
 The contract-visible states are screenshots (`PersonalizedScreenshotTest`): the lead estimate with the staleness
 label and profiles marker, the no-number state with the weight check, the loadings with their basis, and a missing
 estimate beside a real zero (`loadings_missing_zero.png`).
+
+## Settings and the bottom bar (T3)
+
+The signed-in shell has three bottom-bar places — Logbook, Tools and Settings (`ui/navigation/DiveHubBottomBar.kt`) —
+and a Dive is pushed above the place that opened it, never into the bar; the bar stays on that place selected. A switch uses `saveState`/`restoreState`, so
+the logbook comes back on its page; back from the logbook (the `main` graph's start destination) leaves the app and
+never walks back through sign-in.
+
+The settings screen (`ui/settings/`) is a grouped M3 list: **Connection** shows the instance from
+`PreferencesInstanceUrlStore` and "Change instance" asks first, then signs out, wipes the local data and forgets the
+address so the app asks for an instance again ([settings/SettingsRepository.kt](shared/src/commonMain/kotlin/dev/divehub/shared/settings/SettingsRepository.kt)).
+**Account** shows the `/api/me` e-mail and owns sign-out, which used to sit on the logbook app bar; it wipes the
+session and the graph pops to sign-in. **Sync** reuses the logbook's `SyncLine` source (`sync_state.lastFullSyncAt`
+and the refresher's offline flag) and "Sync now" runs the same guarded `refreshNow` path as the periodic worker.
+**About** shows `versionName (versionCode)` from `BuildConfig` (real values stamped by the release lane, ADR 0077) and
+opens the bundled Poppins OFL licence from `assets/licenses/`.
+
+EN and DE strings are in the app resources; the four light/dark frames and the three bottom-bar frames are Roborazzi
+records (`SettingsScreenshotTest`, `BottomBarScreenshotTest`).

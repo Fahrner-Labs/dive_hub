@@ -38,6 +38,10 @@ private class FakeInstances(initial: String? = "https://dive.example") : Instanc
     override suspend fun save(url: String) {
         value = url
     }
+
+    override suspend fun clear() {
+        value = null
+    }
 }
 
 class SyncAuthTest {

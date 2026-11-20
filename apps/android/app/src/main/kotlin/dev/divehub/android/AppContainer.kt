@@ -16,6 +16,7 @@ import dev.divehub.shared.dive.DiveRepository
 import dev.divehub.shared.logbook.LogbookRepository
 import dev.divehub.shared.logbook.StoreLogbook
 import dev.divehub.shared.UserScopedStore
+import dev.divehub.shared.settings.SettingsRepository
 import dev.divehub.shared.sync.SseLiveHints
 import dev.divehub.shared.sync.SyncEngine
 import dev.divehub.shared.sync.SyncRefresher
@@ -90,6 +91,9 @@ class AppContainer(context: Context) {
 
     /** The D4 read side: the list, one Dive, its neighbours and its profiles come from the store, never a request. */
     val storeLogbook = StoreLogbook(diveStore)
+
+    /** What the settings screen reads: the stored instance address and the sync state the logbook also reads. */
+    val settings: SettingsRepository by lazy { SettingsRepository(instances, diveStore) }
 
     /** The sync engine and its refresh loop; the UI reads the store, never the API, from D4 on. */
     val sync = SyncEngine(session.client, diveStore)
