@@ -52,6 +52,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
@@ -198,8 +199,11 @@ private class DiveHubScreens(
     }
 
     @Composable
-    override fun settingsDebug(onBack: () -> Unit) {
-        val settings: SettingsViewModel = viewModel(factory = SettingsViewModel.factory(container))
+    override fun settingsDebug(owner: ViewModelStoreOwner, onBack: () -> Unit) {
+        val settings: SettingsViewModel = viewModel(
+            viewModelStoreOwner = owner,
+            factory = SettingsViewModel.factory(container),
+        )
         SettingsDebugRoute(viewModel = settings, onBack = onBack)
     }
 

@@ -14,6 +14,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.ViewModelStoreOwner
 import androidx.navigation.NavController
 import androidx.navigation.NavDestination
 import androidx.navigation.NavDestination.Companion.hasRoute
@@ -54,7 +55,7 @@ internal interface AppScreens {
     fun settings(onOpenDebug: () -> Unit)
 
     @Composable
-    fun settingsDebug(onBack: () -> Unit)
+    fun settingsDebug(owner: ViewModelStoreOwner, onBack: () -> Unit)
 }
 
 /**
@@ -147,8 +148,11 @@ internal fun AppNavHost(
                     }
                 }
                 composable<SettingsDebugRoute> {
+                    // The Debug screen shares the settings entry's view model: it only ever sits above that entry,
+                    // which owns the state both screens read (FAH-343).
+                    val owner = remember { navController.getBackStackEntry<SettingsRoute>() }
                     MainShell(navController) {
-                        currentScreens.value.settingsDebug(onBack = { navController.popBackStack() })
+                        currentScreens.value.settingsDebug(owner = owner, onBack = { navController.popBackStack() })
                     }
                 }
             }
@@ -225,8 +229,8 @@ private fun NavController.leaveDiveForLogbook(page: Int?, onLogbookPage: (Int) -
 private fun NavHostController.navigateToTab(tab: AppTab, onLeaveDive: () -> Unit = {}) {
     val active = currentBackStack.value.asReversed().firstNotNullOfOrNull { tabOf(it.destination) }
     if (tab == active) {
-        // Reselecting a place returns to its root: pop what sits above it (a Dive or a tool subpage), never the root
-        // itself, so the screen keeps its entry and does not replay its enter transition.
+        // Reselecting a place returns to its root: pop what sits above it (a Dive, a tool subpage or the Debug
+        // subscreen), never the root itself, so the screen keeps its entry and does not replay its enter transition.
         when (tab) {
             AppTab.Logbook -> {
                 // A Dive's page must reach the list, as it does on the Dive's own back path (ADR 0042).

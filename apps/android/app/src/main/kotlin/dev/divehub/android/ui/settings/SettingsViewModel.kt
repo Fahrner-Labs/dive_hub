@@ -22,7 +22,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-/** What the settings screen draws; the email and the app version come from the session and the build. */
+/** What the settings screens draw; the email and the app version come from the session and the build. */
 data class SettingsUiState(
     val instanceUrl: String? = null,
     /** The store's last full sync; the instance row's "Offline — last synced …" when the stream is down. */
@@ -34,8 +34,8 @@ data class SettingsUiState(
 )
 
 /**
- * The Debug group's read model: whether the instance accepts uploads (null while checking), what the local buffer
- * holds, and the one-shot results of *Report a problem* and *Share local logs*.
+ * The Debug subscreen's read model: whether the instance accepts uploads (null while checking), what the local
+ * buffer holds, and the one-shot results of *Report a problem* and *Share local logs*.
  */
 data class SettingsDiagnosticsState(
     val enabled: Boolean? = null,
@@ -49,8 +49,8 @@ data class SettingsDiagnosticsState(
 
 /**
  * The settings screen's small state holder: the stored instance address and the sync state, plus the "Sync now"
- * trigger. The reads live in `shared/settings` (ADR 0073); this only keeps what the screen last read. The Debug group
- * reads FAH-321's capture layer (ADR 0080) without owning any of it.
+ * trigger. The reads live in `shared/settings` (ADR 0073); this only keeps what the screen last read. The Debug
+ * subscreen reads FAH-321's capture layer (ADR 0080) without owning any of it.
  */
 class SettingsViewModel(
     private val settings: SettingsRepository,
@@ -142,7 +142,7 @@ class SettingsViewModel(
         }
     }
 
-    /** Re-read the instance capability, the count and the preview; the settings route calls this on each entry. */
+    /** Re-read the instance capability, the count and the preview; the Debug route calls this on each entry. */
     fun refreshDiagnostics() {
         viewModelScope.launch {
             val enabled = withContext(io) { diagnostics.instanceEnabled() }
@@ -171,7 +171,7 @@ class SettingsViewModel(
     }
 
     companion object {
-        /** The newest entries the Debug group previews; the export and the upload still carry the whole buffer. */
+        /** The newest entries the Debug subscreen previews; the export and the upload still carry the whole buffer. */
         const val PREVIEW_LIMIT: Int = 3
 
         fun factory(container: AppContainer): ViewModelProvider.Factory = viewModelFactory {

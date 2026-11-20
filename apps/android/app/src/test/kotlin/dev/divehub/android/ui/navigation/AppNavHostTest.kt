@@ -10,6 +10,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavHostController
+import androidx.lifecycle.ViewModelStoreOwner
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import dev.divehub.android.ui.tools.ToolPage
@@ -559,7 +560,7 @@ class AppNavHostTest {
         }
 
         @Composable
-        override fun settingsDebug(onBack: () -> Unit) {
+        override fun settingsDebug(owner: ViewModelStoreOwner, onBack: () -> Unit) {
             settingsDebugShown = true
             settingsDebugBack = onBack
             Text("settings debug")
