@@ -249,6 +249,10 @@ V1 of the native client reads offline: phones lose signal where dives are, and t
   `GET /api/recordings/{id}/samples`. A details page is capped at 50 Dives a page because each row is a whole Dive,
   not a summary: page with `limit=50` until `offset` reaches `total`. Without `include=details` the list answers the
   summary row, unchanged. The OpenAPI document names the two answers `DiveListView` and `DiveDetailsListView`.
+- **A stored payload keeps the API's JSON with absent nulls.** The sync writes the values as the API sent them with `null`
+  fields omitted. A reader of a stored payload must treat an absent nullable field as `null`, never as a missing required
+  one: decoding a stored `suit` whose undergarment is absent, or feedback that felt right and has no amount, as incomplete
+  drops the whole value, and the offline lead estimate then cannot use that Dive.
 - **Refresh keeps the store current.** While online the client opens the live hint stream; a Dive or site hint
   refetches that thing through the normal API, and every (re)connect re-runs the list sync because hints are not
   replayed (ADR 0066). Polling remains the automatic fallback. Deleted Dives arrive as tombstones (`deletedAt`),
