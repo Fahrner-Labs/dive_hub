@@ -11,22 +11,29 @@ import androidx.compose.ui.test.onRoot
 import com.github.takahirom.roborazzi.captureRoboImage
 import dev.divehub.android.ui.DiveHubTheme
 import dev.divehub.api.models.DiveView
+import dev.divehub.api.models.DiveViewCylindersItem
+import dev.divehub.api.models.DiveViewCylindersItemGas
 import dev.divehub.api.models.DiveViewFromRecording
 import dev.divehub.api.models.DiveViewFromRecordingStartsAt
+import dev.divehub.api.models.DiveViewLeadItem
 import dev.divehub.api.models.DiveViewParticipantsItem
+import dev.divehub.api.models.DiveViewSac
 import dev.divehub.api.models.DiveViewRecordingsItem
 import dev.divehub.api.models.DiveViewRecordingsItemDevice
 import dev.divehub.api.models.DiveViewRecordingsItemSummary
 import dev.divehub.api.models.DiveViewRecordingsItemSummarySurfaceBreaksItem
+import dev.divehub.api.models.DiveViewSuit
 import dev.divehub.api.models.DiveViewValues
 import dev.divehub.api.models.DiveViewValuesStartsAt
 import dev.divehub.api.models.DiveViewWaterMismatch
+import dev.divehub.api.models.DiveViewWeightingFeedback
 import dev.divehub.api.models.NeighboursView
 import dev.divehub.api.models.NeighboursViewNext
 import dev.divehub.api.models.NeighboursViewPrevious
 import dev.divehub.api.models.RecordingSamplesView
 import dev.divehub.api.models.RecordingSamplesViewSeriesItem
 import dev.divehub.shared.logbook.ProviderDirectory
+import kotlinx.serialization.json.JsonPrimitive
 import java.util.TimeZone
 import org.junit.After
 import org.junit.Before
@@ -184,6 +191,49 @@ class DiveDetailScreenshotTest {
         capture("dive_profile_failed.png")
     }
 
+    @Test
+    fun `the synced gear, weighting and notes are shown`() {
+        render(
+            state(
+                dive = dive(
+                    notes = "Drifted along the wall and met a turtle.",
+                    cylinders = listOf(
+                        DiveViewCylindersItem(
+                            volumeL = 12.0,
+                            workingPressureBar = 232.0,
+                            material = "steel",
+                            gas = DiveViewCylindersItemGas(o2 = 21.0, he = 0.0),
+                            startPressureBar = 200.0,
+                            endPressureBar = 50.0,
+                            fromPod = false,
+                            series = null,
+                        ),
+                    ),
+                    sac = DiveViewSac(litresPerMinute = 16.5, barPerMinute = 11.0),
+                    suit = DiveViewSuit(type = "wetsuit", thicknessMm = 5.0, hood = JsonPrimitive(true), undergarment = null),
+                    lead = listOf(
+                        DiveViewLeadItem(amountKg = 4.0, placement = "belt"),
+                        DiveViewLeadItem(amountKg = 1.0, placement = "trim"),
+                    ),
+                    leadTotalKg = 5.0,
+                    weightingFeedback = DiveViewWeightingFeedback(felt = "too_heavy", amountKg = 1.0),
+                ),
+            ),
+        )
+        val list = compose.onNode(hasScrollAction())
+        list.performScrollToNode(hasText("Cylinder 1"))
+        compose.onNodeWithText("12 L · Steel · 232 bar working pressure · Air").assertIsDisplayed()
+        compose.onNodeWithText("200 bar → 50 bar (150 bar used)").assertIsDisplayed()
+        compose.onNodeWithText("SAC 16.5 L/min").assertIsDisplayed()
+        list.performScrollToNode(hasText("Weighting"))
+        compose.onNodeWithText("Wetsuit, 5 mm, with hood").assertIsDisplayed()
+        compose.onNodeWithText("4.0 kg on a belt\n1.0 kg trim\nTotal 5.0 kg").assertIsDisplayed()
+        compose.onNodeWithText("Too heavy by 1.0 kg").assertIsDisplayed()
+        list.performScrollToNode(hasText("Notes"))
+        compose.onNodeWithText("Drifted along the wall and met a turtle.").assertIsDisplayed()
+        capture("dive_gear_weighting_notes.png")
+    }
+
     private fun render(state: DiveDetailUiState) {
         compose.setContent {
             DiveHubTheme(darkTheme = false) {
@@ -237,6 +287,13 @@ class DiveDetailScreenshotTest {
         waterType: String? = "salt",
         waterMismatch: DiveViewWaterMismatch? = null,
         fromRecording: DiveViewFromRecording? = fromRecording(),
+        notes: String? = null,
+        cylinders: List<DiveViewCylindersItem> = emptyList(),
+        sac: DiveViewSac? = null,
+        suit: DiveViewSuit? = null,
+        lead: List<DiveViewLeadItem> = emptyList(),
+        leadTotalKg: Double? = null,
+        weightingFeedback: DiveViewWeightingFeedback? = null,
     ) = DiveView(
         id = "d1",
         diverId = "diver",
@@ -253,18 +310,18 @@ class DiveDetailScreenshotTest {
         utcOffsetSource = source,
         fromProvider = fromProvider,
         fromRecording = fromRecording,
-        notes = "Drifted along the wall and met a turtle.",
+        notes = notes,
         site = if (fromProvider == null) dev.divehub.api.models.DiveViewSite("site-1", "Lighthouse Reef") else null,
         waterType = waterType,
         waterMismatch = waterMismatch,
         position = null,
         recordings = recordings,
-        cylinders = emptyList(),
-        lead = emptyList(),
-        leadTotalKg = null,
-        weightingFeedback = null,
-        suit = null,
-        sac = null,
+        cylinders = cylinders,
+        lead = lead,
+        leadTotalKg = leadTotalKg,
+        weightingFeedback = weightingFeedback,
+        suit = suit,
+        sac = sac,
         sacMissing = null,
         participants = listOf(
             DiveViewParticipantsItem("diver-2", "Ada Byron", "buddy"),
