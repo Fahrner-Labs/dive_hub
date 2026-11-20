@@ -1,5 +1,9 @@
 package dev.divehub.android.ui.dive
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assertIsDisplayed
@@ -193,22 +197,46 @@ class DiveDetailScreenshotTest {
     }
 
     @Test
-    fun `swiping to a neighbour opens it and re-anchors the pager on the current dive`() {
+    fun `swiping to a neighbour opens it and re-anchors on the new dive`() {
         val opened = mutableListOf<String>()
-        render(state(dive = dive()), onOpenDive = opened::add)
+        val first = state(dive = dive())
+        val second = state(
+            dive = dive(number = 43).copy(id = "d2"),
+            neighbours = NeighboursView(
+                previous = NeighboursViewPrevious("d1"),
+                next = NeighboursViewNext("d3"),
+                position = 13,
+                total = 312,
+            ),
+        )
+        compose.setContent {
+            var current by remember { mutableStateOf(first) }
+            DiveHubTheme(darkTheme = false) {
+                DiveDetailScreen(
+                    state = current,
+                    units = "metric",
+                    onBack = {},
+                    onRetry = {},
+                    onOpenDive = { id ->
+                        opened += id
+                        if (id == "d2") current = second
+                    },
+                )
+            }
+        }
         compose.onNodeWithTag("dive_pager").performTouchInput {
             swipe(start = Offset(width * 0.9f, height / 2f), end = Offset(width * 0.1f, height / 2f), durationMillis = 200)
         }
         compose.waitForIdle()
         assertEquals(listOf("d2"), opened)
-        compose.onNodeWithText("Dive 42").assertIsDisplayed()
+        compose.onNodeWithText("Dive 43").assertIsDisplayed()
 
-        // A second swipe in the same direction only works when the pager is back on the current dive.
+        // The second swipe uses the new Dive's neighbours: it opens d3, not d2 again.
         compose.onNodeWithTag("dive_pager").performTouchInput {
             swipe(start = Offset(width * 0.9f, height / 2f), end = Offset(width * 0.1f, height / 2f), durationMillis = 200)
         }
         compose.waitForIdle()
-        assertEquals(listOf("d2", "d2"), opened)
+        assertEquals(listOf("d2", "d3"), opened)
     }
 
     @Test
@@ -220,7 +248,7 @@ class DiveDetailScreenshotTest {
         }
         compose.waitForIdle()
         assertEquals(listOf("d0"), opened)
-        compose.onNodeWithText("Dive 42").assertIsDisplayed()
+        compose.onNodeWithTag("dive_scroll").assertIsDisplayed()
     }
 
     @Test
@@ -243,7 +271,7 @@ class DiveDetailScreenshotTest {
         }
         compose.waitForIdle()
         assertTrue(opened.isEmpty())
-        compose.onNodeWithText("Dive 42").assertIsDisplayed()
+        compose.onNodeWithTag("dive_scroll").assertIsDisplayed()
     }
 
     @Test
@@ -266,7 +294,38 @@ class DiveDetailScreenshotTest {
         }
         compose.waitForIdle()
         assertTrue(opened.isEmpty())
-        compose.onNodeWithText("Dive 42").assertIsDisplayed()
+        compose.onNodeWithTag("dive_scroll").assertIsDisplayed()
+    }
+
+    @Test
+    fun `a valid swipe still opens a neighbour after an end-stop springs back`() {
+        val opened = mutableListOf<String>()
+        render(
+            state(
+                dive = dive(),
+                neighbours = NeighboursView(
+                    previous = null,
+                    next = NeighboursViewNext("d2"),
+                    position = 1,
+                    total = 312,
+                ),
+            ),
+            onOpenDive = opened::add,
+        )
+        // The start-of-list end-stop: swipe right, let it spring back.
+        compose.onNodeWithTag("dive_pager").performTouchInput {
+            swipe(start = Offset(width * 0.1f, height / 2f), end = Offset(width * 0.9f, height / 2f), durationMillis = 200)
+        }
+        compose.waitForIdle()
+        assertTrue(opened.isEmpty())
+        compose.onNodeWithTag("dive_scroll").assertIsDisplayed()
+
+        // The collector survived the spring-back: the valid direction still opens the next Dive.
+        compose.onNodeWithTag("dive_pager").performTouchInput {
+            swipe(start = Offset(width * 0.9f, height / 2f), end = Offset(width * 0.1f, height / 2f), durationMillis = 200)
+        }
+        compose.waitForIdle()
+        assertEquals(listOf("d2"), opened)
     }
 
     @Test

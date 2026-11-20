@@ -65,6 +65,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.setProgress
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.flow.collectLatest
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.divehub.android.R
 import dev.divehub.android.ui.SyncLine
@@ -205,8 +206,10 @@ private fun DivePager(
     val currentNeighbours by rememberUpdatedState(neighbours)
     val currentOnOpenDive by rememberUpdatedState(onOpenDive)
     LaunchedEffect(pagerState) {
-        snapshotFlow { pagerState.settledPage }.collect { page ->
-            if (page == CURRENT_DIVE_PAGE) return@collect
+        // collectLatest keeps the collector alive when a drag wins the pager's mutex and cancels the spring-back:
+        // the cancelled block does not cancel this effect, so the next swipe is still observed (FAH-344 review).
+        snapshotFlow { pagerState.settledPage }.collectLatest { page ->
+            if (page == CURRENT_DIVE_PAGE) return@collectLatest
             val target = if (page < CURRENT_DIVE_PAGE) {
                 currentNeighbours?.previous?.id
             } else {
