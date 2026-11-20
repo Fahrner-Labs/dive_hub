@@ -3,6 +3,11 @@ package dev.divehub.android.ui.dive
 import android.content.Context
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.awaitHorizontalTouchSlopOrCancellation
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.horizontalDrag
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -35,13 +40,18 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.setProgress
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -51,6 +61,7 @@ import dev.divehub.android.ui.SyncLine
 import dev.divehub.android.ui.Formats
 import dev.divehub.api.models.DiveView
 import dev.divehub.api.models.DiveViewRecordingsItem
+import dev.divehub.api.models.DiveViewRecordingsItemSummaryGasesItem
 import dev.divehub.api.models.NeighboursView
 import dev.divehub.api.models.RecordingSamplesView
 import dev.divehub.api.models.RecordingSamplesViewSeriesItem
@@ -63,8 +74,11 @@ import dev.divehub.shared.dive.depthReading
 import dev.divehub.shared.dive.depthSeries
 import dev.divehub.shared.dive.deviceName
 import dev.divehub.shared.dive.markOf
+import dev.divehub.shared.dive.nearest
+import dev.divehub.shared.dive.nearestIndex
 import dev.divehub.shared.dive.partsOf
 import dev.divehub.shared.dive.perMinute
+import dev.divehub.shared.dive.pressureSeries
 import dev.divehub.shared.dive.profileRecording
 import dev.divehub.shared.dive.startSetByHand
 import dev.divehub.shared.dive.summarize
@@ -72,7 +86,9 @@ import dev.divehub.shared.dive.surfaceBands
 import dev.divehub.shared.dive.surfaceBreakSeconds
 import dev.divehub.shared.dive.surfaceBreakTotalSeconds
 import dev.divehub.shared.dive.temperatureSeries
+import dev.divehub.shared.dive.timeAtFraction
 import dev.divehub.shared.logbook.ProviderDirectory
+import dev.divehub.shared.logbook.mixName
 import dev.divehub.shared.dive.timeZoneNote
 import dev.divehub.shared.dive.TimeZoneOrigin
 import java.util.Locale
@@ -473,11 +489,32 @@ private fun Profile(
         return
     }
     val summaryText = profileSummaryText(context, summary, locale, imperial)
+    val temperature = temperatureSeries(samples)
+    val pressures = pressureSeries(samples)
+    val podGases = recording.summary.gases.orEmpty().filter { it.startPressureBar != null || it.endPressureBar != null }
+    val pressureTanks = pressures.mapIndexed { index, series ->
+        tankLabel(pressures.size, index, podGases.getOrNull(index), locale) to series
+    }
+    var scrubFraction by remember(depth) { mutableStateOf<Float?>(null) }
+    val spanMs = depth.offsetsMs.lastOrNull() ?: 0
+    val scrubIndex = scrubFraction?.let { nearestIndex(depth, timeAtFraction(it.toDouble(), spanMs)) }
+    val scrubOffsetMs = scrubIndex?.let { depth.offsetsMs[it] }
+    val readingMs = scrubOffsetMs ?: depth.offsetsMs.firstOrNull() ?: 0
     Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+        ScrubReadout(
+            offsetMs = readingMs,
+            depthM = nearest(depth, readingMs),
+            temperatureC = nearest(temperature, readingMs),
+            tanks = pressureTanks,
+            locale = locale,
+            imperial = imperial,
+        )
         ProfileChart(
             depth = depth,
             bands = surfaceBands(recording.summary.surfaceBreaks.orEmpty(), summary.durationSeconds),
             description = summaryText,
+            scrubMs = scrubOffsetMs,
+            onScrub = { scrubFraction = it },
         )
         Text(summaryText, modifier = Modifier.padding(top = 8.dp), style = MaterialTheme.typography.bodyMedium)
         surfaceBreakSeconds(recording).forEach { seconds ->
@@ -487,7 +524,84 @@ private fun Profile(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        ProfileTable(depth, temperatureSeries(samples), locale, imperial)
+        ProfileTable(depth, temperature, pressureTanks, locale, imperial)
+    }
+}
+
+/** What the touched moment of the profile reads, announced as a live region for TalkBack (FAH-337). */
+@Composable
+private fun ScrubReadout(
+    offsetMs: Int,
+    depthM: Double?,
+    temperatureC: Double?,
+    tanks: List<Pair<String, RecordingSamplesViewSeriesItem>>,
+    locale: Locale,
+    imperial: Boolean,
+) {
+    val context = LocalContext.current
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .padding(bottom = 4.dp)
+            .semantics(mergeDescendants = true) { liveRegion = LiveRegionMode.Polite },
+    ) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Readout(
+                label = stringResource(R.string.dive_time),
+                value = DiveDetailText.elapsed(offsetMs / 1000.0, locale),
+                modifier = Modifier.weight(1f),
+            )
+            Readout(
+                label = stringResource(R.string.dive_depth),
+                value = depthM?.let { DiveDetailText.depth(context, it, locale, imperial) } ?: "–",
+                modifier = Modifier.weight(1f),
+            )
+            Readout(
+                label = stringResource(R.string.dive_temperature),
+                value = temperatureC?.let { DiveDetailText.temperature(context, it, locale, imperial) } ?: "–",
+                modifier = Modifier.weight(1f),
+            )
+        }
+        if (tanks.isNotEmpty()) {
+            Row(
+                Modifier.fillMaxWidth().padding(top = 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                tanks.forEach { (label, series) ->
+                    Readout(
+                        label = label,
+                        value = nearest(series, offsetMs)?.let { DiveDetailText.pressure(context, it, locale, imperial) } ?: "–",
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+            }
+        }
+    }
+}
+
+/** A tank by the gas and size it holds, else by its pod or number; several also by their number (ADR 0045). */
+@Composable
+private fun tankLabel(
+    count: Int,
+    index: Int,
+    gas: DiveViewRecordingsItemSummaryGasesItem?,
+    locale: Locale,
+): String {
+    if (gas != null) {
+        val context = LocalContext.current
+        val mix = mixName(gas.o2, gas.he, stringResource(R.string.dive_air))
+        val volume = gas.tankVolumeL?.let { DiveDetailText.litres(context, it, locale) }
+        val what = if (volume == null) mix else stringResource(R.string.dive_tank_gas_size, mix, volume)
+        return if (count == 1) what else stringResource(R.string.dive_tank_numbered_gas, index + 1, what)
+    }
+    return if (count == 1) stringResource(R.string.dive_tank_pressure) else stringResource(R.string.dive_tank_numbered, index + 1)
+}
+
+@Composable
+private fun Readout(label: String, value: String, modifier: Modifier = Modifier) {
+    Column(modifier) {
+        Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(value, style = MaterialTheme.typography.titleSmall)
     }
 }
 
@@ -513,10 +627,17 @@ private fun profileSummaryText(context: Context, summary: ProfileSummary, locale
 }
 
 @Composable
-private fun ProfileChart(depth: RecordingSamplesViewSeriesItem, bands: List<dev.divehub.shared.dive.SurfaceBand>, description: String) {
+private fun ProfileChart(
+    depth: RecordingSamplesViewSeriesItem,
+    bands: List<dev.divehub.shared.dive.SurfaceBand>,
+    description: String,
+    scrubMs: Int?,
+    onScrub: (Float) -> Unit,
+) {
     val line = MaterialTheme.colorScheme.primary
     val area = MaterialTheme.colorScheme.primaryContainer
     val surface = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.18f)
+    val scrub = MaterialTheme.colorScheme.onSurface
     val span = (depth.offsetsMs.lastOrNull() ?: 0).toFloat().takeIf { it > 0f } ?: 1f
     val deepest = depth.values.maxOrNull()?.toFloat()?.takeIf { it > 0f } ?: 1f
     Canvas(
@@ -525,7 +646,39 @@ private fun ProfileChart(depth: RecordingSamplesViewSeriesItem, bands: List<dev.
             .height(160.dp)
             .clip(RoundedCornerShape(8.dp))
             .background(MaterialTheme.colorScheme.surfaceVariant)
-            .semantics { contentDescription = description },
+            .testTag("dive_profile_chart")
+            .pointerInput(depth) {
+                detectTapGestures { offset ->
+                    onScrub((offset.x / size.width).coerceIn(0f, 1f))
+                }
+            }
+            .pointerInput(depth) {
+                // Only a horizontal drag scrubs, so a vertical swipe still scrolls the page.
+                awaitEachGesture {
+                    val down = awaitFirstDown(requireUnconsumed = false)
+                    fun at(x: Float) {
+                        onScrub((x / size.width).coerceIn(0f, 1f))
+                    }
+                    val drag = awaitHorizontalTouchSlopOrCancellation(down.id) { change, _ ->
+                        at(change.position.x)
+                        change.consume()
+                    } ?: return@awaitEachGesture
+                    at(drag.position.x)
+                    horizontalDrag(drag.id) { change ->
+                        at(change.position.x)
+                        change.consume()
+                    }
+                }
+            }
+            .semantics {
+                contentDescription = description
+                // TalkBack moves the scrub with the adjustable action and hears the readout's live region (FAH-337).
+                progressBarRangeInfo = ProgressBarRangeInfo(((scrubMs ?: 0) / span).coerceIn(0f, 1f), 0f..1f)
+                setProgress { fraction ->
+                    onScrub(fraction.coerceIn(0f, 1f))
+                    true
+                }
+            },
     ) {
         val width = size.width
         val height = size.height
@@ -557,6 +710,16 @@ private fun ProfileChart(depth: RecordingSamplesViewSeriesItem, bands: List<dev.
             )
         }
         drawPath(outline, line, style = Stroke(width = 2.dp.toPx()))
+        // The scrub line goes over the surface bands and the profile, on the sample the readout names (FAH-337).
+        if (scrubMs != null) {
+            val x = (scrubMs / span).coerceIn(0f, 1f) * width
+            drawLine(scrub, Offset(x, 0f), Offset(x, height), strokeWidth = 2.dp.toPx())
+            val index = nearestIndex(depth, scrubMs)
+            if (index != null) {
+                val y = ((depth.values.getOrNull(index) ?: 0.0).toFloat() / deepest).coerceIn(0f, 1f) * (height - 2f)
+                drawCircle(line, radius = 5.dp.toPx(), center = Offset(x, y))
+            }
+        }
     }
 }
 
@@ -564,6 +727,7 @@ private fun ProfileChart(depth: RecordingSamplesViewSeriesItem, bands: List<dev.
 private fun ProfileTable(
     depth: RecordingSamplesViewSeriesItem,
     temperature: RecordingSamplesViewSeriesItem?,
+    tanks: List<Pair<String, RecordingSamplesViewSeriesItem>>,
     locale: Locale,
     imperial: Boolean,
 ) {
@@ -577,6 +741,7 @@ private fun ProfileTable(
             TableHead(stringResource(R.string.dive_time), Modifier.weight(1f))
             TableHead(stringResource(R.string.dive_depth), Modifier.weight(1f))
             TableHead(stringResource(R.string.dive_temperature), Modifier.weight(1f))
+            tanks.forEach { (label, _) -> TableHead(label, Modifier.weight(1f)) }
         }
         HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant)
         rows.forEach { row ->
@@ -587,6 +752,12 @@ private fun ProfileTable(
                     row.temperatureC?.let { DiveDetailText.temperature(context, it, locale, imperial) } ?: "–",
                     Modifier.weight(1f),
                 )
+                tanks.forEach { (_, series) ->
+                    TableCell(
+                        nearest(series, row.minute * 60_000)?.let { DiveDetailText.pressure(context, it, locale, imperial) } ?: "–",
+                        Modifier.weight(1f),
+                    )
+                }
             }
         }
     }
