@@ -1,5 +1,8 @@
 /* Page-wide defaults on top of the tokens. Component styles live in src/ui/ui.css. */
-@import '@fontsource-variable/ibm-plex-sans';
+/* Poppins has no variable build on Fontsource; the UI's weights are 400, 500 and 600. */
+@import '@fontsource/poppins/400.css';
+@import '@fontsource/poppins/500.css';
+@import '@fontsource/poppins/600.css';
 
 *, *::before, *::after { box-sizing: border-box; }
 
