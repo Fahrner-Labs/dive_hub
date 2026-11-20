@@ -10,6 +10,7 @@ import dev.divehub.api.models.DiveView
 import dev.divehub.api.models.RecordingSamplesView
 import dev.divehub.api.models.SiteView
 import dev.divehub.shared.ApiClient
+import dev.divehub.shared.DecodeException
 import dev.divehub.shared.DiveHubException
 import dev.divehub.shared.NoAnswerException
 import dev.divehub.shared.store.DiveStore
@@ -17,14 +18,12 @@ import dev.divehub.shared.store.Recording
 import dev.divehub.shared.store.RecordingSeries
 import dev.divehub.shared.store.SyncCheckpoint
 import io.ktor.client.statement.HttpResponse
-import io.ktor.client.statement.bodyAsText
 import io.ktor.http.encodeURLParameter
 import io.ktor.http.isSuccess
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.serialization.SerializationException
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlin.time.Clock
@@ -655,10 +654,10 @@ class SyncEngine(
      * Dive. Any other decode failure is real and rethrown.
      */
     private suspend fun fetchDetailsPage(path: String): DiveDetailsListView? {
-        val body = fetch(path).bodyAsText()
+        val body = api.bodyText(fetch(path))
         return try {
             api.decode(body, DiveDetailsListView.serializer())
-        } catch (error: SerializationException) {
+        } catch (error: DecodeException) {
             if (decodesAsSummaryList(body)) null else throw error
         }
     }
@@ -666,7 +665,7 @@ class SyncEngine(
     private fun decodesAsSummaryList(body: String): Boolean = try {
         api.decode(body, DiveListView.serializer())
         true
-    } catch (_: SerializationException) {
+    } catch (_: DecodeException) {
         false
     }
 

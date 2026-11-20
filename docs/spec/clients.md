@@ -163,6 +163,9 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   carry fields and a server may serve endpoints a client does not know; leave them alone rather than failing the
   whole answer. A closed enum gains a value only when its contract already says an unknown value is shown as
   recorded (the device vocabulary above).
+- **A body that does not decode is a server failure, not an unknown addition.** A missing required field or a wrong
+  type breaks the contract: show the `internal_error` refusal and stop that read; the serializer's exception never
+  escapes into the client's scope. *Android:* `ApiClient.decode` wraps it in `DecodeException`.
 - **An endpoint the server does not have yet answers an ordinary 404:** show that feature as unavailable, not as an error.
 - **The Android client identifies itself** on every request with
   `User-Agent: divehub-android/<version>` (the app's release version,
