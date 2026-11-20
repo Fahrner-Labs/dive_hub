@@ -77,6 +77,8 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   Android's *Share local logs* share sheet stays available whether the setting is on or off.
   *Web:* `lib/diagnostics.ts` (the local buffer and browser capture points), `ReportProblem.tsx` (the status line and
   *Send diagnostics*, also in a failing page's fallback), `#/settings/report-problem`.
+  *Android:* under `apps/android/app`: the settings Debug group (`SettingsScreen.kt`: capability and local-capture
+  status, *Report a problem*), and `LogShare.kt` (the *Share local logs* share-sheet file).
 
 ### Security
 - **Must forget everything about the previous User** when the User changes: on sign-in as someone else, an

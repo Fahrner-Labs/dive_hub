@@ -25,6 +25,16 @@
                 android:value="androidx.startup"
                 tools:node="remove" />
         </provider>
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.diagnostics"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <!-- The local diagnostics export is shared by URI, never by a world-readable file (FAH-318). -->
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/diagnostics_paths" />
+        </provider>
         <activity
             android:name=".MainActivity"
             android:exported="true"

@@ -519,4 +519,26 @@
     <string name="settings_licenses">Open-source licenses</string>
     <string name="settings_licenses_title">Poppins (SIL Open Font License 1.1)</string>
     <string name="settings_close">Close</string>
+
+    <string name="settings_section_debug">Debug</string>
+    <string name="settings_debug_diagnostics">Diagnostics</string>
+    <string name="settings_debug_checking">Checking whether this Dive Hub accepts diagnostics…</string>
+    <string name="settings_debug_on">This Dive Hub accepts diagnostics.</string>
+    <string name="settings_debug_off">Client diagnostics are switched off on this Dive Hub.</string>
+    <string name="settings_debug_capture">Local capture is on. Entries kept on this device: %1$d.</string>
+    <string name="settings_debug_report">Report a problem</string>
+    <string name="settings_debug_report_off">An admin can switch diagnostics on. Errors stay on this device.</string>
+    <string name="settings_debug_report_nothing">No errors have been captured on this device yet.</string>
+    <string name="settings_debug_report_body">Sends the errors kept on this device to this Dive Hub.</string>
+    <string name="settings_debug_reporting">Sending…</string>
+    <string name="settings_debug_sent">Diagnostics sent. Thank you.</string>
+    <string name="settings_debug_report_disabled">Client diagnostics were switched off meanwhile. Errors stay on this device.</string>
+    <string name="settings_debug_report_limited">Too many reports from this account. Try again later.</string>
+    <string name="settings_debug_report_offline">No connection to this Dive Hub. Try again later.</string>
+    <string name="settings_debug_report_failed">Could not send diagnostics. Try again later.</string>
+    <string name="settings_debug_share">Share local logs</string>
+    <string name="settings_debug_share_body">Saves or sends the log file wherever you choose.</string>
+    <string name="settings_debug_share_empty">There are no entries to share yet.</string>
+    <string name="settings_debug_share_title">Share local logs</string>
+    <string name="settings_debug_share_subject">DiveHub diagnostics</string>
 </resources>

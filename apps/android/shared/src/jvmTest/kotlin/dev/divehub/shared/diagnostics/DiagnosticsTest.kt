@@ -91,6 +91,14 @@ class DiagnosticsTest {
     }
 
     @Test
+    fun `count reports how many entries the settings group shows`() {
+        capture(1)
+        capture(2)
+
+        assertEquals(2, diagnostics(MockEngine { error("no request expected") }).count())
+    }
+
+    @Test
     fun `a 204 upload sends at most 50 entries and clears the buffer`() = runTest {
         var body: String? = null
         val engine = MockEngine { request ->
