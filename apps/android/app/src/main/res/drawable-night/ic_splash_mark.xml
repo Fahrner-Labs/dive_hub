@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="256dp"
+    android:height="256dp"
+    android:viewportWidth="256"
+    android:viewportHeight="256">
+    <!-- The reversed Waypoint mark for the ink launch window (logo guidelines §4): white and thinned so the bead
+         stays one shape with the flag. The stripe stays transparent so the ink background shows through. -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:fillType="evenOdd"
+        android:pathData="M 50 32 H 206 A 18 18 0 0 1 224 50 V 206 A 18 18 0 0 1 206 224 H 50 A 18 18 0 0 1 32 206 V 50 A 18 18 0 0 1 50 32 Z M 32 55.4 V 50 A 18 18 0 0 1 50 32 H 55.4 L 224 200.6 V 206 A 18 18 0 0 1 206 224 H 200.6 Z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M128,90.8 a37.2,37.2 0 1,1 0,74.4 a37.2,37.2 0 1,1 0,-74.4 Z" />
+</vector>

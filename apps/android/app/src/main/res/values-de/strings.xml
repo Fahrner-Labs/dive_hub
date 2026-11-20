@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Dive Hub</string>
+    <string name="splash_wordmark" translatable="false">DiveHub</string>
+    <string name="loading_slogan">Die zentrale Anlaufstelle für dein Tauchleben</string>
 
     <string name="instance_title">Mit deinem Dive Hub verbinden</string>
     <string name="instance_about">Gib die Adresse deiner selbst betriebenen Dive-Hub-Instanz ein.</string>
