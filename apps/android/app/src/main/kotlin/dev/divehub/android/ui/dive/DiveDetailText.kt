@@ -31,8 +31,26 @@ internal object DiveDetailText {
 
     fun duration(context: Context, seconds: Double): String = Formats.duration(context, seconds)
 
+    /** The time into the dive as minutes and seconds, "12:40" (FAH-337). */
+    fun elapsed(seconds: Double, locale: Locale): String {
+        val whole = seconds.toInt().coerceAtLeast(0)
+        return String.format(locale, "%d:%02d", whole / 60, whole % 60)
+    }
+
     fun depth(context: Context, metres: Double, locale: Locale, imperial: Boolean): String =
         Formats.depth(context, metres, locale, imperial)
+
+    fun pressure(context: Context, bar: Double, locale: Locale, imperial: Boolean): String =
+        Formats.pressure(context, bar, locale, imperial)
+
+    /** A tank's size, "12 L" or "11.1 L": up to one decimal, as the cylinder is sold (ADR 0045). */
+    fun litres(context: Context, litres: Double, locale: Locale): String {
+        val text = NumberFormat.getNumberInstance(locale).apply {
+            minimumFractionDigits = 0
+            maximumFractionDigits = 1
+        }.format(litres)
+        return context.getString(R.string.tools_plan_litres, text)
+    }
 
     /** "18 °C" or "64 °F", whole numbers as a dive page shows water temperature. */
     fun temperature(context: Context, celsius: Double, locale: Locale, imperial: Boolean): String {

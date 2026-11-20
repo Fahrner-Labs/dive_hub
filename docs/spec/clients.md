@@ -584,6 +584,14 @@ V1 of the native client reads offline: phones lose signal where dives are, and t
   minutes into one entry, and shows three entries before "Show the whole history". *Web:* `DiveHistory.tsx`, `lib/history.ts`.
 - **The depth profile needs a text alternative:** a summary (deepest point and when, duration, temperature range)
   and the samples per minute as a table (WCAG 1.1.1). *Web:* `DepthProfile.tsx`, `lib/profile.ts`.
+- **Read the profile where it is touched** (Android, FAH-337): a tap or horizontal drag on the drawn depth profile
+  reads the moment under the finger — time into the dive, depth, temperature and each tank pod's pressure, each the
+  nearest sample — in a readout strip above the chart, with a scrub line and a dot on the depth trace. Each tank is
+  named by the gas and size it holds where the Recording says, else by its pod or number; several tanks also carry
+  their number. The strip always shows a reading (the start before the first touch), so the chart keeps its place.
+  The chart is an adjustable control for TalkBack, and the readout is a polite live region, so TalkBack users hear
+  the same values; the per-minute table stays the text alternative and gains a column per tank pod. *Android:*
+  `DiveDetailScreen.kt`, `ProfileText.kt`.
 - **Tank pressure** ([ADR 0045](../decisions/0045-tank-pressure-cylinders-and-sac-on-a-dive.md)): a Recording with a
   tank pod has a series `tankPressure` (bar; further pods `tankPressure:<n>`) and, in its summary, per gas
   `tankVolumeL`, `startPressureBar` and `endPressureBar`, and the pod's `sacLpm`. Show the pressure over time on the
