@@ -16,6 +16,7 @@ import { createGarminClient, DEFAULT_GARMIN_URL } from './providers/garmin/garmi
 import { createSsiAdapter } from './providers/ssi/ssi-adapter.js';
 import { createSsiClient } from './providers/ssi/ssi-client.js';
 import { createLocalBlobStore } from './storage/blob-store.js';
+import { createLogRingBuffer } from './support/log-ring-buffer.js';
 import { clientRequestSerializer } from './version/request-log.js';
 import { startWorker } from './worker.js';
 
@@ -23,10 +24,12 @@ export async function start(config: Config) {
   // From the first moment the process can touch the instance, the restore CLI can tell it is running (plan FAH-175).
   const appLock = await acquireAppLock(config.dataDir);
   const { db, pool } = createDb(config.databaseUrl);
-  // The logger comes first: the Providers and the worker log through it.
+  // The logger comes first: the Providers and the worker log through it. The same stream feeds the support bundle.
+  const logBuffer = createLogRingBuffer();
   const app = createServer({
     logger: {
       level: config.logLevel,
+      stream: logBuffer,
       // A native client's bearer token is the session token (ADR 0074). The request serializer logs the parsed Android
       // client instead of headers, and this redaction keeps the token out if one ever adds them.
       redact: { paths: ['req.headers.authorization'], censor: '[redacted]' },
@@ -40,9 +43,13 @@ export async function start(config: Config) {
     // The Vite dev server proxies /api from its own origin.
     trustedOrigins: config.production ? [] : ['http://localhost:5173'],
   });
+  // The worker stays away until setup is done (plan FAH-175): during a first-start restore, no background job may
+  // touch the database. The first-admin route starts it; when setup was done already, it starts with the boot below.
+  let worker: Awaited<ReturnType<typeof startWorker>> | undefined;
   const services = createServices({
     db, auth, blobs: createLocalBlobStore(config.dataDir), secrets: createSecretBox(config.encryptionKey),
     dataDir: config.dataDir, databaseUrl: config.databaseUrl, encryptionKey: config.encryptionKey,
+    logBuffer, workerRunning: () => worker !== undefined,
     siteSources: createSiteSources({ contact: config.contact, overpassUrl: config.overpassUrl, wikidataUrl: config.wikidataSparqlUrl, ssiSitesUrl: config.ssiSitesUrl }),
     // The Providers of this instance (ADR 0027): SSI and Garmin. Every call to SSI is logged (no token or password), to
     // tell Dive Hub's use of an account from the owner's own (docs/references/ssi-app-api.md).
@@ -53,9 +60,6 @@ export async function start(config: Config) {
     // The live layer listens on its own connection to the same database (ADR 0066).
     live: { connectionString: config.databaseUrl },
   });
-  // The worker stays away until setup is done (plan FAH-175): during a first-start restore, no background job may
-  // touch the database. The first-admin route starts it; when setup was done already, it starts with the boot below.
-  let worker: Awaited<ReturnType<typeof startWorker>> | undefined;
   const startWorkerIfConfigured = async () => {
     if (!config.inProcessWorker || worker) return;
     worker = await startWorker(pool, workerDeps(services, app.log));

@@ -76,6 +76,7 @@ const AREAS = [
   // Backup runs (plan FAH-175): the admin's page triggers them, downloads an archive and sets the schedule.
   [/^apps\/web\/src\/BackupsPage\.tsx$|^apps\/web\/src\/lib\/backups\.ts$/, ['@admin']],
   [/^apps\/server\/src\/backups\//, ['@admin']],
+  [/^apps\/server\/src\/support\//, ['@admin']],
   [/^apps\/server\/src\/sites\/import\/|^apps\/server\/src\/(site-sources|providers\/ssi\/ssi-sites)\.ts$/, ['@admin', '@sites']],
   [/^apps\/server\/src\/sites\//, ['@sites', '@dives']],
   [/^apps\/server\/src\/centres\//, ['@sites', '@dives']],
