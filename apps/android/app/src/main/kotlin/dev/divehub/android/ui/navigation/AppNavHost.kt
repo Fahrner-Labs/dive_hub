@@ -207,17 +207,15 @@ private fun NavController.leaveDiveForLogbook(page: Int?, onLogbookPage: (Int) -
 private fun NavHostController.navigateToTab(tab: AppTab, onLeaveDive: () -> Unit = {}) {
     val active = currentBackStack.value.asReversed().firstNotNullOfOrNull { tabOf(it.destination) }
     if (tab == active) {
-        // Reselecting a place returns to its root without restoring the stack above it (a Dive or a tool subpage).
+        // Reselecting a place returns to its root: pop what sits above it (a Dive or a tool subpage), never the root
+        // itself, so the screen keeps its entry and does not replay its enter transition.
         when (tab) {
             AppTab.Logbook -> {
                 // A Dive's page must reach the list, as it does on the Dive's own back path (ADR 0042).
                 if (currentDestination?.hasRoute(DiveRoute::class) == true) onLeaveDive()
                 popBackStack(LogbookRoute, inclusive = false)
             }
-            AppTab.Tools -> navigate(ToolsRoute()) {
-                popUpTo<LogbookRoute> { inclusive = false }
-                launchSingleTop = true
-            }
+            AppTab.Tools -> popBackStack(ToolsRoute(), inclusive = false)
             AppTab.Settings -> Unit
         }
         return
