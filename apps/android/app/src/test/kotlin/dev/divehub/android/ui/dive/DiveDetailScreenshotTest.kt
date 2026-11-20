@@ -288,7 +288,7 @@ class DiveDetailScreenshotTest {
         )
         compose.onNodeWithContentDescription("Previous dive (unavailable)").assertIsNotEnabled()
         compose.onNodeWithContentDescription("Next dive (unavailable)").assertIsNotEnabled()
-        compose.onNodeWithContentDescription("Logbook").assertIsEnabled()
+        compose.onNodeWithContentDescription("Back").assertIsEnabled()
     }
 
     @Test
@@ -307,7 +307,7 @@ class DiveDetailScreenshotTest {
     fun `the header's back arrow returns to the logbook`() {
         var backs = 0
         render(state(dive = dive()), onBack = { backs++ })
-        compose.onNodeWithContentDescription("Logbook").performClick()
+        compose.onNodeWithContentDescription("Back").performClick()
         assertEquals(1, backs)
     }
 
