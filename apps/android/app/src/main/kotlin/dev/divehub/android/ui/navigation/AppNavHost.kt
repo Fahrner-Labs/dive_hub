@@ -234,11 +234,18 @@ private fun NavHostController.navigateToTab(tab: AppTab, onLeaveDive: () -> Unit
     }
 }
 
-/** Drop the saved tab stacks when the User changes, so the next person never restores the previous one's screens. */
+/**
+ * Drop the saved tab stacks when the User changes, so the next person never restores the previous one's screens.
+ *
+ * This runs after the session is gone, when the current destination is [InstanceRoute] or [SignInRoute] — outside the
+ * `main` graph. The filled-route overloads (`clearBackStack(LogbookRoute)`) look the destination up from the current
+ * graph and throw `IllegalStateException` there; the [KClass] overloads clear by destination id and work from any
+ * destination (FAH-327).
+ */
 internal fun NavHostController.clearSavedTabStates() {
-    clearBackStack(LogbookRoute)
-    clearBackStack(ToolsRoute())
-    clearBackStack(SettingsRoute)
+    clearBackStack(LogbookRoute::class)
+    clearBackStack(ToolsRoute::class)
+    clearBackStack(SettingsRoute::class)
 }
 
 /**
