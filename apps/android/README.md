@@ -224,7 +224,7 @@ counts are the API's own, read from the store (see slice D4 above):
 - `totals` above the list and month headings with all of each month's Dives and their time (ADR 0040).
 - Rows say the Recordings count ("No recording"), the source Provider, gas, the computer's surface interval and the
   participants as initials in circles, with names and roles as the row's accessible text. Findings are not marked on a
-  row: they are shown where they are actionable, on the Dive page.
+  row; until the Dive page shows assessments, the `with-findings` filter is how they are found.
   The `profile` sketch shares one depth scale for every row (`totals.deepestM`, at least 10 m); fast ascent is thicker
   and coloured. A null profile draws nothing, or an empty dashed box when the Dive has no Recording (ADR 0041).
 - Pull-to-refresh re-runs the sync. With a cache, no answer shows the stored list and its age; before the first sync

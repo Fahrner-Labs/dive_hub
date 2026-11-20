@@ -656,8 +656,8 @@ returns findings from fixed rules; the client words them.
   changes what was computed.
 - **The logbook's mark is optional:** `findings` on each Dive of `GET /api/dives` counts the notes and cautions not put
   aside. A client that shows it shows text, not a colour or an icon alone, and never in an alarm colour. The Android
-  client leaves it off the list rows, where findings are not actionable; the Dive page shows them. The `with-findings`
-  filter and its count stay on both clients.
+  client leaves it off the list rows, where findings are not actionable; until its Dive page shows assessments, the
+  `with-findings` filter is how they are found there. The `with-findings` filter and its count stay on both clients.
 - **The no-fly time** (`noFly`, on the last dive of a diving day, else null) is information beside the findings: show it
   apart from them with its `source`, don't count it, and offer nothing to dismiss.
 - **Muted rules are listed with their Diver** (`mutedRules` of `GET /api/divers`), each with a way to show it again: a
