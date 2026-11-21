@@ -49,6 +49,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -212,6 +213,10 @@ fun LogbookScreen(
             DiveHubTopBar(
                 title = stringResource(R.string.logbook_title),
                 titleModifier = Modifier.semantics { heading() },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background,
+                    titleContentColor = MaterialTheme.colorScheme.onBackground,
+                ),
                 actions = {
                     if (chips.isNotEmpty()) {
                         FilterAction(selectedCount = state.filters.size, onClick = { filtersOpen = true })
