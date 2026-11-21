@@ -149,11 +149,11 @@ class LogbookScreenshotTest {
     @Test
     @Config(sdk = [36], qualifiers = "de-rDE-w320dp-h640dp-xxhdpi", fontScale = 2f)
     fun `the sheet at 320 dp and 200 percent text in German`() {
-        render(page(dives = listOf(reef), filters = setOf(LogbookFilter.CHANGED_SINCE_SENT)))
+        render(page(dives = listOf(reef), filters = setOf(LogbookFilter.NO_RECORDING)))
         compose.onNodeWithContentDescription("Filter, 1 ausgewählt").assertIsDisplayed()
         capture("logbook_filter_badge_narrow_de.png")
         compose.onNodeWithContentDescription("Filter, 1 ausgewählt").performClick()
-        val chip = compose.onNodeWithText("Seit dem Senden geändert\u00A07")
+        val chip = compose.onNodeWithText("Keine Aufzeichnung\u00A03")
         chip.performScrollTo().assertIsDisplayed().assertIsSelected()
         chip.assertHeightIsAtLeast(48.dp)
         capture("logbook_filters_narrow_de.png")
