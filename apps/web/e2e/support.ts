@@ -106,7 +106,7 @@ export function guardedRoute(handler: (route: Route) => Promise<unknown>): (rout
   };
 }
 
-export async function setPreferences(api: APIRequestContext, preferences: { language?: string | null; units?: string | null }) {
+export async function setPreferences(api: APIRequestContext, preferences: { language?: string | null; units?: string | null; mailOptOut?: boolean }) {
   await api.patch('/api/me/preferences', { data: preferences, headers });
 }
 

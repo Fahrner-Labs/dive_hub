@@ -31,6 +31,23 @@ export interface Config {
   ssiUrl: string | undefined;
   /** Garmin's Personal API; another endpoint only for tests. */
   garminUrl: string | undefined;
+  /** The SMTP relay transactional e-mail goes through; without it, mail is off (sends are skipped and logged). */
+  smtpUrl: string | undefined;
+  /** The sender of transactional e-mail (`Name <address>`); required while `smtpUrl` is set. */
+  mailFrom: string | undefined;
+}
+
+/** An SMTP relay URL, or an error at start for anything else (`smtp://` for STARTTLS, `smtps://` for TLS). */
+function mailUrl(value: string | undefined): string | undefined {
+  if (!value) return undefined;
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    throw new Error(`DIVEHUB_SMTP_URL must be an smtp:// or smtps:// URL, not ${value}`);
+  }
+  if (url.protocol !== 'smtp:' && url.protocol !== 'smtps:') throw new Error(`DIVEHUB_SMTP_URL must be an smtp:// or smtps:// URL, not ${url.protocol}//...`);
+  return value;
 }
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
@@ -50,6 +67,10 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   const port = count('DIVEHUB_PORT', 3000);
   const baseUrl = get('DIVEHUB_BASE_URL') ?? (production ? required('DIVEHUB_BASE_URL') : `http://localhost:${port}`);
   const webDir = get('DIVEHUB_WEB_DIR');
+  const smtpUrl = mailUrl(get('DIVEHUB_SMTP_URL'));
+  const mailFrom = get('DIVEHUB_MAIL_FROM');
+  // A relay without a sender can only fail when the first reminder is due: say so at start instead.
+  if (smtpUrl && !mailFrom) throw new Error('Missing required environment variable DIVEHUB_MAIL_FROM (needed while DIVEHUB_SMTP_URL is set)');
   return {
     databaseUrl: required('DATABASE_URL'),
     dataDir: resolve(get('DIVEHUB_DATA_DIR') ?? './data'),
@@ -70,5 +91,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     encryptionKey: parseEncryptionKey(env.DIVEHUB_ENCRYPTION_KEY),
     ssiUrl: get('DIVEHUB_SSI_URL'),
     garminUrl: get('DIVEHUB_GARMIN_URL'),
+    smtpUrl,
+    mailFrom,
   };
 }

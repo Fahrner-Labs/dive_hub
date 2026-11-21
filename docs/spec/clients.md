@@ -338,6 +338,9 @@ V1 of the native client reads offline: phones lose signal where dives are, and t
 - **Display settings:** language and units, each "same as the device" (null) or a choice, saved at once
   (`PATCH /api/me/preferences`). The UI follows them immediately, including number and date input.
   *Web:* `AccountSettings.tsx`, `main.tsx` (`I18nProvider`), `App.tsx` (`useLanguage`).
+- **E-mail:** one switch in Settings' E-mail section, the same `PATCH /api/me/preferences` (`mailOptOut`, in
+  `GET /api/me`'s `preferences`). On means no transactional e-mail, such as certification expiry reminders; the switch
+  saves at once and says so. *Web:* `AccountSettings.tsx` (`NotificationSettings`).
 - **Sessions:** list them with device, IP address, sign-in and last activity, and mark the current one. Ending
   another session is immediate; ending the current one is signing out. *Web:* `AccountSettings.tsx` (`Sessions`).
 

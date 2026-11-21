@@ -125,6 +125,8 @@
     "unitsAuto": "Wie die Region des Browsers",
     "metric": "Metrisch (m, °C)",
     "imperial": "Imperial (ft, °F)",
+    "mail": "E-Mails zu meinem Logbuch",
+    "mailHint": "Zum Beispiel, wenn eine Zertifizierung bald abläuft. Mehr schickt Dive Hub nicht.",
     "saved": "Gespeichert.",
     "browser": "Browser",
     "signOutOthersTitle": "Überall sonst abmelden?",
@@ -136,6 +138,7 @@
     "title": "Einstellungen",
     "section": {
       "display": "Anzeige",
+      "notifications": "E-Mail",
       "security": "Anmeldung und Sicherheit",
       "connections": "Verbindungen",
       "ai-access": "KI-Zugang",

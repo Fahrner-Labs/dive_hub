@@ -98,6 +98,8 @@ switches it on; behind a reverse proxy, `/mcp` must be forwarded like `/api`.
 | `DIVEHUB_CONTACT` | Optional: the operator's e-mail address or URL, added to the User-Agent of Site imports ([below](#dive-site-imports-and-licenses)). Not sent to SSI: calls there carry the SSI app's User-Agent ([ADR 0049](../decisions/0049-ssi-app-user-agent.md)). |
 | `DIVEHUB_ENCRYPTION_KEY` | Optional: 32 bytes as base64 (`openssl rand -base64 32`). Encrypts what Dive Hub keeps for Targets (SSI tokens and passwords, [ADR 0024](../decisions/0024-ssi-target-via-app-api.md)). Without it, Users can't choose "Keep me signed in" for SSI, and tokens are stored as they are. A `.divehub-backup` archive stores only its fingerprint, never the key ([ADR 0069](../decisions/0069-full-instance-backup-and-restore.md)); losing it means every User signs in to SSI again. A wrong length stops the server at start. |
 | `DIVEHUB_SSI_URL` | Only for tests: another endpoint for SSI's app API. |
+| `DIVEHUB_SMTP_URL` | Optional: the SMTP relay for transactional e-mail — `smtp://` (STARTTLS) or `smtps://` (TLS), with the relay's credentials in the URL, e.g. `smtps://user:password@mail.example.com:465`. Unset: mail is off, and every send is skipped and logged. |
+| `DIVEHUB_MAIL_FROM` | The sender of those e-mails, e.g. `Dive Hub <no-reply@example.com>`. Required while `DIVEHUB_SMTP_URL` is set. |
 | `DIVEHUB_OVERPASS_URL`, `DIVEHUB_WIKIDATA_SPARQL_URL` | Optional: other endpoints for Site imports (default `overpass-api.de`, `query.wikidata.org`). |
 | `DIVEHUB_SSI_SITES_URL` | Optional: another address for SSI's site list (default `api.divessi.com/app/APP_CACHE_SITES.zip`, ADR 0025). |
 
@@ -1003,3 +1005,18 @@ design).
   `continuation_append`.
 - Web: `AppendDive.tsx` (dialog, the dive page's menu), the check card in `LogbookChecks.tsx`, breaks in `DepthProfile.tsx`, the parts
   under the joined Recording, `DeletedDives.tsx` (one entry per append, what comes back), the history (en, de).
+
+**Transactional e-mail foundation (2026-11-14)** (plan FAH-38; [ADR 0012](../decisions/0012-invitations-and-admin-bootstrap.md)
+left SMTP out until a feature needed it).
+- `apps/server/src/config.ts`: `DIVEHUB_SMTP_URL` (`smtp://` or `smtps://`, unset means mail is off) and
+  `DIVEHUB_MAIL_FROM` (required while the relay is set). A relay without a sender stops the server at start; a disabled
+  mail skips every send and logs it, never an error.
+- `apps/server/src/mail/`: `mail-service.ts` (`sendToUser` queues one `mail_send` job in graphile-worker's table;
+  `deliver` reads the User again and hands the message to the transport), `smtp-transport.ts` (nodemailer),
+  `mail-task.ts` (the worker task, five attempts). The job carries the User's id, subject and text (optionally HTML),
+  never their address; the address is read when the task runs.
+- Per-User opt-out: `user.mail_opt_out` (migration 0059, Better Auth additional field `mailOptOut`) is checked when
+  queueing and again when sending. `GET /api/me` returns it in `preferences`, `PATCH /api/me/preferences` sets it, and
+  Settings has an E-mail section for it (en, de).
+- Not yet: the features that send, certification expiry reminders (FAH-41) and logbook-check e-mail (FAH-83); slice 18c's
+  "telling by e-mail" stays not yet.

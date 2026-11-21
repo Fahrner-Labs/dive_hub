@@ -2,7 +2,7 @@
  * Settings is one area with a view per section, "#/settings/<section>", the section's name its h1 (UI overhaul, "The
  * shell"). Administration is a section only admins see listed.
  */
-export const SETTINGS_SECTIONS = ['display', 'security', 'connections', 'ai-access', 'devices', 'report-problem', 'admin'] as const;
+export const SETTINGS_SECTIONS = ['display', 'notifications', 'security', 'connections', 'ai-access', 'devices', 'report-problem', 'admin'] as const;
 export type SettingsSection = (typeof SETTINGS_SECTIONS)[number];
 
 export function isSettingsSection(value: string | undefined): value is SettingsSection {

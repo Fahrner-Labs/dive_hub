@@ -19,6 +19,8 @@ const MODULE_IMPORTS = {
   // Narrower than plan D8's ['divers', 'dives', 'revisions'] on purpose: the equipment module needs nothing from dives.
   imports: ['divers', 'dives', 'equipment', 'live', 'revisions', 'sites'],
   lead: ['divers', 'dives', 'planning:type'],
+  // Transactional e-mail reads the User's address and opt-out; senders pass it a message, so it needs no other module.
+  mail: [],
   mcp: ['assessment', 'divers', 'dives', 'equipment', 'planning', 'sites'],
   // The loadings endpoint reuses DAN's no-fly rule (series-rules.ts) rather than copying it (ADR 0071).
   planning: ['assessment', 'divers', 'dives'],

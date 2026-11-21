@@ -125,6 +125,8 @@
     "unitsAuto": "Same as the browser’s region",
     "metric": "Metric (m, °C)",
     "imperial": "Imperial (ft, °F)",
+    "mail": "E-mail me about my logbook",
+    "mailHint": "For example when a certification expires soon. Dive Hub sends nothing else.",
     "saved": "Saved.",
     "browser": "Browser",
     "signOutOthersTitle": "Sign out everywhere else?",
@@ -136,6 +138,7 @@
     "title": "Settings",
     "section": {
       "display": "Display",
+      "notifications": "E-mail",
       "security": "Sign-in and security",
       "connections": "Connections",
       "ai-access": "AI access",

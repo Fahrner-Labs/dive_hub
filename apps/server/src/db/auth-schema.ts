@@ -25,6 +25,8 @@ export const user = pgTable("user", {
   email: text("email").notNull().unique(),
   emailVerified: boolean("email_verified").default(false).notNull(),
   image: text("image"),
+  // Our own field (auth.ts's user.additionalFields): a User who opted out of transactional e-mail (mail/).
+  mailOptOut: boolean("mail_opt_out").default(false).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .defaultNow()

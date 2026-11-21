@@ -1,7 +1,7 @@
 import { lazy, Suspense, useLayoutEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Me } from './api.ts';
-import { DisplaySettings, ReportProblemSettings, SecuritySettings } from './AccountSettings.tsx';
+import { DisplaySettings, NotificationSettings, ReportProblemSettings, SecuritySettings } from './AccountSettings.tsx';
 import { AiAccess } from './AiAccess.tsx';
 import { Connections } from './Connections.tsx';
 import { Devices } from './Devices.tsx';
@@ -66,6 +66,7 @@ function SectionView({ section, admin, params }: { section: SettingsSection; adm
   const { t } = useTranslation();
   switch (section) {
     case 'display': return <DisplaySettings />;
+    case 'notifications': return <NotificationSettings />;
     case 'security': return <SecuritySettings />;
     case 'connections': return <Connections focus={params.get('connection') ?? undefined} />;
     case 'ai-access': return <AiAccess />;

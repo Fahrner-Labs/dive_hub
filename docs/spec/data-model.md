@@ -83,7 +83,7 @@ These apply to every entity unless stated otherwise. They close gaps A2, A3, A5 
 
 ### People and accounts
 
-**User** — sign-in identity, preferences (units, default Visibility), instance role
+**User** — sign-in identity, preferences (units, e-mail opt-out, default Visibility), instance role
 (admin or regular; more roles are an open question).
 
 **Diver** — personal data (name, birth date, contact details, emergency contact), plus

@@ -18,7 +18,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
-private const val ME = """{"user":{"id":"u1","email":"ada@example.com","name":"Ada","role":"user","disabled":false,"createdAt":"2026-01-01T00:00:00Z"},"ownDiver":{"id":"diver-1","name":"Ada"},"preferences":{"language":null,"units":null}}"""
+private const val ME = """{"user":{"id":"u1","email":"ada@example.com","name":"Ada","role":"user","disabled":false,"createdAt":"2026-01-01T00:00:00Z"},"ownDiver":{"id":"diver-1","name":"Ada"},"preferences":{"language":null,"units":null,"mailOptOut":false}}"""
 
 private class FakeTokens(initial: String? = null) : TokenStore {
     var value: String? = initial

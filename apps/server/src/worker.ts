@@ -11,6 +11,8 @@ import { AUTOMATION_TICK_TASK, type WaitingPushService } from './providers/waiti
 import { SCHEDULED_FETCH_TASK, type ScheduledFetch } from './providers/dive-import/scheduled-fetch.js';
 import { CERTIFICATION_IMAGE_TASK, type CertificationService } from './certifications/certification-service.js';
 import type { PurgeService } from './dives/purge-service.js';
+import { MAIL_SEND_TASK, type MailService } from './mail/mail-service.js';
+import { mailTask } from './mail/mail-task.js';
 import type { AiAccessService } from './mcp/access-service.js';
 import type { AssessmentService } from './assessment/assessment-service.js';
 import type { ClientDiagnosticsService } from './support/client-diagnostics-service.js';
@@ -85,11 +87,12 @@ export interface WorkerDeps {
   certifications: CertificationService;
   purges: PurgeService;
   clientDiagnostics: ClientDiagnosticsService;
+  mail: MailService;
   log: FastifyBaseLogger;
 }
 
 export async function startWorker(pool: pg.Pool, deps: WorkerDeps): Promise<Runner> {
-  const { backups, imports, siteImports, aiAccesses, assessments, pushRuns, waitingPushes, scheduledFetch, certifications, purges, clientDiagnostics, log } = deps;
+  const { backups, imports, siteImports, aiAccesses, assessments, pushRuns, waitingPushes, scheduledFetch, certifications, purges, clientDiagnostics, mail, log } = deps;
   // A backup still "running" now was cut off when the worker last stopped; its passphrase is gone with the process.
   await backups.reconcileOrphans();
   // An import still "running" now was cut off when the worker last stopped.
@@ -146,6 +149,8 @@ export async function startWorker(pool: pg.Pool, deps: WorkerDeps): Promise<Runn
         const outcome = await certifications.fetchImage(certificationId, { final });
         if (outcome === 'failed') log.warn({ certificationId }, 'a certification card picture could not be fetched');
       },
+      // One transactional e-mail, queued by mail-service.ts; the service reads the User and their opt-out again.
+      [MAIL_SEND_TASK]: mailTask(mail),
       [EXPIRE_WAITING_IMPORTS_TASK]: async () => {
         const ended = await imports.expireWaiting();
         if (ended > 0) log.info({ ended }, 'ended Imports nobody answered, and removed their uploads');

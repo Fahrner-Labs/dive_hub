@@ -27,6 +27,7 @@ import { createLive } from './live/service.js';
 import { withRevisionHints } from './live/revision-hints.js';
 import { createAttemptLimit, TOKEN_ATTEMPTS } from './http/attempt-limit.js';
 import { createLeadService } from './lead/lead-service.js';
+import { createMailService, type MailLog, type MailSettings } from './mail/mail-service.js';
 import { createAiAccessService } from './mcp/access-service.js';
 import { createPlanningService } from './planning/planning-service.js';
 import type { Clock } from './providers/lease-service.js';
@@ -70,19 +71,21 @@ export interface ServiceParts {
   siteSources: Record<ImportSource, SiteSourceAdapter>;
   /** The clock of leases and attempt limits (default: real time). */
   clock?: Clock;
-  /** Where the provider layer's own faults go (the app's logger). */
-  log?: ProviderLog;
+  /** Where the provider layer's and the mail's own faults go (the app's logger). */
+  log?: ProviderLog & Pick<MailLog, 'info'>;
   /** Where the live layer's LISTEN connection comes from (ADR 0066); without it, the live route is not mounted. */
   live?: { connectionString: string };
   /** The log stream the support bundle captures; start.ts passes the one it gives Fastify. */
   logBuffer?: LogRingBuffer;
   /** Whether this process runs the worker, for the support bundle's health section. */
   workerRunning?: () => boolean;
+  /** The SMTP relay and sender; without them, mail is off (sends are skipped and logged). */
+  mail?: MailSettings | undefined;
 }
 
 export function createServices({
   db, blobs, auth, secrets, adapters, siteSources, clock, log, live: liveSettings, dataDir, databaseUrl, encryptionKey,
-  logBuffer = createLogRingBuffer({ stdout: { write: () => true } }), workerRunning,
+  logBuffer = createLogRingBuffer({ stdout: { write: () => true } }), workerRunning, mail: mailSettings,
 }: ServiceParts) {
   const assessments = createAssessmentService(db);
   const backupLog: BackupLog = {
@@ -101,6 +104,8 @@ export function createServices({
     appVersion: process.env.DIVEHUB_VERSION ?? 'dev', databaseUrl, dataDir, encryptionKey, clientDiagnostics,
     ...(workerRunning && { workerRunning }),
   });
+  const mailLog: MailLog = { info: (detail, message) => log?.info(detail, message), warn: (detail, message) => log?.warn(detail, message) };
+  const mail = createMailService({ db, settings: mailSettings, log: mailLog });
   const providers = createProviderLayer({ db, blobs, secrets, adapters, ...(clock && { clock }), ...(log && { log }) });
   // Dive and site Revisions also tell open pages (ADR 0066), through the same listener seam as the Waiting pushes.
   // Buddy suggestions hang off the same seam (ADR 0070): the listener runs inside every Participant write's transaction.
@@ -116,7 +121,7 @@ export function createServices({
   // Restoring a Dive an append took undoes the append (ADR 0063).
   const dives = createDiveService(db, continuation);
   return {
-    db, blobs, auth, assessments, backups, support, clientDiagnostics, providers, imports, logBuffer,
+    db, blobs, auth, assessments, backups, support, clientDiagnostics, providers, imports, mail, logBuffer,
     siteImports: createSiteImportService({ db, sources: siteSources }),
     aiAccesses: createAiAccessService(db, auth),
     setup: createSetupService(db, clock ? () => clock.now() : undefined),
@@ -151,5 +156,5 @@ export type Services = ReturnType<typeof createServices>;
 export const workerDeps = (s: Services, log: FastifyBaseLogger): WorkerDeps => ({
   backups: s.backups, imports: s.imports, siteImports: s.siteImports, aiAccesses: s.aiAccesses, assessments: s.assessments, pushRuns: s.providers.pushRuns,
   waitingPushes: s.providers.waitingPushes, scheduledFetch: s.providers.scheduledFetch, certifications: s.providers.certifications,
-  purges: s.purge, clientDiagnostics: s.clientDiagnostics, log,
+  purges: s.purge, clientDiagnostics: s.clientDiagnostics, mail: s.mail, log,
 });

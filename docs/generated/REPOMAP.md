@@ -4,15 +4,15 @@
 > `pnpm check` fails when this map is stale. Symbols are ranked by how widely the code references them;
 > each module shows its most-referenced ones (exported symbols rank higher). Search here before walking the tree.
 
-Files: 417 · symbols: 3809 · shown: 247
+Files: 420 · symbols: 3826 · shown: 252
 
 ### server/(root)
 apps/server/src/vocabulary.ts:13 type SiteWaterType
 apps/server/src/errors.ts:2 const errorMessage
 apps/server/src/vocabulary.ts:12 const SITE_WATER_TYPES
 apps/server/src/vocabulary.ts:51 type ImportSource
-apps/server/src/compose.ts:83 fn createServices
-… 42 more symbols in this module
+apps/server/src/compose.ts:86 fn createServices
+… 43 more symbols in this module
 
 ### server/assessment
 apps/server/src/assessment/rules.ts:50 const RULES
@@ -24,7 +24,7 @@ apps/server/src/assessment/signals.ts:5 iface Series
 
 ### server/auth
 apps/server/src/auth/fastify.ts:81 fn userOf
-apps/server/src/auth/auth.ts:149 type Auth
+apps/server/src/auth/auth.ts:155 type Auth
 apps/server/src/auth/fastify.ts:68 fn requireUser
 apps/server/src/auth/fastify.ts:99 fn requireAdmin
 apps/server/src/auth/auth.ts:60 fn createAuth
@@ -147,6 +147,14 @@ apps/server/src/live/emit.ts:51 fn audienceOfDive
 apps/server/src/live/listener.ts:7 iface LiveLog
 … 18 more symbols in this module
 
+### server/mail
+apps/server/src/mail/mail-service.ts:64 fn createMailService
+apps/server/src/mail/mail-service.ts:39 iface MailLog
+apps/server/src/mail/mail-service.ts:9 const MAIL_SEND_TASK
+apps/server/src/mail/mail-task.ts:4 fn mailTask
+apps/server/src/mail/smtp-transport.ts:5 fn createSmtpTransport
+… 9 more symbols in this module
+
 ### server/mcp
 apps/server/src/mcp/tool.ts:54 const Id
 apps/server/src/mcp/tool.ts:49 const defineTool
@@ -257,10 +265,10 @@ apps/server/src/support/client-diagnostics-service.ts:21 class ClientDiagnostics
 ### server/users
 apps/server/src/users/views.ts:23 const UserView
 apps/server/src/users/invitation-service.ts:8 type Role
-apps/server/src/users/views.ts:51 const toUserView
+apps/server/src/users/views.ts:54 const toUserView
 apps/server/src/users/tokens.ts:5 const sha256
 apps/server/src/users/user-admin-service.ts:10 class UserAdminError
-… 60 more symbols in this module
+… 61 more symbols in this module
 
 ### server/version
 apps/server/src/version/min-client-versions.ts:25 type ClientVersionRegistry
@@ -290,7 +298,7 @@ apps/web/src/ImportPanel.tsx:39 const ImportContext
 apps/web/src/ReviewRows.tsx:6 iface Fact
 apps/web/src/SignedOut.tsx:20 fn useUserChanged
 apps/web/src/ProfilePlot.tsx:14 fn withAlpha
-… 520 more symbols in this module
+… 521 more symbols in this module
 
 ### web/api
 apps/web/src/api/request.ts:3 const api

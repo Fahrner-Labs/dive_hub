@@ -376,6 +376,8 @@ th[aria-sort='ascending'], th[aria-sort='descending'] { color: var(--color-text)
 .provider-settings { display: grid; gap: var(--space-1); }
 .provider-settings .radio-group { margin-left: calc(2.25rem + var(--space-2)); }
 .provider-settings-help { margin: calc(-1 * var(--space-1)) 0 var(--space-2) calc(2.25rem + var(--space-2)); font-size: var(--text-sm); }
+/* A switch's help text, aligned under its label (Settings' E-mail section). */
+.switch-help { margin: calc(-1 * var(--space-1)) 0 var(--space-2) calc(2.25rem + var(--space-2)); font-size: var(--text-sm); }
 .provider-fetch-summary p { margin: 0; }
 .provider-fetch-summary { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) var(--space-2); }
 .provider-conflict-question { margin: var(--space-2) 0; font-weight: var(--weight-semibold); }

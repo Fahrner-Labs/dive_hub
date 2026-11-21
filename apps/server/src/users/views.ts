@@ -30,6 +30,9 @@ export const PreferencesView = Type.Object({
   units: Type.Union([Type.Null(), Type.Literal('metric'), Type.Literal('imperial')], {
     description: 'Null: follow the region of the browser',
   }),
+  mailOptOut: Type.Boolean({
+    description: 'No transactional e-mail from Dive Hub, such as certification expiry reminders',
+  }),
 });
 
 /** A password sign-in that still needs a second factor (ADR 0011): the server set the challenge cookie, no session. */

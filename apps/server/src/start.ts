@@ -18,6 +18,7 @@ import { createSsiClient } from './providers/ssi/ssi-client.js';
 import { createLocalBlobStore } from './storage/blob-store.js';
 import { createLogRingBuffer } from './support/log-ring-buffer.js';
 import { clientRequestSerializer } from './version/request-log.js';
+import { createSmtpTransport } from './mail/smtp-transport.js';
 import { startWorker } from './worker.js';
 
 export async function start(config: Config) {
@@ -57,6 +58,10 @@ export async function start(config: Config) {
       createGarminAdapter({ client: createGarminClient({ url: config.garminUrl ?? DEFAULT_GARMIN_URL }) })],
     // The worker's own faults, with the entry they hit, for the operator.
     log: app.log,
+    // Transactional e-mail (mail/): without DIVEHUB_SMTP_URL it stays off, and every send is skipped and logged.
+    mail: config.smtpUrl && config.mailFrom
+      ? { transport: createSmtpTransport(config.smtpUrl), from: config.mailFrom }
+      : undefined,
     // The live layer listens on its own connection to the same database (ADR 0066).
     live: { connectionString: config.databaseUrl },
   });
