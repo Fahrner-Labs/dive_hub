@@ -5,6 +5,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
@@ -72,6 +73,22 @@ class DiveHubTopBarTest {
 
         assertEquals(rootCentre.value, titleCentre.value, 0.5f)
         compose.onNodeWithContentDescription("Back").assertIsDisplayed()
+    }
+
+    @Test
+    fun `the title skeleton waits 150 ms before it appears`() {
+        compose.mainClock.autoAdvance = false
+        compose.setContent {
+            DiveHubTheme(darkTheme = false) {
+                DiveHubTopBar(title = "Dive 42", centerTitle = true, loading = true)
+            }
+        }
+
+        compose.onNodeWithTag(TopBarTitleSkeletonTag).assertDoesNotExist()
+        compose.mainClock.advanceTimeBy(149)
+        compose.onNodeWithTag(TopBarTitleSkeletonTag).assertDoesNotExist()
+        compose.mainClock.advanceTimeBy(2)
+        compose.onNodeWithTag(TopBarTitleSkeletonTag).assertExists()
     }
 
     @Test

@@ -19,8 +19,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertHasClickAction
+import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertWidthIsAtLeast
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
@@ -81,14 +86,14 @@ class ComponentsScreenshotTest {
                 Section(
                     title = "Water temperature",
                     showSeparator = false,
-                    action = { TextButton(onClick = {}) { Text("Edit") } },
+                    action = { QuietButton("Edit", onClick = {}) },
                 ) {
                     FactRow(label = "Surface interval", value = "1 h 5 min")
                 }
                 FactRow(
                     label = "Surface interval",
                     value = "1 h 5 min",
-                    note = "Time zone from the dive site",
+                    notes = listOf("Time zone from the dive site"),
                 )
             }
         }
@@ -96,6 +101,20 @@ class ComponentsScreenshotTest {
         compose.onNodeWithText("Water temperature").assertIsDisplayed()
         compose.onNodeWithText("Edit").assertIsDisplayed()
         capture("components_narrow_2x_light.png")
+    }
+
+    @Test
+    fun `a quiet action keeps its 48 dp target and names its disclosure state`() {
+        render(darkTheme = false) {
+            Column {
+                QuietButton("Edit", onClick = {})
+                QuietButton("Profile as a table", onClick = {}, expanded = false)
+            }
+        }
+
+        compose.onNodeWithText("Edit").assertWidthIsAtLeast(48.dp).assertHeightIsAtLeast(48.dp)
+        compose.onNodeWithText("Profile as a table")
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "Collapsed"))
     }
 
     @Test
@@ -201,7 +220,7 @@ class ComponentsScreenshotTest {
             Section(
                 title = "Dive details",
                 showSeparator = false,
-                action = { TextButton(onClick = {}) { Text("Edit") } },
+                action = { QuietButton("Edit", onClick = {}) },
             ) {
                 FactRow(label = "Max depth", value = "24.3 m")
                 FactRow(label = "Duration", value = "50 min")
@@ -212,7 +231,7 @@ class ComponentsScreenshotTest {
             Section(
                 title = "Waiting for you",
                 attention = true,
-                action = { TextButton(onClick = {}) { Text("Open") } },
+                action = { QuietButton("Open", onClick = {}) },
             ) {
                 Text("This Dive has a finding to review.", style = MaterialTheme.typography.bodyLarge)
             }
@@ -227,7 +246,7 @@ class ComponentsScreenshotTest {
                 label = "Start",
                 value = "2 Apr 2026, 11:00",
                 mark = "edited · recording: 10:58",
-                note = "Time zone from the dive site",
+                notes = listOf("Time zone from the dive site"),
             )
             FactRow(label = "Surface interval", value = "1 h 5 min")
         }

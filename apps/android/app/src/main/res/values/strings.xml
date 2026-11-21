@@ -21,6 +21,8 @@
 
     <string name="form_email">E-mail</string>
     <string name="loading">Loading…</string>
+    <string name="action_expanded">Expanded</string>
+    <string name="action_collapsed">Collapsed</string>
     <string name="password_show">Show: %1$s</string>
     <string name="password_show_short">Show</string>
     <string name="password_hide_short">Hide</string>
@@ -62,7 +64,7 @@
     <string name="dive_no_water_type">None</string>
     <string name="dive_water_from_site">Comes from the dive site</string>
     <string name="dive_water_unknown">Not known for this dive site</string>
-    <string name="dive_choose_site_for_water">Choose a dive site, and the dive takes its water type.</string>
+    <string name="dive_choose_site_for_water">The water type comes from the dive site. Choose a site to set it.</string>
     <string name="dive_water_mismatch">Your computer was set to %1$s; this site is %2$s.</string>
     <string name="dive_water_reads_shallow">Its depths read about %1$s %% shallow.</string>
     <string name="dive_water_reads_deep">Its depths read about %1$s %% deep.</string>
@@ -79,7 +81,7 @@
     <string name="water_in_sentence_custom">a custom density</string>
 
     <string name="dive_edited_value">edited · recording: %1$s</string>
-    <string name="dive_time_zone_position">Time zone from where the dive was</string>
+    <string name="dive_time_zone_position">Time zone from the dive’s position</string>
     <string name="dive_time_zone_nearby">Time zone from your dives in the days around it</string>
     <string name="dive_time_zone_unknown">Time zone unknown: the time is shown as it was logged</string>
     <string name="dive_time_with_offset">%1$s (%2$s)</string>
@@ -87,7 +89,7 @@
 
     <string name="dive_recordings">Recordings</string>
     <string name="dive_recording_n">Recording %1$d</string>
-    <string name="dive_primary">primary</string>
+    <string name="dive_primary">Primary</string>
     <string name="dive_computer_water">Water setting on the computer</string>
     <string name="dive_no_recording">This dive has no recording.</string>
     <string name="dive_no_recording_from">No recording yet: this dive comes from your %1$s logbook, typed in by hand.</string>
@@ -139,12 +141,10 @@
     <string name="dive_cylinder_pressures_used">%1$s → %2$s (%3$s used)</string>
     <string name="dive_cylinder_pressures_unknown">Pressures not known</string>
     <string name="dive_cylinder_from_pod">from a tank pod</string>
-    <string name="dive_sac_litres">SAC %1$s L/min</string>
-    <string name="dive_sac_bar">SAC %1$s/min</string>
-    <string name="dive_sac_missing">SAC not known</string>
-    <string name="dive_sac_missing_too_short">No SAC: the dive is shorter than 15 minutes.</string>
-    <string name="dive_sac_missing_no_average_depth">No SAC: the dive has no average depth.</string>
-    <string name="dive_sac_missing_cylinder_incomplete">No SAC: a cylinder needs its size and both pressures.</string>
+    <string name="dive_sac_missing">Not known</string>
+    <string name="dive_sac_missing_too_short">The dive is shorter than 15 minutes.</string>
+    <string name="dive_sac_missing_no_average_depth">The dive has no average depth.</string>
+    <string name="dive_sac_missing_cylinder_incomplete">A cylinder needs its size and both pressures.</string>
 
     <string name="dive_weighting">Weighting</string>
     <string name="dive_suit">Suit</string>
@@ -169,11 +169,17 @@
     <string name="dive_position_east">%1$s° E</string>
     <string name="dive_position_west">%1$s° W</string>
 
-    <string name="dive_offline">No connection. Check your connection and try again.</string>
+    <string name="dive_offline">Check your connection and try again.</string>
     <string name="dive_offline_cached">No connection. Showing this dive synced as of %1$s.</string>
     <string name="dive_profile_pending">The depth profile is still syncing; it appears when the sync finishes.</string>
     <string name="dive_retry">Try again</string>
+    <string name="dive_offline_title">No connection</string>
+    <string name="dive_error_title">Something went wrong</string>
+    <string name="dive_not_found_title">Dive not found</string>
     <string name="dive_error_not_found">This dive doesn’t exist or isn’t yours.</string>
+    <string name="dive_sac">SAC</string>
+    <string name="dive_sac_litres_value">%1$s L/min</string>
+    <string name="dive_sac_bar_value">%1$s/min</string>
 
     <string name="sync_last">Last synced %1$s.</string>
     <string name="sync_date_pattern">d MMM yyyy, HH:mm</string>
