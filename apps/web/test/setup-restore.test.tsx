@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { keys } from '../src/api.ts';
-import { SetupRestore } from '../src/SetupRestore.tsx';
+import { SetupRestore } from '../src/account/SetupRestore.tsx';
 
 const renderRestore = () => {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });

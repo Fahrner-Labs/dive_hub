@@ -26,17 +26,17 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
 - **Must show OpenStreetMap's Attribution wherever OSM data is shown.** A Dive site with an External ID
   from `osm` that `providesData` shows its `attribution` (text and link, from the API) on the site's page.
   A list that shows such sites carries it once. ODbL 1.0
-  ([ADR 0021](../decisions/0021-site-external-ids-and-import.md)). *Web:* `SitesPage.tsx` (`SiteOrigin`,
+  ([ADR 0021](../decisions/0021-site-external-ids-and-import.md)). *Web:* `sites/SitesPage.tsx` (`SiteOrigin`,
   `OsmAttribution`), `lib/site-origin.ts`.
 - **Must explain ODbL and get a confirmation before an OSM Site import** (`confirmOdbl`). The API refuses
-  without the flag, but the explanation is the client's job (ADR 0021). *Web:* `SiteImportPage.tsx`.
+  without the flag, but the explanation is the client's job (ADR 0021). *Web:* `admin/SiteImportPage.tsx`.
 - **Must take license, Attribution and link from the API** (`externalIds[].attribution`, `.url`), never
   hard-code them. They are defined once on the server (`src/sites/sources.ts`).
 - **Must explain SSI's missing licence and get a confirmation before an SSI Site import** (`confirmSsi`): SSI gives no
   licence for its list (unlike OSM, no conditions make copying allowed); in the EU it is protected as a database, so
   copying large parts can infringe SSI's rights; importing is the operator's decision and risk; what is taken and what
   is never stored. Show it as standing text with a checkbox, not as a notice. The API refuses without the flag
-  (`ssi_not_confirmed`) ([ADR 0025](../decisions/0025-ssi-site-import-and-site-water-type.md)). *Web:* `SiteImportPage.tsx`.
+  (`ssi_not_confirmed`) ([ADR 0025](../decisions/0025-ssi-site-import-and-site-water-type.md)). *Web:* `admin/SiteImportPage.tsx`.
 - **SSI data shows "From SSI" without a link** (`url` is null, no Attribution): SSI has no page per site.
 
 ### Privacy
@@ -51,18 +51,18 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   everyone. Null: public. The site's history never names a private ID.
 - **Must say that a site is shared** when creating or editing one, especially one made from a Dive's position.
   Every User sees a site's position, while a Dive's own position stays private (ADR 0020).
-  *Web:* `SiteForm.tsx` (`sites.sharedHint`).
+  *Web:* `sites/SiteForm.tsx` (`sites.sharedHint`).
 - **Must warn before merging sites that other Users' Dives move too,** without counting them (ADR 0022).
 - **Must say what Dive Hub keeps for a Provider** before connecting ([ADR 0024](../decisions/0024-ssi-target-via-app-api.md),
   [ADR 0027](../decisions/0027-providers-as-adapters.md)): that it signs in for the User (for SSI: through an interface SSI
   doesn't support); and, for password sign-in, the choice between keeping the password (encrypted) and keeping only the
   Provider's sign-in, which can expire at any time. Offer the choice only when the Provider's `signIn.canKeepPassword` is
-  true, and default to not keeping it. Offer "Disconnect", and say that dives already there stay there. *Web:* `Connections.tsx`.
+  true, and default to not keeping it. Offer "Disconnect", and say that dives already there stay there. *Web:* `account/Connections.tsx`.
 - **Must say that Divers' names are seen by every User** where a Diver is added or picked ([ADR 0028](../decisions/0028-shared-divers-and-participants.md)):
   every User of the instance sees every Diver's name, and nothing else about Divers they don't keep.
-  *Web:* `Participants.tsx` (`participants.sharedHint`), `DiversPage.tsx` (`divers.othersIntro`).
+  *Web:* `dives/Participants.tsx` (`participants.sharedHint`), `divers/DiversPage.tsx` (`divers.othersIntro`).
 - **Must not show or keep more of a Provider's people than name and account** ([ADR 0029](../decisions/0029-push-requirements-and-buddies.md)):
-  the buddy list routes give only those; say so where the list is shown. *Web:* `ProviderBuddies.tsx` (`provider.buddiesKept`).
+  the buddy list routes give only those; say so where the list is shown. *Web:* `providers/ProviderBuddies.tsx` (`provider.buddiesKept`).
 - **Must not send positions anywhere by itself.** "Open in maps" is a plain link the User follows. A map with
   tiles needs its own ADR first (tile source, privacy).
 - **Client diagnostics stay on the device until the User sends them.** Keep a small local error ring buffer
@@ -75,7 +75,7 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   `client_diagnostics_limited` say to try again later. The server truncates and re-redacts every entry, so the
   client's own hygiene (no dive contents, tokens or URLs with query strings) is the first line, not the only one.
   Android's *Share local logs* share sheet stays available whether the setting is on or off.
-  *Web:* `lib/diagnostics.ts` (the local buffer and browser capture points), `ReportProblem.tsx` (the status line and
+  *Web:* `lib/diagnostics.ts` (the local buffer and browser capture points), `account/ReportProblem.tsx` (the status line and
   *Send diagnostics*, also in a failing page's fallback), `#/settings/report-problem`.
   *Android:* under `apps/android/app`: the settings Debug subscreen (`SettingsDebugScreen.kt`: capability and
   local-capture status, *Report a problem*), reached from the Debug row on `SettingsScreen.kt`, and `LogShare.kt`
@@ -85,7 +85,7 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
 - **Must forget everything about the previous User** when the User changes: on sign-in as someone else, an
   explicit sign-out (including ending the current session), setup, accepting an Invitation, or using a reset
   link. Drop every cached response and, on a native client, its read store, so on a shared device the next
-  person sees nothing. *Web:* `SignedOut.tsx` (`useUserChanged`: `resetQueries`).
+  person sees nothing. *Web:* `account/SignedOut.tsx` (`useUserChanged`: `resetQueries`).
   A session that ended elsewhere (signed out from another device, revoked after a lost phone) is not a change of
   User: the native client's read store stays readable offline as [Offline reads](#offline-reads-native-client)
   says. That is the one exception; the next User change still wipes it.
@@ -94,20 +94,20 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
     ([ADR 0012](../decisions/0012-invitations-and-admin-bootstrap.md), [ADR 0013](../decisions/0013-account-management.md)).
   - Take them out of the address once used. *Web:* `useUserChanged` (`history.replaceState`).
   - Invitation and reset links an admin creates are shown once, to copy. Don't store them.
-  *Web:* `AdminSettings.tsx` (`LinkToPassOn`), `ui/Overlay.tsx` (`CopyField`).
+  *Web:* `account/AdminSettings.tsx` (`LinkToPassOn`), `ui/Overlay.tsx` (`CopyField`).
 - **Must not tell whether an e-mail address has an account.** A failed sign-in says "wrong e-mail or password".
-  Only "too many attempts" (429) and "disabled" (`BANNED_USER`) get their own message. *Web:* `SignedOut.tsx` (`SignIn`).
+  Only "too many attempts" (429) and "disabled" (`BANNED_USER`) get their own message. *Web:* `account/SignedOut.tsx` (`SignIn`).
 - **Must show the "too many attempts" refusal on the token forms.** Setup, invitation and reset link routes count
   attempts per client IP (30 per 15 minutes, [ADR 0061](../decisions/0061-attempt-limit-on-token-routes.md)) and
   answer 429 `too_many_attempts` with `Retry-After` (seconds). Say to try again later; don't retry by itself.
-  *Web:* `SignedOut.tsx` (`Setup`, `AcceptInvitation`, `ResetPassword`, through `useErrorText`).
+  *Web:* `account/SignedOut.tsx` (`Setup`, `AcceptInvitation`, `ResetPassword`, through `useErrorText`).
 - **Changing the password ends the User's other sessions.** The server enforces it, whatever
-  `revokeOtherSessions` says. Tell the User afterwards that their other sessions were signed out. *Web:* `AccountSettings.tsx` (`ChangePassword`).
+  `revokeOtherSessions` says. Tell the User afterwards that their other sessions were signed out. *Web:* `account/AccountSettings.tsx` (`ChangePassword`).
 - **Must ask for the current password** to change it, and the server checks it (`INVALID_PASSWORD`).
 - **Must treat a Provider's password or token as the Provider's** (ADR 0024, 0027): send it only to
   `POST /api/connections/{provider}` and `POST /api/connections/{id}/sign-in`, never keep it on the device, and keep
   password managers from saving it as the Dive Hub password (`autocomplete="off"`). The API never sends it, or the
-  Provider's access, back. *Web:* `Connections.tsx`.
+  Provider's access, back. *Web:* `account/Connections.tsx`.
 - **Should let password managers work:** mark fields `username`, `current-password` and `new-password`, and on
   the invitation and reset forms include the (read-only) e-mail so the manager saves the pair.
 
@@ -115,24 +115,24 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
 - **Must send the version an edit started from:** the Dive's `version` for edits, moving it, the Primary
   recording, splitting off, deleting and restoring it; the site's `version`; both sites' versions for a merge. On 409 `dive_changed` or
   `site_changed`, **offer to reload instead of overwriting**
-  ([ADR 0015](../decisions/0015-overrides-vocabulary-and-browser-tests.md)). *Web:* `DiveEditForm.tsx`, `SiteForm.tsx`, `DivePage.tsx`.
+  ([ADR 0015](../decisions/0015-overrides-vocabulary-and-browser-tests.md)). *Web:* `dives/DiveEditForm.tsx`, `sites/SiteForm.tsx`, `dives/DivePage.tsx`.
 - **Must confirm what can't be undone, and say what will happen:**
 
   | Action | Confirmation | *Web:* |
   |---|---|---|
-  | Deleting a User | type the User's e-mail (`confirmEmail`; the server checks it) | `AdminSettings.tsx` (`DeleteUserDialog`) |
-  | Disabling a User; signing a User out everywhere | dialog | `AdminSettings.tsx` |
-  | Taking one's own admin role away | dialog: the Admin page disappears | `AdminSettings.tsx` |
-  | Signing out everywhere else; ending the current session | dialog | `AccountSettings.tsx` |
-  | Revoking an Invitation | dialog | `AdminSettings.tsx` |
-  | Deleting a Dive site | dialog | `SitesPage.tsx` |
-  | Merging sites (no undo) | dialog with what moves and fills | `SitesPage.tsx` (`NearbySites`) |
-  | Splitting a Recording off | dialog | `DivePage.tsx` |
-  | Deleting a Dive | dialog: it leaves the logbook, can be restored, isn't imported again; asks about SSI too (see [Dives](#dives)) | `DeleteDive.tsx` |
-  | Deleting a deleted Dive's copy at a Provider | dialog: SSI's app can't bring it back | `DeletedDives.tsx` |
+  | Deleting a User | type the User's e-mail (`confirmEmail`; the server checks it) | `account/AdminSettings.tsx` (`DeleteUserDialog`) |
+  | Disabling a User; signing a User out everywhere | dialog | `account/AdminSettings.tsx` |
+  | Taking one's own admin role away | dialog: the Admin page disappears | `account/AdminSettings.tsx` |
+  | Signing out everywhere else; ending the current session | dialog | `account/AccountSettings.tsx` |
+  | Revoking an Invitation | dialog | `account/AdminSettings.tsx` |
+  | Deleting a Dive site | dialog | `sites/SitesPage.tsx` |
+  | Merging sites (no undo) | dialog with what moves and fills | `sites/SitesPage.tsx` (`NearbySites`) |
+  | Splitting a Recording off | dialog | `dives/DivePage.tsx` |
+  | Deleting a Dive | dialog: it leaves the logbook, can be restored, isn't imported again; asks about SSI too (see [Dives](#dives)) | `dives/DeleteDive.tsx` |
+  | Deleting a deleted Dive's copy at a Provider | dialog: SSI's app can't bring it back | `review/DeletedDives.tsx` |
 
   Discarding a Duplicate candidate is not confirmed. It offers **Undo** at once (reopen) and keeps a list of
-  discarded ones ([ADR 0016](../decisions/0016-recording-decisions-and-divers.md)). *Web:* `Decisions.tsx`.
+  discarded ones ([ADR 0016](../decisions/0016-recording-decisions-and-divers.md)). *Web:* `review/Decisions.tsx`.
 - **Should guard unsaved changes** when leaving a form, including through the address, and release the guard
   once saved before navigating. *Web:* `lib/leave-guard.ts` (the release `useLeaveGuard` returns), `App.tsx` (`useRoute`).
 - **Must send `null` to clear a field, and leave a field out to keep it.** The two mean different things in every
@@ -197,7 +197,7 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   - Site imports (`GET /api/admin/site-imports`), every two seconds.
 
   When one finishes, refresh what it changed (the logbook) and say so, for screen readers too.
-  *Web:* `api.ts` (`importsQuery`, `siteImportsQuery`), `ImportPanel.tsx`, `SiteImportPage.tsx`.
+  *Web:* `api.ts` (`importsQuery`, `siteImportsQuery`), `imports/ImportPanel.tsx`, `admin/SiteImportPage.tsx`.
 - **Lists page** with `limit`/`offset` and `total` (`/api/dives` [ADR 0017](../decisions/0017-logbook-list-paging.md),
   `/api/dive-sites` ADR 0022). Keep search, filters, sort and page in the client's navigation state (the web
   client uses the address), so back and reload keep them. *Web:* `lib/logbook.ts`, `lib/sites-list.ts`.
@@ -219,7 +219,7 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   meaning. A Dive's `profile` (depths, `spanSeconds`, `ascentBands`; [ADR 0041](../decisions/0041-logbook-profile-sketch.md))
   is a sketch of its shape on **one depth scale for all rows**, fast ascent drawn thicker as well as coloured; it is
   decoration, so depth and duration stay text. `null` is drawn as nothing (an empty dashed box when `recordings` is 0).
-  *Web:* `DiveList.tsx`, `ProfileSketch.tsx`, `lib/sketch.ts`.
+  *Web:* `dives/DiveList.tsx`, `dives/ProfileSketch.tsx`, `lib/sketch.ts`.
 - **Previous and next dive** ([ADR 0042](../decisions/0042-dive-neighbours-and-list-in-address.md)): a Dive opened from the
   logbook keeps the list's settings with it and asks `GET /api/dives/{id}/neighbours` with them (no `limit`/`offset`).
   "Previous" is the row above in that list (with the newest first, the newer dive), "next" the row below. *Web:* show the
@@ -228,7 +228,7 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   trailing actions, disabled at the ends and absent when `position` is `null`; a horizontal swipe on the page opens the
   same neighbour and springs back at the ends (FAH-344). "Back to the logbook" returns to the list as it was, on page
   `ceil(position / 25)`. Without a list, the whole logbook newest first.
-  *Web:* `DivePage.tsx` (`Neighbours`), `lib/logbook.ts` (`diveHref`, `neighbourParams`). *Android:* `DiveDetailScreen.kt`
+  *Web:* `dives/DivePage.tsx` (`Neighbours`), `lib/logbook.ts` (`diveHref`, `neighbourParams`). *Android:* `DiveDetailScreen.kt`
   (`DivePager`, `NeighbourAction`).
 - **Follow merged sites:** a site with `mergedInto` is gone. Open the kept site instead (ADR 0022).
 - **Render Providers from `GET /api/providers`** ([ADR 0027](../decisions/0027-providers-as-adapters.md)): its list is
@@ -238,7 +238,7 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   without `data.dives.export` (Garmin, [ADR 0062](../decisions/0062-garmin-import-only-provider.md)) is import only: it
   has no send, read-back or sending automation, so offer none. Offer only the
   operations it lists (no "Update" or "Delete in …" without `update`/`delete`), show its `notices`, and name it by `name`.
-  *Web:* `lib/providers.ts`, `Connections.tsx`, `ProviderPanel.tsx`.
+  *Web:* `lib/providers.ts`, `account/Connections.tsx`, `dives/ProviderPanel.tsx`.
 - **Use the server's flags for what is allowed** (`canDelete`, `inUse`, `isOwn`, `diveCount`/`deviceCount`, the
   User's `role`). Don't offer what the server would refuse, but never rely on hiding it.
 
@@ -300,7 +300,7 @@ V1 of the native client reads offline: phones lose signal where dives are, and t
 
 ### Signing in and the first start
 - **First start:** if `GET /api/setup` says `needed`, show the setup form. Whoever has the setup token from the
-  server log creates the first admin. Say where the token is (ADR 0012). *Web:* `SignedOut.tsx` (`Setup`).
+  server log creates the first admin. Say where the token is (ADR 0012). *Web:* `account/SignedOut.tsx` (`Setup`).
 - **First start offers two paths:** *Start fresh* (the first-admin form above) or *Restore from backup*: the setup
   token, the archive's key, and either an uploaded `.divehub-backup` archive (`POST /api/setup/restore`,
   multipart; streamed to disk, no fixed upload cap) or one the operator placed in `/data/restore/`
@@ -312,7 +312,7 @@ V1 of the native client reads offline: phones lose signal where dives are, and t
   which side has the key and what to do: the backup was made with a key and this instance has none
   (`setup_restore_key_required`, set it), the backup was made without one and this instance has one
   (`setup_restore_key_unexpected`, unset it), or both have different keys (`setup_restore_key_differs`, use the
-  original instance's key). *Web:* `SignedOut.tsx` (`Setup`), `SetupRestore.tsx`.
+  original instance's key). *Web:* `account/SignedOut.tsx` (`Setup`), `account/SetupRestore.tsx`.
 - **Invitations and reset links:** look the token up first (`/lookup`), then show for whom it is (the e-mail).
   An invalid, used or expired link says so and to ask the admin for a new one. *Web:* `AcceptInvitation`, `ResetPassword`.
 - **Passwords:** 15 to 128 characters, enforced by the server. Say the rule beside the field
@@ -323,23 +323,23 @@ V1 of the native client reads offline: phones lose signal where dives are, and t
 - **Connections** (ADR 0024, 0027, `GET /api/connections`): one per Diver and Provider. Show the account
   (`accountLabel`), whether the password is kept, and the state. `needs_sign_in` means the Provider no longer accepts the
   sign-in: offer "Sign in again" (password and the choice again, or a new token). Connections made before slice 13 start
-  in this state once. *Web:* `Connections.tsx`.
+  in this state once. *Web:* `account/Connections.tsx`.
 - **A token sign-in with a key page and an expiry** ([ADR 0062](../decisions/0062-garmin-import-only-provider.md), Garmin):
   with `signIn.createUrl`, link to the page where the User creates the key. With `signIn.expires`, offer an optional
   expiry date (`keyExpiresOn`, `YYYY-MM-DD`) on connecting and on signing in again; send it only then (400 for a past date
   or another Provider; signing in again without it clears it). The Connection says `keyExpiresOn` and `keyExpiresSoon`
   (from 7 days before the date): then show a notice that the key expires, with the `createUrl` link and "Sign in again".
-  *Web:* `Connections.tsx`.
+  *Web:* `account/Connections.tsx`.
 - **Must ask before claiming an external Diver** (ADR 0028, amended): connecting answers `provider_account_held` when an
   external Diver here holds the account (`diver`: its name and on how many Dives it is). Say so and ask whether that is
   the User; on yes, connect again with the same sign-in and `claim: true` (the external Diver merges into the Diver being
   connected, and its Dives then list that Diver). Say that nothing of those Dives becomes the User's. `provider_account_taken`
-  (another User's Diver has the account) can't be claimed. *Web:* `Connections.tsx` (`ConnectForm`).
+  (another User's Diver has the account) can't be claimed. *Web:* `account/Connections.tsx` (`ConnectForm`).
 - **Display settings:** language and units, each "same as the device" (null) or a choice, saved at once
   (`PATCH /api/me/preferences`). The UI follows them immediately, including number and date input.
-  *Web:* `AccountSettings.tsx`, `main.tsx` (`I18nProvider`), `App.tsx` (`useLanguage`).
+  *Web:* `account/AccountSettings.tsx`, `main.tsx` (`I18nProvider`), `App.tsx` (`useLanguage`).
 - **Sessions:** list them with device, IP address, sign-in and last activity, and mark the current one. Ending
-  another session is immediate; ending the current one is signing out. *Web:* `AccountSettings.tsx` (`Sessions`).
+  another session is immediate; ending the current one is signing out. *Web:* `account/AccountSettings.tsx` (`Sessions`).
 
 - **AI access** (ADR 0035, `GET /api/me/ai-access`): a User lets an LLM client read their logbook through the
   [MCP endpoint](#the-mcp-endpoint).
@@ -357,13 +357,13 @@ V1 of the native client reads offline: phones lose signal where dives are, and t
     once and the log stays.
   - **Show the log** (`GET /api/me/ai-access-log`): time, access, tool, arguments, rows, outcome, newest first. It
     covers revoked accesses and reaches back 90 days; `arguments` never holds search words (`[text]`).
-  *Web:* `AiAccess.tsx`, `lib/ai-access.ts`.
+  *Web:* `account/AiAccess.tsx`, `lib/ai-access.ts`.
 
 ### Admin
 - **AI access** (`GET`/`PUT /api/admin/ai-access`): the switch for the instance, off by default. Say what switching on
   means (Users' data can go to AI providers at their request) and, before switching off, that every key stops at once
   and works again when switched back on. "Revoke all" (`DELETE /api/admin/ai-accesses`) asks first and can't be undone.
-  Admins see how many accesses exist, never whose or what they read. *Web:* `AiAccess.tsx` (`AiAccessSetting`).
+  Admins see how many accesses exist, never whose or what they read. *Web:* `account/AiAccess.tsx` (`AiAccessSetting`).
 - **Admin pages only for admins.** The server refuses anyone else (`admins_only`).
 - **Manual backups** (`GET`/`POST /api/admin/backups`, `GET /api/admin/backups/{id}/download`):
   - `POST` with a `passphrase` (15–1024 characters, the app's password minimum: an archive stored anywhere must resist
@@ -385,13 +385,13 @@ V1 of the native client reads offline: phones lose signal where dives are, and t
   scheduled backup lands on the server's `/data/backups`, that retention keeps the newest scheduled runs and never
   deletes a manual run or the last successful one, and that the operator must keep the private key to restore. On
   `backup_recipient_missing` / `backup_recipient_invalid` say what to paste; on `backup_settings_invalid` show the
-  allowed ranges. *Web:* `BackupsPage.tsx` (both manual and scheduled backups, `#/settings/admin/backups`).
+  allowed ranges. *Web:* `admin/BackupsPage.tsx` (both manual and scheduled backups, `#/settings/admin/backups`).
 - **Client diagnostics** (`GET`/`PATCH /api/admin/client-diagnostics`): one instance switch, off by default. Say that
   switching it on lets signed-in clients upload their local error buffer when a user chooses *Report a problem*, that
   entries are stored redacted for at most 90 days and keep at most the newest 500 rows, and that switching it off refuses new uploads
   but keeps rows already stored until their purge or the next support bundle. The bundle's member is
   `client-diagnostics.ndjson` (`formatVersion` 2), empty while the switch is off.
-  *Web:* `AdminSettings.tsx` (the *Client diagnostics* panel beside *Support bundle*, `#/settings/admin`).
+  *Web:* `account/AdminSettings.tsx` (the *Client diagnostics* panel beside *Support bundle*, `#/settings/admin`).
 - **Support bundle** (`GET /api/admin/support-bundle/preview`, `GET /api/admin/support-bundle/download`): an admin
   previews what an on-demand support archive would contain, then downloads it to send to the developer. The preview
   reports app and schema version, log coverage (`oldestAt`–`newestAt`, entries, dropped entries, size), the redaction
@@ -399,7 +399,7 @@ V1 of the native client reads offline: phones lose signal where dives are, and t
   (`clientDiagnostics.entries`). The bundle stays on the instance
   until the admin downloads it; **e-mail addresses, IP addresses and secrets are masked**. The download is a file
   handoff through a plain authenticated link, its filename set by `Content-Disposition`. Non-admins are refused
-  (`admins_only`). *Web:* `SupportBundlePage.tsx` (`#/settings/admin/support-bundle`).
+  (`admins_only`). *Web:* `admin/SupportBundlePage.tsx` (`#/settings/admin/support-bundle`).
 - **Users:**
   - Don't offer to demote, disable or delete the last enabled admin, or to disable or delete oneself; the
     server refuses those too (ADR 0013).
@@ -436,18 +436,18 @@ V1 of the native client reads offline: phones lose signal where dives are, and t
   chose. Say how many dives of a kind were left out (`found[kind]` for the kinds not in `kinds`) and how many files
   were no dives (`found.otherFiles`; they are not kept and not listed in `outcome`). An outcome can have dozens of
   lines (an account export): count them by result instead of listing each.
-  *Web:* `ImportPanel.tsx` (`ImportChoice`, `LeftOut`).
+  *Web:* `imports/ImportPanel.tsx` (`ImportChoice`, `LeftOut`).
 - **Name the files that weren't sent** (a dropped `.gpx`), so the User learns why they didn't arrive.
 - **Each file's outcome:** created, attached, updated, unchanged ("already imported": the same User sent the same
   content before), Duplicate candidate, skipped (for example a Device of another User's Diver, or `deleted_earlier`: the
   dive was deleted, say where to restore it), failed. Link to the Dive where there is one, and say what became of a
-  Duplicate candidate since. *Web:* `ImportPanel.tsx` (`ImportRow`).
+  Duplicate candidate since. *Web:* `imports/ImportPanel.tsx` (`ImportRow`).
 - **An import from a Provider** (`provider` set, [ADR 0030](../decisions/0030-importing-dives-from-providers.md)) is named
   by the Provider ("Dives from SSI"; `uploadName` is its name) and has one outcome per dive there (`remoteId`,
   `remoteNumber`), often dozens: sum them up by result and reason rather than listing each. Its own results and reasons:
   `linked` (a logbook entry tied to a Dive here and filled where it was empty), `sent_by_dive_hub`, `no_match` (the import
   only adds), `ambiguous` (several Dives here and no decision that still fits; say to choose one in the preview),
-  `left_out` (the User's decision). *Web:* `ImportPanel.tsx` (`ProviderImportSummary`).
+  `left_out` (the User's decision). *Web:* `imports/ImportPanel.tsx` (`ProviderImportSummary`).
 - **New words to translate (ADR 0062):** reasons `entered_by_hand` (a dive entered by hand at a Provider whose dives come
   as files: no file is behind it), `kind_not_chosen` (a dive of a kind the Connection doesn't fetch), `already_here` (a
   downloaded file's Recording is here already; a fetch never replaces one) and `unavailable` (the Provider didn't answer
@@ -459,7 +459,7 @@ V1 of the native client reads offline: phones lose signal where dives are, and t
   - A value set by hand is marked "edited", with what the recording says, as visible text and not a tooltip.
   - The User can give a field back to the recording (`reset`).
   - While editing, mark a field as edited while typing, not on blur (nothing should move under a pointer about
-    to press Save). *Web:* `DivePage.tsx`, `DiveEditForm.tsx`.
+    to press Save). *Web:* `dives/DivePage.tsx`, `dives/DiveEditForm.tsx`.
 - **The number** ([ADR 0048](../decisions/0048-dive-numbers.md)): `values.number` on the detail and `number` in the list are the
   Dive's place in its Diver's logbook, worked out by the server: **never offer a field for it**; `PATCH` with `set.number` or
   `reset: ['number']` answers 400, and `overrides` never names it. It is `null` for a Deleted dive and for an apnea session of a
@@ -467,16 +467,16 @@ V1 of the native client reads offline: phones lose signal where dives are, and t
   merged, moved or re-timed, or when the Diver's settings change, **without** a new `version` or a Revision: don't treat a changed
   number as a conflict. The computer's own counter is `recordings[].summary.diveNumber`; show it as "Number on the computer"
   with the Recording, not as the Dive's number. A link or a note that says "Dive 57" can mean another Dive later: link by id.
-  *Web:* `DiveEditForm.tsx` (no field), `DivePage.tsx`.
+  *Web:* `dives/DiveEditForm.tsx` (no field), `dives/DivePage.tsx`.
 - **Time:** a Dive's start is UTC plus the UTC offset at the dive. Show and edit it as the local time at the dive.
   The offset is edited in quarter hours. Without a known offset, the device's time zone stands in.
-  *Web:* `DiveEditForm.tsx`, `lib/units.ts`.
+  *Web:* `dives/DiveEditForm.tsx`, `lib/units.ts`.
   - **`utcOffsetSource: unknown`** ([ADR 0030](../decisions/0030-importing-dives-from-providers.md)): the start is a local
     time logged without a time zone and kept as if it were UTC. Show it in UTC without an offset (as it was logged), never
     in the browser's time zone. The Dive, the dive list and the deleted Dives carry `utcOffsetSource`.
   - **Must say where the time zone came from** when it isn't the device (`position`: where the dive was; `nearby`: the
     Diver's dives in the days around it; `unknown`: the time is shown as logged), unless the User set the start by hand
-    (`startsAt` in `overrides`). *Web:* `DivePage.tsx` (`TimeZoneNote`).
+    (`startsAt` in `overrides`). *Web:* `dives/DivePage.tsx` (`TimeZoneNote`).
 - **Notes** are the Dive's own; an empty text clears them (`null`).
 - **Recordings:**
   - Name them by their Device ("Garmin Descent Mk3 (777)"), not "Recording 2" (ADR 0016).
@@ -485,22 +485,22 @@ V1 of the native client reads offline: phones lose signal where dives are, and t
   - **A joined Recording's parts** (`partOf`: the id of the joined Recording they went into, [ADR 0063](../decisions/0063-dive-continuation.md)):
     list them under the joined Recording, named by their Device and time ("Garmin Descent Mk3 (777), 08:05"), not as more
     computers. A part is never Primary and never split off or made primary on its own (`recording_is_part`, 400): offer
-    neither; the joined Recording goes with its parts. *Web:* `DivePage.tsx`.
+    neither; the joined Recording goes with its parts. *Web:* `dives/DivePage.tsx`.
   - **A Dive without a Recording** (`recordings` empty, ADR 0030) was made from a Provider's logbook entry
     (`fromProvider`): say so, naming the Provider, and that the dive computer's file adds its Recording, which then becomes
-    primary and its values replace these. There is no profile. *Web:* `DivePage.tsx` (`NoRecording`).
+    primary and its values replace these. There is no profile. *Web:* `dives/DivePage.tsx` (`NoRecording`).
 - **Moving a Dive** to another Diver the User manages names that Diver; the Dive's site and values stay.
   - **A Dive linked to a Provider moves as a copy** ([ADR 0038](../decisions/0038-logbook-checks-and-merging-dives.md)):
     the answer of `POST /api/dives/{id}/move` then has another `id`. **Must say so before** (the Dive is at a Provider
     when `GET /api/dives/{id}/providers` has a `current`): it moves as a copy, the dive here goes to the deleted dives,
     so that Provider's next import doesn't bring it back. Afterwards show the Dive of the answer; the old one answers 404
-    and is listed in `GET /api/dives/deleted` with `movedTo`. *Web:* `DivePage.tsx` (`MoveDialog`).
+    and is listed in `GET /api/dives/deleted` with `movedTo`. *Web:* `dives/DivePage.tsx` (`MoveDialog`).
 - **Merging two Dives** ([ADR 0038](../decisions/0038-logbook-checks-and-merging-dives.md)): the same descent logged twice
   (a logbook entry and its computer's file whose times didn't match at first, or two entries).
   - **Must offer to merge a Dive with another by hand,** for the pairs no rule finds:
     `GET /api/dives/{id}/merge-candidates?scope=nearby` lists the Diver's other Dives from the local day before to the day
     after, in order of their start. Show each as in the hint below and let the User choose one; then the same dialog and
-    the same merge. `rule` is null where the two break no logbook check. *Web:* `MergeDive.tsx` (`MergePicker`).
+    the same merge. `rule` is null where the two break no logbook check. *Web:* `dives/MergeDive.tsx` (`MergePicker`).
   - **Must say on a Dive that another Dive of its Diver was at the same time** (`GET /api/dives/{id}/merge-candidates`
     not empty): show that Dive (time, duration, depth, site, with or without a recording), link to it, and offer to merge
     the two. Never merge unasked: two overlapping Dives can be two dives with wrongly typed times.
@@ -519,7 +519,7 @@ V1 of the native client reads offline: phones lose signal where dives are, and t
     On a provider_* error nothing is merged: say so with the reason.
   - `POST /api/dives/{id}/merge` with `version`, `otherId`, `otherVersion` (`dive_changed` 409, `merge_not_possible` 400
     for the same Dive or Dives of two Divers). **The answer is the kept Dive, which may be the other one: follow its
-    `id`.** *Web:* `MergeDive.tsx`.
+    `id`.** *Web:* `dives/MergeDive.tsx`.
 - **Appending a Continuation** ([ADR 0063](../decisions/0063-dive-continuation.md)): a dive the dive computer cut in two
   because the diver was at the surface (the Dives are one Diver's, each with one Recording of the same Device). The later
   Dive is appended to the earlier one: the Dive becomes one, its Primary recording a joined Recording whose profile runs
@@ -527,7 +527,7 @@ V1 of the native client reads offline: phones lose signal where dives are, and t
   - **Must offer to append a Dive to the one before it by hand** (`GET /api/dives/{id}/continuation-candidate`: the
     Diver's Dive just before this one, or null; no time limit, but a Dive that starts exactly when the earlier ends can't be
     appended, the gap must be more than 0). Show that Dive and the Surface break's length (`breakSeconds`), then
-    the dialog; never append unasked. *Web:* `AppendDive.tsx`, the menu "An den vorherigen Tauchgang anhängen…".
+    the dialog; never append unasked. *Web:* `dives/AppendDive.tsx`, the menu "An den vorherigen Tauchgang anhängen…".
   - **The dialog says which Dive stays** (the earlier one, `POST /api/dives/{id}/continuation` is sent to it) and which
     goes to "Deleted dives" and can be restored; that the kept Dive takes over what it lacks (site, buddies, values; notes
     appended), and a link to a Provider goes to it where it has none. **Ask about each Provider both are at** (`bothAt`) as
@@ -538,25 +538,25 @@ V1 of the native client reads offline: phones lose signal where dives are, and t
     `continuation_not_possible` 400). **The answer is the kept Dive: it is the Dive asked.**
   - **Show the Surface breaks in the profile:** the Primary recording's `summary.surfaceBreaks` (`startS`, `endS`, seconds
     from its start) mark where the parts meet; draw them as a band at the surface, and show each break's length with the
-    duration, in the app's duration format. Draw no rate across the edges. *Web:* `DepthProfile.tsx`, `DivePage.tsx`.
+    duration, in the app's duration format. Draw no rate across the edges. *Web:* `dives/DepthProfile.tsx`, `dives/DivePage.tsx`.
 - **Deleted dives that went somewhere** (`mergedInto`, `movedTo` in `GET /api/dives/deleted`): say that the Dive was
   merged into another or moved to another Diver, with a link to that Dive. Restoring one brings it back without the
-  Recordings and links it gave away. *Web:* `DeletedDives.tsx`.
+  Recordings and links it gave away. *Web:* `review/DeletedDives.tsx`.
 - **Deleted dives an append took** (`continuedInto` in `GET /api/dives/deleted`): say that the Dive was appended to that
   Dive as its continuation, with a link. **List the Dives of one append as one entry** (`appendedWith` names the others,
   in start order). **Before restoring, say which Dives come back** (`GET /api/dives/{id}/restore-preview`: `comesBack`,
   ids): restoring undoes the whole append and every later append to the same joined Recording, so also those Dives. Each
   comes back with its Recording as its Primary one; the joined Recording is rebuilt from what remains. The server records
-  "two dives" for the pairs it separated, so the logbook check doesn't ask about them again. *Web:* `DeletedDives.tsx`.
+  "two dives" for the pairs it separated, so the logbook check doesn't ask about them again. *Web:* `review/DeletedDives.tsx`.
 - **History:** a merge is the cause `merge` on the kept Dive (changes `mergedFrom`, the values, site, notes and
   `participants` it took, `providers` for each link taken over), after an `attach` per Recording that came across; the
   other Dive's last entry is `merge` with `mergedInto`. A Dive moved as a copy starts with `move` and `movedFrom`; the old
-  one ends with `move` and `movedTo`. These changes name deleted Dives: tell them, don't link them. *Web:* `DiveHistory.tsx`.
+  one ends with `move` and `movedTo`. These changes name deleted Dives: tell them, don't link them. *Web:* `dives/DiveHistory.tsx`.
   An append is the cause `continuation` on the kept Dive (the joined Recording as `recordings`, `appendedFrom`, the values
-  and links taken) and on each later Dive (`continuedInto`); an undo by restoring is `continuation-undo`. *Web:* `DiveHistory.tsx`.
+  and links taken) and on each later Dive (`continuedInto`); an undo by restoring is `continuation-undo`. *Web:* `dives/DiveHistory.tsx`.
 - **Deleting a Dive** ([ADR 0026](../decisions/0026-deleting-dives.md), `DELETE /api/dives/{id}` with `version`):
   - **Must say what happens** before: it leaves the logbook, its counts and search; it can be restored; importing its
-    file again doesn't bring it back. *Web:* `DeleteDive.tsx`.
+    file again doesn't bring it back. *Web:* `dives/DeleteDive.tsx`.
   - **Must ask about every Provider the Dive is at in the same dialog** (`GET /api/dives/{id}/providers`, each `current`):
     "Delete here and in SSI" (`alsoAt: ['ssi']`) or "Delete only here", saying SSI's app can't bring it back. Without a
     Connection for its Diver at a Provider, say it stays there and don't offer deleting it there. Don't preselect either.
@@ -567,7 +567,7 @@ V1 of the native client reads offline: phones lose signal where dives are, and t
     deleted, the refusal's `providers` says so (`copy: deleted`): say which copy is gone. *Web:* says "Nothing was
     deleted", which holds while SSI is the only Provider that deletes.
   - Afterwards leave the dive page (it answers 404 now) and say what happened (`providers`: each with `copy` `deleted` or
-    `kept`), with **Undo** (restore), which doesn't time out. Undo brings it back here only. *Web:* `DeletedDives.tsx`.
+    `kept`), with **Undo** (restore), which doesn't time out. Undo brings it back here only. *Web:* `review/DeletedDives.tsx`.
 - **Deleted dives** (`GET /api/dives/deleted`): offer to restore them (`POST /api/dives/{id}/restore` with `version`).
   The list is a page, newest deletion first: `limit` (1–200, default 25) and `cursor` from the previous answer's
   `nextCursor`; `total` is every deleted Dive. Never assume `dives` is all of them. `stillAt` at the page's top level
@@ -576,22 +576,22 @@ V1 of the native client reads offline: phones lose signal where dives are, and t
     with "Delete in SSI" per Provider (`DELETE /api/dives/{id}/providers/{provider}`, confirmed), and where the User
     lands (the logbook). Offer "Keep it in SSI": the User keeps those copies there, so the reminder goes and stays away
     on later visits; a Dive deleted later brings it back. Keep it on the client (the web client: `localStorage`), not
-    on the account. *Web:* `DeletedDives.tsx` (the list's "Load more").
+    on the account. *Web:* `review/DeletedDives.tsx` (the list's "Load more").
   - **Must show `waiting`** (the queue of Waiting pushes): a `delete` that waits goes out at `dueAt` ("Will be deleted in
     {{provider}} in {{minutes}} min"); a `held` one says why (`reason`), a `stopped` one "Couldn't delete it in {{provider}}:
     {{reason}}" (the problem code's text).
   - **A Dive may disappear:** 30 days after its last Provider copy is gone it is purged
     ([ADR 0072](../decisions/0072-purging-deleted-dives.md)). The list simply no longer names it and it can't be restored;
-    no request changes. *Web:* `DeletedDives.tsx`.
+    no request changes. *Web:* `review/DeletedDives.tsx`.
 - **History:** a restored Dive's history shows "Deleted" and "Restored" (causes `delete`, `restore`; their change
-  `deletedAt` needs no line of its own). *Web:* `DiveHistory.tsx`.
+  `deletedAt` needs no line of its own). *Web:* `dives/DiveHistory.tsx`.
 - **History:** an import from a Provider writes `fill` (what a Dive lacked, from the Provider's dive: `site`,
   `participants`, `notes`); a Dive made from a logbook entry starts with `import-create` and the change `fromProvider`;
-  the change `utcOffsetSource` names where the time zone came from before and after. *Web:* `DiveHistory.tsx`.
+  the change `utcOffsetSource` names where the time zone came from before and after. *Web:* `dives/DiveHistory.tsx`.
 - **History:** Revisions newest first, translated by `cause`. The web client groups one person's edits within ten
-  minutes into one entry, and shows three entries before "Show the whole history". *Web:* `DiveHistory.tsx`, `lib/history.ts`.
+  minutes into one entry, and shows three entries before "Show the whole history". *Web:* `dives/DiveHistory.tsx`, `lib/history.ts`.
 - **The depth profile needs a text alternative:** a summary (deepest point and when, duration, temperature range)
-  and the samples per minute as a table (WCAG 1.1.1). *Web:* `DepthProfile.tsx`, `lib/profile.ts`.
+  and the samples per minute as a table (WCAG 1.1.1). *Web:* `dives/DepthProfile.tsx`, `lib/profile.ts`.
 - **Read the profile where it is touched** (Android, FAH-337): a tap or horizontal drag on the drawn depth profile
   reads the moment under the finger — time into the dive, depth, temperature and each tank pod's pressure, each the
   nearest sample — in a readout strip above the chart, with a scrub line and a dot on the depth trace. Each tank is
@@ -605,7 +605,7 @@ V1 of the native client reads offline: phones lose signal where dives are, and t
   `tankVolumeL`, `startPressureBar` and `endPressureBar`, and the pod's `sacLpm`. Show the pressure over time on the
   profile's time axis, not as a third scale in the depth profile; tell several tanks apart by more than colour. Say
   the same in words (per tank: start, end, used; the pod's SAC) and in the profile's table. The series in their order
-  belong to the gases that carry pressures, in theirs. *Web:* `DepthProfile.tsx`, `lib/tanks.ts`.
+  belong to the gases that carry pressures, in theirs. *Web:* `dives/DepthProfile.tsx`, `lib/tanks.ts`.
 - **Cylinders** ([ADR 0045](../decisions/0045-tank-pressure-cylinders-and-sac-on-a-dive.md)): show a Dive's
   `cylinders` in their order, each in words (size, material, working pressure, gas, start and end pressure and what
   was used), and say which are `fromPod`. Editing sends the whole list with the Dive's edit (`cylinders` in
@@ -618,7 +618,7 @@ V1 of the native client reads offline: phones lose signal where dives are, and t
   2 x half its volume). "Same as last dive" (`GET /dives/{id}/same-as-last`) fills the form only; nothing is saved
   until the User saves. A tank under the profile whose series a Cylinder is tied to takes the Cylinder's gas, size and
   pressures. The history's change `cylinders` carries the list before and after.
-  *Web:* `Cylinders.tsx`, `lib/cylinders.ts`, `lib/tanks.ts`.
+  *Web:* `components/Cylinders.tsx`, `lib/cylinders.ts`, `lib/tanks.ts`.
 - **Lead, weighting feedback and exposure suit** ([ADR 0031](../decisions/0031-lead-suit-cylinders-and-lead-estimate.md#slice-a-as-built-the-dives-values)):
   show a Dive's `lead` (its entries with where each was carried, and `leadTotalKg`; **no entries is unknown, a total of 0
   is "no lead"**: say the two apart), its `weightingFeedback` (`felt`, with `amountKg` where given) and its `suit`
@@ -631,14 +631,14 @@ V1 of the native client reads offline: phones lose signal where dives are, and t
   prefilled. "Same as last dive" (`GET /dives/{id}/same-as-last`) also answers `lead` and `suit`, never the feedback:
   fill only what the form has none of, and save nothing until the User saves. The history's changes `lead`,
   `weightingFeedback` and `suit` carry the value before and after.
-  *Web:* `Weighting.tsx`, `lib/weighting.ts`.
+  *Web:* `dives/Weighting.tsx`, `lib/weighting.ts`.
 - **SAC on this dive** ([ADR 0045](../decisions/0045-tank-pressure-cylinders-and-sac-on-a-dive.md)): show the Dive's
   `sac.litresPerMinute` (L/min, one decimal, in both unit systems) with its Cylinders, and `sac.barPerMinute` beside it
   when it is not `null` (bar/min with one decimal, or psi/min whole). Don't compute it yourself: the server counts
   real gas. Where `sac` is `null` and `sacMissing` is set, say what is missing: `cylinder_incomplete` (every Cylinder
   needs its volume and both pressures), `no_average_depth`, `too_short` (under 15 minutes). A tank pod's own SAC
   (`sacLpm` of the Recording) stays with the pressure strip, named as the pod's: the two may differ.
-  *Web:* `Cylinders.tsx`.
+  *Web:* `components/Cylinders.tsx`.
 - **A Dive's position is private.** Show it only to the Users who manage the Diver, as the API does.
 - **Participants** (ADR 0028, `participants` on the Dive): buddies, guides and instructors (`role`), any Diver of the
   instance but the Dive's own. Add them from a live search over every Diver by name (`GET /api/divers/search`, saying
@@ -646,14 +646,14 @@ V1 of the native client reads offline: phones lose signal where dives are, and t
   (`POST /api/external-divers`), and save the whole list with the Dive's version (`PUT /api/dives/{id}/participants`;
   `dive_changed` 409, `participant_invalid` for a Diver twice or the Dive's own). A role can be changed in place (the same
   route, the whole list). Every remove button and role field names the person. The history shows who was added (with the role) and who was removed (change `participants`).
-  *Web:* `Participants.tsx`, `DiveHistory.tsx`.
+  *Web:* `dives/Participants.tsx`, `dives/DiveHistory.tsx`.
 - **Water type** (ADR 0025): the Dive's `waterType` is its site's and can't be edited on the Dive. Without a site,
   suggest choosing one; with a site that has none, say it isn't known for the site. Label the Recording's
   `summary.waterType` as the computer's water setting ("Water setting on the computer"), not as the Dive's water.
-  *Web:* `DivePage.tsx` (`WaterFact`, `RecordingDetails`).
+  *Web:* `dives/DivePage.tsx` (`WaterFact`, `RecordingDetails`).
 - **Must say when the computer was set to other water** (`waterMismatch`): name both ("Your computer was set to salt
   water; this site is fresh water.") and how the depths read: `depthPercent` negative reads shallow, positive deep,
-  rounded ("about 2 % shallow"); `null` means they may read a little off. Depths are not corrected. *Web:* `DivePage.tsx`.
+  rounded ("about 2 % shallow"); `null` means they may read a little off. Depths are not corrected. *Web:* `dives/DivePage.tsx`.
 
 ### The dive assessment
 Dive Hub comments on a diver's practice here, so the wording is part of the contract (ADR 0036). `GET /api/dives/{id}/assessment`
@@ -664,7 +664,7 @@ returns findings from fixed rules; the client words them.
   full text: that decompression sickness can happen within every limit, and which symptoms to watch for. A client
   without "one step away" (a script, the MCP tool) gives the full text every time
   ([ADR 0036, amendment of 2026-10-07](../decisions/0036-dive-assessment.md#amendment-2026-10-07-compact-presentation-ui-redesign-slice-a)).
-  *Web:* `Assessment.tsx` (`FixedNote`).
+  *Web:* `dives/Assessment.tsx` (`FixedNote`).
 - **May show a finding as one row and its details on demand,** and findings of severity `info` behind one line that
   counts and names them. Then the row says what was measured, and nothing a finding has is left out of its details.
 - **Must not show or compute a score,** a grade, a colour for the whole dive, or a ranking of dives by findings. At most
@@ -689,17 +689,17 @@ returns findings from fixed rules; the client words them.
 - **The no-fly time** (`noFly`, on the last dive of a diving day, else null) is information beside the findings: show it
   apart from them with its `source`, don't count it, and offer nothing to dismiss.
 - **Muted rules are listed with their Diver** (`mutedRules` of `GET /api/divers`), each with a way to show it again: a
-  muted rule shows on no Dive, so the User needs a place to find it. *Web:* `DiverPage.tsx` (`MutedRules`).
+  muted rule shows on no Dive, so the User needs a place to find it. *Web:* `divers/DiverPage.tsx` (`MutedRules`).
 - **Computer events** (`computerEvents`) are what the dive computer noted. Show them apart from the findings ("your
   computer noted"), never merged, and without the client's own judgement.
 - **The profile's colours** (`ascentBands`: above 4, 9 and 18 m/min) need a legend and the same in words; they must not
   rest on colour alone.
 - `applies: false`: the rules don't cover this kind of dive; say so. `current: false`: the Dive waits to be assessed with
   newer rules; say so and offer to reload.
-- *Web:* `Assessment.tsx`, `DepthProfile.tsx`, `DiveList.tsx`.
+- *Web:* `dives/Assessment.tsx`, `dives/DepthProfile.tsx`, `dives/DiveList.tsx`.
 
 ### Sending a Dive to a Provider (SSI)
-From `GET /api/dives/{id}/providers/{provider}` and the Provider's capabilities (ADR 0024, 0027). *Web:* `ProviderPanel.tsx`.
+From `GET /api/dives/{id}/providers/{provider}` and the Provider's capabilities (ADR 0024, 0027). *Web:* `dives/ProviderPanel.tsx`.
 Each change there answers the new status, so the panel needs no second fetch: "Set number" and the delete answer it as
 `GET` does; the send answers its own result with the status in `status`.
 - **A Provider's numbers** ([ADR 0048](../decisions/0048-dive-numbers.md)): a Provider whose `data.dives.export.numbers` isn't null can be
@@ -718,7 +718,7 @@ Each change there answers the new status, so the panel needs no second fetch: "S
   `numbersRemovingVerification: true`, showing the preview's `numberPlan` first; without `diveId` (a dive only at the
   Provider) say so and lead to the Connection's import. "Set number" itself stays one save and still refuses.
   `provider_numbers_off`, `provider_number_nothing_to_set` (fetch the status again), and a send's codes. *Web:*
-  `ProviderPanel.tsx`, `ProviderDiveNumbers.tsx`, `NumberChain.tsx`.
+  `dives/ProviderPanel.tsx`, `providers/ProviderDiveNumbers.tsx`, `providers/NumberChain.tsx`.
 - **Show where the Dive is there:** not there yet, or its dive number there and when it was sent, with "changed since
   sent" when `current.upToDate` is false. Offer "Send to SSI", or "Update in SSI" when the Provider offers `update`.
   A Provider with `delivery: handed_over` gives no ID back: say when it was handed over, and that sending again adds
@@ -789,7 +789,7 @@ Each change there answers the new status, so the panel needs no second fetch: "S
   update changes the dive's start time there, and SSI then drops a dive centre's verification of the entry; it is
   also true when what is at the Provider is unknown). Say it before the User sends, and after the update that the
   verification is gone. Where the Dive has `verificationCodes`, lead to them from both
-  ([Dive centres](#dive-centres-and-verification-codes)). *Web:* `ProviderPanel.tsx`.
+  ([Dive centres](#dive-centres-and-verification-codes)). *Web:* `dives/ProviderPanel.tsx`.
 - **Must ask before "Delete in SSI"**, saying SSI's app can't bring it back and the Dive stays here. Deleting the Dive
   itself asks about every Provider in its own dialog ([Dives](#dives)).
 - **Show what went wrong:** the latest Push's `failureCode` (with the Provider's name), and its read-back `differences`
@@ -876,13 +876,13 @@ repeatedly).
 - **Dismissal belongs to the run:** `POST /api/push-runs/{id}/dismiss` (an ended run only; again changes nothing) sets
   `dismissedAt`, and every client of the User sees it. Don't keep it per device. Show a run as the strip only while it goes or
   while it is the newest and `dismissedAt` is null. Continuing a stopped run clears `dismissedAt`.
-- *Web:* `PushRun.tsx` (`SendToProvider` in the logbook's toolbar with its `SendDialog`, which owns the selection; `PushRunStrip` above the list, `RunMark` in the navigation); the ended run's Dismiss is
+- *Web:* `providers/PushRun.tsx` (`SendToProvider` in the logbook's toolbar with its `SendDialog`, which owns the selection; `PushRunStrip` above the list, `RunMark` in the navigation); the ended run's Dismiss is
   stored on the server (`dismissedAt`).
 
 ### Importing dives from a Provider (SSI)
 From the Connection (`diveImport` on `GET /api/connections`, null when the Provider imports no dives) and the
 Provider's capabilities (`dives.import` with `list`), [ADR 0030](../decisions/0030-importing-dives-from-providers.md).
-*Web:* `ProviderDiveImport.tsx`, under the Connection.
+*Web:* `imports/ProviderDiveImport.tsx`, under the Connection.
 - **Dives that come as files** ([ADR 0062](../decisions/0062-garmin-import-only-provider.md), `data.dives.asFiles` true,
   Garmin): the import only decides whether to fetch. Offer fetch or nothing (send `mode` `add` or `off`), and show no
   add-or-create choice, no matching window, no computers, sites, decisions or conflicts: each new dive's file is placed
@@ -932,12 +932,12 @@ Provider's capabilities (`dives.import` with `list`), [ADR 0030](../decisions/00
 - **Admins: sites from a Provider's site data** (`GET /api/admin/provider-site-data`; `PUT …/{provider}`): must show the
   Provider's missing licence and that allowing it is the operator's decision and risk, and send `confirm: true` only after
   the admin ticked that (`provider_site_data_not_confirmed`); show who allowed it and when, and offer stopping it.
-  *Web:* `AdminSettings.tsx` (`ProviderSiteData`).
+  *Web:* `account/AdminSettings.tsx` (`ProviderSiteData`).
 
 ### Dives gone at a Provider
 ([ADR 0051](../decisions/0051-dives-gone-at-a-provider.md); `GET /api/gone-dives`,
 `POST /api/connections/{id}/gone-dives/check`, `POST /api/connections/{id}/gone-dives/confirm`, and `goneDives` in the
-import preview.) *Web:* `GoneDives.tsx`, the Review page, the logbook's strip and the Connection.
+import preview.) *Web:* `imports/GoneDives.tsx`, the Review page, the logbook's strip and the Connection.
 - **A check is a read, not a decision.** `check` reads the account's whole logbook once (a paced action; works with the
   import off) and stores what it finds: `{ empty, compared, gone, warning }`. It changes no Dive. Say "nothing was
   changed" and link to where the findings wait. `empty` means the logbook came back with no dive: say so and that
@@ -975,13 +975,13 @@ or `create`). An `exists` entry leaves the list once chosen; a `conflict` entry 
 settles: show it as waiting, without the choices, and take it from `queued` (not from client state: a reload or a second
 device shows the same). A Conflict found again after the choice has `queued: false`: ask again. Tell the kinds by `kind`; a client that doesn't know a kind shows
 the Dive with a link to its page.
-*Web:* `ProviderConflicts.tsx` (the choice per field, on the Dive's page where the send button was, and on the Review
-page), `ProviderConflictsSection.tsx` (the Review section), `PushRun.tsx` (the run report's line).
+*Web:* `providers/ProviderConflicts.tsx` (the choice per field, on the Dive's page where the send button was, and on the Review
+page), `providers/ProviderConflictsSection.tsx` (the Review section), `providers/PushRun.tsx` (the run report's line).
 
 ### Sending by itself
 ([ADR 0056](../decisions/0056-two-way-exchange-and-automation.md); the settings of a Connection, the queue of Waiting
 pushes, the scheduled fetch.) A Connection can send a changed or new Dive, delete at the Provider, and fetch the account's
-dives, all off until the User turns them on. *Web:* `ProviderAutomation.tsx` (settings, summary, offer), `WaitingPush.tsx`, `ProviderConflictsSection.tsx` (decisions).
+dives, all off until the User turns them on. *Web:* `providers/ProviderAutomation.tsx` (settings, summary, offer), `providers/WaitingPush.tsx`, `providers/ProviderConflictsSection.tsx` (decisions).
 - **Settings** (`PATCH /api/connections/{id}`): `sendChanges` ("Send changes automatically"), `sendNewDives` ("Send new
   dives automatically"), `deleteAtProvider` ("Delete at {{provider}} when I delete here", with the help text: restoring the
   dive later creates it at {{provider}} again as a new entry, and a verification it had there is lost; Dive Hub can't see
@@ -1021,7 +1021,7 @@ dives, all off until the User turns them on. *Web:* `ProviderAutomation.tsx` (se
 - **An Import's result links to that offer** (`unsentTo` on `GET /api/imports` and `/api/imports/{id}`: per Connection of
   the User that left the Import's new Dives out, `connectionId`, `provider` and `count`, how many of them are still
   unsent): say "{{count}} new dives weren't sent to {{provider}} by themselves" with a link to that Connection's settings,
-  where the offer is. Empty: say nothing. *Web:* `ImportPanel.tsx` (`#/settings/connections?connection=<id>`).
+  where the offer is. Empty: say nothing. *Web:* `imports/ImportPanel.tsx` (`#/settings/connections?connection=<id>`).
 - **Must call `POST /api/connections/fetch-due` once per app start** (after sign-in); it answers `{ queued }`, fetches
   nothing itself, and queues a fetch only for Connections with the schedule on whose last fetch is more than an hour
   old. Don't poll it.
@@ -1043,7 +1043,7 @@ dives, all off until the User turns them on. *Web:* `ProviderAutomation.tsx` (se
   same depth sketch the logbook rows carry ([ADR 0041](../decisions/0041-logbook-profile-sketch.md)), for drawing
   its card; `null` when the Dive has no current assessment (no Recording, or an assessment of a Recording it no longer
   has as Primary).
-- **Draw every pair's card as a timeline** (`DecisionTimeline.tsx`): both Dives on one wall-clock axis with their
+- **Draw every pair's card as a timeline** (`review/DecisionTimeline.tsx`): both Dives on one wall-clock axis with their
   local start times (and end times), and the space between the two bars labeled with how far apart they are; a
   visually-hidden summary carries the same in text. For `entry_apart_from_recording` this replaces the rule's text, also
   when it is the only kind in the list (the list's heading says "at the same time", which isn't so here); the rule's text
@@ -1068,7 +1068,7 @@ dives, all off until the User turns them on. *Web:* `ProviderAutomation.tsx` (se
   them and each break's length (the app's duration format). Offer **Anhängen** with text that says what happens (one Dive;
   the later ones go to "Deleted dives" and can be restored), the append of [Dives](#dives) to the first Dive with all the
   others (`POST /api/dives/{id}/continuation`), and "they are two dives". It is **never `obvious`** and never in
-  `merge-candidates`: appended only by the User's own click, never in one go. *Web:* `LogbookChecks.tsx`.
+  `merge-candidates`: appended only by the User's own click, never in one go. *Web:* `review/LogbookChecks.tsx`.
   - "They are two dives" on a chain answers every pair of it; "Ask again" on an answered chain reopens all its pairs.
 - **Never merge unasked.** Offer per pair: merge (the merge dialog of [Dives](#dives), with `other.keeps` and
   `other.bothAt`), and "they are two dives" (`PUT /api/logbook-checks/answer` with both ids and `two_dives`). Say that a
@@ -1081,8 +1081,8 @@ dives, all off until the User turns them on. *Web:* `ProviderAutomation.tsx` (se
 - A Recording split off its Dive, or made a Dive of its own from a Duplicate candidate, is answered by the server as two
   dives: such a pair is not listed until it is asked about again.
 - The dive page's hint (`merge-candidates`) leaves out pairs with `answered`.
-- The checks change with every import, edit, merge, move and delete: read them again then. *Web:* `LogbookChecks.tsx`,
-  `Decisions.tsx` (their query sits under the dives'). Count both kinds where the client says how much waits.
+- The checks change with every import, edit, merge, move and delete: read them again then. *Web:* `review/LogbookChecks.tsx`,
+  `review/Decisions.tsx` (their query sits under the dives'). Count both kinds where the client says how much waits.
 
 ### Buddy suggestions
 ([ADR 0070](../decisions/0070-buddy-suggestions-and-joint-dives.md); `GET /api/buddy-suggestions`,
@@ -1119,7 +1119,7 @@ dives, all off until the User turns them on. *Web:* `ProviderAutomation.tsx` (se
   as pending once more. The same 404 and `suggestion_not_pending` refusals as accepting apply.
 - **Changing the Participants or deleting the suggested Dive** changes the list; a claim or merge that gives a pending
   suggestion its first audience (ADR 0028) makes it appear for the new managers. The `buddySuggestion` live hint names
-  the suggestion to refetch (accepting and declining emit it too), as every hint does. *Web:* `BuddySuggestions.tsx`
+  the suggestion to refetch (accepting and declining emit it too), as every hint does. *Web:* `review/BuddySuggestions.tsx`
   (the Review page's "To decide" part); its count joins the Review strip and the navigation's "to decide" count.
 
 ### Duplicate candidates
@@ -1130,7 +1130,7 @@ dives, all off until the User turns them on. *Web:* `ProviderAutomation.tsx` (se
   added to a Dive by itself, so it waits beside every Dive in reach, even one whose values agree. Show every reason in
   words; the same value is an Import outcome's `reason`.
 - **Three decisions:** add to one of those Dives, make it a Dive of its own, or discard. Discard offers Undo, and
-  discarded ones can be shown and reopened ("Decided"). *Web:* `Decisions.tsx`, `ReviewPage.tsx`.
+  discarded ones can be shown and reopened ("Decided"). *Web:* `review/Decisions.tsx`, `review/ReviewPage.tsx`.
 - **No Dives left** (they were deleted, ADR 0026): say so; making it a Dive of its own and discarding remain.
 - **Several candidates at once:** every button names the Recording or Dive it acts on (in its accessible name).
 
@@ -1142,16 +1142,16 @@ dives, all off until the User turns them on. *Web:* `ProviderAutomation.tsx` (se
   - Two Divers with the same name are allowed, but warn about it.
   - **Dive numbers** ([ADR 0048](../decisions/0048-dive-numbers.md)): `divesBefore` (integer 0 to 100 000, "Dives before this logbook") and
     `apneaCounts` ("Count apnea sessions", on by default) are set with `PATCH /api/divers/{id}` (`name` is optional now; at
-    least one field). The numbers follow at once: refresh the logbook and open Dives afterwards. *Web:* `DiverPage.tsx`.
-  - *Web:* `DiversPage.tsx`.
+    least one field). The numbers follow at once: refresh the logbook and open Dives afterwards. *Web:* `divers/DiverPage.tsx`.
+  - *Web:* `divers/DiversPage.tsx`.
 - **Other divers** (external, ADR 0028; `GET /api/external-divers`): anyone renames them; offer deleting only with
   `canDelete` and not `inUse` (`diver_not_deletable`, `diver_in_use`). Say which services an account is known at
   (`accounts`); the account itself shows only with the Diver's details
-  ([Buddy and professional codes](#buddy-and-professional-codes)). *Web:* `DiversPage.tsx` (`OtherDivers`).
+  ([Buddy and professional codes](#buddy-and-professional-codes)). *Web:* `divers/DiversPage.tsx` (`OtherDivers`).
 - **Admins merge an external Diver into another** (`POST /api/admin/divers/{id}/merge` with `into`), the same person, e.g.
   a buddy without an account who became a User: pick the other Diver by name, say it can't be undone. `diver_not_external`
   for a Diver a User keeps; `diver_external_id_taken` when both have different accounts at one service. *Web:*
-  `DiversPage.tsx` (`MergeDialog`).
+  `divers/DiversPage.tsx` (`MergeDialog`).
 - **A Provider's list of people** (`buddies` `find`; SSI's buddy list) under its Connection, read only on request
   (`GET /api/connections/{id}/buddies`): who is a Diver here already, adding entries as external Divers one by one or
   all at once (`POST …/buddies/import` with `accounts`), and linking an entry to a Diver here instead
@@ -1159,13 +1159,13 @@ dives, all off until the User turns them on. *Web:* `ProviderAutomation.tsx` (se
   `entryId` in `entries` of the import: it becomes an external Diver from its name and is remembered for it.
   **Must say what is kept** before adding: name, account, and first name, last name, e-mail and leader number, seen
   by everyone on the instance (ADR 0043). Importing an entry whose Diver is here fills what that Diver lacks; say how
-  many were filled (`updated`). *Web:* `ProviderBuddies.tsx`.
+  many were filled (`updated`). *Web:* `providers/ProviderBuddies.tsx`.
 - **Body weight of a Diver** (ADR 0031): `GET /api/divers/{id}/body-weights` (newest first, `{ date, kg }`),
   `PUT …/body-weights/{date}` with `{ kg }` (20 to 400; setting a date again replaces it; `invalid_input` for a weight or a
   date that doesn't fit) and `DELETE …/body-weights/{date}` (`body_weight_not_found`). Always kilograms: show lb for
   imperial and send kg back (ADR 0014). **Must show it only to the Users who keep the Diver:** every other User, and
   everyone for an external Diver, gets `diver_not_found`, and no other view of a Diver carries it. **Must say who sees it**
-  where it is set ("Only you and the other Users who keep this Diver see it"). *Web:* `BodyWeight.tsx`, a dialog opened from
+  where it is set ("Only you and the other Users who keep this Diver see it"). *Web:* `divers/BodyWeight.tsx`, a dialog opened from
   the Diver's page.
 - **Certifications of a Diver** (ADR 0050): `GET /api/divers/{id}/certifications` (newest issue first, **expired cards last**; each
   has `expiry`: `none`, `valid`, `soon` = expires within 90 days, `expired`), `POST` (`agency`, `level`
@@ -1187,12 +1187,12 @@ dives, all off until the User turns them on. *Web:* `ProviderAutomation.tsx` (se
   is absent (ADR 0028). Show it beside that Participant on the Dive page as words naming the level ("Open Water Diver expired",
   not a colour alone) and link it to that Diver's certifications section (`#/divers/<diver id>?open=certifications`); never
   show the card itself there. A `certification` live hint must refetch open Dive views too, not only the Divers list.
-  *Web:* `Certifications.tsx`, a section of the Diver's page (open state in the address,
-  `#/divers/<diver id>?open=certifications`; `#/divers?certifications=own|<diver id>` only leads there, and the profile menu links to the own one); the card form is a dialog. The hint is in `Participants.tsx`.
+  *Web:* `divers/Certifications.tsx`, a section of the Diver's page (open state in the address,
+  `#/divers/<diver id>?open=certifications`; `#/divers?certifications=own|<diver id>` only leads there, and the profile menu links to the own one); the card form is a dialog. The hint is in `dives/Participants.tsx`.
 - **Devices from a Provider:** importing a Provider's dives from a computer creates its Device for the Connection's
   Diver, the same Device the computer's own files find later (ADR 0030); list it like any other.
 - **Devices:** assigning one to another Diver affects only Imports from then on (ADR 0016). Say so where it is
-  changed; single Dives move with "Move". *Web:* `Devices.tsx`, Settings → Devices.
+  changed; single Dives move with "Move". *Web:* `account/Devices.tsx`, Settings → Devices.
 - **The logbook offers a Diver filter only when the User keeps several Divers,** and then shows the Diver column.
 
 ### Equipment
@@ -1243,35 +1243,35 @@ dives, all off until the User turns them on. *Web:* `ProviderAutomation.tsx` (se
 - **Notices are dismissible client-side**, keyed by the digest of the due schedules: dismissing hides the logbook notice
   until the due set changes (a new schedule becomes due, or one is serviced). Due state is derived data, so nothing is
   persisted on the server. The navigation's count is the length of `GET /api/equipment/due`.
-- *Web:* `EquipmentPage.tsx` (`#/equipment`), `EquipmentDue.tsx`, the gear section `DiveGear.tsx` on a Dive, and the
-  cylinder item in `Cylinders.tsx`.
+- *Web:* `equipment/EquipmentPage.tsx` (`#/equipment`), `equipment/EquipmentDue.tsx`, the gear section `dives/DiveGear.tsx` on a Dive, and the
+  cylinder item in `components/Cylinders.tsx`.
 
 ### Dive sites
 - **Shared and editable by every User** (ADR 0020). Deleting is for the creator or an admin while no Dive is
   there: use `canDelete` and `inUse`, and say why it can't be deleted.
 - **Creating a site from a Dive's position** pre-fills the position and says it becomes visible to every User.
-  *Web:* `SitePicker.tsx`.
+  *Web:* `sites/SitePicker.tsx`.
 - **Choosing a site for a Dive:** a search field with the results under it, updated while typing: before typing
   the sites within 2 km of the Dive's position (nearest first, with distance), then the matches by name, with how
   many match. Mark the current site. Picking a result saves it at once (with the Dive's version); removing the site
   is its own action. When nothing matches, offer to create the site with the typed name: no dead end.
-  *Web:* `SitePicker.tsx`, `ui/SearchList.tsx`.
+  *Web:* `sites/SitePicker.tsx`, `ui/SearchList.tsx`.
 - **Choosing the SSI site** works the same way over the sites in the User's SSI logbook; an SSI ID typed into the
-  field can be used even when the logbook doesn't have it. *Web:* `ProviderPanel.tsx` (`SitePicker`).
+  field can be used even when the logbook doesn't have it. *Web:* `dives/ProviderPanel.tsx` (`SitePicker`).
 - **Typed site IDs** (ADR 0029): the site form offers a field per `site_external_id` requirement whose Source is `typed`
   (SSI today), worded by the Provider, and saves it with `PUT /api/dive-sites/{id}/external-ids/{source}` after the site
   itself (it doesn't change the site's version). The server accepts the `prefixes` ("site:3314") and keeps the bare ID;
   `external_id_taken` means another site has it, `site_source_not_typed` a Source whose IDs only an import brings.
   When creating, a failed ID must not create the site twice on the next try.
 - **Water type** (fresh, salt, brackish, or not known): **the form must say that changing it changes the water type of
-  every Dive at the site** (other Users' too). After saving, refresh the Dives a client holds. *Web:* `SiteForm.tsx`.
+  every Dive at the site** (other Users' too). After saving, refresh the Dives a client holds. *Web:* `sites/SiteForm.tsx`.
 - **Where a site comes from:** "From OpenStreetMap: node/…" with the Attribution, "From SSI: 3314" without a link,
   "Also in …" for a reference, nothing for a site made here ([Licenses](#licenses)). An SSI reference without an
   offer is shown as the SSI site ID field only.
 - **Offers** (ADR 0025): a reference with `offered` values gets "Use SSI's data" (any Source, any User). Before
   confirming, say which empty fields take the Source's values and which filled ones stay although the Source differs,
   and that the site then says "From …" and imports keep those fields current. `POST /api/dive-sites/{id}/adopt` with
-  the version; `site_offer_not_found` means it was taken meanwhile. *Web:* `SitesPage.tsx` (`SiteOrigin`).
+  the version; `site_offer_not_found` means it was taken meanwhile. *Web:* `sites/SitesPage.tsx` (`SiteOrigin`).
 - **Merging:** offer the other sites within 200 m. Explain before confirming, then follow the kept site
   ([Privacy](#privacy), [Data safety](#data-safety)).
 - **Site imports (admins):**
@@ -1307,7 +1307,7 @@ dives, all off until the User turns them on. *Web:* `ProviderAutomation.tsx` (se
   scanned text into a field. Ask for the camera only when the User starts scanning, release it as soon as a code is
   read or the scanner closes, and say which failure it is (blocked, no camera, camera busy). Where the platform gives
   no camera (a web page over plain HTTP), say so and offer the image. A picture without a code is said as that, not
-  as an error of the code. *Web:* `CodeScanner.tsx`, `lib/qr-reader.ts`.
+  as an error of the code. *Web:* `components/CodeScanner.tsx`, `lib/qr-reader.ts`.
 - **The number** is set on its own (`PUT /api/dive-centres/{id}/external-ids/ssi`, `null` removes it; the whole text of
   a centre's code is accepted too). `centre_external_id_taken` names the centre that has it: say so and lead there.
 - **Links to Dive sites** are set from the centre and from the site (`PUT`/`DELETE /api/dive-centres/{id}/sites/{siteId}`;
@@ -1315,7 +1315,7 @@ dives, all off until the User turns them on. *Web:* `ProviderAutomation.tsx` (se
 - **Deleting** is offered when `canDelete`; say that its code no longer shows on Dives and that sites and Dives stay.
 - **Renaming** sends `version` (`centre_changed` on a conflict: reload and ask again).
 
-*Web:* `CentresPage.tsx`, `ui/QrCode.tsx`.
+*Web:* `sites/CentresPage.tsx`, `ui/QrCode.tsx`.
 
 ### Buddy and professional codes
 [ADR 0043](../decisions/0043-dive-centres-and-ssi-verification-codes.md#as-built-slice-3). A Diver's details (first
@@ -1342,7 +1342,7 @@ name, last name, e-mail, SSI leader number) and the codes built from them.
   `diver_external_id_taken` (it names the Diver) are said as they are. Don't keep the scanned text beyond that.
 - **Never show a Diver's e-mail or leader number in a list or a picker.** They belong to the Diver's own view.
 
-*Web:* `DiverCodes.tsx`, `DiversPage.tsx`, `CentresPage.tsx` (`DiveCodes`).
+*Web:* `divers/DiverCodes.tsx`, `divers/DiversPage.tsx`, `sites/CentresPage.tsx` (`DiveCodes`).
 
 ### The Tools page: gas numbers and bottom time
 

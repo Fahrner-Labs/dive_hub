@@ -1,6 +1,6 @@
 ---
 title: "ADR 0053: Module boundaries"
-summary: The server in three layers (routes → services → db, every query in a service, vocabulary.ts below db); the imports between its domain modules as an enforced allow-list in .dependency-cruiser.cjs, changed there without a new ADR; the domain modules in seven tiers that import only downward (amendment 2026-11-07); the web client's shared components import no page; lib/ may import api.ts (types, and queries inside hooks) and api.ts takes from lib/ only what describes a query's inputs (amendment 2026-10-29); no import cycles. Checked by dependency-cruiser against an empty baseline (0 violations). Fixes done - the web cycle api.ts ↔ lib/logbook.ts (the LogbookParams type moved to lib/), the runtime cycle diver-service ↔ merge through DiverError, db/schema.ts importing from sites/, the three server type cycles, and the queries out of all six route files.
+summary: The server in three layers (routes → services → db, every query in a service, vocabulary.ts below db); the imports between its domain modules as an enforced allow-list in .dependency-cruiser.cjs, changed there without a new ADR; the domain modules in seven tiers that import only downward (amendment 2026-11-07); the web client grouped by feature folders under an enforced allow-list, with shared ui/, components/ and lib/ below them (amendment 2026-11-21); lib/ may import api.ts (types, and queries inside hooks) and api.ts takes from lib/ only what describes a query's inputs (amendment 2026-10-29); no import cycles. Checked by dependency-cruiser against an empty baseline (0 violations). Fixes done - the web cycle api.ts ↔ lib/logbook.ts (the LogbookParams type moved to lib/), the runtime cycle diver-service ↔ merge through DiverError, db/schema.ts importing from sites/, the three server type cycles, and the queries out of all six route files.
 status: accepted
 date: 2026-10-22
 ---
@@ -73,7 +73,7 @@ No import cycle, not even through a type import, in either app.
 ### How it is checked
 - dependency-cruiser (`.dependency-cruiser.cjs`): no cycles; `db/` imports no domain module (only
   `vocabulary.ts`); route files don't import `drizzle-orm` or `db/client`; domain modules import only what `MODULE_IMPORTS`
-  allows; `ui/` imports no page. It runs in `pnpm check` (changed files), `pnpm check:full`, CI and
+  allows; the web feature rules of the amendment of 2026-11-21. It runs in `pnpm check` (changed files), `pnpm check:full`, CI and
   after every edit by an agent ([ADR 0023](0023-faster-checks.md), amendment of 2026-10-22).
 - The violations of 2026-10-22 are in `.dependency-cruiser-known-violations.json`: 23 found, 22 left once
   `vocabulary.ts` was allowed below `db/`. 19 left after the DiverError fix, 10 after moving the import types down to `db/import-types.ts`, 7 after the three type cycles, 6 after the queries left `routes.ts`, 5 after `dives/routes.ts`, 4 after `planning/routes.ts`, 3 after `users/routes.ts`, 2 after `users/account-routes.ts`, 1 after `users/admin-routes.ts`, 0 after the web cycle `api.ts` ↔ `lib/logbook.ts`: the file is now `[]` and stays so. Any new violation fails; the file may only shrink. After fixing one,
@@ -185,3 +185,33 @@ Ports (consumer-owned shapes wired at the composition root, the 85e528e pattern)
 
 The stale prose above is refreshed with this amendment: `compose.ts` and `start.ts` are assemblers beside `app.ts`,
 `main.ts`, `worker.ts` and `site-sources.ts`, and the removed `fit` module no longer appears.
+
+## Amendment (2026-11-21): the web client is grouped by feature
+
+From backlog task 0013, delivered as [FAH-15](/FAH/issues/FAH-15). The web client had every page and most of its
+components at the top of `apps/web/src`; the files are moved with `git mv` and behaviour is unchanged. This
+replaces the "Web client" bullets above, which call a page a top-level file.
+
+- **Feature folders:** `apps/web/src` has one folder per feature: `dives/`, `divers/`, `sites/`, `equipment/`,
+  `providers/`, `imports/`, `review/`, `planning/`, `account/` and `admin/`. A feature's routed page and its
+  components sit together.
+- **A page** is the component the router renders for a route, and it lives in its feature folder
+  (`dives/DivePage.tsx`, `sites/SitesPage.tsx`, …). `App.tsx` is the router and assembly; it imports the pages, and
+  a page imports no other routed page.
+- **Shared code stays below the features:** `ui/` (the design system), `lib/` (helpers and data hooks — the owner's
+  decision of 2026-10-29 keeps the data hooks there), `api.ts` and `api/` (the API layer), `design/` and `i18n/`.
+  `components/` holds the components that no single feature owns (`DiveCodes`, `CodeScanner`, `Cylinders`,
+  `ReviewRows`, `ProfilePlot`); a feature may still reuse another feature's component where the allow-list lets it
+  (e.g. `review/` imports dive components). `App.tsx`, `main.tsx` and `pages.css` are the assembly at the root.
+- **Import rules:** between features, `WEB_FEATURE_IMPORTS` in `.dependency-cruiser.cjs` is the enforced
+  allow-list, changed there in the same commit as a new import between features, with the reason in the commit
+  message and no new ADR (the server's `MODULE_IMPORTS` pattern). `ui/`, `lib/`, `api.ts`/`api/` and `components/`
+  import no feature; features import no assembly file; no import cycle. The list is acyclic: `components/` is the
+  bottom, then `equipment/`, `providers/`, `sites/` and `divers/`; `dives/` above them, `imports/` above `dives/`,
+  `review/` above `imports/`, and `account/` and `planning/` are consumers. `admin/` imports no feature.
+- **The check script's areas:** in `scripts/check-lib.mjs`, each feature folder has one line mapping it to its
+  browser-test area tags; the rows for a shared component and the special `account/` and `admin/` pages come before
+  the folder's line (first match wins). A new feature folder or shared component adds its line there.
+- **The web checks** replace `ui-imports-no-page` and `lib-imports-no-page` with `web-feature-imports-<feature>`,
+  `ui-imports-no-feature`, `lib-imports-no-feature`, `api-imports-no-feature`, `web-features-import-no-assembly` and
+  `shared-code-imports-no-assembly`, beside the existing `no-cycles`.

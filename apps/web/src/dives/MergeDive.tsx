@@ -1,0 +1,186 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { allButDive, api, ApiError, diveProvidersQuery, keys, mergeCandidatesQuery, nearbyDivesQuery, unwrap, type DiveView, type LogbookCheckView, type MergeCandidateView } from '../api.ts';
+import { announce } from '../lib/announce.ts';
+import { deleteChoice, type CopyAt } from '../lib/deletion.ts';
+import { useDisplay, useErrorText } from '../lib/display.ts';
+import { useJoinNames, useProviderOf, useProviderText, type ProviderRef } from '../lib/providers.ts';
+import { Button, Dialog, Notice, RowsSkeleton } from '../ui/index.ts';
+
+/** One of the two Dives of a merge, with what tells it from the other. */
+export type MergeSide = Pick<LogbookCheckView['dive'], 'id' | 'version' | 'number' | 'startsAt' | 'utcOffsetSeconds' | 'utcOffsetSource' | 'durationSeconds' | 'maxDepthM' | 'site' | 'recordings'>;
+
+/** "Dive 31 · Apr 2, 2026, 10:00 · 30 min · 16.4 m · Hausreef · with a recording": a Dive told from another at the same time. */
+function useSideText() {
+  const { t } = useTranslation();
+  const display = useDisplay();
+  return (d: Omit<MergeSide, 'id' | 'version'>, named = true) => [
+    ...(named ? [d.number !== null ? t('dive.title', { number: d.number }) : t('dive.titleNoNumber')] : []),
+    display.diveTime(d.startsAt, d.utcOffsetSeconds, d.utcOffsetSource), display.duration(d.durationSeconds),
+    ...(d.maxDepthM !== null ? [display.depth(d.maxDepthM)] : []), d.site?.name,
+    d.recordings > 0 ? t('merge.withRecording') : t('merge.withoutRecording'),
+  ].filter(Boolean).join(' · ');
+}
+
+/** The dive page's Dive as one side of a merge. */
+const sideOf = (d: DiveView): MergeSide => ({
+  id: d.id, version: d.version, number: d.values.number, startsAt: d.values.startsAt.at, utcOffsetSeconds: d.values.startsAt.utcOffsetSeconds,
+  utcOffsetSource: d.utcOffsetSource, durationSeconds: d.values.durationSeconds, maxDepthM: d.values.maxDepthM, site: d.site, recordings: d.recordings.length,
+});
+
+/**
+ * On the dive page (ADR 0038): another Dive of the same Diver at the same time, which may be the same dive logged twice
+ * (a logbook entry and its computer's file, or two entries). Says so and offers to merge the two.
+ */
+export function MergeHint({ dive: d }: { dive: DiveView }) {
+  const { t } = useTranslation();
+  const sideText = useSideText();
+  const candidates = useQuery(mergeCandidatesQuery(d.id));
+  const [merging, setMerging] = useState<MergeCandidateView | null>(null);
+  // A pair the User said are two dives isn't hinted at again (ADR 0038).
+  const open = (candidates.data ?? []).filter((c) => !c.answered);
+  if (open.length === 0) return null;
+  return (
+    <>
+      {open.map((c) => {
+        // Which of the two a merge keeps, said before the dialog: the one with the recording, else this one.
+        const keeps = c.keeps === d.id ? 'merge.hintKeepsThis' : 'merge.hintKeepsOther';
+        return (
+          <Notice key={c.id} tone="info">
+            <p>{t('merge.hint', { facts: sideText(c, false) })} {t(keeps)}</p>
+            <div className="form-actions">
+              <Button icon="merge" onPress={() => setMerging(c)}>{t('merge.action')}</Button>
+              <a href={`#/dives/${c.id}`} className="btn btn-quiet">{t('merge.open')}</a>
+            </div>
+          </Notice>
+        );
+      })}
+      {merging && (
+        <MergeDialog dive={sideOf(d)} other={merging} onClose={() => setMerging(null)} />
+      )}
+    </>
+  );
+}
+
+/**
+ * Merging by hand (ADR 0038, amended): the Diver's other Dives from the day before to the day after, to choose the one
+ * that is the same dive where no rule found the pair. Choosing one opens the merge dialog, which asks as always.
+ */
+export function MergePicker({ dive: d, onClose }: { dive: DiveView; onClose: () => void }) {
+  const { t } = useTranslation();
+  const errorText = useErrorText();
+  const sideText = useSideText();
+  const nearby = useQuery(nearbyDivesQuery(d.id));
+  const [chosen, setChosen] = useState<MergeCandidateView | null>(null);
+  if (chosen) return <MergeDialog dive={sideOf(d)} other={chosen} onClose={onClose} />;
+  return (
+    <Dialog title={t('merge.pickTitle')} isOpen onOpenChange={(open) => !open && onClose()}>
+      {nearby.isPending && <RowsSkeleton rows={2} />}
+      {nearby.error && <Notice tone="danger">{errorText(nearby.error)}</Notice>}
+      {nearby.data && (nearby.data.length === 0 ? <p>{t('merge.pickNone')}</p> : (
+        <>
+          <p>{t('merge.pickIntro')}</p>
+          <ul className="nearby-dives">
+            {nearby.data.map((c) => (
+              <li key={c.id}>
+                <a href={`#/dives/${c.id}`}>{sideText(c)}</a>
+                <Button size="small" icon="merge" aria-label={t('common.forItem', { action: t('merge.pick'), item: sideText(c) })} onPress={() => setChosen(c)}>
+                  {t('merge.pick')}
+                </Button>
+              </li>
+            ))}
+          </ul>
+        </>
+      ))}
+      <div className="form-actions">
+        <Button onPress={onClose}>{t('common.cancel')}</Button>
+      </div>
+    </Dialog>
+  );
+}
+
+/** What the dialog says about the copy at a Provider of the Dive that isn't kept, in the Provider's words. */
+export function CopySentence({ provider: p, number, how }: { provider: ProviderRef; number: number | null; how: 'ask' | 'cannot' | 'itself' }) {
+  const pt = useProviderText(p);
+  const key = { ask: 'deleteAsk', cannot: 'deleteCannot', itself: 'deletesItself' } as const;
+  return <p>{pt(key[how], { number: number ?? '' })}</p>;
+}
+
+/**
+ * Merges the two Dives after saying which stays and which goes, each by what tells it from the other (ADR 0038): "this
+ * dive" would say nothing on the logbook, where both are listed. Where both are at a Provider,
+ * the dialog asks whether to delete the other one's dive there too, as the delete dialog does (ADR 0026, 0027); if that
+ * fails, nothing is merged.
+ */
+export function MergeDialog({ dive: d, other, onClose, stay, onMerged }: {
+  dive: MergeSide; other: MergeSide & Pick<MergeCandidateView, 'keeps' | 'bothAt' | 'at' | 'deletesItself'>;
+  onClose: () => void;
+  /** On the logbook: stay there instead of opening the kept Dive. */
+  stay?: boolean; onMerged?: () => void;
+}) {
+  const { t } = useTranslation();
+  const errorText = useErrorText();
+  const joinNames = useJoinNames();
+  const sideText = useSideText();
+  const queryClient = useQueryClient();
+  const providerOf = useProviderOf();
+  const keepsThis = other.keeps === d.id;
+  const leaving = keepsThis ? other.id : d.id;
+  // Only where both Dives are at a Provider is there a dive left over at it.
+  const statuses = useQuery({ ...diveProvidersQuery(leaving), enabled: other.bothAt.length > 0 });
+  const none = { ask: [], cannot: [], itself: [] };
+  const all = other.bothAt.length === 0 ? none : deleteChoice(statuses.data, other.deletesItself) ?? (statuses.error ? none : undefined);
+  const inBoth = (list: CopyAt[]) => list.filter((c) => other.bothAt.includes(c.provider));
+  const choice = all && { ask: inBoth(all.ask), cannot: inBoth(all.cannot), itself: inBoth(all.itself) };
+  const moves = other.at.filter((c) => !other.bothAt.includes(c.provider));
+  const merge = useMutation({
+    mutationFn: async (alsoThere: boolean) => unwrap(await api.POST('/api/dives/{id}/merge', {
+      params: { path: { id: d.id } },
+      body: { version: d.version, otherId: other.id, otherVersion: other.version, alsoAt: alsoThere ? choice!.ask.map((c) => c.provider) : [] },
+    })),
+    onSuccess: async (kept) => {
+      queryClient.setQueryData(keys.dive(kept.id), kept);
+      queryClient.removeQueries({ queryKey: keys.dive(leaving) });
+      if (kept.id !== d.id && !stay) location.hash = `#/dives/${kept.id}`;
+      await queryClient.invalidateQueries(allButDive(leaving));
+      announce(t('merge.done'));
+      onClose();
+      onMerged?.();
+    },
+  });
+  const asking = (choice?.ask.length ?? 0) > 0;
+
+  return (
+    <Dialog title={t('merge.title')} isOpen onOpenChange={(open) => !open && !merge.isPending && onClose()}>
+      <p><strong>{t('merge.stays')}</strong> {sideText(keepsThis ? d : other)}</p>
+      <p><strong>{t('merge.goes')}</strong> {sideText(keepsThis ? other : d)}</p>
+      <p>{(d.recordings === 0) !== (other.recordings === 0) && `${t('merge.whyRecording')} `}{t('merge.takes')}</p>
+      {keepsThis && moves.length > 0 && <p>{t('merge.linkMoves', { name: joinNames(moves.map((c) => providerOf(c.provider).name)) })}</p>}
+      <p>{t('merge.other')}</p>
+      {choice?.ask.map((c) => <CopySentence key={c.provider} provider={providerOf(c.provider)} number={c.remoteNumber} how="ask" />)}
+      {choice?.cannot.map((c) => <CopySentence key={c.provider} provider={providerOf(c.provider)} number={c.remoteNumber} how="cannot" />)}
+      {choice?.itself.map((c) => <CopySentence key={c.provider} provider={providerOf(c.provider)} number={c.remoteNumber} how="itself" />)}
+      {!choice && <RowsSkeleton rows={2} />}
+      {merge.error && (
+        <Notice tone="danger">
+          {errorText(merge.error)}{merge.error instanceof ApiError && ` ${t('merge.nothingMerged')}`}
+        </Notice>
+      )}
+      {/* The button pressed is pending, the others wait (page rules); `variables` says which: there too or not. */}
+      <div className="form-actions">
+        {asking && (
+          <Button variant="primary" icon="merge" isPending={merge.isPending && merge.variables} isDisabled={merge.isPending && !merge.variables} onPress={() => merge.mutate(true)}>
+            {t('merge.confirmBoth', { name: joinNames(choice!.ask.map((c) => providerOf(c.provider).name)) })}
+          </Button>
+        )}
+        {choice && (
+          <Button variant={asking ? 'secondary' : 'primary'} icon="merge" isPending={merge.isPending && !merge.variables} isDisabled={merge.isPending && merge.variables} onPress={() => merge.mutate(false)}>
+            {asking ? t('merge.confirmHere') : t('merge.confirm')}
+          </Button>
+        )}
+        <Button isDisabled={merge.isPending} onPress={onClose}>{t('common.cancel')}</Button>
+      </div>
+    </Dialog>
+  );
+}

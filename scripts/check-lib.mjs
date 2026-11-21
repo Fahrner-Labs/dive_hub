@@ -34,52 +34,55 @@ const AREAS = [
   [/^apps\/web\/src\/api\/planning\.ts$/, ['@tools', '@dives']],
   [/^apps\/web\/src\/api\/providers\.ts$/, ['@dives', '@account']],
   [/^apps\/web\/src\/api\/sites\.ts$/, ['@sites', '@dives', '@admin']],
-  [/^apps\/web\/src\/SiteImportPage\.tsx$/, ['@admin', '@sites']],
-  [/^apps\/web\/src\/(SitesPage|SiteForm|SiteHistory)\.tsx$|^apps\/web\/src\/lib\/(site-origin|sites-list|geo)\.ts$/, ['@sites']],
-  [/^apps\/web\/src\/SitePicker\.tsx$/, ['@sites', '@dives']],
-  // Dive centres and their verification codes (ADR 0043): their own pages, a panel on a Dive site, a line on a Dive.
-  [/^apps\/web\/src\/(CentresPage|NewCentre|SiteCentres)\.tsx$|^apps\/web\/src\/lib\/centres\.ts$|^apps\/web\/src\/ui\/QrCode\.tsx$/, ['@sites', '@dives']],
+  // Web features (ADR 0053, amendment of 2026-11-21): one rule per feature folder; a shared component's own
+  // rule comes before its folder's. `components/` holds the components that no single feature owns.
+  [/^apps\/web\/src\/components\/CodeScanner\.tsx$|^apps\/web\/src\/lib\/qr-reader\.ts$/, ['@sites', '@divers']],
   // The codes drawn for scanning (ADR 0043): on a centre, a Diver's codes and a Dive's line of codes.
-  [/^apps\/web\/src\/DiveCodes\.tsx$/, ['@sites', '@divers', '@dives']],
-  // The scanner for verification codes (ADR 0043): on the new centre form, where a centre's number is set, and where a diver's code is taken.
-  [/^apps\/web\/src\/CodeScanner\.tsx$|^apps\/web\/src\/lib\/qr-reader\.ts$/, ['@sites', '@divers']],
+  [/^apps\/web\/src\/components\/DiveCodes\.tsx$/, ['@sites', '@divers', '@dives']],
+  [/^apps\/web\/src\/components\/(Cylinders|ReviewRows)\.tsx$/, ['@dives']],
+  [/^apps\/web\/src\/components\/ProfilePlot\.tsx$/, ['@dives', '@tools']],
+  // A new shared component may reach several areas; give it its own line above when its areas are known.
+  [/^apps\/web\/src\/components\//, ['@dives', '@divers', '@sites', '@tools']],
+  [/^apps\/web\/src\/dives\//, ['@dives']],
+  [/^apps\/web\/src\/divers\/Certifications\.tsx$|^apps\/server\/src\/certifications\//, ['@divers', '@account']],
+  [/^apps\/web\/src\/divers\/DiverCodes\.tsx$/, ['@divers', '@dives']],
+  [/^apps\/web\/src\/divers\//, ['@divers']],
+  // Dive centres and their verification codes (ADR 0043): their own pages, a panel on a Dive site, a line on a Dive.
+  [/^apps\/web\/src\/sites\/(CentresPage|NewCentre|SiteCentres|SitePicker)\.tsx$|^apps\/web\/src\/lib\/centres\.ts$|^apps\/web\/src\/ui\/QrCode\.tsx$/, ['@sites', '@dives']],
+  [/^apps\/web\/src\/sites\/|^apps\/web\/src\/lib\/(site-origin|sites-list|geo)\.ts$/, ['@sites']],
   [/^apps\/web\/src\/lib\/address-search\.ts$/, ['@sites', '@dives']],
   // Equipment items and their service schedules (ADR 0034): the page and its forms, the logbook's due notice and a Dive's gear.
-  [/^apps\/web\/src\/(EquipmentPage|EquipmentDue|DiveGear)\.tsx$|^apps\/web\/src\/lib\/equipment\.ts$/, ['@equipment', '@dives']],
-  [/^apps\/web\/src\/(DivePage|DiveEditForm|DiveHistory|DiveList|ProfileSketch|DepthProfile|ProfilePlot|Decisions|DecisionTimeline|ReviewPage|ReviewStrip|ReviewRows|BuddySuggestions|ImportPanel|DeleteDive|DeletedDives|MergeDive|AppendDive|LogbookChecks|Participants|Assessment|Cylinders|Weighting|LeadHint|PushRun).tsx$|^apps\/web\/src\/lib\/(dive-values|history|profile|tanks|cylinders|weighting|answer|sketch|timeline|logbook|review|devices|importable|deletion|assessment|waiting-push)\.ts$/, ['@dives']],
-  // A Diver's codes and details, and taking a scanned code (ADR 0043): on the divers page; the codes also show on a Dive.
-  [/^apps\/web\/src\/DiverCodes\.tsx$/, ['@divers', '@dives']],
-  [/^apps\/web\/src\/DiversPage\.tsx$|^apps\/web\/src\/DiverPage\.tsx$|^apps\/web\/src\/lib\/(divers|loadings)\.ts$/, ['@divers']],
-  [/^apps\/web\/src\/Devices\.tsx$/, ['@divers', '@account']],
-  // A Diver's body weight (ADR 0031), a dialog on a Diver's page.
-  [/^apps\/web\/src\/BodyWeight\.tsx$/, ['@divers']],
-  // A Diver certification cards (ADR 0050), a section of a Diver's page (slice 25c); their server side also takes part in the import.
-  [/^apps\/web\/src\/Certifications\.tsx$|^apps\/server\/src\/certifications\//, ['@divers', '@account']],
+  [/^apps\/web\/src\/equipment\/|^apps\/web\/src\/lib\/equipment\.ts$/, ['@equipment', '@dives']],
+  // Providers in the web client (ADR 0027, 0048, 0056): the account's Connections, each Dive's panels, imports and push runs.
+  [/^apps\/web\/src\/providers\/|^apps\/web\/src\/lib\/providers\.ts$/, ['@dives', '@account']],
+  // Importing a Provider's dives (ADR 0030): on the Connection and the dives it makes; the logbook's import panel.
+  [/^apps\/web\/src\/imports\//, ['@dives', '@account']],
+  // The Review inbox and the logbook's lines waiting for a decision (ADR 0038).
+  [/^apps\/web\/src\/review\//, ['@dives']],
+  // The Tools page (ADR 0032): gas numbers and bottom time; its server computation and the MCP tool that answers the same.
+  [/^apps\/web\/src\/planning\/|^apps\/web\/src\/lib\/tools\.ts$|^apps\/server\/src\/planning\/|^apps\/server\/src\/lead\/|^apps\/server\/src\/mcp\/tools-planning(-gas-plan)?.ts$/, ['@tools']],
   // Client diagnostics (FAH-292, ADR 0080): the local buffer, the report surface, its API calls and the admin switch.
-  [/^apps\/web\/src\/(AccountSettings|ReportProblem)\.tsx$|^apps\/web\/src\/(lib\/diagnostics|api\/diagnostics)\.ts$/, ['@client-diagnostics', '@account']],
-  [/^apps\/web\/src\/(SignedOut|SetupRestore|Connections|ProviderBuddies)\.tsx$|^apps\/web\/src\/lib\/form\.ts$/, ['@account']],
-  [/^apps\/web\/src\/SettingsPage\.tsx$/, ['@account', '@admin']],
+  [/^apps\/web\/src\/account\/(AccountSettings|ReportProblem)\.tsx$|^apps\/web\/src\/(lib\/diagnostics|api\/diagnostics)\.ts$/, ['@client-diagnostics', '@account']],
+  [/^apps\/web\/src\/account\/AdminSettings\.tsx$/, ['@admin', '@client-diagnostics']],
+  // AI accesses to the MCP endpoint (ADR 0035): on the account page, their switch on the admin page.
+  [/^apps\/web\/src\/account\/AiAccess\.tsx$|^apps\/web\/src\/lib\/ai-access\.ts$/, ['@account', '@admin']],
+  [/^apps\/web\/src\/account\/Devices\.tsx$/, ['@divers', '@account']],
+  [/^apps\/web\/src\/account\/SettingsPage\.tsx$/, ['@account', '@admin']],
+  [/^apps\/web\/src\/account\/(SignedOut|SetupRestore|Connections)\.tsx$|^apps\/web\/src\/lib\/form\.ts$/, ['@account']],
   // The Settings addresses: also the links to a Connection's settings from a Dive's panels, an Import and a push run.
   [/^apps\/web\/src\/lib\/settings\.ts$/, ['@account', '@admin', '@dives']],
-  // Importing a Provider's dives (ADR 0030): on the Connection, and the dives it makes.
-  [/^apps\/web\/src\/(ProviderDiveImport|GoneDives|ProviderAutomation)\.tsx$/, ['@account', '@dives']],
-  // A Dive at a Provider, and a Conflict with it asked on the Dive's page and waiting on the Review page (ADR 0056).
-  [/^apps\/web\/src\/(ProviderPanel|LinkOrAdd|ProviderConflicts|ProviderConflictsSection|WaitingPush)\.tsx$/, ['@dives']],
-  // A Dive's numbers at its Providers (ADR 0048): on the Dive's Provider panel, a push run and the account's Connections.
-  [/^apps\/web\/src\/(NumberChain|ProviderDiveNumbers)\.tsx$/, ['@dives', '@account']],
-  // Providers in the web client (ADR 0027): the account's Connections and each Dive's panels read them.
-  [/^apps\/web\/src\/lib\/providers\.ts$/, ['@dives', '@account']],
-  [/^apps\/web\/src\/AdminSettings.tsx$/, ['@admin', '@client-diagnostics']],
-  // The Tools page (ADR 0032): gas numbers and bottom time; its server computation and the MCP tool that answers the same.
-  [/^apps\/web\/src\/Tools(Page|Plan|PlanProfile|Lead)\.tsx$|^apps\/web\/src\/ProfilePlot\.tsx$|^apps\/web\/src\/lib\/tools\.ts$|^apps\/server\/src\/planning\/|^apps\/server\/src\/lead\/|^apps\/server\/src\/mcp\/tools-planning(-gas-plan)?.ts$/, ['@tools']],
-  // AI accesses to the MCP endpoint (ADR 0035): on the account page, their switch on the admin page.
-  [/^apps\/web\/src\/AiAccess\.tsx$|^apps\/web\/src\/lib\/ai-access\.ts$/, ['@account', '@admin']],
-  [/^apps\/server\/src\/mcp\//, ['@account', '@admin']],
+  [/^apps\/web\/src\/account\//, ['@account']],
+  [/^apps\/web\/src\/admin\/SiteImportPage\.tsx$/, ['@admin', '@sites']],
   // Backup runs (plan FAH-175): the admin's page triggers them, downloads an archive and sets the schedule.
-  [/^apps\/web\/src\/BackupsPage\.tsx$|^apps\/web\/src\/lib\/backups\.ts$/, ['@admin']],
-  [/^apps\/server\/src\/backups\//, ['@admin']],
+  [/^apps\/web\/src\/admin\/BackupsPage\.tsx$|^apps\/web\/src\/lib\/backups\.ts$/, ['@admin']],
   // The on-demand support bundle (FAH-291): the admin's page previews and downloads a redacted archive.
-  [/^apps\/web\/src\/SupportBundlePage\.tsx$|^apps\/web\/src\/lib\/support-bundle\.ts$/, ['@support-bundle']],
+  [/^apps\/web\/src\/admin\/SupportBundlePage\.tsx$|^apps\/web\/src\/lib\/support-bundle\.ts$/, ['@support-bundle']],
+  [/^apps\/web\/src\/admin\//, ['@admin']],
+  // Web helpers and data hooks stay in lib/ (owner decision of 2026-10-29); their own rules name the areas.
+  [/^apps\/web\/src\/lib\/(dive-values|history|profile|tanks|cylinders|weighting|answer|sketch|timeline|logbook|review|devices|importable|deletion|assessment|waiting-push)\.ts$/, ['@dives']],
+  [/^apps\/web\/src\/lib\/(divers|loadings)\.ts$/, ['@divers']],
+  [/^apps\/server\/src\/mcp\//, ['@account', '@admin']],
+  [/^apps\/server\/src\/backups\//, ['@admin']],
   [/^apps\/server\/src\/support\//, ['@support-bundle', '@admin']],
   [/^apps\/server\/src\/sites\/import\/|^apps\/server\/src\/(site-sources|providers\/ssi\/ssi-sites)\.ts$/, ['@admin', '@sites']],
   [/^apps\/server\/src\/sites\//, ['@sites', '@dives']],

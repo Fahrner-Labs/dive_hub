@@ -5,7 +5,7 @@
 import { render, screen } from '@testing-library/react';
 import axe from 'axe-core';
 import { describe, expect, it } from 'vitest';
-import { Comparison, type CompareFact, type CompareSubject } from '../src/ReviewRows.tsx';
+import { Comparison, type CompareFact, type CompareSubject } from '../src/components/ReviewRows.tsx';
 
 const label = 'Where does this recording belong?';
 

@@ -124,12 +124,28 @@ test('each step has its own green run, and taking a snapshot leaves the index al
 });
 
 test('a page runs the typecheck, the web tests related to it and its areas with the layout checks', () => {
-  const plan = planFor(['apps/web/src/SitesPage.tsx', 'docs/index.md']);
+  const plan = planFor(['apps/web/src/sites/SitesPage.tsx', 'docs/index.md']);
   assert.equal(plan.typecheck, true);
   assert.equal(plan.server, 'none');
   assert.equal(plan.web, 'changed');
   assert.equal(plan.e2e, 'some');
   assert.deepEqual([...plan.areas].sort(), ['@layout', '@sites']);
+});
+
+test('the feature folders map to their browser-test areas (ADR 0053 amendment of 2026-11-21)', () => {
+  for (const [path, areas] of [
+    ['apps/web/src/dives/DeleteDive.tsx', ['@dives', '@layout']],
+    ['apps/web/src/divers/DiverCodes.tsx', ['@divers', '@dives', '@layout']],
+    ['apps/web/src/sites/SitePicker.tsx', ['@dives', '@layout', '@sites']],
+    ['apps/web/src/equipment/DiveGear.tsx', ['@dives', '@equipment', '@layout']],
+    ['apps/web/src/providers/PushRun.tsx', ['@account', '@dives', '@layout']],
+    ['apps/web/src/imports/ImportPanel.tsx', ['@account', '@dives', '@layout']],
+    ['apps/web/src/review/ReviewPage.tsx', ['@dives', '@layout']],
+    ['apps/web/src/planning/ToolsPage.tsx', ['@layout', '@tools']],
+    ['apps/web/src/account/SettingsPage.tsx', ['@account', '@admin', '@layout']],
+    ['apps/web/src/admin/SiteImportPage.tsx', ['@admin', '@layout', '@sites']],
+    ['apps/web/src/components/ProfilePlot.tsx', ['@dives', '@layout', '@tools']],
+  ]) assert.deepEqual([...planFor([path]).areas].sort(), areas, path);
 });
 
 test('documentation runs nothing; shared code of an app runs its tests and every browser test; an unknown path everything', () => {
@@ -153,7 +169,7 @@ test('a web unit or component test runs itself, without browser tests', () => {
 });
 
 test('a changed source file is linted itself; the CI workflow and the git hooks run nothing', () => {
-  assert.equal(planFor(['apps/web/src/SitesPage.tsx']).lint, 'changed');
+  assert.equal(planFor(['apps/web/src/sites/SitesPage.tsx']).lint, 'changed');
   assert.equal(planFor(['apps/server/test/dive-list.test.ts']).lint, 'changed');
   assert.deepEqual(planFor(['.github/workflows/check.yml', '.githooks/pre-commit']), planFor([]));
 });
@@ -166,10 +182,10 @@ test('the lint configuration and its baselines lint everything and run no tests'
 });
 
 test('ESLint gets the TypeScript files it covers; dependency-cruiser the sources of both apps', () => {
-  const targets = lintTargets(['apps/web/src/SitesPage.tsx', 'apps/server/src/routes.ts', 'apps/server/test/dive-list.test.ts',
+  const targets = lintTargets(['apps/web/src/sites/SitesPage.tsx', 'apps/server/src/routes.ts', 'apps/server/test/dive-list.test.ts',
     'apps/web/e2e/sites.spec.ts', 'apps/web/src/pages.css', 'apps/web/src/i18n/locales/en.json', 'scripts/check.mjs', 'docs/index.md', 'packages/api-client/src/index.ts']);
-  assert.deepEqual(targets.eslint, ['apps/web/src/SitesPage.tsx', 'apps/server/src/routes.ts', 'apps/server/test/dive-list.test.ts', 'apps/web/e2e/sites.spec.ts', 'packages/api-client/src/index.ts']);
-  assert.deepEqual(targets.deps, ['apps/web/src/SitesPage.tsx', 'apps/server/src/routes.ts']);
+  assert.deepEqual(targets.eslint, ['apps/web/src/sites/SitesPage.tsx', 'apps/server/src/routes.ts', 'apps/server/test/dive-list.test.ts', 'apps/web/e2e/sites.spec.ts', 'packages/api-client/src/index.ts']);
+  assert.deepEqual(targets.deps, ['apps/web/src/sites/SitesPage.tsx', 'apps/server/src/routes.ts']);
 });
 
 test('a baseline may only shrink: more suppressions or known violations than before fail', () => {
@@ -216,7 +232,7 @@ test('a change to the edit hook runs the check script tests and lints everything
 
 test('a changed check script runs its own tests', () => {
   assert.equal(planFor(['scripts/check-lib.mjs']).scripts, true);
-  assert.equal(planFor(['apps/web/src/SitesPage.tsx']).scripts, false);
+  assert.equal(planFor(['apps/web/src/sites/SitesPage.tsx']).scripts, false);
 });
 
 test('the Android app has its own lane, and the generated models follow the OpenAPI document', () => {
@@ -261,13 +277,13 @@ test('an Android UI change names the design critique gate; other Android changes
 test('each step is planned from the files changed since its own green run', () => {
   // The server tests passed after the server change; the browser tests have not passed since before it.
   const plan = planSteps({
-    typecheck: ['apps/web/src/DiversPage.tsx'],
+    typecheck: ['apps/web/src/divers/DiversPage.tsx'],
     lint: [],
     scripts: [],
     server: [],
-    web: ['apps/web/src/DiversPage.tsx'],
+    web: ['apps/web/src/divers/DiversPage.tsx'],
     android: [],
-    e2e: ['apps/server/src/sites/routes.ts', 'apps/web/src/DiversPage.tsx', 'apps/web/e2e/sites.spec.ts'],
+    e2e: ['apps/server/src/sites/routes.ts', 'apps/web/src/divers/DiversPage.tsx', 'apps/web/e2e/sites.spec.ts'],
   });
   assert.equal(plan.typecheck, true);
   assert.equal(plan.lint, 'none');
@@ -303,9 +319,9 @@ test('changed texts count, for the browser tests, as the source files that use t
   const repo = repository({
     [EN]: texts({ sites: { title: 'Dive sites' }, divers: { title: 'Divers' }, common: { save: 'Save' } }),
     [DE]: texts({ sites: { title: 'Tauchplätze' }, divers: { title: 'Taucher' }, common: { save: 'Speichern' } }),
-    'apps/web/src/SitesPage.tsx': "t('sites.title')",
-    'apps/web/src/SitePicker.tsx': 't(`sites.${key}`)',
-    'apps/web/src/DiversPage.tsx': "t('divers.title'); t('common.save')",
+    'apps/web/src/sites/SitesPage.tsx': "t('sites.title')",
+    'apps/web/src/sites/SitePicker.tsx': 't(`sites.${key}`)',
+    'apps/web/src/divers/DiversPage.tsx': "t('divers.title'); t('common.save')",
     // The group's name alone, as in a route or a query key, is not a text.
     'apps/web/src/api.ts': "['sites'] as const; '/sites/'",
   });
@@ -314,7 +330,7 @@ test('changed texts count, for the browser tests, as the source files that use t
   repo.write('apps/web/src/Admin.tsx', 'x');
 
   const narrowed = forBrowserTests([DE, 'apps/web/src/Admin.tsx'], 'HEAD', snapshot(repo.cwd), repo.cwd);
-  assert.deepEqual(narrowed.changed.sort(), ['apps/web/src/Admin.tsx', 'apps/web/src/SitePicker.tsx', 'apps/web/src/SitesPage.tsx']);
+  assert.deepEqual(narrowed.changed.sort(), ['apps/web/src/Admin.tsx', 'apps/web/src/sites/SitePicker.tsx', 'apps/web/src/sites/SitesPage.tsx']);
   assert.match(narrowed.note, /sites/);
 });
 
@@ -328,7 +344,7 @@ test('texts of a group that no source file names stay a change of the texts, whi
 });
 
 test('without changed texts, or without a base to compare them with, the files stay as they are', (t) => {
-  const repo = repository({ [EN]: texts({ sites: { title: 'Dive sites' } }), 'apps/web/src/SitesPage.tsx': "t('sites.title')" });
+  const repo = repository({ [EN]: texts({ sites: { title: 'Dive sites' } }), 'apps/web/src/sites/SitesPage.tsx': "t('sites.title')" });
   t.after(repo.drop);
   assert.deepEqual(forBrowserTests(['apps/web/src/Admin.tsx'], 'HEAD', snapshot(repo.cwd), repo.cwd).changed, ['apps/web/src/Admin.tsx']);
   assert.deepEqual(forBrowserTests([EN], null, null, repo.cwd).changed, [EN]);
@@ -487,7 +503,7 @@ test('a stale repo map stops the check except on a CI push to main, whose repo-m
 });
 
 test('the dive number pages run the areas that show them', () => {
-  for (const path of ['apps/web/src/NumberChain.tsx', 'apps/web/src/ProviderDiveNumbers.tsx']) {
+  for (const path of ['apps/web/src/providers/NumberChain.tsx', 'apps/web/src/providers/ProviderDiveNumbers.tsx']) {
     const plan = planFor([path]);
     assert.deepEqual([plan.web, plan.e2e, [...plan.areas].sort()], ['changed', 'some', ['@account', '@dives', '@layout']], path);
   }
@@ -527,10 +543,10 @@ test('what the e2e server loads: its own file and the test files it imports, fol
 // Amendment of 2026-10-24: one ui-quality variant in pnpm check.
 
 test('the other ui-quality variants run in pnpm check only when texts, shared styles or shared UI changed', () => {
-  assert.deepEqual(variantsRun(['apps/web/src/SitesPage.tsx', 'apps/server/src/sites/routes.ts', 'apps/web/e2e/sites.spec.ts']), { run: false, why: null });
+  assert.deepEqual(variantsRun(['apps/web/src/sites/SitesPage.tsx', 'apps/server/src/sites/routes.ts', 'apps/web/e2e/sites.spec.ts']), { run: false, why: null });
   for (const path of ['apps/web/src/i18n/locales/de.json', 'apps/web/src/i18n/index.ts', 'apps/web/src/ui/Button.tsx', 'apps/web/src/design/tokens.css',
     'apps/web/src/App.tsx', 'apps/web/src/pages.css', 'apps/web/src/main.tsx']) {
-    const verdict = variantsRun(['apps/web/src/SitesPage.tsx', path]);
+    const verdict = variantsRun(['apps/web/src/sites/SitesPage.tsx', path]);
     assert.equal(verdict.run, true, path);
     assert.match(verdict.why, new RegExp(path.replace(/[./]/g, '\\$&')));
   }
@@ -763,18 +779,18 @@ test('a recorded test stays passed until the map reaches it: every test, its spe
   const all = [sites, tools, untagged];
   assert.deepEqual(stillPassed(all, planFor([])), all);
   assert.deepEqual(stillPassed(all, planFor(['apps/web/e2e/support.ts'])), all);
-  assert.deepEqual(stillPassed(all, planFor(['apps/web/src/SitesPage.tsx'])), [tools, untagged]);
+  assert.deepEqual(stillPassed(all, planFor(['apps/web/src/sites/SitesPage.tsx'])), [tools, untagged]);
   assert.deepEqual(stillPassed(all, planFor(['apps/web/e2e/tools.spec.ts'])), [sites, untagged]);
   assert.deepEqual(stillPassed(all, planFor(['package.json'])), []);
 });
 
 test('passes recorded on an earlier snapshot carry over unless a change reaches them', (t) => {
-  const repo = repository({ 'apps/web/src/SitesPage.tsx': 'a', 'apps/web/src/ToolsPage.tsx': 't' });
+  const repo = repository({ 'apps/web/src/sites/SitesPage.tsx': 'a', 'apps/web/src/planning/ToolsPage.tsx': 't' });
   t.after(repo.drop);
   const sites = { line: 'sites.spec.ts › adds', file: 'sites.spec.ts', tags: ['@sites'] };
   const tools = { line: 'tools.spec.ts › plans', file: 'tools.spec.ts', tags: ['@tools'] };
   recordPassed(snapshot(repo.cwd), [sites, tools], repo.cwd);
-  repo.write('apps/web/src/SitesPage.tsx', 'b');
+  repo.write('apps/web/src/sites/SitesPage.tsx', 'b');
   const now = passedSince(snapshot(repo.cwd), repo.cwd);
   assert.deepEqual(now.tests, [tools]);
   const reported = [{ ...sites, status: 'passed' }, { line: 'tools.spec.ts › plans', file: 'tools.spec.ts', tags: ['@tools'], status: 'failed' }];

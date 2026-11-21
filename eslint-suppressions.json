@@ -162,27 +162,27 @@
       "count": 1
     }
   },
-  "apps/web/src/DiveEditForm.tsx": {
+  "apps/web/src/dives/DiveEditForm.tsx": {
     "@typescript-eslint/no-unused-vars": {
       "count": 1
     }
   },
-  "apps/web/src/DiveHistory.tsx": {
+  "apps/web/src/dives/DiveHistory.tsx": {
     "sonarjs/cognitive-complexity": {
       "count": 1
     }
   },
-  "apps/web/src/DiveList.tsx": {
+  "apps/web/src/dives/DiveList.tsx": {
     "@typescript-eslint/no-unused-vars": {
       "count": 2
     }
   },
-  "apps/web/src/ProviderPanel.tsx": {
+  "apps/web/src/dives/ProviderPanel.tsx": {
     "sonarjs/cognitive-complexity": {
       "count": 2
     }
   },
-  "apps/web/src/SiteImportPage.tsx": {
+  "apps/web/src/admin/SiteImportPage.tsx": {
     "@typescript-eslint/no-unused-vars": {
       "count": 1
     },
@@ -190,17 +190,17 @@
       "count": 1
     }
   },
-  "apps/web/src/SitePicker.tsx": {
+  "apps/web/src/sites/SitePicker.tsx": {
     "sonarjs/cognitive-complexity": {
       "count": 1
     }
   },
-  "apps/web/src/SitesPage.tsx": {
+  "apps/web/src/sites/SitesPage.tsx": {
     "sonarjs/cognitive-complexity": {
       "count": 1
     }
   },
-  "apps/web/src/ToolsPlan.tsx": {
+  "apps/web/src/planning/ToolsPlan.tsx": {
     "react-hooks/exhaustive-deps": {
       "count": 1
     }
