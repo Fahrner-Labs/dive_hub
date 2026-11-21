@@ -240,6 +240,15 @@ test('an Android UI change names the design critique gate; other Android changes
   assert.match(ui.notes.map((note) => note.text).join('\n'), /Design Consultant[\s\S]*Roborazzi/);
   assert.deepEqual(ui.notes.map((note) => note.steps).flat(), ['android']);
 
+  // The note surfaces in the summary only when the Android lane counts the file as changed (steps: ['android']);
+  // under another step's file list it stays silent.
+  const file = 'apps/android/app/src/main/kotlin/dev/divehub/android/ui/logbook/LogbookScreen.kt';
+  const none = Object.fromEntries(['typecheck', 'lint', 'scripts', 'server', 'web', 'android', 'e2e'].map((step) => [step, []]));
+  const planned = planSteps({ ...none, android: [file] });
+  assert.equal(planned.notes.length, 1);
+  assert.match(planned.notes[0], /Design Consultant/);
+  assert.deepEqual(planSteps({ ...none, web: [file] }).notes, []);
+
   for (const path of ['apps/android/shared/src/commonMain/kotlin/dev/divehub/shared/ApiClient.kt',
     'apps/android/app/src/test/kotlin/dev/divehub/android/ui/logbook/LogbookScreenshotTest.kt',
     'apps/android/app/src/test/screenshots/logbook_light.png']) {
