@@ -57,6 +57,8 @@ Start with `REPOMAP.md` for cheap per-module orientation, then drop to the code 
   `pnpm check --tests <filter>` runs given ones and records them ([development.md](docs/development.md)); `pnpm check:log`
   sums the local run log. A PR whose CI fails after a green local check gets an entry in [check escapes](docs/agents/check-escapes.md).
   A docs-only commit needs no check. A new page or module gets its path in `scripts/check-lib.mjs`; a browser test an area tag.
+  An Android UI change (`apps/android/app/src/main/`) also needs the Design Consultant's critique of its Roborazzi
+  goldens before the PR (`node scripts/check-android.mjs --review` collects them; [development.md](docs/development.md)).
 - **Gates** ([research](docs/research/2026-10-22-agent-guardrails.md)): an edit hook lints each file; run `pnpm hooks:install`
   once per clone (pre-commit check). Fix what they report; never grow a baseline
   or raise a threshold. After a fix, `pnpm lint:baseline`.

@@ -202,8 +202,15 @@ export function planFor(changed, { e2eServerLoads: loads } = {}) {
       plan.notes.push({ text: `${path} is shared by the server's kernels and the Android port, so both lanes run`, steps: ['server', 'android'] });
       continue;
     }
-    // The Android app has its own Gradle build and its own lane (ADR 0073); it changes no JS check.
-    if (path.startsWith('apps/android/')) { plan.android = true; continue; }
+    // The Android app has its own Gradle build and its own lane (ADR 0073); it changes no JS check. A change to
+    // the UI itself (app/src/main) also names the design critique gate (FAH-359, docs/development.md).
+    if (path.startsWith('apps/android/')) {
+      plan.android = true;
+      if (path.startsWith(ANDROID_UI)) {
+        plan.notes.push({ text: `${path} is Android UI: the Design Consultant critiques the updated Roborazzi goldens before the PR (docs/development.md); node scripts/check-android.mjs --review collects them`, steps: ['android'] });
+      }
+      continue;
+    }
     // The lint rules and their baselines change what every file is checked against, and nothing else.
     if (LINT_CONFIG.test(path)) {
       plan.lint = 'all';
@@ -275,6 +282,9 @@ export function planSteps(changedByStep, context = {}) {
     notes: [...new Set(notes)],
   };
 }
+
+/** The Android app's UI sources: a change there goes through the design critique gate (FAH-359). */
+export const ANDROID_UI = 'apps/android/app/src/main/';
 
 /** The lint configuration and the baselines of what it found before (research note 2026-10-22-agent-guardrails). */
 export const LINT_CONFIG = /^(eslint\.config\.mjs|eslint-suppressions\.json|\.dependency-cruiser\.cjs|\.dependency-cruiser-known-violations\.json)$/;
