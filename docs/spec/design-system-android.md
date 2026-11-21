@@ -161,7 +161,8 @@ near-neutral with a faint cool tint, not navy.
 
 **The ink button and the accent are different roles.** The web's `--color-primary` is ink (the filled button), and
 `--color-accent` is water blue (links, focus, data). The current `Theme.kt` maps Material's `primary` slot to the
-accent; that is a name collision, not a design decision. In this brief:
+accent, which does not match ADR 0064's ink primary. This brief treats that as a role-mapping correction, not a
+palette change. In this brief:
 
 - `ColorScheme.primary` / `onPrimary` are the ink button and its text.
 - `secondary` / `onSecondary` carry the accent and its text; `primaryContainer` / `secondaryContainer` carry
