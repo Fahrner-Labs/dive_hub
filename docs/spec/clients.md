@@ -1149,8 +1149,9 @@ dives, all off until the User turns them on. *Web:* `ProviderAutomation.tsx` (se
   at read time means an edit, an Import, a merge or a member leaving resolves an offer without any state to clean up.
 - **A member leaves:** soft-deleting a Dive clears its Joint dive link; a Joint dive left with fewer than two live
   members is deleted with its dismissals. The `jointDiveOffer` live hint names the Joint dive to refetch (accepting a
-  Buddy suggestion that links or creates a Dive emits it too), as every hint does. *Web (later slice):* Review's
-  "To decide" cards and an inline offer on the Dive page.
+  Buddy suggestion that links or creates a Dive emits it too), as every hint does. *Web:* `JointOffers.tsx` (the Review
+  page's "To decide" cards beside Buddy suggestions, and the inline prompt on `DivePage.tsx`); its count joins the
+  Review strip and the navigation's "to decide" count.
 
 ### Duplicate candidates
 - **Show them where the User decides,** on a page of their own ("Review", reached from one line on the logbook and a count

@@ -4,7 +4,7 @@
 > `pnpm check` fails when this map is stale. Symbols are ranked by how widely the code references them;
 > each module shows its most-referenced ones (exported symbols rank higher). Search here before walking the tree.
 
-Files: 420 · symbols: 3847 · shown: 247
+Files: 421 · symbols: 3856 · shown: 248
 
 ### server/(root)
 apps/server/src/vocabulary.ts:13 type SiteWaterType
@@ -274,11 +274,11 @@ apps/server/src/version/gate.ts:10 fn clientVersionGate
 apps/web/src/ToolsLead.tsx:45 fn Panel
 apps/web/src/ToolsLead.tsx:54 fn Conditions
 apps/web/src/PushRun.tsx:21 const named
-apps/web/src/CodeScanner.tsx:106 fn CodeScanner
 apps/web/src/ReviewRows.tsx:52 iface CompareFact
+apps/web/src/CodeScanner.tsx:106 fn CodeScanner
+apps/web/src/ReviewRows.tsx:64 fn Comparison
 apps/web/src/ProviderDiveImport.tsx:18 const DIVE_KINDS
 apps/web/src/DiveCodes.tsx:10 fn CodeFigure
-apps/web/src/ReviewRows.tsx:64 fn Comparison
 apps/web/src/DecisionTimeline.tsx:21 fn DecisionTimeline
 apps/web/src/ProfilePlot.tsx:11 const token
 apps/web/src/Cylinders.tsx:18 fn useCylinderText
@@ -290,7 +290,7 @@ apps/web/src/ImportPanel.tsx:39 const ImportContext
 apps/web/src/ReviewRows.tsx:6 iface Fact
 apps/web/src/SignedOut.tsx:20 fn useUserChanged
 apps/web/src/ProfilePlot.tsx:14 fn withAlpha
-… 520 more symbols in this module
+… 525 more symbols in this module
 
 ### web/api
 apps/web/src/api/request.ts:3 const api
@@ -304,7 +304,8 @@ apps/web/src/api/providers.ts:7 type ProviderView
 apps/web/src/api/dives.ts:16 type RecordingSummary
 apps/web/src/api/sites.ts:8 type Position
 apps/web/src/api/providers.ts:8 type ConnectionView
-… 184 more symbols in this module
+apps/web/src/api/account.ts:17 const meQuery
+… 187 more symbols in this module
 
 ### web/i18n
 apps/web/src/i18n/languages.ts:6 fn pickLanguage
@@ -321,17 +322,17 @@ apps/web/src/lib/providers.ts:70 fn useProviderText
 apps/web/src/lib/providers.ts:47 fn useProviders
 apps/web/src/lib/page.ts:8 fn usePageTitle
 apps/web/src/lib/providers.ts:87 fn useJoinNames
-apps/web/src/lib/settings.ts:13 fn settingsHref
 apps/web/src/lib/focus.ts:28 fn refocusAfterRemoval
+apps/web/src/lib/settings.ts:13 fn settingsHref
 apps/web/src/lib/geo.ts:4 iface Position
 apps/web/src/lib/focus.ts:16 fn focusHeading
 apps/web/src/lib/units.ts:20 const depthIn
-apps/web/src/lib/live.ts:116 const liveHealthy
+apps/web/src/lib/live.ts:122 const liveHealthy
 apps/web/src/lib/providers.ts:9 type SyncedField
 apps/web/src/lib/tools.ts:49 iface ToolsParams
 apps/web/src/lib/form.ts:4 const formValues
 apps/web/src/lib/devices.ts:18 const deviceName
-apps/web/src/lib/review.ts:16 fn reviewHref
+apps/web/src/lib/review.ts:17 fn reviewHref
 apps/web/src/lib/providers.ts:55 fn useProviderOf
 … 391 more symbols in this module
 
@@ -340,5 +341,5 @@ apps/web/src/ui/Layout.tsx:85 fn Notice
 apps/web/src/ui/Button.tsx:20 fn Button
 apps/web/src/ui/Layout.tsx:99 const Muted
 apps/web/src/ui/Overlay.tsx:13 fn Dialog
-apps/web/src/ui/Form.tsx:9 fn Form
+apps/web/src/ui/Layout.tsx:10 fn Panel
 … 57 more symbols in this module

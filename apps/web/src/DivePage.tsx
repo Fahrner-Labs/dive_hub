@@ -13,6 +13,7 @@ import { DiveGear } from './DiveGear.tsx';
 import { useWeightingText } from './Weighting.tsx';
 import { DiveEditForm } from './DiveEditForm.tsx';
 import { DiveHistory } from './DiveHistory.tsx';
+import { DiveJointOffers } from './JointOffers.tsx';
 import { MergeHint, MergePicker } from './MergeDive.tsx';
 import { announce } from './lib/announce.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
@@ -105,6 +106,7 @@ export function DivePage({ id, recordingId, list = '' }: { id: string; recording
         />
       </div>
       {!editing && <MergeHint dive={d} />}
+      {!editing && <DiveJointOffers diveId={d.id} />}
       {/* The assessment belongs to the Primary recording's profile and to the panel under it (ADR 0036). */}
       <AssessmentProvider diveId={d.id}>
         {/* The facts strip, the profile under it and the details under that are one panel: the profile is on the first screen. */}
