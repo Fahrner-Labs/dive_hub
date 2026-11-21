@@ -43,8 +43,8 @@ data class StoreLogbookContext(
     val hasSync: Boolean get() = syncedAt != null
 }
 
-/** One logbook page read from the store: the API's shape, plus what the sync line and the per-Dive marker need. */
-data class StoredLogbookPage(
+/** One logbook read: the API's shape, plus what the sync line and the per-Dive marker need. */
+data class LogbookRead(
     val data: DiveListView,
     val syncedAt: String?,
     val profilePending: Set<String>,
@@ -88,21 +88,18 @@ class StoreLogbook(private val store: DiveStore) {
     private fun needsApi(filter: LogbookFilter): Boolean =
         filter == LogbookFilter.CHANGED_SINCE_SENT || filter == LogbookFilter.NOT_AT_PROVIDER
 
-    fun page(page: Int, filters: Set<LogbookFilter>): StoredLogbookPage = store.transaction {
+    fun list(filters: Set<LogbookFilter>): LogbookRead = store.transaction {
         val rows = store.allDives().filter { it.deletedAt == null }
         val items = rows.map { it.toListItem() }
         val matching = items.filter { matches(it, filters) }
-        val total = matching.size
-        val offset = LogbookPaging.offset(page).coerceAtMost(total)
-        val pageItems = matching.drop(offset).take(LOGBOOK_PAGE_SIZE)
         val counts = storedCounts() ?: countsOf(items)
-        StoredLogbookPage(
+        LogbookRead(
             data = DiveListView(
-                dives = pageItems,
-                total = total,
+                dives = matching,
+                total = matching.size,
                 counts = counts,
                 totals = totalsOf(rows),
-                months = monthsOf(pageItems, matching),
+                months = monthsOf(matching),
             ),
             syncedAt = store.syncState().lastFullSyncAt,
             profilePending = pendingProfiles(),
@@ -186,19 +183,16 @@ class StoreLogbook(private val store: DiveStore) {
             lastDiveAt = rows.maxByOrNull { it.startsAt }?.startsAt,
         )
 
-    private fun monthsOf(
-        pageItems: List<DiveListViewDivesItem>,
-        matching: List<DiveListViewDivesItem>,
-    ): List<DiveListViewMonthsItem> {
-        val byMonth = matching.groupBy { localMonthOf(it.startsAt, it.utcOffsetSeconds) }
-        return pageItems.mapNotNull { localMonthOf(it.startsAt, it.utcOffsetSeconds) }
+    private fun monthsOf(dives: List<DiveListViewDivesItem>): List<DiveListViewMonthsItem> {
+        val byMonth = dives.groupBy { localMonthOf(it.startsAt, it.utcOffsetSeconds) }
+        return dives.mapNotNull { localMonthOf(it.startsAt, it.utcOffsetSeconds) }
             .distinct()
             .mapNotNull { month ->
-                byMonth[month]?.let { dives ->
+                byMonth[month]?.let { matching ->
                     DiveListViewMonthsItem(
                         month = month,
-                        dives = dives.size,
-                        durationSeconds = dives.sumOf { it.durationSeconds },
+                        dives = matching.size,
+                        durationSeconds = matching.sumOf { it.durationSeconds },
                     )
                 }
             }

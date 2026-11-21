@@ -239,6 +239,17 @@ class LogbookScreenshotTest {
     }
 
     @Test
+    fun `a server-answered filter keeps the pager and its range`() {
+        render(
+            page(dives = listOf(reef), filters = setOf(LogbookFilter.CHANGED_SINCE_SENT))
+                .copy(paged = true),
+        )
+        compose.onNodeWithText("1–25 of 312 dives").assertIsDisplayed()
+        compose.onNodeWithText("Next page").assertIsDisplayed()
+        capture("logbook_paged.png")
+    }
+
+    @Test
     fun `the sync line says when the store was last filled`() {
         render(page(dives = listOf(reef), filters = emptySet()).copy(syncedAt = "2026-11-18T12:00:00Z"))
         compose.onNodeWithText("Last synced 18 Nov 2026, 13:00.").assertIsDisplayed()

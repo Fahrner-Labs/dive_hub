@@ -58,15 +58,72 @@ class LogbookViewModelTest {
     fun tearDown() = Dispatchers.resetMain()
 
     @Test
-    fun `start on a restored page opens that page`() {
+    fun `a filter reads every matching stored row in one list`() = runTest(dispatcher) {
         val driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
         val store = DiveStore.create(driver)
         try {
+            repeat(30) { index ->
+                store.upsertDive(dive("dive-$index", "2026-11-%02dT10:00:00.000Z".format(index + 1)))
+            }
             val viewModel = viewModel(StoreLogbook(store))
 
-            viewModel.start("diver-1", page = 3)
+            viewModel.start("diver-1")
+            advanceUntilIdle()
 
-            assertEquals(3, viewModel.state.value.page)
+            assertEquals(30, viewModel.state.value.data?.total)
+            assertEquals(30, viewModel.state.value.data?.dives?.size)
+            assertFalse(viewModel.state.value.paged)
+
+            viewModel.toggle(LogbookFilter.NO_RECORDING)
+            advanceUntilIdle()
+
+            // Every stored row matches, not just the first server-era page of 25.
+            assertEquals(30, viewModel.state.value.data?.dives?.size)
+            assertFalse(viewModel.state.value.paged)
+            viewModel.forget()
+        } finally {
+            driver.close()
+        }
+    }
+
+    @Test
+    fun `a server-answered filter keeps the paged fallback`() = runTest(dispatcher) {
+        val driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
+        val store = DiveStore.create(driver)
+        try {
+            store.upsertDive(dive("dive-1", "2026-11-01T10:00:00.000Z"))
+            val queries = mutableListOf<String?>()
+            val headers = headersOf(HttpHeaders.ContentType, "application/json")
+            val engine = MockEngine { request ->
+                when (request.url.encodedPath) {
+                    "/api/providers", "/api/connections" -> respond("[]", HttpStatusCode.OK, headers)
+                    "/api/dives" -> {
+                        queries += request.url.encodedQuery
+                        respond(listJson("page-dive", total = 60), HttpStatusCode.OK, headers)
+                    }
+                    else -> respond("{}", HttpStatusCode.OK, headers)
+                }
+            }
+            val api = ApiClient(engine, "test", { null }, {}, Json { ignoreUnknownKeys = true }).also {
+                it.baseUrl = "http://test"
+            }
+            val viewModel = viewModel(StoreLogbook(store), api = api)
+            viewModel.start("diver-1")
+            advanceUntilIdle()
+            assertFalse(viewModel.state.value.paged)
+
+            viewModel.toggle(LogbookFilter.CHANGED_SINCE_SENT)
+            awaitState { viewModel.state.value.data?.total == 60 }
+
+            assertTrue(viewModel.state.value.paged)
+            assertEquals(1, viewModel.state.value.page)
+            assertEquals(3, viewModel.state.value.pageCount)
+            assertTrue(queries.last().orEmpty().contains("offset=0"))
+
+            viewModel.showPage(2)
+            awaitState { queries.last().orEmpty().contains("offset=25") }
+
+            assertEquals(2, viewModel.state.value.page)
             viewModel.forget()
         } finally {
             driver.close()
@@ -410,10 +467,10 @@ class LogbookViewModelTest {
         }
     }
 
-    private fun listJson(id: String): String = Json.encodeToString(
+    private fun listJson(id: String, total: Int = 1): String = Json.encodeToString(
         DiveListView(
             dives = listOf(listItem(id)),
-            total = 1,
+            total = total,
             counts = DiveListViewCounts(
                 noRecording = 0,
                 noSite = 0,

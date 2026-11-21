@@ -221,13 +221,15 @@ soon as the store has one, and the tools keep working from the store while a syn
 Read-only, from the synced store ([ADR 0040](../../docs/decisions/0040-logbook-rows-and-filters.md)); the rows and
 counts are the API's own, read from the store (see slice D4 above):
 
-- 25 Dives a page with `limit`/`offset` and `total` (ADR 0017); the pager and the "1–25 of 312" range sit on the list.
+- One continuous list (`LazyColumn`) of the whole stored list, newest first, under sticky month headings. Only the two
+  server-answered filters (`changed-since-sent`, `not-at-provider`) keep 25-Dive pages with `limit`/`offset`, the pager
+  and the "1–25 of 312" range (ADR 0017).
 - The top bar's filter action opens a `ModalBottomSheet` with the "Show only" toggles and their `counts`; a filter
   whose count is 0 is hidden unless it is applied. With filters applied the action carries their count as a badge, so
   the state stays visible while the sheet is closed. Offline, the sheet says a server-only filter needs a connection.
   `not-at-provider` names the connected Providers from `GET /api/providers` and `GET /api/connections` ("Not in SSI").
   No result names the applied filters and offers "Show all dives".
-- `totals` above the list and month headings with all of each month's Dives and their time (ADR 0040).
+- `totals` above the list and sticky month headings with all of each month's Dives and their time (ADR 0040).
 - Rows say the Recordings count ("No recording"), the source Provider, gas, the computer's surface interval and the
   participants as initials in circles, with names and roles as the row's accessible text. Findings are not marked on a
   row; until the Dive page shows assessments, the `with-findings` filter is how they are found.
@@ -259,7 +261,7 @@ Dives):
   and roles only.
 - **Previous/next** follow the logbook's filters (ADR 0042): "previous" is the row above, the position reads
   "Dive 12 of 312", and a control at either end stays but says it is unavailable. Back returns to the logbook with
-  its filters, on the page the Dive is on (ADR 0042).
+  its filters, scrolled to the Dive's row; a server-answered filter pages to it instead (ADR 0042).
 - Errors show by `code`; with a cache, no answer shows the stored Dive and its age, and before the first sync the
   "no connection" state. A profile still syncing says so; one that cannot be read leaves the rest of the page standing.
 
@@ -339,8 +341,9 @@ estimate beside a real zero (`loadings_missing_zero.png`).
 
 The signed-in shell has three bottom-bar places — Logbook, Tools and Settings (`ui/navigation/DiveHubBottomBar.kt`) —
 and a Dive is pushed above the place that opened it, never into the bar; the bar stays on that place selected. A switch uses `saveState`/`restoreState`, so
-the logbook comes back on its page; back from the logbook (the `main` graph's start destination) leaves the app and
-never walks back through sign-in.
+the logbook comes back where the User left it: its saved scroll position, or the page that shows the Dive a
+server-answered filter was stepped from. Back from the logbook (the `main` graph's start destination) leaves the app
+and never walks back through sign-in.
 
 The settings screen (`ui/settings/`) is a grouped M3 list: **Connection** shows the instance from
 `PreferencesInstanceUrlStore` and "Change instance" asks first, then signs out, wipes the local data and forgets the

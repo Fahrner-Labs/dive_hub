@@ -13,10 +13,10 @@ import dev.divehub.shared.DiveHubException
 import dev.divehub.shared.NoAnswerException
 import dev.divehub.shared.logbook.LogbookFilter
 import dev.divehub.shared.logbook.LogbookPaging
+import dev.divehub.shared.logbook.LogbookRead
 import dev.divehub.shared.logbook.LogbookRepository
 import dev.divehub.shared.logbook.ProviderDirectory
 import dev.divehub.shared.logbook.StoreLogbook
-import dev.divehub.shared.logbook.StoredLogbookPage
 import dev.divehub.shared.logbook.toggleFilter
 import dev.divehub.shared.sync.SyncProgress
 import kotlinx.coroutines.CancellationException
@@ -34,11 +34,16 @@ import kotlinx.coroutines.withContext
 data class LogbookUiState(
     val loading: Boolean = true,
     val refreshing: Boolean = false,
+    /**
+     * The active filters must be answered by the API, which still reads a page at a time; the list shows a pager then.
+     * Every filter the store holds is read whole, so the list is continuous.
+     */
+    val paged: Boolean = false,
     val page: Int = 1,
     val filters: Set<LogbookFilter> = emptySet(),
     val data: DiveListView? = null,
     /**
-     * The counts from the last page read. Kept while a filter read has no page yet, so the filter action and its
+     * The counts from the last read. Kept while a filter read has no list yet, so the filter action and its
      * badge stay on screen instead of blinking out.
      */
     val lastCounts: DiveListViewCounts? = null,
@@ -57,14 +62,15 @@ data class LogbookUiState(
     /** The sync's phase counts while the first page is still syncing; null until the first report. */
     val syncProgress: SyncProgress? = null,
 ) {
-    val pageCount: Int get() = data?.let { LogbookPaging.pageCount(it.total) } ?: 0
-    val range: IntRange? get() = data?.let { LogbookPaging.range(page, it.total) }
+    val pageCount: Int get() = if (paged) data?.let { LogbookPaging.pageCount(it.total) } ?: 0 else 0
+    val range: IntRange? get() = if (paged) data?.let { LogbookPaging.range(page, it.total) } else null
 }
 
 /**
- * The read-only logbook (ADR 0040): one page at a time, the "Show only" filters and the Provider names they and the
- * rows show. The store is the source (FAH-277); the two Push-backed filters are fetched online and said unavailable
- * offline. All list maths is in `shared/logbook`; this only holds what the screen last read.
+ * The read-only logbook (ADR 0040): the Diver's whole stored list under its month groups, the "Show only" filters and
+ * the Provider names they and the rows show. The store is the source (FAH-277), read whole; the two Push-backed
+ * filters are fetched online one page at a time and said unavailable offline. All list maths is in `shared/logbook`;
+ * this only holds what the screen last read.
  */
 class LogbookViewModel(
     private val store: StoreLogbook,
@@ -95,18 +101,17 @@ class LogbookViewModel(
     private var followedRevision = 0L
 
     /**
-     * Reads the first page for this User once; a different User (or a sign-in again) starts from nothing. [page] is
-     * the page restored from the destination after process death, so the list comes back where the User left it.
+     * Reads the list for this User once; a different User (or a sign-in again) starts from nothing. The scroll position
+     * is the list's own saved state, so there is no page to restore here.
      */
-    fun start(userId: String, page: Int = 1) {
+    fun start(userId: String) {
         if (loadedFor == userId) return
         loadedFor = userId
         providers = null
         activeGesture = 0L
-        val first = page.coerceAtLeast(1)
-        _state.value = LogbookUiState(page = first)
+        _state.value = LogbookUiState()
         observe()
-        load(page = first, filters = emptySet())
+        load(page = 1, filters = emptySet())
     }
 
     /** Forgets everything about the previous User (client contract §1 Security). */
@@ -155,7 +160,9 @@ class LogbookViewModel(
 
     fun retry() = refresh()
 
-    fun showPage(page: Int) = load(page, _state.value.filters)
+    fun showPage(page: Int) {
+        if (_state.value.paged) load(page, _state.value.filters)
+    }
 
     fun toggle(filter: LogbookFilter) = load(page = 1, filters = toggleFilter(_state.value.filters, filter))
 
@@ -172,11 +179,15 @@ class LogbookViewModel(
         val generation = ++readSeq
         currentRead = generation
         val keepNotice = keepData && _state.value.data == null
+        // The store answers every filter it holds with the whole list; only the two Push-backed ones page.
+        val paged = !store.canAnswer(filters)
+        val firstPage = if (paged) page.coerceAtLeast(1) else 1
         _state.update {
             it.copy(
                 loading = if (keepData) it.loading && it.data == null else it.data == null,
                 refreshing = refreshing,
-                page = page,
+                paged = paged,
+                page = firstPage,
                 filters = filters,
                 data = if (keepData) it.data else null,
                 // A silent reread must not turn an error or offline notice into an empty list.
@@ -186,7 +197,7 @@ class LogbookViewModel(
         }
         val result = try {
             withContext(ioDispatcher) {
-                if (store.canAnswer(filters)) store.page(page, filters) else readServerFiltered(page, filters)
+                if (paged) readServerFiltered(firstPage, filters) else store.list(filters)
             }
         } catch (error: DiveHubException) {
             if (currentRead != generation) return
@@ -194,13 +205,15 @@ class LogbookViewModel(
             return
         } catch (_: NoAnswerException) {
             // The server-only filter needs a connection; show the stored list without it rather than "no connection".
-            val cached = withContext(ioDispatcher) { store.page(page, store.storedFilters(filters)) }
+            val cached = withContext(ioDispatcher) { store.list(store.storedFilters(filters)) }
             if (currentRead != generation) return
             val preSync = cached.syncedAt == null && cached.data.total == 0
             _state.update {
                 it.copy(
                     loading = false,
                     refreshing = false,
+                    paged = false,
+                    page = 1,
                     data = if (preSync) null else cached.data,
                     lastCounts = if (preSync) it.lastCounts else cached.data.counts,
                     syncedAt = if (preSync) null else cached.syncedAt,
@@ -247,11 +260,11 @@ class LogbookViewModel(
         _state.update { it.copy(providers = directory) }
     }
 
-    /** The two Push-backed filters go to the API; everything else, including the page's rows, comes from the store. */
-    private suspend fun readServerFiltered(page: Int, filters: Set<LogbookFilter>): StoredLogbookPage {
+    /** The two Push-backed filters go to the API, which still pages; everything else comes from the store whole. */
+    private suspend fun readServerFiltered(page: Int, filters: Set<LogbookFilter>): LogbookRead {
         val data = api.page(page, filters)
         val context = store.context()
-        return StoredLogbookPage(data = data, syncedAt = context.syncedAt, profilePending = context.profilePending)
+        return LogbookRead(data = data, syncedAt = context.syncedAt, profilePending = context.profilePending)
     }
 
     private fun observe() {
