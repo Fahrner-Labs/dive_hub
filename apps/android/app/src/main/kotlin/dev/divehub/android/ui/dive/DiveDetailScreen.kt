@@ -76,14 +76,18 @@ import dev.divehub.android.ui.DiveHubColors
 import dev.divehub.android.ui.DiveHubText
 import dev.divehub.android.ui.DiveHubTopBar
 import dev.divehub.android.ui.Formats
+import dev.divehub.android.ui.LargeTextFontScale
 import dev.divehub.android.ui.Spacing
 import dev.divehub.android.ui.SyncLine
+import dev.divehub.android.ui.components.ContentRevealMs
 import dev.divehub.android.ui.components.EmptyState
 import dev.divehub.android.ui.components.FactRow
 import dev.divehub.android.ui.components.InkButton
 import dev.divehub.android.ui.components.QuietButton
+import dev.divehub.android.ui.components.Radius
 import dev.divehub.android.ui.components.Section
 import dev.divehub.android.ui.components.SkeletonBar
+import dev.divehub.android.ui.components.SkeletonDelayMs
 import dev.divehub.android.ui.components.rememberReducedMotion
 import dev.divehub.android.ui.components.rememberSkeletonAlpha
 import dev.divehub.api.models.DiveView
@@ -132,23 +136,14 @@ import java.util.Locale
 private const val CURRENT_DIVE_PAGE = 1
 private const val PAGER_PAGES = 3
 
-/** ADR 0064's content arrival: the skeleton gives way to the page over 150 ms, instantly with animations off. */
-private const val ContentRevealMs = 150
-
-/** At 150 % and above the top bar stacks its title under the navigation icons and a row stacks its marker. */
-private const val LargeTextFontScale = 1.5f
-
 /** The brief's named fixed dimensions, which are not spacing steps. */
 private val IconSize = 24.dp
 private val TopBarActionsReserve = 96.dp
 private val IconStroke = 2.dp
-private val ControlCorner = 8.dp
 private val ChartHeight = 160.dp
 private val ChartStroke = 2.dp
 private val ScrubDot = 5.dp
 
-/** The skeleton's pause before it replaces a blank sheet (ADR 0064's 150 ms). */
-private const val SkeletonDelayMs = 150L
 private const val SkeletonFactRows = 5
 
 /**
@@ -1083,7 +1078,7 @@ private fun ProfileChart(
         Modifier
             .fillMaxWidth()
             .height(ChartHeight)
-            .clip(RoundedCornerShape(ControlCorner))
+            .clip(RoundedCornerShape(Radius.control))
             .background(MaterialTheme.colorScheme.surfaceVariant)
             .testTag("dive_profile_chart")
             .pointerInput(depth) {

@@ -16,10 +16,8 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import dev.divehub.android.ui.DiveHubText
+import dev.divehub.android.ui.LargeTextFontScale
 import dev.divehub.android.ui.Spacing
-
-/** At 150 % and above the value goes under the label: a short label never breaks inside a word to keep a column. */
-private const val StackedLayoutFontScale = 1.5f
 
 /**
  * A label–value line: the label in [DiveHubText.label] and muted, the value in [DiveHubText.body] and end-aligned so
@@ -42,7 +40,7 @@ fun FactRow(
         .fillMaxWidth()
         .padding(vertical = Spacing.s3)
         .semantics(mergeDescendants = true) {}
-    if (LocalDensity.current.fontScale >= StackedLayoutFontScale) {
+    if (LocalDensity.current.fontScale >= LargeTextFontScale) {
         Column(row) {
             Text(
                 label,

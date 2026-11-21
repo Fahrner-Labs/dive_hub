@@ -6,9 +6,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
@@ -35,20 +35,24 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import dev.divehub.android.R
 import dev.divehub.android.ui.components.SkeletonBar
+import dev.divehub.android.ui.components.SkeletonDelayMs
 import dev.divehub.android.ui.components.rememberSkeletonAlpha
 import kotlinx.coroutines.delay
-
-/** At 150 % and above a title that no longer fits beside the icons stacks under them, left-aligned to the gutter. */
-private const val StackedTitleFontScale = 1.5f
 
 /** A title's skeleton bar, sized in the final title's line box so the bar never changes the bar's height. */
 private val TitleSkeletonWidth = 120.dp
 
-/** ADR 0064's pause before a skeleton replaces a blank slot; the page's own skeleton waits the same 150 ms. */
-private const val SkeletonDelayMs = 150L
+/**
+ * The stacked title reserves two lines at 150 % and above. A Dive's title is either "Dive 42" or its start date, and the
+ * date wraps to two lines at 200 % on every phone width (the German one too at 150 % on a narrow phone). Reserving the
+ * wrapped height while the data is still arriving keeps the bar from growing when the title lands; a one-line title
+ * simply has room for a line under it (FAH-415).
+ */
+private const val StackedTitleLines = 2
 
 /** The skeleton's handle for the arrival test; the bar itself stays decorative for TalkBack. */
 internal const val TopBarTitleSkeletonTag = "top_bar_title_skeleton"
@@ -91,7 +95,7 @@ fun DiveHubTopBar(
             }
         }
     }
-    if (stackedTitle && LocalDensity.current.fontScale >= StackedTitleFontScale) {
+    if (stackedTitle && LocalDensity.current.fontScale >= LargeTextFontScale) {
         Column(
             Modifier
                 .fillMaxWidth()
@@ -107,24 +111,30 @@ fun DiveHubTopBar(
                     Row(verticalAlignment = Alignment.CenterVertically, content = actions)
                 }
             }
+            val lineBox = titleLineHeight()
             Box(Modifier.fillMaxWidth().padding(horizontal = Spacing.s4, vertical = Spacing.s2)) {
                 if (loading) {
-                    TitleSkeleton()
+                    TitleSkeleton(lineBox = lineBox, lines = StackedTitleLines)
                 } else {
-                    Text(
-                        title,
-                        modifier = titleModifier.fillMaxWidth(),
-                        style = DiveHubText.section,
-                        color = colors.titleContentColor,
-                    )
+                    // The slot keeps the wrapped height while the title settles, so a one-line title never shrinks
+                    // the bar and a wrapped one never grows it (FAH-415).
+                    Box(Modifier.fillMaxWidth().heightIn(min = lineBox * StackedTitleLines)) {
+                        Text(
+                            title,
+                            modifier = titleModifier.fillMaxWidth(),
+                            style = DiveHubText.section,
+                            color = colors.titleContentColor,
+                        )
+                    }
                 }
             }
         }
     } else if (centerTitle) {
         CenterAlignedTopAppBar(
             title = {
+                val lineBox = titleLineHeight()
                 if (loading) {
-                    TitleSkeleton()
+                    TitleSkeleton(lineBox = lineBox, lines = 1)
                 } else {
                     Text(title, modifier = titleModifier)
                 }
@@ -136,8 +146,9 @@ fun DiveHubTopBar(
     } else {
         TopAppBar(
             title = {
+                val lineBox = titleLineHeight()
                 if (loading) {
-                    TitleSkeleton()
+                    TitleSkeleton(lineBox = lineBox, lines = 1)
                 } else {
                     Text(title, modifier = titleModifier)
                 }
@@ -149,26 +160,33 @@ fun DiveHubTopBar(
     }
 }
 
-/**
- * The title's placeholder: it holds the final title's measured line box (font padding included), stays blank for
- * ADR 0064's 150 ms, then shows the skeleton bar. Measuring the box rather than using the type scale's line height
- * keeps the stacked top bar from growing when the real title arrives (FAH-403).
- */
+/** The section style's measured line box (font padding included), the unit a title's slot is reserved in. */
 @Composable
-private fun TitleSkeleton() {
+private fun titleLineHeight(): Dp {
     val density = LocalDensity.current
     val measurer = rememberTextMeasurer()
-    val lineBox = with(density) { measurer.measure(" ", style = DiveHubText.section).size.height.toDp() }
+    return remember(measurer, density) {
+        with(density) { measurer.measure(" ", style = DiveHubText.section).size.height.toDp() }
+    }
+}
+
+/**
+ * The title's placeholder: it holds [lines] of the final title's measured line box, stays blank for ADR 0064's
+ * 150 ms, then shows the skeleton bar in the first line. Measuring the box rather than using the type scale's line
+ * height keeps the stacked top bar from growing when the real title arrives (FAH-403, FAH-415).
+ */
+@Composable
+private fun TitleSkeleton(lineBox: Dp, lines: Int) {
     var visible by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) {
         delay(SkeletonDelayMs)
         visible = true
     }
-    Box(Modifier.width(TitleSkeletonWidth).height(lineBox)) {
+    Box(Modifier.width(TitleSkeletonWidth).height(lineBox * lines)) {
         if (visible) {
             SkeletonBar(
                 Modifier
-                    .fillMaxSize()
+                    .fillMaxWidth()
                     .testTag(TopBarTitleSkeletonTag),
                 height = lineBox,
                 alpha = rememberSkeletonAlpha("top bar title"),
