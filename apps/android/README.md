@@ -122,8 +122,9 @@ From FAH-277 the screens never fetch logbook data themselves: `GET /api/dives`, 
 Push state, and offline the cached list is shown without them. `shared/logbook/StoreLogbook.kt` reads the stored list
 rows and Dive views (the API's own JSON, beside the typed columns) and computes the totals and month figures from the
 same rows the server does. The list and the dive page show "Last synced …" from `sync_state.lastFullSyncAt`, in the
-device's time zone (`ui/SyncTimeFormat.kt`, FAH-296), and a Dive whose profile series are still missing from phase 3
-says "Profile syncing"/"still syncing" from its `profiles:<id>` checkpoint.
+device's time zone (`ui/SyncTimeFormat.kt`, FAH-296), only while the live stream is down; while it is connected they
+stay quiet, and Settings shows the connection state beside the instance (FAH-342). A Dive whose profile series are
+still missing from phase 3 says "Profile syncing"/"still syncing" from its `profiles:<id>` checkpoint.
 
 - Chips: `no-recording`, `no-site` and `with-findings` are answered from the stored rows. Their counts (and the two
   Push-backed ones) come from the last list sync, so a chip keeps its number offline. `changed-since-sent` and
@@ -166,7 +167,10 @@ offline-with-cache versus offline-empty on both screens. An intended visual chan
 ## Behaviour in this slice
 
 - **Instance URL first.** A first start asks for the self-hosted instance; its origin is stored in preferences. The
-  URL has no path (the API lives under `/api` on the same origin).
+  URL has no path (the API lives under `/api` on the same origin). Before it moves from the address to sign-in, and
+  again whenever the sign-in screen is shown, the app probes `GET /api/health/live` (5 s timeout): a typo, an
+  offline phone or a host that is not a Dive Hub keeps the address form with the reason, and the sign-in screen shows
+  the reachability chip.
 - **Sign-in** is the ordinary `POST /api/auth/sign-in/email`; the session token comes from `set-auth-token` and is
   stored encrypted with an AES-GCM key in the Android Keystore. Every request sends `Authorization: Bearer`.
 - **No previous User.** Sign-in, sign-out and a 401 anywhere clear the token, the cached preferences and the cache

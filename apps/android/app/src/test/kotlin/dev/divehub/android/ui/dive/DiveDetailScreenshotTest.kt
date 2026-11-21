@@ -1,13 +1,25 @@
 package dev.divehub.android.ui.dive
 
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.click
+import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.hasScrollAction
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onLast
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
+import androidx.compose.ui.test.performSemanticsAction
+import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.swipe
 import com.github.takahirom.roborazzi.captureRoboImage
 import dev.divehub.android.ui.DiveHubTheme
 import dev.divehub.api.models.DiveView
@@ -17,6 +29,7 @@ import dev.divehub.api.models.DiveViewParticipantsItem
 import dev.divehub.api.models.DiveViewRecordingsItem
 import dev.divehub.api.models.DiveViewRecordingsItemDevice
 import dev.divehub.api.models.DiveViewRecordingsItemSummary
+import dev.divehub.api.models.DiveViewRecordingsItemSummaryGasesItem
 import dev.divehub.api.models.DiveViewRecordingsItemSummarySurfaceBreaksItem
 import dev.divehub.api.models.DiveViewValues
 import dev.divehub.api.models.DiveViewValuesStartsAt
@@ -29,6 +42,7 @@ import dev.divehub.api.models.RecordingSamplesViewSeriesItem
 import dev.divehub.shared.logbook.ProviderDirectory
 import java.util.TimeZone
 import org.junit.After
+import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -141,8 +155,78 @@ class DiveDetailScreenshotTest {
         compose.onNodeWithContentDescription("Previous dive (unavailable)").assertIsDisplayed()
         compose.onNode(hasScrollAction()).performScrollToNode(hasText("Surface break 4 min"))
         compose.onNodeWithText("Surface break 4 min").assertIsDisplayed()
+        compose.onNode(hasScrollAction()).performScrollToNode(hasText("Surface break 2 min"))
         compose.onNodeWithText("Surface break 2 min").assertIsDisplayed()
         capture("dive_surface_breaks.png")
+    }
+
+    @Test
+    fun `scrubbing the profile reads the values at the touched position`() {
+        render(state(dive = dive()))
+        compose.onNode(hasScrollAction()).performScrollToNode(hasTestTag("dive_profile_chart"))
+        val before = compose.onNodeWithTag("dive_profile_chart").getBoundsInRoot()
+        compose.onNodeWithTag("dive_profile_chart").performTouchInput {
+            click(Offset(width * 0.25f, height / 2f))
+        }
+        assertEquals(before, compose.onNodeWithTag("dive_profile_chart").getBoundsInRoot())
+        compose.onNodeWithText("12:40").assertIsDisplayed()
+        compose.onNodeWithText("23.1 m").assertIsDisplayed()
+        compose.onNodeWithText("19 °C").assertIsDisplayed()
+        compose.onNodeWithText("162 bar").assertIsDisplayed()
+        capture("dive_profile_scrub.png")
+    }
+
+    @Test
+    fun `dragging across the profile moves the readout`() {
+        render(state(dive = dive()))
+        compose.onNode(hasScrollAction()).performScrollToNode(hasTestTag("dive_profile_chart"))
+        compose.onNodeWithTag("dive_profile_chart").performTouchInput {
+            swipe(start = Offset(0f, height / 2f), end = Offset(width.toFloat(), height / 2f), durationMillis = 200)
+        }
+        compose.onNodeWithText("50:00").assertIsDisplayed()
+        compose.onNodeWithText("0.0 m").assertIsDisplayed()
+        compose.onNodeWithText("50 bar").assertIsDisplayed()
+    }
+
+    @Test
+    fun `the profile table is the text alternative and includes tank pressure`() {
+        render(state(dive = dive()))
+        compose.onNode(hasScrollAction()).performScrollToNode(hasText("Profile as a table"))
+        compose.onNodeWithText("Profile as a table").performClick()
+        compose.onAllNodesWithText("EAN32, 12 L").onLast().assertExists()
+        compose.onNode(hasScrollAction()).performScrollToNode(hasText("170 bar"))
+        compose.onNodeWithText("170 bar").assertIsDisplayed()
+    }
+
+    @Test
+    fun `TalkBack can move the scrub and read the values`() {
+        render(state(dive = dive()))
+        compose.onNode(hasScrollAction()).performScrollToNode(hasTestTag("dive_profile_chart"))
+        compose.onNodeWithTag("dive_profile_chart").performSemanticsAction(SemanticsActions.SetProgress) { it(0.25f) }
+        compose.onNodeWithText("12:40").assertIsDisplayed()
+        compose.onNodeWithText("162 bar").assertIsDisplayed()
+    }
+
+    @Test
+    fun `several tanks are numbered and keep the size they hold`() {
+        render(
+            state(
+                dive = dive(
+                    recordings = listOf(
+                        recording(
+                            gases = listOf(
+                                gas(o2 = 32.0, volumeL = 12.0),
+                                gas(o2 = 50.0, volumeL = 11.1, startPressureBar = 150.0, endPressureBar = 80.0),
+                            ),
+                        ),
+                    ),
+                ),
+                profileSamples = samples(twoTanks = true),
+            ),
+        )
+        compose.onNode(hasScrollAction()).performScrollToNode(hasText("Tank 2 (EAN50, 11.1 L)"))
+        compose.onNodeWithText("Tank 1 (EAN32, 12 L)").assertIsDisplayed()
+        compose.onNodeWithText("Tank 2 (EAN50, 11.1 L)").assertIsDisplayed()
     }
 
     @Test
@@ -150,6 +234,13 @@ class DiveDetailScreenshotTest {
         render(state(dive = dive(), syncedAt = "2026-11-18T12:00:00Z"))
         compose.onNodeWithText("Last synced 18 Nov 2026, 13:00.").assertIsDisplayed()
         capture("dive_synced.png")
+    }
+
+    @Test
+    fun `while connected the sync line stays quiet`() {
+        render(state(dive = dive(), syncedAt = "2026-11-18T12:00:00Z", connected = true))
+        compose.onNodeWithText("Last synced", substring = true).assertDoesNotExist()
+        capture("dive_connected.png")
     }
 
     @Test
@@ -215,6 +306,7 @@ class DiveDetailScreenshotTest {
         samplesPending: Boolean = false,
         syncedAt: String? = null,
         offline: Boolean = false,
+        connected: Boolean = false,
     ) = DiveDetailUiState(
         diveId = dive.id,
         loading = false,
@@ -226,6 +318,7 @@ class DiveDetailScreenshotTest {
         samplesPending = samplesPending,
         syncedAt = syncedAt,
         offline = offline,
+        connected = connected,
     )
 
     private fun dive(
@@ -283,6 +376,7 @@ class DiveDetailScreenshotTest {
 
     private fun recording(
         breaks: List<DiveViewRecordingsItemSummarySurfaceBreaksItem>? = null,
+        gases: List<DiveViewRecordingsItemSummaryGasesItem> = listOf(gas()),
     ) = DiveViewRecordingsItem(
         id = "r1",
         isPrimary = true,
@@ -296,13 +390,28 @@ class DiveDetailScreenshotTest {
             diveNumber = 57,
             diveMode = "open_circuit",
             waterType = "salt",
+            gases = gases,
             surfaceBreaks = breaks,
         ),
-        channels = listOf("depth", "temperature"),
+        channels = listOf("depth", "temperature", "tankPressure") +
+            if (gases.size > 1) listOf("tankPressure:2") else emptyList(),
+    )
+
+    private fun gas(
+        o2: Double = 32.0,
+        volumeL: Double = 12.0,
+        startPressureBar: Double = 200.0,
+        endPressureBar: Double = 50.0,
+    ) = DiveViewRecordingsItemSummaryGasesItem(
+        o2 = o2,
+        he = 0.0,
+        tankVolumeL = volumeL,
+        startPressureBar = startPressureBar,
+        endPressureBar = endPressureBar,
     )
 
     /** A profile of ten minutes with a dive to 24 m, the same every run so the picture does not change by itself. */
-    private fun samples(): RecordingSamplesView {
+    private fun samples(twoTanks: Boolean = false): RecordingSamplesView {
         val offsets = (0..75).map { it * 40_000 }
         val depths = offsets.mapIndexed { index, _ ->
             when {
@@ -311,12 +420,17 @@ class DiveDetailScreenshotTest {
                 else -> (24.3 - (index - 40) * 0.7).coerceAtLeast(0.0)
             }
         }
+        val series = mutableListOf(
+            RecordingSamplesViewSeriesItem("depth", offsets, depths),
+            RecordingSamplesViewSeriesItem("temperature", offsets, offsets.map { 18.0 + it / 600_000.0 }),
+            RecordingSamplesViewSeriesItem("tankPressure", offsets, offsets.mapIndexed { index, _ -> 200.0 - index * 2.0 }),
+        )
+        if (twoTanks) {
+            series += RecordingSamplesViewSeriesItem("tankPressure:2", offsets, offsets.mapIndexed { index, _ -> 150.0 - index })
+        }
         return RecordingSamplesView(
             recordingId = "r1",
-            series = listOf(
-                RecordingSamplesViewSeriesItem("depth", offsets, depths),
-                RecordingSamplesViewSeriesItem("temperature", offsets, offsets.map { 18.0 + it / 600_000.0 }),
-            ),
+            series = series,
         )
     }
 }

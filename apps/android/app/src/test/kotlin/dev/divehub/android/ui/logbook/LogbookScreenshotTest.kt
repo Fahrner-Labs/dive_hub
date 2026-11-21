@@ -85,6 +85,18 @@ class LogbookScreenshotTest {
     }
 
     @Test
+    fun `while connected the sync line stays quiet`() {
+        render(
+            page(dives = listOf(reef), filters = emptySet()).copy(
+                syncedAt = "2026-11-18T12:00:00Z",
+                connected = true,
+            ),
+        )
+        compose.onNodeWithText("Last synced", substring = true).assertDoesNotExist()
+        capture("logbook_connected.png")
+    }
+
+    @Test
     fun `offline with a cache shows the stored dives and their age`() {
         render(page(dives = listOf(reef), filters = emptySet()).copy(syncedAt = "2026-11-18T12:00:00Z", offline = true))
         compose.onNodeWithText("No connection. Showing dives synced as of 18 Nov 2026, 13:00.").assertIsDisplayed()

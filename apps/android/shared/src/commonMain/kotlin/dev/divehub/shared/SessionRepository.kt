@@ -10,8 +10,19 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.withTimeoutOrNull
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+
+/** The answer to the onboarding probe: the instance is a Dive Hub, or why it could not be confirmed (FAH-332). */
+sealed interface InstanceProbeResult {
+    data object Reachable : InstanceProbeResult
+    data class Unreachable(val code: String) : InstanceProbeResult
+}
+
+/** The delay after which an instance probe counts as no answer; the sign-in form stays usable. */
+const val INSTANCE_PROBE_TIMEOUT_MILLIS: Long = 5_000
 
 /** What the UI shows: still loading, the sign-in screen (with the instance already known or not), or the User. */
 sealed interface SessionState {
@@ -60,6 +71,49 @@ class SessionRepository(
 
     /** The instance URL the sign-in screen starts from, if one was used before. */
     suspend fun knownInstance(): String? = instances.load()
+
+    /**
+     * Probe `GET /api/health/live` before asking for credentials (FAH-332). The route is unauthenticated, so a typo,
+     * an offline phone or a host that is not a Dive Hub is answered here rather than as a misleading sign-in failure.
+     * The client-version gate participates too: a `client_too_old` refusal leaves the app's update-required state.
+     * Timeout and network errors are [ErrorCodes.NO_ANSWER]; an answer of the wrong shape or status is
+     * [ErrorCodes.NOT_DIVEHUB]. [timeoutMillis] is for tests; the app uses the 5 s default.
+     */
+    suspend fun probeInstance(
+        instanceUrl: String,
+        timeoutMillis: Long = INSTANCE_PROBE_TIMEOUT_MILLIS,
+    ): InstanceProbeResult {
+        val url = InstanceUrl.normalize(instanceUrl)
+            ?: return InstanceProbeResult.Unreachable(ErrorCodes.INVALID_INSTANCE_URL)
+        api.baseUrl = url
+        val result = try {
+            withTimeoutOrNull(timeoutMillis) {
+                val response = api.get(HEALTH_LIVE_PATH, authenticated = false, retry = false)
+                if (!response.status.isSuccess()) {
+                    val refusal = api.failure(response)
+                    val code = when {
+                        refusal.code == ErrorCodes.CLIENT_TOO_OLD -> ErrorCodes.CLIENT_TOO_OLD
+                        (refusal.status ?: 0) in 500..599 -> ErrorCodes.SERVER_ERROR
+                        else -> ErrorCodes.NOT_DIVEHUB
+                    }
+                    return@withTimeoutOrNull InstanceProbeResult.Unreachable(code)
+                }
+                val health = try {
+                    api.decode<HealthView>(response)
+                } catch (_: DecodeException) {
+                    return@withTimeoutOrNull InstanceProbeResult.Unreachable(ErrorCodes.NOT_DIVEHUB)
+                }
+                if (health.status == HEALTHY_STATUS) {
+                    InstanceProbeResult.Reachable
+                } else {
+                    InstanceProbeResult.Unreachable(ErrorCodes.NOT_DIVEHUB)
+                }
+            }
+        } catch (_: NoAnswerException) {
+            InstanceProbeResult.Unreachable(ErrorCodes.NO_ANSWER)
+        }
+        return result ?: InstanceProbeResult.Unreachable(ErrorCodes.NO_ANSWER)
+    }
 
     /** Whether this device holds both an instance and a session token: what a background sync needs before a request. */
     suspend fun hasSession(): Boolean = instances.load() != null && tokens.load() != null
@@ -195,3 +249,10 @@ class SessionRepository(
         _state.value = SessionState.SignedOut(instances.load())
     }
 }
+
+/** `GET /api/health/live`'s shape (FAH-332): only the status proves the host is a Dive Hub. */
+@Serializable
+private data class HealthView(val status: String)
+
+private const val HEALTH_LIVE_PATH = "/api/health/live"
+private const val HEALTHY_STATUS = "ok"

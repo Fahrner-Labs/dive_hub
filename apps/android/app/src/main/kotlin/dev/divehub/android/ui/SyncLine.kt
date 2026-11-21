@@ -17,18 +17,19 @@ import dev.divehub.android.R
 import java.util.Locale
 
 /**
- * The list's and the dive page's sync line (FAH-277): "Last synced …" while the store is fresh, or the cached state's
- * "No connection. Showing … synced as of …" when the last sync got no answer. Nothing before the first sync, where the
- * screen's own loading or pre-sync state speaks.
+ * The list's and the dive page's sync line (FAH-277): quiet while the live stream is connected; otherwise
+ * "Last synced …" while the store is fresh, or the cached state's "No connection. Showing … synced as of …" when the
+ * last sync got no answer. Nothing before the first sync, where the screen's own loading or pre-sync state speaks.
  */
 @Composable
 internal fun SyncLine(
     syncedAt: String?,
+    connected: Boolean,
     offline: Boolean,
     @StringRes offlineText: Int,
     modifier: Modifier = Modifier,
 ) {
-    if (syncedAt == null) return
+    if (connected || syncedAt == null) return
     val context = LocalContext.current
     val locale = context.resources.configuration.locales[0] ?: Locale.getDefault()
     val pattern = stringResource(R.string.sync_date_pattern)

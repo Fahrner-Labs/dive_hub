@@ -271,6 +271,7 @@ class LogbookViewModelTest {
         api = LogbookRepository(api),
         revision = revision,
         offlineState = MutableStateFlow(false),
+        connectedState = MutableStateFlow(false),
         syncProgress = MutableStateFlow(SyncProgress.EMPTY),
         refreshSync = refreshSync,
         ioDispatcher = ioDispatcher,

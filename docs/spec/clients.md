@@ -77,8 +77,9 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   Android's *Share local logs* share sheet stays available whether the setting is on or off.
   *Web:* `lib/diagnostics.ts` (the local buffer and browser capture points), `ReportProblem.tsx` (the status line and
   *Send diagnostics*, also in a failing page's fallback), `#/settings/report-problem`.
-  *Android:* under `apps/android/app`: the settings Debug group (`SettingsScreen.kt`: capability and local-capture
-  status, *Report a problem*), and `LogShare.kt` (the *Share local logs* share-sheet file).
+  *Android:* under `apps/android/app`: the settings Debug subscreen (`SettingsDebugScreen.kt`: capability and
+  local-capture status, *Report a problem*), reached from the Debug row on `SettingsScreen.kt`, and `LogShare.kt`
+  (the *Share local logs* share-sheet file).
 
 ### Security
 - **Must forget everything about the previous User** when the User changes: on sign-in as someone else, an
@@ -171,6 +172,12 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   `User-Agent: divehub-android/<version>` (the app's release version,
   [ADR 0076](../decisions/0076-api-versioning-policy.md)). The server logs it and, only for a hard break, uses it
   to answer 400 `client_too_old`: say that the app must be updated, do not retry and do not show sign-in.
+- **Onboarding probes the instance before moving from the address to sign-in** (FAH-332).
+  `GET /api/health/live` is unauthenticated and answers `{ status: 'ok', version }`; a native client checks it
+  after the address is entered (timeout about 5 s, cancellable) and only leaves the address form once that status
+  answers. A 404 or a body that is not a health answer is not a Dive Hub, never a wrong password; a 5xx keeps its
+  server-error code. Show the status beside the instance on the sign-in screen and re-check when it is shown again.
+  If the version gate is configured for this route, its 400 `client_too_old` stays the update-required state.
 - **Live hints (`GET /api/live`, [ADR 0066](../decisions/0066-live-updates-via-sse-hints.md)).** A client may open
   one `text/event-stream` per signed-in User with the session cookie, or (native) the session token as
   `Authorization: Bearer`; the browser's `EventSource` sends the cookie same-origin. The stream carries only
@@ -254,6 +261,11 @@ V1 of the native client reads offline: phones lose signal where dives are, and t
   replayed (ADR 0066). Polling remains the automatic fallback. Deleted Dives arrive as tombstones (`deletedAt`),
   never a local hard delete, and the profiles phase requests each Recording's samples at the endpoint's 20,000-point
   cap so an offline replay keeps the peaks.
+- **The connection state is the live stream's, not the network's.** While the stream is delivering, the logbook and
+  dive pages stay quiet; "Last synced …" appears only when it is down (with the cached wording when the last sync got
+  no answer), and Settings always shows the state beside the instance ("Connected", or "Offline — last synced …").
+  A proxy that buffers the stream, or a server that accepts it without framing a line, reads as not connected: the
+  socket opening is not evidence.
 - **Every offline calculation against synced data shows its age:** "Based on dives synced as of …" with the
   store's last successful sync. A personalized result (the lead estimate, the current loadings, a plan that uses
   the User's own SAC or last dive) says so while the profiles are still syncing, and rests only on the dives that
@@ -572,6 +584,14 @@ V1 of the native client reads offline: phones lose signal where dives are, and t
   minutes into one entry, and shows three entries before "Show the whole history". *Web:* `DiveHistory.tsx`, `lib/history.ts`.
 - **The depth profile needs a text alternative:** a summary (deepest point and when, duration, temperature range)
   and the samples per minute as a table (WCAG 1.1.1). *Web:* `DepthProfile.tsx`, `lib/profile.ts`.
+- **Read the profile where it is touched** (Android, FAH-337): a tap or horizontal drag on the drawn depth profile
+  reads the moment under the finger — time into the dive, depth, temperature and each tank pod's pressure, each the
+  nearest sample — in a readout strip above the chart, with a scrub line and a dot on the depth trace. Each tank is
+  named by the gas and size it holds where the Recording says, else by its pod or number; several tanks also carry
+  their number. The strip always shows a reading (the start before the first touch), so the chart keeps its place.
+  The chart is an adjustable control for TalkBack, and the readout is a polite live region, so TalkBack users hear
+  the same values; the per-minute table stays the text alternative and gains a column per tank pod. *Android:*
+  `DiveDetailScreen.kt`, `ProfileText.kt`.
 - **Tank pressure** ([ADR 0045](../decisions/0045-tank-pressure-cylinders-and-sac-on-a-dive.md)): a Recording with a
   tank pod has a series `tankPressure` (bar; further pods `tankPressure:<n>`) and, in its summary, per gas
   `tankVolumeL`, `startPressureBar` and `endPressureBar`, and the pod's `sacLpm`. Show the pressure over time on the
