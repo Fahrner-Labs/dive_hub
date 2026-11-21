@@ -110,13 +110,13 @@ test('the E-mail section switches transactional e-mail off, and the choice stays
   await page.goto('/#/settings/notifications');
   await expect(page.getByRole('heading', { name: 'E-mail', level: 1 })).toBeVisible();
   const toggle = page.getByRole('switch', { name: 'E-mail me about my logbook' });
-  await expect(toggle).toHaveAttribute('aria-checked', 'true');
+  await expect(toggle).toBeChecked();
   const saved = page.waitForResponse((response) => response.url().endsWith('/api/me/preferences') && response.request().method() === 'PATCH');
   await toggle.click();
   await saved;
-  await expect(toggle).toHaveAttribute('aria-checked', 'false');
+  await expect(toggle).not.toBeChecked();
   await page.reload();
-  await expect(toggle).toHaveAttribute('aria-checked', 'false');
+  await expect(toggle).not.toBeChecked();
   await toggle.click();
-  await expect(toggle).toHaveAttribute('aria-checked', 'true');
+  await expect(toggle).toBeChecked();
 });

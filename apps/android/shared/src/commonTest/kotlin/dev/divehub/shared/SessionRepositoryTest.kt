@@ -60,7 +60,7 @@ private class FakeCache : UserScopedStore {
 }
 
 private const val USER_JSON = """{"id":"u1","name":"Ada","email":"ada@example.com","emailVerified":true,"createdAt":"2026-01-01T00:00:00Z","updatedAt":"2026-01-01T00:00:00Z","banned":false,"twoFactorEnabled":false}"""
-private const val ME_JSON = """{"user":{"id":"u1","email":"ada@example.com","name":"Ada","role":"user","disabled":false,"createdAt":"2026-01-01T00:00:00Z"},"ownDiver":{"id":"d1","name":"Ada"},"preferences":{"language":null,"units":null}}"""
+private const val ME_JSON = """{"user":{"id":"u1","email":"ada@example.com","name":"Ada","role":"user","disabled":false,"createdAt":"2026-01-01T00:00:00Z"},"ownDiver":{"id":"d1","name":"Ada"},"preferences":{"language":null,"units":null,"mailOptOut":false}}"""
 
 private class Harness(
     val tokens: FakeTokens = FakeTokens(),
@@ -128,7 +128,7 @@ class SessionRepositoryTest {
     assertTrue(harness.cache.forgets >= 1)
     assertEquals("https://dive.example", harness.instances.value)
     assertEquals(
-        SessionState.SignedIn("https://dive.example", user, ApiMeGet200ResponsePreferences(language = null, units = null)),
+        SessionState.SignedIn("https://dive.example", user, ApiMeGet200ResponsePreferences(language = null, units = null, mailOptOut = false)),
         harness.session.state.value,
     )
 }
