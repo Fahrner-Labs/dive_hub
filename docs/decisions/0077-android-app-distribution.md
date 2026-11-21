@@ -64,6 +64,10 @@ debug install is a fresh install that wipes the on-device store — acceptable e
 use.
 
 ### D7 — The Android release lane
+> **Amended by [ADR 0081](0081-release-lane-trigger.md) (2026-11-20):** `workflow_dispatch` with the release tag as
+> its `version` input is the only trigger, not an `android-v*` tag push. The verification, build and publish steps
+> below are unchanged; the procedure is in [releases.md](../releases.md).
+
 A new workflow `.github/workflows/android-release.yml` triggers on `android-v*` tags (plus `workflow_dispatch`
 repair runs, mirroring [ADR 0068](0068-release-pipeline.md) D3). It verifies grammar and ancestry, builds
 `assembleRelease` signed from the GitHub secrets, verifies the APK signature with `apksigner`, and attaches the APK
@@ -71,7 +75,8 @@ to a GitHub Release for the tag (prerelease, non-latest for rc, `--generate-note
 on the tag, same rationale as ADR 0068.
 
 ## Consequences
-- Cutting an app release is one `git tag android-vX.Y.Z` + push on main; the APK appears on the Releases page.
+- Cutting an app release is one `git tag android-vX.Y.Z` + push on main, then a dispatch of the lane with that tag
+  ([ADR 0081](0081-release-lane-trigger.md)); the APK appears on the Releases page.
 - Key custody is ours: the GitHub secrets plus the owner's confirmed cold backup are the only copies. Rotating
   means a new signing identity and reinstalls — do not rotate.
 - Users upgrading from any debug install reinstall once (D6); release-to-release upgrades are seamless.

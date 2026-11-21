@@ -321,7 +321,7 @@ private fun DiveBody(
     val primary = profileRecording(dive.recordings)
 
     LazyColumn(modifier.testTag("dive_scroll")) {
-        item { SyncLine(state.syncedAt, state.offline, R.string.dive_offline_cached) }
+        item { SyncLine(state.syncedAt, state.connected, state.offline, R.string.dive_offline_cached) }
         item { Facts(dive, locale, imperial) }
         item { Recordings(dive, locale, state.providers) }
         if (primary != null) {

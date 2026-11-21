@@ -77,8 +77,9 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   Android's *Share local logs* share sheet stays available whether the setting is on or off.
   *Web:* `lib/diagnostics.ts` (the local buffer and browser capture points), `ReportProblem.tsx` (the status line and
   *Send diagnostics*, also in a failing page's fallback), `#/settings/report-problem`.
-  *Android:* under `apps/android/app`: the settings Debug group (`SettingsScreen.kt`: capability and local-capture
-  status, *Report a problem*), and `LogShare.kt` (the *Share local logs* share-sheet file).
+  *Android:* under `apps/android/app`: the settings Debug subscreen (`SettingsDebugScreen.kt`: capability and
+  local-capture status, *Report a problem*), reached from the Debug row on `SettingsScreen.kt`, and `LogShare.kt`
+  (the *Share local logs* share-sheet file).
 
 ### Security
 - **Must forget everything about the previous User** when the User changes: on sign-in as someone else, an
@@ -264,6 +265,11 @@ V1 of the native client reads offline: phones lose signal where dives are, and t
   replayed (ADR 0066). Polling remains the automatic fallback. Deleted Dives arrive as tombstones (`deletedAt`),
   never a local hard delete, and the profiles phase requests each Recording's samples at the endpoint's 20,000-point
   cap so an offline replay keeps the peaks.
+- **The connection state is the live stream's, not the network's.** While the stream is delivering, the logbook and
+  dive pages stay quiet; "Last synced …" appears only when it is down (with the cached wording when the last sync got
+  no answer), and Settings always shows the state beside the instance ("Connected", or "Offline — last synced …").
+  A proxy that buffers the stream, or a server that accepts it without framing a line, reads as not connected: the
+  socket opening is not evidence.
 - **Every offline calculation against synced data shows its age:** "Based on dives synced as of …" with the
   store's last successful sync. A personalized result (the lead estimate, the current loadings, a plan that uses
   the User's own SAC or last dive) says so while the profiles are still syncing, and rests only on the dives that

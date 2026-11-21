@@ -12,6 +12,9 @@ Decided in [ADR 0014](../decisions/0014-design-system-and-localization.md), surf
 `apps/web/src/design/` (tokens, base styles), `apps/web/src/ui/` (components), `apps/web/src/i18n/`
 (translations), `apps/web/src/lib/units.ts` (units and formatting).
 
+The native Android client follows the same visual identity, translated for the phone in the
+[Android design system](design-system-android.md).
+
 ## Direction
 
 **Subject:** a logbook that a family, club or dive center hosts for itself. Its main job is reading

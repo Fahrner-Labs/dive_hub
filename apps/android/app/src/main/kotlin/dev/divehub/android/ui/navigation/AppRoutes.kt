@@ -27,3 +27,6 @@ internal data class ToolsRoute(val page: ToolPage = ToolPage.Gas)
 
 @Serializable
 internal data object SettingsRoute
+
+@Serializable
+internal data object SettingsDebugRoute
