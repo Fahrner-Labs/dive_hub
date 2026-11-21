@@ -30,14 +30,14 @@ export function reviewGoldens({ root = ROOT, filter } = {}) {
 
 /**
  * The `--review` arguments: nothing, or `--filter <part of the file name>`. Anything else — an unknown argument, a
- * missing or `--`-prefixed filter value, a leftover — is an error, so a typo never silently reviews the wrong set.
+ * missing, empty or `--`-prefixed filter value, a leftover — is an error, so a typo never silently reviews the wrong set.
  */
 export function parseReviewArgs(args) {
   const [first, ...rest] = args;
   if (first === undefined) return { filter: undefined };
   if (first !== '--filter') return { error: `unknown --review argument ${first} (the only one is --filter <part of the file name>)` };
   const [value, ...leftover] = rest;
-  if (value === undefined || value.startsWith('--')) return { error: `--filter needs a part of the file name${value ? `, not ${value}` : ''}` };
+  if (value === undefined || value.startsWith('--') || value.trim() === '') return { error: `--filter needs a part of the file name${value ? `, not ${value}` : ''}` };
   if (leftover.length > 0) return { error: `unknown --review argument ${leftover[0]} (the only one is --filter <part of the file name>)` };
   return { filter: value };
 }
@@ -50,14 +50,10 @@ function review(args) {
   }
   const { outDir, copied } = reviewGoldens({ filter: parsed.filter });
   if (copied.length === 0) {
-    const message = `android: no goldens${parsed.filter ? ` matching "${parsed.filter}"` : ''} in ${GOLDENS}`;
-    // A filter that matches nothing is a typo, not an empty review set.
-    if (parsed.filter) {
-      console.error(message);
-      process.exit(1);
-    }
-    console.log(message);
-    return;
+    // A filter that matches nothing is a typo; no goldens at all is a broken checkout (the docs order --review
+    // after a green Android lane). Neither may hand an empty bundle to the critique.
+    console.error(`android: no goldens${parsed.filter ? ` matching "${parsed.filter}"` : ''} in ${GOLDENS}`);
+    process.exit(1);
   }
   console.log([`android: ${copied.length} screenshot(s) for the design critique in ${outDir}:`, ...copied.map((path) => `  ${path}`), 'Attach them to the Design Consultant review (docs/development.md: Android UI review).'].join('\n'));
 }

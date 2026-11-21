@@ -59,6 +59,9 @@ test('--review arguments: nothing or --filter <name part>, everything else an er
     ['--bogus'],
     ['logbook'],
     ['--filter'],
+    // An empty value, as from an unset shell variable, is not a name part either.
+    ['--filter', ''],
+    ['--filter', '  '],
     // A `--`-prefixed value is a mistyped option, not a name part.
     ['--filter', '--bogus'],
     // Leftovers never pass silently.
