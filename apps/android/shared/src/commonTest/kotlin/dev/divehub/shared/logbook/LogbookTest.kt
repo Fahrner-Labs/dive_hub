@@ -80,7 +80,7 @@ class LogbookPagingTest {
     }
 
     @Test
-    fun `a range names the positions a page shows`() {
+    fun `a range names the positions a server-answered page shows`() {
         assertEquals(1..25, LogbookPaging.range(1, 312))
         assertEquals(301..312, LogbookPaging.range(13, 312))
         assertNull(LogbookPaging.range(1, 0))

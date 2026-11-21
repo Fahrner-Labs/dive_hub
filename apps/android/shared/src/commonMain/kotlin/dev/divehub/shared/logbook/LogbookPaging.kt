@@ -3,7 +3,10 @@ package dev.divehub.shared.logbook
 /** A logbook page holds 25 Dives (ADR 0040); paging is offset based (ADR 0017). */
 const val LOGBOOK_PAGE_SIZE: Int = 25
 
-/** The offset paging the logbook's first page and its page buttons need. Pages are 1-based in the client. */
+/**
+ * The offset paging the server-answered logbook filters (`changed-since-sent`, `not-at-provider`) still need; the
+ * stored list is read whole. Pages are 1-based in the client.
+ */
 object LogbookPaging {
     fun offset(page: Int): Int = (page.coerceAtLeast(1) - 1) * LOGBOOK_PAGE_SIZE
 
