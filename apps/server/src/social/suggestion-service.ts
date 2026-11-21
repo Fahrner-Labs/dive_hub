@@ -14,6 +14,7 @@ import { managementOf } from '../divers/management.js';
 import { renumber } from '../divers/dive-numbers.js';
 import { DAY_MS, MAX_OFFSET_MS, OVERLAP_TOLERANCE_SECONDS, alignedForMatching, overlapWindow, overlaps } from '../dives/matching.js';
 import { writeRevision, type Actor } from '../revisions/revisions.js';
+import { emitJointOfferHint } from './offer-service.js';
 
 export class SuggestionError extends Error {
   constructor(readonly code:
@@ -110,6 +111,8 @@ async function acceptLinked(tx: Tx, args: {
   if (target.jointDiveId !== jointDiveId) await tx.update(dive).set({ jointDiveId }).where(eq(dive.id, target.id));
   await unionJointDiveParticipants(tx, jointDiveId);
   await emitSuggestionHints(tx, [{ id: args.id, diverId: suggestion.diverId }]);
+  // The new link makes both members' shared facts offerable to each other (FAH-411), and neither write above is a Revision.
+  await emitJointOfferHint(tx, jointDiveId);
 
   return { id: args.id, status: 'accepted' as const, resolvedAt: at.toISOString(), diveId: target.id, jointDiveId };
 }
@@ -450,6 +453,8 @@ export function createSuggestionService(db: Db) {
         });
         await renumber(tx, [row.suggestion.diverId]);
         await emitSuggestionHints(tx, [{ id, diverId: row.suggestion.diverId }]);
+        // The copy's empty site and depths are now offerable from the source Dive (FAH-411).
+        await emitJointOfferHint(tx, jointDiveId);
 
         return { id, status: 'accepted' as const, resolvedAt: at.toISOString(), diveId: created!.id, jointDiveId };
       });

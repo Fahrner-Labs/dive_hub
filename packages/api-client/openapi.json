@@ -409,6 +409,7 @@
               "suggestion_dive_not_found",
               "suggestion_dive_not_overlapping",
               "suggestion_link_conflict",
+              "joint_offer_not_valid",
               "merge_not_possible",
               "check_not_found",
               "continuation_not_possible",
@@ -3820,6 +3821,7 @@
                   "suggestion_dive_not_found",
                   "suggestion_dive_not_overlapping",
                   "suggestion_link_conflict",
+                  "joint_offer_not_valid",
                   "merge_not_possible",
                   "check_not_found",
                   "continuation_not_possible",
@@ -4047,6 +4049,7 @@
                   "suggestion_dive_not_found",
                   "suggestion_dive_not_overlapping",
                   "suggestion_link_conflict",
+                  "joint_offer_not_valid",
                   "merge_not_possible",
                   "check_not_found",
                   "continuation_not_possible",
@@ -4881,6 +4884,7 @@
                         "suggestion_dive_not_found",
                         "suggestion_dive_not_overlapping",
                         "suggestion_link_conflict",
+                        "joint_offer_not_valid",
                         "merge_not_possible",
                         "check_not_found",
                         "continuation_not_possible",
@@ -12463,7 +12467,8 @@
                           "fill",
                           "continuation",
                           "continuation-undo",
-                          "buddy-accept"
+                          "buddy-accept",
+                          "joint-dive-fill"
                         ]
                       },
                       "changes": {
@@ -21682,7 +21687,8 @@
                           "fill",
                           "continuation",
                           "continuation-undo",
-                          "buddy-accept"
+                          "buddy-accept",
+                          "joint-dive-fill"
                         ]
                       },
                       "changes": {
@@ -23472,6 +23478,740 @@
                     }
                   },
                   "description": "A Buddy suggestion declined by a User who manages the invited Diver; nothing was created"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/joint-dives/offers": {
+      "get": {
+        "summary": "Fill offers from the other members of the signed-in User's Joint dives",
+        "description": "One entry per source Dive: the shared facts of the User's Dive beside the other member's, and which of the User's empty fields it can fill. Offers exist only where the User's field is empty and another member has a value; differing filled values are never offered. With more than two members the newest filled value is the source. Never a Recording, notes, suit, weighting, cylinders, lead, an overridden value or a provider link.",
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "dive",
+                      "source",
+                      "fields"
+                    ],
+                    "properties": {
+                      "dive": {
+                        "type": "object",
+                        "required": [
+                          "id",
+                          "startsAt",
+                          "utcOffsetSeconds",
+                          "durationSeconds",
+                          "maxDepthM",
+                          "avgDepthM",
+                          "site"
+                        ],
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "description": "The receiving Dive, one of the signed-in User's Dives in a Joint dive"
+                          },
+                          "startsAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "utcOffsetSeconds": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "integer",
+                                "minimum": -43200,
+                                "maximum": 50400
+                              }
+                            ]
+                          },
+                          "durationSeconds": {
+                            "type": "number"
+                          },
+                          "maxDepthM": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "number"
+                              }
+                            ]
+                          },
+                          "avgDepthM": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "number"
+                              }
+                            ]
+                          },
+                          "site": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "object",
+                                "required": [
+                                  "id",
+                                  "name"
+                                ],
+                                "properties": {
+                                  "id": {
+                                    "type": "string"
+                                  },
+                                  "name": {
+                                    "type": "string"
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "source": {
+                        "type": "object",
+                        "required": [
+                          "diveId",
+                          "diver",
+                          "startsAt",
+                          "utcOffsetSeconds",
+                          "durationSeconds",
+                          "maxDepthM",
+                          "avgDepthM",
+                          "site"
+                        ],
+                        "properties": {
+                          "diveId": {
+                            "type": "string"
+                          },
+                          "diver": {
+                            "type": "object",
+                            "required": [
+                              "id",
+                              "name"
+                            ],
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "name": {
+                                "type": "string"
+                              }
+                            }
+                          },
+                          "startsAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "utcOffsetSeconds": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "integer",
+                                "minimum": -43200,
+                                "maximum": 50400
+                              }
+                            ]
+                          },
+                          "durationSeconds": {
+                            "type": "number"
+                          },
+                          "maxDepthM": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "number"
+                              }
+                            ]
+                          },
+                          "avgDepthM": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "number"
+                              }
+                            ]
+                          },
+                          "site": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "object",
+                                "required": [
+                                  "id",
+                                  "name"
+                                ],
+                                "properties": {
+                                  "id": {
+                                    "type": "string"
+                                  },
+                                  "name": {
+                                    "type": "string"
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        },
+                        "description": "The member Dive the values come from (the newest filled value when the Joint dive has more than two members)"
+                      },
+                      "fields": {
+                        "type": "array",
+                        "items": {
+                          "enum": [
+                            "siteId",
+                            "startsAt",
+                            "durationSeconds",
+                            "maxDepthM",
+                            "avgDepthM"
+                          ],
+                          "description": "A shared fact of the descent: the site, the start with its UTC offset, the duration, the max or the average depth"
+                        },
+                        "minItems": 1,
+                        "description": "The receiving Dive's empty fields this source can fill"
+                      }
+                    },
+                    "description": "The shared facts of two member Dives of one Joint dive, and which of them the signed-in User may fill"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/dives/{id}/joint-offers": {
+      "get": {
+        "summary": "Fill offers for one Dive of a Joint dive",
+        "description": "The same entries as GET /joint-dives/offers, for this Dive only. 404 `dive_not_found` unless the signed-in User manages its Diver.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "dive",
+                      "source",
+                      "fields"
+                    ],
+                    "properties": {
+                      "dive": {
+                        "type": "object",
+                        "required": [
+                          "id",
+                          "startsAt",
+                          "utcOffsetSeconds",
+                          "durationSeconds",
+                          "maxDepthM",
+                          "avgDepthM",
+                          "site"
+                        ],
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "description": "The receiving Dive, one of the signed-in User's Dives in a Joint dive"
+                          },
+                          "startsAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "utcOffsetSeconds": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "integer",
+                                "minimum": -43200,
+                                "maximum": 50400
+                              }
+                            ]
+                          },
+                          "durationSeconds": {
+                            "type": "number"
+                          },
+                          "maxDepthM": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "number"
+                              }
+                            ]
+                          },
+                          "avgDepthM": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "number"
+                              }
+                            ]
+                          },
+                          "site": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "object",
+                                "required": [
+                                  "id",
+                                  "name"
+                                ],
+                                "properties": {
+                                  "id": {
+                                    "type": "string"
+                                  },
+                                  "name": {
+                                    "type": "string"
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "source": {
+                        "type": "object",
+                        "required": [
+                          "diveId",
+                          "diver",
+                          "startsAt",
+                          "utcOffsetSeconds",
+                          "durationSeconds",
+                          "maxDepthM",
+                          "avgDepthM",
+                          "site"
+                        ],
+                        "properties": {
+                          "diveId": {
+                            "type": "string"
+                          },
+                          "diver": {
+                            "type": "object",
+                            "required": [
+                              "id",
+                              "name"
+                            ],
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "name": {
+                                "type": "string"
+                              }
+                            }
+                          },
+                          "startsAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "utcOffsetSeconds": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "integer",
+                                "minimum": -43200,
+                                "maximum": 50400
+                              }
+                            ]
+                          },
+                          "durationSeconds": {
+                            "type": "number"
+                          },
+                          "maxDepthM": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "number"
+                              }
+                            ]
+                          },
+                          "avgDepthM": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "number"
+                              }
+                            ]
+                          },
+                          "site": {
+                            "anyOf": [
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "object",
+                                "required": [
+                                  "id",
+                                  "name"
+                                ],
+                                "properties": {
+                                  "id": {
+                                    "type": "string"
+                                  },
+                                  "name": {
+                                    "type": "string"
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        },
+                        "description": "The member Dive the values come from (the newest filled value when the Joint dive has more than two members)"
+                      },
+                      "fields": {
+                        "type": "array",
+                        "items": {
+                          "enum": [
+                            "siteId",
+                            "startsAt",
+                            "durationSeconds",
+                            "maxDepthM",
+                            "avgDepthM"
+                          ],
+                          "description": "A shared fact of the descent: the site, the start with its UTC offset, the duration, the max or the average depth"
+                        },
+                        "minItems": 1,
+                        "description": "The receiving Dive's empty fields this source can fill"
+                      }
+                    },
+                    "description": "The shared facts of two member Dives of one Joint dive, and which of them the signed-in User may fill"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/joint-dives/offers/accept": {
+      "post": {
+        "summary": "Fill empty fields of one of the User's Dives from another member of its Joint dive",
+        "description": "Copies the offering member's current values (never a preview) for the named fields, as the User's own values, through the normal Revision machinery (actor `system`, cause `joint-dive-fill`). The Dive is locked first: 409 `joint_offer_not_valid` when it is no longer in a Joint dive, a requested field is filled meanwhile, or the other member no longer has a value. 404 `dive_not_found` unless the User manages the Dive.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "diveId",
+                  "fields"
+                ],
+                "properties": {
+                  "diveId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "fields": {
+                    "type": "array",
+                    "items": {
+                      "enum": [
+                        "siteId",
+                        "startsAt",
+                        "durationSeconds",
+                        "maxDepthM",
+                        "avgDepthM"
+                      ],
+                      "description": "A shared fact of the descent: the site, the start with its UTC offset, the duration, the max or the average depth"
+                    },
+                    "minItems": 1,
+                    "maxItems": 5,
+                    "uniqueItems": true
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "A fill offer accepted; the shared facts were written as the User's own values",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "diveId",
+                    "fields",
+                    "version",
+                    "values"
+                  ],
+                  "properties": {
+                    "diveId": {
+                      "type": "string"
+                    },
+                    "fields": {
+                      "type": "array",
+                      "items": {
+                        "enum": [
+                          "siteId",
+                          "startsAt",
+                          "durationSeconds",
+                          "maxDepthM",
+                          "avgDepthM"
+                        ],
+                        "description": "A shared fact of the descent: the site, the start with its UTC offset, the duration, the max or the average depth"
+                      }
+                    },
+                    "version": {
+                      "type": "integer",
+                      "description": "The Dive's version after the fill"
+                    },
+                    "values": {
+                      "type": "object",
+                      "required": [
+                        "startsAt",
+                        "utcOffsetSeconds",
+                        "durationSeconds",
+                        "maxDepthM",
+                        "avgDepthM",
+                        "site"
+                      ],
+                      "properties": {
+                        "startsAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "utcOffsetSeconds": {
+                          "anyOf": [
+                            {
+                              "type": "null"
+                            },
+                            {
+                              "type": "integer",
+                              "minimum": -43200,
+                              "maximum": 50400
+                            }
+                          ]
+                        },
+                        "durationSeconds": {
+                          "type": "number"
+                        },
+                        "maxDepthM": {
+                          "anyOf": [
+                            {
+                              "type": "null"
+                            },
+                            {
+                              "type": "number"
+                            }
+                          ]
+                        },
+                        "avgDepthM": {
+                          "anyOf": [
+                            {
+                              "type": "null"
+                            },
+                            {
+                              "type": "number"
+                            }
+                          ]
+                        },
+                        "site": {
+                          "anyOf": [
+                            {
+                              "type": "null"
+                            },
+                            {
+                              "type": "object",
+                              "required": [
+                                "id",
+                                "name"
+                              ],
+                              "properties": {
+                                "id": {
+                                  "type": "string"
+                                },
+                                "name": {
+                                  "type": "string"
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "description": "The values now in effect; the fill copied the offering Dive's current values, not a preview"
+                    }
+                  },
+                  "description": "A fill offer accepted; the shared facts were written as the User's own values"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/joint-dives/offers/decline": {
+      "post": {
+        "summary": "Decline fill offers for one of the User's Dives",
+        "description": "Stores a dismissal per named field for this Dive and Joint dive; the derivation leaves them out from then on, also after the other members' values change. 404 `dive_not_found` unless the User manages the Dive; 409 `joint_offer_not_valid` when the Dive is not in a Joint dive anymore.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "diveId",
+                  "fields"
+                ],
+                "properties": {
+                  "diveId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "fields": {
+                    "type": "array",
+                    "items": {
+                      "enum": [
+                        "siteId",
+                        "startsAt",
+                        "durationSeconds",
+                        "maxDepthM",
+                        "avgDepthM"
+                      ],
+                      "description": "A shared fact of the descent: the site, the start with its UTC offset, the duration, the max or the average depth"
+                    },
+                    "minItems": 1,
+                    "maxItems": 5,
+                    "uniqueItems": true
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The fields declined for this Dive of the Joint dive; they are not offered again",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "diveId",
+                    "fields"
+                  ],
+                  "properties": {
+                    "diveId": {
+                      "type": "string"
+                    },
+                    "fields": {
+                      "type": "array",
+                      "items": {
+                        "enum": [
+                          "siteId",
+                          "startsAt",
+                          "durationSeconds",
+                          "maxDepthM",
+                          "avgDepthM"
+                        ],
+                        "description": "A shared fact of the descent: the site, the start with its UTC offset, the duration, the max or the average depth"
+                      }
+                    }
+                  },
+                  "description": "The fields declined for this Dive of the Joint dive; they are not offered again"
                 }
               }
             }

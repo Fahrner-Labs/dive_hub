@@ -40,6 +40,7 @@ import { createSiteImportService } from './sites/import/site-import-service.js';
 import type { SiteSourceAdapter } from './sites/import/site-source.js';
 import { createSiteService } from './sites/site-service.js';
 import type { ImportSource } from './sites/sources.js';
+import { createOfferService } from './social/offer-service.js';
 import { createSuggestionService } from './social/suggestion-service.js';
 import { withSuggestionChanges } from './social/suggestion-changes.js';
 import type { BlobStore } from './storage/blob-store.js';
@@ -129,6 +130,7 @@ export function createServices({
     userAdmin: createUserAdminService(db, blobs),
     logbook, dives, checks, merging,
     suggestions: createSuggestionService(db),
+    offers: createOfferService(db),
     divers: createDiverService(db),
     equipment: createEquipmentService(db),
     centres: createCentreService(db, { ssi: ssiCentreDisplayName }),

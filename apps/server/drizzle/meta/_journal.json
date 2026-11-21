@@ -442,6 +442,13 @@
       "when": 1795156929069,
       "tag": "0062_living_scarlet_witch",
       "breakpoints": true
+    },
+    {
+      "idx": 63,
+      "version": "7",
+      "when": 1795284567337,
+      "tag": "0063_cool_christian_walker",
+      "breakpoints": true
     }
   ]
 }
