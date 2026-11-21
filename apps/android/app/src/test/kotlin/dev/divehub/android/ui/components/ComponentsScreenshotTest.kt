@@ -81,14 +81,14 @@ class ComponentsScreenshotTest {
                 Section(
                     title = "Water temperature",
                     showSeparator = false,
-                    action = { TextButton(onClick = {}) { Text("Edit") } },
+                    action = { QuietButton("Edit", onClick = {}) },
                 ) {
                     FactRow(label = "Surface interval", value = "1 h 5 min")
                 }
                 FactRow(
                     label = "Surface interval",
                     value = "1 h 5 min",
-                    note = "Time zone from the dive site",
+                    notes = listOf("Time zone from the dive site"),
                 )
             }
         }
@@ -201,7 +201,7 @@ class ComponentsScreenshotTest {
             Section(
                 title = "Dive details",
                 showSeparator = false,
-                action = { TextButton(onClick = {}) { Text("Edit") } },
+                action = { QuietButton("Edit", onClick = {}) },
             ) {
                 FactRow(label = "Max depth", value = "24.3 m")
                 FactRow(label = "Duration", value = "50 min")
@@ -212,7 +212,7 @@ class ComponentsScreenshotTest {
             Section(
                 title = "Waiting for you",
                 attention = true,
-                action = { TextButton(onClick = {}) { Text("Open") } },
+                action = { QuietButton("Open", onClick = {}) },
             ) {
                 Text("This Dive has a finding to review.", style = MaterialTheme.typography.bodyLarge)
             }
@@ -227,7 +227,7 @@ class ComponentsScreenshotTest {
                 label = "Start",
                 value = "2 Apr 2026, 11:00",
                 mark = "edited · recording: 10:58",
-                note = "Time zone from the dive site",
+                notes = listOf("Time zone from the dive site"),
             )
             FactRow(label = "Surface interval", value = "1 h 5 min")
         }

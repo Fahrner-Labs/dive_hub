@@ -62,7 +62,7 @@
     <string name="dive_no_water_type">None</string>
     <string name="dive_water_from_site">Comes from the dive site</string>
     <string name="dive_water_unknown">Not known for this dive site</string>
-    <string name="dive_choose_site_for_water">Choose a dive site, and the dive takes its water type.</string>
+    <string name="dive_choose_site_for_water">The water type comes from the dive site.</string>
     <string name="dive_water_mismatch">Your computer was set to %1$s; this site is %2$s.</string>
     <string name="dive_water_reads_shallow">Its depths read about %1$s %% shallow.</string>
     <string name="dive_water_reads_deep">Its depths read about %1$s %% deep.</string>
@@ -79,7 +79,7 @@
     <string name="water_in_sentence_custom">a custom density</string>
 
     <string name="dive_edited_value">edited · recording: %1$s</string>
-    <string name="dive_time_zone_position">Time zone from where the dive was</string>
+    <string name="dive_time_zone_position">Time zone from the dive’s position</string>
     <string name="dive_time_zone_nearby">Time zone from your dives in the days around it</string>
     <string name="dive_time_zone_unknown">Time zone unknown: the time is shown as it was logged</string>
     <string name="dive_time_with_offset">%1$s (%2$s)</string>
@@ -87,7 +87,7 @@
 
     <string name="dive_recordings">Recordings</string>
     <string name="dive_recording_n">Recording %1$d</string>
-    <string name="dive_primary">primary</string>
+    <string name="dive_primary">Primary</string>
     <string name="dive_computer_water">Water setting on the computer</string>
     <string name="dive_no_recording">This dive has no recording.</string>
     <string name="dive_no_recording_from">No recording yet: this dive comes from your %1$s logbook, typed in by hand.</string>
@@ -139,8 +139,6 @@
     <string name="dive_cylinder_pressures_used">%1$s → %2$s (%3$s used)</string>
     <string name="dive_cylinder_pressures_unknown">Pressures not known</string>
     <string name="dive_cylinder_from_pod">from a tank pod</string>
-    <string name="dive_sac_litres">SAC %1$s L/min</string>
-    <string name="dive_sac_bar">SAC %1$s/min</string>
     <string name="dive_sac_missing">SAC not known</string>
     <string name="dive_sac_missing_too_short">No SAC: the dive is shorter than 15 minutes.</string>
     <string name="dive_sac_missing_no_average_depth">No SAC: the dive has no average depth.</string>

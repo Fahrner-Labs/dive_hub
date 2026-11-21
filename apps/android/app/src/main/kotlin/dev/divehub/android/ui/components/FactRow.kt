@@ -25,7 +25,7 @@ private const val StackedLayoutFontScale = 1.5f
  * A label–value line: the label in [DiveHubText.label] and muted, the value in [DiveHubText.body] and end-aligned so
  * figures line up down the column. An edited mark and its notes sit under the value in [DiveHubText.meta]. It keeps
  * [Spacing.s3] above and below, the one comfortable density. [notes] is for a value explained over several lines, such
- * as a water mismatch or a set of pressures, so each line stays its own readable text.
+ * as a water mismatch or a set of pressures, so each line stays its own readable text; a mark is one note too.
  *
  * At large text the label takes the full width above the value, so "Duration" or "Water temperature" wraps at its
  * words instead of breaking inside one; the row grows, it is never squeezed to fit.
@@ -36,7 +36,6 @@ fun FactRow(
     value: String,
     modifier: Modifier = Modifier,
     mark: String? = null,
-    note: String? = null,
     notes: List<String> = emptyList(),
 ) {
     val row = modifier
@@ -53,7 +52,6 @@ fun FactRow(
             Spacer(Modifier.height(Spacing.s1))
             Text(value, style = DiveHubText.body)
             mark?.let { StackedNoteText(it) }
-            note?.let { StackedNoteText(it) }
             notes.forEach { StackedNoteText(it) }
         }
     } else {
@@ -70,7 +68,6 @@ fun FactRow(
             Column(Modifier.weight(0.6f), horizontalAlignment = Alignment.End) {
                 Text(value, style = DiveHubText.body, textAlign = TextAlign.End)
                 mark?.let { NoteText(it) }
-                note?.let { NoteText(it) }
                 notes.forEach { NoteText(it) }
             }
         }

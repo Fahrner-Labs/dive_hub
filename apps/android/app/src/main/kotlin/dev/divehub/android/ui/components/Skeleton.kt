@@ -26,7 +26,7 @@ private val SkeletonBarHeight = 12.dp
 private val SkeletonBarCorner = 8.dp
 
 private const val SkeletonPulseMs = 1_600
-private const val SkeletonPulseAlpha = 0.55f
+private const val SkeletonPulseAlpha = 0.7f
 private const val AnimatorScaleDisabled = 0f
 
 /**
@@ -65,6 +65,7 @@ fun SkeletonBar(modifier: Modifier, height: Dp = SkeletonBarHeight, alpha: Float
             .height(height)
             .alpha(alpha)
             .clip(RoundedCornerShape(SkeletonBarCorner))
-            .background(MaterialTheme.colorScheme.surfaceVariant),
+            // A visible tone, not surfaceVariant: 1.08:1 on the sheet read as an empty page (FAH-366 critique).
+            .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.32f)),
     )
 }

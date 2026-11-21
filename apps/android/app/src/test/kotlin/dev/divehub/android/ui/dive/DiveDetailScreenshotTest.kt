@@ -123,7 +123,7 @@ class DiveDetailScreenshotTest {
     @Test
     fun `the time zone note says where the offset came from`() {
         render(state(dive = dive(source = "position")))
-        compose.onNodeWithText("Time zone from where the dive was").assertIsDisplayed()
+        compose.onNodeWithText("Time zone from the dive’s position").assertIsDisplayed()
         capture("dive_time_zone_note.png")
     }
 
@@ -540,6 +540,7 @@ class DiveDetailScreenshotTest {
         compose.onNodeWithText("Dive 42").assertIsDisplayed()
         compose.onNodeWithTag("dive_scroll").performScrollToNode(hasText("The instance had a problem. Try again later."))
         compose.onNodeWithText("The instance had a problem. Try again later.").assertIsDisplayed()
+        compose.onNodeWithText("Try again").assertIsDisplayed()
         capture("dive_profile_failed.png")
     }
 
@@ -639,6 +640,8 @@ class DiveDetailScreenshotTest {
         )
         compose.onNodeWithText("Dive 42").assertIsDisplayed()
         capture("dive_narrow_2x.png")
+        compose.onNodeWithTag("dive_scroll").performScrollToNode(hasText("Its depths read about 2 % shallow."))
+        capture("dive_narrow_2x_water.png")
         compose.onNodeWithTag("dive_scroll").performScrollToNode(hasTestTag("dive_profile_chart"))
         capture("dive_narrow_2x_profile.png")
     }
@@ -660,6 +663,105 @@ class DiveDetailScreenshotTest {
         )
         compose.onNodeWithText("Tauchgang 42").assertIsDisplayed()
         capture("dive_de_narrow_2x.png")
+        compose.onNodeWithTag("dive_scroll").performScrollToNode(hasText("Aufzeichnungen"))
+        capture("dive_de_narrow_2x_recordings.png")
+        compose.onNodeWithTag("dive_scroll").performScrollToNode(hasText("Anastasia von Hohenberg", substring = true))
+        compose.onNodeWithText("Anastasia von Hohenberg", substring = true).assertIsDisplayed()
+        capture("dive_de_narrow_2x_participants.png")
+    }
+
+    @Test
+    @Config(qualifiers = "en-rUS-w320dp-h891dp-xxhdpi")
+    fun `the profile table is readable at 320 dp and 200 percent`() {
+        render(state(dive = dive()), fontScale = 2f)
+        compose.onNodeWithTag("dive_scroll").performScrollToNode(hasText("Profile as a table"))
+        compose.onNodeWithText("Profile as a table").performClick()
+        compose.onNodeWithTag("dive_profile_table").assertExists()
+        compose.onNodeWithTag("dive_scroll").performTouchInput {
+            swipe(start = Offset(width / 2f, height * 0.8f), end = Offset(width / 2f, height * 0.2f), durationMillis = 200)
+        }
+        capture("dive_table_narrow_2x.png")
+    }
+
+    @Test
+    @Config(qualifiers = "de-rDE-w320dp-h891dp-xxhdpi")
+    fun `the german profile table is readable at 320 dp and 200 percent`() {
+        render(state(dive = dive()), fontScale = 2f)
+        compose.onNodeWithTag("dive_scroll").performScrollToNode(hasText("Profil als Tabelle"))
+        compose.onNodeWithText("Profil als Tabelle").performClick()
+        compose.onNodeWithTag("dive_profile_table").assertExists()
+        compose.onNodeWithTag("dive_scroll").performTouchInput {
+            swipe(start = Offset(width / 2f, height * 0.8f), end = Offset(width / 2f, height * 0.2f), durationMillis = 200)
+        }
+        capture("dive_table_de_narrow_2x.png")
+    }
+
+    @Test
+    @Config(qualifiers = "en-rUS-w320dp-h891dp-night-xxhdpi")
+    fun `the dark dive page at 320 dp and 200 percent`() {
+        render(
+            state(dive = dive(notes = "Drifted along the wall and met a turtle.")),
+            darkTheme = true,
+            fontScale = 2f,
+        )
+        capture("dive_dark_narrow_2x.png")
+        compose.onNodeWithTag("dive_scroll").performScrollToNode(hasTestTag("dive_profile_chart"))
+        capture("dive_dark_narrow_2x_profile.png")
+    }
+
+    @Test
+    @Config(qualifiers = "en-rUS-w360dp-h891dp-xxhdpi")
+    fun `the dive page at 360 dp`() {
+        render(state(dive = dive()))
+        capture("dive_360.png")
+    }
+
+    @Test
+    @Config(qualifiers = "en-rUS-w390dp-h891dp-xxhdpi")
+    fun `the dive page at 390 dp`() {
+        render(state(dive = dive()))
+        capture("dive_390.png")
+    }
+
+    @Test
+    @Config(qualifiers = "en-rUS-w320dp-h891dp-xxhdpi")
+    fun `the offline empty state at 320 dp and 200 percent`() {
+        render(DiveDetailUiState(loading = false, offline = true), fontScale = 2f)
+        compose.onNodeWithText("No connection").assertIsDisplayed()
+        capture("dive_offline_narrow_2x.png")
+    }
+
+    @Test
+    @Config(qualifiers = "en-rUS-w320dp-h891dp-xxhdpi")
+    fun `the error empty state at 320 dp and 200 percent`() {
+        render(DiveDetailUiState(loading = false, error = ErrorCodes.SERVER_ERROR), fontScale = 2f)
+        compose.onNodeWithText("Something went wrong").assertIsDisplayed()
+        capture("dive_error_narrow_2x.png")
+    }
+
+    @Test
+    @Config(qualifiers = "en-rUS-w411dp-h891dp-night-xxhdpi")
+    fun `the first load in the dark`() {
+        render(DiveDetailUiState(loading = true), darkTheme = true)
+        compose.onNodeWithContentDescription("Loading…").assertExists()
+        compose.mainClock.advanceTimeBy(250)
+        capture("dive_loading_dark.png")
+    }
+
+    @Test
+    @Config(qualifiers = "en-rUS-w320dp-h891dp-xxhdpi")
+    fun `the first load at 320 dp and 200 percent`() {
+        render(DiveDetailUiState(loading = true), fontScale = 2f)
+        compose.onNodeWithContentDescription("Loading…").assertExists()
+        compose.mainClock.advanceTimeBy(250)
+        capture("dive_loading_narrow_2x.png")
+    }
+
+    @Test
+    fun `the primary recording is marked`() {
+        render(state(dive = dive()))
+        compose.onNodeWithTag("dive_scroll").performScrollToNode(hasText("Primary"))
+        compose.onNodeWithText("Primary").assertIsDisplayed()
     }
 
     private fun render(

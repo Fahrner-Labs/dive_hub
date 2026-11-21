@@ -1,19 +1,41 @@
 package dev.divehub.android.ui
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarColors
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import dev.divehub.android.R
+import dev.divehub.android.ui.components.SkeletonBar
+import dev.divehub.android.ui.components.rememberSkeletonAlpha
+
+/** At 150 % and above a title that no longer fits beside the icons stacks under them, left-aligned to the gutter. */
+private const val StackedTitleFontScale = 1.5f
+
+/** A title's skeleton bar, sized in the final title's line box so the bar never changes the bar's height. */
+private val TitleSkeletonWidth = 120.dp
 
 /**
  * The one app bar every screen draws (FAH-335): the screen's title and, on a pushed screen, a real back arrow. A
@@ -22,8 +44,13 @@ import dev.divehub.android.R
  *
  * [centerTitle] is for a screen whose title is the subject of the page rather than a section label; the Dive page
  * centres it between its leading back arrow and its trailing neighbour chevrons (ADR 0018, 2026-11-20 amendment).
+ * [stackedTitle] moves that title to its own full-width row at 150 % and above, left-aligned to the gutter, because a
+ * long title such as "Tauchgang 42" no longer fits between the icons at 200 % and would otherwise break inside a word.
  * [titleModifier] carries a screen's own semantics on the title, such as the heading role. [colors] is for a screen
  * that follows the brief's frame tone (the background behind the bars) rather than Material's surface.
+ *
+ * [loading] keeps the title's slot in the final layout while the data is still arriving: a skeleton bar in the title's
+ * line height, so the bar's height does not change when the title appears (FAH-366 critique).
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -31,6 +58,8 @@ fun DiveHubTopBar(
     title: String,
     onBack: (() -> Unit)? = null,
     centerTitle: Boolean = false,
+    stackedTitle: Boolean = false,
+    loading: Boolean = false,
     titleModifier: Modifier = Modifier,
     colors: TopAppBarColors = TopAppBarDefaults.topAppBarColors(),
     actions: @Composable RowScope.() -> Unit = {},
@@ -45,16 +74,72 @@ fun DiveHubTopBar(
             }
         }
     }
-    if (centerTitle) {
+    if (stackedTitle && LocalDensity.current.fontScale >= StackedTitleFontScale) {
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .background(colors.containerColor)
+                .statusBarsPadding(),
+        ) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                CompositionLocalProvider(LocalContentColor provides colors.navigationIconContentColor) {
+                    navigationIcon()
+                }
+                Spacer(Modifier.weight(1f))
+                CompositionLocalProvider(LocalContentColor provides colors.actionIconContentColor) {
+                    Row(verticalAlignment = Alignment.CenterVertically, content = actions)
+                }
+            }
+            Box(Modifier.fillMaxWidth().padding(horizontal = Spacing.s4, vertical = Spacing.s2)) {
+                if (loading) {
+                    val height = with(LocalDensity.current) { DiveHubText.section.lineHeight.toDp() }
+                    SkeletonBar(
+                        Modifier.width(TitleSkeletonWidth),
+                        height = height,
+                        alpha = rememberSkeletonAlpha("top bar title"),
+                    )
+                } else {
+                    Text(
+                        title,
+                        modifier = titleModifier.fillMaxWidth(),
+                        style = DiveHubText.section,
+                        color = colors.titleContentColor,
+                    )
+                }
+            }
+        }
+    } else if (centerTitle) {
         CenterAlignedTopAppBar(
-            title = { Text(title, modifier = titleModifier) },
+            title = {
+                if (loading) {
+                    val height = with(LocalDensity.current) { DiveHubText.section.lineHeight.toDp() }
+                    SkeletonBar(
+                        Modifier.width(TitleSkeletonWidth),
+                        height = height,
+                        alpha = rememberSkeletonAlpha("top bar title"),
+                    )
+                } else {
+                    Text(title, modifier = titleModifier)
+                }
+            },
             navigationIcon = navigationIcon,
             actions = actions,
             colors = colors,
         )
     } else {
         TopAppBar(
-            title = { Text(title, modifier = titleModifier) },
+            title = {
+                if (loading) {
+                    val height = with(LocalDensity.current) { DiveHubText.section.lineHeight.toDp() }
+                    SkeletonBar(
+                        Modifier.width(TitleSkeletonWidth),
+                        height = height,
+                        alpha = rememberSkeletonAlpha("top bar title"),
+                    )
+                } else {
+                    Text(title, modifier = titleModifier)
+                }
+            },
             navigationIcon = navigationIcon,
             actions = actions,
             colors = colors,
