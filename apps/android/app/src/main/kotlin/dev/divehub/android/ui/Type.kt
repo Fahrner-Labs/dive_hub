@@ -58,13 +58,6 @@ object DiveHubText {
     val meta = style(12, 16, FontWeight.Normal)
 }
 
-/**
- * Numbers in data (depths, durations, times, counts, temperatures, pressures, SAC and profile samples) line up by
- * being end-aligned in their column, never by a monospace font. Poppins, the one family, has no tabular (`tnum`)
- * feature in its 400/500/600 builds, so `fontFeatureSettings = "tnum"` would be a no-op; there is no tabular helper
- * until a build that carries the feature is bundled.
- */
-
 /** Every Material slot is set from the semantic scale, so no slot falls back to a Material default. */
 val DiveHubTypography = Typography(
     displayLarge = DiveHubText.hero,

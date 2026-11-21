@@ -207,13 +207,13 @@ heading or empty state. The table maps each one to the web component it translat
 | Android component | Web counterpart | Rules |
 |---|---|---|
 | `Section` | `Panel` | A titled section of the sheet: heading, optional action, content. A hairline with `s5` above separates it from the section before. No card, outline or elevation. `attention` paints it with `accent-soft` for something waiting for the User; a single form uses the same section with a narrow content width. |
-| `FactRow` | facts in `PageHeader`, table rows | A label–value line: label in `label` and muted, value in `body`; numbers tabular. An edited mark and a note sit under the value in `meta`. Vertical padding `s3`. |
+| `FactRow` | facts in `PageHeader`, table rows | A label–value line: label in `label` and muted, value in `body` and end-aligned. An edited mark and a note sit under the value in `meta`. Vertical padding `s3`. |
 | `DiveRow` | `DiveList` | The logbook's row: title in `bodyStrong`, aligned depth, duration and facts, participant avatars. The whole row is the target; month headings sit above the rows. |
 | `EmptyState` | the empty and not-found rule | Says why it is empty and offers the way on. No dead end. The action is a `Button` or a quiet `TextButton`. |
 | `Button` | `Button` | `primary` is ink; `secondary` is tonal with a control border; `quiet` is text-like; `danger` confirms a destructive action. A 48 dp target; `small` may look 40 dp but keeps the 48 dp target. One primary per section. No Material pill. |
 | `IconButton` | the icon-only exceptions | Icon-only is the exception, and this brief owns the Android ones: the top app bar's back and previous/next are platform navigation, alongside a dialog's close and a password field's eye from the ADR 0018 amendment. Full accessible names and a 48 dp target. Chevrons say "(unavailable)" and are disabled at the ends. |
 | `TextField` | `TextField` | Label, supporting text and error. `body` 16 sp, `Radius.control`, a visible focus ring. No floating-label-only field. |
-| `NumberField` | `NumberField` | Numeric keyboard, unit suffix, the UI language's format, value committed on blur. Tabular figures. |
+| `NumberField` | `NumberField` | Numeric keyboard, unit suffix, the UI language's format, value committed on blur. Figures end-aligned. |
 | `PasswordField` | `PasswordField` | A field with an eye toggle inside it, a full accessible name and autofill intact. Never a plain password field. |
 | `SearchField` | `SearchList` | A search field with results under it, the typed part marked, a status line, and a way on when nothing matches. Picking a row saves. |
 | `ChoiceRow` | `Checkbox`, `RadioGroup`, `Switch` | A full-row target with label and supporting text. A switch takes effect at once; a checkbox is a form choice; radios are for up to five fixed options. 48 dp. |
