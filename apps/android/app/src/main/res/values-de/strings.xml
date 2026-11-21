@@ -10,6 +10,9 @@
     <string name="instance_hint">https://tauchen.beispiel</string>
     <string name="instance_continue">Weiter</string>
     <string name="instance_change">Instanz ändern</string>
+    <string name="instance_checking">Wird geprüft…</string>
+    <string name="instance_reachable">Verbunden</string>
+    <string name="instance_unreachable">Nicht erreichbar</string>
 
     <string name="sign_in_title">Anmelden</string>
     <string name="sign_in_about">Nutze die E-Mail-Adresse und das Passwort deines Dive-Hub-Kontos.</string>
@@ -32,6 +35,7 @@
     <string name="error_user_disabled">Dieses Konto ist deaktiviert. Bitte die Administration fragen.</string>
     <string name="error_sign_in_required">Deine Sitzung ist beendet. Melde dich erneut an.</string>
     <string name="error_invalid_instance_url">Gib die Adresse deiner Dive-Hub-Instanz ein, z. B. https://tauchen.beispiel.</string>
+    <string name="error_not_divehub">Diese Adresse antwortet, ist aber keine Dive-Hub-Instanz.</string>
     <string name="error_missing_token">Die Instanz hat kein Sitzungs-Token ausgegeben. Prüfe, ob sie aktuell ist.</string>
     <string name="error_no_answer">Keine Antwort von der Instanz. Prüfe die Adresse und deine Verbindung.</string>
     <string name="error_server">Die Instanz hatte ein Problem. Versuche es später erneut.</string>
@@ -40,9 +44,8 @@
     <string name="update_required_title">DiveHub aktualisieren</string>
     <string name="update_required_body">Dieser Server braucht eine neuere Version der App. Aktualisiere DiveHub, um sie weiter zu nutzen.</string>
 
-    <string name="dive_back">Logbuch</string>
+    <string name="dive_back">Zurück</string>
     <string name="dive_title_number">Tauchgang %1$d</string>
-    <string name="dive_position_of">Tauchgang %1$d von %2$d</string>
     <string name="dive_previous">Vorheriger Tauchgang</string>
     <string name="dive_next">Nächster Tauchgang</string>
     <string name="dive_previous_unavailable">Vorheriger Tauchgang (nicht verfügbar)</string>
@@ -96,6 +99,10 @@
     <string name="dive_profile_temperature">Wasser %1$s.</string>
     <string name="dive_profile_temperature_range">%1$s – %2$s</string>
     <string name="dive_profile_table">Profil als Tabelle</string>
+    <string name="dive_tank_gas_size">%1$s, %2$s</string>
+    <string name="dive_tank_pressure">Flaschendruck</string>
+    <string name="dive_tank_numbered_gas">Flasche %1$d (%2$s)</string>
+    <string name="dive_tank_numbered">Flasche %1$d</string>
     <string name="dive_time">Zeit</string>
     <string name="dive_depth">Tiefe</string>
     <string name="dive_temperature">Temperatur</string>
@@ -548,6 +555,9 @@
     <string name="settings_title">Einstellungen</string>
     <string name="settings_section_connection">Verbindung</string>
     <string name="settings_instance">Instanz</string>
+    <string name="settings_connection_connected">Verbunden</string>
+    <string name="settings_connection_offline">Offline — zuletzt synchronisiert: %1$s.</string>
+    <string name="settings_connection_never">Offline — noch nicht synchronisiert.</string>
     <string name="settings_change_instance_title">Instanz wechseln?</string>
     <string name="settings_change_instance_body">Beim Wechsel der Instanz wirst du abgemeldet und die lokalen Daten auf diesem Gerät werden gelöscht.</string>
     <string name="settings_cancel">Abbrechen</string>
@@ -556,8 +566,6 @@
     <string name="settings_sign_out_title">Abmelden?</string>
     <string name="settings_sign_out_body">Beim Abmelden werden die Sitzung und die lokalen Daten von diesem Gerät entfernt.</string>
     <string name="settings_section_sync">Synchronisierung</string>
-    <string name="settings_sync_never">Noch nicht synchronisiert. Deine Tauchgänge werden synchronisiert, sobald du online bist.</string>
-    <string name="settings_sync_offline">Keine Verbindung. Zuletzt synchronisiert bis %1$s.</string>
     <string name="settings_sync_now">Jetzt synchronisieren</string>
     <string name="settings_syncing">Wird synchronisiert…</string>
     <string name="settings_section_about">Über</string>
@@ -568,6 +576,8 @@
     <string name="settings_close">Schließen</string>
 
     <string name="settings_section_debug">Debug</string>
+    <string name="settings_debug_summary">Diagnose, Meldungen und lokale Protokolle.</string>
+    <string name="settings_debug_back">Zurück</string>
     <string name="settings_debug_diagnostics">Diagnose</string>
     <string name="settings_debug_checking">Es wird geprüft, ob dieser Dive Hub Diagnosen annimmt…</string>
     <string name="settings_debug_on">Dieser Dive Hub nimmt Diagnosen an.</string>

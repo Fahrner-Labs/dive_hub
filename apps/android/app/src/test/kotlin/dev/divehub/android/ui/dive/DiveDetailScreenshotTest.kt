@@ -1,13 +1,30 @@
 package dev.divehub.android.ui.dive
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.hasScrollAction
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.click
+import androidx.compose.ui.test.getBoundsInRoot
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onLast
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
+import androidx.compose.ui.test.performSemanticsAction
+import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.swipe
 import com.github.takahirom.roborazzi.captureRoboImage
 import dev.divehub.android.ui.DiveHubTheme
 import dev.divehub.api.models.DiveView
@@ -21,6 +38,7 @@ import dev.divehub.api.models.DiveViewSac
 import dev.divehub.api.models.DiveViewRecordingsItem
 import dev.divehub.api.models.DiveViewRecordingsItemDevice
 import dev.divehub.api.models.DiveViewRecordingsItemSummary
+import dev.divehub.api.models.DiveViewRecordingsItemSummaryGasesItem
 import dev.divehub.api.models.DiveViewRecordingsItemSummarySurfaceBreaksItem
 import dev.divehub.api.models.DiveViewSuit
 import dev.divehub.api.models.DiveViewValues
@@ -36,6 +54,8 @@ import dev.divehub.shared.logbook.ProviderDirectory
 import kotlinx.serialization.json.JsonPrimitive
 import java.util.TimeZone
 import org.junit.After
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -144,12 +164,296 @@ class DiveDetailScreenshotTest {
                 ),
             ),
         )
-        compose.onNodeWithText("Dive 1 of 312").assertIsDisplayed()
+        compose.onNodeWithText("Dive 42").assertIsDisplayed()
         compose.onNodeWithContentDescription("Previous dive (unavailable)").assertIsDisplayed()
-        compose.onNode(hasScrollAction()).performScrollToNode(hasText("Surface break 4 min"))
+        compose.onNodeWithTag("dive_scroll").performScrollToNode(hasText("Surface break 4 min"))
         compose.onNodeWithText("Surface break 4 min").assertIsDisplayed()
+        compose.onNodeWithTag("dive_scroll").performScrollToNode(hasText("Surface break 2 min"))
         compose.onNodeWithText("Surface break 2 min").assertIsDisplayed()
         capture("dive_surface_breaks.png")
+    }
+
+    @Test
+    fun `scrubbing the profile reads the values at the touched position`() {
+        render(state(dive = dive()))
+        compose.onNodeWithTag("dive_scroll").performScrollToNode(hasTestTag("dive_profile_chart"))
+        val before = compose.onNodeWithTag("dive_profile_chart").getBoundsInRoot()
+        compose.onNodeWithTag("dive_profile_chart").performTouchInput {
+            click(Offset(width * 0.25f, height / 2f))
+        }
+        assertEquals(before, compose.onNodeWithTag("dive_profile_chart").getBoundsInRoot())
+        compose.onNodeWithText("12:40").assertIsDisplayed()
+        compose.onNodeWithText("23.1 m").assertIsDisplayed()
+        compose.onNodeWithText("19 °C").assertIsDisplayed()
+        compose.onNodeWithText("162 bar").assertIsDisplayed()
+        capture("dive_profile_scrub.png")
+    }
+
+    @Test
+    fun `dragging across the profile moves the readout instead of switching dives`() {
+        val opened = mutableListOf<String>()
+        render(state(dive = dive()), onOpenDive = opened::add)
+        compose.onNodeWithTag("dive_scroll").performScrollToNode(hasTestTag("dive_profile_chart"))
+        compose.onNodeWithTag("dive_profile_chart").performTouchInput {
+            swipe(start = Offset(0f, height / 2f), end = Offset(width.toFloat(), height / 2f), durationMillis = 200)
+        }
+        assertTrue(opened.isEmpty())
+        compose.onNodeWithText("50:00").assertIsDisplayed()
+        compose.onNodeWithText("0.0 m").assertIsDisplayed()
+        compose.onNodeWithText("50 bar").assertIsDisplayed()
+    }
+
+    @Test
+    fun `swiping to a neighbour opens it and re-anchors on the new dive`() {
+        val opened = mutableListOf<String>()
+        val first = state(dive = dive())
+        val second = state(
+            dive = dive(number = 43).copy(id = "d2"),
+            neighbours = NeighboursView(
+                previous = NeighboursViewPrevious("d1"),
+                next = NeighboursViewNext("d3"),
+                position = 13,
+                total = 312,
+            ),
+        )
+        compose.setContent {
+            var current by remember { mutableStateOf(first) }
+            DiveHubTheme(darkTheme = false) {
+                DiveDetailScreen(
+                    state = current,
+                    units = "metric",
+                    onBack = {},
+                    onRetry = {},
+                    onOpenDive = { id ->
+                        opened += id
+                        if (id == "d2") current = second
+                    },
+                )
+            }
+        }
+        compose.onNodeWithTag("dive_pager").performTouchInput {
+            swipe(start = Offset(width * 0.9f, height / 2f), end = Offset(width * 0.1f, height / 2f), durationMillis = 200)
+        }
+        compose.waitForIdle()
+        assertEquals(listOf("d2"), opened)
+        compose.onNodeWithText("Dive 43").assertIsDisplayed()
+
+        // The second swipe uses the new Dive's neighbours: it opens d3, not d2 again.
+        compose.onNodeWithTag("dive_pager").performTouchInput {
+            swipe(start = Offset(width * 0.9f, height / 2f), end = Offset(width * 0.1f, height / 2f), durationMillis = 200)
+        }
+        compose.waitForIdle()
+        assertEquals(listOf("d2", "d3"), opened)
+    }
+
+    @Test
+    fun `swiping the other way opens the previous dive`() {
+        val opened = mutableListOf<String>()
+        render(state(dive = dive()), onOpenDive = opened::add)
+        compose.onNodeWithTag("dive_pager").performTouchInput {
+            swipe(start = Offset(width * 0.1f, height / 2f), end = Offset(width * 0.9f, height / 2f), durationMillis = 200)
+        }
+        compose.waitForIdle()
+        assertEquals(listOf("d0"), opened)
+        compose.onNodeWithTag("dive_scroll").assertIsDisplayed()
+    }
+
+    @Test
+    fun `swiping before the first dive springs back without opening one`() {
+        val opened = mutableListOf<String>()
+        render(
+            state(
+                dive = dive(),
+                neighbours = NeighboursView(
+                    previous = null,
+                    next = NeighboursViewNext("d2"),
+                    position = 1,
+                    total = 312,
+                ),
+            ),
+            onOpenDive = opened::add,
+        )
+        compose.onNodeWithTag("dive_pager").performTouchInput {
+            swipe(start = Offset(width * 0.1f, height / 2f), end = Offset(width * 0.9f, height / 2f), durationMillis = 200)
+        }
+        compose.waitForIdle()
+        assertTrue(opened.isEmpty())
+        compose.onNodeWithTag("dive_scroll").assertIsDisplayed()
+    }
+
+    @Test
+    fun `swiping past the last dive springs back without opening one`() {
+        val opened = mutableListOf<String>()
+        render(
+            state(
+                dive = dive(),
+                neighbours = NeighboursView(
+                    previous = NeighboursViewPrevious("d0"),
+                    next = null,
+                    position = 312,
+                    total = 312,
+                ),
+            ),
+            onOpenDive = opened::add,
+        )
+        compose.onNodeWithTag("dive_pager").performTouchInput {
+            swipe(start = Offset(width * 0.9f, height / 2f), end = Offset(width * 0.1f, height / 2f), durationMillis = 200)
+        }
+        compose.waitForIdle()
+        assertTrue(opened.isEmpty())
+        compose.onNodeWithTag("dive_scroll").assertIsDisplayed()
+    }
+
+    @Test
+    fun `a valid swipe still opens a neighbour after an end-stop springs back`() {
+        val opened = mutableListOf<String>()
+        render(
+            state(
+                dive = dive(),
+                neighbours = NeighboursView(
+                    previous = null,
+                    next = NeighboursViewNext("d2"),
+                    position = 1,
+                    total = 312,
+                ),
+            ),
+            onOpenDive = opened::add,
+        )
+        // The start-of-list end-stop: swipe right, let it spring back.
+        compose.onNodeWithTag("dive_pager").performTouchInput {
+            swipe(start = Offset(width * 0.1f, height / 2f), end = Offset(width * 0.9f, height / 2f), durationMillis = 200)
+        }
+        compose.waitForIdle()
+        assertTrue(opened.isEmpty())
+        compose.onNodeWithTag("dive_scroll").assertIsDisplayed()
+
+        // The collector survived the spring-back: the valid direction still opens the next Dive.
+        compose.onNodeWithTag("dive_pager").performTouchInput {
+            swipe(start = Offset(width * 0.9f, height / 2f), end = Offset(width * 0.1f, height / 2f), durationMillis = 200)
+        }
+        compose.waitForIdle()
+        assertEquals(listOf("d2"), opened)
+    }
+
+    @Test
+    fun `a swipe that interrupts the end-stop spring-back still re-springs onto the dive`() {
+        val opened = mutableListOf<String>()
+        render(
+            state(
+                dive = dive(),
+                neighbours = NeighboursView(
+                    previous = null,
+                    next = NeighboursViewNext("d2"),
+                    position = 1,
+                    total = 312,
+                ),
+            ),
+            onOpenDive = opened::add,
+        )
+        compose.mainClock.autoAdvance = false
+        // The start-of-list end-stop; stop the clock while its spring-back is under way.
+        compose.onNodeWithTag("dive_pager").performTouchInput {
+            swipe(start = Offset(width * 0.1f, height / 2f), end = Offset(width * 0.9f, height / 2f), durationMillis = 200)
+        }
+        compose.mainClock.advanceTimeBy(250)
+        // A second end-stop drag interrupts the spring-back and settles back on the same empty page.
+        compose.onNodeWithTag("dive_pager").performTouchInput {
+            swipe(start = Offset(width * 0.1f, height / 2f), end = Offset(width * 0.9f, height / 2f), durationMillis = 200)
+        }
+        compose.mainClock.autoAdvance = true
+        compose.waitForIdle()
+        assertTrue(opened.isEmpty())
+        compose.onNodeWithTag("dive_scroll").assertIsDisplayed()
+
+        // The interrupted spring-back still leaves the gesture listener alive.
+        compose.onNodeWithTag("dive_pager").performTouchInput {
+            swipe(start = Offset(width * 0.9f, height / 2f), end = Offset(width * 0.1f, height / 2f), durationMillis = 200)
+        }
+        compose.waitForIdle()
+        assertEquals(listOf("d2"), opened)
+    }
+
+    @Test
+    fun `the header's arrows open the neighbouring dives`() {
+        val opened = mutableListOf<String>()
+        render(state(dive = dive()), onOpenDive = opened::add)
+        compose.onNodeWithContentDescription("Next dive").performClick()
+        compose.onNodeWithContentDescription("Previous dive").performClick()
+        assertEquals(listOf("d2", "d0"), opened)
+    }
+
+    @Test
+    fun `the header's arrows are disabled at the ends and the back arrow is there`() {
+        render(
+            state(
+                dive = dive(),
+                neighbours = NeighboursView(previous = null, next = null, position = 1, total = 1),
+            ),
+        )
+        compose.onNodeWithContentDescription("Previous dive (unavailable)").assertIsNotEnabled()
+        compose.onNodeWithContentDescription("Next dive (unavailable)").assertIsNotEnabled()
+        compose.onNodeWithContentDescription("Back").assertIsEnabled()
+    }
+
+    @Test
+    fun `a dive outside the list shows no neighbour arrows`() {
+        render(
+            state(
+                dive = dive(),
+                neighbours = NeighboursView(previous = null, next = null, position = null, total = 0),
+            ),
+        )
+        compose.onNodeWithContentDescription("Previous dive (unavailable)").assertDoesNotExist()
+        compose.onNodeWithContentDescription("Next dive (unavailable)").assertDoesNotExist()
+    }
+
+    @Test
+    fun `the header's back arrow returns to the logbook`() {
+        var backs = 0
+        render(state(dive = dive()), onBack = { backs++ })
+        compose.onNodeWithContentDescription("Back").performClick()
+        assertEquals(1, backs)
+    }
+
+    @Test
+    fun `the profile table is the text alternative and includes tank pressure`() {
+        render(state(dive = dive()))
+        compose.onNodeWithTag("dive_scroll").performScrollToNode(hasText("Profile as a table"))
+        compose.onNodeWithText("Profile as a table").performClick()
+        compose.onAllNodesWithText("EAN32, 12 L").onLast().assertExists()
+        compose.onNodeWithTag("dive_scroll").performScrollToNode(hasText("170 bar"))
+        compose.onNodeWithText("170 bar").assertIsDisplayed()
+    }
+
+    @Test
+    fun `TalkBack can move the scrub and read the values`() {
+        render(state(dive = dive()))
+        compose.onNodeWithTag("dive_scroll").performScrollToNode(hasTestTag("dive_profile_chart"))
+        compose.onNodeWithTag("dive_profile_chart").performSemanticsAction(SemanticsActions.SetProgress) { it(0.25f) }
+        compose.onNodeWithText("12:40").assertIsDisplayed()
+        compose.onNodeWithText("162 bar").assertIsDisplayed()
+    }
+
+    @Test
+    fun `several tanks are numbered and keep the size they hold`() {
+        render(
+            state(
+                dive = dive(
+                    recordings = listOf(
+                        recording(
+                            gases = listOf(
+                                gas(o2 = 32.0, volumeL = 12.0),
+                                gas(o2 = 50.0, volumeL = 11.1, startPressureBar = 150.0, endPressureBar = 80.0),
+                            ),
+                        ),
+                    ),
+                ),
+                profileSamples = samples(twoTanks = true),
+            ),
+        )
+        compose.onNodeWithTag("dive_scroll").performScrollToNode(hasText("Tank 2 (EAN50, 11.1 L)"))
+        compose.onNodeWithText("Tank 1 (EAN32, 12 L)").assertIsDisplayed()
+        compose.onNodeWithText("Tank 2 (EAN50, 11.1 L)").assertIsDisplayed()
     }
 
     @Test
@@ -157,6 +461,13 @@ class DiveDetailScreenshotTest {
         render(state(dive = dive(), syncedAt = "2026-11-18T12:00:00Z"))
         compose.onNodeWithText("Last synced 18 Nov 2026, 13:00.").assertIsDisplayed()
         capture("dive_synced.png")
+    }
+
+    @Test
+    fun `while connected the sync line stays quiet`() {
+        render(state(dive = dive(), syncedAt = "2026-11-18T12:00:00Z", connected = true))
+        compose.onNodeWithText("Last synced", substring = true).assertDoesNotExist()
+        capture("dive_connected.png")
     }
 
     @Test
@@ -177,7 +488,7 @@ class DiveDetailScreenshotTest {
     @Test
     fun `a dive whose profiles are still syncing says so`() {
         render(state(dive = dive(), profileSamples = null, samplesPending = true))
-        compose.onNode(hasScrollAction()).performScrollToNode(hasText("The depth profile is still syncing; it appears when the sync finishes."))
+        compose.onNodeWithTag("dive_scroll").performScrollToNode(hasText("The depth profile is still syncing; it appears when the sync finishes."))
         compose.onNodeWithText("The depth profile is still syncing; it appears when the sync finishes.").assertIsDisplayed()
         capture("dive_profile_pending.png")
     }
@@ -186,7 +497,7 @@ class DiveDetailScreenshotTest {
     fun `a failed profile leaves the rest of the page standing`() {
         render(state(dive = dive(), profileSamples = null, samplesError = "internal_error"))
         compose.onNodeWithText("Dive 42").assertIsDisplayed()
-        compose.onNode(hasScrollAction()).performScrollToNode(hasText("The instance had a problem. Try again later."))
+        compose.onNodeWithTag("dive_scroll").performScrollToNode(hasText("The instance had a problem. Try again later."))
         compose.onNodeWithText("The instance had a problem. Try again later.").assertIsDisplayed()
         capture("dive_profile_failed.png")
     }
@@ -220,7 +531,7 @@ class DiveDetailScreenshotTest {
                 ),
             ),
         )
-        val list = compose.onNode(hasScrollAction())
+        val list = compose.onNodeWithTag("dive_scroll")
         list.performScrollToNode(hasText("Cylinder 1"))
         compose.onNodeWithText("12 L · Steel · 232 bar working pressure · Air").assertIsDisplayed()
         compose.onNodeWithText("200 bar → 50 bar (150 bar used)").assertIsDisplayed()
@@ -257,19 +568,24 @@ class DiveDetailScreenshotTest {
             ),
             units = "imperial",
         )
-        compose.onNode(hasScrollAction()).performScrollToNode(hasText("SAC 160 psi/min"))
+        compose.onNodeWithTag("dive_scroll").performScrollToNode(hasText("SAC 160 psi/min"))
         compose.onNodeWithText("SAC 160 psi/min").assertIsDisplayed()
     }
 
-    private fun render(state: DiveDetailUiState, units: String = "metric") {
+    private fun render(
+        state: DiveDetailUiState,
+        units: String = "metric",
+        onBack: () -> Unit = {},
+        onOpenDive: (String) -> Unit = {},
+    ) {
         compose.setContent {
             DiveHubTheme(darkTheme = false) {
                 DiveDetailScreen(
                     state = state,
                     units = units,
-                    onBack = {},
+                    onBack = onBack,
                     onRetry = {},
-                    onOpenDive = {},
+                    onOpenDive = onOpenDive,
                 )
             }
         }
@@ -292,6 +608,7 @@ class DiveDetailScreenshotTest {
         samplesPending: Boolean = false,
         syncedAt: String? = null,
         offline: Boolean = false,
+        connected: Boolean = false,
     ) = DiveDetailUiState(
         diveId = dive.id,
         loading = false,
@@ -303,6 +620,7 @@ class DiveDetailScreenshotTest {
         samplesPending = samplesPending,
         syncedAt = syncedAt,
         offline = offline,
+        connected = connected,
     )
 
     private fun dive(
@@ -367,6 +685,7 @@ class DiveDetailScreenshotTest {
 
     private fun recording(
         breaks: List<DiveViewRecordingsItemSummarySurfaceBreaksItem>? = null,
+        gases: List<DiveViewRecordingsItemSummaryGasesItem> = listOf(gas()),
     ) = DiveViewRecordingsItem(
         id = "r1",
         isPrimary = true,
@@ -380,13 +699,28 @@ class DiveDetailScreenshotTest {
             diveNumber = 57,
             diveMode = "open_circuit",
             waterType = "salt",
+            gases = gases,
             surfaceBreaks = breaks,
         ),
-        channels = listOf("depth", "temperature"),
+        channels = listOf("depth", "temperature", "tankPressure") +
+            if (gases.size > 1) listOf("tankPressure:2") else emptyList(),
+    )
+
+    private fun gas(
+        o2: Double = 32.0,
+        volumeL: Double = 12.0,
+        startPressureBar: Double = 200.0,
+        endPressureBar: Double = 50.0,
+    ) = DiveViewRecordingsItemSummaryGasesItem(
+        o2 = o2,
+        he = 0.0,
+        tankVolumeL = volumeL,
+        startPressureBar = startPressureBar,
+        endPressureBar = endPressureBar,
     )
 
     /** A profile of ten minutes with a dive to 24 m, the same every run so the picture does not change by itself. */
-    private fun samples(): RecordingSamplesView {
+    private fun samples(twoTanks: Boolean = false): RecordingSamplesView {
         val offsets = (0..75).map { it * 40_000 }
         val depths = offsets.mapIndexed { index, _ ->
             when {
@@ -395,12 +729,17 @@ class DiveDetailScreenshotTest {
                 else -> (24.3 - (index - 40) * 0.7).coerceAtLeast(0.0)
             }
         }
+        val series = mutableListOf(
+            RecordingSamplesViewSeriesItem("depth", offsets, depths),
+            RecordingSamplesViewSeriesItem("temperature", offsets, offsets.map { 18.0 + it / 600_000.0 }),
+            RecordingSamplesViewSeriesItem("tankPressure", offsets, offsets.mapIndexed { index, _ -> 200.0 - index * 2.0 }),
+        )
+        if (twoTanks) {
+            series += RecordingSamplesViewSeriesItem("tankPressure:2", offsets, offsets.mapIndexed { index, _ -> 150.0 - index })
+        }
         return RecordingSamplesView(
             recordingId = "r1",
-            series = listOf(
-                RecordingSamplesViewSeriesItem("depth", offsets, depths),
-                RecordingSamplesViewSeriesItem("temperature", offsets, offsets.map { 18.0 + it / 600_000.0 }),
-            ),
+            series = series,
         )
     }
 }

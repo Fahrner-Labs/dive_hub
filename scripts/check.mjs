@@ -262,9 +262,9 @@ function otherSteps() {
     const file = dry ? resolve(CACHE, 'lint-files.txt') : listFile('lint-files.txt', lintFiles);
     lane.push({ name: `lint and module boundaries (${count} changed file(s))`, command: `node scripts/check-lint.mjs --files-from "${file}"`, step: 'lint' });
   }
-  // The repo map's and code graph's tests run after the check scripts': a fourth concurrent test process made the
-  // timing-sensitive texts test flake on a 2-vCPU runner.
-  if (plan.scripts) lane.push({ name: 'check script tests', command: 'node --test scripts/check-lib.test.mjs scripts/check-run.test.mjs scripts/check-log.test.mjs scripts/generate-android-api.test.mjs && node --test scripts/repomap.test.mjs scripts/code-graph.test.mjs scripts/release-tag.test.mjs scripts/android-version-code.test.mjs', step: 'scripts', env: testEnv });
+  // The repo map's, code graph's and Android lane's tests run after the check scripts': a fourth concurrent test
+  // process made the timing-sensitive texts test flake on a 2-vCPU runner.
+  if (plan.scripts) lane.push({ name: 'check script tests', command: 'node --test scripts/check-lib.test.mjs scripts/check-run.test.mjs scripts/check-log.test.mjs scripts/generate-android-api.test.mjs && node --test scripts/repomap.test.mjs scripts/code-graph.test.mjs scripts/release-tag.test.mjs scripts/android-version-code.test.mjs scripts/check-android.test.mjs', step: 'scripts', env: testEnv });
   if (plan.server !== 'none') lane.push({ name: `server tests (${plan.server})`, command: unitTests('server', plan.server), step: 'server', env: testEnv });
   if (plan.web !== 'none') lane.push({ name: `web unit tests (${plan.web})`, command: unitTests('web', plan.web), step: 'web', env: testEnv });
   if (plan.android) lane.push({ name: 'Android build and shared tests', command: 'node scripts/check-android.mjs', step: 'android' });

@@ -54,6 +54,10 @@ A release candidate publishes **only** its exact `vX.Y.Z-rcN` tag. The floating 
 the GitHub Release's `latest` flag, are stable-only; an rc is a non-latest prerelease.
 
 ### D3 — A tag on main triggers the release
+> **Amended by [ADR 0081](0081-release-lane-trigger.md) (2026-11-20):** `workflow_dispatch` with the release tag as
+> its `version` input is now the only trigger. A tag pushed by the automation identity starts no workflow run;
+> verify and the published artefacts are unchanged, and the procedure is in [releases.md](../releases.md).
+
 Pushing a `v*` tag runs [`.github/workflows/release.yml`](../../.github/workflows/release.yml). The `verify` job
 requires the tag to match `^v[0-9]+\.[0-9]+\.[0-9]+(-rc[1-9][0-9]*)?$` and its commit to be an ancestor of
 `origin/main`; otherwise it fails before anything is built. Stable tags and release candidates alike are cut only on
@@ -95,7 +99,8 @@ The decisions above are recorded here rather than in the release workflow's comm
 registry, tag scheme and upgrade contract are hard to reverse and constrain future tooling.
 
 ## Consequences
-- Cutting a release is one `git tag` + `git push` on main; nothing is published from a branch or a local build.
+- Cutting a release is one `git tag` + `git push` on main, then a dispatch of the lane with that tag
+  ([ADR 0081](0081-release-lane-trigger.md)); nothing is published from a branch or a local build.
 - A bad version build fails the smoke job and publishes nothing; a crash during `publish` is repaired by
   `workflow_dispatch` with the same tag.
 - The first release run is also the live validation of the workflow (about 15–25 minutes because arm64 builds under
