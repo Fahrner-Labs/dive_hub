@@ -207,14 +207,17 @@ fun LogbookScreen(
     onFocusHandled: () -> Unit = {},
 ) {
     val data = state.data
-    LaunchedEffect(focusDiveId, focusPage, state.paged, data) {
+    // One grouping for the list and the focus effect; a sync write replaces the data, a status update does not.
+    val groups = remember(data) { data?.let { monthGroups(it.dives, it.months) }.orEmpty() }
+    LaunchedEffect(focusDiveId, focusPage, state.paged, groups) {
         if (data == null || (focusDiveId == null && focusPage == null)) return@LaunchedEffect
         if (state.paged) {
             // The server-answered filters keep a pager; the row may sit on another page, so turn the position into one.
             focusPage?.let { page -> if (page != state.page) onPage(page) }
         } else if (focusDiveId != null) {
-            val index = logbookDiveItemIndex(monthGroups(data.dives, data.months), focusDiveId)
-            if (index != null) listState.scrollToItem(index)
+            val index = logbookDiveItemIndex(groups, focusDiveId)
+            // The month header is pinned over the top edge; one item up keeps the Dive's title clear of it.
+            if (index != null) listState.scrollToItem((index - 1).coerceAtLeast(0))
         }
         onFocusHandled()
     }
@@ -269,7 +272,7 @@ fun LogbookScreen(
                         onRefresh = onRefresh,
                         modifier = modifier,
                     ) {
-                        LogbookList(state, units, onRefresh, onRetry, onShowAll, onPage, onOpenDive, listState)
+                        LogbookList(state, units, groups, onRefresh, onRetry, onShowAll, onPage, onOpenDive, listState)
                     }
                 }
             }
@@ -524,6 +527,7 @@ private fun NoContent(modifier: Modifier, title: String, message: String, retry:
 private fun LogbookList(
     state: LogbookUiState,
     units: String?,
+    groups: List<LogbookMonth>,
     onRefresh: () -> Unit,
     onRetry: () -> Unit,
     onShowAll: () -> Unit,
@@ -535,11 +539,16 @@ private fun LogbookList(
     val locale = context.resources.configuration.locales[0] ?: Locale.getDefault()
     val imperial = LogbookText.imperial(units, locale)
     val data = state.data ?: return
-    val groups = monthGroups(data.dives, data.months)
     val scaleM = sketchScale(data.totals.deepestM)
     val filtersEmpty = state.filters.isEmpty()
 
-    LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
+    // The scrolling content is the sheet; the frame stays `background` (design system, "Surfaces").
+    LazyColumn(
+        state = listState,
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.surface),
+    ) {
         item(key = "header") {
             Column(Modifier.fillMaxWidth()) {
                 SyncLine(state.syncedAt, state.connected, state.offline, R.string.logbook_offline_cached)

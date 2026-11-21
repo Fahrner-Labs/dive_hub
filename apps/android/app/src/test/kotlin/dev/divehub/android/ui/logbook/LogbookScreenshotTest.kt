@@ -103,7 +103,7 @@ class LogbookScreenshotTest {
             page(
                 dives = listOf(withFindings),
                 filters = setOf(LogbookFilter.WITH_FINDINGS, LogbookFilter.CHANGED_SINCE_SENT),
-            ).copy(paged = true),
+            ),
         )
         compose.onNodeWithText("With findings\u00A02").assertDoesNotExist()
         compose.onNodeWithContentDescription("Filters, 2 selected").assertIsDisplayed()
@@ -137,7 +137,7 @@ class LogbookScreenshotTest {
         val state = page(
             dives = listOf(withFindings),
             filters = setOf(LogbookFilter.WITH_FINDINGS, LogbookFilter.CHANGED_SINCE_SENT),
-        ).copy(paged = true)
+        )
         render(state, darkTheme = true)
         compose.onNodeWithContentDescription("Filters, 2 selected").assertIsDisplayed()
         capture("logbook_filter_badge_dark.png")
@@ -243,8 +243,7 @@ class LogbookScreenshotTest {
     @Test
     fun `a server-answered filter keeps the pager and its range`() {
         render(
-            page(dives = listOf(reef), filters = setOf(LogbookFilter.CHANGED_SINCE_SENT))
-                .copy(paged = true),
+            page(dives = listOf(reef), filters = setOf(LogbookFilter.CHANGED_SINCE_SENT)),
         )
         compose.onNodeWithText("1–25 of 312 dives").assertIsDisplayed()
         compose.onNodeWithText("Next page").assertIsDisplayed()

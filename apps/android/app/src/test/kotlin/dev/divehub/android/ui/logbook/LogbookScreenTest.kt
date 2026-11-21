@@ -1,8 +1,12 @@
 package dev.divehub.android.ui.logbook
 
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.getBoundsInRoot
+import androidx.compose.ui.test.hasScrollAction
+import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performScrollToIndex
 import dev.divehub.android.ui.DiveHubTheme
 import dev.divehub.api.models.DiveListView
 import dev.divehub.api.models.DiveListViewCounts
@@ -57,9 +61,41 @@ class LogbookScreenTest {
         compose.waitForIdle()
 
         compose.onNodeWithText("Site 31").assertIsDisplayed()
-        // The month heading sticks to the top, so the row still says which month it belongs to.
-        compose.onNodeWithText("March 2026").assertIsDisplayed()
+        // The month heading sticks to the top, so the row still says which month it belongs to...
+        val header = compose.onNodeWithText("March 2026").getBoundsInRoot()
+        // ...and the returned row starts below it instead of under the pinned heading.
+        val row = compose.onNodeWithText("Site 31").getBoundsInRoot()
+        assertTrue("row top ${row.top} above header bottom ${header.bottom}", row.top >= header.bottom)
         assertTrue(handled)
+    }
+
+    @Test
+    fun `the list scroll position survives a saved-state restore`() {
+        val restoration = StateRestorationTester(compose)
+        val state = state(dives = fortyDives())
+        restoration.setContent {
+            DiveHubTheme(darkTheme = false) {
+                LogbookScreen(
+                    state = state,
+                    units = "metric",
+                    onRefresh = {},
+                    onRetry = {},
+                    onShowAll = {},
+                    onPage = {},
+                    onToggleFilter = {},
+                    onOpenDive = {},
+                )
+            }
+        }
+        compose.waitForIdle()
+        compose.onNode(hasScrollAction()).performScrollToIndex(20)
+        compose.waitForIdle()
+        compose.onNodeWithText("Site 1").assertDoesNotExist()
+
+        restoration.emulateSavedInstanceStateRestore()
+        compose.waitForIdle()
+
+        compose.onNodeWithText("Site 1").assertDoesNotExist()
     }
 
     @Test
