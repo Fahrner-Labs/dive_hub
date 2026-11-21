@@ -85,7 +85,8 @@ Rules:
   `headlineSmall` alias `title` and `section`; `titleSmall` aliases `bodyStrong`; `bodyMedium` aliases `body`;
   `bodySmall` aliases `meta`. No slot falls back to a Material default. Screens use the semantic styles
   (`DiveHubText.*`), not Material slot names.
-- `title` is 28 sp, not Material's 22 sp. `section` is 20 sp. Do not use `headlineMedium` for a screen title.
+- The sizes are the web's, not Material's defaults: `hero` 32 (not `displaySmall` 36), `title` 28 (not
+  `headlineLarge` 32), `section` 20 (not `titleLarge` 22). A screen title is `title`, never a Material slot name.
 - Large headings use −0.01em tracking. Line height belongs to the style; a screen does not override it.
 - 700 is not part of the scale. Emphasis is 600 plus size, not a fourth weight. Do not use Poppins Bold for UI
   text.
