@@ -62,7 +62,7 @@ class LogbookScreenshotTest {
 
     @Test
     fun `filter counts`() {
-        render(page(dives = listOf(reef), filters = emptySet()))
+        render(page(dives = listOf(reef, noRecording), filters = emptySet()))
         compose.onNodeWithText("Show only").assertIsDisplayed()
         compose.onNodeWithText("No recording · 3").assertIsDisplayed()
         capture("logbook_filters.png")

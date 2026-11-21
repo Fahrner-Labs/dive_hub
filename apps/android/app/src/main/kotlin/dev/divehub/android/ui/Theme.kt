@@ -78,6 +78,14 @@ object DiveHubColors {
     val border: Color
         @Composable get() = if (isDarkScheme()) Color(0xFF22272C) else Color(0xFFE1E7EC)
 
+    /** The ink primary button until `ColorScheme.primary` carries ink: text-ink in the light, its inverse in the dark. */
+    val ink: Color
+        @Composable get() = if (isDarkScheme()) Color(0xFFE9EEF2) else Color(0xFF0E1A23)
+
+    /** The text on the ink button. */
+    val onInk: Color
+        @Composable get() = if (isDarkScheme()) Color(0xFF0B0D0F) else Color(0xFFFFFFFF)
+
     /** The water column's shallow end in the profile sketch. */
     val depthShallow: Color
         @Composable get() = if (isDarkScheme()) Color(0xFF62B6E6) else Color(0xFF8FD3E8)

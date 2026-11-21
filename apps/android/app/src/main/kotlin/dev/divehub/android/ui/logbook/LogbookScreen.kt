@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -79,6 +80,9 @@ private val AvatarSize = 24.dp
 /** The brief's `Radius.control` for a filled action; a quiet text action stays text. */
 private val ControlCorner = 8.dp
 
+/** The dive-number label column: fixed so titles start on the same line whatever the number's width. */
+private val NumberColumn = 32.dp
+
 /**
  * The logbook route: the list keeps its page and filters in the view model, not in an address. [onPage] tells the
  * destination when the User changed the page, so the route can save it for process death.
@@ -137,6 +141,7 @@ fun LogbookScreen(
                 title = {
                     Text(
                         stringResource(R.string.logbook_title),
+                        modifier = Modifier.semantics { heading() },
                         style = DiveHubText.section,
                     )
                 },
@@ -230,6 +235,7 @@ private fun Error(modifier: Modifier, code: String, onRetry: () -> Unit) {
 private fun NoContent(modifier: Modifier, message: String, retry: String, onRetry: () -> Unit) {
     Box(modifier, contentAlignment = Alignment.Center) {
         EmptyState(
+            modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
             message = message,
             action = { InkButton(retry, onRetry) },
         )
@@ -502,6 +508,7 @@ private fun LogbookDiveRow(
         leading = {
             Text(
                 dive.number?.toString() ?: "–",
+                modifier = Modifier.width(NumberColumn),
                 style = DiveHubText.meta,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.End,
@@ -613,8 +620,8 @@ private fun InkButton(text: String, onClick: () -> Unit) {
         onClick = onClick,
         shape = RoundedCornerShape(ControlCorner),
         colors = ButtonDefaults.buttonColors(
-            containerColor = MaterialTheme.colorScheme.onBackground,
-            contentColor = MaterialTheme.colorScheme.onPrimary,
+            containerColor = DiveHubColors.ink,
+            contentColor = DiveHubColors.onInk,
         ),
     ) {
         Text(text)
