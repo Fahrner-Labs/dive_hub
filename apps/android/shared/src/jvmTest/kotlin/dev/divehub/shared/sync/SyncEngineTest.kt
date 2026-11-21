@@ -4,9 +4,18 @@ import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import dev.divehub.shared.ApiClient
 import dev.divehub.shared.DecodeException
 import dev.divehub.shared.NoAnswerException
+import dev.divehub.shared.planning.CylinderMaterial
+import dev.divehub.shared.planning.EstimateCylinder
+import dev.divehub.shared.planning.LeadUnit
+import dev.divehub.shared.planning.PlannedConditions
+import dev.divehub.shared.planning.SiteWaterType
+import dev.divehub.shared.planning.Suit
+import dev.divehub.shared.planning.SuitType
 import dev.divehub.shared.store.Dive
 import dev.divehub.shared.store.DiveStore
 import dev.divehub.shared.store.SyncState
+import dev.divehub.shared.tools.assemblePersonalizedSources
+import dev.divehub.shared.tools.leadEstimate
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
 import io.ktor.client.request.HttpRequestData
@@ -29,6 +38,7 @@ import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlin.time.Instant
 
 private const val NOW = "2026-11-19T10:00:00Z"
 private val JSON = Json { ignoreUnknownKeys = true; explicitNulls = false }
@@ -132,7 +142,7 @@ private fun detailJson(id: String = "dive-1", startsAt: String = "2026-11-01T10:
     "cylinders":[{"volumeL":12,"workingPressureBar":232,"material":"steel","gas":{"o2":21,"he":0},
       "startPressureBar":200,"endPressureBar":50,"fromPod":false,"series":null}],
     "lead":[{"amountKg":4,"placement":"belt"}],"leadTotalKg":4,
-    "weightingFeedback":{"felt":"good","amountKg":4},
+    "weightingFeedback":{"felt":"too_heavy","amountKg":4},
     "suit":{"type":"wetsuit","thicknessMm":5.0,"hood":true,"undergarment":null},
     "participants":[],"verificationCodes":[]}"""
 
@@ -711,5 +721,28 @@ class SyncEngineTest {
         assertEquals(3L, progress.storedDives)
         assertEquals(3L, progress.detailedDives)
         assertEquals(3L, progress.divesAwaitingProfiles)
+    }
+
+    @Test
+    fun `a synced dive's details feed the offline lead estimate`() = runTest {
+        val harness = Harness(store, routes())
+
+        assertEquals(SyncResult.Complete, harness.engine.sync())
+
+        val sources = assemblePersonalizedSources(store, Instant.parse("2026-11-19T12:00:00Z").toEpochMilliseconds())
+        val answer = leadEstimate(
+            PlannedConditions(
+                water = SiteWaterType.salt,
+                suit = Suit(SuitType.wetsuit, 5.0, true, null),
+                cylinders = listOf(EstimateCylinder(12.0, CylinderMaterial.steel)),
+            ),
+            LeadUnit.kg,
+            sources,
+            Instant.parse("2026-11-19T12:00:00Z"),
+        )
+
+        assertEquals("dives", answer.basis?.kind)
+        assertEquals(listOf("dive-1"), answer.basis?.dives?.map { it.diveId })
+        assertNotNull(answer.total)
     }
 }

@@ -72,8 +72,11 @@ import dev.divehub.android.R
 import dev.divehub.android.ui.SyncLine
 import dev.divehub.android.ui.Formats
 import dev.divehub.api.models.DiveView
+import dev.divehub.api.models.DiveViewCylindersItem
 import dev.divehub.api.models.DiveViewRecordingsItem
 import dev.divehub.api.models.DiveViewRecordingsItemSummaryGasesItem
+import dev.divehub.api.models.DiveViewSuit
+import dev.divehub.api.models.DiveViewWeightingFeedback
 import dev.divehub.api.models.NeighboursView
 import dev.divehub.api.models.RecordingSamplesView
 import dev.divehub.api.models.RecordingSamplesViewSeriesItem
@@ -103,6 +106,8 @@ import dev.divehub.shared.logbook.ProviderDirectory
 import dev.divehub.shared.logbook.mixName
 import dev.divehub.shared.dive.timeZoneNote
 import dev.divehub.shared.dive.TimeZoneOrigin
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.booleanOrNull
 import java.util.Locale
 
 /** The dive page route: the page itself holds no navigation state; back returns the logbook as it was. */
@@ -323,6 +328,9 @@ private fun DiveBody(
     LazyColumn(modifier.testTag("dive_scroll")) {
         item { SyncLine(state.syncedAt, state.connected, state.offline, R.string.dive_offline_cached) }
         item { Facts(dive, locale, imperial) }
+        item { Cylinders(dive, locale, imperial) }
+        item { Weighting(dive, locale, imperial) }
+        item { Notes(dive.notes) }
         item { Recordings(dive, locale, state.providers) }
         if (primary != null) {
             item { Profile(state, primary, locale, imperial) }
@@ -472,6 +480,160 @@ private fun Water(dive: DiveView, locale: Locale) {
             )
         }
     }
+}
+
+/** The Dive's Cylinders in their order with the SAC the server computed (ADR 0045), or why it has none. */
+@Composable
+private fun Cylinders(dive: DiveView, locale: Locale, imperial: Boolean) {
+    if (dive.cylinders.isEmpty() && dive.sac == null && dive.sacMissing == null) return
+    val context = LocalContext.current
+    SectionHeading(stringResource(R.string.dive_cylinders))
+    Column(Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) {
+        dive.cylinders.forEachIndexed { index, cylinder ->
+            Text(
+                stringResource(R.string.dive_cylinder_n, index + 1),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(cylinderLine(context, cylinder, locale, imperial), style = MaterialTheme.typography.bodyLarge)
+            Text(
+                cylinderPressures(context, cylinder, locale, imperial),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            if (cylinder.fromPod) {
+                Text(
+                    stringResource(R.string.dive_cylinder_from_pod),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Spacer(Modifier.height(8.dp))
+        }
+        val sac = dive.sac
+        val sacMissing = dive.sacMissing
+        when {
+            sac != null -> {
+                Text(
+                    context.getString(R.string.dive_sac_litres, Formats.decimal(locale, sac.litresPerMinute, 1)),
+                    style = MaterialTheme.typography.bodyLarge,
+                )
+                sac.barPerMinute?.let { barPerMinute ->
+                    Text(
+                        context.getString(R.string.dive_sac_bar, Formats.pressureRate(context, barPerMinute, locale, imperial)),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+            sacMissing != null -> Text(
+                sacMissingText(context, sacMissing),
+                style = MaterialTheme.typography.bodyLarge,
+            )
+        }
+    }
+}
+
+private fun cylinderLine(
+    context: Context,
+    cylinder: DiveViewCylindersItem,
+    locale: Locale,
+    imperial: Boolean,
+): String = buildList {
+    cylinder.volumeL?.let { add(DiveDetailText.volume(context, it, locale)) }
+    cylinder.material?.let { add(DiveDetailText.material(context, it)) }
+    cylinder.workingPressureBar?.let {
+        add(context.getString(R.string.dive_cylinder_working_pressure, Formats.pressure(context, it, locale, imperial)))
+    }
+    add(DiveDetailText.gas(context, cylinder.gas?.o2, cylinder.gas?.he))
+}.joinToString(" · ")
+
+private fun cylinderPressures(
+    context: Context,
+    cylinder: DiveViewCylindersItem,
+    locale: Locale,
+    imperial: Boolean,
+): String {
+    val start = cylinder.startPressureBar
+    val end = cylinder.endPressureBar
+    if (start == null && end == null) return context.getString(R.string.dive_cylinder_pressures_unknown)
+    val startText = start?.let { Formats.pressure(context, it, locale, imperial) } ?: "–"
+    val endText = end?.let { Formats.pressure(context, it, locale, imperial) } ?: "–"
+    if (start != null && end != null && start > end) {
+        val used = Formats.pressure(context, start - end, locale, imperial)
+        return context.getString(R.string.dive_cylinder_pressures_used, startText, endText, used)
+    }
+    return context.getString(R.string.dive_cylinder_pressures, startText, endText)
+}
+
+private fun sacMissingText(context: Context, missing: String): String = when (missing) {
+    "too_short" -> context.getString(R.string.dive_sac_missing_too_short)
+    "no_average_depth" -> context.getString(R.string.dive_sac_missing_no_average_depth)
+    "cylinder_incomplete" -> context.getString(R.string.dive_sac_missing_cylinder_incomplete)
+    else -> context.getString(R.string.dive_sac_missing)
+}
+
+/** The suit, the Lead entries and how the weighting felt (ADR 0031); nothing when the Dive has none of them. */
+@Composable
+private fun Weighting(dive: DiveView, locale: Locale, imperial: Boolean) {
+    val suit = dive.suit
+    val lead = dive.lead
+    val feedback = dive.weightingFeedback
+    if (suit == null && lead.isEmpty() && feedback == null) return
+    val context = LocalContext.current
+    SectionHeading(stringResource(R.string.dive_weighting))
+    Column(Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) {
+        suit?.let {
+            FactRow(label = stringResource(R.string.dive_suit), value = suitText(context, locale, it))
+        }
+        FactRow(label = stringResource(R.string.dive_lead), value = leadText(context, dive, locale, imperial))
+        feedback?.let {
+            FactRow(label = stringResource(R.string.dive_feedback), value = feedbackText(context, it, locale, imperial))
+        }
+    }
+}
+
+private fun suitText(context: Context, locale: Locale, suit: DiveViewSuit): String =
+    DiveDetailText.suit(context, locale, suit.type, suit.thicknessMm, (suit.hood as? JsonPrimitive)?.booleanOrNull, suit.undergarment)
+
+private fun leadText(context: Context, dive: DiveView, locale: Locale, imperial: Boolean): String {
+    if (dive.lead.isEmpty()) return context.getString(R.string.dive_lead_unknown)
+    if (dive.leadTotalKg == 0.0) return context.getString(R.string.dive_lead_none)
+    val entries = dive.lead.joinToString("\n") { entry ->
+        val amount = DiveDetailText.mass(context, entry.amountKg, locale, imperial)
+        entry.placement?.let { "$amount ${DiveDetailText.placement(context, it)}" } ?: amount
+    }
+    val total = dive.leadTotalKg?.let {
+        "\n" + context.getString(R.string.dive_lead_total, DiveDetailText.mass(context, it, locale, imperial))
+    }.orEmpty()
+    return entries + total
+}
+
+private fun feedbackText(
+    context: Context,
+    feedback: DiveViewWeightingFeedback,
+    locale: Locale,
+    imperial: Boolean,
+): String = when (feedback.felt) {
+    "right" -> context.getString(R.string.dive_feedback_right)
+    "too_heavy" -> feedback.amountKg?.let {
+        context.getString(R.string.dive_feedback_too_heavy, DiveDetailText.mass(context, it, locale, imperial))
+    } ?: context.getString(R.string.dive_feedback_too_heavy_unknown)
+    "too_light" -> feedback.amountKg?.let {
+        context.getString(R.string.dive_feedback_too_light, DiveDetailText.mass(context, it, locale, imperial))
+    } ?: context.getString(R.string.dive_feedback_too_light_unknown)
+    else -> feedback.felt
+}
+
+@Composable
+private fun Notes(notes: String?) {
+    if (notes.isNullOrBlank()) return
+    SectionHeading(stringResource(R.string.dive_notes))
+    Text(
+        notes,
+        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+        style = MaterialTheme.typography.bodyLarge,
+    )
 }
 
 @Composable
