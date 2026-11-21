@@ -122,8 +122,9 @@ From FAH-277 the screens never fetch logbook data themselves: `GET /api/dives`, 
 Push state, and offline the cached list is shown without them. `shared/logbook/StoreLogbook.kt` reads the stored list
 rows and Dive views (the API's own JSON, beside the typed columns) and computes the totals and month figures from the
 same rows the server does. The list and the dive page show "Last synced …" from `sync_state.lastFullSyncAt`, in the
-device's time zone (`ui/SyncTimeFormat.kt`, FAH-296), and a Dive whose profile series are still missing from phase 3
-says "Profile syncing"/"still syncing" from its `profiles:<id>` checkpoint.
+device's time zone (`ui/SyncTimeFormat.kt`, FAH-296), only while the live stream is down; while it is connected they
+stay quiet, and Settings shows the connection state beside the instance (FAH-342). A Dive whose profile series are
+still missing from phase 3 says "Profile syncing"/"still syncing" from its `profiles:<id>` checkpoint.
 
 - Chips: `no-recording`, `no-site` and `with-findings` are answered from the stored rows. Their counts (and the two
   Push-backed ones) come from the last list sync, so a chip keeps its number offline. `changed-since-sent` and

@@ -6,6 +6,7 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 
 // The overhaul palette (ADR 0064): a near-neutral framed sheet, ink text and buttons, water blue only for links,
 // focus and data. It supersedes ADR 0019's navy tones.
@@ -58,4 +59,20 @@ fun DiveHubTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composabl
         typography = DiveHubTypography,
         content = content,
     )
+}
+
+/** The design system's success colour (kelp); Material 3 has no success slot, so it follows the background's scheme. */
+@Composable
+internal fun successColor(): Color =
+    if (MaterialTheme.colorScheme.background.luminance() < 0.5f) Color(0xFF5CC593) else Color(0xFF2A7150)
+
+/**
+ * Semantic colours Material 3 has no role for. They follow the scheme the theme is painting, so a component reads the
+ * same name in light and dark.
+ */
+object DiveHubColors {
+    /** The decorative hairline (1 dp of `border`), never a control boundary. */
+    val border: Color
+        @Composable get() =
+            if (MaterialTheme.colorScheme.background.luminance() < 0.5f) Color(0xFF22272C) else Color(0xFFE1E7EC)
 }

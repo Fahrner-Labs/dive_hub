@@ -52,6 +52,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
@@ -66,6 +67,7 @@ import dev.divehub.android.ui.navigation.AppNavHost
 import dev.divehub.android.ui.navigation.AppScreens
 import dev.divehub.android.ui.navigation.clearSavedTabStates
 import dev.divehub.android.ui.navigation.sessionDestination
+import dev.divehub.android.ui.settings.SettingsDebugRoute
 import dev.divehub.android.ui.settings.SettingsRoute
 import dev.divehub.android.ui.settings.SettingsViewModel
 import dev.divehub.android.ui.tools.GasPlanViewModel
@@ -182,7 +184,7 @@ private class DiveHubScreens(
     }
 
     @Composable
-    override fun settings() {
+    override fun settings(onOpenDebug: () -> Unit) {
         val state by viewModel.state.collectAsStateWithLifecycle()
         val settings: SettingsViewModel = viewModel(factory = SettingsViewModel.factory(container))
         SettingsRoute(
@@ -192,7 +194,17 @@ private class DiveHubScreens(
             versionCode = BuildConfig.VERSION_CODE,
             onChangeInstance = viewModel::signOutAndChangeInstance,
             onSignOut = viewModel::signOut,
+            onOpenDebug = onOpenDebug,
         )
+    }
+
+    @Composable
+    override fun settingsDebug(owner: ViewModelStoreOwner, onBack: () -> Unit) {
+        val settings: SettingsViewModel = viewModel(
+            viewModelStoreOwner = owner,
+            factory = SettingsViewModel.factory(container),
+        )
+        SettingsDebugRoute(viewModel = settings, onBack = onBack)
     }
 
     @Composable

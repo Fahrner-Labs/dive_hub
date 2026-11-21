@@ -50,6 +50,13 @@ class LiveHintsTest {
     }
 
     @Test
+    fun `a response that frames nothing is not a connection`() = runTest {
+        val events = SseLiveHints(api("")).events().toList()
+
+        assertEquals(emptyList<LiveEvent>(), events)
+    }
+
+    @Test
     fun `a malformed or newer frame is skipped rather than ending the stream`() = runTest {
         val body = """
             event: hint

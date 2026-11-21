@@ -41,7 +41,10 @@ private const val RECENT_RECORDINGS = 100
 
 /** The checkpoint entity the profiles phase (FAH-273) writes when it syncs the series. */
 private const val PROFILES_ENTITY = "profiles"
-private val JSON = Json { ignoreUnknownKeys = true }
+// The sync writes the API's JSON with nulls omitted (SyncMapping), so a nullable field it dropped must read as
+// null here: without `explicitNulls = false` every suit (undergarment or thickness null) fails to decode and the
+// lead estimate loses the Dive's suit entirely.
+private val JSON = Json { ignoreUnknownKeys = true; explicitNulls = false }
 
 /** A Dive with the link data the answer names beside each dive the estimate rests on. */
 data class LeadDiveSource(
