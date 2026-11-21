@@ -4,13 +4,28 @@
 // away takes its pending suggestions to the surviving Diver the same way, in the merge's transaction.
 import type { ChangeListener } from '../revisions/revisions.js';
 import type { Tx } from '../db/client.js';
-import { followMergedDiver, syncSuggestions } from './suggestion-service.js';
+import type { ParticipantRole } from '../db/schema.js';
+import { followMergedDiver, propagateAddedParticipants, syncSuggestions } from './suggestion-service.js';
+
+type ParticipantChange = {
+  from: { diverId: string }[];
+  to: { diverId: string; role: ParticipantRole }[];
+};
 
 /** Wraps the process's existing listener so Participant changes and soft deletes also keep the suggestions current. */
 export function withSuggestionChanges(inner: ChangeListener): ChangeListener {
   return {
     async diveChanged(tx: Tx, diveId, cause, at, actor, changes) {
       await inner.diveChanged(tx, diveId, cause, at, actor);
+      // A Joint dive keeps its members' people in step (FAH-410): a Participant added to one member joins every other
+      // member too. Adds only — a removal never reaches another member — and a row already there stays as it is, so
+      // replaying the same change is a no-op. The receiving Dive's own Diver is never a Participant of its own.
+      const participantChange = changes?.participants as ParticipantChange | undefined;
+      if (participantChange) {
+        const before = new Set(participantChange.from.map((person) => person.diverId));
+        const added = participantChange.to.filter((person) => !before.has(person.diverId));
+        await propagateAddedParticipants(tx, diveId, added);
+      }
       // `participants` means the list was written; a tombstone means the Dive left every list; `diverId` means the Dive
       // moved to another Diver, which changes who its own Diver is. Only adding a Participant raises a declined or
       // cancelled row again (ADR 0070), so a move cancels but never revives: it also removes the new own Diver from the

@@ -4,7 +4,7 @@
 > `pnpm check` fails when this map is stale. Symbols are ranked by how widely the code references them;
 > each module shows its most-referenced ones (exported symbols rank higher). Search here before walking the tree.
 
-Files: 417 · symbols: 3809 · shown: 247
+Files: 417 · symbols: 3817 · shown: 247
 
 ### server/(root)
 apps/server/src/vocabulary.ts:13 type SiteWaterType
@@ -234,11 +234,11 @@ apps/server/src/sites/sources.ts:14 const IMPORT_SOURCES
 
 ### server/social
 apps/server/src/social/suggestion-service.ts:18 class SuggestionError
-apps/server/src/social/suggestion-service.ts:233 fn createSuggestionService
+apps/server/src/social/suggestion-service.ts:297 fn createSuggestionService
 apps/server/src/social/routes.ts:17 const STATUS
 apps/server/src/social/suggestion-view.ts:10 const SiteRef
-apps/server/src/social/suggestion-service.ts:117 fn emitSuggestionHints
-… 21 more symbols in this module
+apps/server/src/social/suggestion-service.ts:181 fn emitSuggestionHints
+… 29 more symbols in this module
 
 ### server/storage
 apps/server/src/storage/blob-store.ts:26 iface BlobStore

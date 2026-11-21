@@ -120,7 +120,7 @@ describe.skipIf(!(await databaseReachable()))('Buddy suggestions: link an existi
     expect((await pendingFor(source, kid.id))!.status).toBe('pending');
   });
 
-  it('links the chosen Dive into one Joint dive without copying or merging either Dive', async () => {
+  it('links the chosen Dive into one Joint dive without copying or merging the Dives\' own facts', async () => {
     const source = await makeSource(new Date('2026-04-02T09:00:00Z'), 'Tim\'s own notes');
     const imported = await upload('anna-link.fit', makeSyntheticDive({
       serialNumber: 7101, start: new Date('2026-04-02T09:03:00Z'), durationSeconds: DURATION, maxDepthM: 18.5,
@@ -149,7 +149,8 @@ describe.skipIf(!(await databaseReachable()))('Buddy suggestions: link an existi
       values: { startsAt: annaBefore.values.startsAt, durationSeconds: annaBefore.values.durationSeconds, maxDepthM: annaBefore.values.maxDepthM },
       recordings: [expect.objectContaining({ isPrimary: true })],
     });
-    expect(annaAfter.participants).toEqual([]);
+    // The Dives' own facts are untouched; only their people are unioned (FAH-410), so Tim joins Anna's Dive as a buddy.
+    expect(annaAfter.participants).toEqual([{ diverId: timDiver, name: 'tim', role: 'buddy' }]);
     expect(await getDive(source)).toMatchObject({
       notes: 'Tim\'s own notes', participants: [{ diverId: annaDiver, name: 'anna', role: 'buddy' }],
       values: { startsAt: sourceBefore.values.startsAt, durationSeconds: sourceBefore.values.durationSeconds, maxDepthM: 24 },
