@@ -513,10 +513,13 @@ for (const v of variants) {
       await goodPage(page, title('Devices'), v);
     });
 
-    test('my account: display, and sign-in and security', { tag: ['@account'] }, async ({ page }) => {
+    test('my account: display, e-mail, and sign-in and security', { tag: ['@account'] }, async ({ page }) => {
       await page.goto('/#/account');
       await expect(page.getByRole('radiogroup').first()).toBeVisible();
       await goodPage(page, title('Display'), v);
+      await page.goto('/#/settings/notifications');
+      await expect(page.getByRole('switch', { name: v.english ? 'E-mail me about my logbook' : 'E-Mails zu meinem Logbuch' })).toBeVisible();
+      await goodPage(page, title('E-mail'), v);
       await page.goto('/#/settings/security');
       await expect(page.getByRole('table').first()).toBeVisible();
       await goodPage(page, title('Sign-in and security'), v);
