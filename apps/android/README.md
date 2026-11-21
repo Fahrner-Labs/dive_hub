@@ -222,9 +222,11 @@ Read-only, from the synced store ([ADR 0040](../../docs/decisions/0040-logbook-r
 counts are the API's own, read from the store (see slice D4 above):
 
 - 25 Dives a page with `limit`/`offset` and `total` (ADR 0017); the pager and the "1–25 of 312" range sit on the list.
-- "Show only" toggles with their `counts`; a filter whose count is 0 is hidden unless it is applied. `not-at-provider`
-  names the connected Providers from `GET /api/providers` and `GET /api/connections` ("Not in SSI"). No result names
-  the applied filters and offers "Show all dives".
+- The top bar's filter action opens a `ModalBottomSheet` with the "Show only" toggles and their `counts`; a filter
+  whose count is 0 is hidden unless it is applied. With filters applied the action carries their count as a badge, so
+  the state stays visible while the sheet is closed. Offline, the sheet says a server-only filter needs a connection.
+  `not-at-provider` names the connected Providers from `GET /api/providers` and `GET /api/connections` ("Not in SSI").
+  No result names the applied filters and offers "Show all dives".
 - `totals` above the list and month headings with all of each month's Dives and their time (ADR 0040).
 - Rows say the Recordings count ("No recording"), the source Provider, gas, the computer's surface interval and the
   participants as initials in circles, with names and roles as the row's accessible text. The findings mark is text.

@@ -179,6 +179,8 @@
     <string name="sync_date_pattern">d. MMM yyyy, HH:mm</string>
 
     <string name="logbook_title">Logbuch</string>
+    <string name="logbook_filters">Filter</string>
+    <string name="logbook_filters_selected">Filter, %1$d ausgewählt</string>
     <string name="logbook_show_only">Nur anzeigen</string>
     <string name="logbook_only_no_recording">Keine Aufzeichnung</string>
     <string name="logbook_only_no_site">Kein Tauchplatz</string>
