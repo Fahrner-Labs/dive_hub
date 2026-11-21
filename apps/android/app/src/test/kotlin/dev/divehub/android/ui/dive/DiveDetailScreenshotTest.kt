@@ -9,10 +9,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.SemanticsActions
-import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.hasTestTag
@@ -652,7 +652,7 @@ class DiveDetailScreenshotTest {
             ),
         )
         compose.onNodeWithTag("dive_scroll").performScrollToNode(hasText("The dive is shorter than 15 minutes."))
-        compose.onAllNodesWithText("SAC").assertCountEquals(1)
+        compose.onNodeWithText("SAC").assertTextEquals("SAC", "The dive is shorter than 15 minutes.")
         compose.onNodeWithText("The dive is shorter than 15 minutes.").assertIsDisplayed()
         capture("dive_sac_missing.png")
     }
