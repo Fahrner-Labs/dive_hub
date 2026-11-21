@@ -1,19 +1,19 @@
 import { useQuery, useQueryClient, type UseQueryResult } from '@tanstack/react-query';
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { AcceptInvitation, ResetPassword, Setup, SignIn, useSignOut } from './SignedOut.tsx';
+import { AcceptInvitation, ResetPassword, Setup, SignIn, useSignOut } from './account/SignedOut.tsx';
 import { api, divesQuery, meQuery, setupQuery, type Me } from './api.ts';
-import { DiveList, LogbookHeader } from './DiveList.tsx';
+import { DiveList, LogbookHeader } from './dives/DiveList.tsx';
 import { listOfDiveAddress, logbookParams, type LogbookParams } from './lib/logbook.ts';
 import { sitesParams } from './lib/sites-list.ts';
 import { toolsParams } from './lib/tools.ts';
 import { pickLanguage } from './i18n/languages.ts';
-import { DeletedNotices } from './DeletedDives.tsx';
-import { EquipmentDueNotice } from './EquipmentDue.tsx';
-import { ImportFilesButton, ImportPanel, ImportProvider, RecentImports } from './ImportPanel.tsx';
-import { PushRunStrip, RunMark } from './PushRun.tsx';
-import { ReportProblem } from './ReportProblem.tsx';
-import { ReviewMore, ReviewStrip } from './ReviewStrip.tsx';
+import { DeletedNotices } from './review/DeletedDives.tsx';
+import { EquipmentDueNotice } from './equipment/EquipmentDue.tsx';
+import { ImportFilesButton, ImportPanel, ImportProvider, RecentImports } from './imports/ImportPanel.tsx';
+import { PushRunStrip, RunMark } from './providers/PushRun.tsx';
+import { ReportProblem } from './account/ReportProblem.tsx';
+import { ReviewMore, ReviewStrip } from './review/ReviewStrip.tsx';
 import { useErrorText } from './lib/display.ts';
 import { mayLeave } from './lib/leave-guard.ts';
 import { startLive } from './lib/live.ts';
@@ -24,20 +24,20 @@ import { ErrorBoundary, LogbookSkeleton, Notice, PageHeader, RowsSkeleton } from
 import { PlainShell, Shell } from './ui/Shell.tsx';
 
 // Pages most visits don't need load on demand: the chart library, Settings.
-const DivePage = lazy(() => import('./DivePage.tsx').then((m) => ({ default: m.DivePage })));
-const SettingsPage = lazy(() => import('./SettingsPage.tsx').then((m) => ({ default: m.SettingsPage })));
-const DiversPage = lazy(() => import('./DiversPage.tsx').then((m) => ({ default: m.DiversPage })));
-const DiverPage = lazy(() => import('./DiverPage.tsx').then((m) => ({ default: m.DiverPage })));
-const SitesPage = lazy(() => import('./SitesPage.tsx').then((m) => ({ default: m.SitesPage })));
-const SitePage = lazy(() => import('./SitesPage.tsx').then((m) => ({ default: m.SitePage })));
-const CentresPage = lazy(() => import('./CentresPage.tsx').then((m) => ({ default: m.CentresPage })));
-const CentrePage = lazy(() => import('./CentresPage.tsx').then((m) => ({ default: m.CentrePage })));
-const ReviewPage = lazy(() => import('./ReviewPage.tsx').then((m) => ({ default: m.ReviewPage })));
-const ToolsPage = lazy(() => import('./ToolsPage.tsx').then((m) => ({ default: m.ToolsPage })));
-const EquipmentPage = lazy(() => import('./EquipmentPage.tsx').then((m) => ({ default: m.EquipmentPage })));
-const SiteImportPage = lazy(() => import('./SiteImportPage.tsx').then((m) => ({ default: m.SiteImportPage })));
-const BackupsPage = lazy(() => import('./BackupsPage.tsx').then((m) => ({ default: m.BackupsPage })));
-const SupportBundlePage = lazy(() => import('./SupportBundlePage.tsx').then((m) => ({ default: m.SupportBundlePage })));
+const DivePage = lazy(() => import('./dives/DivePage.tsx').then((m) => ({ default: m.DivePage })));
+const SettingsPage = lazy(() => import('./account/SettingsPage.tsx').then((m) => ({ default: m.SettingsPage })));
+const DiversPage = lazy(() => import('./divers/DiversPage.tsx').then((m) => ({ default: m.DiversPage })));
+const DiverPage = lazy(() => import('./divers/DiverPage.tsx').then((m) => ({ default: m.DiverPage })));
+const SitesPage = lazy(() => import('./sites/SitesPage.tsx').then((m) => ({ default: m.SitesPage })));
+const SitePage = lazy(() => import('./sites/SitesPage.tsx').then((m) => ({ default: m.SitePage })));
+const CentresPage = lazy(() => import('./sites/CentresPage.tsx').then((m) => ({ default: m.CentresPage })));
+const CentrePage = lazy(() => import('./sites/CentresPage.tsx').then((m) => ({ default: m.CentrePage })));
+const ReviewPage = lazy(() => import('./review/ReviewPage.tsx').then((m) => ({ default: m.ReviewPage })));
+const ToolsPage = lazy(() => import('./planning/ToolsPage.tsx').then((m) => ({ default: m.ToolsPage })));
+const EquipmentPage = lazy(() => import('./equipment/EquipmentPage.tsx').then((m) => ({ default: m.EquipmentPage })));
+const SiteImportPage = lazy(() => import('./admin/SiteImportPage.tsx').then((m) => ({ default: m.SiteImportPage })));
+const BackupsPage = lazy(() => import('./admin/BackupsPage.tsx').then((m) => ({ default: m.BackupsPage })));
+const SupportBundlePage = lazy(() => import('./admin/SupportBundlePage.tsx').then((m) => ({ default: m.SupportBundlePage })));
 
 /**
  * Minimal hash routing: "#/" (logbook, "#/?diver=<id>" for one Diver, "#/?site=<id>" for one Dive site),

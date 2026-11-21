@@ -453,9 +453,9 @@ Implemented:
   with `deleted_earlier` (other Users: `not_your_diver`). The key stays reserved, so restoring can't clash.
 - **SSI:** the route checks the version, then deletes in SSI (`ssi.remove`), then here; an SSI error deletes nothing.
   `ssi.currentOf` tells which Dives are still in SSI (for the answer and the list).
-- **Web client:** "Delete dive…" in the dive page's More menu (`DeleteDive.tsx`: one dialog with the SSI question);
+- **Web client:** "Delete dive…" in the dive page's More menu (`dives/DeleteDive.tsx`: one dialog with the SSI question);
   back to the logbook with a notice and Undo, the SSI reminder and "Deleted dives" with Restore and "Delete in SSI"
-  (`DeletedDives.tsx`, state shared between the pages in `lib/deletion.ts`). The list pages with "Load more"; the
+  (`review/DeletedDives.tsx`, state shared between the pages in `lib/deletion.ts`). The list pages with "Load more"; the
   reminder's "Keep it in SSI" keeps those copies there on this client, so the reminder stays away on later visits. The
   candidates panel says when a candidate's Dives are gone; the history shows "Restored".
 - **Tests:** `test/dive-deletion.test.ts` (server, against the fake SSI), `test/deletion.test.ts` (web),
@@ -507,7 +507,7 @@ Implemented:
   `drizzle-kit generate` then reports no changes): `target` → `provider` (text), `account_email` → `account_label`, sealed
   `credentials` instead of `token`/`password` (old ones dropped, Connections `needs_sign_in`), `push.remote_gone`, stored
   `ssi_*` codes renamed.
-- **Web client:** `Connections.tsx` (a panel per Provider with sign-in) and `ProviderPanel.tsx` (a panel per Provider that
+- **Web client:** `account/Connections.tsx` (a panel per Provider with sign-in) and `dives/ProviderPanel.tsx` (a panel per Provider that
   takes dives) render from `GET /api/providers`; the delete dialog and the deleted dives ask every Provider a Dive is at.
   Texts: `provider.*` with the Provider's name, and `providers.ssi.*` where SSI is worded itself; every SSI text reads as
   before in both languages (checked by comparing the old and new translations).
@@ -598,10 +598,10 @@ Implemented:
   sent before, from the current Push's payload), counts the Participants' SSI accounts in the fingerprint and reads the
   buddy IDs back. `GET /api/connections/{id}/buddies` and `POST …/buddies/import` read the list live and create external
   Divers with name and SSI account (`src/providers/buddies/buddy-service.ts`).
-- **Web client:** `Participants.tsx` (buddies, guides and instructors on the dive page; a role radio group and a live
-  search over every Diver, or a new one by the typed name, when adding; a role dropdown per row that saves at once); `ProviderPanel.tsx` renders one resolver per requirement type
+- **Web client:** `dives/Participants.tsx` (buddies, guides and instructors on the dive page; a role radio group and a live
+  search over every Diver, or a new one by the typed name, when adding; a role dropdown per row that saves at once); `dives/ProviderPanel.tsx` renders one resolver per requirement type
   (the site picker takes its ID forms from the capabilities; "Find … in your SSI buddy list" sets the Diver's account), an
-  unknown type with the Provider's description, and who a Push left out; `ProviderBuddies.tsx` (the SSI buddy list under
+  unknown type with the Provider's description, and who a Push left out; `providers/ProviderBuddies.tsx` (the SSI buddy list under
   the Connection: add one or all, or link an entry to a Diver here); "Other divers" on the Divers page; the site form's
   typed site IDs come from the requirements. No `ssiSiteId` or SSI QR format in the web code; SSI's own sentences are
   `providers.ssi.*` texts.
@@ -676,7 +676,7 @@ Implemented:
   `linked`, reasons `sent_by_dive_hub`, `no_match`, `ambiguous`, `left_out`, outcomes `remoteId`/`remoteNumber`; problem
   `provider_import_off`; Revision cause `fill`. Migration 0016 (generated, reviewed: additions only; existing rows are
   `device`).
-- **Web client:** `ProviderDiveImport.tsx` under each Connection (what the import may do and the window, saved at once;
+- **Web client:** `imports/ProviderDiveImport.tsx` under each Connection (what the import may do and the window, saved at once;
   the preview with the computers' choices and the entries to decide; the start and the outcome, polled); an import from
   a Provider is summed up by result in the Imports list; the dive page says where a time zone came from and shows a Dive
   without a Recording; an `unknown` time shows as logged, without an offset.
@@ -782,7 +782,7 @@ its [amendment](../decisions/0035-mcp-connector.md#amendment-2026-10-06-as-built
 - Routes: `GET /api/me/ai-access`, `POST /api/me/ai-accesses` (the key once), `DELETE /api/me/ai-accesses/{id}`,
   `GET /api/me/ai-access-log`; admins: `GET`/`PUT /api/admin/ai-access`, `DELETE /api/admin/ai-accesses`. Codes
   `ai_access_off`, `ai_access_not_found`.
-- Web: `AiAccess.tsx` — on the account page what an access hands to the AI provider, creating one (the key once, with
+- Web: `account/AiAccess.tsx` — on the account page what an access hands to the AI provider, creating one (the key once, with
   lines for Claude Code, VS Code and mcp-remote from `lib/ai-access.ts`), the accesses with their last use, revoking, and
   what was read; on the admin page the switch and "Revoke all". `CopyField`'s button is now named with what it copies.
 - Better Auth's log no longer prints an error with a stack for every unknown key (`auth.ts`, `logger`).
@@ -806,9 +806,9 @@ its [amendment](../decisions/0035-mcp-connector.md#amendment-2026-10-06-as-built
   `PUT /api/divers/{id}/muted-rules/{rule}`; `GET /api/dives` carries `findings` per Dive. Code `finding_not_found`.
 - Computer events: `COMPUTER_EVENTS` in `vocabulary.ts`, Garmin's `dive_alert` codes in `imports/formats/fit/fit-vocabulary.ts`.
 - MCP: `logbook_get_dive_assessment` (eight tools now).
-- Web: `Assessment.tsx` (the panel under the Recordings, the findings' lane, a context shared with the profile),
-  `DepthProfile.tsx` (the ascent coloured by speed with a legend in words, the selected finding's stretch),
-  `lib/assessment.ts`, the mark in `DiveList.tsx`; tokens `--color-ascent-1..3`.
+- Web: `dives/Assessment.tsx` (the panel under the Recordings, the findings' lane, a context shared with the profile),
+  `dives/DepthProfile.tsx` (the ascent coloured by speed with a legend in words, the selected finding's stretch),
+  `lib/assessment.ts`, the mark in `dives/DiveList.tsx`; tokens `--color-ascent-1..3`.
 - Tests: `assessment-rules.test.ts` (every rule on synthetic profiles, what must not fire, 5 s data, real files when
   present), `assessment.test.ts` (API: after imports, edits, deleting and restoring, dismiss, mute, another User, a new
   engine version, a Dive without a Recording), the MCP tool in `mcp-endpoint.test.ts`; web `assessment.test.ts`; browser
@@ -861,7 +861,7 @@ its [amendment](../decisions/0035-mcp-connector.md#amendment-2026-10-06-as-built
   Provider first, through the Push service, as deleting does), `POST /api/dives/{id}/move` answers the Dive where it is
   now; `GET /api/dives/deleted` gains `mergedInto` and `movedTo`, read from the deleting Revision. Problem
   `merge_not_possible`. No migration.
-- Web: `MergeDive.tsx` (the hint on the dive page and the dialog), the move dialog says when a Dive moves as a copy, the
+- Web: `dives/MergeDive.tsx` (the hint on the dive page and the dialog), the move dialog says when a Dive moves as a copy, the
   deleted dives say where a Dive went, the history tells merges and copies (en, de); icon `merge`.
 - Tests: `dive-merging.test.ts` (PostgreSQL, SSI's fake and the ledger: the two observations of the research note, a
   merge from either side, filling and appended notes, links moved or left behind, deleting at the Provider when asked,
@@ -893,7 +893,7 @@ its [amendment](../decisions/0035-mcp-connector.md#amendment-2026-10-06-as-built
   `findChecks` never calls such a pair `obvious`. Tests: `matching.test.ts`, `false-start-import.test.ts`.
 - Routes: `GET /api/logbook-checks?status=open|answered`, `PUT /api/logbook-checks/answer`; `merge-candidates` gains
   `rule` and `answered`. Problem `check_not_found`.
-- Web: `LogbookChecks.tsx` on the Review page (`ReviewPage.tsx`, since UI redesign slice B; first inside "Needs your decision"): the pairs with "Merge the two…" (the merge
+- Web: `review/LogbookChecks.tsx` on the Review page (`review/ReviewPage.tsx`, since UI redesign slice B; first inside "Needs your decision"): the pairs with "Merge the two…" (the merge
   dialog, staying on the logbook) and "They are two dives" (with Undo), "Merge the N clear pairs…" from two obvious pairs
   on, the answered pairs with "Ask again"; the dive page's hint leaves answered pairs out (en, de).
 - Tests: `logbook-check-rules.test.ts` (the rules), `logbook-checks.test.ts` (PostgreSQL: both observations found, another
@@ -926,8 +926,8 @@ its [amendment](../decisions/0035-mcp-connector.md#amendment-2026-10-06-as-built
 - SSI declares `numbers: { set: ['create', 'update'], changeRemovesVerification: true }` since the owner's checks of
   2026-10-10 (`test/fixtures/ssi/round-trip.ts number`): its create, its update and its `setNumber` use Dive Hub's number unless
   another dive in the logbook has it (SSI itself would take it twice). A verified dive was not checked.
-- Web: no number field in the edit form; "Dive numbers" per Diver (`DiversPage.tsx`), "Number dives in SSI as in Dive Hub"
-  (`ProviderDiveNumbers.tsx`), "Set number" in `ProviderPanel.tsx`, "Number on the computer" with the Recording.
+- Web: no number field in the edit form; "Dive numbers" per Diver (`divers/DiversPage.tsx`), "Number dives in SSI as in Dive Hub"
+  (`providers/ProviderDiveNumbers.tsx`), "Set number" in `dives/ProviderPanel.tsx`, "Number on the computer" with the Recording.
 - Tests: `dive-numbers.test.ts`, `provider-numbers.test.ts`, the numbers rules in `provider-contract.ts`, `ssi-adapter.test.ts`; the e2e
   server gives the seeded Divers `dives_before` 41 and 500 so the fixtures keep their numbers (42, 501 to 504).
 
@@ -947,7 +947,7 @@ its [amendment](../decisions/0035-mcp-connector.md#amendment-2026-10-06-as-built
   Continue resets the failed items whose reason is worth another try (`provider_unavailable`, `provider_refused`, `provider_not_stored`,
   `provider_dive_gone`, `internal_error`).
 - Capabilities: `limits.run { pauseMs, maxDives } | null` (SSI 5000 ms and 100; the ledger fake 1000 and 3; hand-over `null`), checked in
-  `provider-contract.ts` (`runProblems`). Web: `PushRun.tsx`. Tests: `push-run-plan.test.ts`, `push-runs.test.ts`, `push-run.spec.ts`, and
+  `provider-contract.ts` (`runProblems`). Web: `providers/PushRun.tsx`. Tests: `push-run-plan.test.ts`, `push-runs.test.ts`, `push-run.spec.ts`, and
   a case in `ui-quality.spec.ts`; the e2e server gives the fake SSI a 150 ms run pause and has test-only routes to expire SSI's tokens and
   clear runs.
 
@@ -957,7 +957,7 @@ its [amendment](../decisions/0035-mcp-connector.md#amendment-2026-10-06-as-built
   picture (`certifications.find`, `.image`); capability `data.certifications.import`. The worker task `certification_image` fetches a picture
   into the blob store (3 attempts; the last failure marks it `failed`). A card's blob is released when no other card or Original refers to it;
   deleting a Diver or a User releases theirs.
-- Web: `Certifications.tsx`, a dialog on the Divers page. Tests: `diver-certifications.test.ts`, cases in `provider-contract.ts` and
+- Web: `divers/Certifications.tsx`, a dialog on the Divers page. Tests: `diver-certifications.test.ts`, cases in `provider-contract.ts` and
   `ssi-client.test.ts`, `certifications.spec.ts`, a case in `ui-quality.spec.ts`; the e2e server's fake SSI has two invented cards for Erika.
 
 **Piece 3 (2026-10-24): the send is three-way** ([ADR 0056](../decisions/0056-two-way-exchange-and-automation.md), amended).
@@ -1001,5 +1001,5 @@ design).
 - Logbook check `surface_break` (`LOGBOOK_CHECKS_VERSION` 5, `chain`); the assessment `ENGINE_VERSION` 4 (the edges of a Surface
   break give no rate). Migration for `recording.original_id` nullable, `joined_recording_id`, `append_id`, `from_dive_id` and
   `continuation_append`.
-- Web: `AppendDive.tsx` (dialog, the dive page's menu), the check card in `LogbookChecks.tsx`, breaks in `DepthProfile.tsx`, the parts
-  under the joined Recording, `DeletedDives.tsx` (one entry per append, what comes back), the history (en, de).
+- Web: `dives/AppendDive.tsx` (dialog, the dive page's menu), the check card in `review/LogbookChecks.tsx`, breaks in `dives/DepthProfile.tsx`, the parts
+  under the joined Recording, `review/DeletedDives.tsx` (one entry per append, what comes back), the history (en, de).

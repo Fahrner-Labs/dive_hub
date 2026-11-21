@@ -37,6 +37,36 @@ const MODULE_IMPORTS = {
   version: [],
 };
 const target = (names) => `${SERVER}(${names.join('|')})/`;
+
+// The web client's feature folders and the other features each may import (ADR 0053, amendment of 2026-11-21).
+// `components/` holds the feature components no single feature owns; `ui/` is the shared design system.
+// A new import between features adds its entry here, in the same commit, with the reason in the commit message.
+const WEB = '^apps/web/src/';
+const WEB_FEATURE_IMPORTS = {
+  components: [],
+  dives: ['components', 'equipment', 'providers', 'sites'],
+  divers: ['components'],
+  sites: ['components'],
+  equipment: [],
+  providers: ['components'],
+  imports: ['components', 'dives', 'providers'],
+  review: ['components', 'dives', 'imports', 'providers'],
+  planning: ['components'],
+  account: ['imports', 'providers'],
+  admin: [],
+};
+const webFeatures = Object.keys(WEB_FEATURE_IMPORTS);
+const webTarget = (names) => `${WEB}(${names.join('|')})/`;
+const webFeatureRules = Object.entries(WEB_FEATURE_IMPORTS).flatMap(([from, allowed]) => {
+  const others = webFeatures.filter((name) => name !== from && !allowed.includes(name));
+  return others.length > 0 ? [{
+    name: `web-feature-imports-${from}`,
+    severity: 'error',
+    comment: `${from}/ may import only these feature folders: ${allowed.join(', ') || 'none'} (WEB_FEATURE_IMPORTS in .dependency-cruiser.cjs, ADR 0053).`,
+    from: { path: `${WEB}${from}/` },
+    to: { path: webTarget(others) },
+  }] : [];
+});
 const moduleRules = Object.entries(MODULE_IMPORTS).flatMap(([from, allowed]) => {
   const names = allowed.map((entry) => entry.split(':')[0]);
   const typeOnly = allowed.filter((entry) => entry.endsWith(':type')).map((entry) => entry.split(':')[0]);
@@ -63,6 +93,7 @@ const moduleRules = Object.entries(MODULE_IMPORTS).flatMap(([from, allowed]) => 
 module.exports = {
   forbidden: [
     ...moduleRules,
+    ...webFeatureRules,
     {
       name: 'no-cycles',
       severity: 'error',
@@ -106,18 +137,39 @@ module.exports = {
       to: { path: ['node_modules/drizzle-orm/', '^apps/server/src/db/client[.]ts$'] },
     },
     {
-      name: 'ui-imports-no-page',
+      name: 'ui-imports-no-feature',
       severity: 'error',
-      comment: 'Shared components (apps/web/src/ui) must not depend on a page (a component file at the top of apps/web/src).',
-      from: { path: '^apps/web/src/ui/' },
-      to: { path: '^apps/web/src/[A-Z][^/]*\\.tsx$' },
+      comment: 'The shared design system (apps/web/src/ui) depends on no feature folder (ADR 0053, amendment of 2026-11-21).',
+      from: { path: `${WEB}ui/` },
+      to: { path: webTarget(webFeatures) },
     },
     {
-      name: 'lib-imports-no-page',
+      name: 'lib-imports-no-feature',
       severity: 'error',
-      comment: 'Web helpers and data hooks (apps/web/src/lib) must not depend on a page (ADR 0053).',
-      from: { path: '^apps/web/src/lib/' },
-      to: { path: '^apps/web/src/[A-Z][^/]*\\.tsx$' },
+      comment: 'Web helpers and data hooks (apps/web/src/lib) depend on no feature folder; they stay shared (ADR 0053).',
+      from: { path: `${WEB}lib/` },
+      to: { path: webTarget(webFeatures) },
+    },
+    {
+      name: 'api-imports-no-feature',
+      severity: 'error',
+      comment: 'The API layer (api.ts and api/) depends on no feature folder (ADR 0053).',
+      from: { path: `${WEB}api([.]ts|/)` },
+      to: { path: webTarget(webFeatures) },
+    },
+    {
+      name: 'web-features-import-no-assembly',
+      severity: 'error',
+      comment: 'The files that assemble the web client (App.tsx, main.tsx) import the features, never the other way (ADR 0053).',
+      from: { path: webTarget(webFeatures) },
+      to: { path: `${WEB}(App|main)[.]tsx$` },
+    },
+    {
+      name: 'shared-code-imports-no-assembly',
+      severity: 'error',
+      comment: 'The shared code below the features (ui, lib, api, components) imports no assembly file (ADR 0053).',
+      from: { path: `${WEB}(ui/|lib/|components/|api([.]ts|/))` },
+      to: { path: `${WEB}(App|main)[.]tsx$` },
     },
     {
       // lib/ may import api.ts (amendment of 2026-10-29); the API layer takes from lib/ only what describes a

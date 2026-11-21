@@ -1,0 +1,263 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useState, type ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
+import { formValues } from '../lib/form.ts';
+import { api, ApiError, connectionsQuery, diversQuery, keys, unwrap, type ConnectionView, type ProviderView } from '../api.ts';
+import { announce } from '../lib/announce.ts';
+import { useDisplay, useErrorText } from '../lib/display.ts';
+import { connectableProviders, useProviders, useProviderText } from '../lib/providers.ts';
+import { ProviderAutomation } from '../providers/ProviderAutomation.tsx';
+import { ProviderBuddies } from '../providers/ProviderBuddies.tsx';
+import { ProviderDiveImport } from '../imports/ProviderDiveImport.tsx';
+import { ProviderDiveNumbers } from '../providers/ProviderDiveNumbers.tsx';
+import { Badge, Button, ConfirmButton, Dialog, Form, Icon, Muted, Notice, Panel, PasswordField, RadioGroup, Select, Table, TextField } from '../ui/index.ts';
+
+/** A choice with its explanation under it, read together by screen readers. */
+const choice = (label: string, hint: string): ReactNode => (
+  <span className="radio-text"><span>{label}</span><span className="field-description">{hint}</span></span>
+);
+
+/**
+ * Whether Dive Hub keeps the password (ADR 0024). The User decides on every sign-in; without the server's encryption
+ * key there is nothing to choose, and the panel says what that means. Only for password sign-in.
+ */
+function KeepSignedIn({ provider: p, value, onChange }: { provider: ProviderView; value: string; onChange: (v: string) => void }) {
+  const pt = useProviderText(p);
+  if (p.signIn.kind !== 'password') return null;
+  if (!p.signIn.canKeepPassword) return <Muted>{pt('tokenOnly')}</Muted>;
+  return (
+    <RadioGroup
+      label={pt('keepQuestion')} value={value} onChange={onChange}
+      options={[
+        { value: 'keep', label: choice(pt('keep'), pt('keepHint')) },
+        { value: 'token', label: choice(pt('dontKeep'), pt('dontKeepHint')) },
+      ]}
+    />
+  );
+}
+
+/** The way to the page where the User creates the Provider's key, in a new tab. */
+function CreateKeyLink({ provider: p }: { provider: ProviderView }) {
+  const pt = useProviderText(p);
+  if (!p.signIn.createUrl) return null;
+  return <a href={p.signIn.createUrl} target="_blank" rel="noopener noreferrer" className="external-link">{pt('tokenCreate')}<Icon name="external" /></a>;
+}
+
+/** The fields the Provider's sign-in asks for. Its secrets are the Provider's: never saved as Dive Hub's (autocomplete off). */
+function SignInFields({ provider: p, withLogin, autoFocus, account }: { provider: ProviderView; withLogin: boolean; autoFocus?: boolean; account?: string }) {
+  const pt = useProviderText(p);
+  if (p.signIn.kind === 'token') {
+    return (
+      <>
+        <PasswordField
+          label={pt('token')} buttonItem={account ? `${pt('token')}, ${account}` : undefined} name="token" autoComplete="off" isRequired {...(autoFocus && { autoFocus })}
+          description={<>{pt('tokenHint')}{p.signIn.createUrl && <>{' '}<CreateKeyLink provider={p} /></>}</>}
+        />
+        {p.signIn.expires && <TextField label={pt('keyExpiresOn')} description={pt('keyExpiresOnHint')} name="keyExpiresOn" type="date" />}
+      </>
+    );
+  }
+  return (
+    <>
+      {withLogin && (p.signIn.login === 'username'
+        ? <TextField label={pt('username')} name="login" autoComplete="off" isRequired />
+        : <TextField label={pt('email')} name="login" type="email" autoComplete="off" isRequired />)}
+      <PasswordField label={pt('password')} buttonItem={account ? `${pt('password')}, ${account}` : undefined} name="password" autoComplete="off" isRequired {...(autoFocus && { autoFocus })} />
+    </>
+  );
+}
+
+/** What the sign-in fields hold, for the API. */
+const signInBody = (p: ProviderView, values: Record<string, string | undefined>, keep: string) => (p.signIn.kind === 'token'
+  ? { token: values.token!, keepSignedIn: false, ...(p.signIn.expires && values.keyExpiresOn && { keyExpiresOn: values.keyExpiresOn }) }
+  : { password: values.password!, keepSignedIn: p.signIn.canKeepPassword && keep === 'keep' });
+
+/** The account's Connections (ADR 0024, 0027): a panel per Provider the User can connect to, one Connection per Diver. */
+export function Connections({ focus }: { focus?: string | undefined }) {
+  const providers = useProviders();
+  return <>{connectableProviders(providers.data).map((p) => <ProviderConnections key={p.id} provider={p} focus={focus} />)}</>;
+}
+
+function ProviderConnections({ provider: p, focus }: { provider: ProviderView; focus?: string | undefined }) {
+  const { t } = useTranslation();
+  const pt = useProviderText(p);
+  const errorText = useErrorText();
+  const display = useDisplay();
+  const queryClient = useQueryClient();
+  const connections = useQuery(connectionsQuery());
+  const divers = useQuery(diversQuery());
+  const [signingIn, setSigningIn] = useState<ConnectionView | null>(null);
+  const disconnect = useMutation({
+    mutationFn: async (c: ConnectionView) => unwrap(await api.DELETE('/api/connections/{id}', { params: { path: { id: c.id } } })),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: keys.connections });
+      await queryClient.invalidateQueries({ queryKey: keys.dives });
+      announce(pt('disconnected'));
+    },
+  });
+  if (!connections.data || !divers.data) {
+    return connections.error ? <Panel title={p.name}><Notice tone="danger">{errorText(connections.error)}</Notice></Panel> : null;
+  }
+  const own = connections.data.filter((c) => c.provider === p.id);
+  const several = divers.data.length > 1;
+  const unconnected = divers.data.filter((d) => !own.some((c) => c.diverId === d.id));
+  const label = (c: ConnectionView) => (several ? `${c.diverName}, ${c.accountLabel}` : c.accountLabel);
+
+  return (
+    <Panel title={p.name}>
+      <Muted>{pt('intro')}</Muted>
+      {own.length > 0 && (
+        <Table cards label={p.name} head={[
+          ...(several ? [pt('diver')] : []), pt('account'), pt('state'), pt('lastUsed'), { label: t('common.actions'), hidden: true },
+        ]}>
+          {own.map((c) => (
+            <tr key={c.id}>
+              {several && <td>{c.diverName}</td>}
+              <td className="email">{c.accountLabel}</td>
+              <td>
+                {c.state === 'active'
+                  ? <Badge tone="success">{c.keepSignedIn ? pt('stateKept') : pt('stateActive')}</Badge>
+                  : <Badge tone="danger">{pt('stateNeedsSignIn')}</Badge>}
+              </td>
+              <td className="date">{c.lastUsedAt ? display.dateTime(c.lastUsedAt) : t('common.none')}</td>
+              <td>
+                <span className="actions">
+                  <Button variant={c.state === 'active' ? 'quiet' : 'primary'} icon="signIn"
+                    aria-label={t('common.forItem', { action: pt('signInAgain'), item: label(c) })} onPress={() => setSigningIn(c)}>
+                    {pt('signInAgain')}
+                  </Button>
+                  <ConfirmButton
+                    variant="quiet" icon="disconnect" aria-label={t('common.forItem', { action: pt('disconnect'), item: label(c) })}
+                    title={pt('disconnectTitle')} body={pt('disconnectBody')} confirmLabel={pt('disconnect')}
+                    onConfirm={() => disconnect.mutateAsync(c)}
+                  >
+                    {pt('disconnect')}
+                  </ConfirmButton>
+                </span>
+              </td>
+            </tr>
+          ))}
+        </Table>
+      )}
+      {own.map((c) => <KeyExpiry key={`expiry-${c.id}`} provider={p} connection={c} several={several} />)}
+      {own.map((c) => <ProviderBuddies key={`buddies-${c.id}`} provider={p} connection={c} />)}
+      {own.map((c) => <ProviderDiveImport key={`import-${c.id}`} provider={p} connection={c} several={several} />)}
+      {own.map((c) => <ProviderDiveNumbers key={`numbers-${c.id}`} provider={p} connection={c} />)}
+      {own.map((c) => <ProviderAutomation key={`automation-${c.id}`} provider={p} connection={c} several={several} focused={focus === c.id} />)}
+      {/* ADR 0049: said where the User connects and on the Connection. */}
+      {p.notices.includes('presents_as_app') && <Muted>{pt('notice.presents_as_app')}</Muted>}
+      {unconnected.length > 0 && <ConnectForm provider={p} divers={unconnected} several={several} />}
+      {signingIn && <SignInDialog provider={p} connection={signingIn} onClose={() => setSigningIn(null)} />}
+    </Panel>
+  );
+}
+
+/** A key that expires within a week (the server says so, ADR 0062): said on the Connection, with the way to a new one. */
+function KeyExpiry({ provider: p, connection: c, several }: { provider: ProviderView; connection: ConnectionView; several: boolean }) {
+  const pt = useProviderText(p);
+  const display = useDisplay();
+  if (!c.keyExpiresSoon || !c.keyExpiresOn) return null;
+  const gone = c.keyExpiresOn < new Date().toLocaleDateString('sv');
+  return (
+    <Notice tone="info">
+      <p>
+        {several && `${c.diverName}: `}{pt(gone ? 'keyExpired' : 'keyExpiresSoon', { date: display.date(c.keyExpiresOn) })}{' '}
+        <CreateKeyLink provider={p} />
+      </p>
+    </Notice>
+  );
+}
+
+type ConnectBody = { diverId: string; login?: string; password?: string; token?: string; keyExpiresOn?: string; keepSignedIn: boolean; claim?: boolean };
+
+function ConnectForm({ provider: p, divers, several }: { provider: ProviderView; divers: { id: string; name: string }[]; several: boolean }) {
+  const { t } = useTranslation();
+  const pt = useProviderText(p);
+  const errorText = useErrorText();
+  const queryClient = useQueryClient();
+  const [diverId, setDiverId] = useState<string | null>(divers[0]?.id ?? null);
+  const [keep, setKeep] = useState('token');
+  // What was sent, kept for a claim (ADR 0028): an external Diver here has this account, and the User is asked first.
+  const [sent, setSent] = useState<ConnectBody | null>(null);
+  const connect = useMutation({
+    mutationFn: async (body: ConnectBody) => {
+      setSent(body);
+      return unwrap(await api.POST('/api/connections/{provider}', { params: { path: { provider: p.id } }, body }));
+    },
+    onSuccess: async () => {
+      setSent(null);
+      await queryClient.invalidateQueries({ queryKey: keys.connections });
+      await queryClient.invalidateQueries({ queryKey: keys.dives });
+      announce(pt('connected'));
+    },
+  });
+  const target = divers.find((d) => d.id === diverId) ?? divers[0];
+  const held = connect.error instanceof ApiError && connect.error.code === 'provider_account_held' ? connect.error.details.diver : undefined;
+  return (
+    <Form
+      className="form narrow-form"
+      onSubmit={(e) => {
+        const values = formValues(e);
+        const form = e.currentTarget;
+        if (!target) return;
+        connect.mutate(
+          { diverId: target.id, ...(p.signIn.kind === 'password' && { login: values.login! }), ...signInBody(p, values, keep) },
+          { onSuccess: () => form.reset() },
+        );
+      }}
+    >
+      <h3 className="subheading">{several ? pt('connectDiver', { diver: target?.name ?? '' }) : pt('connect')}</h3>
+      {several && divers.length > 1 && (
+        <Select label={pt('diverFor')} value={diverId} onChange={setDiverId} options={divers.map((d) => ({ id: d.id, label: d.name }))} />
+      )}
+      <SignInFields provider={p} withLogin />
+      <KeepSignedIn provider={p} value={keep} onChange={setKeep} />
+      {held && sent ? (
+        <Notice tone="info">
+          <p>{pt('claimQuestion' as 'claimQuestion_one', { diver: held.name, count: held.dives ?? 0 })}</p>
+          <p>{pt('claimExplain', { diver: held.name, mine: target?.name ?? '' })}</p>
+          <div className="form-actions">
+            <Button variant="primary" icon="link" isPending={connect.isPending} onPress={() => connect.mutate({ ...sent, claim: true })}>
+              {pt('claimConfirm', { diver: held.name })}
+            </Button>
+            <Button onPress={() => { connect.reset(); setSent(null); }}>{t('common.cancel')}</Button>
+          </div>
+        </Notice>
+      ) : connect.error && <Notice tone="danger">{errorText(connect.error)}</Notice>}
+      <div className="form-actions"><Button type="submit" variant="primary" icon="link" isPending={connect.isPending}>{pt('connectSubmit')}</Button></div>
+    </Form>
+  );
+}
+
+function SignInDialog({ provider: p, connection: c, onClose }: { provider: ProviderView; connection: ConnectionView; onClose: () => void }) {
+  const { t } = useTranslation();
+  const pt = useProviderText(p);
+  const errorText = useErrorText();
+  const queryClient = useQueryClient();
+  const [keep, setKeep] = useState(c.keepSignedIn ? 'keep' : 'token');
+  const signIn = useMutation({
+    mutationFn: async (body: { password?: string; token?: string; keyExpiresOn?: string; keepSignedIn: boolean }) =>
+      unwrap(await api.POST('/api/connections/{id}/sign-in', { params: { path: { id: c.id } }, body })),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: keys.connections });
+      await queryClient.invalidateQueries({ queryKey: keys.dives });
+      announce(pt('signedIn'));
+      onClose();
+    },
+  });
+  return (
+    <Dialog title={pt('signInTitle')} isOpen onOpenChange={(open) => !open && onClose()}>
+      <p>{pt(p.signIn.kind === 'token' ? 'signInBodyToken' : 'signInBody', { account: c.accountLabel })}</p>
+      <Form className="form" onSubmit={(e) => signIn.mutate(signInBody(p, formValues(e), keep))}>
+        {/* The account names the eye button: the Connection's own form may show the same field behind the dialog. */}
+        <SignInFields provider={p} withLogin={false} autoFocus account={c.accountLabel} />
+        <KeepSignedIn provider={p} value={keep} onChange={setKeep} />
+        {signIn.error && <Notice tone="danger">{errorText(signIn.error)}</Notice>}
+        <div className="form-actions">
+          <Button type="submit" variant="primary" icon="signIn" isPending={signIn.isPending}>{pt('signInSubmit')}</Button>
+          <Button onPress={onClose}>{t('common.cancel')}</Button>
+        </div>
+      </Form>
+    </Dialog>
+  );
+}

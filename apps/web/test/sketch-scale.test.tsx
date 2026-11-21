@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import type { DiveSummary, Me } from '../src/api.ts';
-import { SketchScale } from '../src/ProfileSketch.tsx';
+import { SketchScale } from '../src/dives/ProfileSketch.tsx';
 
 const renderScale = (profile: DiveSummary['profile']) => {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });

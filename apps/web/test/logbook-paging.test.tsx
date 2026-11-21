@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { keys, PAGE_SIZE, type DiveSummary, type LogbookPage } from '../src/api.ts';
-import { DiveList } from '../src/DiveList.tsx';
+import { DiveList } from '../src/dives/DiveList.tsx';
 
 const dive = (number: number): DiveSummary => ({
   id: `dive-${number}`,

@@ -122,7 +122,7 @@ describe('form conventions (slice 25g)', () => {
   });
 
   it('say what "Same as last dive" copies (C17)', () => {
-    expect(read(join(src, 'DiveEditForm.tsx'))).toContain("t('cylinders.sameAsLastHint')");
+    expect(read(join(src, 'dives/DiveEditForm.tsx'))).toContain("t('cylinders.sameAsLastHint')");
   });
 });
 

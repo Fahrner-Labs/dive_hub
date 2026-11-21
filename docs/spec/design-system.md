@@ -169,7 +169,7 @@ In `apps/web/src/ui/`, built on React Aria Components (behaviour, keyboard, ARIA
 
 The Review page's decision cards share one anatomy: a question heading, one visual that carries what the decision is
 really about, only the facts that differ (equal facts collapse to one muted line), one consequence sentence and the
-actions. `Comparison` is the stats layer; `DecisionTimeline` (`apps/web/src/DecisionTimeline.tsx`) and `ProfileSketch`
+actions. `Comparison` is the stats layer; `DecisionTimeline` (`apps/web/src/review/DecisionTimeline.tsx`) and `ProfileSketch`
 are decoration (`aria-hidden`), so the comparison below and a visually hidden summary carry the same values as text.
 The timeline has one wall-clock axis and a lane per candidate. The bar is the data mark and fills the track, its
 duration optically centred inside. When every bar in a lane spans at least 45% of the track and the container is
