@@ -1,10 +1,9 @@
 package dev.divehub.android.ui.logbook
 
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasProgressBarRangeInfo
@@ -13,7 +12,8 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.unit.Density
+import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import com.github.takahirom.roborazzi.captureRoboImage
 import dev.divehub.android.ui.DiveHubTheme
@@ -124,11 +124,15 @@ class LogbookScreenshotTest {
     }
 
     @Test
-    @Config(sdk = [36], qualifiers = "de-rDE-w320dp-h640dp-xxhdpi")
+    @Config(sdk = [36], qualifiers = "de-rDE-w320dp-h640dp-xxhdpi", fontScale = 2f)
     fun `the sheet at 320 dp and 200 percent text in German`() {
-        render(page(dives = listOf(reef), filters = emptySet()), fontScale = 2f)
-        compose.onNodeWithContentDescription("Filter").performClick()
-        compose.onNodeWithText("Seit dem Senden geändert · 7").assertExists()
+        render(page(dives = listOf(reef), filters = setOf(LogbookFilter.CHANGED_SINCE_SENT)))
+        compose.onNodeWithContentDescription("Filter, 1 aktiv").assertIsDisplayed()
+        capture("logbook_filter_badge_narrow_de.png")
+        compose.onNodeWithContentDescription("Filter, 1 aktiv").performClick()
+        val chip = compose.onNodeWithText("Seit dem Senden geändert · 7")
+        chip.performScrollTo().assertIsDisplayed().assertIsSelected()
+        chip.assertHeightIsAtLeast(48.dp)
         capture("logbook_filters_narrow_de.png")
     }
 
@@ -241,22 +245,19 @@ class LogbookScreenshotTest {
         compose.onNode(hasProgressBarRangeInfo(ProgressBarRangeInfo.Indeterminate)).assertDoesNotExist()
     }
 
-    private fun render(state: LogbookUiState, darkTheme: Boolean = false, fontScale: Float = 1f) {
+    private fun render(state: LogbookUiState, darkTheme: Boolean = false) {
         compose.setContent {
-            val density = LocalDensity.current
-            CompositionLocalProvider(LocalDensity provides Density(density.density, fontScale)) {
-                DiveHubTheme(darkTheme = darkTheme) {
-                    LogbookScreen(
-                        state = state,
-                        units = "metric",
-                        onRefresh = {},
-                        onRetry = {},
-                        onShowAll = {},
-                        onPage = {},
-                        onToggleFilter = {},
-                        onOpenDive = {},
-                    )
-                }
+            DiveHubTheme(darkTheme = darkTheme) {
+                LogbookScreen(
+                    state = state,
+                    units = "metric",
+                    onRefresh = {},
+                    onRetry = {},
+                    onShowAll = {},
+                    onPage = {},
+                    onToggleFilter = {},
+                    onOpenDive = {},
+                )
             }
         }
     }

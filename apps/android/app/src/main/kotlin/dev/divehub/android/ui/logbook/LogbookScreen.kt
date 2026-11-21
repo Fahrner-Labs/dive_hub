@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -26,7 +25,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Badge
-import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -34,7 +32,7 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
@@ -56,6 +54,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
@@ -176,34 +175,36 @@ fun LogbookScreen(
 
 @Composable
 private fun FilterAction(activeCount: Int, onClick: () -> Unit) {
-    IconButton(onClick = onClick) {
-        BadgedBox(
-            badge = {
-                if (activeCount > 0) {
-                    Badge(
-                        modifier = Modifier
-                            .offset(x = 4.dp, y = (-4).dp)
-                            .border(1.dp, MaterialTheme.colorScheme.outline, CircleShape)
-                            .clearAndSetSemantics {},
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                    ) {
-                        Text(
-                            activeCount.toString(),
-                            style = MaterialTheme.typography.labelMedium.copy(fontFeatureSettings = "tnum"),
-                        )
-                    }
+    val label = if (activeCount > 0) {
+        stringResource(R.string.logbook_filters_active, activeCount)
+    } else {
+        stringResource(R.string.logbook_filters)
+    }
+    Box(
+        modifier = Modifier
+            .minimumInteractiveComponentSize()
+            .clickable(role = Role.Button, onClick = onClick)
+            .semantics(mergeDescendants = true) { contentDescription = label }
+            .padding(horizontal = 8.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(painter = painterResource(R.drawable.ic_filter), contentDescription = null)
+            if (activeCount > 0) {
+                Spacer(Modifier.width(4.dp))
+                Badge(
+                    modifier = Modifier
+                        .border(1.dp, MaterialTheme.colorScheme.outline, CircleShape)
+                        .clearAndSetSemantics {},
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                ) {
+                    Text(
+                        activeCount.toString(),
+                        style = MaterialTheme.typography.labelMedium.copy(fontFeatureSettings = "tnum"),
+                    )
                 }
-            },
-        ) {
-            Icon(
-                painter = painterResource(R.drawable.ic_filter),
-                contentDescription = if (activeCount > 0) {
-                    stringResource(R.string.logbook_filters_active, activeCount)
-                } else {
-                    stringResource(R.string.logbook_filters)
-                },
-            )
+            }
         }
     }
 }
