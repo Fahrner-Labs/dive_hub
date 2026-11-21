@@ -66,13 +66,33 @@ fun DiveHubTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composabl
 internal fun successColor(): Color =
     if (MaterialTheme.colorScheme.background.luminance() < 0.5f) Color(0xFF5CC593) else Color(0xFF2A7150)
 
+@Composable
+private fun isDarkScheme(): Boolean = MaterialTheme.colorScheme.background.luminance() < 0.5f
+
 /**
  * Semantic colours Material 3 has no role for. They follow the scheme the theme is painting, so a component reads the
- * same name in light and dark.
+ * same name in light and dark. The depth and ascent values are the web's data tokens, not new colours.
  */
 object DiveHubColors {
     /** The decorative hairline (1 dp of `border`), never a control boundary. */
     val border: Color
-        @Composable get() =
-            if (MaterialTheme.colorScheme.background.luminance() < 0.5f) Color(0xFF22272C) else Color(0xFFE1E7EC)
+        @Composable get() = if (isDarkScheme()) Color(0xFF22272C) else Color(0xFFE1E7EC)
+
+    /** The water column's shallow end in the profile sketch. */
+    val depthShallow: Color
+        @Composable get() = if (isDarkScheme()) Color(0xFF62B6E6) else Color(0xFF8FD3E8)
+
+    /** The water column's deep end in the profile sketch. */
+    val depthDeep: Color
+        @Composable get() = if (isDarkScheme()) Color(0xFF1B4867) else Color(0xFF0F5E8C)
+
+    /** Ascent by speed, slowest band first; faster is also drawn thicker. */
+    val ascent1: Color
+        @Composable get() = if (isDarkScheme()) Color(0xFFE6C04A) else Color(0xFF9A7400)
+
+    val ascent2: Color
+        @Composable get() = if (isDarkScheme()) Color(0xFFF29A4A) else Color(0xFFC2570C)
+
+    val ascent3: Color
+        @Composable get() = if (isDarkScheme()) Color(0xFFFFB9A3) else Color(0xFF8A2F0A)
 }

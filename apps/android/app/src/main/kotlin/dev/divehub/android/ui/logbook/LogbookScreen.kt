@@ -1,7 +1,7 @@
 package dev.divehub.android.ui.logbook
 
+import android.content.Context
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,22 +14,27 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
-import android.content.Context
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -47,7 +52,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.divehub.android.R
+import dev.divehub.android.ui.DiveHubColors
+import dev.divehub.android.ui.DiveHubText
+import dev.divehub.android.ui.Spacing
 import dev.divehub.android.ui.SyncLine
+import dev.divehub.android.ui.components.DiveRow
+import dev.divehub.android.ui.components.EmptyState
+import dev.divehub.android.ui.components.Section
 import dev.divehub.api.models.DiveListView
 import dev.divehub.api.models.DiveListViewDivesItem
 import dev.divehub.api.models.DiveListViewDivesItemParticipantsItem
@@ -61,6 +72,12 @@ import dev.divehub.shared.logbook.monthGroups
 import dev.divehub.shared.logbook.sketchScale
 import dev.divehub.shared.sync.SyncProgress
 import java.util.Locale
+
+/** The participant circle's fixed size, not a spacing step. */
+private val AvatarSize = 24.dp
+
+/** The brief's `Radius.control` for a filled action; a quiet text action stays text. */
+private val ControlCorner = 8.dp
 
 /**
  * The logbook route: the list keeps its page and filters in the view model, not in an address. [onPage] tells the
@@ -97,8 +114,9 @@ fun LogbookRoute(
 
 /**
  * The logbook's one screen (ADR 0040): the Diver's whole logbook above the list, "Show only" filters with their counts,
- * rows under month headings, a page at a time and pull-to-refresh. Everything here is drawn from [state], so the
- * contract-visible states have screenshot tests.
+ * rows under month headings, a page at a time and pull-to-refresh. One sheet under the frame's top bar, sections kept
+ * apart by a hairline and the rows in the design system's one comfortable density (design-system-android.md).
+ * Everything here is drawn from [state], so the contract-visible states have screenshot tests.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -113,23 +131,38 @@ fun LogbookScreen(
     onOpenDive: (DiveListViewDivesItem) -> Unit,
 ) {
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.logbook_title)) },
+                title = {
+                    Text(
+                        stringResource(R.string.logbook_title),
+                        style = DiveHubText.section,
+                    )
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background,
+                    titleContentColor = MaterialTheme.colorScheme.onBackground,
+                ),
             )
         },
     ) { padding ->
-        val modifier = Modifier.padding(padding).fillMaxSize()
-        when {
-            state.loading && state.data == null -> Loading(modifier, state.syncProgress)
-            state.offline && state.data == null -> Offline(modifier, onRetry)
-            state.error != null && state.data == null -> Error(modifier, state.error, onRetry)
-            else -> PullToRefreshBox(
-                isRefreshing = state.refreshing,
-                onRefresh = onRefresh,
-                modifier = modifier,
-            ) {
-                LogbookList(state, units, onRetry, onShowAll, onPage, onToggleFilter, onOpenDive)
+        Surface(
+            modifier = Modifier.padding(padding).fillMaxSize(),
+            color = MaterialTheme.colorScheme.surface,
+        ) {
+            val modifier = Modifier.fillMaxSize()
+            when {
+                state.loading && state.data == null -> Loading(modifier, state.syncProgress)
+                state.offline && state.data == null -> Offline(modifier, onRetry)
+                state.error != null && state.data == null -> Error(modifier, state.error, onRetry)
+                else -> PullToRefreshBox(
+                    isRefreshing = state.refreshing,
+                    onRefresh = onRefresh,
+                    modifier = modifier,
+                ) {
+                    LogbookList(state, units, onRetry, onShowAll, onPage, onToggleFilter, onOpenDive)
+                }
             }
         }
     }
@@ -148,7 +181,7 @@ private fun Loading(modifier: Modifier, progress: SyncProgress?) {
     }
     Box(modifier, contentAlignment = Alignment.Center) {
         Column(
-            modifier = Modifier.padding(24.dp),
+            modifier = Modifier.padding(Spacing.s5),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
@@ -157,11 +190,11 @@ private fun Loading(modifier: Modifier, progress: SyncProgress?) {
             } else {
                 CircularProgressIndicator()
             }
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(Spacing.s4))
             Text(
                 label,
                 modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
-                style = MaterialTheme.typography.bodyLarge,
+                style = DiveHubText.body,
                 textAlign = TextAlign.Center,
             )
         }
@@ -170,9 +203,9 @@ private fun Loading(modifier: Modifier, progress: SyncProgress?) {
 
 @Composable
 private fun Offline(modifier: Modifier, onRetry: () -> Unit) {
-    Notice(
+    NoContent(
         modifier = modifier,
-        text = stringResource(R.string.logbook_offline),
+        message = stringResource(R.string.logbook_offline),
         retry = stringResource(R.string.logbook_retry),
         onRetry = onRetry,
     )
@@ -181,9 +214,9 @@ private fun Offline(modifier: Modifier, onRetry: () -> Unit) {
 @Composable
 private fun Error(modifier: Modifier, code: String, onRetry: () -> Unit) {
     val context = LocalContext.current
-    Notice(
+    NoContent(
         modifier = modifier,
-        text = when (code) {
+        message = when (code) {
             ErrorCodes.SIGN_IN_REQUIRED -> context.getString(R.string.error_sign_in_required)
             ErrorCodes.SERVER_ERROR -> context.getString(R.string.error_server)
             else -> context.getString(R.string.error_unknown)
@@ -194,20 +227,12 @@ private fun Error(modifier: Modifier, code: String, onRetry: () -> Unit) {
 }
 
 @Composable
-private fun Notice(modifier: Modifier, text: String, retry: String, onRetry: () -> Unit) {
-    Column(
-        modifier.padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-    ) {
-        Text(
-            text,
-            modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
-            style = MaterialTheme.typography.bodyLarge,
-            textAlign = TextAlign.Center,
+private fun NoContent(modifier: Modifier, message: String, retry: String, onRetry: () -> Unit) {
+    Box(modifier, contentAlignment = Alignment.Center) {
+        EmptyState(
+            message = message,
+            action = { InkButton(retry, onRetry) },
         )
-        Spacer(Modifier.height(16.dp))
-        Button(onClick = onRetry) { Text(retry) }
     }
 }
 
@@ -231,57 +256,62 @@ private fun LogbookList(
     val filtersEmpty = state.filters.isEmpty()
 
     LazyColumn(Modifier.fillMaxSize()) {
-        item {
-            SyncLine(state.syncedAt, state.connected, state.offline, R.string.logbook_offline_cached)
-            if (state.filterUnavailable) {
-                Text(
-                    stringResource(R.string.logbook_filter_offline),
-                    modifier = Modifier
-                        .padding(horizontal = 16.dp, vertical = 4.dp)
-                        .semantics { liveRegion = LiveRegionMode.Polite },
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+        item(key = "header") {
+            Column(Modifier.fillMaxWidth()) {
+                SyncLine(state.syncedAt, state.connected, state.offline, R.string.logbook_offline_cached)
+                Column(Modifier.padding(horizontal = Spacing.s4)) {
+                    if (state.filterUnavailable) {
+                        Text(
+                            stringResource(R.string.logbook_filter_offline),
+                            modifier = Modifier
+                                .padding(vertical = Spacing.s1)
+                                .semantics { liveRegion = LiveRegionMode.Polite },
+                            style = DiveHubText.meta,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    Summary(data, locale, imperial)
+                    if (state.error != null) {
+                        RefreshError(onRetry)
+                    }
+                }
             }
-            Totals(data, locale, imperial)
-            if (chips.isNotEmpty()) {
-                Filters(chips, state.providers.connected, onToggleFilter)
+        }
+
+        if (chips.isNotEmpty()) {
+            item(key = "filters") {
+                Section(
+                    title = stringResource(R.string.logbook_show_only),
+                    modifier = Modifier.padding(horizontal = Spacing.s4),
+                    showSeparator = false,
+                ) {
+                    Filters(chips, state.providers.connected, onToggleFilter)
+                }
             }
-            if (state.error != null) {
-                Text(
-                    stringResource(R.string.logbook_refresh_failed),
-                    modifier = Modifier
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
-                        .semantics { liveRegion = LiveRegionMode.Polite },
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-                TextButton(onClick = onRetry) { Text(stringResource(R.string.logbook_retry)) }
-            }
-            if (data.total > 0) Range(state)
+        }
+
+        if (data.total > 0) {
+            item(key = "range") { Range(state) }
         }
 
         if (data.total == 0) {
-            item {
-                Column(Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        if (filtersEmpty) {
-                            stringResource(R.string.logbook_none)
-                        } else {
-                            stringResource(
-                                R.string.logbook_no_match_filters,
-                                state.filters.map { LogbookText.filterName(context, it, state.providers.connected) }
-                                    .joinToString(", "),
-                            )
-                        },
-                        style = MaterialTheme.typography.bodyLarge,
-                        textAlign = TextAlign.Center,
-                    )
-                    if (!filtersEmpty) {
-                        Spacer(Modifier.height(12.dp))
-                        Button(onClick = onShowAll) { Text(stringResource(R.string.logbook_show_all)) }
-                    }
-                }
+            item(key = "empty") {
+                EmptyState(
+                    message = if (filtersEmpty) {
+                        stringResource(R.string.logbook_none)
+                    } else {
+                        stringResource(
+                            R.string.logbook_no_match_filters,
+                            state.filters.map { LogbookText.filterName(context, it, state.providers.connected) }
+                                .joinToString(", "),
+                        )
+                    },
+                    action = {
+                        if (!filtersEmpty) {
+                            QuietButton(stringResource(R.string.logbook_show_all), onShowAll)
+                        }
+                    },
+                )
             }
         } else {
             groups.forEach { group ->
@@ -292,7 +322,7 @@ private fun LogbookList(
                     }
                 }
                 items(group.dives, key = { it.id }) { dive ->
-                    DiveRow(
+                    LogbookDiveRow(
                         dive = dive,
                         scaleM = scaleM,
                         providerName = state.providers::nameOf,
@@ -301,7 +331,7 @@ private fun LogbookList(
                         imperial = imperial,
                         onOpen = { onOpenDive(dive) },
                     )
-                    HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant)
+                    HorizontalDivider(color = DiveHubColors.border)
                 }
             }
         }
@@ -313,27 +343,35 @@ private fun LogbookList(
 }
 
 @Composable
-private fun Totals(data: DiveListView, locale: Locale, imperial: Boolean) {
+private fun RefreshError(onRetry: () -> Unit) {
+    Column(Modifier.padding(vertical = Spacing.s2)) {
+        Text(
+            stringResource(R.string.logbook_refresh_failed),
+            modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+            style = DiveHubText.body,
+            color = MaterialTheme.colorScheme.error,
+        )
+        QuietButton(stringResource(R.string.logbook_retry), onRetry)
+    }
+}
+
+@Composable
+private fun Summary(data: DiveListView, locale: Locale, imperial: Boolean) {
     val context = LocalContext.current
     val totals = data.totals
-    val text = if (totals.dives == 0) {
-        stringResource(R.string.logbook_none)
-    } else {
-        val deepest = totals.deepestM?.let { LogbookText.depth(context, it, locale, imperial) } ?: "–"
-        context.resources.getQuantityString(
-            R.plurals.logbook_summary,
-            totals.dives,
-            LogbookText.number(locale, totals.dives),
-            LogbookText.duration(context, totals.durationSeconds),
-            deepest,
-        )
-    }
+    if (totals.dives == 0) return
+    val deepest = totals.deepestM?.let { LogbookText.depth(context, it, locale, imperial) } ?: "–"
+    val text = context.resources.getQuantityString(
+        R.plurals.logbook_summary,
+        totals.dives,
+        LogbookText.number(locale, totals.dives),
+        LogbookText.duration(context, totals.durationSeconds),
+        deepest,
+    )
     Text(
         text,
-        modifier = Modifier
-            .padding(horizontal = 16.dp, vertical = 12.dp)
-            .semantics { heading() },
-        style = MaterialTheme.typography.bodyMedium,
+        modifier = Modifier.padding(vertical = Spacing.s4),
+        style = DiveHubText.body,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
 }
@@ -346,26 +384,29 @@ private fun Filters(
     onToggle: (LogbookFilter) -> Unit,
 ) {
     val context = LocalContext.current
-    Column(Modifier.padding(bottom = 4.dp)) {
-        Text(
-            stringResource(R.string.logbook_show_only),
-            modifier = Modifier.padding(horizontal = 16.dp),
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        FlowRow(
-            Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            chips.forEach { chip ->
-                FilterChip(
-                    selected = chip.applied,
-                    onClick = { onToggle(chip.filter) },
-                    label = { Text("${LogbookText.filterName(context, chip.filter, connected)} · ${chip.count}") },
-                )
-            }
+    FlowRow(
+        Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(Spacing.s2),
+        verticalArrangement = Arrangement.spacedBy(Spacing.s1),
+    ) {
+        chips.forEach { chip ->
+            FilterChip(
+                selected = chip.applied,
+                onClick = { onToggle(chip.filter) },
+                label = {
+                    Text("${LogbookText.filterName(context, chip.filter, connected)} · ${chip.count}")
+                },
+                leadingIcon = if (chip.applied) {
+                    {
+                        Icon(
+                            Icons.Filled.Check,
+                            contentDescription = null,
+                        )
+                    }
+                } else {
+                    null
+                },
+            )
         }
     }
 }
@@ -384,25 +425,27 @@ private fun Range(state: LogbookUiState) {
     )
     Text(
         text,
-        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-        style = MaterialTheme.typography.labelMedium,
+        modifier = Modifier.padding(horizontal = Spacing.s4, vertical = Spacing.s2),
+        style = DiveHubText.meta,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun MonthHead(context: Context, month: String, dives: Int?, durationSeconds: Double?, locale: Locale) {
-    Row(
+    FlowRow(
         Modifier
             .fillMaxWidth()
-            .padding(start = 16.dp, end = 16.dp, top = 20.dp, bottom = 4.dp),
+            .padding(start = Spacing.s4, end = Spacing.s4, top = Spacing.s5, bottom = Spacing.s2),
         horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.Bottom,
+        verticalArrangement = Arrangement.spacedBy(Spacing.s1),
+        itemVerticalAlignment = Alignment.Bottom,
     ) {
         Text(
             LogbookText.month(context, month, locale),
             modifier = Modifier.semantics { heading() },
-            style = MaterialTheme.typography.titleMedium,
+            style = DiveHubText.bodyStrong,
         )
         if (dives != null && durationSeconds != null) {
             Text(
@@ -412,16 +455,15 @@ private fun MonthHead(context: Context, month: String, dives: Int?, durationSeco
                     dives,
                     LogbookText.duration(context, durationSeconds),
                 ),
-                style = MaterialTheme.typography.labelMedium,
+                style = DiveHubText.meta,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun DiveRow(
+private fun LogbookDiveRow(
     dive: DiveListViewDivesItem,
     scaleM: Double,
     providerName: (String) -> String,
@@ -432,61 +474,64 @@ private fun DiveRow(
 ) {
     val context = LocalContext.current
     val day = LogbookText.diveDay(context, dive.startsAt, dive.utcOffsetSeconds, dive.utcOffsetSource, locale)
-    Row(Modifier.fillMaxWidth().clickable(onClick = onOpen).padding(horizontal = 16.dp, vertical = 10.dp)) {
-        Text(
-            dive.number?.toString() ?: "–",
-            modifier = Modifier.width(32.dp),
-            textAlign = TextAlign.End,
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Spacer(Modifier.width(10.dp))
-        Column(Modifier.weight(1f)) {
+    val noSite = stringResource(R.string.logbook_no_site)
+    val air = stringResource(R.string.dive_air)
+    val noRecording = stringResource(R.string.logbook_no_recording)
+    val profileSyncing = stringResource(R.string.logbook_profile_pending)
+    val fromProvider = dive.fromProvider?.let { stringResource(R.string.logbook_from_provider, providerName(it)) }
+    val surfaceInterval = dive.surfaceIntervalSeconds?.takeIf { it < SAME_DAY_SECONDS }?.let {
+        stringResource(R.string.logbook_surface_interval, LogbookText.duration(context, it))
+    }
+    val facts = buildList {
+        add(if (dive.site != null) day else noSite)
+        dive.gases.forEach { gas -> add(mixName(gas.o2, gas.he, air)) }
+        if (dive.recordings == 0) {
+            add(noRecording)
+            fromProvider?.let { add(it) }
+        }
+        surfaceInterval?.let { add(it) }
+        if (profilePending && dive.recordings > 0) {
+            add(profileSyncing)
+        }
+    }
+    DiveRow(
+        title = dive.site?.name ?: day,
+        depth = dive.maxDepthM?.let { LogbookText.depth(context, it, locale, imperial) } ?: "–",
+        duration = LogbookText.duration(context, dive.durationSeconds),
+        modifier = Modifier.padding(horizontal = Spacing.s4),
+        leading = {
             Text(
-                dive.site?.name ?: day,
-                style = MaterialTheme.typography.titleMedium,
+                dive.number?.toString() ?: "–",
+                style = DiveHubText.meta,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.End,
             )
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(2.dp),
-            ) {
-                Fact(if (dive.site != null) day else stringResource(R.string.logbook_no_site))
-                Fact(dive.maxDepthM?.let { LogbookText.depth(context, it, locale, imperial) } ?: "–")
-                Fact(LogbookText.duration(context, dive.durationSeconds))
-            }
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(2.dp),
-            ) {
-                dive.gases.forEach { gas -> Fact(mixName(gas.o2, gas.he, stringResource(R.string.dive_air))) }
-                if (dive.recordings == 0) {
-                    Fact(stringResource(R.string.logbook_no_recording))
-                    dive.fromProvider?.let { Fact(stringResource(R.string.logbook_from_provider, providerName(it))) }
-                }
-                dive.surfaceIntervalSeconds?.takeIf { it < SAME_DAY_SECONDS }?.let {
-                    Fact(stringResource(R.string.logbook_surface_interval, LogbookText.duration(context, it)))
-                }
+        },
+        facts = facts,
+        avatars = if (dive.participants.isEmpty()) {
+            null
+        } else {
+            { Participants(dive.participants) }
+        },
+        footer = {
+            Column {
                 if (dive.findings > 0) {
                     Text(
-                        context.resources.getQuantityString(R.plurals.logbook_findings, dive.findings, dive.findings),
-                        style = MaterialTheme.typography.labelLarge,
+                        context.resources.getQuantityString(
+                            R.plurals.logbook_findings,
+                            dive.findings,
+                            dive.findings,
+                        ),
+                        style = DiveHubText.metaStrong,
                         color = MaterialTheme.colorScheme.error,
                     )
+                    Spacer(Modifier.height(Spacing.s1))
                 }
-                if (profilePending && dive.recordings > 0) {
-                    Fact(stringResource(R.string.logbook_profile_pending))
-                }
+                ProfileSketch(dive.profile, dive.recordings > 0, scaleM)
             }
-            Participants(dive.participants)
-        }
-        Spacer(Modifier.width(8.dp))
-        ProfileSketch(dive.profile, dive.recordings > 0, scaleM)
-    }
-}
-
-@Composable
-private fun Fact(text: String) {
-    Text(text, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        },
+        onClick = onOpen,
+    )
 }
 
 /**
@@ -495,7 +540,6 @@ private fun Fact(text: String) {
  */
 @Composable
 private fun Participants(people: List<DiveListViewDivesItemParticipantsItem>) {
-    if (people.isEmpty()) return
     val context = LocalContext.current
     val description = context.getString(
         R.string.logbook_with,
@@ -503,9 +547,8 @@ private fun Participants(people: List<DiveListViewDivesItemParticipantsItem>) {
     )
     Row(
         Modifier
-            .padding(top = 6.dp)
             .semantics(mergeDescendants = true) { contentDescription = description },
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        horizontalArrangement = Arrangement.spacedBy(Spacing.s1),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         people.take(3).forEach { person -> AvatarCircle(person) }
@@ -513,8 +556,8 @@ private fun Participants(people: List<DiveListViewDivesItemParticipantsItem>) {
         if (more > 0) {
             Text(
                 context.getString(R.string.logbook_more_people, more),
-                modifier = Modifier.padding(start = 10.dp),
-                style = MaterialTheme.typography.labelSmall,
+                modifier = Modifier.padding(start = Spacing.s2),
+                style = DiveHubText.meta,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
@@ -531,13 +574,13 @@ private fun AvatarCircle(person: DiveListViewDivesItemParticipantsItem) {
     val tone = tones[(person.diverId.sumOf { it.code }) % tones.size]
     Box(
         Modifier
-            .size(24.dp)
+            .size(AvatarSize)
             .clip(CircleShape)
             .background(tone)
             .clearAndSetSemantics {},
         contentAlignment = Alignment.Center,
     ) {
-        Text(initials(person.name), style = MaterialTheme.typography.labelSmall)
+        Text(initials(person.name), style = DiveHubText.metaStrong)
     }
 }
 
@@ -547,22 +590,48 @@ private fun Pager(state: LogbookUiState, onPage: (Int) -> Unit) {
     Row(
         Modifier
             .fillMaxWidth()
-            .padding(16.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+            .padding(horizontal = Spacing.s4, vertical = Spacing.s4),
+        horizontalArrangement = Arrangement.spacedBy(Spacing.s2),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        TextButton(onClick = { onPage(state.page - 1) }, enabled = state.page > 1) {
-            Text(stringResource(R.string.logbook_previous))
-        }
+        QuietButton(stringResource(R.string.logbook_previous), { onPage(state.page - 1) }, enabled = state.page > 1)
         Text(
             stringResource(R.string.logbook_page_of, state.page, pages),
             modifier = Modifier.weight(1f),
             textAlign = TextAlign.Center,
-            style = MaterialTheme.typography.labelMedium,
+            style = DiveHubText.meta,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        TextButton(onClick = { onPage(state.page + 1) }, enabled = state.page < pages) {
-            Text(stringResource(R.string.logbook_next))
-        }
+        QuietButton(stringResource(R.string.logbook_next), { onPage(state.page + 1) }, enabled = state.page < pages)
+    }
+}
+
+/** The brief's ink primary button: ink in the light, the inverted ink in the dark, with the control radius. */
+@Composable
+private fun InkButton(text: String, onClick: () -> Unit) {
+    Button(
+        onClick = onClick,
+        shape = RoundedCornerShape(ControlCorner),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = MaterialTheme.colorScheme.onBackground,
+            contentColor = MaterialTheme.colorScheme.onPrimary,
+        ),
+    ) {
+        Text(text)
+    }
+}
+
+/**
+ * A text-like action (paging, "Show all dives", retry): no fill and no accent, because the accent means a link, focus
+ * or data and these are navigation.
+ */
+@Composable
+private fun QuietButton(text: String, onClick: () -> Unit, enabled: Boolean = true) {
+    TextButton(
+        onClick = onClick,
+        enabled = enabled,
+        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.onSurface),
+    ) {
+        Text(text)
     }
 }

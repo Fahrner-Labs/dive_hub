@@ -1,11 +1,16 @@
 package dev.divehub.android.ui.logbook
 
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasProgressBarRangeInfo
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
+import androidx.compose.ui.unit.Density
 import com.github.takahirom.roborazzi.captureRoboImage
 import dev.divehub.android.ui.DiveHubTheme
 import dev.divehub.api.models.DiveListView
@@ -58,6 +63,7 @@ class LogbookScreenshotTest {
     @Test
     fun `filter counts`() {
         render(page(dives = listOf(reef), filters = emptySet()))
+        compose.onNodeWithText("Show only").assertIsDisplayed()
         compose.onNodeWithText("No recording · 3").assertIsDisplayed()
         capture("logbook_filters.png")
     }
@@ -65,8 +71,9 @@ class LogbookScreenshotTest {
     @Test
     fun `a row without a recording`() {
         render(page(dives = listOf(noRecording), filters = setOf(LogbookFilter.NO_RECORDING)))
-        compose.onNodeWithText("No recording").assertIsDisplayed()
-        compose.onNodeWithText("from SSI").assertIsDisplayed()
+        compose.onNodeWithText("No recording · 3").assertIsSelected()
+        compose.onNodeWithContentDescription("No recording", substring = true, useUnmergedTree = true).assertIsDisplayed()
+        compose.onNodeWithContentDescription("from SSI", substring = true, useUnmergedTree = true).assertIsDisplayed()
         capture("logbook_no_recording_row.png")
     }
 
@@ -126,8 +133,25 @@ class LogbookScreenshotTest {
     @Test
     fun `a dive whose profiles are still syncing carries its own marker`() {
         render(page(dives = listOf(reef), filters = emptySet()).copy(profilePending = setOf(reef.id)))
-        compose.onNodeWithText("Profile syncing").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Profile syncing", substring = true, useUnmergedTree = true).assertIsDisplayed()
         capture("logbook_profile_pending.png")
+    }
+
+    @Test
+    @Config(qualifiers = "en-rUS-w411dp-h891dp-night-xxhdpi")
+    fun `the logbook in dark`() {
+        render(page(dives = listOf(reef), filters = emptySet()), darkTheme = true)
+        compose.onNodeWithText("Lighthouse Reef").assertIsDisplayed()
+        capture("logbook_dark.png")
+    }
+
+    @Test
+    @Config(qualifiers = "en-rUS-w320dp-h891dp-xxhdpi")
+    fun `the logbook at 320 dp and 200 percent`() {
+        render(page(dives = listOf(reef), filters = emptySet()), fontScale = 2f)
+        compose.onNodeWithText("Lighthouse Reef").assertIsDisplayed()
+        compose.onNodeWithText("Show only").assertIsDisplayed()
+        capture("logbook_narrow_2x.png")
     }
 
     @Test
@@ -142,19 +166,24 @@ class LogbookScreenshotTest {
         compose.onNode(hasProgressBarRangeInfo(ProgressBarRangeInfo.Indeterminate)).assertDoesNotExist()
     }
 
-    private fun render(state: LogbookUiState) {
+    private fun render(state: LogbookUiState, darkTheme: Boolean = false, fontScale: Float? = null) {
         compose.setContent {
-            DiveHubTheme(darkTheme = false) {
-                LogbookScreen(
-                    state = state,
-                    units = "metric",
-                    onRefresh = {},
-                    onRetry = {},
-                    onShowAll = {},
-                    onPage = {},
-                    onToggleFilter = {},
-                    onOpenDive = {},
-                )
+            DiveHubTheme(darkTheme = darkTheme) {
+                val density = LocalDensity.current
+                CompositionLocalProvider(
+                    LocalDensity provides Density(density.density, fontScale ?: density.fontScale),
+                ) {
+                    LogbookScreen(
+                        state = state,
+                        units = "metric",
+                        onRefresh = {},
+                        onRetry = {},
+                        onShowAll = {},
+                        onPage = {},
+                        onToggleFilter = {},
+                        onOpenDive = {},
+                    )
+                }
             }
         }
     }
