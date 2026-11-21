@@ -19,7 +19,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -35,6 +34,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.divehub.android.R
+import dev.divehub.android.ui.DiveHubTopBar
 import dev.divehub.android.ui.Formats
 import dev.divehub.api.models.ApiDiversIdLeadEstimateGet200Response
 import dev.divehub.api.models.ApiDiversIdLeadEstimateGet200ResponseAdjustmentsItem
@@ -89,9 +89,9 @@ fun LeadEstimateScreen(
 ) {
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.tools_lead_title)) },
-                navigationIcon = { TextButton(onClick = onBack) { Text(stringResource(R.string.tools_tools_back)) } },
+            DiveHubTopBar(
+                title = stringResource(R.string.tools_lead_title),
+                onBack = onBack,
             )
         },
     ) { padding ->

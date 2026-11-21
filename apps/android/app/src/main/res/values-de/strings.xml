@@ -41,10 +41,11 @@
     <string name="error_server">Die Instanz hatte ein Problem. Versuche es später erneut.</string>
     <string name="error_unknown">Etwas ist schiefgelaufen. Versuche es erneut.</string>
 
+    <string name="back">Zurück</string>
+
     <string name="update_required_title">DiveHub aktualisieren</string>
     <string name="update_required_body">Dieser Server braucht eine neuere Version der App. Aktualisiere DiveHub, um sie weiter zu nutzen.</string>
 
-    <string name="dive_back">Zurück</string>
     <string name="dive_title_number">Tauchgang %1$d</string>
     <string name="dive_previous">Vorheriger Tauchgang</string>
     <string name="dive_next">Nächster Tauchgang</string>
@@ -236,8 +237,8 @@
     </plurals>
 
     <string name="tools_title">Werkzeuge</string>
-    <string name="tools_back">Logbuch</string>
     <string name="tools_notice">Eine Schätzung, kein Rat: Tauchcomputer und Ausbildung entscheiden. Kein Modell garantiert Sicherheit.</string>
+    <string name="tools_more_tools">Weitere Werkzeuge</string>
     <string name="tools_estimate_short">Eine Schätzung, kein Rat.</string>
     <string name="tools_empty_store">Auf diesem Gerät sind noch keine Tauchgänge synchronisiert. Die Zahlen nutzen nur deine Eingaben; dein Logbuch wird synchronisiert, sobald du online bist.</string>
 
@@ -347,8 +348,6 @@
 
     <string name="tools_not_synced">Noch nicht synchronisiert; diese Antwort nutzt nur deine Eingaben.</string>
 
-    <string name="tools_plan_back">Zurück</string>
-
     <string name="tools_plan_title">Gasplanung</string>
     <string name="tools_plan_inputs_title">Der Plan</string>
     <string name="tools_plan_lead">Plane das Gas für eine oder mehrere Tiefen, allein oder als Gruppe. Der Plan folgt der Person, der zuerst die Reserve ausgeht.</string>
@@ -436,7 +435,6 @@
     <string name="tools_day_pattern">d. MMM yyyy</string>
     <string name="tools_profiles_syncing">(Profile werden noch synchronisiert)</string>
     <string name="tools_details_syncing">(Tauchgangsdetails werden noch synchronisiert)</string>
-    <string name="tools_tools_back">Werkzeuge</string>
     <string name="tools_suit_none">Kein Anzug</string>
     <string name="tools_suit_skin">Skin</string>
     <string name="tools_suit_wetsuit">Neoprenanzug</string>
@@ -451,7 +449,6 @@
     <string name="tools_error_suit_invalid">Prüfe den Anzug: Eine Dicke gehört zu Neopren- oder Halbtrockenanzug, ein Unterzieher zum Trockenanzug.</string>
 
     <string name="tools_lead_title">Bleischätzung</string>
-    <string name="tools_lead_title_short">Blei</string>
     <string name="tools_lead_answer">Die Schätzung</string>
     <string name="tools_lead_conditions">Geplante Bedingungen</string>
     <string name="tools_lead_suit">Anzug</string>
@@ -520,7 +517,6 @@
     <string name="tools_lead_step_neutral">Auf 5 m neutral schweben mit %1$s Restdruck in der Flasche.</string>
 
     <string name="tools_loadings_title">Aktuelle Belastung</string>
-    <string name="tools_loadings_title_short">Belastung</string>
     <string name="tools_loadings_numbers">Was die Tauchgänge hinterlassen</string>
     <string name="tools_loadings_empty">Auf diesem Gerät sind noch keine Tauchgänge synchronisiert. Dein Logbuch synchronisiert, wenn du online bist.</string>
     <string name="tools_loadings_nothing">Noch nichts zu schätzen. Logge einen Tauchgang in Dive Hub, dann synchronisiert er hierher.</string>
