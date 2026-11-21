@@ -19,8 +19,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertHasClickAction
+import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertWidthIsAtLeast
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
@@ -96,6 +101,20 @@ class ComponentsScreenshotTest {
         compose.onNodeWithText("Water temperature").assertIsDisplayed()
         compose.onNodeWithText("Edit").assertIsDisplayed()
         capture("components_narrow_2x_light.png")
+    }
+
+    @Test
+    fun `a quiet action keeps its 48 dp target and names its disclosure state`() {
+        render(darkTheme = false) {
+            Column {
+                QuietButton("Edit", onClick = {})
+                QuietButton("Profile as a table", onClick = {}, expanded = false)
+            }
+        }
+
+        compose.onNodeWithText("Edit").assertWidthIsAtLeast(48.dp).assertHeightIsAtLeast(48.dp)
+        compose.onNodeWithText("Profile as a table")
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "Collapsed"))
     }
 
     @Test

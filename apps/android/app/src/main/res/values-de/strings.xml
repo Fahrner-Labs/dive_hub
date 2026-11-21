@@ -21,6 +21,8 @@
 
     <string name="form_email">E-Mail</string>
     <string name="loading">Wird geladen…</string>
+    <string name="action_expanded">Ausgeklappt</string>
+    <string name="action_collapsed">Eingeklappt</string>
     <string name="password_show">Anzeigen: %1$s</string>
     <string name="password_show_short">Anzeigen</string>
     <string name="password_hide_short">Verbergen</string>

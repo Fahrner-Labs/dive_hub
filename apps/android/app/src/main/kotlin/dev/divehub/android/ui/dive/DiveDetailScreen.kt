@@ -414,10 +414,8 @@ private fun Loading(modifier: Modifier) {
                 progressBarRangeInfo = ProgressBarRangeInfo.Indeterminate
             },
     ) {
-        Spacer(Modifier.height(Spacing.s4))
         if (showBars) {
-            SkeletonBar(Modifier.fillMaxWidth(0.3f), height = sectionHeight, alpha = alpha)
-            Spacer(Modifier.height(Spacing.s5))
+            // The page opens on its facts, not a heading; the first row takes its own s3, so nothing moves on arrival.
             repeat(SkeletonFactRows) { SkeletonFactRow(alpha, labelHeight, bodyHeight) }
             Spacer(Modifier.height(Spacing.s5))
             SkeletonBar(Modifier.fillMaxWidth(0.45f), height = sectionHeight, alpha = alpha)

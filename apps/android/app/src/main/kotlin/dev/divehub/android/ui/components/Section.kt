@@ -2,6 +2,7 @@ package dev.divehub.android.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -16,11 +17,15 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import dev.divehub.android.ui.DiveHubColors
 import dev.divehub.android.ui.DiveHubText
@@ -66,18 +71,34 @@ fun Section(
                 Modifier
             },
         ) {
-            FlowRow(
-                Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalArrangement = Arrangement.spacedBy(Spacing.s2),
-                itemVerticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    title,
-                    modifier = Modifier.semantics { heading() },
-                    style = DiveHubText.section,
-                )
-                action?.invoke(this)
+            BoxWithConstraints(Modifier.fillMaxWidth()) {
+                // A short action lines up with the column's outer edge: End while it shares the heading's line,
+                // Start once the action wraps below it. Guessing the action's 48 dp target is enough because a
+                // longer label is as wide as its own box, so the edge cannot inset it.
+                val titleWidth = rememberTextMeasurer()
+                    .measure(AnnotatedString(title), style = DiveHubText.section).size.width
+                val density = LocalDensity.current
+                val gap = with(density) { Spacing.s2.roundToPx() }
+                val target = with(density) { QuietActionTarget.roundToPx() }
+                val actionAtEnd = titleWidth + gap + target <= constraints.maxWidth
+                FlowRow(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalArrangement = Arrangement.spacedBy(Spacing.s2),
+                    itemVerticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        title,
+                        modifier = Modifier.semantics { heading() },
+                        style = DiveHubText.section,
+                    )
+                    CompositionLocalProvider(
+                        LocalQuietActionAlignment provides
+                            if (actionAtEnd) Alignment.CenterEnd else Alignment.CenterStart,
+                    ) {
+                        action?.invoke(this)
+                    }
+                }
             }
             Spacer(Modifier.height(Spacing.s2))
             content()
