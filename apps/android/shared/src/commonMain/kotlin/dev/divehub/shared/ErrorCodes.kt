@@ -8,6 +8,8 @@ object ErrorCodes {
     const val USER_DISABLED = "user_disabled"
     const val SIGN_IN_REQUIRED = "sign_in_required"
     const val INVALID_INSTANCE_URL = "invalid_instance_url"
+    /** The address answered, but not as a Dive Hub instance (FAH-332). */
+    const val NOT_DIVEHUB = "not_divehub"
     const val MISSING_TOKEN = "missing_token"
     const val SERVER_ERROR = "internal_error"
     /** The server refuses this app's version (ADR 0076): the session is fine, the app is old. */

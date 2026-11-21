@@ -1,17 +1,15 @@
-# Publishes a release: the vX.Y.Z or vX.Y.Z-rcN tag is the only input (ADR 0068). The tag must point at a commit on
-# main, the image is built for amd64 and arm64, smoke-tested, pushed to ghcr.io and announced on the Releases page.
-# A stable tag publishes four image tags and a latest release; an rc publishes only its exact tag as a non-latest
-# prerelease. A tag that fails the checks publishes nothing.
+# Publishes a release: the vX.Y.Z or vX.Y.Z-rcN tag is the only input (ADR 0068) and workflow_dispatch is the only
+# trigger (ADR 0081: a tag pushed with the automation token starts no workflow run, so relying on the push event
+# meant repairing every cut by hand). The tag must point at a commit on main, the image is built for amd64 and
+# arm64, smoke-tested, pushed to ghcr.io and announced on the Releases page. A stable tag publishes four image tags
+# and a latest release; an rc publishes only its exact tag as a non-latest prerelease. A tag that fails the checks
+# publishes nothing.
 name: release
 
 on:
-  push:
-    tags: ['v*']
-  # A release published in the GitHub UI creates the tag without a push event; its tag is the same input and still
-  # has to pass verify. Releases created by this workflow use GITHUB_TOKEN and do not trigger it again.
-  release:
-    types: [published]
-  # Re-runs and repairs: give the existing release tag, e.g. v0.1.0. The job checks out that tag, not the branch.
+  # Cut the tag on main, push it, then dispatch this workflow with that tag (docs/releases.md):
+  #   gh workflow run release.yml -f version=vX.Y.Z
+  # Re-dispatching the same tag is also the repair path: every step is idempotent.
   workflow_dispatch:
     inputs:
       version:
@@ -25,12 +23,12 @@ permissions:
 
 concurrency:
   # One run per tag; never cancel half way through a push.
-  group: release-${{ github.event_name == 'workflow_dispatch' && inputs.version || github.ref_name }}
+  group: release-${{ inputs.version }}
   cancel-in-progress: false
 
 env:
   IMAGE: ghcr.io/fahrner-labs/dive_hub
-  RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.version || github.event_name == 'release' && github.event.release.tag_name || github.ref_name }}
+  RELEASE_TAG: ${{ inputs.version }}
 
 jobs:
   verify:

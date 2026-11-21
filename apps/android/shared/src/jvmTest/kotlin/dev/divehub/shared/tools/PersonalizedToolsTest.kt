@@ -9,6 +9,8 @@ import dev.divehub.shared.planning.SiteWaterType
 import dev.divehub.shared.planning.Suit
 import dev.divehub.shared.planning.SuitType
 import dev.divehub.shared.planning.SuitUndergarment
+import dev.divehub.shared.planning.WeightingFeedback
+import dev.divehub.shared.planning.WeightingFelt
 import dev.divehub.shared.store.Cylinder
 import dev.divehub.shared.store.Dive
 import dev.divehub.shared.store.DiveSite
@@ -363,5 +365,23 @@ class PersonalizedToolsTest {
             SyncState(lastFullSyncAt = "2026-11-19T10:00:00.000Z", schemaVersion = DiveStore.schemaVersion),
         )
         assertEquals("2026-11-19T10:00:00.000Z", assemblePersonalizedSources(store, nowMs).syncedAt)
+    }
+
+    @Test
+    fun `the sync JSON without nulls still decodes the suit and the weighting feedback`() {
+        ownDiver()
+        // The sync writes the API's JSON with nulls omitted (SyncMapping): a suit has one null of its own
+        // (thickness or undergarment) and feedback that felt right has no amount. Both must still read.
+        dive(
+            id = "d1",
+            startsAt = "2026-11-19T08:00:00.000Z",
+            leadKg = 4.0,
+            suitJson = """{"type":"drysuit","hood":true}""",
+            feedbackJson = """{"felt":"too_heavy"}""",
+        )
+
+        val found = assertNotNull(assemblePersonalizedSources(store, nowMs).leadDives.singleOrNull()).dive
+        assertEquals(Suit(SuitType.drysuit, null, true, null), found.suit)
+        assertEquals(WeightingFeedback(WeightingFelt.too_heavy, null), found.feedback)
     }
 }

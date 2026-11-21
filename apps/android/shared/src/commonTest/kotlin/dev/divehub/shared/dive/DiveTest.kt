@@ -212,6 +212,42 @@ class ProfileTextTest {
     }
 
     @Test
+    fun `a touch maps to a time over the profile's span`() {
+        assertEquals(0, timeAtFraction(0.0, 600_000))
+        assertEquals(600_000, timeAtFraction(1.0, 600_000))
+        assertEquals(150_000, timeAtFraction(0.25, 600_000))
+        assertEquals(0, timeAtFraction(-0.5, 600_000))
+        assertEquals(600_000, timeAtFraction(1.5, 600_000))
+        assertEquals(0, timeAtFraction(0.5, 0))
+    }
+
+    @Test
+    fun `the nearest sample is the one the touch reads`() {
+        assertEquals(0, nearestIndex(depth, 0))
+        assertEquals(0, nearestIndex(depth, 29_999))
+        assertEquals(0, nearestIndex(depth, 30_000))
+        assertEquals(1, nearestIndex(depth, 90_000))
+        assertEquals(2, nearestIndex(depth, 200_000))
+        assertEquals(5.0, nearest(depth, 200_000))
+        assertNull(nearestIndex(series("depth", emptyList(), emptyList()), 0))
+    }
+
+    @Test
+    fun `only tank pod pressure series are read, first pod first`() {
+        val samples = RecordingSamplesView(
+            "r1",
+            listOf(
+                series("temperature", listOf(0), listOf(18.0)),
+                series("tankPressure:3", listOf(0), listOf(150.0)),
+                series("tankPressure", listOf(0), listOf(200.0)),
+                series("tankPressureLow", listOf(0), listOf(1.0)),
+                series("tankPressure:2", emptyList(), emptyList()),
+            ),
+        )
+        assertEquals(listOf("tankPressure", "tankPressure:3"), pressureSeries(samples).map { it.channel })
+    }
+
+    @Test
     fun `a surface break is said by its length and summed with the duration`() {
         val joined = recording(
             breaks = listOf(

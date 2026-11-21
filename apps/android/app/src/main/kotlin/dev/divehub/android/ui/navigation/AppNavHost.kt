@@ -14,6 +14,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.ViewModelStoreOwner
 import androidx.navigation.NavController
 import androidx.navigation.NavDestination
 import androidx.navigation.NavDestination.Companion.hasRoute
@@ -51,13 +52,17 @@ internal interface AppScreens {
     fun tools(page: ToolPage, onPage: (ToolPage) -> Unit, onBack: () -> Unit, onOpenDive: (String) -> Unit)
 
     @Composable
-    fun settings()
+    fun settings(onOpenDebug: () -> Unit)
+
+    @Composable
+    fun settingsDebug(owner: ViewModelStoreOwner, onBack: () -> Unit)
 }
 
 /**
  * The signed-in/out graph (ADR 0079): `instance` and `signin` at the root, the `main` nested graph with `logbook` as
- * its start destination, `dive/{id}` above it, `tools` and `settings` beside it. The bottom bar exposes the three
- * top-level signed-in places and saves each tab's state; a Dive is pushed above its origin, not into the bar.
+ * its start destination, `dive/{id}` above it, `tools` and `settings` beside it, and `settings/debug` above settings.
+ * The bottom bar exposes the three top-level signed-in places and saves each tab's state; a Dive is pushed above its
+ * origin, not into the bar.
  */
 @Composable
 internal fun AppNavHost(
@@ -133,7 +138,23 @@ internal fun AppNavHost(
                         )
                     }
                 }
-                composable<SettingsRoute> { MainShell(navController) { currentScreens.value.settings() } }
+                composable<SettingsRoute> {
+                    MainShell(navController) {
+                        currentScreens.value.settings(
+                            onOpenDebug = {
+                                navController.navigate(SettingsDebugRoute) { launchSingleTop = true }
+                            },
+                        )
+                    }
+                }
+                composable<SettingsDebugRoute> {
+                    // The Debug screen shares the settings entry's view model: it only ever sits above that entry,
+                    // which owns the state both screens read (FAH-343).
+                    val owner = remember { navController.getBackStackEntry<SettingsRoute>() }
+                    MainShell(navController) {
+                        currentScreens.value.settingsDebug(owner = owner, onBack = { navController.popBackStack() })
+                    }
+                }
             }
         }
     }
@@ -183,6 +204,7 @@ private fun tabOf(destination: NavDestination): AppTab? = when {
     destination.hasRoute(LogbookRoute::class) -> AppTab.Logbook
     destination.hasRoute(ToolsRoute::class) -> AppTab.Tools
     destination.hasRoute(SettingsRoute::class) -> AppTab.Settings
+    destination.hasRoute(SettingsDebugRoute::class) -> AppTab.Settings
     else -> null
 }
 
@@ -207,18 +229,16 @@ private fun NavController.leaveDiveForLogbook(page: Int?, onLogbookPage: (Int) -
 private fun NavHostController.navigateToTab(tab: AppTab, onLeaveDive: () -> Unit = {}) {
     val active = currentBackStack.value.asReversed().firstNotNullOfOrNull { tabOf(it.destination) }
     if (tab == active) {
-        // Reselecting a place returns to its root without restoring the stack above it (a Dive or a tool subpage).
+        // Reselecting a place returns to its root: pop what sits above it (a Dive, a tool subpage or the Debug
+        // subscreen), never the root itself, so the screen keeps its entry and does not replay its enter transition.
         when (tab) {
             AppTab.Logbook -> {
                 // A Dive's page must reach the list, as it does on the Dive's own back path (ADR 0042).
                 if (currentDestination?.hasRoute(DiveRoute::class) == true) onLeaveDive()
                 popBackStack(LogbookRoute, inclusive = false)
             }
-            AppTab.Tools -> navigate(ToolsRoute()) {
-                popUpTo<LogbookRoute> { inclusive = false }
-                launchSingleTop = true
-            }
-            AppTab.Settings -> Unit
+            AppTab.Tools -> popBackStack(ToolsRoute(), inclusive = false)
+            AppTab.Settings -> popBackStack(SettingsRoute, inclusive = false)
         }
         return
     }
@@ -246,6 +266,7 @@ internal fun NavHostController.clearSavedTabStates() {
     clearBackStack(LogbookRoute::class)
     clearBackStack(ToolsRoute::class)
     clearBackStack(SettingsRoute::class)
+    clearBackStack(SettingsDebugRoute::class)
 }
 
 /**

@@ -31,8 +31,26 @@ internal object DiveDetailText {
 
     fun duration(context: Context, seconds: Double): String = Formats.duration(context, seconds)
 
+    /** The time into the dive as minutes and seconds, "12:40" (FAH-337). */
+    fun elapsed(seconds: Double, locale: Locale): String {
+        val whole = seconds.toInt().coerceAtLeast(0)
+        return String.format(locale, "%d:%02d", whole / 60, whole % 60)
+    }
+
     fun depth(context: Context, metres: Double, locale: Locale, imperial: Boolean): String =
         Formats.depth(context, metres, locale, imperial)
+
+    fun pressure(context: Context, bar: Double, locale: Locale, imperial: Boolean): String =
+        Formats.pressure(context, bar, locale, imperial)
+
+    /** A tank's size, "12 L" or "11.1 L": up to one decimal, as the cylinder is sold (ADR 0045). */
+    fun litres(context: Context, litres: Double, locale: Locale): String {
+        val text = NumberFormat.getNumberInstance(locale).apply {
+            minimumFractionDigits = 0
+            maximumFractionDigits = 1
+        }.format(litres)
+        return context.getString(R.string.tools_plan_litres, text)
+    }
 
     /** "18 °C" or "64 °F", whole numbers as a dive page shows water temperature. */
     fun temperature(context: Context, celsius: Double, locale: Locale, imperial: Boolean): String {
@@ -117,5 +135,83 @@ internal object DiveDetailText {
 
     fun role(context: Context, role: String): String = Formats.role(context, role)
 
+    /** "12 L", "11.1 L": a whole size keeps no decimal. */
+    fun volume(context: Context, litres: Double, locale: Locale): String {
+        val text = if (litres == whole(litres)) Formats.number(locale, litres.toInt()) else Formats.decimal(locale, litres, 1)
+        return context.getString(R.string.dive_litres, text)
+    }
+
+    /** "4.0 kg", "8.8 lb": lead and a feedback amount are shown in the User's unit (ADR 0014). */
+    fun mass(context: Context, kg: Double, locale: Locale, imperial: Boolean): String {
+        val text = Formats.decimal(locale, if (imperial) kg / KG_PER_LB else kg, 1)
+        return context.getString(if (imperial) R.string.dive_mass_pounds else R.string.dive_mass_kilograms, text)
+    }
+
+    /** The gas a Cylinder held: "Air", "EAN32", "Trimix 21/35"; null when the API sent no mix. */
+    fun gas(context: Context, o2: Double?, he: Double?): String {
+        if (o2 == null || he == null) return context.getString(R.string.dive_gas_unknown)
+        val oxygen = percent(o2)
+        return when {
+            he > 0 -> context.getString(R.string.dive_gas_trimix, oxygen, percent(he))
+            o2 == 21.0 -> context.getString(R.string.dive_gas_air)
+            else -> context.getString(R.string.dive_gas_nitrox, oxygen)
+        }
+    }
+
+    /** A suit with what is known about it: "Wetsuit, 5 mm, with hood", "Drysuit, heavy undergarment". */
+    fun suit(context: Context, locale: Locale, type: String, thicknessMm: Double?, hood: Boolean?, undergarment: String?): String {
+        val parts = buildList {
+            add(
+                when (type) {
+                    "none" -> context.getString(R.string.tools_suit_none)
+                    "skin" -> context.getString(R.string.tools_suit_skin)
+                    "wetsuit" -> context.getString(R.string.tools_suit_wetsuit)
+                    "semidry" -> context.getString(R.string.tools_suit_semidry)
+                    "drysuit" -> context.getString(R.string.tools_suit_drysuit)
+                    else -> type
+                },
+            )
+            thicknessMm?.let { add(context.getString(R.string.dive_suit_thickness, decimalText(locale, it))) }
+            hood?.let { add(context.getString(if (it) R.string.dive_suit_with_hood else R.string.dive_suit_without_hood)) }
+            undergarment?.let {
+                add(
+                    when (it) {
+                        "light" -> context.getString(R.string.dive_undergarment_light)
+                        "medium" -> context.getString(R.string.dive_undergarment_medium)
+                        "heavy" -> context.getString(R.string.dive_undergarment_heavy)
+                        else -> it
+                    },
+                )
+            }
+        }
+        return parts.joinToString(", ")
+    }
+
+    fun material(context: Context, material: String): String = when (material) {
+        "aluminium" -> context.getString(R.string.tools_material_aluminium)
+        "steel" -> context.getString(R.string.tools_material_steel)
+        "carbon" -> context.getString(R.string.tools_material_carbon)
+        else -> material
+    }
+
+    fun placement(context: Context, placement: String): String = when (placement) {
+        "belt" -> context.getString(R.string.dive_placement_belt)
+        "integrated" -> context.getString(R.string.dive_placement_integrated)
+        "trim" -> context.getString(R.string.dive_placement_trim)
+        "ankle" -> context.getString(R.string.dive_placement_ankle)
+        "backplate" -> context.getString(R.string.dive_placement_backplate)
+        else -> context.getString(R.string.dive_placement_other)
+    }
+
+    private fun whole(value: Double): Double = value.toLong().toDouble()
+
+    private fun decimalText(locale: Locale, value: Double): String =
+        if (value == whole(value)) Formats.number(locale, value.toInt()) else Formats.decimal(locale, value, 1)
+
+    private fun percent(value: Double): String =
+        if (value == whole(value)) value.toInt().toString() else String.format(Locale.ROOT, "%.1f", value)
+
     private fun abs(value: Double): Double = if (value < 0) -value else value
+
+    private const val KG_PER_LB = 0.45359237
 }
