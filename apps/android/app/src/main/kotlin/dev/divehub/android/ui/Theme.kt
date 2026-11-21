@@ -65,3 +65,14 @@ fun DiveHubTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composabl
 @Composable
 internal fun successColor(): Color =
     if (MaterialTheme.colorScheme.background.luminance() < 0.5f) Color(0xFF5CC593) else Color(0xFF2A7150)
+
+/**
+ * Semantic colours Material 3 has no role for. They follow the scheme the theme is painting, so a component reads the
+ * same name in light and dark.
+ */
+object DiveHubColors {
+    /** The decorative hairline (1 dp of `border`), never a control boundary. */
+    val border: Color
+        @Composable get() =
+            if (MaterialTheme.colorScheme.background.luminance() < 0.5f) Color(0xFF22272C) else Color(0xFFE1E7EC)
+}

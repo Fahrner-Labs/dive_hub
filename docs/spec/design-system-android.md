@@ -29,8 +29,8 @@ cards. The depth profile is the one bold element. The diver-down flag is the bra
 (near-black, inverted in the dark); the accent colour means only "link, focus or data". One typeface, Poppins.
 
 Checked against generic defaults: no Material purple, no default pill-shaped buttons, no identical elevated cards,
-no gradients as decoration (only the depth profile), no monospace for data (tabular figures instead), no all-caps
-labels.
+no gradients as decoration (only the depth profile), no monospace for data (Poppins figures, right-aligned), no
+all-caps labels.
 
 ## Spacing and density
 
@@ -90,8 +90,11 @@ Rules:
 - Large headings use −0.01em tracking. Line height belongs to the style; a screen does not override it.
 - 700 is not part of the scale. Emphasis is 600 plus size, not a fourth weight. Do not use Poppins Bold for UI
   text.
-- Numbers in data use tabular figures (`fontFeatureSettings = "tnum"`): depths, durations, times, counts,
-  temperatures, pressures, SAC and profile samples. Never a monospace font.
+- Numbers in data (depths, durations, times, counts, temperatures, pressures, SAC and profile samples) line up by
+  being end-aligned in their column. Never a monospace font. Poppins, the one family, has no tabular (`tnum`)
+  feature in its 400/500/600 builds, so `fontFeatureSettings = "tnum"` is a no-op and there is no tabular helper.
+  If a Poppins build that carries `tnum` is bundled, apply it at the data call sites (`FactRow` value, `DiveRow`
+  figures), not to all body text.
 - Body text is 16 sp. The smallest UI text is 12 sp (`meta`) and is never used for body text or inputs. This keeps
   the web's floors and keeps German legible.
 - Muted is a colour, not a size. A lead sentence stays at `body`; `meta` is for secondary text only.
@@ -204,13 +207,13 @@ heading or empty state. The table maps each one to the web component it translat
 | Android component | Web counterpart | Rules |
 |---|---|---|
 | `Section` | `Panel` | A titled section of the sheet: heading, optional action, content. A hairline with `s5` above separates it from the section before. No card, outline or elevation. `attention` paints it with `accent-soft` for something waiting for the User; a single form uses the same section with a narrow content width. |
-| `FactRow` | facts in `PageHeader`, table rows | A label–value line: label in `label` and muted, value in `body`; numbers tabular. An edited mark and a note sit under the value in `meta`. Vertical padding `s3`. |
+| `FactRow` | facts in `PageHeader`, table rows | A label–value line: label in `label` and muted, value in `body` and end-aligned. An edited mark and a note sit under the value in `meta`. Vertical padding `s3`. |
 | `DiveRow` | `DiveList` | The logbook's row: title in `bodyStrong`, aligned depth, duration and facts, participant avatars. The whole row is the target; month headings sit above the rows. |
 | `EmptyState` | the empty and not-found rule | Says why it is empty and offers the way on. No dead end. The action is a `Button` or a quiet `TextButton`. |
 | `Button` | `Button` | `primary` is ink; `secondary` is tonal with a control border; `quiet` is text-like; `danger` confirms a destructive action. A 48 dp target; `small` may look 40 dp but keeps the 48 dp target. One primary per section. No Material pill. |
 | `IconButton` | the icon-only exceptions | Icon-only is the exception, and this brief owns the Android ones: the top app bar's back and previous/next are platform navigation, alongside a dialog's close and a password field's eye from the ADR 0018 amendment. Full accessible names and a 48 dp target. Chevrons say "(unavailable)" and are disabled at the ends. |
 | `TextField` | `TextField` | Label, supporting text and error. `body` 16 sp, `Radius.control`, a visible focus ring. No floating-label-only field. |
-| `NumberField` | `NumberField` | Numeric keyboard, unit suffix, the UI language's format, value committed on blur. Tabular figures. |
+| `NumberField` | `NumberField` | Numeric keyboard, unit suffix, the UI language's format, value committed on blur. Figures end-aligned. |
 | `PasswordField` | `PasswordField` | A field with an eye toggle inside it, a full accessible name and autofill intact. Never a plain password field. |
 | `SearchField` | `SearchList` | A search field with results under it, the typed part marked, a status line, and a way on when nothing matches. Picking a row saves. |
 | `ChoiceRow` | `Checkbox`, `RadioGroup`, `Switch` | A full-row target with label and supporting text. A switch takes effect at once; a checkbox is a form choice; radios are for up to five fixed options. 48 dp. |
@@ -326,7 +329,7 @@ This is a specification, not a big-bang rewrite. The Android code moves onto it 
 
 - `Theme.kt`: the ink `primary`, the accent as its own role, the border, success and surface-container roles, the data
   colours, and no hardcoded colour outside the file.
-- `Type.kt`: the scale above, every Material slot set, and a tabular-figures helper.
+- `Type.kt`: the scale above and every Material slot set.
 - `Spacing.kt`: `s1`…`s7` on the 4 dp grid.
 - `ui/components/`: `Section`, `FactRow`, `DiveRow`, `EmptyState` first, then the other components as a screen
   needs them.
