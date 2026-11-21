@@ -9,6 +9,7 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -64,7 +65,10 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -99,12 +103,18 @@ private val AvatarSize = 24.dp
 /** The brief's `Radius.control` for a filled action; a quiet text action stays text. */
 private val ControlCorner = 8.dp
 
+/** A chip's 1 dp outline and the progress track's end gap (the brief's pill chip; no M3 stop dot). */
+private val ChipBorder = 1.dp
+private val ProgressGap = 0.dp
+
 /** The dive-number label column: a minimum so titles start on the same line, wide enough for four digits. */
 private val NumberColumn = 32.dp
 
 /** The skeleton's bar height, chip and row count, and the pause before it replaces a blank sheet (the brief's 150 ms). */
 private val SkeletonBarHeight = 12.dp
 private val SkeletonChipHeight = 32.dp
+private val SkeletonFigureWidth = 48.dp
+private val SkeletonFigureShortWidth = 36.dp
 private const val SkeletonRows = 6
 private const val SkeletonDelayMs = 150L
 private const val SkeletonPulseMs = 1_600
@@ -275,6 +285,8 @@ private fun Loading(modifier: Modifier, progress: SyncProgress?) {
                 modifier = Modifier.fillMaxWidth(),
                 color = MaterialTheme.colorScheme.primary,
                 trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                gapSize = ProgressGap,
+                drawStopIndicator = {},
             )
         }
         if (showBars) {
@@ -298,6 +310,8 @@ private fun Loading(modifier: Modifier, progress: SyncProgress?) {
 /** The logbook's settling shape: row bars where the number, title, facts and sketch land. */
 @Composable
 private fun SkeletonDiveRow(index: Int, alpha: Float) {
+    // The row's final layout: number, then title, facts and the sketch under them, and the end-aligned figure lines.
+    val numberWidth = NumberColumn * LocalDensity.current.fontScale
     Row(
         Modifier
             .fillMaxWidth()
@@ -305,13 +319,23 @@ private fun SkeletonDiveRow(index: Int, alpha: Float) {
         horizontalArrangement = Arrangement.spacedBy(Spacing.s3),
         verticalAlignment = Alignment.Top,
     ) {
-        SkeletonBar(Modifier.widthIn(min = NumberColumn), alpha = alpha)
+        SkeletonBar(Modifier.widthIn(min = numberWidth), alpha = alpha)
         Column(Modifier.weight(1f)) {
             SkeletonBar(Modifier.fillMaxWidth(if (index % 3 == 0) 0.62f else 0.48f), alpha = alpha)
             Spacer(Modifier.height(Spacing.s1))
             SkeletonBar(Modifier.fillMaxWidth(0.34f), alpha = alpha)
+            Spacer(Modifier.height(Spacing.s1))
+            SkeletonBar(
+                Modifier.width(SKETCH_WIDTH.dp),
+                height = SKETCH_HEIGHT.dp,
+                alpha = alpha,
+            )
         }
-        SkeletonBar(Modifier.width(SKETCH_WIDTH.dp), height = SKETCH_HEIGHT.dp, alpha = alpha)
+        Column(horizontalAlignment = Alignment.End) {
+            SkeletonBar(Modifier.width(SkeletonFigureWidth), alpha = alpha)
+            Spacer(Modifier.height(Spacing.s1))
+            SkeletonBar(Modifier.width(SkeletonFigureShortWidth), alpha = alpha)
+        }
     }
 }
 
@@ -330,6 +354,7 @@ private fun SkeletonBar(modifier: Modifier, height: Dp = SkeletonBarHeight, alph
 private fun Offline(modifier: Modifier, onRetry: () -> Unit) {
     NoContent(
         modifier = modifier,
+        title = stringResource(R.string.logbook_offline_title),
         message = stringResource(R.string.logbook_offline),
         retry = stringResource(R.string.logbook_retry),
         onRetry = onRetry,
@@ -341,6 +366,7 @@ private fun Error(modifier: Modifier, code: String, onRetry: () -> Unit) {
     val context = LocalContext.current
     NoContent(
         modifier = modifier,
+        title = stringResource(R.string.logbook_error_title),
         message = when (code) {
             ErrorCodes.SIGN_IN_REQUIRED -> context.getString(R.string.error_sign_in_required)
             ErrorCodes.SERVER_ERROR -> context.getString(R.string.error_server)
@@ -352,10 +378,11 @@ private fun Error(modifier: Modifier, code: String, onRetry: () -> Unit) {
 }
 
 @Composable
-private fun NoContent(modifier: Modifier, message: String, retry: String, onRetry: () -> Unit) {
+private fun NoContent(modifier: Modifier, title: String, message: String, retry: String, onRetry: () -> Unit) {
     Box(modifier, contentAlignment = Alignment.Center) {
         EmptyState(
             modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+            title = title,
             message = message,
             action = { InkButton(retry, onRetry) },
         )
@@ -423,26 +450,33 @@ private fun LogbookList(
 
         if (data.total == 0) {
             item(key = "empty") {
-                EmptyState(
-                    message = if (filtersEmpty) {
-                        stringResource(R.string.logbook_none)
-                    } else {
-                        stringResource(
-                            R.string.logbook_no_match_filters,
-                            state.filters.map { LogbookText.filterName(context, it, state.providers.connected) }
-                                .joinToString(", "),
-                        )
-                    },
-                    action = {
-                        // No dead end (the brief's EmptyState): filters go back to all dives, and a genuinely empty
-                        // logbook offers the refresh that would pick up a first import.
-                        if (filtersEmpty) {
-                            InkButton(stringResource(R.string.logbook_refresh), onRefresh)
+                // The same placement as offline and error: the empty state is centred, not pinned under the header.
+                Box(
+                    Modifier.fillParentMaxHeight().fillMaxWidth(),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    EmptyState(
+                        title = if (filtersEmpty) stringResource(R.string.logbook_empty_title) else null,
+                        message = if (filtersEmpty) {
+                            stringResource(R.string.logbook_none)
                         } else {
-                            QuietButton(stringResource(R.string.logbook_show_all), onShowAll)
-                        }
-                    },
-                )
+                            stringResource(
+                                R.string.logbook_no_match_filters,
+                                state.filters.map { LogbookText.filterName(context, it, state.providers.connected) }
+                                    .joinToString(", "),
+                            )
+                        },
+                        action = {
+                            // No dead end (the brief's EmptyState): filters go back to all dives, and a genuinely
+                            // empty logbook offers the refresh that would pick up a first import.
+                            if (filtersEmpty) {
+                                InkButton(stringResource(R.string.logbook_refresh), onRefresh)
+                            } else {
+                                QuietButton(stringResource(R.string.logbook_show_all), onShowAll)
+                            }
+                        },
+                    )
+                }
             }
         } else {
             groups.forEach { group ->
@@ -491,12 +525,13 @@ private fun Summary(data: DiveListView, locale: Locale, imperial: Boolean) {
     val context = LocalContext.current
     val totals = data.totals
     if (totals.dives == 0) return
-    val deepest = totals.deepestM?.let { LogbookText.depth(context, it, locale, imperial) } ?: "–"
+    // The summary is one sentence, so its figures stay whole: a value never leaves its unit at 200 % or in German.
+    val deepest = (totals.deepestM?.let { LogbookText.depth(context, it, locale, imperial) } ?: "–").noBreakSpaces()
     val text = context.resources.getQuantityString(
         R.plurals.logbook_summary,
         totals.dives,
         LogbookText.number(locale, totals.dives),
-        LogbookText.duration(context, totals.durationSeconds),
+        LogbookText.duration(context, totals.durationSeconds).noBreakSpaces(),
         deepest,
     )
     Text(
@@ -525,22 +560,25 @@ private fun Filters(
             FilterChip(
                 selected = chip.applied,
                 onClick = { onToggle(chip.filter) },
+                shape = RoundedCornerShape(percent = 50),
+                border = BorderStroke(ChipBorder, MaterialTheme.colorScheme.outline),
                 label = {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(Spacing.s2),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(LogbookText.filterName(context, chip.filter, connected))
-                        Text(
-                            LogbookText.number(locale, chip.count),
-                            style = DiveHubText.meta,
-                            color = if (chip.applied) {
-                                MaterialTheme.colorScheme.onSurface
-                            } else {
-                                MaterialTheme.colorScheme.onSurfaceVariant
-                            },
-                        )
-                    }
+                    val countColor = MaterialTheme.colorScheme.onSurfaceVariant
+                    val countStyle = SpanStyle(
+                        fontSize = DiveHubText.meta.fontSize,
+                        fontWeight = DiveHubText.meta.fontWeight,
+                        letterSpacing = DiveHubText.meta.letterSpacing,
+                        color = countColor,
+                    )
+                    // A non-breaking space keeps the count with the label's last word when the chip wraps.
+                    Text(
+                        buildAnnotatedString {
+                            append(LogbookText.filterName(context, chip.filter, connected))
+                            append('\u00A0')
+                            withStyle(countStyle) { append(LogbookText.number(locale, chip.count)) }
+                        },
+                        style = DiveHubText.label,
+                    )
                 },
                 leadingIcon = if (chip.applied) {
                     {
@@ -801,3 +839,6 @@ private fun QuietButton(text: String, onClick: () -> Unit, enabled: Boolean = tr
         Text(text)
     }
 }
+
+/** Keeps a formatted figure and its unit together while the summary wraps. */
+private fun String.noBreakSpaces(): String = replace(' ', '\u00A0')

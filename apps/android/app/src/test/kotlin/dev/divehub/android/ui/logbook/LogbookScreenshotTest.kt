@@ -8,6 +8,7 @@ import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasProgressBarRangeInfo
 import androidx.compose.ui.test.hasScrollToIndexAction
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
@@ -82,14 +83,14 @@ class LogbookScreenshotTest {
     fun `filter counts`() {
         render(page(dives = listOf(reef, noRecording), filters = emptySet()))
         compose.onNodeWithText("Show only").assertIsDisplayed()
-        compose.onNodeWithText("No recording").assertIsDisplayed()
+        compose.onNode(hasText("No recording", substring = true) and isSelectable()).assertIsDisplayed()
         capture("logbook_filters.png")
     }
 
     @Test
     fun `a row without a recording`() {
         render(page(dives = listOf(noRecording), filters = setOf(LogbookFilter.NO_RECORDING)))
-        compose.onNodeWithText("No recording").assertIsSelected()
+        compose.onNode(hasText("No recording", substring = true) and isSelectable()).assertIsSelected()
         compose.onNodeWithContentDescription("No recording", substring = true, useUnmergedTree = true).assertIsDisplayed()
         compose.onNodeWithContentDescription("from SSI", substring = true, useUnmergedTree = true).assertIsDisplayed()
         capture("logbook_no_recording_row.png")
@@ -131,7 +132,7 @@ class LogbookScreenshotTest {
     @Test
     fun `offline before the first sync is an empty state, not a stale list`() {
         render(LogbookUiState(loading = false, offline = true))
-        compose.onNodeWithText("No connection. Check your connection and try again.").assertIsDisplayed()
+        compose.onNodeWithText("Check your connection and try again.").assertIsDisplayed()
         capture("logbook_offline_empty.png")
     }
 
@@ -183,7 +184,7 @@ class LogbookScreenshotTest {
     fun `an empty logbook offers the way on`() {
         var refreshed = 0
         render(emptyLogbook(), onRefresh = { refreshed++ })
-        compose.onNodeWithText("No dives here.").assertIsDisplayed()
+        compose.onNodeWithText("No dives yet").assertIsDisplayed()
         compose.onNodeWithText("Refresh").performClick()
         assert(refreshed == 1) { "Refresh calls the screen's onRefresh, not another action" }
         capture("logbook_empty.png")

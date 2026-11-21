@@ -58,16 +58,26 @@ fun DiveRow(
         .semantics(mergeDescendants = true) {}
         .padding(vertical = Spacing.s3)
     if (stacked) {
-        Column(row) {
-            Row(
-                Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(Spacing.s3),
-                verticalAlignment = Alignment.Top,
-            ) {
-                leading?.invoke()
-                RowText(title, facts, badge, avatars, footer, Modifier.weight(1f))
+        // The web's narrow layout: the figures sit in the facts cell, directly under the facts, and the participants
+        // and sketch follow on their own lines.
+        Row(
+            row,
+            horizontalArrangement = Arrangement.spacedBy(Spacing.s3),
+            verticalAlignment = Alignment.Top,
+        ) {
+            leading?.invoke()
+            Column(Modifier.weight(1f)) {
+                RowFacts(title, facts, badge)
+                Figures(depth, duration, stacked = true, Modifier.padding(top = Spacing.s1))
+                avatars?.let {
+                    Spacer(Modifier.height(Spacing.s1))
+                    it()
+                }
+                footer?.let {
+                    Spacer(Modifier.height(Spacing.s1))
+                    it()
+                }
             }
-            Figures(depth, duration, Modifier.fillMaxWidth().padding(top = Spacing.s1))
         }
     } else {
         Row(
@@ -76,22 +86,25 @@ fun DiveRow(
             verticalAlignment = Alignment.Top,
         ) {
             leading?.invoke()
-            RowText(title, facts, badge, avatars, footer, Modifier.weight(1f))
+            Column(Modifier.weight(1f)) {
+                RowFacts(title, facts, badge)
+                avatars?.let {
+                    Spacer(Modifier.height(Spacing.s1))
+                    it()
+                }
+                footer?.let {
+                    Spacer(Modifier.height(Spacing.s1))
+                    it()
+                }
+            }
             Figures(depth, duration)
         }
     }
 }
 
 @Composable
-private fun RowText(
-    title: String,
-    facts: List<String>,
-    badge: (@Composable () -> Unit)?,
-    avatars: (@Composable () -> Unit)?,
-    footer: (@Composable () -> Unit)?,
-    modifier: Modifier,
-) {
-    Column(modifier) {
+private fun RowFacts(title: String, facts: List<String>, badge: (@Composable () -> Unit)?) {
+    Column {
         Text(title, style = DiveHubText.bodyStrong)
         if (facts.isNotEmpty() || badge != null) {
             Spacer(Modifier.height(Spacing.s1))
@@ -113,21 +126,25 @@ private fun RowText(
                 badge?.invoke()
             }
         }
-        avatars?.let {
-            Spacer(Modifier.height(Spacing.s1))
-            it()
-        }
-        footer?.let {
-            Spacer(Modifier.height(Spacing.s1))
-            it()
-        }
     }
 }
 
 @Composable
-private fun Figures(depth: String, duration: String, modifier: Modifier = Modifier) {
-    Column(modifier, horizontalAlignment = Alignment.End) {
-        Text(depth, style = DiveHubText.body, textAlign = TextAlign.End)
-        Text(duration, style = DiveHubText.body, textAlign = TextAlign.End)
+private fun Figures(depth: String, duration: String, stacked: Boolean = false, modifier: Modifier = Modifier) {
+    if (stacked) {
+        // Flow, so a duration that no longer fits moves to the next line whole instead of breaking inside "min".
+        FlowRow(modifier, horizontalArrangement = Arrangement.spacedBy(Spacing.s2)) {
+            Text(depth, style = DiveHubText.meta, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(
+                "·\u00A0$duration",
+                style = DiveHubText.meta,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    } else {
+        Column(modifier, horizontalAlignment = Alignment.End) {
+            Text(depth, style = DiveHubText.body, textAlign = TextAlign.End)
+            Text(duration, style = DiveHubText.body, textAlign = TextAlign.End)
+        }
     }
 }

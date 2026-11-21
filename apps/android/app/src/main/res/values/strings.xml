@@ -185,7 +185,10 @@
     <string name="logbook_only_not_at_provider">Not in %1$s</string>
     <string name="logbook_only_changed_since_sent">Changed since sent</string>
     <string name="provider_some_service">the service</string>
-    <string name="logbook_none">No dives here.</string>
+    <string name="logbook_none">Dives appear here after the first sync.</string>
+    <string name="logbook_empty_title">No dives yet</string>
+    <string name="logbook_offline_title">No connection</string>
+    <string name="logbook_error_title">Something went wrong</string>
     <string name="logbook_no_match_filters">No dives match these filters: %1$s.</string>
     <string name="logbook_refresh">Refresh</string>
     <string name="logbook_show_all">Show all dives</string>
@@ -204,7 +207,7 @@
     <string name="logbook_previous">Previous page</string>
     <string name="logbook_next">Next page</string>
     <string name="logbook_page_of">Page %1$d of %2$d</string>
-    <string name="logbook_offline">No connection. Check your connection and try again.</string>
+    <string name="logbook_offline">Check your connection and try again.</string>
     <string name="logbook_offline_cached">No connection. Showing dives synced as of %1$s.</string>
     <string name="logbook_filter_offline">This filter needs a connection. Showing the dives synced on this device.</string>
     <string name="logbook_profile_pending">Profile syncing</string>
@@ -218,8 +221,8 @@
     <string name="participant_role_instructor">Instructor</string>
 
     <plurals name="logbook_summary">
-        <item quantity="one">%1$s dive · %2$s under water · deepest %3$s</item>
-        <item quantity="other">%1$s dives · %2$s under water · deepest %3$s</item>
+        <item quantity="one">%1$s dive · %2$s under water · deepest&#160;%3$s</item>
+        <item quantity="other">%1$s dives · %2$s under water · deepest&#160;%3$s</item>
     </plurals>
     <plurals name="logbook_range">
         <item quantity="one">%1$d–%2$d of %3$d dive</item>

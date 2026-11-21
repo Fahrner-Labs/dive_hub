@@ -185,7 +185,10 @@
     <string name="logbook_only_not_at_provider">Nicht in %1$s</string>
     <string name="logbook_only_changed_since_sent">Seit dem Senden geändert</string>
     <string name="provider_some_service">der Dienst</string>
-    <string name="logbook_none">Keine Tauchgänge hier.</string>
+    <string name="logbook_none">Tauchgänge erscheinen hier nach der ersten Synchronisierung.</string>
+    <string name="logbook_empty_title">Noch keine Tauchgänge</string>
+    <string name="logbook_offline_title">Keine Verbindung</string>
+    <string name="logbook_error_title">Etwas ist schiefgelaufen</string>
     <string name="logbook_no_match_filters">Keine Tauchgänge passen zu diesen Filtern: %1$s.</string>
     <string name="logbook_refresh">Aktualisieren</string>
     <string name="logbook_show_all">Alle Tauchgänge zeigen</string>
@@ -204,7 +207,7 @@
     <string name="logbook_previous">Vorige Seite</string>
     <string name="logbook_next">Nächste Seite</string>
     <string name="logbook_page_of">Seite %1$d von %2$d</string>
-    <string name="logbook_offline">Keine Verbindung. Prüfe deine Verbindung und versuche es erneut.</string>
+    <string name="logbook_offline">Prüfe deine Verbindung und versuche es erneut.</string>
     <string name="logbook_offline_cached">Keine Verbindung. Die Tauchgänge sind synchronisiert bis %1$s.</string>
     <string name="logbook_filter_offline">Dieser Filter braucht eine Verbindung. Gezeigt werden die auf diesem Gerät synchronisierten Tauchgänge.</string>
     <string name="logbook_profile_pending">Profil wird synchronisiert</string>
@@ -218,8 +221,8 @@
     <string name="participant_role_instructor">Tauchlehrer</string>
 
     <plurals name="logbook_summary">
-        <item quantity="one">%1$s Tauchgang · %2$s unter Wasser · am tiefsten %3$s</item>
-        <item quantity="other">%1$s Tauchgänge · %2$s unter Wasser · am tiefsten %3$s</item>
+        <item quantity="one">%1$s Tauchgang · %2$s unter Wasser · am&#160;tiefsten&#160;%3$s</item>
+        <item quantity="other">%1$s Tauchgänge · %2$s unter Wasser · am&#160;tiefsten&#160;%3$s</item>
     </plurals>
     <plurals name="logbook_range">
         <item quantity="one">%1$d–%2$d von %3$d Tauchgang</item>
