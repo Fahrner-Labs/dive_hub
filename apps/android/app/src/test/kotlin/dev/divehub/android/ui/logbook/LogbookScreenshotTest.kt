@@ -1,9 +1,11 @@
 package dev.divehub.android.ui.logbook
 
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasProgressBarRangeInfo
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
-import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import com.github.takahirom.roborazzi.captureRoboImage
 import dev.divehub.android.ui.DiveHubTheme
 import dev.divehub.api.models.DiveListView
@@ -126,6 +128,18 @@ class LogbookScreenshotTest {
         render(page(dives = listOf(reef), filters = emptySet()).copy(profilePending = setOf(reef.id)))
         compose.onNodeWithText("Profile syncing").assertIsDisplayed()
         capture("logbook_profile_pending.png")
+    }
+
+    @Test
+    fun `the refresh spinner is drawn only for the user gesture`() {
+        render(page(dives = listOf(reef), filters = emptySet()).copy(refreshing = true))
+        compose.onNode(hasProgressBarRangeInfo(ProgressBarRangeInfo.Indeterminate)).assertExists()
+    }
+
+    @Test
+    fun `a sync write does not put the refresh spinner on screen`() {
+        render(page(dives = listOf(reef), filters = emptySet()))
+        compose.onNode(hasProgressBarRangeInfo(ProgressBarRangeInfo.Indeterminate)).assertDoesNotExist()
     }
 
     private fun render(state: LogbookUiState) {
