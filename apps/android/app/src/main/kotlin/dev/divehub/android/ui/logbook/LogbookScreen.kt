@@ -181,7 +181,7 @@ fun LogbookScreen(
 @Composable
 private fun FilterAction(activeCount: Int, onClick: () -> Unit) {
     val label = if (activeCount > 0) {
-        stringResource(R.string.logbook_filters_active, activeCount)
+        stringResource(R.string.logbook_filters_selected, activeCount)
     } else {
         stringResource(R.string.logbook_filters)
     }

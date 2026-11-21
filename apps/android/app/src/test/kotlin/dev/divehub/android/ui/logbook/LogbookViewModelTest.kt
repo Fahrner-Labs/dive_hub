@@ -353,12 +353,13 @@ class LogbookViewModelTest {
             advanceUntilIdle()
             assertNotNull(viewModel.state.value.lastCounts)
 
-            viewModel.forget()
-            assertNull(viewModel.state.value.lastCounts)
-
             viewModel.start("diver-2")
             assertNull(viewModel.state.value.lastCounts)
+
+            advanceUntilIdle()
+            assertNotNull(viewModel.state.value.lastCounts)
             viewModel.forget()
+            assertNull(viewModel.state.value.lastCounts)
         } finally {
             driver.close()
         }

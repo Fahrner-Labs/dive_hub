@@ -83,14 +83,14 @@ class LogbookScreenshotTest {
             ),
         )
         compose.onNodeWithText("With findings · 2").assertDoesNotExist()
-        compose.onNodeWithContentDescription("Filters, 2 active").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Filters, 2 selected").assertIsDisplayed()
         capture("logbook_filter_badge.png")
     }
 
     @Test
     fun `an applied filter is checked in the sheet`() {
         render(page(dives = listOf(noRecording), filters = setOf(LogbookFilter.NO_RECORDING)))
-        compose.onNodeWithContentDescription("Filters, 1 active").performClick()
+        compose.onNodeWithContentDescription("Filters, 1 selected").performClick()
         compose.onNodeWithText("No recording · 3").assertIsSelected()
         capture("logbook_filters_applied.png")
     }
@@ -103,7 +103,7 @@ class LogbookScreenshotTest {
         )
         val note = "This filter needs a connection. Showing the dives synced on this device."
         compose.onNodeWithText(note).assertDoesNotExist()
-        compose.onNodeWithContentDescription("Filters, 1 active").performClick()
+        compose.onNodeWithContentDescription("Filters, 1 selected").performClick()
         compose.onNodeWithText(note).assertIsDisplayed()
         capture("logbook_filters_offline.png")
     }
@@ -116,9 +116,9 @@ class LogbookScreenshotTest {
             filters = setOf(LogbookFilter.WITH_FINDINGS, LogbookFilter.CHANGED_SINCE_SENT),
         )
         render(state, darkTheme = true)
-        compose.onNodeWithContentDescription("Filters, 2 active").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Filters, 2 selected").assertIsDisplayed()
         capture("logbook_filter_badge_dark.png")
-        compose.onNodeWithContentDescription("Filters, 2 active").performClick()
+        compose.onNodeWithContentDescription("Filters, 2 selected").performClick()
         compose.onNodeWithText("With findings · 2").assertIsSelected()
         capture("logbook_filters_dark.png")
     }
@@ -127,9 +127,9 @@ class LogbookScreenshotTest {
     @Config(sdk = [36], qualifiers = "de-rDE-w320dp-h640dp-xxhdpi", fontScale = 2f)
     fun `the sheet at 320 dp and 200 percent text in German`() {
         render(page(dives = listOf(reef), filters = setOf(LogbookFilter.CHANGED_SINCE_SENT)))
-        compose.onNodeWithContentDescription("Filter, 1 aktiv").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Filter, 1 ausgewählt").assertIsDisplayed()
         capture("logbook_filter_badge_narrow_de.png")
-        compose.onNodeWithContentDescription("Filter, 1 aktiv").performClick()
+        compose.onNodeWithContentDescription("Filter, 1 ausgewählt").performClick()
         val chip = compose.onNodeWithText("Seit dem Senden geändert · 7")
         chip.performScrollTo().assertIsDisplayed().assertIsSelected()
         chip.assertHeightIsAtLeast(48.dp)
@@ -162,7 +162,7 @@ class LogbookScreenshotTest {
         compose.onNodeWithContentDescription("Filters").performClick()
         compose.onNodeWithText("No recording · 3").performClick()
         compose.onNodeWithText("Show only").assertIsDisplayed()
-        compose.onNodeWithContentDescription("Filters, 1 active").assertExists()
+        compose.onNodeWithContentDescription("Filters, 1 selected").assertExists()
     }
 
     @Test
