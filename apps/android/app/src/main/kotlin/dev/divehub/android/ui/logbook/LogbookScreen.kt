@@ -146,7 +146,7 @@ fun LogbookScreen(
                 title = { Text(stringResource(R.string.logbook_title)) },
                 actions = {
                     if (chips.isNotEmpty()) {
-                        FilterAction(activeCount = state.filters.size, onClick = { filtersOpen = true })
+                        FilterAction(selectedCount = state.filters.size, onClick = { filtersOpen = true })
                     }
                 },
             )
@@ -179,9 +179,9 @@ fun LogbookScreen(
 }
 
 @Composable
-private fun FilterAction(activeCount: Int, onClick: () -> Unit) {
-    val label = if (activeCount > 0) {
-        stringResource(R.string.logbook_filters_selected, activeCount)
+private fun FilterAction(selectedCount: Int, onClick: () -> Unit) {
+    val label = if (selectedCount > 0) {
+        stringResource(R.string.logbook_filters_selected, selectedCount)
     } else {
         stringResource(R.string.logbook_filters)
     }
@@ -195,7 +195,7 @@ private fun FilterAction(activeCount: Int, onClick: () -> Unit) {
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(painter = painterResource(R.drawable.ic_filter), contentDescription = null)
-            if (activeCount > 0) {
+            if (selectedCount > 0) {
                 Spacer(Modifier.width(4.dp))
                 Badge(
                     modifier = Modifier
@@ -205,7 +205,7 @@ private fun FilterAction(activeCount: Int, onClick: () -> Unit) {
                     contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
                 ) {
                     Text(
-                        activeCount.toString(),
+                        selectedCount.toString(),
                         style = MaterialTheme.typography.labelMedium.copy(fontFeatureSettings = "tnum"),
                     )
                 }
