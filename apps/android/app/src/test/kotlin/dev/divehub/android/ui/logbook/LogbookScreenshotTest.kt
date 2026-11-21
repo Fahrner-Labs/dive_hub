@@ -191,6 +191,18 @@ class LogbookScreenshotTest {
     }
 
     @Test
+    @Config(qualifiers = "en-rUS-w320dp-h891dp-xxhdpi")
+    fun `a filtered logbook with no match says why under the filters`() {
+        render(
+            page(dives = emptyList(), filters = setOf(LogbookFilter.WITH_FINDINGS), total = 0),
+            fontScale = 2f,
+        )
+        compose.onNodeWithText("No dives match these filters: With findings.").assertIsDisplayed()
+        compose.onNodeWithText("Show all dives").assertIsDisplayed()
+        capture("logbook_no_match.png")
+    }
+
+    @Test
     fun `a server error says what happened`() {
         render(LogbookUiState(loading = false, error = ErrorCodes.SERVER_ERROR))
         compose.onNodeWithText("The instance had a problem. Try again later.").assertIsDisplayed()
@@ -315,13 +327,17 @@ class LogbookScreenshotTest {
         ),
     )
 
-    private fun page(dives: List<DiveListViewDivesItem>, filters: Set<LogbookFilter>) = LogbookUiState(
+    private fun page(
+        dives: List<DiveListViewDivesItem>,
+        filters: Set<LogbookFilter>,
+        total: Int = 312,
+    ) = LogbookUiState(
         loading = false,
         page = 1,
         filters = filters,
         data = DiveListView(
             dives = dives,
-            total = 312,
+            total = total,
             counts = DiveListViewCounts(
                 noRecording = 3,
                 noSite = 1,

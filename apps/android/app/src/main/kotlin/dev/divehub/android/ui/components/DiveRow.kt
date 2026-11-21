@@ -132,11 +132,19 @@ private fun RowFacts(title: String, facts: List<String>, badge: (@Composable () 
 @Composable
 private fun Figures(depth: String, duration: String, stacked: Boolean = false, modifier: Modifier = Modifier) {
     if (stacked) {
-        // Flow, so a duration that no longer fits moves to the next line whole instead of breaking inside "min".
-        FlowRow(modifier, horizontalArrangement = Arrangement.spacedBy(Spacing.s2)) {
-            Text(depth, style = DiveHubText.meta, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        // Flow, so a duration that no longer fits moves to the next line whole instead of breaking inside "min". The
+        // separator trails the depth, so a wrapped duration never starts a line with a middot that reads as a bullet.
+        FlowRow(
+            modifier.clearAndSetSemantics { contentDescription = "$depth, $duration" },
+            horizontalArrangement = Arrangement.spacedBy(Spacing.s2),
+        ) {
             Text(
-                "·\u00A0$duration",
+                "$depth\u00A0·",
+                style = DiveHubText.meta,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+                duration.replace(' ', '\u00A0'),
                 style = DiveHubText.meta,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

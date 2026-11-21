@@ -124,6 +124,16 @@ private const val AnimatorScaleDisabled = 0f
 /** The content's arrival over the skeleton (ADR 0064): 150 ms, and instant when animations are off. */
 private const val ContentRevealMs = 150
 
+/** ADR 0064: reduce or remove motion when the system's animations are off. */
+@Composable
+private fun rememberReducedMotion(): Boolean {
+    val context = LocalContext.current
+    return remember(context) {
+        Settings.Global.getFloat(context.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) ==
+            AnimatorScaleDisabled
+    }
+}
+
 /** Which of the screen's exclusive states is on stage; [Crossfade] fades the content in over the skeleton. */
 private enum class LogbookPhase { Loading, Offline, Error, List }
 
@@ -207,9 +217,10 @@ fun LogbookScreen(
                 state.error != null && state.data == null -> LogbookPhase.Error
                 else -> LogbookPhase.List
             }
+            val reducedMotion = rememberReducedMotion()
             Crossfade(
                 targetState = phase,
-                animationSpec = tween(ContentRevealMs),
+                animationSpec = tween(if (reducedMotion) 0 else ContentRevealMs),
                 label = "logbook content",
             ) { shown ->
                 when (shown) {
@@ -246,11 +257,7 @@ private fun Loading(modifier: Modifier, progress: SyncProgress?) {
         showBars = true
     }
     // ADR 0064: the bars pulse gently, and stand still when the system's animations are off.
-    val context = LocalContext.current
-    val reducedMotion = remember(context) {
-        Settings.Global.getFloat(context.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) ==
-            AnimatorScaleDisabled
-    }
+    val reducedMotion = rememberReducedMotion()
     val barAlpha = if (reducedMotion) {
         1f
     } else {
@@ -450,11 +457,15 @@ private fun LogbookList(
 
         if (data.total == 0) {
             item(key = "empty") {
-                // The same placement as offline and error: the empty state is centred, not pinned under the header.
-                Box(
-                    Modifier.fillParentMaxHeight().fillMaxWidth(),
-                    contentAlignment = Alignment.Center,
-                ) {
+                // A genuinely empty logbook has no filter block, so it takes the same centred placement as offline and
+                // error. With filters pressed the list is empty only because of them: the message belongs directly
+                // under the filters, where it is seen, not a viewport below them.
+                val placement = if (filtersEmpty) {
+                    Modifier.fillParentMaxHeight().fillMaxWidth()
+                } else {
+                    Modifier.fillMaxWidth()
+                }
+                Box(placement, contentAlignment = Alignment.Center) {
                     EmptyState(
                         title = if (filtersEmpty) stringResource(R.string.logbook_empty_title) else null,
                         message = if (filtersEmpty) {
