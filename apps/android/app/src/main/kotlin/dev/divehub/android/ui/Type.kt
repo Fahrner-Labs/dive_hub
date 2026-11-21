@@ -56,16 +56,6 @@ object DiveHubText {
 
     /** Dates, supporting text, secondary detail. */
     val meta = style(12, 16, FontWeight.Normal)
-
-    /**
-     * Data figures (depth, duration, counts), for call sites that keep numbers in a column. The bundled Poppins builds
-     * carry no `tnum` feature, so tabular figures are inert today and end-alignment does the work; a future build that
-     * carries it is picked up here, as the design brief asks.
-     */
-    val figures = body.copy(fontFeatureSettings = "tnum")
-
-    /** [figures] at the meta size (counts in a chip, month figures). */
-    val metaFigures = meta.copy(fontFeatureSettings = "tnum")
 }
 
 /** Every Material slot is set from the semantic scale, so no slot falls back to a Material default. */

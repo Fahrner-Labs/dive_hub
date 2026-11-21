@@ -127,7 +127,7 @@ private fun RowText(
 @Composable
 private fun Figures(depth: String, duration: String, modifier: Modifier = Modifier) {
     Column(modifier, horizontalAlignment = Alignment.End) {
-        Text(depth, style = DiveHubText.figures, textAlign = TextAlign.End)
-        Text(duration, style = DiveHubText.figures, textAlign = TextAlign.End)
+        Text(depth, style = DiveHubText.body, textAlign = TextAlign.End)
+        Text(duration, style = DiveHubText.body, textAlign = TextAlign.End)
     }
 }

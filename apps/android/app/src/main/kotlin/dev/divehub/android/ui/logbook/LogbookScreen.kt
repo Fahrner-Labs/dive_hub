@@ -1,6 +1,14 @@
 package dev.divehub.android.ui.logbook
 
 import android.content.Context
+import android.provider.Settings
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.EaseInOut
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -45,6 +53,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -98,6 +107,15 @@ private val SkeletonBarHeight = 12.dp
 private val SkeletonChipHeight = 32.dp
 private const val SkeletonRows = 6
 private const val SkeletonDelayMs = 150L
+private const val SkeletonPulseMs = 1_600
+private const val SkeletonPulseAlpha = 0.55f
+private const val AnimatorScaleDisabled = 0f
+
+/** The content's arrival over the skeleton (ADR 0064): 150 ms, and instant when animations are off. */
+private const val ContentRevealMs = 150
+
+/** Which of the screen's exclusive states is on stage; [Crossfade] fades the content in over the skeleton. */
+private enum class LogbookPhase { Loading, Offline, Error, List }
 
 /**
  * The logbook route: the list keeps its page and filters in the view model, not in an address. [onPage] tells the
@@ -173,16 +191,28 @@ fun LogbookScreen(
             color = MaterialTheme.colorScheme.surface,
         ) {
             val modifier = Modifier.fillMaxSize()
-            when {
-                state.loading && state.data == null -> Loading(modifier, state.syncProgress)
-                state.offline && state.data == null -> Offline(modifier, onRetry)
-                state.error != null && state.data == null -> Error(modifier, state.error, onRetry)
-                else -> PullToRefreshBox(
-                    isRefreshing = state.refreshing,
-                    onRefresh = onRefresh,
-                    modifier = modifier,
-                ) {
-                    LogbookList(state, units, onRefresh, onRetry, onShowAll, onPage, onToggleFilter, onOpenDive)
+            val phase = when {
+                state.loading && state.data == null -> LogbookPhase.Loading
+                state.offline && state.data == null -> LogbookPhase.Offline
+                state.error != null && state.data == null -> LogbookPhase.Error
+                else -> LogbookPhase.List
+            }
+            Crossfade(
+                targetState = phase,
+                animationSpec = tween(ContentRevealMs),
+                label = "logbook content",
+            ) { shown ->
+                when (shown) {
+                    LogbookPhase.Loading -> Loading(modifier, state.syncProgress)
+                    LogbookPhase.Offline -> Offline(modifier, onRetry)
+                    LogbookPhase.Error -> Error(modifier, state.error ?: ErrorCodes.SERVER_ERROR, onRetry)
+                    LogbookPhase.List -> PullToRefreshBox(
+                        isRefreshing = state.refreshing,
+                        onRefresh = onRefresh,
+                        modifier = modifier,
+                    ) {
+                        LogbookList(state, units, onRefresh, onRetry, onShowAll, onPage, onToggleFilter, onOpenDive)
+                    }
                 }
             }
         }
@@ -204,6 +234,25 @@ private fun Loading(modifier: Modifier, progress: SyncProgress?) {
     LaunchedEffect(Unit) {
         delay(SkeletonDelayMs)
         showBars = true
+    }
+    // ADR 0064: the bars pulse gently, and stand still when the system's animations are off.
+    val context = LocalContext.current
+    val reducedMotion = remember(context) {
+        Settings.Global.getFloat(context.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) ==
+            AnimatorScaleDisabled
+    }
+    val barAlpha = if (reducedMotion) {
+        1f
+    } else {
+        rememberInfiniteTransition(label = "logbook skeleton").animateFloat(
+            initialValue = 1f,
+            targetValue = SkeletonPulseAlpha,
+            animationSpec = infiniteRepeatable(
+                animation = tween(SkeletonPulseMs, easing = EaseInOut),
+                repeatMode = RepeatMode.Reverse,
+            ),
+            label = "skeleton bar alpha",
+        ).value
     }
     // The brief's rule 7: the logbook's own shape in flat bars, not a centred spinner. The quiet meta line keeps the
     // determinate sync count; the bars are decoration, so only the label speaks.
@@ -230,25 +279,25 @@ private fun Loading(modifier: Modifier, progress: SyncProgress?) {
         }
         if (showBars) {
             Spacer(Modifier.height(Spacing.s5))
-            SkeletonBar(Modifier.fillMaxWidth(0.55f))
+            SkeletonBar(Modifier.fillMaxWidth(0.55f), alpha = barAlpha)
             Spacer(Modifier.height(Spacing.s5))
-            SkeletonBar(Modifier.fillMaxWidth(0.28f))
+            SkeletonBar(Modifier.fillMaxWidth(0.28f), alpha = barAlpha)
             Spacer(Modifier.height(Spacing.s2))
             Row(horizontalArrangement = Arrangement.spacedBy(Spacing.s2)) {
-                SkeletonBar(Modifier.fillMaxWidth(0.3f), height = SkeletonChipHeight)
-                SkeletonBar(Modifier.fillMaxWidth(0.24f), height = SkeletonChipHeight)
+                SkeletonBar(Modifier.fillMaxWidth(0.3f), height = SkeletonChipHeight, alpha = barAlpha)
+                SkeletonBar(Modifier.fillMaxWidth(0.24f), height = SkeletonChipHeight, alpha = barAlpha)
             }
             Spacer(Modifier.height(Spacing.s5))
-            SkeletonBar(Modifier.fillMaxWidth(0.36f))
+            SkeletonBar(Modifier.fillMaxWidth(0.36f), alpha = barAlpha)
             Spacer(Modifier.height(Spacing.s2))
-            repeat(SkeletonRows) { index -> SkeletonDiveRow(index) }
+            repeat(SkeletonRows) { index -> SkeletonDiveRow(index, barAlpha) }
         }
     }
 }
 
 /** The logbook's settling shape: row bars where the number, title, facts and sketch land. */
 @Composable
-private fun SkeletonDiveRow(index: Int) {
+private fun SkeletonDiveRow(index: Int, alpha: Float) {
     Row(
         Modifier
             .fillMaxWidth()
@@ -256,21 +305,22 @@ private fun SkeletonDiveRow(index: Int) {
         horizontalArrangement = Arrangement.spacedBy(Spacing.s3),
         verticalAlignment = Alignment.Top,
     ) {
-        SkeletonBar(Modifier.widthIn(min = NumberColumn))
+        SkeletonBar(Modifier.widthIn(min = NumberColumn), alpha = alpha)
         Column(Modifier.weight(1f)) {
-            SkeletonBar(Modifier.fillMaxWidth(if (index % 3 == 0) 0.62f else 0.48f))
+            SkeletonBar(Modifier.fillMaxWidth(if (index % 3 == 0) 0.62f else 0.48f), alpha = alpha)
             Spacer(Modifier.height(Spacing.s1))
-            SkeletonBar(Modifier.fillMaxWidth(0.34f))
+            SkeletonBar(Modifier.fillMaxWidth(0.34f), alpha = alpha)
         }
-        SkeletonBar(Modifier.width(SKETCH_WIDTH.dp), height = SKETCH_HEIGHT.dp)
+        SkeletonBar(Modifier.width(SKETCH_WIDTH.dp), height = SKETCH_HEIGHT.dp, alpha = alpha)
     }
 }
 
 @Composable
-private fun SkeletonBar(modifier: Modifier, height: Dp = SkeletonBarHeight) {
+private fun SkeletonBar(modifier: Modifier, height: Dp = SkeletonBarHeight, alpha: Float = 1f) {
     Box(
         modifier
             .height(height)
+            .alpha(alpha)
             .clip(RoundedCornerShape(ControlCorner))
             .background(MaterialTheme.colorScheme.surfaceVariant),
     )
@@ -465,6 +515,7 @@ private fun Filters(
     onToggle: (LogbookFilter) -> Unit,
 ) {
     val context = LocalContext.current
+    val locale = context.resources.configuration.locales[0] ?: Locale.getDefault()
     FlowRow(
         Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(Spacing.s2),
@@ -481,8 +532,8 @@ private fun Filters(
                     ) {
                         Text(LogbookText.filterName(context, chip.filter, connected))
                         Text(
-                            chip.count.toString(),
-                            style = DiveHubText.metaFigures,
+                            LogbookText.number(locale, chip.count),
+                            style = DiveHubText.meta,
                             color = if (chip.applied) {
                                 MaterialTheme.colorScheme.onSurface
                             } else {
@@ -550,7 +601,7 @@ private fun MonthHead(context: Context, month: String, dives: Int?, durationSeco
                     dives,
                     LogbookText.duration(context, durationSeconds),
                 ),
-                style = DiveHubText.metaFigures,
+                style = DiveHubText.meta,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
@@ -599,7 +650,7 @@ private fun LogbookDiveRow(
             Text(
                 dive.number?.toString() ?: "–",
                 modifier = Modifier.widthIn(min = numberWidth),
-                style = DiveHubText.metaFigures,
+                style = DiveHubText.meta,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.End,
             )
@@ -714,7 +765,7 @@ private fun Pager(state: LogbookUiState, onPage: (Int) -> Unit) {
         Text(
             stringResource(R.string.logbook_page_of, state.page, pages),
             textAlign = TextAlign.Center,
-            style = DiveHubText.metaFigures,
+            style = DiveHubText.meta,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         QuietButton(stringResource(R.string.logbook_next), { onPage(state.page + 1) }, enabled = state.page < pages)

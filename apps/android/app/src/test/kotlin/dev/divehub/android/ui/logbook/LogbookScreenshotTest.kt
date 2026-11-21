@@ -1,5 +1,6 @@
 package dev.divehub.android.ui.logbook
 
+import android.provider.Settings
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.test.assertIsDisplayed
@@ -11,6 +12,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.unit.Density
@@ -37,6 +39,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
@@ -57,11 +60,22 @@ class LogbookScreenshotTest {
     fun pinZone() {
         previousZone = TimeZone.getDefault()
         TimeZone.setDefault(TimeZone.getTimeZone("Europe/Berlin"))
+        // A still skeleton: the pulse is ADR 0064 motion, and a moving bar is not a stable golden.
+        Settings.Global.putFloat(
+            RuntimeEnvironment.getApplication().contentResolver,
+            Settings.Global.ANIMATOR_DURATION_SCALE,
+            0f,
+        )
     }
 
     @After
     fun restoreZone() {
         TimeZone.setDefault(previousZone)
+        Settings.Global.putFloat(
+            RuntimeEnvironment.getApplication().contentResolver,
+            Settings.Global.ANIMATOR_DURATION_SCALE,
+            1f,
+        )
     }
 
     @Test
@@ -167,9 +181,11 @@ class LogbookScreenshotTest {
 
     @Test
     fun `an empty logbook offers the way on`() {
-        render(emptyLogbook())
+        var refreshed = 0
+        render(emptyLogbook(), onRefresh = { refreshed++ })
         compose.onNodeWithText("No dives here.").assertIsDisplayed()
-        compose.onNodeWithText("Refresh").assertIsDisplayed()
+        compose.onNodeWithText("Refresh").performClick()
+        assert(refreshed == 1) { "Refresh calls the screen's onRefresh, not another action" }
         capture("logbook_empty.png")
     }
 
@@ -229,7 +245,12 @@ class LogbookScreenshotTest {
         compose.onNode(hasProgressBarRangeInfo(ProgressBarRangeInfo.Indeterminate)).assertDoesNotExist()
     }
 
-    private fun render(state: LogbookUiState, darkTheme: Boolean = false, fontScale: Float? = null) {
+    private fun render(
+        state: LogbookUiState,
+        darkTheme: Boolean = false,
+        fontScale: Float? = null,
+        onRefresh: () -> Unit = {},
+    ) {
         compose.setContent {
             DiveHubTheme(darkTheme = darkTheme) {
                 val density = LocalDensity.current
@@ -239,7 +260,7 @@ class LogbookScreenshotTest {
                     LogbookScreen(
                         state = state,
                         units = "metric",
-                        onRefresh = {},
+                        onRefresh = onRefresh,
                         onRetry = {},
                         onShowAll = {},
                         onPage = {},
