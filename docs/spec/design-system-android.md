@@ -101,8 +101,8 @@ Rules:
 - Use `sp` for text. Support font scale up to 200% without clipping: a row grows, it does not truncate a label to
   fit.
 - **At 150 % and above, text takes the full width instead of keeping a two-column geometry.** A top app bar title
-  that no longer fits beside its icons stacks under them, left-aligned to the gutter; a `FactRow` puts its value
-  under its label, start-aligned. Below 150 % the Dive title stays centred and facts keep their label/value columns.
+  stacks under its icons, left-aligned to the gutter; a `FactRow` puts its value under its label, start-aligned.
+  Below 150 % the Dive title stays centred and facts keep their label/value columns.
   The run of text grows instead of breaking inside a word ([ADR 0018](../decisions/0018-icons-and-motion.md),
   2026-11-21 amendment).
 

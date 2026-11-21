@@ -141,10 +141,10 @@
     <string name="dive_cylinder_pressures_used">%1$s → %2$s (%3$s used)</string>
     <string name="dive_cylinder_pressures_unknown">Pressures not known</string>
     <string name="dive_cylinder_from_pod">from a tank pod</string>
-    <string name="dive_sac_missing">SAC not known</string>
-    <string name="dive_sac_missing_too_short">No SAC: the dive is shorter than 15 minutes.</string>
-    <string name="dive_sac_missing_no_average_depth">No SAC: the dive has no average depth.</string>
-    <string name="dive_sac_missing_cylinder_incomplete">No SAC: a cylinder needs its size and both pressures.</string>
+    <string name="dive_sac_missing">Not known</string>
+    <string name="dive_sac_missing_too_short">The dive is shorter than 15 minutes.</string>
+    <string name="dive_sac_missing_no_average_depth">The dive has no average depth.</string>
+    <string name="dive_sac_missing_cylinder_incomplete">A cylinder needs its size and both pressures.</string>
 
     <string name="dive_weighting">Weighting</string>
     <string name="dive_suit">Suit</string>

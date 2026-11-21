@@ -9,6 +9,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
@@ -530,6 +531,17 @@ class DiveDetailScreenshotTest {
     }
 
     @Test
+    fun `the page skeleton waits 150 ms so a fast load does not flash`() {
+        compose.mainClock.autoAdvance = false
+        render(DiveDetailUiState(loading = true))
+        compose.onNodeWithTag("dive_skeleton_bars").assertDoesNotExist()
+        compose.mainClock.advanceTimeBy(149)
+        compose.onNodeWithTag("dive_skeleton_bars").assertDoesNotExist()
+        compose.mainClock.advanceTimeBy(2)
+        compose.onNodeWithTag("dive_skeleton_bars").assertExists()
+    }
+
+    @Test
     fun `a dive whose profiles are still syncing says so`() {
         render(state(dive = dive(), profileSamples = null, samplesPending = true))
         compose.onNodeWithTag("dive_scroll").performScrollToNode(hasText("The depth profile is still syncing; it appears when the sync finishes."))
@@ -615,6 +627,33 @@ class DiveDetailScreenshotTest {
         )
         compose.onNodeWithTag("dive_scroll").performScrollToNode(hasText("160 psi/min"))
         compose.onNodeWithText("160 psi/min").assertIsDisplayed()
+    }
+
+    @Test
+    fun `a too short dive says why there is no SAC without repeating the label`() {
+        render(
+            state(
+                dive = dive(
+                    cylinders = listOf(
+                        DiveViewCylindersItem(
+                            volumeL = 12.0,
+                            workingPressureBar = 232.0,
+                            material = "steel",
+                            gas = DiveViewCylindersItemGas(o2 = 21.0, he = 0.0),
+                            startPressureBar = 200.0,
+                            endPressureBar = 50.0,
+                            fromPod = false,
+                            series = null,
+                        ),
+                    ),
+                    sacMissing = "too_short",
+                ),
+            ),
+        )
+        compose.onNodeWithTag("dive_scroll").performScrollToNode(hasText("The dive is shorter than 15 minutes."))
+        compose.onAllNodesWithText("SAC").assertCountEquals(1)
+        compose.onNodeWithText("The dive is shorter than 15 minutes.").assertIsDisplayed()
+        capture("dive_sac_missing.png")
     }
 
     @Test
@@ -837,6 +876,7 @@ class DiveDetailScreenshotTest {
         notes: String? = null,
         cylinders: List<DiveViewCylindersItem> = emptyList(),
         sac: DiveViewSac? = null,
+        sacMissing: String? = null,
         suit: DiveViewSuit? = null,
         lead: List<DiveViewLeadItem> = emptyList(),
         leadTotalKg: Double? = null,
@@ -873,7 +913,7 @@ class DiveDetailScreenshotTest {
         weightingFeedback = weightingFeedback,
         suit = suit,
         sac = sac,
-        sacMissing = null,
+        sacMissing = sacMissing,
         participants = participants,
         verificationCodes = emptyList(),
     )

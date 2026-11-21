@@ -415,12 +415,14 @@ private fun Loading(modifier: Modifier) {
             },
     ) {
         if (showBars) {
-            // The page opens on its facts, not a heading; the first row takes its own s3, so nothing moves on arrival.
-            repeat(SkeletonFactRows) { SkeletonFactRow(alpha, labelHeight, bodyHeight) }
-            Spacer(Modifier.height(Spacing.s5))
-            SkeletonBar(Modifier.fillMaxWidth(0.45f), height = sectionHeight, alpha = alpha)
-            Spacer(Modifier.height(Spacing.s2))
-            repeat(2) { SkeletonFactRow(alpha, labelHeight, bodyHeight) }
+            Column(Modifier.testTag("dive_skeleton_bars")) {
+                // The page opens on its facts, not a heading; the first row takes its own s3, so nothing moves on arrival.
+                repeat(SkeletonFactRows) { SkeletonFactRow(alpha, labelHeight, bodyHeight) }
+                Spacer(Modifier.height(Spacing.s5))
+                SkeletonBar(Modifier.fillMaxWidth(0.45f), height = sectionHeight, alpha = alpha)
+                Spacer(Modifier.height(Spacing.s2))
+                repeat(2) { SkeletonFactRow(alpha, labelHeight, bodyHeight) }
+            }
         }
     }
 }

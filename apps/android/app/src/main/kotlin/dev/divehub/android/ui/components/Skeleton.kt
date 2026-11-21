@@ -31,7 +31,7 @@ private const val AnimatorScaleDisabled = 0f
 
 /**
  * ADR 0064's reduced motion: the system's animations are off, so the skeleton stands still and content arrives
- * without a fade. One reading for every screen, so no screen invents its own test.
+ * without a fade. The shared reading for the screens that use it, so none of them invents its own test.
  */
 @Composable
 fun rememberReducedMotion(): Boolean {

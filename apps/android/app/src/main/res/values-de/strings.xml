@@ -141,10 +141,10 @@
     <string name="dive_cylinder_pressures_used">%1$s → %2$s (%3$s verbraucht)</string>
     <string name="dive_cylinder_pressures_unknown">Drücke nicht bekannt</string>
     <string name="dive_cylinder_from_pod">von einem Tank-Pod</string>
-    <string name="dive_sac_missing">AMV nicht bekannt</string>
-    <string name="dive_sac_missing_too_short">Kein AMV: der Tauchgang ist kürzer als 15 Minuten.</string>
-    <string name="dive_sac_missing_no_average_depth">Kein AMV: dem Tauchgang fehlt die Durchschnittstiefe.</string>
-    <string name="dive_sac_missing_cylinder_incomplete">Kein AMV: eine Flasche braucht ihre Größe und beide Drücke.</string>
+    <string name="dive_sac_missing">Nicht bekannt</string>
+    <string name="dive_sac_missing_too_short">Der Tauchgang ist kürzer als 15 Minuten.</string>
+    <string name="dive_sac_missing_no_average_depth">Dem Tauchgang fehlt die Durchschnittstiefe.</string>
+    <string name="dive_sac_missing_cylinder_incomplete">Eine Flasche braucht ihre Größe und beide Drücke.</string>
 
     <string name="dive_weighting">Beschwerung</string>
     <string name="dive_suit">Anzug</string>
