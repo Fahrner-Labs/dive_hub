@@ -17,6 +17,7 @@ import dev.divehub.shared.dive.profileRecording
 import dev.divehub.shared.logbook.LogbookFilter
 import dev.divehub.shared.logbook.ProviderDirectory
 import dev.divehub.shared.logbook.StoreLogbook
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -99,6 +100,8 @@ class DiveDetailViewModel(
     private suspend fun refreshNow(diveId: String) {
         try {
             refreshDive(diveId)
+        } catch (cancelled: CancellationException) {
+            throw cancelled
         } catch (_: Exception) {
             // The store stays the source; the cached page below is still worth showing.
         }
@@ -126,7 +129,8 @@ class DiveDetailViewModel(
         if (reset) {
             _state.value = DiveDetailUiState(diveId = diveId, loading = true)
         } else {
-            _state.update { it.copy(diveId = diveId, error = null) }
+            // Keep the previous notice on screen while a background reread runs; a blank page draws nothing.
+            _state.update { it.copy(diveId = diveId) }
         }
         val stored = withContext(ioDispatcher) { store.dive(diveId) }
         if (!stillOpen(diveId)) return
@@ -155,6 +159,7 @@ class DiveDetailViewModel(
                 dive = dive,
                 syncedAt = stored.syncedAt,
                 offline = offlineState.value,
+                error = null,
             )
         }
         val directory = providers ?: api.providers().also {
