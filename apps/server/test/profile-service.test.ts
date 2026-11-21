@@ -27,12 +27,13 @@ describe.skipIf(!(await databaseReachable()))('profile service', () => {
   it('reads the own Diver and empty preferences of a new User', async () => {
     const me = await profiles.read(annId);
     expect(me.ownDiver).toMatchObject({ id: expect.any(String), name: expect.any(String) });
-    expect(me.preferences).toEqual({ language: null, units: null });
+    expect(me.preferences).toEqual({ language: null, units: null, mailOptOut: false });
   });
 
   it('saves preferences, leaving fields not given as they are', async () => {
-    expect(await profiles.savePreferences(annId, { language: 'de' })).toEqual({ language: 'de', units: null });
-    expect(await profiles.savePreferences(annId, { units: 'imperial' })).toEqual({ language: 'de', units: 'imperial' });
-    expect((await profiles.read(annId)).preferences).toEqual({ language: 'de', units: 'imperial' });
+    expect(await profiles.savePreferences(annId, { language: 'de' })).toEqual({ language: 'de', units: null, mailOptOut: false });
+    expect(await profiles.savePreferences(annId, { units: 'imperial' })).toEqual({ language: 'de', units: 'imperial', mailOptOut: false });
+    expect(await profiles.savePreferences(annId, { mailOptOut: true })).toEqual({ language: 'de', units: 'imperial', mailOptOut: true });
+    expect((await profiles.read(annId)).preferences).toEqual({ language: 'de', units: 'imperial', mailOptOut: true });
   });
 });

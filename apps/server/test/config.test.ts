@@ -11,6 +11,7 @@ describe('loadConfig', () => {
     expect(config).toMatchObject({
       port: 3000, host: '127.0.0.1', maxUploadBytes: 512 * 1024 * 1024, logLevel: 'info', inProcessWorker: true,
       baseUrl: 'http://localhost:3000', authSecret: undefined, trustedProxies: [], production: false,
+      smtpUrl: undefined, mailFrom: undefined,
     });
   });
 
@@ -18,6 +19,7 @@ describe('loadConfig', () => {
     const config = loadConfig({
       ...base, DIVEHUB_PORT: '', DIVEHUB_MAX_UPLOAD_MB: '', DIVEHUB_HOST: '', DIVEHUB_LOG_LEVEL: '', DIVEHUB_WORKER: '',
       DIVEHUB_BASE_URL: '', DIVEHUB_DATA_DIR: '', DIVEHUB_AUTH_SECRET: '', DIVEHUB_CONTACT: ' ',
+      DIVEHUB_SMTP_URL: '', DIVEHUB_MAIL_FROM: '',
     });
     expect(config).toEqual(loadConfig(base));
   });
@@ -36,5 +38,15 @@ describe('loadConfig', () => {
     expect(() => loadConfig({ DATABASE_URL: '' })).toThrow('DATABASE_URL');
     expect(() => loadConfig({ ...base, NODE_ENV: 'production' })).toThrow('DIVEHUB_BASE_URL');
     expect(loadConfig({ ...base, NODE_ENV: 'production', DIVEHUB_BASE_URL: 'https://dives.example.com' }).baseUrl).toBe('https://dives.example.com');
+  });
+
+  it('takes an SMTP URL and its sender together, and accepts only smtp:// or smtps://', () => {
+    const mail = loadConfig({
+      ...base, DIVEHUB_SMTP_URL: 'smtps://mail.example.com:465', DIVEHUB_MAIL_FROM: 'Dive Hub <no-reply@example.com>',
+    });
+    expect(mail).toMatchObject({ smtpUrl: 'smtps://mail.example.com:465', mailFrom: 'Dive Hub <no-reply@example.com>' });
+    expect(() => loadConfig({ ...base, DIVEHUB_SMTP_URL: 'smtp://mail.example.com:587' })).toThrow('DIVEHUB_MAIL_FROM');
+    expect(() => loadConfig({ ...base, DIVEHUB_SMTP_URL: 'https://mail.example.com' })).toThrow('DIVEHUB_SMTP_URL');
+    expect(() => loadConfig({ ...base, DIVEHUB_SMTP_URL: 'not a url' })).toThrow('DIVEHUB_SMTP_URL');
   });
 });

@@ -270,6 +270,8 @@ export interface paths {
                                 language: null | string;
                                 /** @description Null: follow the region of the browser */
                                 units: null | "metric" | "imperial";
+                                /** @description No transactional e-mail from Dive Hub, such as certification expiry reminders */
+                                mailOptOut: boolean;
                             };
                         };
                     };
@@ -312,6 +314,8 @@ export interface paths {
                         language?: null | string;
                         /** @description Null: follow the region of the browser */
                         units?: null | "metric" | "imperial";
+                        /** @description No transactional e-mail from Dive Hub, such as certification expiry reminders */
+                        mailOptOut?: boolean;
                     };
                 };
             };
@@ -327,6 +331,8 @@ export interface paths {
                             language: null | string;
                             /** @description Null: follow the region of the browser */
                             units: null | "metric" | "imperial";
+                            /** @description No transactional e-mail from Dive Hub, such as certification expiry reminders */
+                            mailOptOut: boolean;
                         };
                     };
                 };
@@ -15181,6 +15187,8 @@ export interface components {
             readonly banExpires?: string;
             /** @default false */
             readonly twoFactorEnabled: boolean;
+            /** @default false */
+            readonly mailOptOut: boolean;
         };
         Session: {
             readonly id: string;

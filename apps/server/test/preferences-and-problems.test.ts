@@ -38,15 +38,16 @@ describe.skipIf(!(await databaseReachable()))('preferences and error codes', () 
 
   describe('preferences', () => {
     it('follow the browser until the User chooses', async () => {
-      expect((await inject('GET', '/api/me')).json().preferences).toEqual({ language: null, units: null });
+      expect((await inject('GET', '/api/me')).json().preferences).toEqual({ language: null, units: null, mailOptOut: false });
     });
 
     it('are saved per User; fields left out stay as they are', async () => {
-      expect((await inject('PATCH', '/api/me/preferences', { language: 'de' })).json()).toEqual({ language: 'de', units: null });
-      expect((await inject('PATCH', '/api/me/preferences', { units: 'imperial' })).json()).toEqual({ language: 'de', units: 'imperial' });
-      expect((await inject('GET', '/api/me')).json().preferences).toEqual({ language: 'de', units: 'imperial' });
+      expect((await inject('PATCH', '/api/me/preferences', { language: 'de' })).json()).toEqual({ language: 'de', units: null, mailOptOut: false });
+      expect((await inject('PATCH', '/api/me/preferences', { units: 'imperial' })).json()).toEqual({ language: 'de', units: 'imperial', mailOptOut: false });
+      expect((await inject('PATCH', '/api/me/preferences', { mailOptOut: true })).json()).toEqual({ language: 'de', units: 'imperial', mailOptOut: true });
+      expect((await inject('GET', '/api/me')).json().preferences).toEqual({ language: 'de', units: 'imperial', mailOptOut: true });
       // Back to "follow the browser".
-      expect((await inject('PATCH', '/api/me/preferences', { language: null })).json()).toEqual({ language: null, units: 'imperial' });
+      expect((await inject('PATCH', '/api/me/preferences', { language: null })).json()).toEqual({ language: null, units: 'imperial', mailOptOut: true });
     });
 
     it('reject values that are not a language tag or a unit system', async () => {

@@ -82,6 +82,12 @@ export function createAuth({ db, baseUrl, secret, trustedOrigins = [], rateLimit
       revokeSessionsOnPasswordReset: true,
       password: { hash: hashPassword, verify: verifyPassword },
     },
+    user: {
+      additionalFields: {
+        // Only our own routes set it (PATCH /api/me/preferences); Better Auth's endpoints must not.
+        mailOptOut: { type: 'boolean', required: false, defaultValue: false, input: false },
+      },
+    },
     session: {
       expiresIn: 60 * 60 * 24 * 7,
       updateAge: 60 * 60 * 24,

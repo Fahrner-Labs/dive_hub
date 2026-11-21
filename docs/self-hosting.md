@@ -101,6 +101,8 @@ Application settings (optional unless stated):
 | `DIVEHUB_OVERPASS_URL` | `https://overpass-api.de/api/interpreter` | Another Overpass endpoint for site imports, e.g. your own or a paid server for regular or commercial imports. |
 | `DIVEHUB_WIKIDATA_SPARQL_URL` | `https://query.wikidata.org/sparql` | Another Wikidata SPARQL endpoint. |
 | `DIVEHUB_SSI_SITES_URL` | `https://api.divessi.com/app/APP_CACHE_SITES.zip` | Another address for SSI's site list, normally only for tests ([ADR 0025](decisions/0025-ssi-site-import-and-site-water-type.md)). |
+| `DIVEHUB_SMTP_URL` | unset | The SMTP relay for transactional e-mail, `smtp://` (STARTTLS) or `smtps://` (TLS), credentials in the URL: `smtps://user:password@mail.example.com:465`. Unset, mail is off and no e-mail is sent. |
+| `DIVEHUB_MAIL_FROM` | unset | The sender of those e-mails, e.g. `Dive Hub <no-reply@example.com>`. Required while `DIVEHUB_SMTP_URL` is set. |
 
 `DIVEHUB_GARMIN_URL`, `DIVEHUB_SSI_URL`, `DIVEHUB_HOST`, `DIVEHUB_WORKER`, `DIVEHUB_WEB_DIR` and
 `DIVEHUB_DATA_DIR` exist for the image and the tests; the example compose file sets what the

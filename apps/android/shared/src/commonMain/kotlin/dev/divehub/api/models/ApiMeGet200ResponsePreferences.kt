@@ -11,5 +11,7 @@ data class ApiMeGet200ResponsePreferences(
     /** Null: follow the browser */
     @SerialName("language") val language: String?,
     /** Null: follow the region of the browser */
-    @SerialName("units") val units: String?
+    @SerialName("units") val units: String?,
+    /** No transactional e-mail from Dive Hub, such as certification expiry reminders */
+    @SerialName("mailOptOut") val mailOptOut: Boolean
 )

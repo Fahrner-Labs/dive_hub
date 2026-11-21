@@ -95,6 +95,7 @@ const AREAS = [
   [/^apps\/server\/src\/live\/|^apps\/web\/src\/lib\/live(-arrivals)?\.ts$/, ['@dives', '@account', '@live']],
   // Divers reach further than their page: a Dive shows its Participants and their codes, the account page imports buddies.
   [/^apps\/server\/src\/divers\//, ['@divers', '@dives', '@account']],
+  [/^apps\/server\/src\/mail\//, ['@account']],
   [/^apps\/server\/src\/(users|auth)\//, ['@account', '@admin']],
   [/^apps\/server\/src\/(providers|secrets)\//, ['@dives', '@account']],
   [/^apps\/server\/test\/fixtures\/site-sources\//, ['@admin', '@sites']],

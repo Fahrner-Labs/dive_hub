@@ -6180,6 +6180,11 @@
             "type": "boolean",
             "default": false,
             "readOnly": true
+          },
+          "mailOptOut": {
+            "type": "boolean",
+            "default": false,
+            "readOnly": true
           }
         },
         "required": [
@@ -6538,7 +6543,8 @@
                       "type": "object",
                       "required": [
                         "language",
-                        "units"
+                        "units",
+                        "mailOptOut"
                       ],
                       "properties": {
                         "language": {
@@ -6573,6 +6579,10 @@
                             }
                           ],
                           "description": "Null: follow the region of the browser"
+                        },
+                        "mailOptOut": {
+                          "type": "boolean",
+                          "description": "No transactional e-mail from Dive Hub, such as certification expiry reminders"
                         }
                       }
                     }
@@ -6626,6 +6636,10 @@
                       }
                     ],
                     "description": "Null: follow the region of the browser"
+                  },
+                  "mailOptOut": {
+                    "type": "boolean",
+                    "description": "No transactional e-mail from Dive Hub, such as certification expiry reminders"
                   }
                 }
               }
@@ -6641,7 +6655,8 @@
                   "type": "object",
                   "required": [
                     "language",
-                    "units"
+                    "units",
+                    "mailOptOut"
                   ],
                   "properties": {
                     "language": {
@@ -6676,6 +6691,10 @@
                         }
                       ],
                       "description": "Null: follow the region of the browser"
+                    },
+                    "mailOptOut": {
+                      "type": "boolean",
+                      "description": "No transactional e-mail from Dive Hub, such as certification expiry reminders"
                     }
                   }
                 }

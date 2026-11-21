@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useRef, useState } from 'react';
+import { useId, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { formValues } from './lib/form.ts';
 import { NewPasswordField, useUserChanged } from './SignedOut.tsx';
@@ -9,7 +9,7 @@ import { useDisplay, useErrorText } from './lib/display.ts';
 import { announce } from './lib/announce.ts';
 import { refocusAfterRemoval } from './lib/focus.ts';
 import { ReportProblem } from './ReportProblem.tsx';
-import { Button, ConfirmButton, Form, Notice, Panel, PasswordField, RadioGroup, Table } from './ui/index.ts';
+import { Button, ConfirmButton, Form, Notice, Panel, PasswordField, RadioGroup, Switch, Table } from './ui/index.ts';
 
 const AUTO = 'auto';
 
@@ -53,6 +53,37 @@ export function DisplaySettings() {
           ]}
         />
       </div>
+      {save.error && <Notice tone="danger">{errorText(save.error)}</Notice>}
+    </Panel>
+  );
+}
+
+/** Settings' E-mail section: one switch for transactional e-mail, saved as it is switched (the User's mail opt-out). */
+export function NotificationSettings() {
+  const { t } = useTranslation();
+  const errorText = useErrorText();
+  const queryClient = useQueryClient();
+  const me = useQuery(meQuery());
+  const hint = useId();
+  const save = useMutation({
+    mutationFn: async (mailOptOut: boolean) => unwrap(await api.PATCH('/api/me/preferences', { body: { mailOptOut } })),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: keys.me, exact: true });
+      announce(t('account.saved'));
+    },
+  });
+  const prefs = me.data?.preferences;
+  if (!prefs) return null;
+
+  return (
+    <Panel>
+      <Switch
+        isSelected={!prefs.mailOptOut} isPending={save.isPending} aria-describedby={hint}
+        onChange={(selected) => save.mutate(!selected)}
+      >
+        {t('account.mail')}
+      </Switch>
+      <p id={hint} className="muted switch-help">{t('account.mailHint')}</p>
       {save.error && <Notice tone="danger">{errorText(save.error)}</Notice>}
     </Panel>
   );

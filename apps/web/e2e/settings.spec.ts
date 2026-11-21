@@ -4,7 +4,7 @@ import { expect, test } from '@playwright/test';
 import { connectSsi, E2E_BASE_URL, headers, setPreferences } from './support.ts';
 
 test.beforeEach(async ({ request }) => {
-  await setPreferences(request, { language: null, units: null });
+  await setPreferences(request, { language: null, units: null, mailOptOut: false });
 });
 
 test('an old account address lands on its section, and the sections are beside it', { tag: ['@account'] }, async ({ page }) => {
@@ -104,4 +104,19 @@ test('someone not an admin is not offered Administration, and its address says o
   } finally {
     await context.close();
   }
+});
+
+test('the E-mail section switches transactional e-mail off, and the choice stays', { tag: ['@account'] }, async ({ page }) => {
+  await page.goto('/#/settings/notifications');
+  await expect(page.getByRole('heading', { name: 'E-mail', level: 1 })).toBeVisible();
+  const toggle = page.getByRole('switch', { name: 'E-mail me about my logbook' });
+  await expect(toggle).toHaveAttribute('aria-checked', 'true');
+  const saved = page.waitForResponse((response) => response.url().endsWith('/api/me/preferences') && response.request().method() === 'PATCH');
+  await toggle.click();
+  await saved;
+  await expect(toggle).toHaveAttribute('aria-checked', 'false');
+  await page.reload();
+  await expect(toggle).toHaveAttribute('aria-checked', 'false');
+  await toggle.click();
+  await expect(toggle).toHaveAttribute('aria-checked', 'true');
 });
