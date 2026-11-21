@@ -187,6 +187,7 @@
     <string name="provider_some_service">the service</string>
     <string name="logbook_none">No dives here.</string>
     <string name="logbook_no_match_filters">No dives match these filters: %1$s.</string>
+    <string name="logbook_refresh">Refresh</string>
     <string name="logbook_show_all">Show all dives</string>
     <string name="logbook_no_site">No dive site</string>
     <string name="logbook_no_recording">No recording</string>

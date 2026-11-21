@@ -187,6 +187,7 @@
     <string name="provider_some_service">der Dienst</string>
     <string name="logbook_none">Keine Tauchgänge hier.</string>
     <string name="logbook_no_match_filters">Keine Tauchgänge passen zu diesen Filtern: %1$s.</string>
+    <string name="logbook_refresh">Aktualisieren</string>
     <string name="logbook_show_all">Alle Tauchgänge zeigen</string>
     <string name="logbook_no_site">Kein Tauchplatz</string>
     <string name="logbook_no_recording">Keine Aufzeichnung</string>

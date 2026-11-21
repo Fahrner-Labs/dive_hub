@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -23,11 +24,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -37,11 +38,16 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -50,6 +56,7 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.divehub.android.R
@@ -66,12 +73,15 @@ import dev.divehub.api.models.DiveListViewDivesItemParticipantsItem
 import dev.divehub.shared.ErrorCodes
 import dev.divehub.shared.logbook.LogbookFilter
 import dev.divehub.shared.logbook.SAME_DAY_SECONDS
+import dev.divehub.shared.logbook.SKETCH_HEIGHT
+import dev.divehub.shared.logbook.SKETCH_WIDTH
 import dev.divehub.shared.logbook.filterChips
 import dev.divehub.shared.logbook.initials
 import dev.divehub.shared.logbook.mixName
 import dev.divehub.shared.logbook.monthGroups
 import dev.divehub.shared.logbook.sketchScale
 import dev.divehub.shared.sync.SyncProgress
+import kotlinx.coroutines.delay
 import java.util.Locale
 
 /** The participant circle's fixed size, not a spacing step. */
@@ -80,8 +90,14 @@ private val AvatarSize = 24.dp
 /** The brief's `Radius.control` for a filled action; a quiet text action stays text. */
 private val ControlCorner = 8.dp
 
-/** The dive-number label column: fixed so titles start on the same line whatever the number's width. */
+/** The dive-number label column: a minimum so titles start on the same line, wide enough for four digits. */
 private val NumberColumn = 32.dp
+
+/** The skeleton's bar height, chip and row count, and the pause before it replaces a blank sheet (the brief's 150 ms). */
+private val SkeletonBarHeight = 12.dp
+private val SkeletonChipHeight = 32.dp
+private const val SkeletonRows = 6
+private const val SkeletonDelayMs = 150L
 
 /**
  * The logbook route: the list keeps its page and filters in the view model, not in an address. [onPage] tells the
@@ -166,7 +182,7 @@ fun LogbookScreen(
                     onRefresh = onRefresh,
                     modifier = modifier,
                 ) {
-                    LogbookList(state, units, onRetry, onShowAll, onPage, onToggleFilter, onOpenDive)
+                    LogbookList(state, units, onRefresh, onRetry, onShowAll, onPage, onToggleFilter, onOpenDive)
                 }
             }
         }
@@ -184,26 +200,80 @@ private fun Loading(modifier: Modifier, progress: SyncProgress?) {
     } else {
         stringResource(R.string.logbook_sync_progress_starting)
     }
-    Box(modifier, contentAlignment = Alignment.Center) {
-        Column(
-            modifier = Modifier.padding(Spacing.s5),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
-        ) {
-            if (countable) {
-                CircularProgressIndicator(progress = { (done.toFloat() / total).coerceIn(0f, 1f) })
-            } else {
-                CircularProgressIndicator()
-            }
-            Spacer(Modifier.height(Spacing.s4))
-            Text(
-                label,
-                modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
-                style = DiveHubText.body,
-                textAlign = TextAlign.Center,
+    var showBars by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        delay(SkeletonDelayMs)
+        showBars = true
+    }
+    // The brief's rule 7: the logbook's own shape in flat bars, not a centred spinner. The quiet meta line keeps the
+    // determinate sync count; the bars are decoration, so only the label speaks.
+    Column(
+        modifier
+            .fillMaxSize()
+            .padding(horizontal = Spacing.s4),
+    ) {
+        Spacer(Modifier.height(Spacing.s4))
+        Text(
+            label,
+            modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+            style = DiveHubText.meta,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        if (countable) {
+            Spacer(Modifier.height(Spacing.s2))
+            LinearProgressIndicator(
+                progress = { (done.toFloat() / total).coerceIn(0f, 1f) },
+                modifier = Modifier.fillMaxWidth(),
+                color = MaterialTheme.colorScheme.primary,
+                trackColor = MaterialTheme.colorScheme.surfaceVariant,
             )
         }
+        if (showBars) {
+            Spacer(Modifier.height(Spacing.s5))
+            SkeletonBar(Modifier.fillMaxWidth(0.55f))
+            Spacer(Modifier.height(Spacing.s5))
+            SkeletonBar(Modifier.fillMaxWidth(0.28f))
+            Spacer(Modifier.height(Spacing.s2))
+            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.s2)) {
+                SkeletonBar(Modifier.fillMaxWidth(0.3f), height = SkeletonChipHeight)
+                SkeletonBar(Modifier.fillMaxWidth(0.24f), height = SkeletonChipHeight)
+            }
+            Spacer(Modifier.height(Spacing.s5))
+            SkeletonBar(Modifier.fillMaxWidth(0.36f))
+            Spacer(Modifier.height(Spacing.s2))
+            repeat(SkeletonRows) { index -> SkeletonDiveRow(index) }
+        }
     }
+}
+
+/** The logbook's settling shape: row bars where the number, title, facts and sketch land. */
+@Composable
+private fun SkeletonDiveRow(index: Int) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .padding(vertical = Spacing.s3),
+        horizontalArrangement = Arrangement.spacedBy(Spacing.s3),
+        verticalAlignment = Alignment.Top,
+    ) {
+        SkeletonBar(Modifier.widthIn(min = NumberColumn))
+        Column(Modifier.weight(1f)) {
+            SkeletonBar(Modifier.fillMaxWidth(if (index % 3 == 0) 0.62f else 0.48f))
+            Spacer(Modifier.height(Spacing.s1))
+            SkeletonBar(Modifier.fillMaxWidth(0.34f))
+        }
+        SkeletonBar(Modifier.width(SKETCH_WIDTH.dp), height = SKETCH_HEIGHT.dp)
+    }
+}
+
+@Composable
+private fun SkeletonBar(modifier: Modifier, height: Dp = SkeletonBarHeight) {
+    Box(
+        modifier
+            .height(height)
+            .clip(RoundedCornerShape(ControlCorner))
+            .background(MaterialTheme.colorScheme.surfaceVariant),
+    )
 }
 
 @Composable
@@ -246,6 +316,7 @@ private fun NoContent(modifier: Modifier, message: String, retry: String, onRetr
 private fun LogbookList(
     state: LogbookUiState,
     units: String?,
+    onRefresh: () -> Unit,
     onRetry: () -> Unit,
     onShowAll: () -> Unit,
     onPage: (Int) -> Unit,
@@ -313,7 +384,11 @@ private fun LogbookList(
                         )
                     },
                     action = {
-                        if (!filtersEmpty) {
+                        // No dead end (the brief's EmptyState): filters go back to all dives, and a genuinely empty
+                        // logbook offers the refresh that would pick up a first import.
+                        if (filtersEmpty) {
+                            InkButton(stringResource(R.string.logbook_refresh), onRefresh)
+                        } else {
                             QuietButton(stringResource(R.string.logbook_show_all), onShowAll)
                         }
                     },
@@ -393,14 +468,28 @@ private fun Filters(
     FlowRow(
         Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(Spacing.s2),
-        verticalArrangement = Arrangement.spacedBy(Spacing.s1),
+        verticalArrangement = Arrangement.spacedBy(Spacing.s2),
     ) {
         chips.forEach { chip ->
             FilterChip(
                 selected = chip.applied,
                 onClick = { onToggle(chip.filter) },
                 label = {
-                    Text("${LogbookText.filterName(context, chip.filter, connected)} · ${chip.count}")
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.s2),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(LogbookText.filterName(context, chip.filter, connected))
+                        Text(
+                            chip.count.toString(),
+                            style = DiveHubText.metaFigures,
+                            color = if (chip.applied) {
+                                MaterialTheme.colorScheme.onSurface
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            },
+                        )
+                    }
                 },
                 leadingIcon = if (chip.applied) {
                     {
@@ -461,7 +550,7 @@ private fun MonthHead(context: Context, month: String, dives: Int?, durationSeco
                     dives,
                     LogbookText.duration(context, durationSeconds),
                 ),
-                style = DiveHubText.meta,
+                style = DiveHubText.metaFigures,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
@@ -479,6 +568,7 @@ private fun LogbookDiveRow(
     onOpen: () -> Unit,
 ) {
     val context = LocalContext.current
+    val numberWidth = NumberColumn * LocalDensity.current.fontScale
     val day = LogbookText.diveDay(context, dive.startsAt, dive.utcOffsetSeconds, dive.utcOffsetSource, locale)
     val noSite = stringResource(R.string.logbook_no_site)
     val air = stringResource(R.string.dive_air)
@@ -508,35 +598,32 @@ private fun LogbookDiveRow(
         leading = {
             Text(
                 dive.number?.toString() ?: "–",
-                modifier = Modifier.width(NumberColumn),
-                style = DiveHubText.meta,
+                modifier = Modifier.widthIn(min = numberWidth),
+                style = DiveHubText.metaFigures,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.End,
             )
         },
         facts = facts,
+        badge = if (dive.findings > 0) {
+            {
+                FindingsBadge(
+                    context.resources.getQuantityString(
+                        R.plurals.logbook_findings,
+                        dive.findings,
+                        dive.findings,
+                    ),
+                )
+            }
+        } else {
+            null
+        },
         avatars = if (dive.participants.isEmpty()) {
             null
         } else {
             { Participants(dive.participants) }
         },
-        footer = {
-            Column {
-                if (dive.findings > 0) {
-                    Text(
-                        context.resources.getQuantityString(
-                            R.plurals.logbook_findings,
-                            dive.findings,
-                            dive.findings,
-                        ),
-                        style = DiveHubText.metaStrong,
-                        color = MaterialTheme.colorScheme.error,
-                    )
-                    Spacer(Modifier.height(Spacing.s1))
-                }
-                ProfileSketch(dive.profile, dive.recordings > 0, scaleM)
-            }
-        },
+        footer = { ProfileSketch(dive.profile, dive.recordings > 0, scaleM) },
         onClick = onOpen,
     )
 }
@@ -571,17 +658,36 @@ private fun Participants(people: List<DiveListViewDivesItemParticipantsItem>) {
     }
 }
 
+/**
+ * A short state with the facts: findings can be information, a note or a caution (glossary), so the mark is the
+ * neutral badge the web uses, never the danger tone. A future severity from the API can tint it.
+ */
+@Composable
+private fun FindingsBadge(text: String) {
+    Text(
+        text,
+        modifier = Modifier
+            .clip(CircleShape)
+            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .padding(horizontal = Spacing.s2),
+        style = DiveHubText.metaStrong,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+}
+
 @Composable
 private fun AvatarCircle(person: DiveListViewDivesItemParticipantsItem) {
     val tones = listOf(
         MaterialTheme.colorScheme.primaryContainer,
+        DiveHubColors.successSoft,
         MaterialTheme.colorScheme.surfaceVariant,
-        MaterialTheme.colorScheme.errorContainer,
     )
     val tone = tones[(person.diverId.sumOf { it.code }) % tones.size]
+    // The circle grows with the font scale so the scaled initials never clip at 200 %.
+    val size = AvatarSize * LocalDensity.current.fontScale
     Box(
         Modifier
-            .size(AvatarSize)
+            .size(size)
             .clip(CircleShape)
             .background(tone)
             .clearAndSetSemantics {},
@@ -591,22 +697,24 @@ private fun AvatarCircle(person: DiveListViewDivesItemParticipantsItem) {
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun Pager(state: LogbookUiState, onPage: (Int) -> Unit) {
     val pages = state.pageCount
-    Row(
+    // The actions wrap instead of overflowing: at 320 dp and 200 % two "previous/next page" labels cannot share a row.
+    FlowRow(
         Modifier
             .fillMaxWidth()
             .padding(horizontal = Spacing.s4, vertical = Spacing.s4),
-        horizontalArrangement = Arrangement.spacedBy(Spacing.s2),
-        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Spacing.s2, Alignment.CenterHorizontally),
+        verticalArrangement = Arrangement.spacedBy(Spacing.s2),
+        itemVerticalAlignment = Alignment.CenterVertically,
     ) {
         QuietButton(stringResource(R.string.logbook_previous), { onPage(state.page - 1) }, enabled = state.page > 1)
         Text(
             stringResource(R.string.logbook_page_of, state.page, pages),
-            modifier = Modifier.weight(1f),
             textAlign = TextAlign.Center,
-            style = DiveHubText.meta,
+            style = DiveHubText.metaFigures,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         QuietButton(stringResource(R.string.logbook_next), { onPage(state.page + 1) }, enabled = state.page < pages)

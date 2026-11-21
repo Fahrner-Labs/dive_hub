@@ -86,6 +86,10 @@ object DiveHubColors {
     val onInk: Color
         @Composable get() = if (isDarkScheme()) Color(0xFF0B0D0F) else Color(0xFFFFFFFF)
 
+    /** The success-soft tone: one of the three avatar tones, and a success badge's tint. */
+    val successSoft: Color
+        @Composable get() = if (isDarkScheme()) Color(0xFF10301F) else Color(0xFFE5F3EC)
+
     /** The water column's shallow end in the profile sketch. */
     val depthShallow: Color
         @Composable get() = if (isDarkScheme()) Color(0xFF62B6E6) else Color(0xFF8FD3E8)

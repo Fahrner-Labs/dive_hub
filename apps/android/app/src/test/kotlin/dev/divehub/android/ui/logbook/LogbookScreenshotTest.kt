@@ -5,10 +5,13 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasProgressBarRangeInfo
+import androidx.compose.ui.test.hasScrollToIndexAction
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.unit.Density
 import com.github.takahirom.roborazzi.captureRoboImage
@@ -22,6 +25,7 @@ import dev.divehub.api.models.DiveListViewDivesItemSite
 import dev.divehub.api.models.DiveListViewMonthsItem
 import dev.divehub.api.models.DiveListViewTotals
 import dev.divehub.api.models.DiveProfileView
+import dev.divehub.shared.ErrorCodes
 import dev.divehub.shared.logbook.LogbookFilter
 import dev.divehub.shared.logbook.ProviderDirectory
 import dev.divehub.shared.sync.SyncProgress
@@ -64,14 +68,14 @@ class LogbookScreenshotTest {
     fun `filter counts`() {
         render(page(dives = listOf(reef, noRecording), filters = emptySet()))
         compose.onNodeWithText("Show only").assertIsDisplayed()
-        compose.onNodeWithText("No recording · 3").assertIsDisplayed()
+        compose.onNodeWithText("No recording").assertIsDisplayed()
         capture("logbook_filters.png")
     }
 
     @Test
     fun `a row without a recording`() {
         render(page(dives = listOf(noRecording), filters = setOf(LogbookFilter.NO_RECORDING)))
-        compose.onNodeWithText("No recording · 3").assertIsSelected()
+        compose.onNodeWithText("No recording").assertIsSelected()
         compose.onNodeWithContentDescription("No recording", substring = true, useUnmergedTree = true).assertIsDisplayed()
         compose.onNodeWithContentDescription("from SSI", substring = true, useUnmergedTree = true).assertIsDisplayed()
         capture("logbook_no_recording_row.png")
@@ -100,7 +104,6 @@ class LogbookScreenshotTest {
             ),
         )
         compose.onNodeWithText("Last synced", substring = true).assertDoesNotExist()
-        capture("logbook_connected.png")
     }
 
     @Test
@@ -127,6 +130,7 @@ class LogbookScreenshotTest {
             ),
         )
         compose.onNodeWithText("Syncing your dives… 42 of 130").assertIsDisplayed()
+        compose.mainClock.advanceTimeBy(250)
         capture("logbook_sync_progress.png")
     }
 
@@ -148,10 +152,69 @@ class LogbookScreenshotTest {
     @Test
     @Config(qualifiers = "en-rUS-w320dp-h891dp-xxhdpi")
     fun `the logbook at 320 dp and 200 percent`() {
-        render(page(dives = listOf(reef), filters = emptySet()), fontScale = 2f)
-        compose.onNodeWithText("Lighthouse Reef").assertIsDisplayed()
+        render(page(dives = crowded, filters = emptySet()), fontScale = 2f)
+        compose.onNodeWithText("Tauchplatz an der Steilküste von Gozo").assertIsDisplayed()
         compose.onNodeWithText("Show only").assertIsDisplayed()
         capture("logbook_narrow_2x.png")
+    }
+
+    @Test
+    fun `dive numbers and their figures line up down the list`() {
+        render(page(dives = numbers, filters = emptySet()))
+        compose.onNodeWithText("1000").assertIsDisplayed()
+        capture("logbook_numbers.png")
+    }
+
+    @Test
+    fun `an empty logbook offers the way on`() {
+        render(emptyLogbook())
+        compose.onNodeWithText("No dives here.").assertIsDisplayed()
+        compose.onNodeWithText("Refresh").assertIsDisplayed()
+        capture("logbook_empty.png")
+    }
+
+    @Test
+    fun `a server error says what happened`() {
+        render(LogbookUiState(loading = false, error = ErrorCodes.SERVER_ERROR))
+        compose.onNodeWithText("The instance had a problem. Try again later.").assertIsDisplayed()
+        capture("logbook_error.png")
+    }
+
+    @Test
+    @Config(qualifiers = "en-rUS-w411dp-h891dp-night-xxhdpi")
+    fun `the dark logbook keeps the selected filter and the findings mark`() {
+        render(
+            page(dives = listOf(withFindings), filters = setOf(LogbookFilter.WITH_FINDINGS)),
+            darkTheme = true,
+        )
+        compose.onNodeWithText("2 findings").assertIsDisplayed()
+        capture("logbook_dark_findings.png")
+    }
+
+    @Test
+    @Config(qualifiers = "en-rUS-w411dp-h891dp-night-xxhdpi")
+    fun `the dark error state`() {
+        render(LogbookUiState(loading = false, error = ErrorCodes.SERVER_ERROR), darkTheme = true)
+        compose.onNodeWithText("The instance had a problem. Try again later.").assertIsDisplayed()
+        capture("logbook_dark_error.png")
+    }
+
+    @Test
+    @Config(qualifiers = "de-rDE-w320dp-h891dp-xxhdpi")
+    fun `the german logbook at 320 dp and 200 percent with crowded names`() {
+        render(page(dives = crowded, filters = emptySet()), fontScale = 2f)
+        compose.onNodeWithText("Nur anzeigen").assertIsDisplayed()
+        compose.onNodeWithText("Tauchplatz an der Steilküste von Gozo").assertIsDisplayed()
+        capture("logbook_de_narrow_2x.png")
+    }
+
+    @Test
+    @Config(qualifiers = "en-rUS-w320dp-h891dp-xxhdpi")
+    fun `the 320 dp 200 percent logbook reaches its pager`() {
+        render(page(dives = numbers, filters = emptySet()), fontScale = 2f)
+        compose.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("Next page"))
+        compose.onNodeWithText("Page 1 of 13").assertIsDisplayed()
+        capture("logbook_narrow_2x_scrolled.png")
     }
 
     @Test
@@ -191,6 +254,44 @@ class LogbookScreenshotTest {
     private fun capture(name: String) {
         compose.onRoot().captureRoboImage("src/test/screenshots/$name")
     }
+
+    private fun numberDive(
+        id: String,
+        number: Int,
+        startsAt: String,
+        site: String,
+        maxDepthM: Double,
+        durationSeconds: Double,
+    ) = dive(
+        id = id,
+        number = number,
+        startsAt = startsAt,
+        site = site,
+        maxDepthM = maxDepthM,
+        durationSeconds = durationSeconds,
+        profile = DiveProfileView(
+            depthsM = listOf(0.0, maxDepthM / 2, maxDepthM, maxDepthM / 3, 0.0),
+            spanSeconds = durationSeconds,
+            ascentBands = emptyList(),
+        ),
+    )
+
+    private fun emptyLogbook() = LogbookUiState(
+        loading = false,
+        data = DiveListView(
+            dives = emptyList(),
+            total = 0,
+            counts = DiveListViewCounts(
+                noRecording = 0,
+                noSite = 0,
+                withFindings = 0,
+                notAtProvider = 0,
+                changedSinceSent = 0,
+            ),
+            totals = DiveListViewTotals(dives = 0, durationSeconds = 0.0, deepestM = null, lastDiveAt = null),
+            months = emptyList(),
+        ),
+    )
 
     private fun page(dives: List<DiveListViewDivesItem>, filters: Set<LogbookFilter>) = LogbookUiState(
         loading = false,
@@ -251,6 +352,53 @@ class LogbookScreenshotTest {
         profile = null,
     )
 
+    private val numbers = listOf(
+        numberDive("nine", 9, "2026-04-02T09:00:00Z", "Lighthouse Reef", 8.4, 1_500.0),
+        numberDive("forty-two", 42, "2026-04-10T10:30:00Z", "Blue Hole", 12.0, 3_000.0),
+        numberDive("seventy-seven", 77, "2026-04-18T14:00:00Z", "Lighthouse Reef", 24.3, 4_200.0),
+        dive(
+            id = "thousand",
+            number = 1_000,
+            startsAt = "2026-04-26T16:15:00Z",
+            site = "Blue Hole",
+            maxDepthM = 40.2,
+            durationSeconds = 5_400.0,
+            participants = listOf(
+                DiveListViewDivesItemParticipantsItem("diver-2", "Anneliese Bergström", "buddy"),
+                DiveListViewDivesItemParticipantsItem("diver-3", "Maximilian von Hohenstein", "guide"),
+                DiveListViewDivesItemParticipantsItem("diver-4", "Charlotte Wilhelmine", "buddy"),
+                DiveListViewDivesItemParticipantsItem("diver-5", "Friedrich-Alexander", "buddy"),
+            ),
+            profile = DiveProfileView(
+                depthsM = listOf(0.0, 20.0, 40.2, 18.0, 0.0),
+                spanSeconds = 5_400.0,
+                ascentBands = emptyList(),
+            ),
+        ),
+    )
+
+    private val crowded = listOf(
+        dive(
+            id = "crowded",
+            number = 1_000,
+            startsAt = "2026-04-02T09:00:00Z",
+            site = "Tauchplatz an der Steilküste von Gozo",
+            maxDepthM = 40.2,
+            durationSeconds = 5_400.0,
+            participants = listOf(
+                DiveListViewDivesItemParticipantsItem("diver-2", "Anneliese Bergström", "buddy"),
+                DiveListViewDivesItemParticipantsItem("diver-3", "Maximilian von Hohenstein", "guide"),
+                DiveListViewDivesItemParticipantsItem("diver-4", "Charlotte Wilhelmine", "buddy"),
+                DiveListViewDivesItemParticipantsItem("diver-5", "Friedrich-Alexander", "buddy"),
+            ),
+            profile = DiveProfileView(
+                depthsM = listOf(0.0, 12.0, 28.0, 40.2, 20.0, 6.0, 0.0),
+                spanSeconds = 5_400.0,
+                ascentBands = emptyList(),
+            ),
+        ),
+    )
+
     private val withFindings = dive(
         id = "findings",
         number = 77,
@@ -273,6 +421,7 @@ class LogbookScreenshotTest {
         site: String?,
         maxDepthM: Double,
         recordings: Int = 1,
+        durationSeconds: Double = 3_000.0,
         fromProvider: String? = null,
         findings: Int = 0,
         surfaceIntervalSeconds: Double? = null,
@@ -286,7 +435,7 @@ class LogbookScreenshotTest {
         startsAt = startsAt,
         utcOffsetSeconds = 7_200,
         utcOffsetSource = "device",
-        durationSeconds = 3_000.0,
+        durationSeconds = durationSeconds,
         maxDepthM = maxDepthM,
         avgDepthM = maxDepthM / 2,
         site = site?.let { DiveListViewDivesItemSite(id = "site-$id", name = it) },

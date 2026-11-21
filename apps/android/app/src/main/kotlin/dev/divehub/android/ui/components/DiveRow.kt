@@ -3,6 +3,8 @@ package dev.divehub.android.ui.components
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -31,9 +33,11 @@ private const val StackedFiguresFontScale = 1.5f
  * the figures move under the facts, so the title never breaks inside a word. The whole row is one target and keeps
  * [Spacing.s3] above and below. Month headings sit above the rows, not inside one.
  *
- * [leading] is the row's number column, [footer] what sits under the facts inside the text column (the logbook's
- * profile sketch and its findings mark), so a narrow phone never squeezes the title to fit a third column.
+ * [leading] is the row's number column, [badge] a short state that sits with the facts (the logbook's findings mark),
+ * and [footer] what sits under them inside the text column (the profile sketch), so a narrow phone never squeezes the
+ * title to fit a third column.
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun DiveRow(
     title: String,
@@ -42,6 +46,7 @@ fun DiveRow(
     modifier: Modifier = Modifier,
     leading: (@Composable () -> Unit)? = null,
     facts: List<String> = emptyList(),
+    badge: (@Composable () -> Unit)? = null,
     avatars: (@Composable () -> Unit)? = null,
     footer: (@Composable () -> Unit)? = null,
     onClick: () -> Unit,
@@ -60,7 +65,7 @@ fun DiveRow(
                 verticalAlignment = Alignment.Top,
             ) {
                 leading?.invoke()
-                RowText(title, facts, avatars, footer, Modifier.weight(1f))
+                RowText(title, facts, badge, avatars, footer, Modifier.weight(1f))
             }
             Figures(depth, duration, Modifier.fillMaxWidth().padding(top = Spacing.s1))
         }
@@ -71,7 +76,7 @@ fun DiveRow(
             verticalAlignment = Alignment.Top,
         ) {
             leading?.invoke()
-            RowText(title, facts, avatars, footer, Modifier.weight(1f))
+            RowText(title, facts, badge, avatars, footer, Modifier.weight(1f))
             Figures(depth, duration)
         }
     }
@@ -81,22 +86,32 @@ fun DiveRow(
 private fun RowText(
     title: String,
     facts: List<String>,
+    badge: (@Composable () -> Unit)?,
     avatars: (@Composable () -> Unit)?,
     footer: (@Composable () -> Unit)?,
     modifier: Modifier,
 ) {
     Column(modifier) {
         Text(title, style = DiveHubText.bodyStrong)
-        if (facts.isNotEmpty()) {
+        if (facts.isNotEmpty() || badge != null) {
             Spacer(Modifier.height(Spacing.s1))
-            Text(
-                facts.joinToString(" · "),
-                modifier = Modifier.clearAndSetSemantics {
-                    contentDescription = facts.joinToString(", ")
-                },
-                style = DiveHubText.meta,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(Spacing.s2),
+                verticalArrangement = Arrangement.spacedBy(Spacing.s1),
+                itemVerticalAlignment = Alignment.CenterVertically,
+            ) {
+                if (facts.isNotEmpty()) {
+                    Text(
+                        facts.joinToString(" · "),
+                        modifier = Modifier.clearAndSetSemantics {
+                            contentDescription = facts.joinToString(", ")
+                        },
+                        style = DiveHubText.meta,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                badge?.invoke()
+            }
         }
         avatars?.let {
             Spacer(Modifier.height(Spacing.s1))
@@ -112,7 +127,7 @@ private fun RowText(
 @Composable
 private fun Figures(depth: String, duration: String, modifier: Modifier = Modifier) {
     Column(modifier, horizontalAlignment = Alignment.End) {
-        Text(depth, style = DiveHubText.body, textAlign = TextAlign.End)
-        Text(duration, style = DiveHubText.body, textAlign = TextAlign.End)
+        Text(depth, style = DiveHubText.figures, textAlign = TextAlign.End)
+        Text(duration, style = DiveHubText.figures, textAlign = TextAlign.End)
     }
 }
