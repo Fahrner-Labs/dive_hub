@@ -1,6 +1,8 @@
 package dev.divehub.android.ui.dive
 
 import android.content.Context
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.awaitEachGesture
@@ -11,6 +13,8 @@ import androidx.compose.foundation.gestures.horizontalDrag
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -18,21 +22,24 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -46,13 +53,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
@@ -64,13 +74,20 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.setProgress
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.filter
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.divehub.android.R
+import dev.divehub.android.ui.DiveHubColors
+import dev.divehub.android.ui.DiveHubText
 import dev.divehub.android.ui.DiveHubTopBar
-import dev.divehub.android.ui.SyncLine
 import dev.divehub.android.ui.Formats
+import dev.divehub.android.ui.Spacing
+import dev.divehub.android.ui.SyncLine
+import dev.divehub.android.ui.components.EmptyState
+import dev.divehub.android.ui.components.FactRow
+import dev.divehub.android.ui.components.Section
+import dev.divehub.android.ui.components.SkeletonBar
+import dev.divehub.android.ui.components.rememberReducedMotion
+import dev.divehub.android.ui.components.rememberSkeletonAlpha
 import dev.divehub.api.models.DiveView
 import dev.divehub.api.models.DiveViewCylindersItem
 import dev.divehub.api.models.DiveViewRecordingsItem
@@ -102,15 +119,42 @@ import dev.divehub.shared.dive.surfaceBreakSeconds
 import dev.divehub.shared.dive.surfaceBreakTotalSeconds
 import dev.divehub.shared.dive.temperatureSeries
 import dev.divehub.shared.dive.timeAtFraction
+import dev.divehub.shared.dive.TimeZoneOrigin
+import dev.divehub.shared.dive.timeZoneNote
 import dev.divehub.shared.logbook.ProviderDirectory
 import dev.divehub.shared.logbook.mixName
-import dev.divehub.shared.dive.timeZoneNote
-import dev.divehub.shared.dive.TimeZoneOrigin
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.filter
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.booleanOrNull
 import java.util.Locale
 
-/** The dive page route: the page itself holds no navigation state; back returns the logbook as it was. */
+/** The pager draws the current Dive in the middle, so either adjacent page is one swipe away. (FAH-344) */
+private const val CURRENT_DIVE_PAGE = 1
+private const val PAGER_PAGES = 3
+
+/** ADR 0064's content arrival: the skeleton gives way to the page over 150 ms, instantly with animations off. */
+private const val ContentRevealMs = 150
+
+/** At 150 % and above the top bar stacks its title under the navigation icons and a row stacks its marker. */
+private const val LargeTextFontScale = 1.5f
+
+/** The brief's named fixed dimensions, which are not spacing steps. */
+private val IconSize = 24.dp
+private val IconStroke = 2.dp
+private val ControlCorner = 8.dp
+private val ChartHeight = 160.dp
+private val ChartStroke = 2.dp
+private val ScrubDot = 5.dp
+
+/** The skeleton's pause before it replaces a blank sheet (ADR 0064's 150 ms). */
+private const val SkeletonDelayMs = 150L
+private const val SkeletonFactRows = 5
+
+/**
+ * The dive page route: the page itself holds no navigation state; back returns the logbook as it was.
+ */
 @Composable
 fun DiveDetailRoute(
     viewModel: DiveDetailViewModel,
@@ -132,6 +176,9 @@ fun DiveDetailRoute(
  * One Dive, read-only (client contract, Dives). Everything on it is drawn from [state], so the contract-visible
  * states — an edited value with what the recording says, the time-zone note, a Dive without a Recording, a water
  * mismatch and Surface breaks — have screenshot tests.
+ *
+ * One sheet under the frame's top bar (design-system-android.md): the facts lead, then titled sections separated by a
+ * hairline, with the profile as the one bold element.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -149,41 +196,31 @@ fun DiveDetailScreen(
     val previous = neighbours?.previous?.id
     val next = neighbours?.next?.id
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            DiveHubTopBar(
+            DiveTopBar(
                 title = state.dive?.let { title(context, it, locale) } ?: "",
                 onBack = onBack,
-                centerTitle = true,
-                actions = {
-                    // A Dive outside the list the page was opened from has no neighbours to name (ADR 0042).
-                    if (inList) {
-                        NeighbourAction(
-                            direction = Direction.Left,
-                            target = previous,
-                            label = stringResource(R.string.dive_previous),
-                            unavailable = stringResource(R.string.dive_previous_unavailable),
-                            onOpenDive = onOpenDive,
-                        )
-                        NeighbourAction(
-                            direction = Direction.Right,
-                            target = next,
-                            label = stringResource(R.string.dive_next),
-                            unavailable = stringResource(R.string.dive_next_unavailable),
-                            onOpenDive = onOpenDive,
-                        )
-                    }
-                },
+                inList = inList,
+                previous = previous,
+                next = next,
+                onOpenDive = onOpenDive,
             )
         },
     ) { padding ->
-        DivePager(
-            state = state,
-            units = units,
-            neighbours = neighbours,
-            onRetry = onRetry,
-            onOpenDive = onOpenDive,
+        Surface(
             modifier = Modifier.padding(padding).fillMaxSize(),
-        )
+            color = MaterialTheme.colorScheme.surface,
+        ) {
+            DivePager(
+                state = state,
+                units = units,
+                neighbours = neighbours,
+                onRetry = onRetry,
+                onOpenDive = onOpenDive,
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
     }
 }
 
@@ -239,6 +276,9 @@ private fun DivePager(
     }
 }
 
+/** Which of the screen's exclusive states is on stage; [Crossfade] fades the page in over the skeleton. */
+private enum class DivePhase { Loading, Offline, Error, Dive }
+
 @Composable
 private fun DiveContent(
     state: DiveDetailUiState,
@@ -246,32 +286,121 @@ private fun DiveContent(
     onRetry: () -> Unit,
     modifier: Modifier,
 ) {
-    val context = LocalContext.current
-    when {
-        state.loading && state.dive == null -> Loading(modifier)
-        state.offline && state.dive == null -> Notice(
-            modifier = modifier,
-            text = stringResource(R.string.dive_offline),
-            retry = stringResource(R.string.dive_retry),
-            onRetry = onRetry,
-        )
-        state.error != null && state.dive == null -> Notice(
-            modifier = modifier,
-            text = errorText(context, state.error),
-            retry = stringResource(R.string.dive_retry),
-            onRetry = onRetry,
-        )
-        state.dive != null -> DiveBody(state, state.dive, units, modifier)
+    val phase = when {
+        state.loading && state.dive == null -> DivePhase.Loading
+        state.offline && state.dive == null -> DivePhase.Offline
+        state.error != null && state.dive == null -> DivePhase.Error
+        state.dive != null -> DivePhase.Dive
+        else -> DivePhase.Loading
+    }
+    Crossfade(
+        targetState = phase,
+        modifier = modifier,
+        animationSpec = tween(if (rememberReducedMotion()) 0 else ContentRevealMs),
+        label = "dive content",
+    ) { shown ->
+        when (shown) {
+            DivePhase.Loading -> Loading(Modifier.fillMaxSize())
+            DivePhase.Offline -> NoContent(
+                modifier = Modifier.fillMaxSize(),
+                title = stringResource(R.string.dive_offline_title),
+                message = stringResource(R.string.dive_offline),
+                retry = stringResource(R.string.dive_retry),
+                onRetry = onRetry,
+            )
+            DivePhase.Error -> NoContent(
+                modifier = Modifier.fillMaxSize(),
+                title = if (state.error == "dive_not_found" || state.error == "not_found") {
+                    stringResource(R.string.dive_not_found_title)
+                } else {
+                    stringResource(R.string.dive_error_title)
+                },
+                message = errorText(LocalContext.current, state.error),
+                retry = stringResource(R.string.dive_retry),
+                onRetry = onRetry,
+            )
+            DivePhase.Dive -> state.dive?.let { DiveBody(state, it, units) }
+        }
     }
 }
-
-/** The pager draws the current Dive in the middle, so either adjacent page is one swipe away. (FAH-344) */
-private const val CURRENT_DIVE_PAGE = 1
-private const val PAGER_PAGES = 3
 
 private fun title(context: Context, dive: DiveView, locale: Locale): String = dive.values.number?.let {
     context.getString(R.string.dive_title_number, it)
 } ?: DiveDetailText.start(context, dive.values.startsAt.at, dive.values.startsAt.utcOffsetSeconds, locale)
+
+/**
+ * The Dive page's top bar: the title centred between the back arrow and the neighbour chevrons (ADR 0018, 2026-11-20
+ * amendment). At 150 % and above the title stacks under the icons, because "Tauchgang 42" at 200 % no longer fits
+ * between them; the page title grows instead of breaking inside a word.
+ */
+@Composable
+private fun DiveTopBar(
+    title: String,
+    onBack: () -> Unit,
+    inList: Boolean,
+    previous: String?,
+    next: String?,
+    onOpenDive: (String) -> Unit,
+) {
+    val titleModifier = Modifier.semantics { heading() }
+    val neighbours: @Composable () -> Unit = {
+        // A Dive outside the list the page was opened from has no neighbours to name (ADR 0042).
+        if (inList) {
+            NeighbourAction(
+                direction = Direction.Left,
+                target = previous,
+                label = stringResource(R.string.dive_previous),
+                unavailable = stringResource(R.string.dive_previous_unavailable),
+                onOpenDive = onOpenDive,
+            )
+            NeighbourAction(
+                direction = Direction.Right,
+                target = next,
+                label = stringResource(R.string.dive_next),
+                unavailable = stringResource(R.string.dive_next_unavailable),
+                onOpenDive = onOpenDive,
+            )
+        }
+    }
+    if (LocalDensity.current.fontScale >= LargeTextFontScale) {
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .background(MaterialTheme.colorScheme.background)
+                .statusBarsPadding(),
+        ) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = onBack) {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_arrow_back),
+                        contentDescription = stringResource(R.string.back),
+                    )
+                }
+                Spacer(Modifier.weight(1f))
+                neighbours()
+            }
+            Text(
+                title,
+                modifier = titleModifier.padding(horizontal = Spacing.s4, vertical = Spacing.s2),
+                style = DiveHubText.section,
+            )
+        }
+    } else {
+        DiveHubTopBar(
+            title = title,
+            onBack = onBack,
+            centerTitle = true,
+            titleModifier = titleModifier,
+            colors = TopAppBarDefaults.topAppBarColors(
+                containerColor = MaterialTheme.colorScheme.background,
+                titleContentColor = MaterialTheme.colorScheme.onBackground,
+                navigationIconContentColor = MaterialTheme.colorScheme.onBackground,
+                actionIconContentColor = MaterialTheme.colorScheme.onBackground,
+            ),
+            actions = { neighbours() },
+        )
+    }
+}
 
 private fun errorText(context: Context, code: String?): String = when (code) {
     "dive_not_found", "not_found" -> context.getString(R.string.dive_error_not_found)
@@ -280,29 +409,57 @@ private fun errorText(context: Context, code: String?): String = when (code) {
     else -> context.getString(R.string.error_unknown)
 }
 
+/** The page's settling shape in flat bars: the facts lead, then a section and its rows. */
 @Composable
 private fun Loading(modifier: Modifier) {
     val label = stringResource(R.string.loading)
-    Box(modifier, contentAlignment = Alignment.Center) {
-        CircularProgressIndicator(Modifier.semantics { contentDescription = label })
+    var showBars by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        delay(SkeletonDelayMs)
+        showBars = true
+    }
+    val alpha = rememberSkeletonAlpha("dive skeleton")
+    Column(
+        modifier
+            .fillMaxSize()
+            .padding(horizontal = Spacing.s4)
+            .semantics { contentDescription = label },
+    ) {
+        Spacer(Modifier.height(Spacing.s4))
+        if (showBars) {
+            SkeletonBar(Modifier.fillMaxWidth(0.3f), alpha = alpha)
+            Spacer(Modifier.height(Spacing.s5))
+            repeat(SkeletonFactRows) { SkeletonFactRow(alpha) }
+            Spacer(Modifier.height(Spacing.s5))
+            SkeletonBar(Modifier.fillMaxWidth(0.45f), alpha = alpha)
+            Spacer(Modifier.height(Spacing.s2))
+            repeat(2) { SkeletonFactRow(alpha) }
+        }
     }
 }
 
 @Composable
-private fun Notice(modifier: Modifier, text: String, retry: String, onRetry: () -> Unit) {
-    Column(
-        modifier.padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
+private fun SkeletonFactRow(alpha: Float) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .padding(vertical = Spacing.s3),
+        horizontalArrangement = Arrangement.spacedBy(Spacing.s4),
     ) {
-        Text(
-            text,
+        SkeletonBar(Modifier.weight(0.4f), alpha = alpha)
+        SkeletonBar(Modifier.weight(0.6f), alpha = alpha)
+    }
+}
+
+@Composable
+private fun NoContent(modifier: Modifier, title: String, message: String, retry: String, onRetry: () -> Unit) {
+    Box(modifier, contentAlignment = Alignment.Center) {
+        EmptyState(
             modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
-            style = MaterialTheme.typography.bodyLarge,
-            textAlign = TextAlign.Center,
+            title = title,
+            message = message,
+            action = { InkButton(retry, onRetry) },
         )
-        Spacer(Modifier.height(16.dp))
-        Button(onClick = onRetry) { Text(retry) }
     }
 }
 
@@ -311,14 +468,13 @@ private fun DiveBody(
     state: DiveDetailUiState,
     dive: DiveView,
     units: String?,
-    modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
     val locale = context.resources.configuration.locales[0] ?: Locale.getDefault()
     val imperial = Formats.imperial(units, locale)
     val primary = profileRecording(dive.recordings)
 
-    LazyColumn(modifier.testTag("dive_scroll")) {
+    LazyColumn(Modifier.fillMaxSize().testTag("dive_scroll")) {
         item { SyncLine(state.syncedAt, state.connected, state.offline, R.string.dive_offline_cached) }
         item { Facts(dive, locale, imperial) }
         item { Cylinders(dive, locale, imperial) }
@@ -361,8 +517,8 @@ private enum class Direction { Back, Left, Right }
 @Composable
 private fun DirectionIcon(direction: Direction) {
     val color = LocalContentColor.current
-    Canvas(Modifier.size(24.dp)) {
-        val stroke = Stroke(width = 2.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round)
+    Canvas(Modifier.size(IconSize)) {
+        val stroke = Stroke(width = IconStroke.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round)
         val width = size.width
         val height = size.height
         val path = Path().apply {
@@ -390,11 +546,15 @@ private fun DirectionIcon(direction: Direction) {
     }
 }
 
+/**
+ * What the Dive was, at a glance: the page's lead, before the first section's hairline. Every value is a [FactRow],
+ * so figures line up down the column and an edited value keeps its mark and note under it.
+ */
 @Composable
 private fun Facts(dive: DiveView, locale: Locale, imperial: Boolean) {
     val context = LocalContext.current
     val values = dive.values
-    Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+    Column(Modifier.fillMaxWidth().padding(horizontal = Spacing.s4)) {
         FactRow(
             label = stringResource(R.string.dive_number),
             value = values.number?.let { Formats.number(locale, it) } ?: "–",
@@ -403,7 +563,10 @@ private fun Facts(dive: DiveView, locale: Locale, imperial: Boolean) {
             label = stringResource(R.string.dive_start),
             value = DiveDetailText.start(context, values.startsAt.at, values.startsAt.utcOffsetSeconds, locale),
             mark = DiveDetailText.editedValue(context, dive.markOf(DiveValue.STARTS_AT), DiveValue.STARTS_AT, locale, imperial),
-            note = timeZoneNote(dive.utcOffsetSource, dive.startSetByHand)?.let { timeZoneText(context, it) },
+            notes = listOfNotNull(
+                timeZoneNote(dive.utcOffsetSource, dive.startSetByHand)?.let { timeZoneText(context, it) }
+                    ?.takeIf { it.isNotEmpty() },
+            ),
         )
         val surface = profileRecording(dive.recordings)?.let(::surfaceBreakTotalSeconds) ?: 0.0
         FactRow(
@@ -447,32 +610,29 @@ private fun Facts(dive: DiveView, locale: Locale, imperial: Boolean) {
 private fun Water(dive: DiveView, locale: Locale) {
     val context = LocalContext.current
     val mismatch = dive.waterMismatch
+    val notes = if (mismatch != null) {
+        listOf(
+            context.getString(
+                R.string.dive_water_mismatch,
+                DiveDetailText.waterInSentence(context, mismatch.computer),
+                DiveDetailText.waterInSentence(context, mismatch.site),
+            ),
+            DiveDetailText.depthReadingText(context, depthReading(mismatch.depthPercent), locale),
+        )
+    } else {
+        listOf(
+            when {
+                dive.site == null -> context.getString(R.string.dive_choose_site_for_water)
+                dive.waterType == null -> context.getString(R.string.dive_water_unknown)
+                else -> context.getString(R.string.dive_water_from_site)
+            },
+        )
+    }
     FactRow(
         label = stringResource(R.string.dive_water_type),
         value = dive.waterType?.let { DiveDetailText.waterName(context, it) } ?: stringResource(R.string.dive_no_water_type),
-        note = when {
-            mismatch != null -> null
-            dive.site == null -> context.getString(R.string.dive_choose_site_for_water)
-            dive.waterType == null -> context.getString(R.string.dive_water_unknown)
-            else -> context.getString(R.string.dive_water_from_site)
-        },
+        notes = notes,
     )
-    if (mismatch != null) {
-        Column(Modifier.padding(start = 150.dp, bottom = 8.dp)) {
-            Text(
-                context.getString(
-                    R.string.dive_water_mismatch,
-                    DiveDetailText.waterInSentence(context, mismatch.computer),
-                    DiveDetailText.waterInSentence(context, mismatch.site),
-                ),
-                style = MaterialTheme.typography.bodyMedium,
-            )
-            Text(
-                DiveDetailText.depthReadingText(context, depthReading(mismatch.depthPercent), locale),
-                style = MaterialTheme.typography.bodyMedium,
-            )
-        }
-    }
 }
 
 /** The Dive's Cylinders in their order with the SAC the server computed (ADR 0045), or why it has none. */
@@ -480,48 +640,39 @@ private fun Water(dive: DiveView, locale: Locale) {
 private fun Cylinders(dive: DiveView, locale: Locale, imperial: Boolean) {
     if (dive.cylinders.isEmpty() && dive.sac == null && dive.sacMissing == null) return
     val context = LocalContext.current
-    SectionHeading(stringResource(R.string.dive_cylinders))
-    Column(Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) {
+    Section(
+        stringResource(R.string.dive_cylinders),
+        Modifier.fillMaxWidth().padding(horizontal = Spacing.s4),
+    ) {
         dive.cylinders.forEachIndexed { index, cylinder ->
-            Text(
-                stringResource(R.string.dive_cylinder_n, index + 1),
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            FactRow(
+                label = stringResource(R.string.dive_cylinder_n, index + 1),
+                value = cylinderLine(context, cylinder, locale, imperial),
+                notes = buildList {
+                    add(cylinderPressures(context, cylinder, locale, imperial))
+                    if (cylinder.fromPod) add(stringResource(R.string.dive_cylinder_from_pod))
+                },
             )
-            Text(cylinderLine(context, cylinder, locale, imperial), style = MaterialTheme.typography.bodyLarge)
-            Text(
-                cylinderPressures(context, cylinder, locale, imperial),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            if (cylinder.fromPod) {
-                Text(
-                    stringResource(R.string.dive_cylinder_from_pod),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            Spacer(Modifier.height(8.dp))
         }
         val sac = dive.sac
         val sacMissing = dive.sacMissing
         when {
-            sac != null -> {
-                Text(
-                    context.getString(R.string.dive_sac_litres, Formats.decimal(locale, sac.litresPerMinute, 1)),
-                    style = MaterialTheme.typography.bodyLarge,
-                )
-                sac.barPerMinute?.let { barPerMinute ->
-                    Text(
-                        context.getString(R.string.dive_sac_bar, Formats.pressureRate(context, barPerMinute, locale, imperial)),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+            sac != null -> FactRow(
+                label = stringResource(R.string.dive_sac),
+                value = stringResource(
+                    R.string.dive_sac_litres_value,
+                    Formats.decimal(locale, sac.litresPerMinute, 1),
+                ),
+                note = sac.barPerMinute?.let {
+                    stringResource(
+                        R.string.dive_sac_bar_value,
+                        Formats.pressureRate(context, it, locale, imperial),
                     )
-                }
-            }
-            sacMissing != null -> Text(
-                sacMissingText(context, sacMissing),
-                style = MaterialTheme.typography.bodyLarge,
+                },
+            )
+            sacMissing != null -> FactRow(
+                label = stringResource(R.string.dive_sac),
+                value = sacMissingText(context, sacMissing),
             )
         }
     }
@@ -574,8 +725,10 @@ private fun Weighting(dive: DiveView, locale: Locale, imperial: Boolean) {
     val feedback = dive.weightingFeedback
     if (suit == null && lead.isEmpty() && feedback == null) return
     val context = LocalContext.current
-    SectionHeading(stringResource(R.string.dive_weighting))
-    Column(Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) {
+    Section(
+        stringResource(R.string.dive_weighting),
+        Modifier.fillMaxWidth().padding(horizontal = Spacing.s4),
+    ) {
         suit?.let {
             FactRow(label = stringResource(R.string.dive_suit), value = suitText(context, locale, it))
         }
@@ -621,28 +774,11 @@ private fun feedbackText(
 @Composable
 private fun Notes(notes: String?) {
     if (notes.isNullOrBlank()) return
-    SectionHeading(stringResource(R.string.dive_notes))
-    Text(
-        notes,
-        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
-        style = MaterialTheme.typography.bodyLarge,
-    )
-}
-
-@Composable
-private fun FactRow(label: String, value: String, mark: String? = null, note: String? = null) {
-    Row(Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
-        Text(
-            label,
-            modifier = Modifier.width(150.dp),
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Column(Modifier.weight(1f)) {
-            Text(value, style = MaterialTheme.typography.titleMedium)
-            mark?.let { Text(it, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
-            note?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
-        }
+    Section(
+        stringResource(R.string.dive_notes),
+        Modifier.fillMaxWidth().padding(horizontal = Spacing.s4),
+    ) {
+        Text(notes, style = DiveHubText.body)
     }
 }
 
@@ -658,41 +794,63 @@ private fun timeZoneText(context: Context, origin: TimeZoneOrigin): String = whe
 @Composable
 private fun Recordings(dive: DiveView, locale: Locale, providers: ProviderDirectory) {
     val context = LocalContext.current
-    SectionHeading(stringResource(R.string.dive_recordings))
-    val computers = computerRecordings(dive.recordings)
-    if (computers.isEmpty()) {
-        Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+    Section(
+        stringResource(R.string.dive_recordings),
+        Modifier.fillMaxWidth().padding(horizontal = Spacing.s4),
+    ) {
+        val computers = computerRecordings(dive.recordings)
+        if (computers.isEmpty()) {
             Text(
                 dive.fromProvider?.let { provider ->
                     context.getString(R.string.dive_no_recording_from, providers.nameOf(provider))
                 } ?: context.getString(R.string.dive_no_recording),
-                style = MaterialTheme.typography.bodyLarge,
+                style = DiveHubText.body,
             )
             Text(
                 stringResource(R.string.dive_no_recording_next),
-                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.padding(top = Spacing.s1),
+                style = DiveHubText.meta,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+            return@Section
         }
-        return
-    }
-    Column(Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) {
-        computers.forEach { recording ->
+        computers.forEachIndexed { index, recording ->
+            if (index > 0) {
+                Spacer(Modifier.height(Spacing.s3))
+                HorizontalDivider(color = DiveHubColors.border)
+                Spacer(Modifier.height(Spacing.s3))
+            }
             val name = recordingName(context, dive, recording)
-            Row(Modifier.fillMaxWidth().padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text(name, modifier = Modifier.weight(1f), style = MaterialTheme.typography.titleMedium)
-                if (recording.isPrimary) {
-                    Text(
-                        stringResource(R.string.dive_primary),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.primary,
-                    )
+            if (LocalDensity.current.fontScale >= LargeTextFontScale) {
+                // The marker goes under the name, so a long device name keeps the whole width at 200 %.
+                Column {
+                    Text(name, style = DiveHubText.bodyStrong)
+                    if (recording.isPrimary) {
+                        Text(
+                            stringResource(R.string.dive_primary),
+                            modifier = Modifier.padding(top = Spacing.s1),
+                            style = DiveHubText.metaStrong,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+            } else {
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Text(name, modifier = Modifier.weight(1f), style = DiveHubText.bodyStrong)
+                    if (recording.isPrimary) {
+                        Text(
+                            stringResource(R.string.dive_primary),
+                            style = DiveHubText.metaStrong,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                 }
             }
             recording.summary.waterType?.let {
                 Text(
                     stringResource(R.string.dive_computer_water) + ": " + DiveDetailText.waterName(context, it),
-                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(top = Spacing.s1),
+                    style = DiveHubText.meta,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
@@ -700,8 +858,8 @@ private fun Recordings(dive: DiveView, locale: Locale, providers: ProviderDirect
             if (parts.isNotEmpty()) {
                 Text(
                     stringResource(R.string.dive_parts),
-                    modifier = Modifier.padding(top = 6.dp),
-                    style = MaterialTheme.typography.labelLarge,
+                    modifier = Modifier.padding(top = Spacing.s3),
+                    style = DiveHubText.label,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 parts.forEach { part ->
@@ -712,11 +870,10 @@ private fun Recordings(dive: DiveView, locale: Locale, providers: ProviderDirect
                             DiveDetailText.start(context, part.startsAt, dive.values.startsAt.utcOffsetSeconds, locale),
                             DiveDetailText.duration(context, part.durationSeconds),
                         ),
-                        style = MaterialTheme.typography.bodySmall,
+                        style = DiveHubText.meta,
                     )
                 }
             }
-            HorizontalDivider(Modifier.padding(top = 8.dp), color = MaterialTheme.colorScheme.surfaceVariant)
         }
     }
 }
@@ -734,46 +891,42 @@ private fun Profile(
     imperial: Boolean,
 ) {
     val context = LocalContext.current
-    SectionHeading(stringResource(R.string.dive_profile))
-    val samples = state.samples
-    val depth = samples?.let(::depthSeries)
-    val summary = if (samples != null && depth != null) summarize(depth, temperatureSeries(samples)) else null
-    if (depth == null || summary == null) {
-        if (state.samplesPending) {
-            Text(
-                stringResource(R.string.dive_profile_pending),
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            return
+    Section(
+        stringResource(R.string.dive_profile),
+        Modifier.fillMaxWidth().padding(horizontal = Spacing.s4),
+    ) {
+        val samples = state.samples
+        val depth = samples?.let(::depthSeries)
+        val summary = if (samples != null && depth != null) summarize(depth, temperatureSeries(samples)) else null
+        if (depth == null || summary == null) {
+            if (state.samplesPending) {
+                Text(
+                    stringResource(R.string.dive_profile_pending),
+                    style = DiveHubText.meta,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                return@Section
+            }
+            val failure = when {
+                state.samplesError != null -> errorText(context, state.samplesError)
+                samples != null -> context.getString(R.string.dive_profile_failed)
+                else -> return@Section
+            }
+            Text(failure, style = DiveHubText.meta, color = MaterialTheme.colorScheme.error)
+            return@Section
         }
-        val failure = when {
-            state.samplesError != null -> errorText(context, state.samplesError)
-            samples != null -> context.getString(R.string.dive_profile_failed)
-            else -> return
+        val summaryText = profileSummaryText(context, summary, locale, imperial)
+        val temperature = temperatureSeries(samples)
+        val pressures = pressureSeries(samples)
+        val podGases = recording.summary.gases.orEmpty().filter { it.startPressureBar != null || it.endPressureBar != null }
+        val pressureTanks = pressures.mapIndexed { index, series ->
+            tankLabel(pressures.size, index, podGases.getOrNull(index), locale) to series
         }
-        Text(
-            failure,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.error,
-        )
-        return
-    }
-    val summaryText = profileSummaryText(context, summary, locale, imperial)
-    val temperature = temperatureSeries(samples)
-    val pressures = pressureSeries(samples)
-    val podGases = recording.summary.gases.orEmpty().filter { it.startPressureBar != null || it.endPressureBar != null }
-    val pressureTanks = pressures.mapIndexed { index, series ->
-        tankLabel(pressures.size, index, podGases.getOrNull(index), locale) to series
-    }
-    var scrubFraction by remember(depth) { mutableStateOf<Float?>(null) }
-    val spanMs = depth.offsetsMs.lastOrNull() ?: 0
-    val scrubIndex = scrubFraction?.let { nearestIndex(depth, timeAtFraction(it.toDouble(), spanMs)) }
-    val scrubOffsetMs = scrubIndex?.let { depth.offsetsMs[it] }
-    val readingMs = scrubOffsetMs ?: depth.offsetsMs.firstOrNull() ?: 0
-    Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+        var scrubFraction by remember(depth) { mutableStateOf<Float?>(null) }
+        val spanMs = depth.offsetsMs.lastOrNull() ?: 0
+        val scrubIndex = scrubFraction?.let { nearestIndex(depth, timeAtFraction(it.toDouble(), spanMs)) }
+        val scrubOffsetMs = scrubIndex?.let { depth.offsetsMs[it] }
+        val readingMs = scrubOffsetMs ?: depth.offsetsMs.firstOrNull() ?: 0
         ScrubReadout(
             offsetMs = readingMs,
             depthM = nearest(depth, readingMs),
@@ -789,11 +942,16 @@ private fun Profile(
             scrubMs = scrubOffsetMs,
             onScrub = { scrubFraction = it },
         )
-        Text(summaryText, modifier = Modifier.padding(top = 8.dp), style = MaterialTheme.typography.bodyMedium)
+        Text(
+            summaryText,
+            modifier = Modifier.padding(top = Spacing.s2),
+            style = DiveHubText.body,
+        )
         surfaceBreakSeconds(recording).forEach { seconds ->
             Text(
                 context.getString(R.string.dive_surface_break, DiveDetailText.duration(context, seconds)),
-                style = MaterialTheme.typography.labelMedium,
+                modifier = Modifier.padding(top = Spacing.s1),
+                style = DiveHubText.meta,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
@@ -802,6 +960,7 @@ private fun Profile(
 }
 
 /** What the touched moment of the profile reads, announced as a live region for TalkBack (FAH-337). */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun ScrubReadout(
     offsetMs: Int,
@@ -815,38 +974,31 @@ private fun ScrubReadout(
     Column(
         Modifier
             .fillMaxWidth()
-            .padding(bottom = 4.dp)
+            .padding(bottom = Spacing.s1)
             .semantics(mergeDescendants = true) { liveRegion = LiveRegionMode.Polite },
     ) {
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        FlowRow(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(Spacing.s3),
+            verticalArrangement = Arrangement.spacedBy(Spacing.s2),
+        ) {
             Readout(
                 label = stringResource(R.string.dive_time),
                 value = DiveDetailText.elapsed(offsetMs / 1000.0, locale),
-                modifier = Modifier.weight(1f),
             )
             Readout(
                 label = stringResource(R.string.dive_depth),
                 value = depthM?.let { DiveDetailText.depth(context, it, locale, imperial) } ?: "–",
-                modifier = Modifier.weight(1f),
             )
             Readout(
                 label = stringResource(R.string.dive_temperature),
                 value = temperatureC?.let { DiveDetailText.temperature(context, it, locale, imperial) } ?: "–",
-                modifier = Modifier.weight(1f),
             )
-        }
-        if (tanks.isNotEmpty()) {
-            Row(
-                Modifier.fillMaxWidth().padding(top = 4.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                tanks.forEach { (label, series) ->
-                    Readout(
-                        label = label,
-                        value = nearest(series, offsetMs)?.let { DiveDetailText.pressure(context, it, locale, imperial) } ?: "–",
-                        modifier = Modifier.weight(1f),
-                    )
-                }
+            tanks.forEach { (label, series) ->
+                Readout(
+                    label = label,
+                    value = nearest(series, offsetMs)?.let { DiveDetailText.pressure(context, it, locale, imperial) } ?: "–",
+                )
             }
         }
     }
@@ -871,10 +1023,10 @@ private fun tankLabel(
 }
 
 @Composable
-private fun Readout(label: String, value: String, modifier: Modifier = Modifier) {
-    Column(modifier) {
-        Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text(value, style = MaterialTheme.typography.titleSmall)
+private fun Readout(label: String, value: String) {
+    Column {
+        Text(label, style = DiveHubText.meta, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(value, style = DiveHubText.bodyStrong)
     }
 }
 
@@ -907,8 +1059,10 @@ private fun ProfileChart(
     scrubMs: Int?,
     onScrub: (Float) -> Unit,
 ) {
-    val line = MaterialTheme.colorScheme.primary
-    val area = MaterialTheme.colorScheme.primaryContainer
+    // The profile is the one place the depth ramp is drawn (design-system-android.md): shallow at the surface,
+    // deep at the bottom, both the web's data tokens.
+    val line = DiveHubColors.depthDeep
+    val area = Brush.verticalGradient(listOf(DiveHubColors.depthShallow, DiveHubColors.depthDeep))
     val surface = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.18f)
     val scrub = MaterialTheme.colorScheme.onSurface
     val span = (depth.offsetsMs.lastOrNull() ?: 0).toFloat().takeIf { it > 0f } ?: 1f
@@ -916,8 +1070,8 @@ private fun ProfileChart(
     Canvas(
         Modifier
             .fillMaxWidth()
-            .height(160.dp)
-            .clip(RoundedCornerShape(8.dp))
+            .height(ChartHeight)
+            .clip(RoundedCornerShape(ControlCorner))
             .background(MaterialTheme.colorScheme.surfaceVariant)
             .testTag("dive_profile_chart")
             .pointerInput(depth) {
@@ -958,6 +1112,7 @@ private fun ProfileChart(
         val points = depth.offsetsMs.mapIndexed { index, offset ->
             Offset(
                 x = (offset / span).coerceIn(0f, 1f) * width,
+                // Deeper is lower on the chart, so the water's ramp runs shallow to deep down the page.
                 y = ((depth.values.getOrNull(index) ?: 0.0).toFloat() / deepest).coerceIn(0f, 1f) * (height - 2f),
             )
         }
@@ -982,15 +1137,15 @@ private fun ProfileChart(
                 size = Size((band.toFraction - band.fromFraction).toFloat() * width, height),
             )
         }
-        drawPath(outline, line, style = Stroke(width = 2.dp.toPx()))
+        drawPath(outline, line, style = Stroke(width = ChartStroke.toPx()))
         // The scrub line goes over the surface bands and the profile, on the sample the readout names (FAH-337).
         if (scrubMs != null) {
             val x = (scrubMs / span).coerceIn(0f, 1f) * width
-            drawLine(scrub, Offset(x, 0f), Offset(x, height), strokeWidth = 2.dp.toPx())
+            drawLine(scrub, Offset(x, 0f), Offset(x, height), strokeWidth = ChartStroke.toPx())
             val index = nearestIndex(depth, scrubMs)
             if (index != null) {
                 val y = ((depth.values.getOrNull(index) ?: 0.0).toFloat() / deepest).coerceIn(0f, 1f) * (height - 2f)
-                drawCircle(line, radius = 5.dp.toPx(), center = Offset(x, y))
+                drawCircle(line, radius = ScrubDot.toPx(), center = Offset(x, y))
             }
         }
     }
@@ -1006,19 +1161,27 @@ private fun ProfileTable(
 ) {
     val context = LocalContext.current
     var open by remember { mutableStateOf(false) }
-    TextButton(onClick = { open = !open }) { Text(stringResource(R.string.dive_profile_table)) }
+    QuietButton(stringResource(R.string.dive_profile_table), onClick = { open = !open })
     if (!open) return
     val rows = perMinute(depth, temperature)
     Column(Modifier.fillMaxWidth()) {
-        Row(Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .padding(top = Spacing.s2, bottom = Spacing.s1),
+        ) {
             TableHead(stringResource(R.string.dive_time), Modifier.weight(1f))
             TableHead(stringResource(R.string.dive_depth), Modifier.weight(1f))
             TableHead(stringResource(R.string.dive_temperature), Modifier.weight(1f))
             tanks.forEach { (label, _) -> TableHead(label, Modifier.weight(1f)) }
         }
-        HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant)
+        HorizontalDivider(color = DiveHubColors.border)
         rows.forEach { row ->
-            Row(Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = Spacing.s1),
+            ) {
                 TableCell(DiveDetailText.duration(context, row.minute * 60.0), Modifier.weight(1f))
                 TableCell(DiveDetailText.depth(context, row.depthM, locale, imperial), Modifier.weight(1f))
                 TableCell(
@@ -1038,23 +1201,25 @@ private fun ProfileTable(
 
 @Composable
 private fun TableHead(text: String, modifier: Modifier) {
-    Text(text, modifier = modifier, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    Text(text, modifier = modifier, style = DiveHubText.metaStrong, color = MaterialTheme.colorScheme.onSurfaceVariant)
 }
 
 @Composable
 private fun TableCell(text: String, modifier: Modifier) {
-    Text(text, modifier = modifier, style = MaterialTheme.typography.bodySmall)
+    Text(text, modifier = modifier, style = DiveHubText.meta)
 }
 
 @Composable
 private fun Participants(dive: DiveView) {
     val context = LocalContext.current
-    SectionHeading(stringResource(R.string.dive_participants))
-    Column(Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) {
+    Section(
+        stringResource(R.string.dive_participants),
+        Modifier.fillMaxWidth().padding(horizontal = Spacing.s4),
+    ) {
         dive.participants.forEach { person ->
             Text(
                 context.getString(R.string.dive_participant, person.name, DiveDetailText.role(context, person.role)),
-                style = MaterialTheme.typography.bodyLarge,
+                style = DiveHubText.body,
             )
         }
     }
@@ -1064,22 +1229,36 @@ private fun Participants(dive: DiveView) {
 @Composable
 private fun Position(latitude: Double, longitude: Double, locale: Locale) {
     val context = LocalContext.current
-    SectionHeading(stringResource(R.string.dive_position))
-    Text(
-        DiveDetailText.position(context, latitude, longitude, locale),
-        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
-        style = MaterialTheme.typography.bodyLarge,
-    )
+    Section(
+        stringResource(R.string.dive_position),
+        Modifier.fillMaxWidth().padding(horizontal = Spacing.s4),
+    ) {
+        Text(DiveDetailText.position(context, latitude, longitude, locale), style = DiveHubText.body)
+    }
 }
 
+/** The brief's ink primary button: ink in the light, the inverted ink in the dark, with the control radius. */
 @Composable
-private fun SectionHeading(text: String) {
-    Text(
-        text,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 4.dp)
-            .semantics { heading() },
-        style = MaterialTheme.typography.titleMedium,
-    )
+private fun InkButton(text: String, onClick: () -> Unit) {
+    Button(
+        onClick = onClick,
+        shape = RoundedCornerShape(ControlCorner),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = DiveHubColors.ink,
+            contentColor = DiveHubColors.onInk,
+        ),
+    ) {
+        Text(text)
+    }
+}
+
+/** A text-like action: no fill and no accent, because the accent means a link, focus or data. */
+@Composable
+private fun QuietButton(text: String, onClick: () -> Unit) {
+    TextButton(
+        onClick = onClick,
+        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.onSurface),
+    ) {
+        Text(text)
+    }
 }

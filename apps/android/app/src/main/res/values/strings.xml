@@ -169,11 +169,17 @@
     <string name="dive_position_east">%1$s° E</string>
     <string name="dive_position_west">%1$s° W</string>
 
-    <string name="dive_offline">No connection. Check your connection and try again.</string>
+    <string name="dive_offline">Check your connection and try again.</string>
     <string name="dive_offline_cached">No connection. Showing this dive synced as of %1$s.</string>
     <string name="dive_profile_pending">The depth profile is still syncing; it appears when the sync finishes.</string>
     <string name="dive_retry">Try again</string>
+    <string name="dive_offline_title">No connection</string>
+    <string name="dive_error_title">Something went wrong</string>
+    <string name="dive_not_found_title">Dive not found</string>
     <string name="dive_error_not_found">This dive doesn’t exist or isn’t yours.</string>
+    <string name="dive_sac">SAC</string>
+    <string name="dive_sac_litres_value">%1$s L/min</string>
+    <string name="dive_sac_bar_value">%1$s/min</string>
 
     <string name="sync_last">Last synced %1$s.</string>
     <string name="sync_date_pattern">d MMM yyyy, HH:mm</string>
