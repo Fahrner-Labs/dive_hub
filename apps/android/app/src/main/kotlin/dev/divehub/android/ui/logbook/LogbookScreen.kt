@@ -1,6 +1,7 @@
 package dev.divehub.android.ui.logbook
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -12,6 +13,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -21,12 +23,15 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -56,7 +61,10 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.divehub.android.R
@@ -173,11 +181,17 @@ private fun FilterAction(activeCount: Int, onClick: () -> Unit) {
             badge = {
                 if (activeCount > 0) {
                     Badge(
-                        modifier = Modifier.clearAndSetSemantics {},
+                        modifier = Modifier
+                            .offset(x = 4.dp, y = (-4).dp)
+                            .border(1.dp, MaterialTheme.colorScheme.outline, CircleShape)
+                            .clearAndSetSemantics {},
                         containerColor = MaterialTheme.colorScheme.surfaceVariant,
                         contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
                     ) {
-                        Text(activeCount.toString())
+                        Text(
+                            activeCount.toString(),
+                            style = MaterialTheme.typography.labelMedium.copy(fontFeatureSettings = "tnum"),
+                        )
                     }
                 }
             },
@@ -219,7 +233,7 @@ private fun FilterSheet(
             Text(
                 stringResource(R.string.logbook_show_only),
                 modifier = Modifier.semantics { heading() },
-                style = MaterialTheme.typography.titleMedium,
+                style = MaterialTheme.typography.titleLarge,
             )
             if (unavailable) {
                 Text(
@@ -430,6 +444,7 @@ private fun Filters(
     onToggle: (LogbookFilter) -> Unit,
 ) {
     val context = LocalContext.current
+    val outline = MaterialTheme.colorScheme.outline
     FlowRow(
         Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -439,7 +454,38 @@ private fun Filters(
             FilterChip(
                 selected = chip.applied,
                 onClick = { onToggle(chip.filter) },
-                label = { Text("${LogbookText.filterName(context, chip.filter, connected)} · ${chip.count}") },
+                shape = CircleShape,
+                border = FilterChipDefaults.filterChipBorder(
+                    enabled = true,
+                    selected = chip.applied,
+                    borderColor = outline,
+                    selectedBorderColor = outline,
+                    borderWidth = 1.dp,
+                    selectedBorderWidth = 1.dp,
+                ),
+                leadingIcon = if (chip.applied) {
+                    {
+                        Icon(
+                            Icons.Filled.Check,
+                            contentDescription = null,
+                            modifier = Modifier.size(FilterChipDefaults.IconSize),
+                        )
+                    }
+                } else {
+                    null
+                },
+                label = {
+                    Text(
+                        buildAnnotatedString {
+                            append(LogbookText.filterName(context, chip.filter, connected))
+                            withStyle(SpanStyle(color = MaterialTheme.colorScheme.onSurfaceVariant)) {
+                                append(" · ${chip.count}")
+                            }
+                        },
+                        color = MaterialTheme.colorScheme.onSurface,
+                        style = MaterialTheme.typography.labelLarge.copy(fontFeatureSettings = "tnum"),
+                    )
+                },
             )
         }
     }

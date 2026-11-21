@@ -1,15 +1,19 @@
 package dev.divehub.android.ui.logbook
 
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasProgressBarRangeInfo
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import com.github.takahirom.roborazzi.captureRoboImage
 import dev.divehub.android.ui.DiveHubTheme
@@ -84,6 +88,14 @@ class LogbookScreenshotTest {
     }
 
     @Test
+    fun `an applied filter is checked in the sheet`() {
+        render(page(dives = listOf(noRecording), filters = setOf(LogbookFilter.NO_RECORDING)))
+        compose.onNodeWithContentDescription("Filters, 1 active").performClick()
+        compose.onNodeWithText("No recording · 3").assertIsSelected()
+        capture("logbook_filters_applied.png")
+    }
+
+    @Test
     fun `the offline filter note lives in the sheet`() {
         render(
             page(dives = listOf(reef), filters = setOf(LogbookFilter.CHANGED_SINCE_SENT))
@@ -93,6 +105,31 @@ class LogbookScreenshotTest {
         compose.onNodeWithText(note).assertDoesNotExist()
         compose.onNodeWithContentDescription("Filters, 1 active").performClick()
         compose.onNodeWithText(note).assertIsDisplayed()
+        capture("logbook_filters_offline.png")
+    }
+
+    @Test
+    @Config(sdk = [36], qualifiers = "en-rUS-w411dp-h891dp-night-xxhdpi")
+    fun `the action and the sheet in the dark scheme`() {
+        val state = page(
+            dives = listOf(withFindings),
+            filters = setOf(LogbookFilter.WITH_FINDINGS, LogbookFilter.CHANGED_SINCE_SENT),
+        )
+        render(state, darkTheme = true)
+        compose.onNodeWithContentDescription("Filters, 2 active").assertIsDisplayed()
+        capture("logbook_filter_badge_dark.png")
+        compose.onNodeWithContentDescription("Filters, 2 active").performClick()
+        compose.onNodeWithText("With findings · 2").assertIsSelected()
+        capture("logbook_filters_dark.png")
+    }
+
+    @Test
+    @Config(sdk = [36], qualifiers = "de-rDE-w320dp-h640dp-xxhdpi")
+    fun `the sheet at 320 dp and 200 percent text in German`() {
+        render(page(dives = listOf(reef), filters = emptySet()), fontScale = 2f)
+        compose.onNodeWithContentDescription("Filter").performClick()
+        compose.onNodeWithText("Seit dem Senden geändert · 7").assertExists()
+        capture("logbook_filters_narrow_de.png")
     }
 
     @Test
@@ -204,19 +241,22 @@ class LogbookScreenshotTest {
         compose.onNode(hasProgressBarRangeInfo(ProgressBarRangeInfo.Indeterminate)).assertDoesNotExist()
     }
 
-    private fun render(state: LogbookUiState) {
+    private fun render(state: LogbookUiState, darkTheme: Boolean = false, fontScale: Float = 1f) {
         compose.setContent {
-            DiveHubTheme(darkTheme = false) {
-                LogbookScreen(
-                    state = state,
-                    units = "metric",
-                    onRefresh = {},
-                    onRetry = {},
-                    onShowAll = {},
-                    onPage = {},
-                    onToggleFilter = {},
-                    onOpenDive = {},
-                )
+            val density = LocalDensity.current
+            CompositionLocalProvider(LocalDensity provides Density(density.density, fontScale)) {
+                DiveHubTheme(darkTheme = darkTheme) {
+                    LogbookScreen(
+                        state = state,
+                        units = "metric",
+                        onRefresh = {},
+                        onRetry = {},
+                        onShowAll = {},
+                        onPage = {},
+                        onToggleFilter = {},
+                        onOpenDive = {},
+                    )
+                }
             }
         }
     }
