@@ -3,8 +3,10 @@ package dev.divehub.android.ui.logbook
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasProgressBarRangeInfo
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import com.github.takahirom.roborazzi.captureRoboImage
 import dev.divehub.android.ui.DiveHubTheme
@@ -58,8 +60,28 @@ class LogbookScreenshotTest {
     @Test
     fun `filter counts`() {
         render(page(dives = listOf(reef), filters = emptySet()))
+        compose.onNodeWithText("No recording · 3").assertDoesNotExist()
+        compose.onNodeWithContentDescription("Filters").performClick()
         compose.onNodeWithText("No recording · 3").assertIsDisplayed()
         capture("logbook_filters.png")
+    }
+
+    @Test
+    fun `an applied filter is visible while the sheet is closed`() {
+        val filters = setOf(LogbookFilter.NO_RECORDING, LogbookFilter.WITH_FINDINGS)
+        render(page(dives = listOf(reef), filters = filters))
+        compose.onNodeWithText("No recording · 3").assertDoesNotExist()
+        compose.onNodeWithContentDescription("Filters, 2 active").assertIsDisplayed()
+        capture("logbook_filter_badge.png")
+    }
+
+    @Test
+    fun `the offline filter note lives in the sheet`() {
+        render(page(dives = listOf(reef), filters = emptySet()).copy(filterUnavailable = true))
+        val note = "This filter needs a connection. Showing the dives synced on this device."
+        compose.onNodeWithText(note).assertDoesNotExist()
+        compose.onNodeWithContentDescription("Filters").performClick()
+        compose.onNodeWithText(note).assertIsDisplayed()
     }
 
     @Test
