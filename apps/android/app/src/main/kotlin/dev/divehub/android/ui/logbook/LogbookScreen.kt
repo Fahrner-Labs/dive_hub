@@ -40,10 +40,8 @@ import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.rememberModalBottomSheetState
 import android.content.Context
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -64,7 +62,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.divehub.android.R
 import dev.divehub.android.ui.SyncLine
 import dev.divehub.api.models.DiveListView
-import dev.divehub.api.models.DiveListViewCounts
 import dev.divehub.api.models.DiveListViewDivesItem
 import dev.divehub.api.models.DiveListViewDivesItemParticipantsItem
 import dev.divehub.shared.ErrorCodes
@@ -128,12 +125,7 @@ fun LogbookScreen(
     onToggleFilter: (LogbookFilter) -> Unit,
     onOpenDive: (DiveListViewDivesItem) -> Unit,
 ) {
-    val dataCounts = state.data?.counts
-    var counts by remember { mutableStateOf<DiveListViewCounts?>(null) }
-    LaunchedEffect(dataCounts) {
-        if (dataCounts != null) counts = dataCounts
-    }
-    val chips = counts?.let { filterChips(it, state.filters) }.orEmpty()
+    val chips = state.lastCounts?.let { filterChips(it, state.filters) }.orEmpty()
     var filtersOpen by rememberSaveable { mutableStateOf(false) }
 
     Scaffold(

@@ -72,9 +72,14 @@ class LogbookScreenshotTest {
 
     @Test
     fun `an applied filter is visible while the sheet is closed`() {
-        render(page(dives = listOf(noRecording), filters = setOf(LogbookFilter.NO_RECORDING)))
-        compose.onNodeWithText("No recording · 3").assertDoesNotExist()
-        compose.onNodeWithContentDescription("Filters, 1 active").assertIsDisplayed()
+        render(
+            page(
+                dives = listOf(withFindings),
+                filters = setOf(LogbookFilter.WITH_FINDINGS, LogbookFilter.CHANGED_SINCE_SENT),
+            ),
+        )
+        compose.onNodeWithText("With findings · 2").assertDoesNotExist()
+        compose.onNodeWithContentDescription("Filters, 2 active").assertIsDisplayed()
         capture("logbook_filter_badge.png")
     }
 
@@ -104,7 +109,7 @@ class LogbookScreenshotTest {
                     onPage = {},
                     onToggleFilter = { filter ->
                         state = state.copy(
-                            loading = true,
+                            loading = false,
                             data = null,
                             filters = toggleFilter(state.filters, filter),
                         )
@@ -220,11 +225,8 @@ class LogbookScreenshotTest {
         compose.onRoot().captureRoboImage("src/test/screenshots/$name")
     }
 
-    private fun page(dives: List<DiveListViewDivesItem>, filters: Set<LogbookFilter>) = LogbookUiState(
-        loading = false,
-        page = 1,
-        filters = filters,
-        data = DiveListView(
+    private fun page(dives: List<DiveListViewDivesItem>, filters: Set<LogbookFilter>): LogbookUiState {
+        val data = DiveListView(
             dives = dives,
             total = 312,
             counts = DiveListViewCounts(
@@ -244,9 +246,16 @@ class LogbookScreenshotTest {
                 DiveListViewMonthsItem("2026-04", 9, 27_000.0),
                 DiveListViewMonthsItem("2026-03", 12, 36_000.0),
             ),
-        ),
-        providers = ProviderDirectory(names = mapOf("ssi" to "SSI"), connected = listOf("SSI")),
-    )
+        )
+        return LogbookUiState(
+            loading = false,
+            page = 1,
+            filters = filters,
+            data = data,
+            lastCounts = data.counts,
+            providers = ProviderDirectory(names = mapOf("ssi" to "SSI"), connected = listOf("SSI")),
+        )
+    }
 
     private val reef = dive(
         id = "reef",
