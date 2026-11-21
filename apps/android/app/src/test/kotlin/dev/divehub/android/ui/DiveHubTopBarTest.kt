@@ -2,9 +2,11 @@ package dev.divehub.android.ui
 
 import androidx.compose.material3.Text
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -48,6 +50,28 @@ class DiveHubTopBarTest {
 
         compose.onNodeWithText("Tools").assertIsDisplayed()
         compose.onNodeWithContentDescription("Back").assertDoesNotExist()
+    }
+
+    @Test
+    fun `the dive screen centres its title between the arrows`() {
+        compose.setContent {
+            DiveHubTheme(darkTheme = false) {
+                DiveHubTopBar(
+                    title = "Dive 42",
+                    onBack = {},
+                    centerTitle = true,
+                    actions = { Text("Next dive") },
+                )
+            }
+        }
+
+        val root = compose.onRoot().getBoundsInRoot()
+        val title = compose.onNodeWithText("Dive 42").getBoundsInRoot()
+        val rootCentre = (root.left + root.right) / 2
+        val titleCentre = (title.left + title.right) / 2
+
+        assertEquals(rootCentre.value, titleCentre.value, 0.5f)
+        compose.onNodeWithContentDescription("Back").assertIsDisplayed()
     }
 
     @Test

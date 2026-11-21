@@ -153,6 +153,7 @@ fun DiveDetailScreen(
             DiveHubTopBar(
                 title = state.dive?.let { title(context, it, locale) } ?: "",
                 onBack = onBack,
+                centerTitle = true,
                 actions = {
                     // A Dive outside the list the page was opened from has no neighbours to name (ADR 0042).
                     if (inList) {
