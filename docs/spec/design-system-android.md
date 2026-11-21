@@ -14,9 +14,9 @@ links, focus and data) and [ADR 0073](../decisions/0073-android-app-in-monorepo-
 (Kotlin, Jetpack Compose, Material 3). Material 3 is the base, not the look: the rules below replace its default
 colour, type, shape and density.
 
-Code: `apps/android/app/src/main/kotlin/dev/divehub/android/ui/Theme.kt` (colour), `Type.kt` (type),
-`Spacing.kt` (spacing) and `ui/components/` (the shared components). The palette and brand do not
-change here.
+Code today: `apps/android/app/src/main/kotlin/dev/divehub/android/ui/Theme.kt` (colour) and `Type.kt` (type).
+The token and component work adds `Spacing.kt` (spacing) and `ui/components/` (the shared components); the brief
+names them where they are planned. The palette and brand do not change here.
 
 ## Direction
 
@@ -60,8 +60,8 @@ Rules:
 
 **One comfortable density — binding for every Android screen.** There is no compact mode, density setting or
 per-screen tightening. List, table and fact rows keep `s3` (12 dp) vertical padding; a screen that wants more rows
-pages, scrolls or splits into another screen. This is the web rule from ADR 0019, and the same reason: a logbook is
-read, not scanned in a spreadsheet.
+pages, scrolls or splits into another screen. This is the web rule from ADR 0019, where compact density was rejected
+because the logbook pages by 25 dives: a logbook is read, not scanned in a spreadsheet.
 
 ## Type
 
@@ -171,8 +171,6 @@ palette change. In this brief:
   colour a link or a focus ring with `primary` is re-coloured or replaced.
 - The brand flag (`tertiary` today) is used only by `BrandMark`, never as a UI accent.
 
-This is a correction T3 applies when it builds the token object. It does not change the palette.
-
 Other rules:
 
 - **Contrast.** The web's measured WCAG 2.2 AA pairs are the gate; the same hex values give the same ratios. Text on
@@ -183,8 +181,11 @@ Other rules:
   and accent (`#62B6E6`). Never use a light-mode hex on a dark surface.
 - **Data colours are web tokens, not new colours.** The depth ramp is `#8FD3E8` → `#0F5E8C` in the light and
   `#62B6E6` → `#1B4867` in the dark. Ascent by speed is `#9A7400`, `#C2570C`, `#8A2F0A` in the light and
-  `#E6C04A`, `#F29A4A`, `#FFB9A3` in the dark. The logbook's current `ProfileSketch` ascent constants are not these
-  values; they move onto the tokens when that screen is next touched.
+  `#E6C04A`, `#F29A4A`, `#FFB9A3` in the dark. The logbook's `ProfileSketch` is wrong in both places: its ascent
+  constants are `#E0A100`, `#E06A00`, `#C81E1E`, and its depth fill reads `primaryContainer` → `primary`, so today the
+  deep end only looks right because `primary` is the accent, while the shallow end (`accent-soft`, `#E1EEF6`) is
+  already wrong. The depth gradient and the ascent colours both move onto these tokens in the same pass, before or
+  with the ink `primary` remap ([how this brief lands](#how-this-brief-lands)).
 - **System bars.** The status bar and navigation bar use the frame colour; icon appearance follows the scheme. The
   app draws edge to edge; the bars' backgrounds may extend under the system bars, content does not.
 - **No hardcoded colour.** A `Color(0x…)` outside `Theme.kt` is a bug. A screen reads `MaterialTheme.colorScheme` or
@@ -196,8 +197,9 @@ Other rules:
 
 ## Components
 
-Built in `apps/android/app/src/main/kotlin/dev/divehub/android/ui/components/`. A screen uses these, not a
-hand-rolled row, heading or empty state. The table maps each one to the web component it translates.
+These live in `apps/android/app/src/main/kotlin/dev/divehub/android/ui/components/` once the component work lands;
+until then the screens keep their current local composables. A screen then uses these, not a hand-rolled row,
+heading or empty state. The table maps each one to the web component it translates.
 
 | Android component | Web counterpart | Rules |
 |---|---|---|
@@ -206,7 +208,7 @@ hand-rolled row, heading or empty state. The table maps each one to the web comp
 | `DiveRow` | `DiveList` | The logbook's row: title in `bodyStrong`, aligned depth, duration and facts, participant avatars. The whole row is the target; month headings sit above the rows. |
 | `EmptyState` | the empty and not-found rule | Says why it is empty and offers the way on. No dead end. The action is a `Button` or a quiet `TextButton`. |
 | `Button` | `Button` | `primary` is ink; `secondary` is tonal with a control border; `quiet` is text-like; `danger` confirms a destructive action. A 48 dp target; `small` may look 40 dp but keeps the 48 dp target. One primary per section. No Material pill. |
-| `IconButton` | the icon-only exceptions | Only the named exceptions: the top bar's back and previous/next, a dialog's close, and a password field's eye. Full accessible names and a 48 dp target (ADR 0018 amendment). Chevrons say "(unavailable)" and are disabled at the ends. |
+| `IconButton` | the icon-only exceptions | Icon-only is the exception, and this brief owns the Android ones: the top app bar's back and previous/next are platform navigation, alongside a dialog's close and a password field's eye from the ADR 0018 amendment. Full accessible names and a 48 dp target. Chevrons say "(unavailable)" and are disabled at the ends. |
 | `TextField` | `TextField` | Label, supporting text and error. `body` 16 sp, `Radius.control`, a visible focus ring. No floating-label-only field. |
 | `NumberField` | `NumberField` | Numeric keyboard, unit suffix, the UI language's format, value committed on blur. Tabular figures. |
 | `PasswordField` | `PasswordField` | A field with an eye toggle inside it, a full accessible name and autofill intact. Never a plain password field. |
@@ -225,6 +227,11 @@ hand-rolled row, heading or empty state. The table maps each one to the web comp
 | `SyncLine` | the web's live-arrivals and sync rules | A quiet `meta` line for syncing, offline or cached. No badge, connection dot or toast. |
 | `BrandMark` | `BrandMark` | The diver-down flag. The mark only; never a UI accent. |
 | `Icon` | `Icon` | One set, 24 dp, 2 dp stroke where drawn, beside a visible label except the named exceptions. Decorative icons are hidden from TalkBack. |
+
+The web table's `Form`, `PageHeader`, `Table`, `Disclosure`, `CopyField`, `Select`, `TextArea`, `DateTimeField` and
+`ErrorBoundary` have no Android component yet; they are deferred until a screen needs them and are then built from
+the primitives above (a form is a `Section` with a narrow content width, a page header is the top app bar or the
+screen's `title`, and a table becomes `FactRow`/`DiveRow` lines or a card per row at phone width).
 
 ## Rules every Android screen follows
 
@@ -309,7 +316,7 @@ Roborazzi goldens are the regression floor, not the design review. For every And
   sanctioned flow (`apps/android/README.md`).
 - Put the updated goldens through a Design Consultant critique before the PR, as the Android design-critique gate
   requires.
-- Check every screen at 320, 390 and 412 dp, in light and dark, in English and German, with crowded data (long
+- Check every screen at 320, 360, 390 and 412 dp, in light and dark, in English and German, with crowded data (long
   names and e-mail addresses) and at 200% font scale.
 - Check touch, the keyboard, insets and back on a real phone before calling it done.
 
@@ -324,7 +331,8 @@ This is a specification, not a big-bang rewrite. The Android code moves onto it 
 - `ui/components/`: `Section`, `FactRow`, `DiveRow`, `EmptyState` first, then the other components as a screen
   needs them.
 - Existing screens: replace hardcoded `dp` with `Spacing`, Material default text with `DiveHubText`, and direct
-  colours with the token roles, as each screen is redesigned or next touched. The logbook's `ProfileSketch` ascent
-  colours move onto the data tokens in the same pass.
+  colours with the token roles, as each screen is redesigned or next touched. The logbook's `ProfileSketch` depth
+  gradient and ascent colours move onto the depth and ascent tokens in the same pass, before or with the ink
+  `primary` remap.
 - No new UI library, no change to the palette or the brand, and no ADR: ADR 0064 and ADR 0073 already govern this
   work.
