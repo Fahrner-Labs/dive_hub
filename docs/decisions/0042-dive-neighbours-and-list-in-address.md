@@ -1,6 +1,6 @@
 ---
 title: "ADR 0042: Previous and next dive follow the list the User came from"
-summary: A Dive's address carries the logbook's settings (`?list=`); GET /api/dives/:id/neighbours returns the Dives before and after it in that list's order; "Logbook" goes back to the list on the page the Dive is on.
+summary: A Dive's address carries the logbook's settings (`?list=`); GET /api/dives/:id/neighbours returns the Dives before and after it in that list's order; "Logbook" goes back to the Dive's place in the list (a paged client to its page, the Android list to its row).
 status: accepted
 date: 2026-10-07
 ---
@@ -26,8 +26,9 @@ the server has to order the neighbours the way the list is ordered, across page 
   disagree. A Dive of someone the User doesn't manage is 404. A Dive the list does not show gets `position: null` and
   no neighbours.
 - **"Previous" is the row above in that list**, "next" the row below. With the newest first, "previous" is the newer dive.
-- **"Logbook" returns to the list with its page recomputed** from `position` (page size 25), so it is right after
-  stepping across a page boundary.
+- **"Logbook" returns to the list at the Dive's place**, computed from `position`: a paged client recomputes the
+  page (page size 25), so it is right after stepping across a page boundary; the Android continuous list scrolls to
+  that Dive's row. The `position`/`total` contract is unchanged.
 
 ## Consequences
 - Each dive page asks one more query (a window function over the filtered list; cheap at logbook scale).

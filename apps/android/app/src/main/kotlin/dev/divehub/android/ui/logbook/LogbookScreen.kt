@@ -10,6 +10,7 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -28,7 +29,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -95,6 +98,8 @@ import dev.divehub.api.models.DiveListViewDivesItem
 import dev.divehub.api.models.DiveListViewDivesItemParticipantsItem
 import dev.divehub.shared.ErrorCodes
 import dev.divehub.shared.logbook.LogbookFilter
+import dev.divehub.shared.logbook.LogbookMonth
+import dev.divehub.shared.logbook.LogbookPaging
 import dev.divehub.shared.logbook.SAME_DAY_SECONDS
 import dev.divehub.shared.logbook.SKETCH_HEIGHT
 import dev.divehub.shared.logbook.SKETCH_WIDTH
@@ -149,15 +154,18 @@ private fun rememberReducedMotion(): Boolean {
 private enum class LogbookPhase { Loading, Offline, Error, List }
 
 /**
- * The logbook route: the list keeps its page and filters in the view model, not in an address. [onPage] tells the
- * destination when the User changed the page, so the route can save it for process death.
+ * The logbook route: the list keeps its filters in the view model and its scroll position in the destination's saved
+ * state. [focusDiveId] and [focusPosition] are a Dive the User came back from; the list scrolls to its row, or pages to
+ * it when a server-answered filter keeps the pager, then [onFocusHandled] clears them.
  */
 @Composable
 fun LogbookRoute(
     viewModel: LogbookViewModel,
     units: String?,
     onOpenDive: (String, Set<LogbookFilter>) -> Unit,
-    onPage: (Int) -> Unit = {},
+    focusDiveId: String? = null,
+    focusPosition: Int? = null,
+    onFocusHandled: () -> Unit = {},
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     LogbookScreen(
@@ -165,28 +173,22 @@ fun LogbookRoute(
         units = units,
         onRefresh = viewModel::refresh,
         onRetry = viewModel::retry,
-        onShowAll = {
-            viewModel.showAll()
-            onPage(1)
-        },
-        onPage = { page ->
-            viewModel.showPage(page)
-            onPage(page)
-        },
-        onToggleFilter = { filter ->
-            viewModel.toggle(filter)
-            onPage(1)
-        },
+        onShowAll = viewModel::showAll,
+        onPage = viewModel::showPage,
+        onToggleFilter = viewModel::toggle,
+        focusDiveId = focusDiveId,
+        focusPage = focusPosition?.let(LogbookPaging::pageOf),
+        onFocusHandled = onFocusHandled,
         onOpenDive = { dive -> onOpenDive(dive.id, state.filters) },
     )
 }
 
 /**
  * The logbook's one screen (ADR 0040): the Diver's whole logbook above the list, "Show only" filters behind the top
- * bar's filter action, rows under month headings, a page at a time and pull-to-refresh. One sheet under the frame's
- * top bar, sections kept apart by a hairline and the rows in the design system's one comfortable density
- * (design-system-android.md). Everything here is drawn from [state], so the contract-visible states have screenshot
- * tests.
+ * bar's filter action, rows under sticky month headings and pull-to-refresh. One sheet under the frame's top bar,
+ * sections kept apart by a hairline and the rows in the design system's one comfortable density
+ * (design-system-android.md). The stored filters read the whole list; the two server-answered ones keep a pager.
+ * Everything here is drawn from [state], so the contract-visible states have screenshot tests.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -199,7 +201,26 @@ fun LogbookScreen(
     onPage: (Int) -> Unit,
     onToggleFilter: (LogbookFilter) -> Unit,
     onOpenDive: (DiveListViewDivesItem) -> Unit,
+    listState: LazyListState = rememberLazyListState(),
+    focusDiveId: String? = null,
+    focusPage: Int? = null,
+    onFocusHandled: () -> Unit = {},
 ) {
+    val data = state.data
+    // One grouping for the list and the focus effect; a sync write replaces the data, a status update does not.
+    val groups = remember(data) { data?.let { monthGroups(it.dives, it.months) }.orEmpty() }
+    LaunchedEffect(focusDiveId, focusPage, state.paged, groups) {
+        if (data == null || (focusDiveId == null && focusPage == null)) return@LaunchedEffect
+        if (state.paged) {
+            // The server-answered filters keep a pager; the row may sit on another page, so turn the position into one.
+            focusPage?.let { page -> if (page != state.page) onPage(page) }
+        } else if (focusDiveId != null) {
+            val index = logbookDiveItemIndex(groups, focusDiveId)
+            // The month header is pinned over the top edge; one item up keeps the Dive's title clear of it.
+            if (index != null) listState.scrollToItem((index - 1).coerceAtLeast(0))
+        }
+        onFocusHandled()
+    }
     val counts = state.data?.counts ?: state.lastCounts
     val chips = counts?.let { filterChips(it, state.filters) }.orEmpty()
     var filtersOpen by rememberSaveable { mutableStateOf(false) }
@@ -251,7 +272,7 @@ fun LogbookScreen(
                         onRefresh = onRefresh,
                         modifier = modifier,
                     ) {
-                        LogbookList(state, units, onRefresh, onRetry, onShowAll, onPage, onOpenDive)
+                        LogbookList(state, units, groups, onRefresh, onRetry, onShowAll, onPage, onOpenDive, listState)
                     }
                 }
             }
@@ -501,25 +522,33 @@ private fun NoContent(modifier: Modifier, title: String, message: String, retry:
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun LogbookList(
     state: LogbookUiState,
     units: String?,
+    groups: List<LogbookMonth>,
     onRefresh: () -> Unit,
     onRetry: () -> Unit,
     onShowAll: () -> Unit,
     onPage: (Int) -> Unit,
     onOpenDive: (DiveListViewDivesItem) -> Unit,
+    listState: LazyListState,
 ) {
     val context = LocalContext.current
     val locale = context.resources.configuration.locales[0] ?: Locale.getDefault()
     val imperial = LogbookText.imperial(units, locale)
     val data = state.data ?: return
-    val groups = monthGroups(data.dives, data.months)
     val scaleM = sketchScale(data.totals.deepestM)
     val filtersEmpty = state.filters.isEmpty()
 
-    LazyColumn(Modifier.fillMaxSize()) {
+    // The scrolling content is the sheet; the frame stays `background` (design system, "Surfaces").
+    LazyColumn(
+        state = listState,
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.surface),
+    ) {
         item(key = "header") {
             Column(Modifier.fillMaxWidth()) {
                 SyncLine(state.syncedAt, state.connected, state.offline, R.string.logbook_offline_cached)
@@ -532,7 +561,7 @@ private fun LogbookList(
             }
         }
 
-        if (data.total > 0) {
+        if (state.paged && data.total > 0) {
             item(key = "range") { Range(state) }
         }
 
@@ -574,7 +603,7 @@ private fun LogbookList(
             groups.forEach { group ->
                 val month = group.month
                 if (month != null) {
-                    item(key = "month-$month") {
+                    stickyHeader(key = "month-$month") {
                         MonthHead(context, month, group.figures?.dives, group.figures?.durationSeconds, locale)
                     }
                 }
@@ -593,10 +622,25 @@ private fun LogbookList(
             }
         }
 
-        if (state.pageCount > 1) {
+        if (state.paged && state.pageCount > 1) {
             item(key = "pager") { Pager(state, onPage) }
         }
     }
+}
+
+/**
+ * The `LazyColumn` item of [diveId]: the header is item 0, then each month heading followed by its rows. Null when the
+ * filter does not show the Dive — the server-answered pager may stand on another page.
+ */
+internal fun logbookDiveItemIndex(groups: List<LogbookMonth>, diveId: String): Int? {
+    var index = 1
+    for (group in groups) {
+        if (group.month != null) index += 1
+        val at = group.dives.indexOfFirst { it.id == diveId }
+        if (at >= 0) return index + at
+        index += group.dives.size
+    }
+    return null
 }
 
 @Composable
@@ -713,6 +757,7 @@ private fun MonthHead(context: Context, month: String, dives: Int?, durationSeco
     FlowRow(
         Modifier
             .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.surface)
             .padding(start = Spacing.s4, end = Spacing.s4, top = Spacing.s5, bottom = Spacing.s2),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalArrangement = Arrangement.spacedBy(Spacing.s1),

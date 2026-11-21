@@ -60,8 +60,8 @@ Rules:
 
 **One comfortable density — binding for every Android screen.** There is no compact mode, density setting or
 per-screen tightening. List, table and fact rows keep `s3` (12 dp) vertical padding; a screen that wants more rows
-pages, scrolls or splits into another screen. This is the web rule from ADR 0019, where compact density was rejected
-because the logbook pages by 25 dives: a logbook is read, not scanned in a spreadsheet.
+pages, scrolls or splits into another screen. This is the web rule from ADR 0019: a logbook is read, not scanned in a
+spreadsheet.
 
 ## Type
 

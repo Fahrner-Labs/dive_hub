@@ -8,7 +8,7 @@ import kotlinx.datetime.plus
 import kotlinx.datetime.toLocalDateTime
 import kotlin.time.Instant
 
-/** A page's Dives under a month heading, with the month's figures for all its matching Dives (ADR 0040). */
+/** The list's Dives under a month heading, with the month's figures for all its matching Dives (ADR 0040). */
 data class LogbookMonth(
     /** Local `YYYY-MM`, or null when the list is not sorted by date. */
     val month: String?,
@@ -25,8 +25,8 @@ fun localMonthOf(startsAt: String, utcOffsetSeconds: Int?): String? = runCatchin
 }.getOrNull()
 
 /**
- * The page's Dives grouped by their consecutive months. Without `months` (the list isn't sorted by date) the page is
- * one group without a heading. Figures come from the API, so a month on page 2 counts all its Dives, not its share.
+ * The list's Dives grouped by their consecutive months. Without `months` (the list isn't sorted by date) the list is
+ * one group without a heading. Figures come from the API, so a month counts all its Dives, not a page's share.
  */
 fun monthGroups(
     dives: List<DiveListViewDivesItem>,
@@ -34,15 +34,18 @@ fun monthGroups(
 ): List<LogbookMonth> {
     if (months.isEmpty()) return listOf(LogbookMonth(null, null, dives))
     val figures = months.associateBy { it.month }
-    val groups = mutableListOf<LogbookMonth>()
+    // One pass: appending to the month's own list keeps the whole-list read linear.
+    val grouped = mutableListOf<Pair<String?, MutableList<DiveListViewDivesItem>>>()
     for (dive in dives) {
         val month = localMonthOf(dive.startsAt, dive.utcOffsetSeconds)
-        val last = groups.lastOrNull()
-        if (last != null && last.month == month) {
-            groups[groups.lastIndex] = last.copy(dives = last.dives + dive)
+        val last = grouped.lastOrNull()
+        if (last != null && last.first == month) {
+            last.second.add(dive)
         } else {
-            groups += LogbookMonth(month, month?.let(figures::get), listOf(dive))
+            grouped += month to mutableListOf(dive)
         }
     }
-    return groups
+    return grouped.map { (month, matching) ->
+        LogbookMonth(month, month?.let(figures::get), matching)
+    }
 }
