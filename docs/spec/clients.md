@@ -222,10 +222,14 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   *Web:* `DiveList.tsx`, `ProfileSketch.tsx`, `lib/sketch.ts`.
 - **Previous and next dive** ([ADR 0042](../decisions/0042-dive-neighbours-and-list-in-address.md)): a Dive opened from the
   logbook keeps the list's settings with it and asks `GET /api/dives/{id}/neighbours` with them (no `limit`/`offset`).
-  "Previous" is the row above in that list (with the newest first, the newer dive), "next" the row below; show the position
-  (`position` of `total`), keep the control at the ends but say it is unavailable, and show nothing when `position` is
-  `null`. "Back to the logbook" returns to the list as it was, on page `ceil(position / 25)`. Without a list, the whole
-  logbook newest first. *Web:* `DivePage.tsx` (`Neighbours`), `lib/logbook.ts` (`diveHref`, `neighbourParams`).
+  "Previous" is the row above in that list (with the newest first, the newer dive), "next" the row below. *Web:* show the
+  position (`position` of `total`), keep the control at the ends but say it is unavailable, and show nothing when
+  `position` is `null`. *Android:* the top bar's back arrow, the Dive's title centred and previous/next chevrons in the
+  trailing actions, disabled at the ends and absent when `position` is `null`; a horizontal swipe on the page opens the
+  same neighbour and springs back at the ends (FAH-344). "Back to the logbook" returns to the list as it was, on page
+  `ceil(position / 25)`. Without a list, the whole logbook newest first.
+  *Web:* `DivePage.tsx` (`Neighbours`), `lib/logbook.ts` (`diveHref`, `neighbourParams`). *Android:* `DiveDetailScreen.kt`
+  (`DivePager`, `NeighbourAction`).
 - **Follow merged sites:** a site with `mergedInto` is gone. Open the kept site instead (ADR 0022).
 - **Render Providers from `GET /api/providers`** ([ADR 0027](../decisions/0027-providers-as-adapters.md)): its list is
   the instance's, and it changes only with the server (cache it for the session). Offer a Connection panel per Provider
@@ -256,6 +260,10 @@ V1 of the native client reads offline: phones lose signal where dives are, and t
   `GET /api/recordings/{id}/samples`. A details page is capped at 50 Dives a page because each row is a whole Dive,
   not a summary: page with `limit=50` until `offset` reaches `total`. Without `include=details` the list answers the
   summary row, unchanged. The OpenAPI document names the two answers `DiveListView` and `DiveDetailsListView`.
+- **A stored payload keeps the API's JSON with absent nulls.** The sync writes the values as the API sent them with `null`
+  fields omitted. A reader of a stored payload must treat an absent nullable field as `null`, never as a missing required
+  one: decoding a stored `suit` whose undergarment is absent, or feedback that felt right and has no amount, as incomplete
+  drops the whole value, and the offline lead estimate then cannot use that Dive.
 - **Refresh keeps the store current.** While online the client opens the live hint stream; a Dive or site hint
   refetches that thing through the normal API, and every (re)connect re-runs the list sync because hints are not
   replayed (ADR 0066). Polling remains the automatic fallback. Deleted Dives arrive as tombstones (`deletedAt`),
@@ -1514,7 +1522,8 @@ An LLM client is an API client Dive Hub can't make follow this contract, so the 
   heading; when a form closes, back to the button that opened it. *Web:* `lib/focus.ts`.
 - **Buttons repeated per row name their row** in their accessible name ("Revoke: anna@example.com").
 - **Icons always beside text,** never icon-only controls ([ADR 0018](../decisions/0018-icons-and-motion.md)), but a
-  dialog's close button and a password field's eye, each with its full accessible name (amendment 2026-11-02).
+  dialog's close button, a password field's eye and the Android dive header's back arrow and previous/next chevrons,
+  each with its full accessible name (amendments 2026-11-02 and 2026-11-20).
 - **A password or secret field has a button that shows it:** one name ("Show: <field label>") and its state as pressed
   or not; the field keeps its name and autofill hints so password managers fill it; sending the form hides it again.
   Never shown by default. *Web:* `ui/TextField.tsx` (`PasswordField`).

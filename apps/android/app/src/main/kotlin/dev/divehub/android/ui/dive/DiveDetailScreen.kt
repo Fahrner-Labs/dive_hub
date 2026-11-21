@@ -17,29 +17,39 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
@@ -55,13 +65,18 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.setProgress
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.filter
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.divehub.android.R
 import dev.divehub.android.ui.SyncLine
 import dev.divehub.android.ui.Formats
 import dev.divehub.api.models.DiveView
+import dev.divehub.api.models.DiveViewCylindersItem
 import dev.divehub.api.models.DiveViewRecordingsItem
 import dev.divehub.api.models.DiveViewRecordingsItemSummaryGasesItem
+import dev.divehub.api.models.DiveViewSuit
+import dev.divehub.api.models.DiveViewWeightingFeedback
 import dev.divehub.api.models.NeighboursView
 import dev.divehub.api.models.RecordingSamplesView
 import dev.divehub.api.models.RecordingSamplesViewSeriesItem
@@ -91,6 +106,8 @@ import dev.divehub.shared.logbook.ProviderDirectory
 import dev.divehub.shared.logbook.mixName
 import dev.divehub.shared.dive.timeZoneNote
 import dev.divehub.shared.dive.TimeZoneOrigin
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.booleanOrNull
 import java.util.Locale
 
 /** The dive page route: the page itself holds no navigation state; back returns the logbook as it was. */
@@ -127,35 +144,137 @@ fun DiveDetailScreen(
 ) {
     val context = LocalContext.current
     val locale = context.resources.configuration.locales[0] ?: Locale.getDefault()
+    val neighbours = state.neighbours
+    val inList = neighbours?.position != null
+    val previous = neighbours?.previous?.id
+    val next = neighbours?.next?.id
+    val backLabel = stringResource(R.string.dive_back)
     Scaffold(
         topBar = {
-            TopAppBar(
+            CenterAlignedTopAppBar(
                 title = { Text(state.dive?.let { title(context, it, locale) } ?: "") },
                 navigationIcon = {
-                    TextButton(onClick = onBack) { Text(stringResource(R.string.dive_back)) }
+                    IconButton(
+                        onClick = onBack,
+                        modifier = Modifier.semantics { contentDescription = backLabel },
+                    ) {
+                        DirectionIcon(Direction.Back)
+                    }
+                },
+                actions = {
+                    // A Dive outside the list the page was opened from has no neighbours to name (ADR 0042).
+                    if (inList) {
+                        NeighbourAction(
+                            direction = Direction.Left,
+                            target = previous,
+                            label = stringResource(R.string.dive_previous),
+                            unavailable = stringResource(R.string.dive_previous_unavailable),
+                            onOpenDive = onOpenDive,
+                        )
+                        NeighbourAction(
+                            direction = Direction.Right,
+                            target = next,
+                            label = stringResource(R.string.dive_next),
+                            unavailable = stringResource(R.string.dive_next_unavailable),
+                            onOpenDive = onOpenDive,
+                        )
+                    }
                 },
             )
         },
     ) { padding ->
-        val modifier = Modifier.padding(padding).fillMaxSize()
-        when {
-            state.loading && state.dive == null -> Loading(modifier)
-            state.offline && state.dive == null -> Notice(
-                modifier = modifier,
-                text = stringResource(R.string.dive_offline),
-                retry = stringResource(R.string.dive_retry),
-                onRetry = onRetry,
-            )
-            state.error != null && state.dive == null -> Notice(
-                modifier = modifier,
-                text = errorText(context, state.error),
-                retry = stringResource(R.string.dive_retry),
-                onRetry = onRetry,
-            )
-            state.dive != null -> DiveBody(state, state.dive, units, onOpenDive, modifier)
+        DivePager(
+            state = state,
+            units = units,
+            neighbours = neighbours,
+            onRetry = onRetry,
+            onOpenDive = onOpenDive,
+            modifier = Modifier.padding(padding).fillMaxSize(),
+        )
+    }
+}
+
+/**
+ * The Dive page as a three-page pager: the current Dive in the middle, an empty page on either side for the neighbour
+ * a swipe opens. Once a swipe settles, [onOpenDive] moves the page and the pager snaps back to the middle; at either end
+ * of the list the spring-back is the end-stop hint. The buttons in the top bar open the same neighbour directly.
+ */
+@Composable
+private fun DivePager(
+    state: DiveDetailUiState,
+    units: String?,
+    neighbours: NeighboursView?,
+    onRetry: () -> Unit,
+    onOpenDive: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val pagerState = rememberPagerState(initialPage = CURRENT_DIVE_PAGE) { PAGER_PAGES }
+    val currentNeighbours by rememberUpdatedState(neighbours)
+    val currentOnOpenDive by rememberUpdatedState(onOpenDive)
+    LaunchedEffect(pagerState) {
+        // Gate on the gesture ending, not the page changing: an interrupted end-stop can settle back on the same
+        // page, which emits no settledPage change but must still run the spring-back again (FAH-344 review). The
+        // scroll this block starts is filtered upstream, so collectLatest only cancels the block on a new drag.
+        snapshotFlow { pagerState.isScrollInProgress }
+            .filter { !it }
+            .collectLatest {
+                val page = pagerState.currentPage
+                if (page == CURRENT_DIVE_PAGE) return@collectLatest
+                val target = if (page < CURRENT_DIVE_PAGE) {
+                    currentNeighbours?.previous?.id
+                } else {
+                    currentNeighbours?.next?.id
+                }
+                if (target != null) {
+                    currentOnOpenDive(target)
+                    pagerState.scrollToPage(CURRENT_DIVE_PAGE)
+                } else {
+                    // The ends of the list: the spring-back says there is nothing further (FAH-344).
+                    pagerState.animateScrollToPage(CURRENT_DIVE_PAGE)
+                }
+            }
+    }
+    HorizontalPager(
+        state = pagerState,
+        modifier = modifier.testTag("dive_pager"),
+    ) { page ->
+        if (page == CURRENT_DIVE_PAGE) {
+            DiveContent(state, units, onRetry, Modifier.fillMaxSize())
+        } else {
+            Box(Modifier.fillMaxSize())
         }
     }
 }
+
+@Composable
+private fun DiveContent(
+    state: DiveDetailUiState,
+    units: String?,
+    onRetry: () -> Unit,
+    modifier: Modifier,
+) {
+    val context = LocalContext.current
+    when {
+        state.loading && state.dive == null -> Loading(modifier)
+        state.offline && state.dive == null -> Notice(
+            modifier = modifier,
+            text = stringResource(R.string.dive_offline),
+            retry = stringResource(R.string.dive_retry),
+            onRetry = onRetry,
+        )
+        state.error != null && state.dive == null -> Notice(
+            modifier = modifier,
+            text = errorText(context, state.error),
+            retry = stringResource(R.string.dive_retry),
+            onRetry = onRetry,
+        )
+        state.dive != null -> DiveBody(state, state.dive, units, modifier)
+    }
+}
+
+/** The pager draws the current Dive in the middle, so either adjacent page is one swipe away. (FAH-344) */
+private const val CURRENT_DIVE_PAGE = 1
+private const val PAGER_PAGES = 3
 
 private fun title(context: Context, dive: DiveView, locale: Locale): String = dive.values.number?.let {
     context.getString(R.string.dive_title_number, it)
@@ -199,7 +318,6 @@ private fun DiveBody(
     state: DiveDetailUiState,
     dive: DiveView,
     units: String?,
-    onOpenDive: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -207,10 +325,12 @@ private fun DiveBody(
     val imperial = Formats.imperial(units, locale)
     val primary = profileRecording(dive.recordings)
 
-    LazyColumn(modifier) {
+    LazyColumn(modifier.testTag("dive_scroll")) {
         item { SyncLine(state.syncedAt, state.connected, state.offline, R.string.dive_offline_cached) }
-        item { Neighbours(state.neighbours, onOpenDive) }
         item { Facts(dive, locale, imperial) }
+        item { Cylinders(dive, locale, imperial) }
+        item { Weighting(dive, locale, imperial) }
+        item { Notes(dive.notes) }
         item { Recordings(dive, locale, state.providers) }
         if (primary != null) {
             item { Profile(state, primary, locale, imperial) }
@@ -224,52 +344,56 @@ private fun DiveBody(
     }
 }
 
-/**
- * Previous and next in the order of the list the Dive was opened from (ADR 0042). "Previous" is the row above. At the
- * ends of the list the control stays, so the others don't move, and says it is unavailable. Nothing when the list
- * doesn't show this Dive.
- */
+/** A neighbour in the top bar: enabled by its id, so at the ends of the list the greying is the end-stop (FAH-344). */
 @Composable
-private fun Neighbours(neighbours: NeighboursView?, onOpenDive: (String) -> Unit) {
-    val n = neighbours ?: return
-    val position = n.position ?: return
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically,
+private fun NeighbourAction(
+    direction: Direction,
+    target: String?,
+    label: String,
+    unavailable: String,
+    onOpenDive: (String) -> Unit,
+) {
+    IconButton(
+        onClick = { target?.let(onOpenDive) },
+        enabled = target != null,
+        modifier = Modifier.semantics { contentDescription = if (target == null) unavailable else label },
     ) {
-        NeighbourButton(
-            label = stringResource(R.string.dive_previous),
-            unavailable = stringResource(R.string.dive_previous_unavailable),
-            target = n.previous?.id,
-            onOpenDive = onOpenDive,
-        )
-        Text(
-            stringResource(R.string.dive_position_of, position, n.total),
-            modifier = Modifier.weight(1f),
-            textAlign = TextAlign.Center,
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        NeighbourButton(
-            label = stringResource(R.string.dive_next),
-            unavailable = stringResource(R.string.dive_next_unavailable),
-            target = n.next?.id,
-            onOpenDive = onOpenDive,
-        )
+        DirectionIcon(direction)
     }
 }
 
+private enum class Direction { Back, Left, Right }
+
+/** The header's arrows, drawn here so the app needs no separate icon dependency. */
 @Composable
-private fun NeighbourButton(label: String, unavailable: String, target: String?, onOpenDive: (String) -> Unit) {
-    TextButton(
-        onClick = { target?.let(onOpenDive) },
-        enabled = target != null,
-        modifier = if (target == null) Modifier.semantics { contentDescription = unavailable } else Modifier,
-    ) {
-        Text(label)
+private fun DirectionIcon(direction: Direction) {
+    val color = LocalContentColor.current
+    Canvas(Modifier.size(24.dp)) {
+        val stroke = Stroke(width = 2.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round)
+        val width = size.width
+        val height = size.height
+        val path = Path().apply {
+            when (direction) {
+                Direction.Back -> {
+                    moveTo(width * 0.72f, height * 0.5f)
+                    lineTo(width * 0.28f, height * 0.5f)
+                    moveTo(width * 0.46f, height * 0.28f)
+                    lineTo(width * 0.28f, height * 0.5f)
+                    lineTo(width * 0.46f, height * 0.72f)
+                }
+                Direction.Left -> {
+                    moveTo(width * 0.62f, height * 0.25f)
+                    lineTo(width * 0.38f, height * 0.5f)
+                    lineTo(width * 0.62f, height * 0.75f)
+                }
+                Direction.Right -> {
+                    moveTo(width * 0.38f, height * 0.25f)
+                    lineTo(width * 0.62f, height * 0.5f)
+                    lineTo(width * 0.38f, height * 0.75f)
+                }
+            }
+        }
+        drawPath(path, color, style = stroke)
     }
 }
 
@@ -356,6 +480,160 @@ private fun Water(dive: DiveView, locale: Locale) {
             )
         }
     }
+}
+
+/** The Dive's Cylinders in their order with the SAC the server computed (ADR 0045), or why it has none. */
+@Composable
+private fun Cylinders(dive: DiveView, locale: Locale, imperial: Boolean) {
+    if (dive.cylinders.isEmpty() && dive.sac == null && dive.sacMissing == null) return
+    val context = LocalContext.current
+    SectionHeading(stringResource(R.string.dive_cylinders))
+    Column(Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) {
+        dive.cylinders.forEachIndexed { index, cylinder ->
+            Text(
+                stringResource(R.string.dive_cylinder_n, index + 1),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(cylinderLine(context, cylinder, locale, imperial), style = MaterialTheme.typography.bodyLarge)
+            Text(
+                cylinderPressures(context, cylinder, locale, imperial),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            if (cylinder.fromPod) {
+                Text(
+                    stringResource(R.string.dive_cylinder_from_pod),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Spacer(Modifier.height(8.dp))
+        }
+        val sac = dive.sac
+        val sacMissing = dive.sacMissing
+        when {
+            sac != null -> {
+                Text(
+                    context.getString(R.string.dive_sac_litres, Formats.decimal(locale, sac.litresPerMinute, 1)),
+                    style = MaterialTheme.typography.bodyLarge,
+                )
+                sac.barPerMinute?.let { barPerMinute ->
+                    Text(
+                        context.getString(R.string.dive_sac_bar, Formats.pressureRate(context, barPerMinute, locale, imperial)),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+            sacMissing != null -> Text(
+                sacMissingText(context, sacMissing),
+                style = MaterialTheme.typography.bodyLarge,
+            )
+        }
+    }
+}
+
+private fun cylinderLine(
+    context: Context,
+    cylinder: DiveViewCylindersItem,
+    locale: Locale,
+    imperial: Boolean,
+): String = buildList {
+    cylinder.volumeL?.let { add(DiveDetailText.volume(context, it, locale)) }
+    cylinder.material?.let { add(DiveDetailText.material(context, it)) }
+    cylinder.workingPressureBar?.let {
+        add(context.getString(R.string.dive_cylinder_working_pressure, Formats.pressure(context, it, locale, imperial)))
+    }
+    add(DiveDetailText.gas(context, cylinder.gas?.o2, cylinder.gas?.he))
+}.joinToString(" · ")
+
+private fun cylinderPressures(
+    context: Context,
+    cylinder: DiveViewCylindersItem,
+    locale: Locale,
+    imperial: Boolean,
+): String {
+    val start = cylinder.startPressureBar
+    val end = cylinder.endPressureBar
+    if (start == null && end == null) return context.getString(R.string.dive_cylinder_pressures_unknown)
+    val startText = start?.let { Formats.pressure(context, it, locale, imperial) } ?: "–"
+    val endText = end?.let { Formats.pressure(context, it, locale, imperial) } ?: "–"
+    if (start != null && end != null && start > end) {
+        val used = Formats.pressure(context, start - end, locale, imperial)
+        return context.getString(R.string.dive_cylinder_pressures_used, startText, endText, used)
+    }
+    return context.getString(R.string.dive_cylinder_pressures, startText, endText)
+}
+
+private fun sacMissingText(context: Context, missing: String): String = when (missing) {
+    "too_short" -> context.getString(R.string.dive_sac_missing_too_short)
+    "no_average_depth" -> context.getString(R.string.dive_sac_missing_no_average_depth)
+    "cylinder_incomplete" -> context.getString(R.string.dive_sac_missing_cylinder_incomplete)
+    else -> context.getString(R.string.dive_sac_missing)
+}
+
+/** The suit, the Lead entries and how the weighting felt (ADR 0031); nothing when the Dive has none of them. */
+@Composable
+private fun Weighting(dive: DiveView, locale: Locale, imperial: Boolean) {
+    val suit = dive.suit
+    val lead = dive.lead
+    val feedback = dive.weightingFeedback
+    if (suit == null && lead.isEmpty() && feedback == null) return
+    val context = LocalContext.current
+    SectionHeading(stringResource(R.string.dive_weighting))
+    Column(Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) {
+        suit?.let {
+            FactRow(label = stringResource(R.string.dive_suit), value = suitText(context, locale, it))
+        }
+        FactRow(label = stringResource(R.string.dive_lead), value = leadText(context, dive, locale, imperial))
+        feedback?.let {
+            FactRow(label = stringResource(R.string.dive_feedback), value = feedbackText(context, it, locale, imperial))
+        }
+    }
+}
+
+private fun suitText(context: Context, locale: Locale, suit: DiveViewSuit): String =
+    DiveDetailText.suit(context, locale, suit.type, suit.thicknessMm, (suit.hood as? JsonPrimitive)?.booleanOrNull, suit.undergarment)
+
+private fun leadText(context: Context, dive: DiveView, locale: Locale, imperial: Boolean): String {
+    if (dive.lead.isEmpty()) return context.getString(R.string.dive_lead_unknown)
+    if (dive.leadTotalKg == 0.0) return context.getString(R.string.dive_lead_none)
+    val entries = dive.lead.joinToString("\n") { entry ->
+        val amount = DiveDetailText.mass(context, entry.amountKg, locale, imperial)
+        entry.placement?.let { "$amount ${DiveDetailText.placement(context, it)}" } ?: amount
+    }
+    val total = dive.leadTotalKg?.let {
+        "\n" + context.getString(R.string.dive_lead_total, DiveDetailText.mass(context, it, locale, imperial))
+    }.orEmpty()
+    return entries + total
+}
+
+private fun feedbackText(
+    context: Context,
+    feedback: DiveViewWeightingFeedback,
+    locale: Locale,
+    imperial: Boolean,
+): String = when (feedback.felt) {
+    "right" -> context.getString(R.string.dive_feedback_right)
+    "too_heavy" -> feedback.amountKg?.let {
+        context.getString(R.string.dive_feedback_too_heavy, DiveDetailText.mass(context, it, locale, imperial))
+    } ?: context.getString(R.string.dive_feedback_too_heavy_unknown)
+    "too_light" -> feedback.amountKg?.let {
+        context.getString(R.string.dive_feedback_too_light, DiveDetailText.mass(context, it, locale, imperial))
+    } ?: context.getString(R.string.dive_feedback_too_light_unknown)
+    else -> feedback.felt
+}
+
+@Composable
+private fun Notes(notes: String?) {
+    if (notes.isNullOrBlank()) return
+    SectionHeading(stringResource(R.string.dive_notes))
+    Text(
+        notes,
+        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+        style = MaterialTheme.typography.bodyLarge,
+    )
 }
 
 @Composable
