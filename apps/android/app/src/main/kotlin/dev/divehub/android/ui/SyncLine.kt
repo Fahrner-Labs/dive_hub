@@ -12,7 +12,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.unit.dp
 import dev.divehub.android.R
 import java.util.Locale
 
@@ -43,9 +42,9 @@ internal fun SyncLine(
         text,
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .padding(horizontal = Spacing.s4, vertical = Spacing.s2)
             .semantics { liveRegion = LiveRegionMode.Polite },
-        style = MaterialTheme.typography.labelMedium,
+        style = DiveHubText.meta,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
 }
