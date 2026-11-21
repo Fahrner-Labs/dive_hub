@@ -4,7 +4,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -17,9 +18,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import dev.divehub.android.ui.DiveHubColors
 import dev.divehub.android.ui.DiveHubText
 import dev.divehub.android.ui.Spacing
 
@@ -32,7 +35,10 @@ private val BoxCornerRadius = 10.dp
  * gutter belongs to the screen's content column. The first section on a screen passes `showSeparator = false`.
  *
  * `attention` paints a section that waits for the User with the accent-soft tone, as the brief's box inside the sheet.
+ * The heading and its action wrap: at 320 dp or 200% font scale the action moves below the heading instead of
+ * squeezing it.
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun Section(
     title: String,
@@ -45,23 +51,26 @@ fun Section(
     Column(modifier) {
         if (showSeparator) {
             Spacer(Modifier.height(Spacing.s5))
-            HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant)
+            HorizontalDivider(color = DiveHubColors.border)
             Spacer(Modifier.height(Spacing.s4))
         }
         Column(
             if (attention) {
+                val shape = RoundedCornerShape(BoxCornerRadius)
                 Modifier
                     .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.primaryContainer, RoundedCornerShape(BoxCornerRadius))
-                    .padding(horizontal = Spacing.s4, vertical = Spacing.s3)
+                    .clip(shape)
+                    .background(MaterialTheme.colorScheme.primaryContainer)
+                    .padding(horizontal = Spacing.s5, vertical = Spacing.s4)
             } else {
                 Modifier
             },
         ) {
-            Row(
+            FlowRow(
                 Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
+                verticalArrangement = Arrangement.spacedBy(Spacing.s2),
+                itemVerticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
                     title,

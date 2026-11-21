@@ -16,9 +16,9 @@ import dev.divehub.android.ui.DiveHubText
 import dev.divehub.android.ui.Spacing
 
 /**
- * A label–value line: the label in [DiveHubText.label] and muted, the value in [DiveHubText.body] with tabular
- * figures. An edited mark and a note sit under the value in [DiveHubText.meta]. It keeps [Spacing.s3] above and below,
- * the one comfortable density.
+ * A label–value line: the label in [DiveHubText.label] and muted, the value in [DiveHubText.body] and end-aligned so
+ * figures line up down the column. An edited mark and a note sit under the value in [DiveHubText.meta]. It keeps
+ * [Spacing.s3] above and below, the one comfortable density.
  */
 @Composable
 fun FactRow(

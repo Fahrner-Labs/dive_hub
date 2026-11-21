@@ -14,15 +14,17 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import dev.divehub.android.ui.DiveHubText
 import dev.divehub.android.ui.Spacing
 
 /**
- * The logbook's row: a title in [DiveHubText.bodyStrong] with its facts under it in [DiveHubText.meta], and the depth
- * and duration aligned on the end with tabular figures. The whole row is one target and keeps [Spacing.s3] above and
- * below. Month headings sit above the rows, not inside one.
+ * The logbook's row: a title in [DiveHubText.bodyStrong] with its facts under it in [DiveHubText.meta], an optional
+ * participant slot, and the depth and duration end-aligned on the right so figures line up down the list. The whole
+ * row is one target and keeps [Spacing.s3] above and below. Month headings sit above the rows, not inside one.
  */
 @Composable
 fun DiveRow(
@@ -31,6 +33,7 @@ fun DiveRow(
     duration: String,
     modifier: Modifier = Modifier,
     facts: List<String> = emptyList(),
+    avatars: (@Composable () -> Unit)? = null,
     onClick: () -> Unit,
 ) {
     Row(
@@ -48,9 +51,16 @@ fun DiveRow(
                 Spacer(Modifier.height(Spacing.s1))
                 Text(
                     facts.joinToString(" · "),
+                    modifier = Modifier.clearAndSetSemantics {
+                        contentDescription = facts.joinToString(", ")
+                    },
                     style = DiveHubText.meta,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+            }
+            avatars?.let {
+                Spacer(Modifier.height(Spacing.s1))
+                it()
             }
         }
         Column(horizontalAlignment = Alignment.End) {

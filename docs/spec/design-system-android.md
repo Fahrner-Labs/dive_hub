@@ -29,8 +29,8 @@ cards. The depth profile is the one bold element. The diver-down flag is the bra
 (near-black, inverted in the dark); the accent colour means only "link, focus or data". One typeface, Poppins.
 
 Checked against generic defaults: no Material purple, no default pill-shaped buttons, no identical elevated cards,
-no gradients as decoration (only the depth profile), no monospace for data (tabular figures instead), no all-caps
-labels.
+no gradients as decoration (only the depth profile), no monospace for data (Poppins figures, right-aligned), no
+all-caps labels.
 
 ## Spacing and density
 
@@ -90,8 +90,11 @@ Rules:
 - Large headings use −0.01em tracking. Line height belongs to the style; a screen does not override it.
 - 700 is not part of the scale. Emphasis is 600 plus size, not a fourth weight. Do not use Poppins Bold for UI
   text.
-- Numbers in data use tabular figures (`fontFeatureSettings = "tnum"`): depths, durations, times, counts,
-  temperatures, pressures, SAC and profile samples. Never a monospace font.
+- Numbers in data (depths, durations, times, counts, temperatures, pressures, SAC and profile samples) line up by
+  being end-aligned in their column. Never a monospace font. Poppins, the one family, has no tabular (`tnum`)
+  feature in its 400/500/600 builds, so `fontFeatureSettings = "tnum"` is a no-op and there is no tabular helper.
+  If a Poppins build that carries `tnum` is bundled, apply it at the data call sites (`FactRow` value, `DiveRow`
+  figures), not to all body text.
 - Body text is 16 sp. The smallest UI text is 12 sp (`meta`) and is never used for body text or inputs. This keeps
   the web's floors and keeps German legible.
 - Muted is a colour, not a size. A lead sentence stays at `body`; `meta` is for secondary text only.
@@ -326,7 +329,7 @@ This is a specification, not a big-bang rewrite. The Android code moves onto it 
 
 - `Theme.kt`: the ink `primary`, the accent as its own role, the border, success and surface-container roles, the data
   colours, and no hardcoded colour outside the file.
-- `Type.kt`: the scale above, every Material slot set, and a tabular-figures helper.
+- `Type.kt`: the scale above and every Material slot set.
 - `Spacing.kt`: `s1`…`s7` on the 4 dp grid.
 - `ui/components/`: `Section`, `FactRow`, `DiveRow`, `EmptyState` first, then the other components as a screen
   needs them.

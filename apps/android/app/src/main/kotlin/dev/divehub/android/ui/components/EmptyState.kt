@@ -18,15 +18,16 @@ import dev.divehub.android.ui.Spacing
 
 /**
  * Why a screen is empty and the way on: an optional title in [DiveHubText.title], the reason in [DiveHubText.body]
- * and an optional action below it. No dead end; the caller supplies the design-system button so its role (a primary
- * [androidx.compose.material3.Button] or a quiet text button) is the caller's choice.
+ * and the action below it. The action is required because an empty state has no dead end; the caller supplies the
+ * design-system button so its role (a primary [androidx.compose.material3.Button] or a quiet text button) is the
+ * caller's choice.
  */
 @Composable
 fun EmptyState(
     message: String,
+    action: @Composable () -> Unit,
     modifier: Modifier = Modifier,
     title: String? = null,
-    action: (@Composable () -> Unit)? = null,
 ) {
     Column(
         modifier
@@ -49,9 +50,7 @@ fun EmptyState(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
         )
-        action?.let {
-            Spacer(Modifier.height(Spacing.s5))
-            it()
-        }
+        Spacer(Modifier.height(Spacing.s5))
+        action()
     }
 }

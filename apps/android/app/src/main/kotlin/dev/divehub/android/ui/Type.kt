@@ -34,7 +34,7 @@ object DiveHubText {
     )
 
     /** A Dive's headline facts, a screen's one big number. */
-    val hero = style(32, 40, FontWeight.SemiBold, largeHeadingTracking).tabularFigures()
+    val hero = style(32, 40, FontWeight.SemiBold, largeHeadingTracking)
 
     /** A screen title where there is no top app bar; an empty-state title. */
     val title = style(28, 36, FontWeight.SemiBold, largeHeadingTracking)
@@ -43,26 +43,27 @@ object DiveHubText {
     val section = style(20, 28, FontWeight.SemiBold, largeHeadingTracking)
 
     /** Body, inputs, fact values. */
-    val body = style(16, 24, FontWeight.Normal).tabularFigures()
+    val body = style(16, 24, FontWeight.Normal)
 
     /** A row title, an emphasised value. */
-    val bodyStrong = style(16, 24, FontWeight.Medium).tabularFigures()
+    val bodyStrong = style(16, 24, FontWeight.Medium)
 
     /** Buttons, field labels, chips. */
     val label = style(14, 20, FontWeight.Medium)
 
     /** Counts, badges, a short state. */
-    val metaStrong = style(12, 16, FontWeight.Medium).tabularFigures()
+    val metaStrong = style(12, 16, FontWeight.Medium)
 
     /** Dates, supporting text, secondary detail. */
-    val meta = style(12, 16, FontWeight.Normal).tabularFigures()
+    val meta = style(12, 16, FontWeight.Normal)
 }
 
 /**
- * Numbers in data (depths, durations, times, counts, temperatures, pressures, SAC and profile samples) use tabular
- * figures, never a monospace font. The data styles carry this already; use it for a number in another style.
+ * Numbers in data (depths, durations, times, counts, temperatures, pressures, SAC and profile samples) line up by
+ * being end-aligned in their column, never by a monospace font. Poppins, the one family, has no tabular (`tnum`)
+ * feature in its 400/500/600 builds, so `fontFeatureSettings = "tnum"` would be a no-op; there is no tabular helper
+ * until a build that carries the feature is bundled.
  */
-fun TextStyle.tabularFigures(): TextStyle = copy(fontFeatureSettings = "tnum")
 
 /** Every Material slot is set from the semantic scale, so no slot falls back to a Material default. */
 val DiveHubTypography = Typography(
