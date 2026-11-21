@@ -166,6 +166,42 @@ class LogbookScreenshotTest {
     }
 
     @Test
+    fun `the sheet does not reopen when counts return`() {
+        var state by mutableStateOf(page(dives = listOf(reef), filters = emptySet()))
+        compose.setContent {
+            DiveHubTheme(darkTheme = false) {
+                LogbookScreen(
+                    state = state,
+                    units = "metric",
+                    onRefresh = {},
+                    onRetry = {},
+                    onShowAll = {},
+                    onPage = {},
+                    onToggleFilter = {},
+                    onOpenDive = {},
+                )
+            }
+        }
+        compose.onNodeWithContentDescription("Filters").performClick()
+        compose.onNodeWithText("Show only").assertIsDisplayed()
+
+        val noCounts = DiveListViewCounts(0, 0, 0, 0, 0)
+        state = state.copy(data = state.data!!.copy(counts = noCounts), lastCounts = noCounts)
+        compose.onNodeWithText("Show only").assertDoesNotExist()
+
+        state = page(dives = listOf(reef), filters = emptySet())
+        compose.onNodeWithText("Show only").assertDoesNotExist()
+    }
+
+    @Test
+    fun `the chips follow the page the list is showing`() {
+        val seenCounts = DiveListViewCounts(0, 0, 0, 0, 0)
+        render(page(dives = listOf(reef), filters = emptySet()).copy(lastCounts = seenCounts))
+        compose.onNodeWithContentDescription("Filters").performClick()
+        compose.onNodeWithText("No recording · 3").assertIsDisplayed()
+    }
+
+    @Test
     fun `a row without a recording`() {
         render(page(dives = listOf(noRecording), filters = setOf(LogbookFilter.NO_RECORDING)))
         compose.onNodeWithText("No recording").assertIsDisplayed()

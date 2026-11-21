@@ -43,6 +43,7 @@ import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.rememberModalBottomSheetState
 import android.content.Context
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -132,8 +133,12 @@ fun LogbookScreen(
     onToggleFilter: (LogbookFilter) -> Unit,
     onOpenDive: (DiveListViewDivesItem) -> Unit,
 ) {
-    val chips = state.lastCounts?.let { filterChips(it, state.filters) }.orEmpty()
+    val counts = state.data?.counts ?: state.lastCounts
+    val chips = counts?.let { filterChips(it, state.filters) }.orEmpty()
     var filtersOpen by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(chips.isEmpty()) {
+        if (chips.isEmpty()) filtersOpen = false
+    }
 
     Scaffold(
         topBar = {
