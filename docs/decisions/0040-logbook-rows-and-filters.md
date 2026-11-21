@@ -8,7 +8,7 @@ date: 2026-10-07
 # ADR 0040: Logbook rows, "Show only" filters and their counts
 
 ## Status
-Accepted – 2026-10-07. Amended 2026-11-17: the chip count compares stored fingerprints (see below). Amends [ADR 0017](0017-logbook-list-paging.md). Numbers are calculated, as it left open: [ADR 0048](0048-dive-numbers.md) (built 2026-10-09).
+Accepted – 2026-10-07. Amended 2026-11-17: the chip count compares stored fingerprints (see below). Amended 2026-11-21: the mark is optional per client (see below). Amends [ADR 0017](0017-logbook-list-paging.md). Numbers are calculated, as it left open: [ADR 0048](0048-dive-numbers.md) (built 2026-10-09).
 
 ## Context
 The [UI redesign](../research/2026-10-07-ui-redesign-proposal.md) (section 3, owner's answers under "Outcome") replaces
@@ -80,3 +80,9 @@ version as changed, and adds the number comparison from the Connection's `follow
 number update. A first start after this change backfills the rows before the server listens (`backfillFingerprints`); a
 database that has none yet counts its sent Dives as changed until then. The filter result itself is unchanged:
 `only=changed-since-sent` still works the set out afresh when used ([FAH-216](/FAH/issues/FAH-216)).
+
+## Amended 2026-11-21 (FAH-339)
+`with-findings` still means `findings > 0` on the Dive ([ADR 0036](0036-dive-assessment.md)). It no longer implies
+that every client draws the list's mark: the mark is optional per client (ADR 0036, amendment of 2026-11-21). The
+filter, its counts and the API's `findings` field are unchanged; the Android client relies on the filter while its
+Dive page has no assessment view. ([FAH-339](/FAH/issues/FAH-339))

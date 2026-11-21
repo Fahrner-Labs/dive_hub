@@ -8,6 +8,7 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import dev.divehub.android.AppContainer
 import dev.divehub.android.ui.followStoreWrites
 import dev.divehub.api.models.DiveListView
+import dev.divehub.api.models.DiveListViewCounts
 import dev.divehub.shared.DiveHubException
 import dev.divehub.shared.NoAnswerException
 import dev.divehub.shared.logbook.LogbookFilter
@@ -36,6 +37,11 @@ data class LogbookUiState(
     val page: Int = 1,
     val filters: Set<LogbookFilter> = emptySet(),
     val data: DiveListView? = null,
+    /**
+     * The counts from the last page read. Kept while a filter read has no page yet, so the filter action and its
+     * badge stay on screen instead of blinking out.
+     */
+    val lastCounts: DiveListViewCounts? = null,
     val providers: ProviderDirectory = ProviderDirectory.EMPTY,
     val error: String? = null,
     /** No answer at all: offline, or the instance cannot be reached (client contract §2). */
@@ -196,6 +202,7 @@ class LogbookViewModel(
                     loading = false,
                     refreshing = false,
                     data = if (preSync) null else cached.data,
+                    lastCounts = if (preSync) it.lastCounts else cached.data.counts,
                     syncedAt = if (preSync) null else cached.syncedAt,
                     profilePending = cached.profilePending,
                     offline = true,
@@ -225,6 +232,7 @@ class LogbookViewModel(
                 loading = false,
                 refreshing = false,
                 data = result.data,
+                lastCounts = result.data.counts,
                 syncedAt = result.syncedAt,
                 profilePending = result.profilePending,
                 offline = offlineState.value,

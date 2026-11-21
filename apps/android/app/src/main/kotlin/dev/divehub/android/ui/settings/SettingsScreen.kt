@@ -29,7 +29,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -48,6 +47,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.divehub.android.R
+import dev.divehub.android.ui.DiveHubTopBar
 import dev.divehub.android.ui.formatSyncTime
 import dev.divehub.android.ui.successColor
 import java.util.Locale
@@ -109,7 +109,7 @@ fun SettingsScreen(
 
     Scaffold(
         modifier = modifier,
-        topBar = { TopAppBar(title = { Text(stringResource(R.string.settings_title)) }) },
+        topBar = { DiveHubTopBar(title = stringResource(R.string.settings_title)) },
     ) { padding ->
         Column(
             Modifier

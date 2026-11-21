@@ -2,21 +2,26 @@ package dev.divehub.android.ui.logbook
 
 import android.provider.Settings
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasProgressBarRangeInfo
 import androidx.compose.ui.test.hasScrollToIndexAction
 import androidx.compose.ui.test.hasText
-import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.dp
 import com.github.takahirom.roborazzi.captureRoboImage
 import dev.divehub.android.ui.DiveHubTheme
 import dev.divehub.api.models.DiveListView
@@ -31,6 +36,7 @@ import dev.divehub.api.models.DiveProfileView
 import dev.divehub.shared.ErrorCodes
 import dev.divehub.shared.logbook.LogbookFilter
 import dev.divehub.shared.logbook.ProviderDirectory
+import dev.divehub.shared.logbook.toggleFilter
 import dev.divehub.shared.sync.SyncProgress
 import kotlinx.serialization.json.JsonPrimitive
 import java.util.TimeZone
@@ -45,8 +51,9 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
 /**
- * The contract-visible logbook states as pictures (ADR 0040): the "Show only" counts, a row without a Recording, and
- * the findings mark. They are rendered from a fixed state, so a drawing change shows up as a changed image.
+ * The contract-visible logbook states as pictures (ADR 0040): the "Show only" filters in their sheet, a row without a
+ * Recording, and the states that have no list. They are rendered from a fixed state, so a drawing change shows up as a
+ * changed image.
  */
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
@@ -81,26 +88,154 @@ class LogbookScreenshotTest {
 
     @Test
     fun `filter counts`() {
-        render(page(dives = listOf(reef, noRecording), filters = emptySet()))
-        compose.onNodeWithText("Show only").assertIsDisplayed()
-        compose.onNode(hasText("No recording", substring = true) and isSelectable()).assertIsDisplayed()
+        render(page(dives = listOf(reef), filters = emptySet()))
+        compose.onNodeWithText("No recording\u00A03").assertDoesNotExist()
+        compose.onNodeWithContentDescription("Filters").performClick()
+        compose.onNodeWithText("No recording\u00A03").assertIsDisplayed()
         capture("logbook_filters.png")
+    }
+
+    @Test
+    fun `an applied filter is visible while the sheet is closed`() {
+        render(
+            page(
+                dives = listOf(withFindings),
+                filters = setOf(LogbookFilter.WITH_FINDINGS, LogbookFilter.CHANGED_SINCE_SENT),
+            ),
+        )
+        compose.onNodeWithText("With findings\u00A02").assertDoesNotExist()
+        compose.onNodeWithContentDescription("Filters, 2 selected").assertIsDisplayed()
+        capture("logbook_filter_badge.png")
+    }
+
+    @Test
+    fun `an applied filter is checked in the sheet`() {
+        render(page(dives = listOf(noRecording), filters = setOf(LogbookFilter.NO_RECORDING)))
+        compose.onNodeWithContentDescription("Filters, 1 selected").performClick()
+        compose.onNodeWithText("No recording\u00A03").assertIsSelected()
+        capture("logbook_filters_applied.png")
+    }
+
+    @Test
+    fun `the offline filter note lives in the sheet`() {
+        render(
+            page(dives = listOf(reef), filters = setOf(LogbookFilter.CHANGED_SINCE_SENT))
+                .copy(filterUnavailable = true),
+        )
+        val note = "This filter needs a connection. Showing the dives synced on this device."
+        compose.onNodeWithText(note).assertDoesNotExist()
+        compose.onNodeWithContentDescription("Filters, 1 selected").performClick()
+        compose.onNodeWithText(note).assertIsDisplayed()
+        capture("logbook_filters_offline.png")
+    }
+
+    @Test
+    @Config(sdk = [36], qualifiers = "en-rUS-w411dp-h891dp-night-xxhdpi")
+    fun `the action and the sheet in the dark scheme`() {
+        val state = page(
+            dives = listOf(withFindings),
+            filters = setOf(LogbookFilter.WITH_FINDINGS, LogbookFilter.CHANGED_SINCE_SENT),
+        )
+        render(state, darkTheme = true)
+        compose.onNodeWithContentDescription("Filters, 2 selected").assertIsDisplayed()
+        capture("logbook_filter_badge_dark.png")
+        compose.onNodeWithContentDescription("Filters, 2 selected").performClick()
+        compose.onNodeWithText("With findings\u00A02").assertIsSelected()
+        capture("logbook_filters_dark.png")
+    }
+
+    @Test
+    @Config(sdk = [36], qualifiers = "de-rDE-w320dp-h640dp-xxhdpi", fontScale = 2f)
+    fun `the sheet at 320 dp and 200 percent text in German`() {
+        render(page(dives = listOf(reef), filters = setOf(LogbookFilter.CHANGED_SINCE_SENT)))
+        compose.onNodeWithContentDescription("Filter, 1 ausgewählt").assertIsDisplayed()
+        capture("logbook_filter_badge_narrow_de.png")
+        compose.onNodeWithContentDescription("Filter, 1 ausgewählt").performClick()
+        val chip = compose.onNodeWithText("Seit dem Senden geändert\u00A07")
+        chip.performScrollTo().assertIsDisplayed().assertIsSelected()
+        chip.assertHeightIsAtLeast(48.dp)
+        capture("logbook_filters_narrow_de.png")
+    }
+
+    @Test
+    fun `the sheet stays open while a filter read clears the page`() {
+        var state by mutableStateOf(page(dives = listOf(reef), filters = emptySet()))
+        compose.setContent {
+            DiveHubTheme(darkTheme = false) {
+                LogbookScreen(
+                    state = state,
+                    units = "metric",
+                    onRefresh = {},
+                    onRetry = {},
+                    onShowAll = {},
+                    onPage = {},
+                    onToggleFilter = { filter ->
+                        state = state.copy(
+                            loading = false,
+                            data = null,
+                            filters = toggleFilter(state.filters, filter),
+                        )
+                    },
+                    onOpenDive = {},
+                )
+            }
+        }
+        compose.onNodeWithContentDescription("Filters").performClick()
+        compose.onNodeWithText("No recording\u00A03").performClick()
+        compose.onNodeWithText("Show only").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Filters, 1 selected").assertExists()
+    }
+
+    @Test
+    fun `the sheet does not reopen when counts return`() {
+        var state by mutableStateOf(page(dives = listOf(reef), filters = emptySet()))
+        compose.setContent {
+            DiveHubTheme(darkTheme = false) {
+                LogbookScreen(
+                    state = state,
+                    units = "metric",
+                    onRefresh = {},
+                    onRetry = {},
+                    onShowAll = {},
+                    onPage = {},
+                    onToggleFilter = {},
+                    onOpenDive = {},
+                )
+            }
+        }
+        compose.onNodeWithContentDescription("Filters").performClick()
+        compose.onNodeWithText("Show only").assertIsDisplayed()
+
+        val noCounts = DiveListViewCounts(0, 0, 0, 0, 0)
+        state = state.copy(data = state.data!!.copy(counts = noCounts), lastCounts = noCounts)
+        compose.onNodeWithText("Show only").assertDoesNotExist()
+
+        state = page(dives = listOf(reef), filters = emptySet())
+        compose.onNodeWithText("Show only").assertDoesNotExist()
+    }
+
+    @Test
+    fun `the chips follow the page the list is showing`() {
+        val seenCounts = DiveListViewCounts(0, 0, 0, 0, 0)
+        render(page(dives = listOf(reef), filters = emptySet()).copy(lastCounts = seenCounts))
+        compose.onNodeWithContentDescription("Filters").performClick()
+        compose.onNodeWithText("No recording\u00A03").assertIsDisplayed()
     }
 
     @Test
     fun `a row without a recording`() {
         render(page(dives = listOf(noRecording), filters = setOf(LogbookFilter.NO_RECORDING)))
-        compose.onNode(hasText("No recording", substring = true) and isSelectable()).assertIsSelected()
         compose.onNodeWithContentDescription("No recording", substring = true, useUnmergedTree = true).assertIsDisplayed()
         compose.onNodeWithContentDescription("from SSI", substring = true, useUnmergedTree = true).assertIsDisplayed()
         capture("logbook_no_recording_row.png")
     }
 
     @Test
-    fun `the findings mark`() {
+    fun `a row whose Dive has findings carries no findings text`() {
         render(page(dives = listOf(withFindings), filters = setOf(LogbookFilter.WITH_FINDINGS)))
-        compose.onNodeWithText("2 findings").assertIsDisplayed()
-        capture("logbook_findings_mark.png")
+        compose.onNodeWithText("2 findings").assertDoesNotExist()
+        compose.onNodeWithText("Blue Hole").assertIsDisplayed()
+        capture("logbook_row_with_findings.png")
     }
 
     @Test
@@ -169,7 +304,7 @@ class LogbookScreenshotTest {
     fun `the logbook at 320 dp and 200 percent`() {
         render(page(dives = crowded, filters = emptySet()), fontScale = 2f)
         compose.onNodeWithText("Tauchplatz an der Steilküste von Gozo").assertIsDisplayed()
-        compose.onNodeWithText("Show only").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Filters").assertIsDisplayed()
         capture("logbook_narrow_2x.png")
     }
 
@@ -192,7 +327,7 @@ class LogbookScreenshotTest {
 
     @Test
     @Config(qualifiers = "en-rUS-w320dp-h891dp-xxhdpi")
-    fun `a filtered logbook with no match says why under the filters`() {
+    fun `a filtered logbook with no match says why under the summary`() {
         render(
             page(dives = emptyList(), filters = setOf(LogbookFilter.WITH_FINDINGS), total = 0),
             fontScale = 2f,
@@ -211,17 +346,6 @@ class LogbookScreenshotTest {
 
     @Test
     @Config(qualifiers = "en-rUS-w411dp-h891dp-night-xxhdpi")
-    fun `the dark logbook keeps the selected filter and the findings mark`() {
-        render(
-            page(dives = listOf(withFindings), filters = setOf(LogbookFilter.WITH_FINDINGS)),
-            darkTheme = true,
-        )
-        compose.onNodeWithText("2 findings").assertIsDisplayed()
-        capture("logbook_dark_findings.png")
-    }
-
-    @Test
-    @Config(qualifiers = "en-rUS-w411dp-h891dp-night-xxhdpi")
     fun `the dark error state`() {
         render(LogbookUiState(loading = false, error = ErrorCodes.SERVER_ERROR), darkTheme = true)
         compose.onNodeWithText("The instance had a problem. Try again later.").assertIsDisplayed()
@@ -232,7 +356,7 @@ class LogbookScreenshotTest {
     @Config(qualifiers = "de-rDE-w320dp-h891dp-xxhdpi")
     fun `the german logbook at 320 dp and 200 percent with crowded names`() {
         render(page(dives = crowded, filters = emptySet()), fontScale = 2f)
-        compose.onNodeWithText("Nur anzeigen").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Filter").assertIsDisplayed()
         compose.onNodeWithText("Tauchplatz an der Steilküste von Gozo").assertIsDisplayed()
         capture("logbook_de_narrow_2x.png")
     }
@@ -331,11 +455,8 @@ class LogbookScreenshotTest {
         dives: List<DiveListViewDivesItem>,
         filters: Set<LogbookFilter>,
         total: Int = 312,
-    ) = LogbookUiState(
-        loading = false,
-        page = 1,
-        filters = filters,
-        data = DiveListView(
+    ): LogbookUiState {
+        val data = DiveListView(
             dives = dives,
             total = total,
             counts = DiveListViewCounts(
@@ -355,9 +476,16 @@ class LogbookScreenshotTest {
                 DiveListViewMonthsItem("2026-04", 9, 27_000.0),
                 DiveListViewMonthsItem("2026-03", 12, 36_000.0),
             ),
-        ),
-        providers = ProviderDirectory(names = mapOf("ssi" to "SSI"), connected = listOf("SSI")),
-    )
+        )
+        return LogbookUiState(
+            loading = false,
+            page = 1,
+            filters = filters,
+            data = data,
+            lastCounts = data.counts,
+            providers = ProviderDirectory(names = mapOf("ssi" to "SSI"), connected = listOf("SSI")),
+        )
+    }
 
     private val reef = dive(
         id = "reef",

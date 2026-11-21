@@ -11,6 +11,8 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -27,10 +29,13 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material3.Badge
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -39,18 +44,20 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -58,8 +65,10 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
@@ -75,11 +84,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.divehub.android.R
 import dev.divehub.android.ui.DiveHubColors
 import dev.divehub.android.ui.DiveHubText
+import dev.divehub.android.ui.DiveHubTopBar
 import dev.divehub.android.ui.Spacing
 import dev.divehub.android.ui.SyncLine
 import dev.divehub.android.ui.components.DiveRow
 import dev.divehub.android.ui.components.EmptyState
-import dev.divehub.android.ui.components.Section
 import dev.divehub.api.models.DiveListView
 import dev.divehub.api.models.DiveListViewDivesItem
 import dev.divehub.api.models.DiveListViewDivesItemParticipantsItem
@@ -100,8 +109,9 @@ import java.util.Locale
 /** The participant circle's fixed size, not a spacing step. */
 private val AvatarSize = 24.dp
 
-/** The brief's `Radius.control` for a filled action; a quiet text action stays text. */
+/** The brief's `Radius.control` for a filled action, and `Radius.sheet` for a bottom sheet's visible corners. */
 private val ControlCorner = 8.dp
+private val SheetCorner = 16.dp
 
 /** A chip's 1 dp outline and the progress track's end gap (the brief's pill chip; no M3 stop dot). */
 private val ChipBorder = 1.dp
@@ -171,10 +181,11 @@ fun LogbookRoute(
 }
 
 /**
- * The logbook's one screen (ADR 0040): the Diver's whole logbook above the list, "Show only" filters with their counts,
- * rows under month headings, a page at a time and pull-to-refresh. One sheet under the frame's top bar, sections kept
- * apart by a hairline and the rows in the design system's one comfortable density (design-system-android.md).
- * Everything here is drawn from [state], so the contract-visible states have screenshot tests.
+ * The logbook's one screen (ADR 0040): the Diver's whole logbook above the list, "Show only" filters behind the top
+ * bar's filter action, rows under month headings, a page at a time and pull-to-refresh. One sheet under the frame's
+ * top bar, sections kept apart by a hairline and the rows in the design system's one comfortable density
+ * (design-system-android.md). Everything here is drawn from [state], so the contract-visible states have screenshot
+ * tests.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -188,21 +199,24 @@ fun LogbookScreen(
     onToggleFilter: (LogbookFilter) -> Unit,
     onOpenDive: (DiveListViewDivesItem) -> Unit,
 ) {
+    val counts = state.data?.counts ?: state.lastCounts
+    val chips = counts?.let { filterChips(it, state.filters) }.orEmpty()
+    var filtersOpen by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(chips.isEmpty()) {
+        if (chips.isEmpty()) filtersOpen = false
+    }
+
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        stringResource(R.string.logbook_title),
-                        modifier = Modifier.semantics { heading() },
-                        style = DiveHubText.section,
-                    )
+            DiveHubTopBar(
+                title = stringResource(R.string.logbook_title),
+                titleModifier = Modifier.semantics { heading() },
+                actions = {
+                    if (chips.isNotEmpty()) {
+                        FilterAction(selectedCount = state.filters.size, onClick = { filtersOpen = true })
+                    }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background,
-                    titleContentColor = MaterialTheme.colorScheme.onBackground,
-                ),
             )
         },
     ) { padding ->
@@ -232,10 +246,96 @@ fun LogbookScreen(
                         onRefresh = onRefresh,
                         modifier = modifier,
                     ) {
-                        LogbookList(state, units, onRefresh, onRetry, onShowAll, onPage, onToggleFilter, onOpenDive)
+                        LogbookList(state, units, onRefresh, onRetry, onShowAll, onPage, onOpenDive)
                     }
                 }
             }
+        }
+    }
+
+    if (filtersOpen && chips.isNotEmpty()) {
+        FilterSheet(
+            chips = chips,
+            connected = state.providers.connected,
+            unavailable = state.filterUnavailable,
+            onToggle = onToggleFilter,
+            onDismiss = { filtersOpen = false },
+        )
+    }
+}
+
+@Composable
+private fun FilterAction(selectedCount: Int, onClick: () -> Unit) {
+    val label = if (selectedCount > 0) {
+        stringResource(R.string.logbook_filters_selected, selectedCount)
+    } else {
+        stringResource(R.string.logbook_filters)
+    }
+    Box(
+        modifier = Modifier
+            .minimumInteractiveComponentSize()
+            .clickable(role = Role.Button, onClick = onClick)
+            .semantics(mergeDescendants = true) { contentDescription = label }
+            .padding(horizontal = Spacing.s2),
+        contentAlignment = Alignment.Center,
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(painter = painterResource(R.drawable.ic_filter), contentDescription = null)
+            if (selectedCount > 0) {
+                Spacer(Modifier.width(Spacing.s1))
+                Badge(
+                    modifier = Modifier
+                        .border(ChipBorder, MaterialTheme.colorScheme.outline, CircleShape)
+                        .clearAndSetSemantics {},
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                ) {
+                    Text(
+                        selectedCount.toString(),
+                        style = DiveHubText.metaStrong.copy(fontFeatureSettings = "tnum"),
+                    )
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun FilterSheet(
+    chips: List<dev.divehub.shared.logbook.FilterChip>,
+    connected: List<String>,
+    unavailable: Boolean,
+    onToggle: (LogbookFilter) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        shape = RoundedCornerShape(topStart = SheetCorner, topEnd = SheetCorner),
+        containerColor = MaterialTheme.colorScheme.surface,
+    ) {
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = Spacing.s5, vertical = Spacing.s5),
+            verticalArrangement = Arrangement.spacedBy(Spacing.s2),
+        ) {
+            Text(
+                stringResource(R.string.logbook_show_only),
+                modifier = Modifier.semantics { heading() },
+                style = DiveHubText.section,
+            )
+            if (unavailable) {
+                Text(
+                    stringResource(R.string.logbook_filter_offline),
+                    modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+                    style = DiveHubText.meta,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Filters(chips, connected, onToggle)
         }
     }
 }
@@ -404,7 +504,6 @@ private fun LogbookList(
     onRetry: () -> Unit,
     onShowAll: () -> Unit,
     onPage: (Int) -> Unit,
-    onToggleFilter: (LogbookFilter) -> Unit,
     onOpenDive: (DiveListViewDivesItem) -> Unit,
 ) {
     val context = LocalContext.current
@@ -413,7 +512,6 @@ private fun LogbookList(
     val data = state.data ?: return
     val groups = monthGroups(data.dives, data.months)
     val scaleM = sketchScale(data.totals.deepestM)
-    val chips = filterChips(data.counts, state.filters)
     val filtersEmpty = state.filters.isEmpty()
 
     LazyColumn(Modifier.fillMaxSize()) {
@@ -421,32 +519,10 @@ private fun LogbookList(
             Column(Modifier.fillMaxWidth()) {
                 SyncLine(state.syncedAt, state.connected, state.offline, R.string.logbook_offline_cached)
                 Column(Modifier.padding(horizontal = Spacing.s4)) {
-                    if (state.filterUnavailable) {
-                        Text(
-                            stringResource(R.string.logbook_filter_offline),
-                            modifier = Modifier
-                                .padding(vertical = Spacing.s1)
-                                .semantics { liveRegion = LiveRegionMode.Polite },
-                            style = DiveHubText.meta,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
                     Summary(data, locale, imperial)
                     if (state.error != null) {
                         RefreshError(onRetry)
                     }
-                }
-            }
-        }
-
-        if (chips.isNotEmpty()) {
-            item(key = "filters") {
-                Section(
-                    title = stringResource(R.string.logbook_show_only),
-                    modifier = Modifier.padding(horizontal = Spacing.s4),
-                    showSeparator = false,
-                ) {
-                    Filters(chips, state.providers.connected, onToggleFilter)
                 }
             }
         }
@@ -457,9 +533,9 @@ private fun LogbookList(
 
         if (data.total == 0) {
             item(key = "empty") {
-                // A genuinely empty logbook has no filter block, so it takes the same centred placement as offline and
-                // error. With filters pressed the list is empty only because of them: the message belongs directly
-                // under the filters, where it is seen, not a viewport below them.
+                // A genuinely empty logbook takes the same centred placement as offline and error. With filters
+                // pressed the list is empty only because of them: the message stays directly under the summary,
+                // where it is seen, not a viewport below it.
                 val placement = if (filtersEmpty) {
                     Modifier.fillParentMaxHeight().fillMaxWidth()
                 } else {
@@ -705,19 +781,6 @@ private fun LogbookDiveRow(
             )
         },
         facts = facts,
-        badge = if (dive.findings > 0) {
-            {
-                FindingsBadge(
-                    context.resources.getQuantityString(
-                        R.plurals.logbook_findings,
-                        dive.findings,
-                        dive.findings,
-                    ),
-                )
-            }
-        } else {
-            null
-        },
         avatars = if (dive.participants.isEmpty()) {
             null
         } else {
@@ -756,23 +819,6 @@ private fun Participants(people: List<DiveListViewDivesItemParticipantsItem>) {
             )
         }
     }
-}
-
-/**
- * A short state with the facts: findings can be information, a note or a caution (glossary), so the mark is the
- * neutral badge the web uses, never the danger tone. A future severity from the API can tint it.
- */
-@Composable
-private fun FindingsBadge(text: String) {
-    Text(
-        text,
-        modifier = Modifier
-            .clip(CircleShape)
-            .background(MaterialTheme.colorScheme.surfaceVariant)
-            .padding(horizontal = Spacing.s2),
-        style = DiveHubText.metaStrong,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-    )
 }
 
 @Composable

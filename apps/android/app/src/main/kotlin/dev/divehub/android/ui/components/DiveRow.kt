@@ -33,9 +33,8 @@ private const val StackedFiguresFontScale = 1.5f
  * the figures move under the facts, so the title never breaks inside a word. The whole row is one target and keeps
  * [Spacing.s3] above and below. Month headings sit above the rows, not inside one.
  *
- * [leading] is the row's number column, [badge] a short state that sits with the facts (the logbook's findings mark),
- * and [footer] what sits under them inside the text column (the profile sketch), so a narrow phone never squeezes the
- * title to fit a third column.
+ * [leading] is the row's number column, [badge] a short state that sits with the facts, and [footer] what sits under
+ * them inside the text column (the profile sketch), so a narrow phone never squeezes the title to fit a third column.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable

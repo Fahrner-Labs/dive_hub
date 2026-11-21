@@ -10,7 +10,8 @@ date: 2026-10-06
 ## Status
 Accepted – 2026-10-06. Built as slice 18 on 2026-10-06 with engine version 1; what the build settled or changed is in the
 [amendment](#amendment-2026-10-06-as-built-slice-18-engine-version-1); how the web client shows it since the UI redesign is in the
-[second amendment](#amendment-2026-10-07-compact-presentation-ui-redesign-slice-a). Designed in [Dive assessment](../research/2026-10-06-dive-assessment.md). Moves the
+[second amendment](#amendment-2026-10-07-compact-presentation-ui-redesign-slice-a); the per-client mark is in the
+[third amendment](#amendment-2026-11-21-the-logbooks-mark-is-optional-fah-339). Designed in [Dive assessment](../research/2026-10-06-dive-assessment.md). Moves the
 planned slices of ADR 0031–0034 once more (to 19–23).
 
 ## Context
@@ -194,3 +195,13 @@ client shows them, and one sentence of the Decision.
   profile, closing it takes it off.
 - **Not changed:** no score, no alarm colour, the assessment under the profile, dismissing and muting (now with the
   finding's details).
+
+## Amendment 2026-11-21: the logbook's mark is optional (FAH-339)
+
+The owner chose (FAH-346, 2026-11-21) that the per-row findings mark is optional per client. `findings` and "no alarm
+red" are unchanged; the count still means note or caution findings neither dismissed nor muted. A client shows the
+mark only where findings are actionable: the web client keeps its neutral badge; the Android client leaves it off the
+logbook rows, and the `with-findings` filter ([ADR 0040](0040-logbook-rows-and-filters.md)) is how findings are found
+there until its Dive page shows assessments. The owner accepts that Android has no per-row at-a-glance signal: the
+2026-10-06 rejected option's "no way to see at a glance" is now a deliberate trade-off for that client, not a reason
+to keep the mark everywhere.

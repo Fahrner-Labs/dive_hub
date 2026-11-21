@@ -5,6 +5,7 @@ import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onFirst
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -61,6 +62,7 @@ class GasPlanScreenshotTest {
         compose.onNodeWithText(
             "An estimate, not advice: the dive computer and your training govern. No model guarantees safety.",
         ).assertIsDisplayed()
+        compose.onNodeWithContentDescription("Back").assertIsDisplayed()
         compose.onNode(hasScrollAction()).performScrollToNode(hasText("Add a level and a Diver to see the plan."))
         compose.onNodeWithText("Add a level and a Diver to see the plan.").assertIsDisplayed()
         capture("gas_plan_empty.png")

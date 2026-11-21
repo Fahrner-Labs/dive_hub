@@ -160,8 +160,8 @@ values as `String`, which is what a client needs when the server adds a code. It
 
 `app/src/test/screenshots/` holds the pictures Roborazzi's Compose test rule renders with Robolectric on the JVM
 (`LogbookScreenshotTest`, `DiveDetailScreenshotTest`). They pin the contract-visible states: the logbook's "Show only"
-counts, a row without a Recording, the findings mark, the sync line, a dive whose profiles are still syncing, and
-offline-with-cache versus offline-empty on both screens. An intended visual change rewrites them with
+counts, a row without a Recording, a row whose Dive has findings, the sync line, a dive whose profiles are still
+syncing, and offline-with-cache versus offline-empty on both screens. An intended visual change rewrites them with
 `:app:recordRoborazziDebug` and commits the PNGs; CI fails when the drawing no longer matches them.
 
 ## Behaviour in this slice
@@ -222,12 +222,15 @@ Read-only, from the synced store ([ADR 0040](../../docs/decisions/0040-logbook-r
 counts are the API's own, read from the store (see slice D4 above):
 
 - 25 Dives a page with `limit`/`offset` and `total` (ADR 0017); the pager and the "1–25 of 312" range sit on the list.
-- "Show only" toggles with their `counts`; a filter whose count is 0 is hidden unless it is applied. `not-at-provider`
-  names the connected Providers from `GET /api/providers` and `GET /api/connections` ("Not in SSI"). No result names
-  the applied filters and offers "Show all dives".
+- The top bar's filter action opens a `ModalBottomSheet` with the "Show only" toggles and their `counts`; a filter
+  whose count is 0 is hidden unless it is applied. With filters applied the action carries their count as a badge, so
+  the state stays visible while the sheet is closed. Offline, the sheet says a server-only filter needs a connection.
+  `not-at-provider` names the connected Providers from `GET /api/providers` and `GET /api/connections` ("Not in SSI").
+  No result names the applied filters and offers "Show all dives".
 - `totals` above the list and month headings with all of each month's Dives and their time (ADR 0040).
 - Rows say the Recordings count ("No recording"), the source Provider, gas, the computer's surface interval and the
-  participants as initials in circles, with names and roles as the row's accessible text. The findings mark is text.
+  participants as initials in circles, with names and roles as the row's accessible text. Findings are not marked on a
+  row; until the Dive page shows assessments, the `with-findings` filter is how they are found.
   The `profile` sketch shares one depth scale for every row (`totals.deepestM`, at least 10 m); fast ascent is thicker
   and coloured. A null profile draws nothing, or an empty dashed box when the Dive has no Recording (ADR 0041).
 - Pull-to-refresh re-runs the sync. With a cache, no answer shows the stored list and its age; before the first sync

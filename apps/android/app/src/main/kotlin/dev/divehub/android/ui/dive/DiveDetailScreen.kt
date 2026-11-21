@@ -24,7 +24,6 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
-import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -69,6 +68,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.filter
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.divehub.android.R
+import dev.divehub.android.ui.DiveHubTopBar
 import dev.divehub.android.ui.SyncLine
 import dev.divehub.android.ui.Formats
 import dev.divehub.api.models.DiveView
@@ -148,19 +148,12 @@ fun DiveDetailScreen(
     val inList = neighbours?.position != null
     val previous = neighbours?.previous?.id
     val next = neighbours?.next?.id
-    val backLabel = stringResource(R.string.dive_back)
     Scaffold(
         topBar = {
-            CenterAlignedTopAppBar(
-                title = { Text(state.dive?.let { title(context, it, locale) } ?: "") },
-                navigationIcon = {
-                    IconButton(
-                        onClick = onBack,
-                        modifier = Modifier.semantics { contentDescription = backLabel },
-                    ) {
-                        DirectionIcon(Direction.Back)
-                    }
-                },
+            DiveHubTopBar(
+                title = state.dive?.let { title(context, it, locale) } ?: "",
+                onBack = onBack,
+                centerTitle = true,
                 actions = {
                     // A Dive outside the list the page was opened from has no neighbours to name (ADR 0042).
                     if (inList) {
