@@ -200,7 +200,9 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   *Web:* `api.ts` (`importsQuery`, `siteImportsQuery`), `ImportPanel.tsx`, `SiteImportPage.tsx`.
 - **Lists page** with `limit`/`offset` and `total` (`/api/dives` [ADR 0017](../decisions/0017-logbook-list-paging.md),
   `/api/dive-sites` ADR 0022). Keep search, filters, sort and page in the client's navigation state (the web
-  client uses the address), so back and reload keep them. *Web:* `lib/logbook.ts`, `lib/sites-list.ts`.
+  client uses the address), so back and reload keep them. A native client that reads the whole list from its store
+  keeps the scroll position instead of a page; the filters the store cannot answer still page. *Web:*
+  `lib/logbook.ts`, `lib/sites-list.ts`.
 - **A list's shape says whether it pages** ([ADR 0060](../decisions/0060-list-response-shapes.md)): a paged list
   (`limit` and `offset`) is an object, the page under the resource's name and `total` beside it
   (`{ dives, total }`, `{ sites, total }`, `{ centres, total }`, `{ divers, total }`, `{ entries, total }`); every
@@ -226,8 +228,9 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   position (`position` of `total`), keep the control at the ends but say it is unavailable, and show nothing when
   `position` is `null`. *Android:* the top bar's back arrow, the Dive's title centred and previous/next chevrons in the
   trailing actions, disabled at the ends and absent when `position` is `null`; a horizontal swipe on the page opens the
-  same neighbour and springs back at the ends (FAH-344). "Back to the logbook" returns to the list as it was, on page
-  `ceil(position / 25)`. Without a list, the whole logbook newest first.
+  same neighbour and springs back at the ends (FAH-344). "Back to the logbook" returns to the list as it was: scrolled
+  to that Dive's row in the continuous stored list, or on the page that shows it while a server-answered filter keeps
+  the pager. Without a list, the whole logbook newest first.
   *Web:* `DivePage.tsx` (`Neighbours`), `lib/logbook.ts` (`diveHref`, `neighbourParams`). *Android:* `DiveDetailScreen.kt`
   (`DivePager`, `NeighbourAction`).
 - **Follow merged sites:** a site with `mergedInto` is gone. Open the kept site instead (ADR 0022).

@@ -29,8 +29,9 @@ not shared logic.
 ### D1 — Navigation Compose with type-safe routes
 Use `androidx.navigation:navigation-compose` (2.10.x) and its type-safe API: every destination is a
 `@Serializable` route (`data object` or `data class` with route arguments), registered with `composable<T>()` inside
-a `NavHost`. The app module applies the Kotlin serialization plugin. Neighbour navigation on a Dive, the logbook
-page and the open tool page are route arguments or saved state, so Navigation restores them after process death.
+a `NavHost`. The app module applies the Kotlin serialization plugin. Neighbour navigation on a Dive, the logbook's
+return focus (Dive id and `position`) and the open tool page are route arguments or saved state, so Navigation
+restores them after process death.
 
 ### D2 — The graph
 ```
@@ -57,12 +58,13 @@ per-User view models and the top-level navigation pops the whole back stack to `
 needed.
 
 ### D4 — Back semantics (ADR 0042) stay
-- Back from a Dive returns to the logbook **on the page the Dive is on**: before popping, the Dive destination
-  writes `LogbookPaging.pageOf(neighbours.position)` into the logbook entry's `SavedStateHandle`.
+- Back from a Dive returns to the logbook **at the Dive's place**: before popping, the Dive destination writes the
+  Dive id and `neighbours.position` into the logbook entry's `SavedStateHandle`. The continuous stored list scrolls
+  to that row; the paged fallback (`changed-since-sent` / `not-at-provider`) pages to `LogbookPaging.pageOf(position)`.
 - A Dive opened from a tool returns to that tool page: the origin is simply the previous back stack entry.
 - A tool page (gas plan, lead, loadings) is pushed above the gas page, so back returns to gas; back from gas returns
   to the logbook, and back from a start destination exits.
-- One `BackHandler` remains, on the Dive destination, because the page write must happen before the pop. Everything
+- One `BackHandler` remains, on the Dive destination, because the focus write must happen before the pop. Everything
   else is the platform's back stack.
 
 ### D5 — Why not keep it, and why not Decompose/Voyager
@@ -73,7 +75,8 @@ is first-party, type-safe, gives saved-state restoration for free, and is the pa
 ## Consequences
 - New screens are a route plus a `composable` block; the bottom bar and settings in T3 are additive.
 - The app gains one ABI-sized dependency (Navigation) and the serialization plugin on `:app`; `:shared` is untouched.
-- Process death restores the Dive id, the logbook page and the open tool page, not just the top-level screen.
+- Process death restores the Dive id, the logbook's return focus and the open tool page, not just the top-level
+  screen.
 - Deep links are available by adding `deepLinks` to the routes; none are defined yet, so addresses stay app-internal.
 - Tests can exercise the shell with stand-in screens: the graph, back stack and restoration no longer require a
   session or a store. Roborazzi screenshot tests still render screens directly and stay unchanged.

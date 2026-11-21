@@ -36,7 +36,7 @@ class StoreLogbookTest {
     fun close() = driver.close()
 
     @Test
-    fun `a page is 25 stored list rows, newest first`() {
+    fun `the whole stored list is read newest first`() {
         for (index in 1..30) {
             insert(
                 diveId = "d$index",
@@ -45,14 +45,12 @@ class StoreLogbookTest {
             )
         }
 
-        val first = logbook.page(page = 1, filters = emptySet())
-        val second = logbook.page(page = 2, filters = emptySet())
+        val list = logbook.list(emptySet())
 
-        assertEquals(30, first.data.total)
-        assertEquals(25, first.data.dives.size)
-        assertEquals(5, second.data.dives.size)
-        assertEquals("d30", first.data.dives.first().id)
-        assertEquals("d5", second.data.dives.first().id)
+        assertEquals(30, list.data.total)
+        assertEquals(30, list.data.dives.size)
+        assertEquals("d30", list.data.dives.first().id)
+        assertEquals("d1", list.data.dives.last().id)
     }
 
     @Test
@@ -68,9 +66,9 @@ class StoreLogbookTest {
             ),
         )
 
-        val typed = logbook.page(page = 1, filters = setOf(LogbookFilter.NO_RECORDING))
-        val noSite = logbook.page(page = 1, filters = setOf(LogbookFilter.NO_SITE))
-        val findings = logbook.page(page = 1, filters = setOf(LogbookFilter.WITH_FINDINGS))
+        val typed = logbook.list(setOf(LogbookFilter.NO_RECORDING))
+        val noSite = logbook.list(setOf(LogbookFilter.NO_SITE))
+        val findings = logbook.list(setOf(LogbookFilter.WITH_FINDINGS))
 
         assertEquals(listOf("typed"), typed.data.dives.map { it.id })
         assertEquals(listOf("typed"), noSite.data.dives.map { it.id })
@@ -85,15 +83,15 @@ class StoreLogbookTest {
         insert("b", item("b", startsAt = "2026-11-12T10:00:00.000Z"), duration = 2_000, depth = 30.0)
         insert("c", item("c", startsAt = "2026-10-02T10:00:00.000Z"), duration = 1_000, depth = 10.0)
 
-        val page = logbook.page(page = 1, filters = emptySet())
+        val list = logbook.list(emptySet())
 
-        assertEquals(3, page.data.totals.dives)
-        assertEquals(6_000.0, page.data.totals.durationSeconds)
-        assertEquals(30.0, page.data.totals.deepestM)
-        assertEquals("2026-11-12T10:00:00.000Z", page.data.totals.lastDiveAt)
-        assertEquals(listOf("2026-11", "2026-10"), page.data.months.map { it.month })
-        assertEquals(2, page.data.months.first().dives)
-        assertEquals(5_000.0, page.data.months.first().durationSeconds)
+        assertEquals(3, list.data.totals.dives)
+        assertEquals(6_000.0, list.data.totals.durationSeconds)
+        assertEquals(30.0, list.data.totals.deepestM)
+        assertEquals("2026-11-12T10:00:00.000Z", list.data.totals.lastDiveAt)
+        assertEquals(listOf("2026-11", "2026-10"), list.data.months.map { it.month })
+        assertEquals(2, list.data.months.first().dives)
+        assertEquals(5_000.0, list.data.months.first().durationSeconds)
     }
 
     @Test
@@ -106,11 +104,11 @@ class StoreLogbookTest {
         store.saveCheckpoint(SyncCheckpoint("profiles:synced", "profiles", done = true, updatedAt = NOW))
         store.saveSyncState(SyncState(lastFullSyncAt = NOW, schemaVersion = DiveStore.schemaVersion))
 
-        val page = logbook.page(page = 1, filters = emptySet())
+        val list = logbook.list(emptySet())
 
-        assertEquals(NOW, page.syncedAt)
-        assertTrue(page.hasSync)
-        assertEquals(setOf("pending"), page.profilePending)
+        assertEquals(NOW, list.syncedAt)
+        assertTrue(list.hasSync)
+        assertEquals(setOf("pending"), list.profilePending)
     }
 
     @Test

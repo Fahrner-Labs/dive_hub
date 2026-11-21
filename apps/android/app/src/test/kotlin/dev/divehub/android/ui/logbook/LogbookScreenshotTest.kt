@@ -1,6 +1,8 @@
 package dev.divehub.android.ui.logbook
 
 import android.provider.Settings
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -120,7 +122,7 @@ class LogbookScreenshotTest {
     fun `the offline filter note lives in the sheet`() {
         render(
             page(dives = listOf(reef), filters = setOf(LogbookFilter.CHANGED_SINCE_SENT))
-                .copy(filterUnavailable = true),
+                .copy(paged = false, filterUnavailable = true),
         )
         val note = "This filter needs a connection. Showing the dives synced on this device."
         compose.onNodeWithText(note).assertDoesNotExist()
@@ -147,11 +149,11 @@ class LogbookScreenshotTest {
     @Test
     @Config(sdk = [36], qualifiers = "de-rDE-w320dp-h640dp-xxhdpi", fontScale = 2f)
     fun `the sheet at 320 dp and 200 percent text in German`() {
-        render(page(dives = listOf(reef), filters = setOf(LogbookFilter.CHANGED_SINCE_SENT)))
+        render(page(dives = listOf(reef), filters = setOf(LogbookFilter.NO_RECORDING)))
         compose.onNodeWithContentDescription("Filter, 1 ausgewählt").assertIsDisplayed()
         capture("logbook_filter_badge_narrow_de.png")
         compose.onNodeWithContentDescription("Filter, 1 ausgewählt").performClick()
-        val chip = compose.onNodeWithText("Seit dem Senden geändert\u00A07")
+        val chip = compose.onNodeWithText("Keine Aufzeichnung\u00A03")
         chip.performScrollTo().assertIsDisplayed().assertIsSelected()
         chip.assertHeightIsAtLeast(48.dp)
         capture("logbook_filters_narrow_de.png")
@@ -236,6 +238,16 @@ class LogbookScreenshotTest {
         compose.onNodeWithText("2 findings").assertDoesNotExist()
         compose.onNodeWithText("Blue Hole").assertIsDisplayed()
         capture("logbook_row_with_findings.png")
+    }
+
+    @Test
+    fun `a server-answered filter keeps the pager and its range`() {
+        render(
+            page(dives = listOf(reef), filters = setOf(LogbookFilter.CHANGED_SINCE_SENT)),
+        )
+        compose.onNodeWithText("1–25 of 312 dives").assertIsDisplayed()
+        compose.onNodeWithText("Next page").assertIsDisplayed()
+        capture("logbook_paged.png")
     }
 
     @Test
@@ -364,10 +376,36 @@ class LogbookScreenshotTest {
     @Test
     @Config(qualifiers = "en-rUS-w320dp-h891dp-xxhdpi")
     fun `the 320 dp 200 percent logbook reaches its pager`() {
-        render(page(dives = numbers, filters = emptySet()), fontScale = 2f)
+        render(
+            page(dives = numbers, filters = setOf(LogbookFilter.CHANGED_SINCE_SENT)),
+            fontScale = 2f,
+        )
         compose.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("Next page"))
         compose.onNodeWithText("Page 1 of 13").assertIsDisplayed()
         capture("logbook_narrow_2x_scrolled.png")
+    }
+
+    @Test
+    fun `the list scrolls under a stuck month heading`() {
+        val dives = (1..16).map { index ->
+            val april = index <= 8
+            val month = if (april) "04" else "03"
+            val day = if (april) 9 - index else 25 - index
+            dive(
+                id = "d$index",
+                number = index,
+                startsAt = "2026-$month-%02dT09:00:00Z".format(day),
+                site = "Site $index",
+                maxDepthM = 20.0,
+                profile = null,
+            )
+        }
+        render(list(dives), initialFirstVisibleItemIndex = 12)
+        compose.waitForIdle()
+
+        compose.onNodeWithText("Site 1").assertDoesNotExist()
+        compose.onNodeWithText("March 2026").assertIsDisplayed()
+        capture("logbook_scrolled.png")
     }
 
     @Test
@@ -387,6 +425,8 @@ class LogbookScreenshotTest {
         darkTheme: Boolean = false,
         fontScale: Float? = null,
         onRefresh: () -> Unit = {},
+        listState: LazyListState? = null,
+        initialFirstVisibleItemIndex: Int = 0,
     ) {
         compose.setContent {
             DiveHubTheme(darkTheme = darkTheme) {
@@ -403,6 +443,8 @@ class LogbookScreenshotTest {
                         onPage = {},
                         onToggleFilter = {},
                         onOpenDive = {},
+                        listState = listState
+                            ?: rememberLazyListState(initialFirstVisibleItemIndex = initialFirstVisibleItemIndex),
                     )
                 }
             }
@@ -451,6 +493,30 @@ class LogbookScreenshotTest {
         ),
     )
 
+    private fun list(dives: List<DiveListViewDivesItem>): LogbookUiState {
+        val months = dives.groupBy { it.startsAt.substring(0, 7) }
+            .map { (month, rows) -> DiveListViewMonthsItem(month, rows.size, rows.sumOf { it.durationSeconds }) }
+        val data = DiveListView(
+            dives = dives,
+            total = dives.size,
+            counts = DiveListViewCounts(0, 0, 0, 0, 0),
+            totals = DiveListViewTotals(
+                dives = dives.size,
+                durationSeconds = dives.sumOf { it.durationSeconds },
+                deepestM = dives.maxOfOrNull { it.maxDepthM ?: 0.0 },
+                lastDiveAt = dives.firstOrNull()?.startsAt,
+            ),
+            months = months,
+        )
+        return LogbookUiState(
+            loading = false,
+            page = 1,
+            filters = emptySet(),
+            data = data,
+            lastCounts = data.counts,
+        )
+    }
+
     private fun page(
         dives: List<DiveListViewDivesItem>,
         filters: Set<LogbookFilter>,
@@ -479,6 +545,10 @@ class LogbookScreenshotTest {
         )
         return LogbookUiState(
             loading = false,
+            // The two Push-backed filters are answered by the API, which still pages; the others are the store's.
+            paged = filters.any { filter ->
+                filter == LogbookFilter.CHANGED_SINCE_SENT || filter == LogbookFilter.NOT_AT_PROVIDER
+            },
             page = 1,
             filters = filters,
             data = data,

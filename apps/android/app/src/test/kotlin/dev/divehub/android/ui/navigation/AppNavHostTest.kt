@@ -16,6 +16,7 @@ import androidx.navigation.toRoute
 import dev.divehub.android.ui.tools.ToolPage
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -25,8 +26,8 @@ import org.robolectric.annotation.Config
 
 /**
  * The app shell's wiring (ADR 0079): the destinations resolve, the back stack keeps ADR 0042's "the logbook returns
- * on the page the Dive is on" and "a Dive opened from a tool returns to that tool page", and Navigation restores the
- * route arguments after process death.
+ * on the Dive's row" and "a Dive opened from a tool returns to that tool page", and Navigation restores the route
+ * arguments after process death.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [36])
@@ -36,7 +37,6 @@ class AppNavHostTest {
 
     private lateinit var controller: NavHostController
     private val screens = FakeScreens()
-    private val logbookPages = mutableListOf<Int>()
 
     @Test
     fun `the graph resolves the logbook, tools and dive destinations`() {
@@ -52,21 +52,26 @@ class AppNavHostTest {
     }
 
     @Test
-    fun `back from a dive returns to the logbook page the dive is on`() {
-        setContent(divePage = 2)
+    fun `back from a dive focuses its row in the logbook`() {
+        setContent(diveId = "dive-2", divePosition = 26)
         compose.runOnIdle {
             controller.navigate(MainRoute)
             controller.navigate(DiveRoute("dive-1"))
         }
         compose.waitForIdle()
-        assertEquals(1, screens.logbookPage)
+        assertNull(screens.logbookFocus)
 
         compose.runOnIdle { screens.diveBack!!.invoke() }
 
         assertRoute<LogbookRoute>()
         compose.waitForIdle()
-        assertEquals(2, screens.logbookPage)
-        assertEquals(listOf(2), logbookPages)
+        assertEquals("dive-2", screens.logbookFocus)
+        assertEquals(26, screens.logbookFocusPosition)
+
+        compose.runOnIdle { screens.logbookFocusHandled!!.invoke() }
+        compose.waitForIdle()
+        assertNull(screens.logbookFocus)
+        assertNull(screens.logbookFocusPosition)
     }
 
     @Test
@@ -154,8 +159,8 @@ class AppNavHostTest {
     }
 
     @Test
-    fun `stepping to a neighbour keeps one dive and the logbook page of the current one`() {
-        setContent(divePage = 2)
+    fun `stepping to a neighbour focuses the current dive on the way back`() {
+        setContent(diveId = "dive-2", divePosition = 26)
         compose.runOnIdle {
             controller.navigate(MainRoute)
             controller.navigate(DiveRoute("dive-1"))
@@ -172,7 +177,8 @@ class AppNavHostTest {
         compose.runOnIdle { screens.diveBack!!.invoke() }
         assertRoute<LogbookRoute>()
         compose.waitForIdle()
-        assertEquals(2, screens.logbookPage)
+        assertEquals("dive-2", screens.logbookFocus)
+        assertEquals(26, screens.logbookFocusPosition)
     }
 
     @Test
@@ -209,19 +215,25 @@ class AppNavHostTest {
     }
 
     @Test
-    fun `process death restores the logbook page`() {
+    fun `process death keeps the dive the logbook returns to`() {
         val restoration = StateRestorationTester(compose)
-        restoration.setContent { start(destination = null) }
-        compose.runOnIdle { controller.navigate(MainRoute) }
-        compose.runOnIdle { screens.logbookOnPage!!.invoke(3) }
+        restoration.setContent { start(destination = null, diveId = "dive-3", divePosition = 51) }
+        compose.runOnIdle {
+            controller.navigate(MainRoute)
+            controller.navigate(DiveRoute("dive-1"))
+        }
         compose.waitForIdle()
-        assertEquals(3, screens.logbookPage)
+        compose.runOnIdle { screens.diveBack!!.invoke() }
+        compose.waitForIdle()
+        assertEquals("dive-3", screens.logbookFocus)
+        assertEquals(51, screens.logbookFocusPosition)
 
         restoration.emulateSavedInstanceStateRestore()
 
         assertRoute<LogbookRoute>()
         compose.waitForIdle()
-        assertEquals(3, screens.logbookPage)
+        assertEquals("dive-3", screens.logbookFocus)
+        assertEquals(51, screens.logbookFocusPosition)
     }
 
     @Test
@@ -255,23 +267,6 @@ class AppNavHostTest {
         restoration.emulateSavedInstanceStateRestore()
 
         assertRoute<SettingsRoute>()
-    }
-
-    @Test
-    fun `a bottom-bar switch saves and restores the logbook page`() {
-        setContent()
-        compose.runOnIdle { controller.navigate(MainRoute) }
-        compose.runOnIdle { screens.logbookOnPage!!.invoke(3) }
-        compose.waitForIdle()
-        assertEquals(3, screens.logbookPage)
-
-        compose.onNodeWithText("Tools").performClick()
-        assertRoute<ToolsRoute>()
-        compose.onNodeWithText("Logbook").performClick()
-
-        assertRoute<LogbookRoute>()
-        compose.waitForIdle()
-        assertEquals(3, screens.logbookPage)
     }
 
     @Test
@@ -402,8 +397,8 @@ class AppNavHostTest {
     }
 
     @Test
-    fun `tapping the selected Logbook tab while on a dive returns to its page`() {
-        setContent(divePage = 4)
+    fun `tapping the selected Logbook tab while on a dive focuses its row`() {
+        setContent(diveId = "dive-4", divePosition = 76)
         compose.runOnIdle { controller.navigate(MainRoute) }
         compose.runOnIdle { screens.logbookOpenDive!!.invoke("dive-1") }
         assertRoute<DiveRoute>()
@@ -412,7 +407,8 @@ class AppNavHostTest {
 
         assertRoute<LogbookRoute>()
         compose.waitForIdle()
-        assertEquals(4, screens.logbookPage)
+        assertEquals("dive-4", screens.logbookFocus)
+        assertEquals(76, screens.logbookFocusPosition)
     }
 
     @Test
@@ -461,13 +457,14 @@ class AppNavHostTest {
         compose.runOnIdle { assertEquals(ToolPage.Gas, controller.currentBackStackEntry?.toRoute<ToolsRoute>()?.page) }
     }
 
-    private fun setContent(divePage: Int? = null) {
-        compose.setContent { start(divePage) }
+    private fun setContent(diveId: String? = null, divePosition: Int? = null) {
+        compose.setContent { start(diveId = diveId, divePosition = divePosition) }
     }
 
     @Composable
     private fun start(
-        divePage: Int? = null,
+        diveId: String? = null,
+        divePosition: Int? = null,
         destination: Any? = InstanceRoute,
         screens: AppScreens = this.screens,
     ) {
@@ -476,8 +473,8 @@ class AppNavHostTest {
             navController = controller,
             screens = screens,
             destination = destination,
-            divePage = { divePage },
-            onLogbookPage = { logbookPages += it },
+            diveId = { diveId },
+            divePosition = { divePosition },
         )
     }
 
@@ -493,10 +490,11 @@ class AppNavHostTest {
 
     /** Stubs that record what the shell asked for; the real screens are bound in `DiveHubApp`. */
     private class FakeScreens : AppScreens {
-        var logbookPage = 1
+        var logbookFocus: String? = null
+        var logbookFocusPosition: Int? = null
         var diveId: String? = null
         var toolsPage: ToolPage? = null
-        var logbookOnPage: ((Int) -> Unit)? = null
+        var logbookFocusHandled: (() -> Unit)? = null
         var logbookOpenDive: ((String) -> Unit)? = null
         var diveBack: (() -> Unit)? = null
         var diveOpenDive: ((String) -> Unit)? = null
@@ -519,14 +517,16 @@ class AppNavHostTest {
 
         @Composable
         override fun logbook(
-            page: Int,
-            onPage: (Int) -> Unit,
+            focusDiveId: String?,
+            focusPosition: Int?,
+            onFocusHandled: () -> Unit,
             onOpenDive: (String) -> Unit,
         ) {
-            logbookPage = page
-            logbookOnPage = onPage
+            logbookFocus = focusDiveId
+            logbookFocusPosition = focusPosition
+            logbookFocusHandled = onFocusHandled
             logbookOpenDive = onOpenDive
-            Text("logbook:$page")
+            Text("logbook")
         }
 
         @Composable

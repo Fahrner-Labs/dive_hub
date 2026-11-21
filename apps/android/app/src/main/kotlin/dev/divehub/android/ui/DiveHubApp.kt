@@ -76,7 +76,6 @@ import dev.divehub.android.ui.tools.LoadingsViewModel
 import dev.divehub.android.ui.tools.ToolPage
 import dev.divehub.android.ui.tools.ToolsRoute
 import dev.divehub.android.ui.tools.ToolsViewModel
-import dev.divehub.shared.logbook.LogbookPaging
 import dev.divehub.shared.ErrorCodes
 
 @Composable
@@ -114,8 +113,8 @@ fun DiveHubApp(
                 navController = navController,
                 screens = screens,
                 destination = sessionDestination(state),
-                divePage = { dive.state.value.neighbours?.position?.let(LogbookPaging::pageOf) },
-                onLogbookPage = logbook::showPage,
+                diveId = { dive.state.value.diveId },
+                divePosition = { dive.state.value.neighbours?.position },
             )
             when {
                 state.loading -> Gate { LoadingScreen() }
@@ -165,12 +164,17 @@ private class DiveHubScreens(
     }
 
     @Composable
-    override fun logbook(page: Int, onPage: (Int) -> Unit, onOpenDive: (String) -> Unit) {
+    override fun logbook(
+        focusDiveId: String?,
+        focusPosition: Int?,
+        onFocusHandled: () -> Unit,
+        onOpenDive: (String) -> Unit,
+    ) {
         val state by viewModel.state.collectAsStateWithLifecycle()
-        // The page is back from the route after process death; start the logbook there once the session is ready.
-        LaunchedEffect(state.user?.id, page) {
+        // One read per User once the session is ready; the list restores its own scroll position.
+        LaunchedEffect(state.user?.id) {
             val userId = state.user?.id ?: return@LaunchedEffect
-            logbook.start(userId, page)
+            logbook.start(userId)
         }
         LogbookRoute(
             viewModel = logbook,
@@ -179,7 +183,9 @@ private class DiveHubScreens(
                 dive.open(id, filters)
                 onOpenDive(id)
             },
-            onPage = onPage,
+            focusDiveId = focusDiveId,
+            focusPosition = focusPosition,
+            onFocusHandled = onFocusHandled,
         )
     }
 

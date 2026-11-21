@@ -28,8 +28,11 @@ import androidx.navigation.toRoute
 import dev.divehub.android.ui.UiState
 import dev.divehub.android.ui.tools.ToolPage
 
-/** The logbook page saved on its back stack entry; ADR 0042 recomputes it from a Dive's position before popping. */
-internal const val LOGBOOK_PAGE_KEY = "logbook_page"
+/** The Dive the logbook should scroll to when the User leaves it; ADR 0042 keeps the list where the Dive was. */
+internal const val LOGBOOK_DIVE_KEY = "logbook_dive"
+
+/** The Dive's 1-based position in the list; the paged fallback turns it back into a page (ADR 0042). */
+internal const val LOGBOOK_POSITION_KEY = "logbook_position"
 
 /**
  * The screens the shell draws for each destination (ADR 0079). `DiveHubApp` binds them to the real screens; tests bind
@@ -43,7 +46,12 @@ internal interface AppScreens {
     fun signIn()
 
     @Composable
-    fun logbook(page: Int, onPage: (Int) -> Unit, onOpenDive: (String) -> Unit)
+    fun logbook(
+        focusDiveId: String?,
+        focusPosition: Int?,
+        onFocusHandled: () -> Unit,
+        onOpenDive: (String) -> Unit,
+    )
 
     @Composable
     fun dive(id: String, onBack: () -> Unit, onOpenDive: (String) -> Unit)
@@ -69,15 +77,15 @@ internal fun AppNavHost(
     navController: NavHostController,
     screens: AppScreens,
     destination: Any?,
-    divePage: () -> Int?,
-    onLogbookPage: (Int) -> Unit,
+    diveId: () -> String?,
+    divePosition: () -> Int?,
     modifier: Modifier = Modifier,
 ) {
     // NavHost remembers its graph: rebuild it only when the controller changes, never for a recomposition. The latest
     // screens and callbacks are read through State so a state change updates the content without resetting the stack.
     val currentScreens = rememberUpdatedState(screens)
-    val currentDivePage = rememberUpdatedState(divePage)
-    val currentOnLogbookPage = rememberUpdatedState(onLogbookPage)
+    val currentDiveId = rememberUpdatedState(diveId)
+    val currentDivePosition = rememberUpdatedState(divePosition)
     val graph = remember(navController) {
         navController.createGraph(startDestination = InstanceRoute) {
             composable<InstanceRoute> { currentScreens.value.instance() }
@@ -85,10 +93,19 @@ internal fun AppNavHost(
             navigation<MainRoute>(startDestination = LogbookRoute) {
                 composable<LogbookRoute> { entry ->
                     MainShell(navController) {
-                        val page by entry.savedStateHandle.getStateFlow(LOGBOOK_PAGE_KEY, 1).collectAsState()
+                        val focusDive by entry.savedStateHandle
+                            .getStateFlow<String?>(LOGBOOK_DIVE_KEY, null)
+                            .collectAsState()
+                        val focusPosition by entry.savedStateHandle
+                            .getStateFlow<Int?>(LOGBOOK_POSITION_KEY, null)
+                            .collectAsState()
                         currentScreens.value.logbook(
-                            page = page,
-                            onPage = { entry.savedStateHandle[LOGBOOK_PAGE_KEY] = it },
+                            focusDiveId = focusDive,
+                            focusPosition = focusPosition,
+                            onFocusHandled = {
+                                entry.savedStateHandle[LOGBOOK_DIVE_KEY] = null
+                                entry.savedStateHandle[LOGBOOK_POSITION_KEY] = null
+                            },
                             onOpenDive = { id -> navController.navigate(DiveRoute(id)) { launchSingleTop = true } },
                         )
                     }
@@ -96,15 +113,15 @@ internal fun AppNavHost(
                 composable<DiveRoute> { entry ->
                     MainShell(
                         navController,
-                        // Leaving the Dive for the Logbook tab writes the page too, as back does.
+                        // Leaving the Dive for the Logbook tab focuses its row too, as back does.
                         onLeaveDive = {
-                            navController.leaveDiveForLogbook(currentDivePage.value(), currentOnLogbookPage.value)
+                            navController.leaveDiveForLogbook(currentDiveId.value(), currentDivePosition.value())
                         },
                     ) {
                         val route = entry.toRoute<DiveRoute>()
-                        // ADR 0042: stepping to a neighbour moves the Dive; back still returns to the list on that Dive's page.
+                        // ADR 0042: stepping to a neighbour moves the Dive; back still returns to that Dive's row.
                         val onBack: () -> Unit = {
-                            navController.leaveDiveForLogbook(currentDivePage.value(), currentOnLogbookPage.value)
+                            navController.leaveDiveForLogbook(currentDiveId.value(), currentDivePosition.value())
                             navController.popBackStack()
                         }
                         BackHandler(onBack = onBack)
@@ -208,22 +225,21 @@ private fun tabOf(destination: NavDestination): AppTab? = when {
 }
 
 /**
- * Put a Dive's position into the logbook entry below it before leaving, so the list returns on that page (ADR 0042).
- * Only a Dive opened from the logbook has such an entry; one opened from a tool keeps its tool page.
+ * Put the Dive's id and position into the logbook entry below it before leaving, so the list scrolls back to its row
+ * (or, with a server-answered filter, pages to it) (ADR 0042). Only a Dive opened from the logbook has such an entry;
+ * one opened from a tool keeps its tool page.
  */
-private fun NavController.leaveDiveForLogbook(page: Int?, onLogbookPage: (Int) -> Unit) {
+private fun NavController.leaveDiveForLogbook(diveId: String?, position: Int?) {
     val previous = previousBackStackEntry
     if (previous?.destination?.hasRoute(LogbookRoute::class) == true) {
-        page?.let {
-            previous.savedStateHandle[LOGBOOK_PAGE_KEY] = it
-            onLogbookPage(it)
-        }
+        diveId?.let { previous.savedStateHandle[LOGBOOK_DIVE_KEY] = it }
+        position?.let { previous.savedStateHandle[LOGBOOK_POSITION_KEY] = it }
     }
 }
 
 /**
  * A bottom-bar switch keeps the logbook as the main graph's start destination and saves the tab being left, so a
- * return restores its scroll/page and back from the start destination leaves the app instead of showing sign-in.
+ * return restores its scroll position and back from the start destination leaves the app instead of showing sign-in.
  */
 private fun NavHostController.navigateToTab(tab: AppTab, onLeaveDive: () -> Unit = {}) {
     val active = currentBackStack.value.asReversed().firstNotNullOfOrNull { tabOf(it.destination) }
@@ -232,7 +248,7 @@ private fun NavHostController.navigateToTab(tab: AppTab, onLeaveDive: () -> Unit
         // subscreen), never the root itself, so the screen keeps its entry and does not replay its enter transition.
         when (tab) {
             AppTab.Logbook -> {
-                // A Dive's page must reach the list, as it does on the Dive's own back path (ADR 0042).
+                // A Dive's row must reach the list, as it does on the Dive's own back path (ADR 0042).
                 if (currentDestination?.hasRoute(DiveRoute::class) == true) onLeaveDive()
                 popBackStack(LogbookRoute, inclusive = false)
             }
