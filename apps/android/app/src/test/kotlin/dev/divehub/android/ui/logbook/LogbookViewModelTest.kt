@@ -43,6 +43,7 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import java.io.IOException
 import kotlin.coroutines.CoroutineContext
 
 /** The logbook's state holder: the restored page, and a sync's writes never take the screen over (FAH-316, FAH-333). */
@@ -255,6 +256,110 @@ class LogbookViewModelTest {
             assertEquals(2, viewModel.state.value.data?.total)
             assertFalse(viewModel.state.value.refreshing)
             viewModel.forget()
+        } finally {
+            driver.close()
+        }
+    }
+
+    @Test
+    fun `a filter read in flight keeps the last counts`() = runTest(dispatcher) {
+        val driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
+        val store = DiveStore.create(driver)
+        try {
+            store.upsertDive(dive("dive-1", "2026-11-01T10:00:00.000Z"))
+            val counting = CountingDispatcher(dispatcher)
+            val viewModel = viewModel(StoreLogbook(store), api = api(), ioDispatcher = counting)
+            viewModel.start("diver-1")
+            advanceUntilIdle()
+            val counts = viewModel.state.value.data!!.counts
+            assertEquals(counts, viewModel.state.value.lastCounts)
+
+            counting.hold()
+            viewModel.toggle(LogbookFilter.NO_RECORDING)
+            runCurrent()
+
+            assertNull(viewModel.state.value.data)
+            assertFalse(viewModel.state.value.loading)
+            assertEquals(counts, viewModel.state.value.lastCounts)
+
+            counting.releaseHeld()
+            advanceUntilIdle()
+
+            val data = viewModel.state.value.data!!
+            assertEquals(data.counts, viewModel.state.value.lastCounts)
+            assertEquals(1, data.counts.noRecording)
+            viewModel.forget()
+        } finally {
+            driver.close()
+        }
+    }
+
+    @Test
+    fun `an unanswered server filter keeps the last counts and says the filter is unavailable`() = runTest(dispatcher) {
+        val driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
+        val store = DiveStore.create(driver)
+        try {
+            store.upsertDive(dive("dive-1", "2026-11-01T10:00:00.000Z"))
+            val gate = CompletableDeferred<Unit>()
+            var started = false
+            val headers = headersOf(HttpHeaders.ContentType, "application/json")
+            val engine = MockEngine { request ->
+                when (request.url.encodedPath) {
+                    "/api/providers", "/api/connections" -> respond("[]", HttpStatusCode.OK, headers)
+                    "/api/dives" -> {
+                        started = true
+                        gate.await()
+                        throw IOException("offline")
+                    }
+                    else -> respond("{}", HttpStatusCode.OK, headers)
+                }
+            }
+            val api = ApiClient(engine, "test", { null }, {}, Json { ignoreUnknownKeys = true }).also {
+                it.baseUrl = "http://test"
+            }
+            val viewModel = viewModel(StoreLogbook(store), api = api)
+            viewModel.start("diver-1")
+            advanceUntilIdle()
+            val counts = viewModel.state.value.data!!.counts
+            assertEquals(counts, viewModel.state.value.lastCounts)
+
+            viewModel.toggle(LogbookFilter.CHANGED_SINCE_SENT)
+            awaitState { started }
+
+            assertNull(viewModel.state.value.data)
+            assertEquals(counts, viewModel.state.value.lastCounts)
+
+            gate.complete(Unit)
+            awaitState { viewModel.state.value.filterUnavailable }
+
+            assertTrue(viewModel.state.value.offline)
+            assertNotNull(viewModel.state.value.data)
+            assertEquals(counts, viewModel.state.value.lastCounts)
+            assertEquals(viewModel.state.value.data!!.counts, viewModel.state.value.lastCounts)
+            viewModel.forget()
+        } finally {
+            driver.close()
+        }
+    }
+
+    @Test
+    fun `forget and another user's start drop the last counts`() = runTest(dispatcher) {
+        val driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
+        val store = DiveStore.create(driver)
+        try {
+            store.upsertDive(dive("dive-1", "2026-11-01T10:00:00.000Z"))
+            val viewModel = viewModel(StoreLogbook(store), api = api())
+            viewModel.start("diver-1")
+            advanceUntilIdle()
+            assertNotNull(viewModel.state.value.lastCounts)
+
+            viewModel.start("diver-2")
+            assertNull(viewModel.state.value.lastCounts)
+
+            advanceUntilIdle()
+            assertNotNull(viewModel.state.value.lastCounts)
+            viewModel.forget()
+            assertNull(viewModel.state.value.lastCounts)
         } finally {
             driver.close()
         }
