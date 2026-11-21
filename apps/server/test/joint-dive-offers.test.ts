@@ -28,7 +28,7 @@ describe.skipIf(!(await databaseReachable()))('Joint dive fill offers', () => {
   let timUserId: string;
   let annaUserId: string;
 
-  const call = (method: 'GET' | 'POST' | 'DELETE', url: string, cookie: string, payload?: object) =>
+  const call = (method: 'GET' | 'POST' | 'PATCH' | 'DELETE', url: string, cookie: string, payload?: object) =>
     ctx.app.inject({ method, url, headers: { cookie, origin: BASE_URL }, ...(payload && { payload }) });
   const json = async <T>(method: Parameters<typeof call>[0], url: string, cookie: string, payload?: object) =>
     (await call(method, url, cookie, payload)).json() as T;

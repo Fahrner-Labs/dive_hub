@@ -2,7 +2,8 @@
 // the page's parts, kept in the address like the logbook's settings (ADR 0017).
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import {
-  buddySuggestionsQuery, candidatesQuery, deletedDivesQuery, deletedDivesTotal, goneDivesQuery, isPairCheck, logbookChecksQuery, providerConflictsQuery,
+  buddySuggestionsQuery, candidatesQuery, deletedDivesQuery, deletedDivesTotal, goneDivesQuery, isPairCheck, jointOffersQuery, logbookChecksQuery,
+  providerConflictsQuery,
 } from '../api.ts';
 
 export const REVIEW_TABS = ['decide', 'imports', 'decided', 'deleted'] as const;
@@ -18,13 +19,15 @@ export function reviewHref(tab: ReviewTab): string {
 }
 
 /**
- * What waits for a decision: Buddy suggestions over a shared Dive (ADR 0070), Recordings that don't clearly belong to a
- * Dive (ADR 0016), pairs of Dives at the same time and Dives that are probably no dive (ADR 0038), Dives cut by a
- * surface break (ADR 0063), Dives gone at a Provider (ADR 0051), counted per Provider, and Dives a run left with values
- * changed in both places, or that the Provider already has a dive for (ADR 0056).
+ * What waits for a decision: Buddy suggestions over a shared Dive (ADR 0070) and Joint-dive fill offers from a buddy's
+ * Dive (FAH-411), Recordings that don't clearly belong to a Dive (ADR 0016), pairs of Dives at the same time and Dives
+ * that are probably no dive (ADR 0038), Dives cut by a surface break (ADR 0063), Dives gone at a Provider (ADR 0051),
+ * counted per Provider, and Dives a run left with values changed in both places, or that the Provider already has a
+ * dive for (ADR 0056).
  */
 export function useToDecideCounts() {
   const suggestions = useQuery(buddySuggestionsQuery()).data?.length ?? 0;
+  const offers = useQuery(jointOffersQuery()).data?.length ?? 0;
   const recordings = useQuery(candidatesQuery('open')).data?.length ?? 0;
   const checks = useQuery(logbookChecksQuery('open')).data ?? [];
   const surfaceBreaks = checks.filter((c) => c.rule === 'surface_break').length;
@@ -38,8 +41,8 @@ export function useToDecideCounts() {
   // Dives the Provider already has a dive for: the send waits for the User's choice.
   const exists = entries.length - conflicts;
   return {
-    suggestions, recordings, pairs, surfaceBreaks, shortDives, goneAt, gone, conflicts, exists,
-    total: suggestions + recordings + checks.length + gone + conflicts + exists,
+    suggestions, offers, recordings, pairs, surfaceBreaks, shortDives, goneAt, gone, conflicts, exists,
+    total: suggestions + offers + recordings + checks.length + gone + conflicts + exists,
   };
 }
 

@@ -20,6 +20,9 @@ export type BuddySuggestionView = Ok<'/api/buddy-suggestions'>[number];
 export type BuddySuggestionPreviewView = Ok<'/api/buddy-suggestions/{id}'>;
 export type BuddySuggestionOverlapView = BuddySuggestionPreviewView['overlaps'][number];
 export type AcceptedBuddySuggestionView = Ok<'/api/buddy-suggestions/{id}/accept', 'post'>;
+/** A fill offer from another member of a Joint dive (FAH-411, ADR 0070), and the shared facts it would fill. */
+export type JointOfferView = Ok<'/api/joint-dives/offers'>[number];
+export type JointOfferField = JointOfferView['fields'][number];
 type AnyLogbookCheck = Ok<'/api/logbook-checks'>[number];
 /** A logbook check about two Dives (ADR 0038). */
 export type LogbookCheckView = AnyLogbookCheck & { rule: Exclude<AnyLogbookCheck['rule'], 'short_shallow_dive'>; other: NonNullable<AnyLogbookCheck['other']> };
@@ -139,3 +142,12 @@ export const buddySuggestionsQuery = () =>
 /** One suggestion's shared facts and the invited Diver's overlapping Dives, for the Review card and its accept dialog. */
 export const buddySuggestionQuery = (id: string) =>
   queryOptions({ queryKey: keys.buddySuggestion(id), queryFn: async () => request(api.GET('/api/buddy-suggestions/{id}', { params: { path: { id } } })) });
+/** Every fill offer of a Joint dive the User manages, one per source Dive, for the Review page's "To decide". */
+export const jointOffersQuery = () =>
+  queryOptions({ queryKey: keys.jointOffers, queryFn: async () => request(api.GET('/api/joint-dives/offers')) });
+/** The fill offers of one Dive, for the inline prompt on its page. */
+export const diveJointOffersQuery = (id: string) =>
+  queryOptions({
+    queryKey: keys.jointOffersOf(id),
+    queryFn: async () => request(api.GET('/api/dives/{id}/joint-offers', { params: { path: { id } } })),
+  });

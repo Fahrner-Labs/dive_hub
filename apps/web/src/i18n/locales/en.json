@@ -1268,6 +1268,23 @@
       "centre": "Dive centre"
     }
   },
+  "jointOffers": {
+    "title": "Fill from your buddy's dive",
+    "intro": "Your dive is joined with a buddy's. The empty facts below can come from theirs.",
+    "from": "From {{diver}}’s dive",
+    "yourDive": "Your dive",
+    "compareLabel": "{{diver}}’s dive beside your dive",
+    "consequence": "Accepting copies these values into your dive as your own; declining leaves them out. Nothing is sent to your buddy.",
+    "accept": "Accept",
+    "decline": "Decline",
+    "field": {
+      "siteId": "Site",
+      "startsAt": "Time",
+      "durationSeconds": "Duration",
+      "maxDepthM": "Max depth",
+      "avgDepthM": "Average depth"
+    }
+  },
   "deleted": {
     "notice": "{{name}} deleted.",
     "noticeKept": "{{name}} deleted. It is still in {{provider}}, as dive {{number}}: you can delete it there under “Deleted dives”.",

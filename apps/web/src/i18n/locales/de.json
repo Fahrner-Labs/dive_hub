@@ -1268,6 +1268,23 @@
       "centre": "Tauchzentrum"
     }
   },
+  "jointOffers": {
+    "title": "Aus dem Tauchgang deines Buddys übernehmen",
+    "intro": "Dein Tauchgang ist mit dem eines Buddys verknüpft. Die leeren Angaben unten können von seinem übernommen werden.",
+    "from": "Aus dem Tauchgang von {{diver}}",
+    "yourDive": "Dein Tauchgang",
+    "compareLabel": "Tauchgang von {{diver}} neben deinem Tauchgang",
+    "consequence": "Beim Annehmen werden diese Werte als deine eigenen übernommen; Ablehnen lässt sie aus. Dein Buddy bekommt nichts davon mit.",
+    "accept": "Annehmen",
+    "decline": "Ablehnen",
+    "field": {
+      "siteId": "Tauchplatz",
+      "startsAt": "Zeit",
+      "durationSeconds": "Dauer",
+      "maxDepthM": "Max. Tiefe",
+      "avgDepthM": "Durchschnittstiefe"
+    }
+  },
   "deleted": {
     "notice": "{{name}} gelöscht.",
     "noticeKept": "{{name}} gelöscht. Er ist noch in {{provider}}, als Tauchgang {{number}}: Unter „Gelöschte Tauchgänge“ kannst du ihn dort löschen.",
