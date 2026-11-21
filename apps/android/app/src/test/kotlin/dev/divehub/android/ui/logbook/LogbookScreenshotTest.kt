@@ -43,7 +43,7 @@ import org.robolectric.annotation.GraphicsMode
 
 /**
  * The contract-visible logbook states as pictures (ADR 0040): the "Show only" counts, a row without a Recording, and
- * the findings mark. They are rendered from a fixed state, so a drawing change shows up as a changed image.
+ * a row whose Dive has findings. They are rendered from a fixed state, so a drawing change shows up as a changed image.
  */
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
@@ -210,10 +210,11 @@ class LogbookScreenshotTest {
     }
 
     @Test
-    fun `the findings mark`() {
+    fun `a row whose Dive has findings carries no findings text`() {
         render(page(dives = listOf(withFindings), filters = setOf(LogbookFilter.WITH_FINDINGS)))
-        compose.onNodeWithText("2 findings").assertIsDisplayed()
-        capture("logbook_findings_mark.png")
+        compose.onNodeWithText("2 findings").assertDoesNotExist()
+        compose.onNodeWithText("Blue Hole").assertIsDisplayed()
+        capture("logbook_row_with_findings.png")
     }
 
     @Test

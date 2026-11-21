@@ -140,7 +140,7 @@ internal fun DiveView.toStore(existing: Dive?): Dive = Dive(
 
 /**
  * A Dive hint's detail into the row the logbook list shows, keeping the list-only values the detail does not carry
- * (the findings mark, the profile sketch and Waiting pushes). The next list refresh replaces it anyway.
+ * (the findings count, the profile sketch and Waiting pushes). The next list refresh replaces it anyway.
  */
 internal fun DiveView.toListRow(existing: String?): String {
     val old = existing?.let {

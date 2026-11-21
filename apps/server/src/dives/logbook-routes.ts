@@ -45,7 +45,7 @@ const DiveListQuery = Type.Object({
   only: Type.Optional(Type.String({
     pattern: DIVE_ONLY_PATTERN,
     description: 'Comma-separated "show only" filters, all of which must fit: no-recording (a logbook entry without a Recording), '
-      + 'no-site, with-findings (the list’s mark is set), not-at-provider (a Provider the User is connected to for the Diver has no current dive for it), '
+      + 'no-site, with-findings (findings > 0), not-at-provider (a Provider the User is connected to for the Diver has no current dive for it), '
       + 'changed-since-sent (at a Provider the User is connected to for the Diver, the current dive there is not up to date with the Dive, '
       + 'or its number differs and the Connection follows numbers)',
   })),
@@ -76,7 +76,7 @@ const DiveSummaryView = Type.Object({
   avgDepthM: Nullable(Type.Number()),
   site: Nullable(Type.Object({ id: Type.String(), name: Type.String() })),
   findings: Type.Integer({
-    description: 'How many findings of the dive assessment differ from guidance (note or caution) and were not put aside (ADR 0036); 0: no mark',
+    description: 'How many findings of the dive assessment differ from guidance (note or caution) and were not put aside (ADR 0036); 0: none',
   }),
   recordings: Type.Integer({ description: 'How many Recordings the Dive has; 0: a logbook entry only (from a Provider or typed)' }),
   fromProvider: Nullable(Type.String({ description: 'The Provider whose logbook entry the Dive was made from, while it has no Recording (ADR 0030)' })),

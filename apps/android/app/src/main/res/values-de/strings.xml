@@ -231,10 +231,6 @@
         <item quantity="one">%1$d Tauchgang · %2$s</item>
         <item quantity="other">%1$d Tauchgänge · %2$s</item>
     </plurals>
-    <plurals name="logbook_findings">
-        <item quantity="one">%1$d Hinweis</item>
-        <item quantity="other">%1$d Hinweise</item>
-    </plurals>
 
     <string name="tools_title">Werkzeuge</string>
     <string name="tools_notice">Eine Schätzung, kein Rat: Tauchcomputer und Ausbildung entscheiden. Kein Modell garantiert Sicherheit.</string>

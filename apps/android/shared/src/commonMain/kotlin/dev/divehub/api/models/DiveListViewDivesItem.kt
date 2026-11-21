@@ -19,7 +19,7 @@ data class DiveListViewDivesItem(
     @SerialName("maxDepthM") val maxDepthM: Double?,
     @SerialName("avgDepthM") val avgDepthM: Double?,
     @SerialName("site") val site: DiveListViewDivesItemSite?,
-    /** How many findings of the dive assessment differ from guidance (note or caution) and were not put aside (ADR 0036); 0: no mark */
+    /** How many findings of the dive assessment differ from guidance (note or caution) and were not put aside (ADR 0036); 0: none */
     @SerialName("findings") val findings: Int,
     /** How many Recordings the Dive has; 0: a logbook entry only (from a Provider or typed) */
     @SerialName("recordings") val recordings: Int,

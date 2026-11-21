@@ -2210,7 +2210,7 @@
                 },
                 "findings": {
                   "type": "integer",
-                  "description": "How many findings of the dive assessment differ from guidance (note or caution) and were not put aside (ADR 0036); 0: no mark"
+                  "description": "How many findings of the dive assessment differ from guidance (note or caution) and were not put aside (ADR 0036); 0: none"
                 },
                 "recordings": {
                   "type": "integer",
@@ -9074,7 +9074,7 @@
             "in": "query",
             "name": "only",
             "required": false,
-            "description": "Comma-separated \"show only\" filters, all of which must fit: no-recording (a logbook entry without a Recording), no-site, with-findings (the list’s mark is set), not-at-provider (a Provider the User is connected to for the Diver has no current dive for it), changed-since-sent (at a Provider the User is connected to for the Diver, the current dive there is not up to date with the Dive, or its number differs and the Connection follows numbers)"
+            "description": "Comma-separated \"show only\" filters, all of which must fit: no-recording (a logbook entry without a Recording), no-site, with-findings (findings > 0), not-at-provider (a Provider the User is connected to for the Diver has no current dive for it), changed-since-sent (at a Provider the User is connected to for the Diver, the current dive there is not up to date with the Dive, or its number differs and the Connection follows numbers)"
           },
           {
             "schema": {
@@ -9210,7 +9210,7 @@
             "in": "query",
             "name": "only",
             "required": false,
-            "description": "Comma-separated \"show only\" filters, all of which must fit: no-recording (a logbook entry without a Recording), no-site, with-findings (the list’s mark is set), not-at-provider (a Provider the User is connected to for the Diver has no current dive for it), changed-since-sent (at a Provider the User is connected to for the Diver, the current dive there is not up to date with the Dive, or its number differs and the Connection follows numbers)"
+            "description": "Comma-separated \"show only\" filters, all of which must fit: no-recording (a logbook entry without a Recording), no-site, with-findings (findings > 0), not-at-provider (a Provider the User is connected to for the Diver has no current dive for it), changed-since-sent (at a Provider the User is connected to for the Diver, the current dive there is not up to date with the Dive, or its number differs and the Connection follows numbers)"
           },
           {
             "schema": {
