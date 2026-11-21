@@ -4,14 +4,14 @@
 > `pnpm check` fails when this map is stale. Symbols are ranked by how widely the code references them;
 > each module shows its most-referenced ones (exported symbols rank higher). Search here before walking the tree.
 
-Files: 417 · symbols: 3809 · shown: 247
+Files: 420 · symbols: 3847 · shown: 247
 
 ### server/(root)
 apps/server/src/vocabulary.ts:13 type SiteWaterType
 apps/server/src/errors.ts:2 const errorMessage
 apps/server/src/vocabulary.ts:12 const SITE_WATER_TYPES
 apps/server/src/vocabulary.ts:51 type ImportSource
-apps/server/src/compose.ts:83 fn createServices
+apps/server/src/compose.ts:84 fn createServices
 … 42 more symbols in this module
 
 ### server/assessment
@@ -24,8 +24,8 @@ apps/server/src/assessment/signals.ts:5 iface Series
 
 ### server/auth
 apps/server/src/auth/fastify.ts:81 fn userOf
-apps/server/src/auth/auth.ts:149 type Auth
 apps/server/src/auth/fastify.ts:68 fn requireUser
+apps/server/src/auth/auth.ts:149 type Auth
 apps/server/src/auth/fastify.ts:99 fn requireAdmin
 apps/server/src/auth/auth.ts:60 fn createAuth
 … 24 more symbols in this module
@@ -64,19 +64,19 @@ apps/server/src/db/client.ts:8 type Queryable
 apps/server/src/db/schema.ts:661 const dive
 apps/server/src/db/client.ts:6 type Tx
 apps/server/src/db/schema.ts:454 const diveSite
-apps/server/src/db/schema.ts:795 const recording
+apps/server/src/db/schema.ts:819 const recording
 apps/server/src/db/schema.ts:75 const diverManagement
 apps/server/src/db/auth-schema.ts:20 const user
 apps/server/src/db/import-types.ts:12 iface ImportedValues
 apps/server/src/db/import-types.ts:6 type ImportArea
-… 156 more symbols in this module
+… 159 more symbols in this module
 
 ### server/divers
 apps/server/src/divers/management.ts:8 fn managedDiverIds
 apps/server/src/divers/dive-numbers.ts:34 fn renumber
 apps/server/src/divers/diver-view.ts:5 const DiverSource
 apps/server/src/divers/diver-error.ts:3 class DiverError
-apps/server/src/divers/management.ts:17 fn managementOf
+apps/server/src/divers/management.ts:25 const managesDiveDiver
 … 52 more symbols in this module
 
 ### server/dives
@@ -114,8 +114,8 @@ apps/server/src/equipment/due.ts:36 iface ScheduleDue
 apps/server/src/http/schemas.ts:10 const Nullable
 apps/server/src/http/schemas.ts:5 const DateTime
 apps/server/src/http/schemas.ts:4 const IdParams
-apps/server/src/http/problems.ts:196 const Problem
-apps/server/src/http/problems.ts:199 const problem
+apps/server/src/http/problems.ts:197 const Problem
+apps/server/src/http/problems.ts:200 const problem
 … 25 more symbols in this module
 
 ### server/imports
@@ -140,10 +140,10 @@ apps/server/src/lead/lead-service.ts:61 fn createLeadService
 … 89 more symbols in this module
 
 ### server/live
-apps/server/src/live/emit.ts:38 fn emitHint
-apps/server/src/live/emit.ts:45 fn audienceOfDiver
+apps/server/src/live/emit.ts:39 fn emitHint
+apps/server/src/live/emit.ts:46 fn audienceOfDiver
 apps/server/src/live/hub.ts:11 iface LiveHub
-apps/server/src/live/emit.ts:51 fn audienceOfDive
+apps/server/src/live/emit.ts:52 fn audienceOfDive
 apps/server/src/live/listener.ts:7 iface LiveLog
 … 18 more symbols in this module
 
@@ -197,10 +197,10 @@ apps/server/src/providers/provider.ts:83 type DiveField
 … 497 more symbols in this module
 
 ### server/revisions
-apps/server/src/revisions/revisions.ts:79 fn writeRevision
+apps/server/src/revisions/revisions.ts:81 fn writeRevision
 apps/server/src/revisions/revisions.ts:5 type Actor
-apps/server/src/revisions/revisions.ts:34 type Changes
-apps/server/src/revisions/revisions.ts:69 fn changeListener
+apps/server/src/revisions/revisions.ts:36 type Changes
+apps/server/src/revisions/revisions.ts:71 fn changeListener
 apps/server/src/revisions/revisions.ts:8 const userActor
 … 6 more symbols in this module
 
@@ -233,12 +233,12 @@ apps/server/src/sites/sources.ts:14 const IMPORT_SOURCES
 … 166 more symbols in this module
 
 ### server/social
-apps/server/src/social/suggestion-service.ts:18 class SuggestionError
-apps/server/src/social/suggestion-service.ts:233 fn createSuggestionService
+apps/server/src/social/suggestion-service.ts:19 class SuggestionError
+apps/server/src/social/offer-service.ts:17 class OfferError
+apps/server/src/social/offer-service.ts:126 fn emitJointOfferHint
+apps/server/src/social/offer-routes.ts:17 const STATUS
 apps/server/src/social/routes.ts:17 const STATUS
-apps/server/src/social/suggestion-view.ts:10 const SiteRef
-apps/server/src/social/suggestion-service.ts:117 fn emitSuggestionHints
-… 21 more symbols in this module
+… 56 more symbols in this module
 
 ### server/storage
 apps/server/src/storage/blob-store.ts:26 iface BlobStore

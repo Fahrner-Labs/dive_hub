@@ -28,6 +28,8 @@ export const REVISION_CAUSES = [
   'continuation', 'continuation-undo',
   // Accepting a Buddy suggestion copies the shared facts into the invited Diver's logbook (ADR 0070).
   'buddy-accept',
+  // A User taking the shared facts a Joint dive's other member has into their own Dive (FAH-411).
+  'joint-dive-fill',
 ] as const;
 export type RevisionCause = (typeof REVISION_CAUSES)[number];
 
