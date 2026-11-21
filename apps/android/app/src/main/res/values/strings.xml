@@ -64,7 +64,7 @@
     <string name="dive_no_water_type">None</string>
     <string name="dive_water_from_site">Comes from the dive site</string>
     <string name="dive_water_unknown">Not known for this dive site</string>
-    <string name="dive_choose_site_for_water">The water type comes from the dive site.</string>
+    <string name="dive_choose_site_for_water">The water type comes from the dive site. Choose a site to set it.</string>
     <string name="dive_water_mismatch">Your computer was set to %1$s; this site is %2$s.</string>
     <string name="dive_water_reads_shallow">Its depths read about %1$s %% shallow.</string>
     <string name="dive_water_reads_deep">Its depths read about %1$s %% deep.</string>

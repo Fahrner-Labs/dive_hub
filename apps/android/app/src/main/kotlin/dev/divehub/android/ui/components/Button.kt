@@ -26,6 +26,7 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
 import dev.divehub.android.R
 import dev.divehub.android.ui.DiveHubColors
+import dev.divehub.android.ui.DiveHubText
 import dev.divehub.android.ui.Spacing
 
 /** The brief's `Radius.control`: a button is not Material's pill. */
@@ -98,7 +99,7 @@ fun QuietButton(
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
                 text,
-                style = MaterialTheme.typography.labelLarge,
+                style = DiveHubText.label,
                 color = if (enabled) contentColor else contentColor.copy(alpha = DisabledContentAlpha),
             )
             if (expanded != null) {

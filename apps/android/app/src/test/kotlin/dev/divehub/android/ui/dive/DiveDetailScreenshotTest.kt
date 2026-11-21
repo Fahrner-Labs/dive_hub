@@ -141,6 +141,9 @@ class DiveDetailScreenshotTest {
         compose.onNodeWithText(
             "When you import the dive computer’s file, its recording is added, and its values replace these.",
         ).assertIsDisplayed()
+        compose.onNodeWithText(
+            "The water type comes from the dive site. Choose a site to set it.",
+        ).assertIsDisplayed()
         capture("dive_no_recording.png")
     }
 

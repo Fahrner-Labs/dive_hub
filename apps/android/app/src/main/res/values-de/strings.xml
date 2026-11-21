@@ -64,7 +64,7 @@
     <string name="dive_no_water_type">Keine</string>
     <string name="dive_water_from_site">Kommt vom Tauchplatz</string>
     <string name="dive_water_unknown">Für diesen Tauchplatz nicht bekannt</string>
-    <string name="dive_choose_site_for_water">Die Wasserart kommt vom Tauchplatz.</string>
+    <string name="dive_choose_site_for_water">Die Wasserart kommt vom Tauchplatz. Wähle einen Tauchplatz, um sie festzulegen.</string>
     <string name="dive_water_mismatch">Dein Computer war auf %1$s eingestellt; dieser Platz ist %2$s.</string>
     <string name="dive_water_reads_shallow">Die Tiefen lesen sich etwa %1$s %% zu flach.</string>
     <string name="dive_water_reads_deep">Die Tiefen lesen sich etwa %1$s %% zu tief.</string>
