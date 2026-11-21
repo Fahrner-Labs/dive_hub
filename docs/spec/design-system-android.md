@@ -15,7 +15,7 @@ links, focus and data) and [ADR 0073](../decisions/0073-android-app-in-monorepo-
 colour, type, shape and density.
 
 Code: `apps/android/app/src/main/kotlin/dev/divehub/android/ui/Theme.kt` (colour), `Type.kt` (type),
-`Spacing.kt` (spacing, with FAH-363) and `ui/components/` (the shared components). The palette and brand do not
+`Spacing.kt` (spacing) and `ui/components/` (the shared components). The palette and brand do not
 change here.
 
 ## Direction
@@ -305,7 +305,8 @@ Roborazzi goldens are the regression floor, not the design review. For every And
 
 - Update only the affected goldens, never bulk re-record. Re-record after an intended visual change is the
   sanctioned flow (`apps/android/README.md`).
-- Put the updated goldens through a Design Consultant critique before the PR, as FAH-359's gate requires.
+- Put the updated goldens through a Design Consultant critique before the PR, as the Android design-critique gate
+  requires.
 - Check every screen at 320, 390 and 412 dp, in light and dark, in English and German, with crowded data (long
   names and e-mail addresses) and at 200% font scale.
 - Check touch, the keyboard, insets and back on a real phone before calling it done.
@@ -318,8 +319,8 @@ This is a specification, not a big-bang rewrite. The Android code moves onto it 
   colours, and no hardcoded colour outside the file.
 - `Type.kt`: the scale above, every Material slot set, and a tabular-figures helper.
 - `Spacing.kt`: `s1`…`s7` on the 4 dp grid.
-- `ui/components/`: `Section`, `FactRow`, `DiveRow`, `EmptyState` first (FAH-363), then the other components as a
-  screen needs them.
+- `ui/components/`: `Section`, `FactRow`, `DiveRow`, `EmptyState` first, then the other components as a screen
+  needs them.
 - Existing screens: replace hardcoded `dp` with `Spacing`, Material default text with `DiveHubText`, and direct
   colours with the token roles, as each screen is redesigned or next touched. The logbook's `ProfileSketch` ascent
   colours move onto the data tokens in the same pass.
