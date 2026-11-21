@@ -1,5 +1,8 @@
 package dev.divehub.android.ui.logbook
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasProgressBarRangeInfo
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -21,6 +24,7 @@ import dev.divehub.api.models.DiveListViewTotals
 import dev.divehub.api.models.DiveProfileView
 import dev.divehub.shared.logbook.LogbookFilter
 import dev.divehub.shared.logbook.ProviderDirectory
+import dev.divehub.shared.logbook.toggleFilter
 import dev.divehub.shared.sync.SyncProgress
 import kotlinx.serialization.json.JsonPrimitive
 import java.util.TimeZone
@@ -68,20 +72,51 @@ class LogbookScreenshotTest {
 
     @Test
     fun `an applied filter is visible while the sheet is closed`() {
-        val filters = setOf(LogbookFilter.NO_RECORDING, LogbookFilter.WITH_FINDINGS)
-        render(page(dives = listOf(reef), filters = filters))
+        render(page(dives = listOf(noRecording), filters = setOf(LogbookFilter.NO_RECORDING)))
         compose.onNodeWithText("No recording · 3").assertDoesNotExist()
-        compose.onNodeWithContentDescription("Filters, 2 active").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Filters, 1 active").assertIsDisplayed()
         capture("logbook_filter_badge.png")
     }
 
     @Test
     fun `the offline filter note lives in the sheet`() {
-        render(page(dives = listOf(reef), filters = emptySet()).copy(filterUnavailable = true))
+        render(
+            page(dives = listOf(reef), filters = setOf(LogbookFilter.CHANGED_SINCE_SENT))
+                .copy(filterUnavailable = true),
+        )
         val note = "This filter needs a connection. Showing the dives synced on this device."
         compose.onNodeWithText(note).assertDoesNotExist()
-        compose.onNodeWithContentDescription("Filters").performClick()
+        compose.onNodeWithContentDescription("Filters, 1 active").performClick()
         compose.onNodeWithText(note).assertIsDisplayed()
+    }
+
+    @Test
+    fun `the sheet stays open while a filter read clears the page`() {
+        var state by mutableStateOf(page(dives = listOf(reef), filters = emptySet()))
+        compose.setContent {
+            DiveHubTheme(darkTheme = false) {
+                LogbookScreen(
+                    state = state,
+                    units = "metric",
+                    onRefresh = {},
+                    onRetry = {},
+                    onShowAll = {},
+                    onPage = {},
+                    onToggleFilter = { filter ->
+                        state = state.copy(
+                            loading = true,
+                            data = null,
+                            filters = toggleFilter(state.filters, filter),
+                        )
+                    },
+                    onOpenDive = {},
+                )
+            }
+        }
+        compose.onNodeWithContentDescription("Filters").performClick()
+        compose.onNodeWithText("No recording · 3").performClick()
+        compose.onNodeWithText("Show only").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Filters, 1 active").assertExists()
     }
 
     @Test

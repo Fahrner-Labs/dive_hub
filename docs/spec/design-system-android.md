@@ -219,7 +219,7 @@ heading or empty state. The table maps each one to the web component it translat
 | `Avatar` | `Avatar` | Initials in one of three tones that tell people apart and mean nothing. Decorative: the name stands beside it as text. |
 | `Notice` | `Notice` | What just happened: info, success or danger, announced once. One line and an action. |
 | `Dialog` | `Dialog`, `ConfirmDialog` | `Radius.sheet`, a scrim, focus kept inside, a close button with a name. A destructive action asks first and says what will happen. |
-| `BottomSheet` | `ActionMenu` on a phone | Secondary actions in a sheet: 16 dp top corners, 48 dp rows, a hairline, a drag handle. The panel keeps only its main action. |
+| `BottomSheet` | `ActionMenu` on a phone | Secondary actions in a sheet: 16 dp top corners, 48 dp rows, a hairline, a drag handle. The panel keeps only its main action. The logbook's filter panel is the other use: a heading with wrapped `FilterChip`s, padded `s5`, scrolling when the content is taller than the sheet, with no rows or hairline. |
 | `TopAppBar` | the web shell's top bar | Frame tone, flat, no shadow. Title in `section` (20 sp); a screen without a top bar uses `title` (28 sp). Navigation icons on the start; the main action does not live here. |
 | `BottomBar` | the web shell's bottom bar | The signed-in top-level places (Logbook, Tools, Settings today), frame tone, flat, labels always visible. |
 | `Skeleton` | `Skeleton` | Flat bars in the final layout, shown after 150 ms. No "Loading…". A hidden label and a busy state for TalkBack; content fades in over the bars. |

@@ -17,8 +17,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Button
@@ -38,8 +40,10 @@ import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.rememberModalBottomSheetState
 import android.content.Context
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -60,6 +64,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.divehub.android.R
 import dev.divehub.android.ui.SyncLine
 import dev.divehub.api.models.DiveListView
+import dev.divehub.api.models.DiveListViewCounts
 import dev.divehub.api.models.DiveListViewDivesItem
 import dev.divehub.api.models.DiveListViewDivesItemParticipantsItem
 import dev.divehub.shared.ErrorCodes
@@ -123,7 +128,12 @@ fun LogbookScreen(
     onToggleFilter: (LogbookFilter) -> Unit,
     onOpenDive: (DiveListViewDivesItem) -> Unit,
 ) {
-    val chips = state.data?.let { filterChips(it.counts, state.filters) }.orEmpty()
+    val dataCounts = state.data?.counts
+    var counts by remember { mutableStateOf<DiveListViewCounts?>(null) }
+    LaunchedEffect(dataCounts) {
+        if (dataCounts != null) counts = dataCounts
+    }
+    val chips = counts?.let { filterChips(it, state.filters) }.orEmpty()
     var filtersOpen by rememberSaveable { mutableStateOf(false) }
 
     Scaffold(
@@ -172,8 +182,8 @@ private fun FilterAction(activeCount: Int, onClick: () -> Unit) {
                 if (activeCount > 0) {
                     Badge(
                         modifier = Modifier.clearAndSetSemantics {},
-                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
                     ) {
                         Text(activeCount.toString())
                     }
@@ -210,8 +220,9 @@ private fun FilterSheet(
         Column(
             Modifier
                 .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
                 .padding(start = 24.dp, end = 24.dp, bottom = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Text(
                 stringResource(R.string.logbook_show_only),
@@ -430,7 +441,7 @@ private fun Filters(
     FlowRow(
         Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         chips.forEach { chip ->
             FilterChip(
