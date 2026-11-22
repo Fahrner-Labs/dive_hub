@@ -94,6 +94,7 @@ class DiveDetailViewModelTest {
         try {
             store.upsertDive(dive(notes = "First"))
             store.upsertDive(dive(id = "dive-2", notes = "Second"))
+            store.saveSyncState(store.syncState().copy(lastFullSyncAt = "2026-11-01T12:00:00.000Z"))
             val revision = MutableStateFlow(0L)
             val viewModel = viewModel(StoreLogbook(store), revision)
             val states = mutableListOf<DiveDetailUiState>()
@@ -102,12 +103,13 @@ class DiveDetailViewModelTest {
             }
 
             viewModel.open("dive-1")
-            awaitState { viewModel.state.value.previousDive?.id == "dive-2" }
+            awaitState { viewModel.state.value.previousDive?.dive?.id == "dive-2" }
             assertEquals("First", viewModel.state.value.dive?.notes)
+            assertEquals("2026-11-01T12:00:00.000Z", viewModel.state.value.previousDive?.syncedAt)
             val opened = states.size
 
             viewModel.openNeighbour("dive-2")
-            awaitState { viewModel.state.value.nextDive?.id == "dive-1" }
+            awaitState { viewModel.state.value.nextDive?.dive?.id == "dive-1" }
 
             assertEquals("dive-2", viewModel.state.value.diveId)
             assertEquals("Second", viewModel.state.value.dive?.notes)
@@ -115,6 +117,10 @@ class DiveDetailViewModelTest {
             assertTrue(followed.isNotEmpty())
             assertTrue(followed.none { it.loading })
             assertTrue(followed.none { it.dive == null })
+            // The new Dive never goes out with the previous list's neighbours: they swap together.
+            val swapped = followed.filter { it.dive?.id == "dive-2" }
+            assertTrue(swapped.isNotEmpty())
+            assertTrue(swapped.all { it.previousDive == null && it.nextDive?.dive?.id == "dive-1" })
             viewModel.forget()
         } finally {
             driver.close()

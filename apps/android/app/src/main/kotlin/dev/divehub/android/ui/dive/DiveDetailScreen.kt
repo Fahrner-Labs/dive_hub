@@ -129,6 +129,7 @@ import dev.divehub.shared.logbook.mixName
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.first
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.booleanOrNull
 import java.util.Locale
@@ -239,6 +240,7 @@ private fun DivePager(
     val pagerState = rememberPagerState(initialPage = CURRENT_DIVE_PAGE) { PAGER_PAGES }
     val currentNeighbours by rememberUpdatedState(neighbours)
     val currentOnOpenDive by rememberUpdatedState(onOpenDive)
+    val currentDiveId by rememberUpdatedState(state.dive?.id)
     LaunchedEffect(pagerState) {
         // Gate on the gesture ending, not the page changing: an interrupted end-stop can settle back on the same
         // page, which emits no settledPage change but must still run the spring-back again (FAH-344 review). The
@@ -255,6 +257,9 @@ private fun DivePager(
                 }
                 if (target != null) {
                     currentOnOpenDive(target)
+                    // The dragged page already shows the target; keep it under the finger until the middle page is
+                    // that Dive, so the re-anchor never flashes the Dive the swipe just left (FAH-421).
+                    snapshotFlow { currentDiveId }.first { it == target || it == null }
                     pagerState.scrollToPage(CURRENT_DIVE_PAGE)
                 } else {
                     // The ends of the list: the spring-back says there is nothing further (FAH-344).
@@ -268,8 +273,8 @@ private fun DivePager(
         key = { page ->
             when (page) {
                 CURRENT_DIVE_PAGE -> "current:${state.dive?.id.orEmpty()}"
-                0 -> "previous:${state.previousDive?.id.orEmpty()}"
-                else -> "next:${state.nextDive?.id.orEmpty()}"
+                0 -> "previous:${state.previousDive?.dive?.id.orEmpty()}"
+                else -> "next:${state.nextDive?.dive?.id.orEmpty()}"
             }
         },
         modifier = modifier.testTag("dive_pager"),
@@ -277,14 +282,14 @@ private fun DivePager(
         when (page) {
             CURRENT_DIVE_PAGE -> DiveContent(state, units, onRetry, Modifier.fillMaxSize())
             0 -> NeighbourPage(
-                dive = state.previousDive,
+                page = state.previousDive,
                 state = state,
                 units = units,
                 onRetry = onRetry,
                 tag = "dive_previous_page",
             )
             else -> NeighbourPage(
-                dive = state.nextDive,
+                page = state.nextDive,
                 state = state,
                 units = units,
                 onRetry = onRetry,
@@ -297,28 +302,23 @@ private fun DivePager(
 /** An adjacent page drawn from the Dive read ahead for it; an empty Box is the end-stop when there is none. */
 @Composable
 private fun NeighbourPage(
-    dive: DiveView?,
+    page: NeighbourDive?,
     state: DiveDetailUiState,
     units: String?,
     onRetry: () -> Unit,
     tag: String,
 ) {
-    if (dive == null) {
+    if (page == null) {
         Box(Modifier.fillMaxSize())
         return
     }
     DiveBody(
-        // The profile is read for the page that is on screen; the neighbour's own chart arrives with it.
-        state = state.copy(
-            diveId = dive.id,
-            dive = dive,
-            samples = null,
-            samplesPending = false,
-            samplesError = null,
-        ),
-        dive = dive,
+        // The profile is read for the page that is on screen; the neighbouring page draws the rest of the Dive.
+        state = state.copy(syncedAt = page.syncedAt),
+        dive = page.dive,
         units = units,
         onRetry = onRetry,
+        includeProfile = false,
         scrollTag = tag,
     )
 }
@@ -516,6 +516,7 @@ private fun DiveBody(
     dive: DiveView,
     units: String?,
     onRetry: () -> Unit,
+    includeProfile: Boolean = true,
     scrollTag: String = "dive_scroll",
 ) {
     val context = LocalContext.current
@@ -534,7 +535,7 @@ private fun DiveBody(
         item { Weighting(dive, locale, imperial) }
         item { Notes(dive.notes) }
         item { Recordings(dive, locale, state.providers) }
-        if (primary != null) {
+        if (primary != null && includeProfile) {
             item { Profile(state, primary, locale, imperial, onRetry) }
         }
         if (dive.participants.isNotEmpty()) {
