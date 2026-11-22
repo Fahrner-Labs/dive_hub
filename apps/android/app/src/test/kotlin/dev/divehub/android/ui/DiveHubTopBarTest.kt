@@ -11,6 +11,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -19,6 +20,8 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performSemanticsAction
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import org.junit.Assert.assertEquals
@@ -178,6 +181,116 @@ class DiveHubTopBarTest {
         val loadedBarBottom = compose.onNodeWithTag("below_the_bar").getBoundsInRoot().top
 
         assertEquals(loadingBarBottom.value, loadedBarBottom.value, 0.5f)
+    }
+
+    @Test
+    @Config(qualifiers = "en-rUS-w320dp-h891dp-xxhdpi")
+    fun `an empty stacked title ends the bar at its icon row`() {
+        compose.setContent {
+            DiveHubTheme(darkTheme = false) {
+                val density = LocalDensity.current
+                CompositionLocalProvider(
+                    LocalDensity provides Density(density.density, 2f),
+                ) {
+                    Column {
+                        DiveHubTopBar(
+                            title = "",
+                            onBack = {},
+                            centerTitle = true,
+                            stackedTitle = true,
+                        )
+                        Box(Modifier.size(1.dp).testTag("below_the_bar"))
+                    }
+                }
+            }
+        }
+
+        val icons = compose.onNodeWithTag(TopBarStackedIconsTag).getBoundsInRoot()
+        val barBottom = compose.onNodeWithTag("below_the_bar").getBoundsInRoot().top
+
+        // No title slot: the bar's bottom is the icon row's bottom (FAH-427).
+        assertEquals(icons.bottom.value, barBottom.value, 0.5f)
+    }
+
+    @Test
+    @Config(qualifiers = "en-rUS-w320dp-h891dp-xxhdpi")
+    fun `a one-line stacked title and its skeleton sit centred in the slot`() {
+        var loading by mutableStateOf(true)
+        var title by mutableStateOf("")
+        compose.setContent {
+            DiveHubTheme(darkTheme = false) {
+                val density = LocalDensity.current
+                CompositionLocalProvider(
+                    LocalDensity provides Density(density.density, 2f),
+                ) {
+                    Column {
+                        DiveHubTopBar(
+                            title = title,
+                            centerTitle = true,
+                            stackedTitle = true,
+                            loading = loading,
+                        )
+                        Box(Modifier.size(1.dp).testTag("below_the_bar"))
+                    }
+                }
+            }
+        }
+
+        compose.mainClock.advanceTimeBy(200)
+        val icons = compose.onNodeWithTag(TopBarStackedIconsTag).getBoundsInRoot()
+        val skeleton = compose.onNodeWithTag(TopBarTitleSkeletonTag).getBoundsInRoot()
+        val loadingBarBottom = compose.onNodeWithTag("below_the_bar").getBoundsInRoot().top
+        assertEquals(
+            (icons.bottom.value + loadingBarBottom.value) / 2,
+            (skeleton.top.value + skeleton.bottom.value) / 2,
+            1f,
+        )
+
+        compose.runOnIdle {
+            loading = false
+            title = "Dive 42"
+        }
+        compose.waitForIdle()
+        val loadedTitle = compose.onNodeWithText("Dive 42").getBoundsInRoot()
+        val loadedBarBottom = compose.onNodeWithTag("below_the_bar").getBoundsInRoot().top
+
+        // The unused line reads as padding above and below, not as a pool under a top-aligned title (FAH-427).
+        assertEquals(
+            (icons.bottom.value + loadedBarBottom.value) / 2,
+            (loadedTitle.top.value + loadedTitle.bottom.value) / 2,
+            1f,
+        )
+    }
+
+    @Test
+    @Config(qualifiers = "en-rUS-w320dp-h891dp-xxhdpi")
+    fun `a numberless dive's start-date title takes two lines at 200 percent`() {
+        assertTitleLines("Thu 2 Apr 2026, 11:00 (UTC+2)")
+    }
+
+    @Test
+    @Config(qualifiers = "de-rDE-w320dp-h891dp-xxhdpi")
+    fun `the german start-date title takes two lines at 200 percent`() {
+        assertTitleLines("Do. 2. Apr. 2026, 11:00 (UTC+2)")
+    }
+
+    /** The motivating title is a Dive's start date, so it must stay inside the reserved two lines (FAH-427). */
+    private fun assertTitleLines(title: String) {
+        compose.setContent {
+            DiveHubTheme(darkTheme = false) {
+                val density = LocalDensity.current
+                CompositionLocalProvider(
+                    LocalDensity provides Density(density.density, 2f),
+                ) {
+                    DiveHubTopBar(title = title, centerTitle = true, stackedTitle = true)
+                }
+            }
+        }
+
+        val results = mutableListOf<TextLayoutResult>()
+        compose.onNodeWithText(title).performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(results) }
+
+        assertEquals(2, results.single().lineCount)
     }
 
     @Test

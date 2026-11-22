@@ -57,6 +57,9 @@ private const val StackedTitleLines = 2
 /** The skeleton's handle for the arrival test; the bar itself stays decorative for TalkBack. */
 internal const val TopBarTitleSkeletonTag = "top_bar_title_skeleton"
 
+/** The stacked bar's icon row, so a test can check that an empty state's bar ends with it. */
+internal const val TopBarStackedIconsTag = "top_bar_stacked_icons"
+
 /**
  * The one app bar every screen draws (FAH-335): the screen's title and, on a pushed screen, a real back arrow. A
  * top-level place passes no [onBack] because the bottom bar is where it leaves; its subscreens are reached from its
@@ -102,7 +105,7 @@ fun DiveHubTopBar(
                 .background(colors.containerColor)
                 .statusBarsPadding(),
         ) {
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Row(Modifier.fillMaxWidth().testTag(TopBarStackedIconsTag), verticalAlignment = Alignment.CenterVertically) {
                 CompositionLocalProvider(LocalContentColor provides colors.navigationIconContentColor) {
                     navigationIcon()
                 }
@@ -111,20 +114,28 @@ fun DiveHubTopBar(
                     Row(verticalAlignment = Alignment.CenterVertically, content = actions)
                 }
             }
-            val lineBox = titleLineHeight()
-            Box(Modifier.fillMaxWidth().padding(horizontal = Spacing.s4, vertical = Spacing.s2)) {
-                if (loading) {
-                    TitleSkeleton(lineBox = lineBox, lines = StackedTitleLines)
-                } else {
-                    // The slot keeps the wrapped height while the title settles, so a one-line title never shrinks
-                    // the bar and a wrapped one never grows it (FAH-415).
-                    Box(Modifier.fillMaxWidth().heightIn(min = lineBox * StackedTitleLines)) {
-                        Text(
-                            title,
-                            modifier = titleModifier.fillMaxWidth(),
-                            style = DiveHubText.section,
-                            color = colors.titleContentColor,
-                        )
+            // An error or offline empty state has no title to reserve: the bar ends with its icon row instead of
+            // standing on a blank two-line slot (FAH-427).
+            if (loading || title.isNotEmpty()) {
+                val lineBox = titleLineHeight()
+                Box(Modifier.fillMaxWidth().padding(horizontal = Spacing.s4, vertical = Spacing.s2)) {
+                    if (loading) {
+                        TitleSkeleton(lineBox = lineBox, lines = StackedTitleLines)
+                    } else {
+                        // The slot keeps the wrapped height while the title settles, so a one-line title never
+                        // shrinks the bar and a wrapped one never grows it (FAH-415). Centre the title and the
+                        // skeleton in that slot so an unused line reads as padding (FAH-427).
+                        Box(
+                            Modifier.fillMaxWidth().heightIn(min = lineBox * StackedTitleLines),
+                            contentAlignment = Alignment.CenterStart,
+                        ) {
+                            Text(
+                                title,
+                                modifier = titleModifier.fillMaxWidth(),
+                                style = DiveHubText.section,
+                                color = colors.titleContentColor,
+                            )
+                        }
                     }
                 }
             }
@@ -182,7 +193,10 @@ private fun TitleSkeleton(lineBox: Dp, lines: Int) {
         delay(SkeletonDelayMs)
         visible = true
     }
-    Box(Modifier.width(TitleSkeletonWidth).height(lineBox * lines)) {
+    Box(
+        Modifier.width(TitleSkeletonWidth).height(lineBox * lines),
+        contentAlignment = Alignment.CenterStart,
+    ) {
         if (visible) {
             SkeletonBar(
                 Modifier
