@@ -229,15 +229,18 @@ class DiveDetailScreenshotTest {
     @Test
     fun `swiping to a neighbour opens it and re-anchors on the new dive`() {
         val opened = mutableListOf<String>()
-        val first = state(dive = dive())
+        val next = dive(number = 43).copy(id = "d2")
+        val first = state(dive = dive(), nextDive = next)
         val second = state(
-            dive = dive(number = 43).copy(id = "d2"),
+            dive = next,
             neighbours = NeighboursView(
                 previous = NeighboursViewPrevious("d1"),
                 next = NeighboursViewNext("d3"),
                 position = 13,
                 total = 312,
             ),
+            // A real following Dive, so the second swipe has a page to drag in (FAH-421 review).
+            nextDive = dive(number = 44).copy(id = "d3"),
         )
         compose.setContent {
             var current by remember { mutableStateOf(first) }
@@ -254,9 +257,21 @@ class DiveDetailScreenshotTest {
                 )
             }
         }
+        // Hold the finger mid-swipe: the next Dive's own page is already under it, not an empty page (FAH-421).
+        compose.mainClock.autoAdvance = false
         compose.onNodeWithTag("dive_pager").performTouchInput {
-            swipe(start = Offset(width * 0.9f, height / 2f), end = Offset(width * 0.1f, height / 2f), durationMillis = 200)
+            down(Offset(width * 0.9f, height / 2f))
+            moveTo(Offset(width * 0.7f, height / 2f))
+            moveTo(Offset(width * 0.5f, height / 2f))
+            moveTo(Offset(width * 0.3f, height / 2f))
+            moveTo(Offset(width * 0.1f, height / 2f))
         }
+        compose.mainClock.advanceTimeByFrame()
+        compose.mainClock.advanceTimeBy(64)
+        compose.onNodeWithTag("dive_next_page").assertIsDisplayed()
+        compose.onNodeWithText("43").assertIsDisplayed()
+        compose.onNodeWithTag("dive_pager").performTouchInput { up() }
+        compose.mainClock.autoAdvance = true
         compose.waitForIdle()
         assertEquals(listOf("d2"), opened)
         compose.onNodeWithText("Dive 43").assertIsDisplayed()
@@ -270,9 +285,140 @@ class DiveDetailScreenshotTest {
     }
 
     @Test
+    fun `a released swipe keeps the new dive under the finger until its page is read`() {
+        val opened = mutableListOf<String>()
+        val next = dive(number = 43).copy(id = "d2")
+        val first = state(dive = dive(), nextDive = next)
+        val second = state(
+            dive = next,
+            neighbours = NeighboursView(
+                previous = NeighboursViewPrevious("d1"),
+                next = NeighboursViewNext("d3"),
+                position = 13,
+                total = 312,
+            ),
+            // A real following Dive: the frozen dragged page must not flip to it before the re-anchor (FAH-421 review).
+            nextDive = dive(number = 44).copy(id = "d3"),
+        )
+        val current = mutableStateOf(first)
+        compose.setContent {
+            DiveHubTheme(darkTheme = false) {
+                DiveDetailScreen(
+                    state = current.value,
+                    units = "metric",
+                    onBack = {},
+                    onRetry = {},
+                    onOpenDive = { id -> opened += id },
+                )
+            }
+        }
+        compose.onNodeWithTag("dive_pager").performTouchInput {
+            swipe(start = Offset(width * 0.9f, height / 2f), end = Offset(width * 0.1f, height / 2f), durationMillis = 200)
+        }
+        compose.waitForIdle()
+        assertEquals(listOf("d2"), opened)
+        // The page is not read yet: the pager still holds the dragged page, not the middle page of the departed Dive.
+        compose.onNodeWithTag("dive_next_page").assertIsDisplayed()
+        compose.onNodeWithText("43").assertIsDisplayed()
+
+        // The page arrives: the re-anchor lands on the same Dive, so the departed page is never shown again.
+        compose.runOnIdle { current.value = second }
+        compose.waitForIdle()
+        compose.onNodeWithTag("dive_scroll").assertIsDisplayed()
+        compose.onNodeWithText("Dive 43").assertIsDisplayed()
+    }
+
+    @Test
+    fun `a store write during the drag keeps the page and opens the dive the drag started on`() {
+        val opened = mutableListOf<String>()
+        val d2 = dive(number = 43).copy(id = "d2")
+        val d3 = dive(number = 44).copy(id = "d3")
+        val first = state(
+            dive = dive(),
+            neighbours = NeighboursView(
+                previous = null,
+                next = NeighboursViewNext("d2"),
+                position = 12,
+                total = 312,
+            ),
+            nextDive = d2,
+        )
+        val changed = first.copy(
+            neighbours = first.neighbours?.copy(next = NeighboursViewNext("d3")),
+            nextDive = NeighbourDive(d3, null),
+        )
+        val current = mutableStateOf(first)
+        compose.setContent {
+            DiveHubTheme(darkTheme = false) {
+                DiveDetailScreen(
+                    state = current.value,
+                    units = "metric",
+                    onBack = {},
+                    onRetry = {},
+                    onOpenDive = { id -> opened += id },
+                )
+            }
+        }
+        compose.mainClock.autoAdvance = false
+        compose.onNodeWithTag("dive_pager").performTouchInput {
+            down(Offset(width * 0.9f, height / 2f))
+            moveTo(Offset(width * 0.7f, height / 2f))
+            moveTo(Offset(width * 0.5f, height / 2f))
+        }
+        compose.mainClock.advanceTimeByFrame()
+        compose.mainClock.advanceTimeBy(64)
+        // A sync lands mid-drag and the live list now says the next Dive is d3. The frozen page must stay d2.
+        compose.runOnIdle { current.value = changed }
+        compose.mainClock.advanceTimeByFrame()
+        compose.mainClock.advanceTimeBy(64)
+        compose.onNodeWithTag("dive_next_page").assertIsDisplayed()
+        compose.onNodeWithText("43").assertIsDisplayed()
+        compose.onNodeWithTag("dive_pager").performTouchInput {
+            moveTo(Offset(width * 0.1f, height / 2f))
+            up()
+        }
+        compose.mainClock.autoAdvance = true
+        compose.waitForIdle()
+        assertEquals(listOf("d2"), opened)
+        // Still the Dive the drag started on, not the d3 the store write put in the live list.
+        compose.onNodeWithTag("dive_next_page").assertIsDisplayed()
+        compose.onNodeWithText("43").assertIsDisplayed()
+        compose.onNodeWithText("44").assertDoesNotExist()
+    }
+
+    @Test
+    fun `a swipe towards a neighbour with no stored page springs back instead of opening it`() {
+        val opened = mutableListOf<String>()
+        renderSwipe(
+            first = state(
+                dive = dive(),
+                neighbours = NeighboursView(
+                    previous = null,
+                    next = NeighboursViewNext("d2"),
+                    position = 12,
+                    total = 312,
+                ),
+                nextDive = null,
+            ),
+            next = mapOf("d2" to state(dive = dive(number = 43).copy(id = "d2"))),
+            opened = opened,
+        )
+        compose.onNodeWithTag("dive_pager").performTouchInput {
+            swipe(start = Offset(width * 0.9f, height / 2f), end = Offset(width * 0.1f, height / 2f), durationMillis = 200)
+        }
+        compose.waitForIdle()
+        assertTrue(opened.isEmpty())
+        compose.onNodeWithText("Dive 42").assertIsDisplayed()
+    }
+
+    @Test
     fun `swiping the other way opens the previous dive`() {
         val opened = mutableListOf<String>()
-        render(state(dive = dive()), onOpenDive = opened::add)
+        renderSwipe(
+            first = state(dive = dive(), previousDive = dive(number = 41).copy(id = "d0")),
+            next = mapOf("d0" to state(dive = dive(number = 41).copy(id = "d0"))),
+            opened = opened,
+        )
         compose.onNodeWithTag("dive_pager").performTouchInput {
             swipe(start = Offset(width * 0.1f, height / 2f), end = Offset(width * 0.9f, height / 2f), durationMillis = 200)
         }
@@ -284,8 +430,8 @@ class DiveDetailScreenshotTest {
     @Test
     fun `swiping before the first dive springs back without opening one`() {
         val opened = mutableListOf<String>()
-        render(
-            state(
+        renderSwipe(
+            first = state(
                 dive = dive(),
                 neighbours = NeighboursView(
                     previous = null,
@@ -294,7 +440,8 @@ class DiveDetailScreenshotTest {
                     total = 312,
                 ),
             ),
-            onOpenDive = opened::add,
+            next = mapOf("d2" to state(dive = dive(number = 43).copy(id = "d2"))),
+            opened = opened,
         )
         compose.onNodeWithTag("dive_pager").performTouchInput {
             swipe(start = Offset(width * 0.1f, height / 2f), end = Offset(width * 0.9f, height / 2f), durationMillis = 200)
@@ -330,8 +477,8 @@ class DiveDetailScreenshotTest {
     @Test
     fun `a valid swipe still opens a neighbour after an end-stop springs back`() {
         val opened = mutableListOf<String>()
-        render(
-            state(
+        renderSwipe(
+            first = state(
                 dive = dive(),
                 neighbours = NeighboursView(
                     previous = null,
@@ -339,8 +486,10 @@ class DiveDetailScreenshotTest {
                     position = 1,
                     total = 312,
                 ),
+                nextDive = dive(number = 43).copy(id = "d2"),
             ),
-            onOpenDive = opened::add,
+            next = mapOf("d2" to state(dive = dive(number = 43).copy(id = "d2"))),
+            opened = opened,
         )
         // The start-of-list end-stop: swipe right, let it spring back.
         compose.onNodeWithTag("dive_pager").performTouchInput {
@@ -361,8 +510,8 @@ class DiveDetailScreenshotTest {
     @Test
     fun `a swipe that interrupts the end-stop spring-back still re-springs onto the dive`() {
         val opened = mutableListOf<String>()
-        render(
-            state(
+        renderSwipe(
+            first = state(
                 dive = dive(),
                 neighbours = NeighboursView(
                     previous = null,
@@ -370,8 +519,10 @@ class DiveDetailScreenshotTest {
                     position = 1,
                     total = 312,
                 ),
+                nextDive = dive(number = 43).copy(id = "d2"),
             ),
-            onOpenDive = opened::add,
+            next = mapOf("d2" to state(dive = dive(number = 43).copy(id = "d2"))),
+            opened = opened,
         )
         compose.mainClock.autoAdvance = false
         // The start-of-list end-stop; stop the clock while its spring-back is under way.
@@ -851,6 +1002,29 @@ class DiveDetailScreenshotTest {
         }
     }
 
+    /** A screen that moves to the named Dive when a swipe settles on it, so the re-anchor gate can resolve. */
+    private fun renderSwipe(
+        first: DiveDetailUiState,
+        next: Map<String, DiveDetailUiState>,
+        opened: MutableList<String>,
+    ) {
+        compose.setContent {
+            var current by remember { mutableStateOf(first) }
+            DiveHubTheme(darkTheme = false) {
+                DiveDetailScreen(
+                    state = current,
+                    units = "metric",
+                    onBack = {},
+                    onRetry = {},
+                    onOpenDive = { id ->
+                        opened += id
+                        next[id]?.let { current = it }
+                    },
+                )
+            }
+        }
+    }
+
     private fun capture(name: String) {
         compose.onRoot().captureRoboImage("src/test/screenshots/$name")
     }
@@ -863,6 +1037,8 @@ class DiveDetailScreenshotTest {
             position = 12,
             total = 312,
         ),
+        previousDive: DiveView? = null,
+        nextDive: DiveView? = null,
         profileSamples: RecordingSamplesView? = samples(),
         samplesError: String? = null,
         samplesPending: Boolean = false,
@@ -875,6 +1051,8 @@ class DiveDetailScreenshotTest {
         dive = dive,
         providers = ProviderDirectory(names = mapOf("ssi" to "SSI")),
         neighbours = neighbours,
+        previousDive = previousDive?.let { NeighbourDive(it, null) },
+        nextDive = nextDive?.let { NeighbourDive(it, null) },
         samples = profileSamples,
         samplesError = samplesError,
         samplesPending = samplesPending,

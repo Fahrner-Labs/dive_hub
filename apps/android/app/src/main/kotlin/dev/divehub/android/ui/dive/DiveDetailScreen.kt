@@ -10,6 +10,7 @@ import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.awaitHorizontalTouchSlopOrCancellation
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.horizontalDrag
+import androidx.compose.foundation.interaction.DragInteraction
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -26,6 +27,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -97,7 +99,6 @@ import dev.divehub.api.models.DiveViewRecordingsItem
 import dev.divehub.api.models.DiveViewRecordingsItemSummaryGasesItem
 import dev.divehub.api.models.DiveViewSuit
 import dev.divehub.api.models.DiveViewWeightingFeedback
-import dev.divehub.api.models.NeighboursView
 import dev.divehub.api.models.RecordingSamplesView
 import dev.divehub.api.models.RecordingSamplesViewSeriesItem
 import dev.divehub.shared.ErrorCodes
@@ -126,9 +127,12 @@ import dev.divehub.shared.dive.TimeZoneOrigin
 import dev.divehub.shared.dive.timeZoneNote
 import dev.divehub.shared.logbook.ProviderDirectory
 import dev.divehub.shared.logbook.mixName
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.booleanOrNull
 import java.util.Locale
@@ -212,7 +216,6 @@ fun DiveDetailScreen(
             DivePager(
                 state = state,
                 units = units,
-                neighbours = neighbours,
                 onRetry = onRetry,
                 onOpenDive = onOpenDive,
                 modifier = Modifier.fillMaxSize(),
@@ -222,55 +225,172 @@ fun DiveDetailScreen(
 }
 
 /**
- * The Dive page as a three-page pager: the current Dive in the middle, an empty page on either side for the neighbour
- * a swipe opens. Once a swipe settles, [onOpenDive] moves the page and the pager snaps back to the middle; at either end
- * of the list the spring-back is the end-stop hint. The buttons in the top bar open the same neighbour directly.
+ * The Dive page as a three-page pager: the current Dive in the middle and the previous/next Dive's own page on either
+ * side, read ahead from the store, so a swipe drags the next Dive in instead of a blank page (FAH-421). Once a swipe
+ * settles, [onOpenDive] moves the page and the pager snaps back to the middle; at either end of the list the
+ * spring-back is the end-stop hint. The buttons in the top bar open the same neighbour directly.
  */
 @Composable
 private fun DivePager(
     state: DiveDetailUiState,
     units: String?,
-    neighbours: NeighboursView?,
     onRetry: () -> Unit,
     onOpenDive: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val pagerState = rememberPagerState(initialPage = CURRENT_DIVE_PAGE) { PAGER_PAGES }
-    val currentNeighbours by rememberUpdatedState(neighbours)
+    val currentState by rememberUpdatedState(state)
     val currentOnOpenDive by rememberUpdatedState(onOpenDive)
+    val currentDiveId by rememberUpdatedState(state.dive?.id)
+    // The adjacent pages as they were when the finger went down. A store write during the drag (a sync landing, a
+    // newly synced neighbour) must not swap the page under the finger, and the settle must open the Dive that was
+    // actually there (FAH-421 review). Kept until the re-anchor lands so the page cannot flip to the following Dive.
+    val dragPages = remember { mutableStateOf<DragPages?>(null) }
+    var settleJob by remember { mutableStateOf<Job?>(null) }
+    // One settle at a time: the scroll the settle starts toggles `isScrollInProgress` again, and that must not start
+    // a second step for the same gesture (FAH-421 review).
+    var settling by remember { mutableStateOf(false) }
+    LaunchedEffect(pagerState) {
+        // A drag start, not `isScrollInProgress`: the settle's own scroll and the end-stop spring also set that, and
+        // only a real gesture must freeze new pages. A new drag also cancels a settle still waiting on the last step.
+        pagerState.interactionSource.interactions.collect { interaction ->
+            if (interaction is DragInteraction.Start) {
+                val live = currentState
+                if (settling) {
+                    // A new drag supersedes a settle still waiting on the last step, and freezes the page it starts on.
+                    settling = false
+                    settleJob?.cancel()
+                    dragPages.value = DragPages(live.previousDive, live.nextDive)
+                } else if (dragPages.value == null) {
+                    // `isScrollInProgress` may win the race on a short gesture; keep the freeze it captured.
+                    dragPages.value = DragPages(live.previousDive, live.nextDive)
+                }
+            }
+        }
+    }
     LaunchedEffect(pagerState) {
         // Gate on the gesture ending, not the page changing: an interrupted end-stop can settle back on the same
-        // page, which emits no settledPage change but must still run the spring-back again (FAH-344 review). The
-        // scroll this block starts is filtered upstream, so collectLatest only cancels the block on a new drag.
+        // page, which emits no settledPage change but must still run the spring-back again (FAH-344 review).
         snapshotFlow { pagerState.isScrollInProgress }
-            .filter { !it }
-            .collectLatest {
-                val page = pagerState.currentPage
-                if (page == CURRENT_DIVE_PAGE) return@collectLatest
-                val target = if (page < CURRENT_DIVE_PAGE) {
-                    currentNeighbours?.previous?.id
-                } else {
-                    currentNeighbours?.next?.id
+            .distinctUntilChanged()
+            .collect { scrolling ->
+                if (scrolling) {
+                    // Freeze as the gesture starts. The interaction source usually arrives first; this is the
+                    // fallback when a tool-driven swipe begins and ends between two frames (FAH-421 review).
+                    if (!settling && dragPages.value == null) {
+                        val live = currentState
+                        dragPages.value = DragPages(live.previousDive, live.nextDive)
+                    }
+                    return@collect
                 }
-                if (target != null) {
-                    currentOnOpenDive(target)
-                    pagerState.scrollToPage(CURRENT_DIVE_PAGE)
-                } else {
-                    // The ends of the list: the spring-back says there is nothing further (FAH-344).
-                    pagerState.animateScrollToPage(CURRENT_DIVE_PAGE)
+                if (settling) return@collect
+                val pages = dragPages.value ?: return@collect
+                if (pagerState.currentPage == CURRENT_DIVE_PAGE) {
+                    dragPages.value = null
+                    return@collect
+                }
+                settling = true
+                settleJob = launch {
+                    try {
+                        settle(pagerState, pages, { currentDiveId }, currentOnOpenDive)
+                    } finally {
+                        // A newer gesture owns the frozen pages now; only the settle that owns them may clear them.
+                        if (dragPages.value === pages) dragPages.value = null
+                        settling = false
+                    }
                 }
             }
     }
+    // A frozen null is "no page", not "use the live one": a store write must not add a page under the finger either.
+    val frozen = dragPages.value
+    val previousPage = if (frozen != null) frozen.previous else state.previousDive
+    val nextPage = if (frozen != null) frozen.next else state.nextDive
     HorizontalPager(
         state = pagerState,
+        // Keyed by Dive id so a page never keeps the previous Dive's scroll, table or scrub state (FAH-421).
+        key = { page ->
+            when (page) {
+                CURRENT_DIVE_PAGE -> "current:${state.dive?.id.orEmpty()}"
+                0 -> "previous:${previousPage?.dive?.id.orEmpty()}"
+                else -> "next:${nextPage?.dive?.id.orEmpty()}"
+            }
+        },
         modifier = modifier.testTag("dive_pager"),
     ) { page ->
-        if (page == CURRENT_DIVE_PAGE) {
-            DiveContent(state, units, onRetry, Modifier.fillMaxSize())
-        } else {
-            Box(Modifier.fillMaxSize())
+        when (page) {
+            CURRENT_DIVE_PAGE -> DiveContent(state, units, onRetry, Modifier.fillMaxSize())
+            0 -> NeighbourPage(
+                page = previousPage,
+                state = state,
+                units = units,
+                onRetry = onRetry,
+                tag = "dive_previous_page",
+            )
+            else -> NeighbourPage(
+                page = nextPage,
+                state = state,
+                units = units,
+                onRetry = onRetry,
+                tag = "dive_next_page",
+            )
         }
     }
+}
+
+/** The adjacent pages frozen when the finger went down; an identity change marks a new gesture (FAH-421 review). */
+private data class DragPages(
+    val previous: NeighbourDive?,
+    val next: NeighbourDive?,
+)
+
+/**
+ * Opens the Dive under the finger and re-anchors on it. A frozen page with no Dive is the end of what can be swiped
+ * to: it springs back rather than opening a page the store cannot draw (FAH-421 review).
+ */
+private suspend fun settle(
+    pagerState: PagerState,
+    pages: DragPages,
+    currentDiveId: () -> String?,
+    onOpenDive: (String) -> Unit,
+) {
+    val page = pagerState.currentPage
+    if (page == CURRENT_DIVE_PAGE) return
+    val target = if (page < CURRENT_DIVE_PAGE) pages.previous?.dive?.id else pages.next?.dive?.id
+    if (target == null) {
+        // The ends of the list, or a neighbour the store cannot draw: the spring-back says there is nothing further
+        // (FAH-344, FAH-421 review).
+        pagerState.animateScrollToPage(CURRENT_DIVE_PAGE)
+        return
+    }
+    onOpenDive(target)
+    // The dragged page already shows the target; keep it under the finger until the middle page is that Dive, so the
+    // re-anchor never flashes the Dive the swipe just left (FAH-421).
+    snapshotFlow { currentDiveId() }.first { it == target || it == null }
+    pagerState.scrollToPage(CURRENT_DIVE_PAGE)
+}
+
+/** An adjacent page drawn from the Dive read ahead for it; an empty Box is the end-stop when there is none. */
+@Composable
+private fun NeighbourPage(
+    page: NeighbourDive?,
+    state: DiveDetailUiState,
+    units: String?,
+    onRetry: () -> Unit,
+    tag: String,
+) {
+    if (page == null) {
+        Box(Modifier.fillMaxSize())
+        return
+    }
+    DiveBody(
+        // The profile is read for the page that is on screen; the neighbouring page draws the rest of the Dive.
+        state = state.copy(syncedAt = page.syncedAt),
+        dive = page.dive,
+        units = units,
+        onRetry = onRetry,
+        includeProfile = false,
+        scrollTag = tag,
+    )
 }
 
 /** Which of the screen's exclusive states is on stage; [Crossfade] fades the page in over the skeleton. */
@@ -466,6 +586,8 @@ private fun DiveBody(
     dive: DiveView,
     units: String?,
     onRetry: () -> Unit,
+    includeProfile: Boolean = true,
+    scrollTag: String = "dive_scroll",
 ) {
     val context = LocalContext.current
     val locale = context.resources.configuration.locales[0] ?: Locale.getDefault()
@@ -473,7 +595,7 @@ private fun DiveBody(
     val primary = profileRecording(dive.recordings)
 
     LazyColumn(
-        modifier = Modifier.fillMaxSize().testTag("dive_scroll"),
+        modifier = Modifier.fillMaxSize().testTag(scrollTag),
         // The last section is plain text: leave the rhythm between sections above the bottom bar (FAH-424).
         contentPadding = PaddingValues(bottom = Spacing.s5),
     ) {
@@ -483,7 +605,7 @@ private fun DiveBody(
         item { Weighting(dive, locale, imperial) }
         item { Notes(dive.notes) }
         item { Recordings(dive, locale, state.providers) }
-        if (primary != null) {
+        if (primary != null && includeProfile) {
             item { Profile(state, primary, locale, imperial, onRetry) }
         }
         if (dive.participants.isNotEmpty()) {

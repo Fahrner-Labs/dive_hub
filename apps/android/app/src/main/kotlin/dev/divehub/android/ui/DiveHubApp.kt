@@ -113,7 +113,9 @@ fun DiveHubApp(
                 navController = navController,
                 screens = screens,
                 destination = sessionDestination(state),
-                diveId = { dive.state.value.diveId },
+                // The id and position go together: `diveId` moves to the requested Dive before its page and list
+                // position arrive, and the logbook focus needs the row that is actually on screen (FAH-421 review).
+                diveId = { dive.state.value.dive?.id },
                 divePosition = { dive.state.value.neighbours?.position },
             )
             when {
@@ -216,10 +218,22 @@ private class DiveHubScreens(
     @Composable
     override fun dive(id: String, onBack: () -> Unit, onOpenDive: (String) -> Unit) {
         val state by viewModel.state.collectAsStateWithLifecycle()
+        val diveState by dive.state.collectAsStateWithLifecycle()
         // After process death the id is back from the route but the page was never read in this process. Wait for the
         // session: `open` reaches the API for the Provider names, and the instance URL is only set once restore is done.
         LaunchedEffect(id, state.user?.id) {
             if (state.user != null && dive.state.value.diveId != id) dive.open(id)
+        }
+        var pendingDive by remember { mutableStateOf<String?>(null) }
+        val shownDiveId = diveState.dive?.id
+        // A fresh Dive destination composes the pager on its middle page, so moving the route before the page is read
+        // would flash the Dive the step left. Move once the page is the target (or its read failed) (FAH-421).
+        LaunchedEffect(pendingDive, shownDiveId, diveState.loading) {
+            val target = pendingDive ?: return@LaunchedEffect
+            if (shownDiveId == target || (shownDiveId == null && !diveState.loading)) {
+                pendingDive = null
+                onOpenDive(target)
+            }
         }
         DiveDetailRoute(
             viewModel = dive,
@@ -227,7 +241,7 @@ private class DiveHubScreens(
             onBack = onBack,
             onOpenDive = { next ->
                 dive.openNeighbour(next)
-                onOpenDive(next)
+                pendingDive = next
             },
         )
     }

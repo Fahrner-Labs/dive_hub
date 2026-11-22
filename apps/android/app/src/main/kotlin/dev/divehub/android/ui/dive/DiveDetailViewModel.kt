@@ -16,6 +16,7 @@ import dev.divehub.shared.dive.DiveRepository
 import dev.divehub.shared.dive.profileRecording
 import dev.divehub.shared.logbook.LogbookFilter
 import dev.divehub.shared.logbook.ProviderDirectory
+import dev.divehub.shared.logbook.StoredDive
 import dev.divehub.shared.logbook.StoreLogbook
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
@@ -28,6 +29,12 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+/** An adjacent Dive read ahead for the swipe, with the store's sync time for that page's sync line (FAH-421). */
+data class NeighbourDive(
+    val dive: DiveView,
+    val syncedAt: String?,
+)
+
 /** What the dive page draws; `error` is a code the UI translates, never the server's English text. */
 data class DiveDetailUiState(
     val diveId: String? = null,
@@ -35,6 +42,10 @@ data class DiveDetailUiState(
     val dive: DiveView? = null,
     val providers: ProviderDirectory = ProviderDirectory.EMPTY,
     val neighbours: NeighboursView? = null,
+    /** The previous Dive's page, read ahead so a swipe drags its content in instead of a blank page (FAH-421). */
+    val previousDive: NeighbourDive? = null,
+    /** The next Dive's page, read ahead so a swipe drags its content in instead of a blank page (FAH-421). */
+    val nextDive: NeighbourDive? = null,
     val samples: RecordingSamplesView? = null,
     /** A stored profile that no longer decodes leaves the rest of the page standing. */
     val samplesError: String? = null,
@@ -83,7 +94,9 @@ class DiveDetailViewModel(
     }
 
     fun openNeighbour(diveId: String) {
-        load(diveId)
+        // A neighbour move is the same screen changing content, not a new destination: keep the current Dive on
+        // screen until the next one is fully read, so the swap never flashes a blank page or a spinner (FAH-421).
+        load(diveId, reset = false)
         refresh(diveId)
     }
 
@@ -150,6 +163,8 @@ class DiveDetailViewModel(
                     connected = connectedState.value,
                     dive = null,
                     neighbours = null,
+                    previousDive = null,
+                    nextDive = null,
                     samples = null,
                     samplesPending = false,
                     samplesError = null,
@@ -158,55 +173,122 @@ class DiveDetailViewModel(
             return
         }
         val dive = stored.dive
-        if (!stillOpen(diveId)) return
-        _state.update {
-            it.copy(
-                loading = false,
-                dive = dive,
-                syncedAt = stored.syncedAt,
-                offline = offlineState.value,
-                connected = connectedState.value,
-                error = null,
-            )
+        // A neighbour step must publish the Dive, its profile and the adjacent pages together: pairing the new Dive
+        // with the previous list's neighbours would show (and let the user open) the wrong Dive (FAH-421).
+        val swapNeighbours = !reset && _state.value.dive?.id != dive.id
+
+        if (swapNeighbours) {
+            // A neighbour step is one page swap: the Dive, its profile and the adjacent pages (chevrons included) are
+            // read first and published in one update, so the chart and the arrows never describe another list
+            // position (FAH-421 review, F2).
+            val profile = readProfile(stored)
+            if (!stillOpen(diveId)) return
+            val read = readNeighbours(diveId) ?: NeighboursRead()
+            if (!stillOpen(diveId)) return
+            _state.update {
+                it.copy(
+                    loading = false,
+                    dive = dive,
+                    samples = profile.samples,
+                    samplesPending = profile.samplesPending,
+                    samplesError = profile.samplesError,
+                    neighbours = read.neighbours,
+                    previousDive = read.previousDive,
+                    nextDive = read.nextDive,
+                    syncedAt = stored.syncedAt,
+                    offline = offlineState.value,
+                    connected = connectedState.value,
+                    error = null,
+                )
+            }
+        } else {
+            // A first open publishes the page before decoding the profile, and a same-Dive sync reread keeps the page
+            // and its chart up while the new one is read (FAH-421 review).
+            _state.update {
+                it.copy(
+                    loading = false,
+                    dive = dive,
+                    syncedAt = stored.syncedAt,
+                    offline = offlineState.value,
+                    connected = connectedState.value,
+                    error = null,
+                )
+            }
+            val profile = readProfile(stored)
+            if (!stillOpen(diveId)) return
+            _state.update {
+                it.copy(
+                    samples = profile.samples,
+                    samplesPending = profile.samplesPending,
+                    samplesError = profile.samplesError,
+                )
+            }
+            // The adjacent pages refresh once the list answers, without holding the page back on an API-backed filter.
+            val read = readNeighbours(diveId)
+            if (read != null && stillOpen(diveId)) {
+                _state.update {
+                    it.copy(neighbours = read.neighbours, previousDive = read.previousDive, nextDive = read.nextDive)
+                }
+            }
         }
+
         val directory = providers ?: api.providers().also {
             if (it.names.isNotEmpty() || it.connected.isNotEmpty()) providers = it
         }
         if (!stillOpen(diveId)) return
         _state.update { it.copy(providers = directory) }
+    }
 
-        // The page stands without these: neighbours that cannot be read just hide the controls, and a profile that
-        // is not in the store yet says it is still syncing.
-        try {
-            val neighbours = if (store.canAnswer(filters)) {
-                withContext(ioDispatcher) { store.neighbours(diveId, filters) }
-            } else {
-                // The Push-backed filters only the API can apply (client contract, Offline reads).
-                api.neighbours(diveId, filters)
-            }
-            if (stillOpen(diveId)) _state.update { it.copy(neighbours = neighbours) }
-        } catch (_: DiveHubException) {
-        } catch (_: NoAnswerException) {
-        }
-
-        val recording = profileRecording(dive.recordings)
-        if (recording != null) {
-            val samples = withContext(ioDispatcher) { store.samples(recording.id) }
-            if (!stillOpen(diveId)) return
-            when {
-                samples != null -> _state.update {
-                    it.copy(samples = samples, samplesPending = false, samplesError = null)
-                }
-                stored.profilePending -> _state.update {
-                    it.copy(samplesPending = true, samplesError = null)
-                }
-                withContext(ioDispatcher) { store.hasSeries(recording.id) } ->
-                    _state.update { it.copy(samplesPending = false, samplesError = "internal_error") }
-            }
-        } else if (!reset) {
-            _state.update { it.copy(samples = null, samplesPending = false, samplesError = null) }
+    /** The profile for [stored]'s Primary recording, read together with the page on a neighbour step (FAH-421). */
+    private suspend fun readProfile(stored: StoredDive): ProfileRead {
+        val recording = profileRecording(stored.dive.recordings) ?: return ProfileRead()
+        val samples = withContext(ioDispatcher) { store.samples(recording.id) }
+        if (samples != null) return ProfileRead(samples = samples)
+        if (stored.profilePending) return ProfileRead(samplesPending = true)
+        return if (withContext(ioDispatcher) { store.hasSeries(recording.id) }) {
+            ProfileRead(samplesError = "internal_error")
+        } else {
+            ProfileRead()
         }
     }
+
+    private data class ProfileRead(
+        val samples: RecordingSamplesView? = null,
+        val samplesPending: Boolean = false,
+        val samplesError: String? = null,
+    )
+
+    /**
+     * The list around [diveId] and the adjacent pages, or null when the list cannot answer (the controls hide). A
+     * neighbour the store has not synced yet has no page and is drawn as the empty end-stop until a sync stores it.
+     */
+    private suspend fun readNeighbours(diveId: String): NeighboursRead? = try {
+        val neighbours = if (store.canAnswer(filters)) {
+            withContext(ioDispatcher) { store.neighbours(diveId, filters) }
+        } else {
+            // The Push-backed filters only the API can apply (client contract, Offline reads).
+            api.neighbours(diveId, filters)
+        }
+        NeighboursRead(
+            neighbours = neighbours,
+            previousDive = neighbours.previous?.id?.let {
+                withContext(ioDispatcher) { store.dive(it) }
+            }?.let { NeighbourDive(it.dive, it.syncedAt) },
+            nextDive = neighbours.next?.id?.let {
+                withContext(ioDispatcher) { store.dive(it) }
+            }?.let { NeighbourDive(it.dive, it.syncedAt) },
+        )
+    } catch (_: DiveHubException) {
+        null
+    } catch (_: NoAnswerException) {
+        null
+    }
+
+    private data class NeighboursRead(
+        val neighbours: NeighboursView? = null,
+        val previousDive: NeighbourDive? = null,
+        val nextDive: NeighbourDive? = null,
+    )
 
     /** A different Dive (or a forgotten User) owns the state now; a read that started earlier must not write over it. */
     private fun stillOpen(diveId: String): Boolean = _state.value.diveId == diveId
