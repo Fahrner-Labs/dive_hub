@@ -228,7 +228,10 @@ class DiveDetailViewModel(
         _state.update { it.copy(providers = directory) }
     }
 
-    /** The list around [diveId] and the adjacent pages, or null when the list cannot answer (the controls hide). */
+    /**
+     * The list around [diveId] and the adjacent pages, or null when the list cannot answer (the controls hide). A
+     * neighbour the store has not synced yet has no page and is drawn as the empty end-stop until a sync stores it.
+     */
     private suspend fun readNeighbours(diveId: String): NeighboursRead? = try {
         val neighbours = if (store.canAnswer(filters)) {
             withContext(ioDispatcher) { store.neighbours(diveId, filters) }
