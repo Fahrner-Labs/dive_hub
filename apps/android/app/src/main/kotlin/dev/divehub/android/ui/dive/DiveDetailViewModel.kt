@@ -35,6 +35,10 @@ data class DiveDetailUiState(
     val dive: DiveView? = null,
     val providers: ProviderDirectory = ProviderDirectory.EMPTY,
     val neighbours: NeighboursView? = null,
+    /** The previous Dive's page, read ahead so a swipe drags its content in instead of a blank page (FAH-421). */
+    val previousDive: DiveView? = null,
+    /** The next Dive's page, read ahead so a swipe drags its content in instead of a blank page (FAH-421). */
+    val nextDive: DiveView? = null,
     val samples: RecordingSamplesView? = null,
     /** A stored profile that no longer decodes leaves the rest of the page standing. */
     val samplesError: String? = null,
@@ -83,7 +87,9 @@ class DiveDetailViewModel(
     }
 
     fun openNeighbour(diveId: String) {
-        load(diveId)
+        // A neighbour move is the same screen changing content, not a new destination: keep the current Dive on
+        // screen until the next one is fully read, so the swap never flashes a blank page or a spinner (FAH-421).
+        load(diveId, reset = false)
         refresh(diveId)
     }
 
@@ -150,6 +156,8 @@ class DiveDetailViewModel(
                     connected = connectedState.value,
                     dive = null,
                     neighbours = null,
+                    previousDive = null,
+                    nextDive = null,
                     samples = null,
                     samplesPending = false,
                     samplesError = null,
@@ -158,25 +166,45 @@ class DiveDetailViewModel(
             return
         }
         val dive = stored.dive
+
+        // The Dive and its profile go out together: a neighbour step must never pair one Dive's values with the
+        // previous Dive's chart while the local read finishes (FAH-421).
+        var samples: RecordingSamplesView? = null
+        var samplesPending = false
+        var samplesError: String? = null
+        val recording = profileRecording(dive.recordings)
+        if (recording != null) {
+            samples = withContext(ioDispatcher) { store.samples(recording.id) }
+            if (!stillOpen(diveId)) return
+            when {
+                samples != null -> Unit
+                stored.profilePending -> samplesPending = true
+                withContext(ioDispatcher) { store.hasSeries(recording.id) } -> samplesError = "internal_error"
+            }
+        }
         if (!stillOpen(diveId)) return
         _state.update {
             it.copy(
                 loading = false,
                 dive = dive,
+                samples = samples,
+                samplesPending = samplesPending,
+                samplesError = samplesError,
                 syncedAt = stored.syncedAt,
                 offline = offlineState.value,
                 connected = connectedState.value,
                 error = null,
             )
         }
+
         val directory = providers ?: api.providers().also {
             if (it.names.isNotEmpty() || it.connected.isNotEmpty()) providers = it
         }
         if (!stillOpen(diveId)) return
         _state.update { it.copy(providers = directory) }
 
-        // The page stands without these: neighbours that cannot be read just hide the controls, and a profile that
-        // is not in the store yet says it is still syncing.
+        // The page stands without these: neighbours that cannot be read just hide the controls, and the adjacent
+        // pages are read ahead from the store so a swipe drags the real Dive in (FAH-421).
         try {
             val neighbours = if (store.canAnswer(filters)) {
                 withContext(ioDispatcher) { store.neighbours(diveId, filters) }
@@ -184,27 +212,19 @@ class DiveDetailViewModel(
                 // The Push-backed filters only the API can apply (client contract, Offline reads).
                 api.neighbours(diveId, filters)
             }
-            if (stillOpen(diveId)) _state.update { it.copy(neighbours = neighbours) }
+            val previousDive = neighbours.previous?.id?.let {
+                withContext(ioDispatcher) { store.dive(it)?.dive }
+            }
+            val nextDive = neighbours.next?.id?.let {
+                withContext(ioDispatcher) { store.dive(it)?.dive }
+            }
+            if (stillOpen(diveId)) {
+                _state.update {
+                    it.copy(neighbours = neighbours, previousDive = previousDive, nextDive = nextDive)
+                }
+            }
         } catch (_: DiveHubException) {
         } catch (_: NoAnswerException) {
-        }
-
-        val recording = profileRecording(dive.recordings)
-        if (recording != null) {
-            val samples = withContext(ioDispatcher) { store.samples(recording.id) }
-            if (!stillOpen(diveId)) return
-            when {
-                samples != null -> _state.update {
-                    it.copy(samples = samples, samplesPending = false, samplesError = null)
-                }
-                stored.profilePending -> _state.update {
-                    it.copy(samplesPending = true, samplesError = null)
-                }
-                withContext(ioDispatcher) { store.hasSeries(recording.id) } ->
-                    _state.update { it.copy(samplesPending = false, samplesError = "internal_error") }
-            }
-        } else if (!reset) {
-            _state.update { it.copy(samples = null, samplesPending = false, samplesError = null) }
         }
     }
 

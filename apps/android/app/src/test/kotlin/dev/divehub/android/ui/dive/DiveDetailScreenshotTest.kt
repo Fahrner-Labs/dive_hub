@@ -229,9 +229,10 @@ class DiveDetailScreenshotTest {
     @Test
     fun `swiping to a neighbour opens it and re-anchors on the new dive`() {
         val opened = mutableListOf<String>()
-        val first = state(dive = dive())
+        val next = dive(number = 43).copy(id = "d2")
+        val first = state(dive = dive(), nextDive = next)
         val second = state(
-            dive = dive(number = 43).copy(id = "d2"),
+            dive = next,
             neighbours = NeighboursView(
                 previous = NeighboursViewPrevious("d1"),
                 next = NeighboursViewNext("d3"),
@@ -254,9 +255,21 @@ class DiveDetailScreenshotTest {
                 )
             }
         }
+        // Hold the finger mid-swipe: the next Dive's own page is already under it, not an empty page (FAH-421).
+        compose.mainClock.autoAdvance = false
         compose.onNodeWithTag("dive_pager").performTouchInput {
-            swipe(start = Offset(width * 0.9f, height / 2f), end = Offset(width * 0.1f, height / 2f), durationMillis = 200)
+            down(Offset(width * 0.9f, height / 2f))
+            moveTo(Offset(width * 0.7f, height / 2f))
+            moveTo(Offset(width * 0.5f, height / 2f))
+            moveTo(Offset(width * 0.3f, height / 2f))
+            moveTo(Offset(width * 0.1f, height / 2f))
         }
+        compose.mainClock.advanceTimeByFrame()
+        compose.mainClock.advanceTimeBy(64)
+        compose.onNodeWithTag("dive_next_page").assertIsDisplayed()
+        compose.onNodeWithText("43").assertIsDisplayed()
+        compose.onNodeWithTag("dive_pager").performTouchInput { up() }
+        compose.mainClock.autoAdvance = true
         compose.waitForIdle()
         assertEquals(listOf("d2"), opened)
         compose.onNodeWithText("Dive 43").assertIsDisplayed()
@@ -863,6 +876,8 @@ class DiveDetailScreenshotTest {
             position = 12,
             total = 312,
         ),
+        previousDive: DiveView? = null,
+        nextDive: DiveView? = null,
         profileSamples: RecordingSamplesView? = samples(),
         samplesError: String? = null,
         samplesPending: Boolean = false,
@@ -875,6 +890,8 @@ class DiveDetailScreenshotTest {
         dive = dive,
         providers = ProviderDirectory(names = mapOf("ssi" to "SSI")),
         neighbours = neighbours,
+        previousDive = previousDive,
+        nextDive = nextDive,
         samples = profileSamples,
         samplesError = samplesError,
         samplesPending = samplesPending,

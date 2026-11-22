@@ -1,6 +1,8 @@
 package dev.divehub.android.ui.navigation
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.consumeWindowInsets
@@ -110,7 +112,14 @@ internal fun AppNavHost(
                         )
                     }
                 }
-                composable<DiveRoute> { entry ->
+                // A Dive to Dive step is one screen changing content, not a destination change: the default fade
+                // would show the app's near-black surface between the two dives (FAH-421).
+                composable<DiveRoute>(
+                    enterTransition = { EnterTransition.None },
+                    exitTransition = { ExitTransition.None },
+                    popEnterTransition = { EnterTransition.None },
+                    popExitTransition = { ExitTransition.None },
+                ) { entry ->
                     MainShell(
                         navController,
                         // Leaving the Dive for the Logbook tab focuses its row too, as back does.

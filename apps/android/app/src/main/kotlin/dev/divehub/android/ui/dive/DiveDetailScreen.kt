@@ -222,9 +222,10 @@ fun DiveDetailScreen(
 }
 
 /**
- * The Dive page as a three-page pager: the current Dive in the middle, an empty page on either side for the neighbour
- * a swipe opens. Once a swipe settles, [onOpenDive] moves the page and the pager snaps back to the middle; at either end
- * of the list the spring-back is the end-stop hint. The buttons in the top bar open the same neighbour directly.
+ * The Dive page as a three-page pager: the current Dive in the middle and the previous/next Dive's own page on either
+ * side, read ahead from the store, so a swipe drags the next Dive in instead of a blank page (FAH-421). Once a swipe
+ * settles, [onOpenDive] moves the page and the pager snaps back to the middle; at either end of the list the
+ * spring-back is the end-stop hint. The buttons in the top bar open the same neighbour directly.
  */
 @Composable
 private fun DivePager(
@@ -263,14 +264,63 @@ private fun DivePager(
     }
     HorizontalPager(
         state = pagerState,
+        // Keyed by Dive id so a page never keeps the previous Dive's scroll, table or scrub state (FAH-421).
+        key = { page ->
+            when (page) {
+                CURRENT_DIVE_PAGE -> "current:${state.dive?.id.orEmpty()}"
+                0 -> "previous:${state.previousDive?.id.orEmpty()}"
+                else -> "next:${state.nextDive?.id.orEmpty()}"
+            }
+        },
         modifier = modifier.testTag("dive_pager"),
     ) { page ->
-        if (page == CURRENT_DIVE_PAGE) {
-            DiveContent(state, units, onRetry, Modifier.fillMaxSize())
-        } else {
-            Box(Modifier.fillMaxSize())
+        when (page) {
+            CURRENT_DIVE_PAGE -> DiveContent(state, units, onRetry, Modifier.fillMaxSize())
+            0 -> NeighbourPage(
+                dive = state.previousDive,
+                state = state,
+                units = units,
+                onRetry = onRetry,
+                tag = "dive_previous_page",
+            )
+            else -> NeighbourPage(
+                dive = state.nextDive,
+                state = state,
+                units = units,
+                onRetry = onRetry,
+                tag = "dive_next_page",
+            )
         }
     }
+}
+
+/** An adjacent page drawn from the Dive read ahead for it; an empty Box is the end-stop when there is none. */
+@Composable
+private fun NeighbourPage(
+    dive: DiveView?,
+    state: DiveDetailUiState,
+    units: String?,
+    onRetry: () -> Unit,
+    tag: String,
+) {
+    if (dive == null) {
+        Box(Modifier.fillMaxSize())
+        return
+    }
+    DiveBody(
+        // The profile is read for the page that is on screen; the neighbour's own chart arrives with it.
+        state = state.copy(
+            diveId = dive.id,
+            dive = dive,
+            samples = null,
+            samplesPending = false,
+            samplesError = null,
+        ),
+        dive = dive,
+        units = units,
+        onRetry = onRetry,
+        scrollTag = tag,
+    )
 }
 
 /** Which of the screen's exclusive states is on stage; [Crossfade] fades the page in over the skeleton. */
@@ -466,6 +516,7 @@ private fun DiveBody(
     dive: DiveView,
     units: String?,
     onRetry: () -> Unit,
+    scrollTag: String = "dive_scroll",
 ) {
     val context = LocalContext.current
     val locale = context.resources.configuration.locales[0] ?: Locale.getDefault()
@@ -473,7 +524,7 @@ private fun DiveBody(
     val primary = profileRecording(dive.recordings)
 
     LazyColumn(
-        modifier = Modifier.fillMaxSize().testTag("dive_scroll"),
+        modifier = Modifier.fillMaxSize().testTag(scrollTag),
         // The last section is plain text: leave the rhythm between sections above the bottom bar (FAH-424).
         contentPadding = PaddingValues(bottom = Spacing.s5),
     ) {

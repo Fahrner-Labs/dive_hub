@@ -88,6 +88,40 @@ class DiveDetailViewModelTest {
     }
 
     @Test
+    fun `a neighbour step never blanks the page and reads the adjacent pages ahead`() = runTest(dispatcher) {
+        val driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
+        val store = DiveStore.create(driver)
+        try {
+            store.upsertDive(dive(notes = "First"))
+            store.upsertDive(dive(id = "dive-2", notes = "Second"))
+            val revision = MutableStateFlow(0L)
+            val viewModel = viewModel(StoreLogbook(store), revision)
+            val states = mutableListOf<DiveDetailUiState>()
+            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                viewModel.state.collect { states += it }
+            }
+
+            viewModel.open("dive-1")
+            awaitState { viewModel.state.value.previousDive?.id == "dive-2" }
+            assertEquals("First", viewModel.state.value.dive?.notes)
+            val opened = states.size
+
+            viewModel.openNeighbour("dive-2")
+            awaitState { viewModel.state.value.nextDive?.id == "dive-1" }
+
+            assertEquals("dive-2", viewModel.state.value.diveId)
+            assertEquals("Second", viewModel.state.value.dive?.notes)
+            val followed = states.drop(opened)
+            assertTrue(followed.isNotEmpty())
+            assertTrue(followed.none { it.loading })
+            assertTrue(followed.none { it.dive == null })
+            viewModel.forget()
+        } finally {
+            driver.close()
+        }
+    }
+
+    @Test
     fun `a deleted dive keeps its notice through later sync writes`() = runTest(dispatcher) {
         val driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
         val store = DiveStore.create(driver)
