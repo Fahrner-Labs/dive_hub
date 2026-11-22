@@ -2,10 +2,12 @@ package dev.divehub.android
 
 import android.content.Context
 import dev.divehub.android.auth.KeystoreTokenStore
+import dev.divehub.android.auth.PreferencesCachedMeStore
 import dev.divehub.android.auth.PreferencesInstanceUrlStore
 import dev.divehub.android.auth.UserCacheStore
 import dev.divehub.android.database.AndroidDiveStore
 import dev.divehub.android.sync.WorkManagerPeriodicSync
+import dev.divehub.shared.CachedMeStore
 import dev.divehub.shared.InstanceUrlStore
 import dev.divehub.shared.SessionRepository
 import dev.divehub.shared.store.DiveStore
@@ -40,6 +42,7 @@ class AppContainer(context: Context) {
 
     private val tokens: TokenStore = KeystoreTokenStore(application)
     private val instances: InstanceUrlStore = PreferencesInstanceUrlStore(application)
+    private val cachedMe: CachedMeStore = PreferencesCachedMeStore(application)
     private val cache = UserCacheStore(application)
 
     /** The one database file, opened on first use: the read store and the diagnostics ring buffer. */
@@ -78,7 +81,7 @@ class AppContainer(context: Context) {
         }
     }
 
-    val session = SessionRepository(httpEngine, tokens, instances, userData, versionName = BuildConfig.VERSION_NAME)
+    val session = SessionRepository(httpEngine, tokens, instances, userData, cachedMe, versionName = BuildConfig.VERSION_NAME)
 
     /** The logbook's and dive page's read sides share the session's HTTP layer (instance URL and bearer token). */
     val logbook = LogbookRepository(session.client)

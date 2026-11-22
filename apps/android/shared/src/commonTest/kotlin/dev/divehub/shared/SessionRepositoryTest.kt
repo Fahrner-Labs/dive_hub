@@ -59,6 +59,23 @@ private class FakeCache : UserScopedStore {
     }
 }
 
+private class FakeCachedMe(initial: String? = null) : CachedMeStore {
+    var value: String? = initial
+    var saves = 0
+    var clears = 0
+
+    override suspend fun load(): String? = value
+    override suspend fun save(meJson: String) {
+        value = meJson
+        saves += 1
+    }
+
+    override suspend fun clear() {
+        value = null
+        clears += 1
+    }
+}
+
 private const val USER_JSON = """{"id":"u1","name":"Ada","email":"ada@example.com","emailVerified":true,"createdAt":"2026-01-01T00:00:00Z","updatedAt":"2026-01-01T00:00:00Z","banned":false,"twoFactorEnabled":false}"""
 private const val ME_JSON = """{"user":{"id":"u1","email":"ada@example.com","name":"Ada","role":"user","disabled":false,"createdAt":"2026-01-01T00:00:00Z"},"ownDiver":{"id":"d1","name":"Ada"},"preferences":{"language":null,"units":null}}"""
 
@@ -66,10 +83,11 @@ private class Harness(
     val tokens: FakeTokens = FakeTokens(),
     val instances: FakeInstances = FakeInstances("https://dive.example"),
     val cache: FakeCache = FakeCache(),
+    val cachedMe: FakeCachedMe = FakeCachedMe(),
     handler: suspend MockRequestHandleScope.(HttpRequestData) -> HttpResponseData,
 ) {
     private val engine = MockEngine(handler)
-    val session = SessionRepository(engine, tokens, instances, cache, versionName = "0.1.0-dev")
+    val session = SessionRepository(engine, tokens, instances, cache, cachedMe, versionName = "0.1.0-dev")
 }
 
 private fun MockRequestHandleScope.json(body: String, status: HttpStatusCode = HttpStatusCode.OK): HttpResponseData =
@@ -126,6 +144,8 @@ class SessionRepositoryTest {
     assertNull(signInAuthorization)
     assertEquals("Bearer header-token", meAuthorization)
     assertTrue(harness.cache.forgets >= 1)
+    assertEquals(1, harness.cachedMe.clears)
+    assertEquals(1, harness.cachedMe.saves)
     assertEquals("https://dive.example", harness.instances.value)
     assertEquals(
         SessionState.SignedIn("https://dive.example", user, ApiMeGet200ResponsePreferences(language = null, units = null)),
@@ -161,7 +181,7 @@ fun `signing in forgets the previous User before the new token is stored`() = ru
             else -> error("unexpected ${request.url}")
         }
     }
-    val session = SessionRepository(engine, tokens, FakeInstances("https://dive.example"), cache, versionName = "0.1.0-dev")
+    val session = SessionRepository(engine, tokens, FakeInstances("https://dive.example"), cache, FakeCachedMe(), versionName = "0.1.0-dev")
 
     session.signIn("https://dive.example", "ada@example.com", "correct horse battery")
 
@@ -204,24 +224,28 @@ fun `a wrong e-mail or password never says which one`() = runTest {
 
 @Test
 fun `signing out clears the token and the cache but keeps the instance`() = runTest {
-    val harness = Harness(tokens = FakeTokens("old-token")) { _ -> json("""{"success":true}""") }
+    val harness = Harness(tokens = FakeTokens("old-token"), cachedMe = FakeCachedMe(ME_JSON)) { _ -> json("""{"success":true}""") }
 
     harness.session.signOut()
 
     assertNull(harness.tokens.value)
     assertEquals(1, harness.cache.forgets)
+    assertEquals(1, harness.cachedMe.clears)
+    assertNull(harness.cachedMe.value)
     assertEquals("https://dive.example", harness.instances.value)
     assertIs<SessionState.SignedOut>(harness.session.state.value)
 }
 
 @Test
 fun `changing the instance signs out, wipes and forgets the address`() = runTest {
-    val harness = Harness(tokens = FakeTokens("old-token")) { _ -> json("""{"success":true}""") }
+    val harness = Harness(tokens = FakeTokens("old-token"), cachedMe = FakeCachedMe(ME_JSON)) { _ -> json("""{"success":true}""") }
 
     harness.session.changeInstance()
 
     assertNull(harness.tokens.value)
     assertEquals(1, harness.cache.forgets)
+    assertEquals(1, harness.cachedMe.clears)
+    assertNull(harness.cachedMe.value)
     assertNull(harness.instances.value)
     val state = harness.session.state.value
     assertIs<SessionState.SignedOut>(state)
@@ -230,7 +254,7 @@ fun `changing the instance signs out, wipes and forgets the address`() = runTest
 
 @Test
 fun `a 401 anywhere ends the session and keeps the cached store`() = runTest {
-    val harness = Harness(tokens = FakeTokens("expired")) { request ->
+    val harness = Harness(tokens = FakeTokens("expired"), cachedMe = FakeCachedMe(ME_JSON)) { request ->
         when (request.url.encodedPath) {
             "/api/me" -> json("""{"code":"sign_in_required","error":"Sign in required"}""", HttpStatusCode.Unauthorized)
             else -> error("unexpected ${request.url}")
@@ -242,6 +266,8 @@ fun `a 401 anywhere ends the session and keeps the cached store`() = runTest {
     assertIs<SessionState.SignedOut>(state)
     assertNull(harness.tokens.value)
     assertEquals(0, harness.cache.forgets)
+    assertEquals(0, harness.cachedMe.clears)
+    assertEquals(ME_JSON, harness.cachedMe.value)
 }
 
 @Test
@@ -252,6 +278,7 @@ fun `a stored token is proven by me on start`() = runTest {
 
     assertIs<SessionState.SignedIn>(state)
     assertEquals("Ada", state.user.name)
+    assertEquals(1, harness.cachedMe.saves)
 }
 
 @Test
@@ -300,6 +327,24 @@ fun `a second 5xx fails by its code`() = runTest {
     assertEquals(ErrorCodes.SERVER_ERROR, error.code)
     assertEquals(2, calls)
     assertEquals("stored", harness.tokens.value)
+    assertIs<SessionState.SignedOut>(harness.session.state.value)
+}
+
+@Test
+fun `a second 5xx restores the cached session instead of signing out`() = runTest {
+    var calls = 0
+    val harness = Harness(tokens = FakeTokens("stored"), cachedMe = FakeCachedMe(ME_JSON)) {
+        calls += 1
+        json("""{"code":"internal_error","error":"boom"}""", HttpStatusCode.InternalServerError)
+    }
+
+    val state = harness.session.restore()
+
+    assertIs<SessionState.SignedIn>(state)
+    assertEquals("Ada", state.user.name)
+    assertEquals(2, calls)
+    assertEquals("stored", harness.tokens.value)
+    assertIs<SessionState.SignedIn>(harness.session.state.value)
 }
 
 @Test
@@ -327,6 +372,27 @@ fun `a network failure is retried once and then says there was no answer`() = ru
     assertFailsWith<NoAnswerException> { harness.session.restore() }
     assertEquals(2, calls)
     assertEquals("stored", harness.tokens.value)
+    assertIs<SessionState.SignedOut>(harness.session.state.value)
+    assertEquals(0, harness.cachedMe.clears)
+}
+
+@Test
+fun `an offline cold start restores the cached session instead of signing out`() = runTest {
+    var calls = 0
+    val harness = Harness(tokens = FakeTokens("stored"), cachedMe = FakeCachedMe(ME_JSON)) {
+        calls += 1
+        throw IOException("offline")
+    }
+
+    val state = harness.session.restore()
+
+    assertIs<SessionState.SignedIn>(state)
+    assertEquals("https://dive.example", state.instanceUrl)
+    assertEquals("Ada", state.user.name)
+    assertEquals("stored", harness.tokens.value)
+    assertEquals(2, calls)
+    assertEquals(0, harness.cachedMe.clears)
+    assertIs<SessionState.SignedIn>(harness.session.state.value)
 }
 
 @Test

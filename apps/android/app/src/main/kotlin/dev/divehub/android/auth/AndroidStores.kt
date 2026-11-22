@@ -4,6 +4,7 @@ import android.content.Context
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import android.util.Base64
+import dev.divehub.shared.CachedMeStore
 import dev.divehub.shared.InstanceUrlStore
 import dev.divehub.shared.TokenStore
 import dev.divehub.shared.UserScopedStore
@@ -97,12 +98,36 @@ class KeystoreTokenStore(context: Context) : TokenStore {
 
 /**
  * Everything the app cached for the signed-in User. Sign-in and sign-out call this before the next User sees a screen
- * (client contract §1 Security); there is no response cache in this slice, so the preferences and cache directory are
- * the whole of it.
+ * (client contract §1 Security); the preferences and cache directory are the whole of it.
  */
 class UserCacheStore(private val context: Context) : UserScopedStore {
     override suspend fun forget(): Unit = withContext(Dispatchers.IO) {
         context.getSharedPreferences("divehub.cache", Context.MODE_PRIVATE).edit().clear().commit()
         context.cacheDir.listFiles()?.forEach { it.deleteRecursively() }
+    }
+}
+
+/**
+ * The last successful `/api/me` answer, as JSON, so an offline cold start shows the signed-in User rather than the
+ * sign-in screen (FAH-419). It is not a secret beyond the read store it sits beside: both hold the same User's data.
+ * Sign-in, sign-out and a change of instance clear it; a 401 that ends the session keeps it, like the read store.
+ */
+class PreferencesCachedMeStore(context: Context) : CachedMeStore {
+    private val preferences = context.getSharedPreferences("divehub.session", Context.MODE_PRIVATE)
+
+    override suspend fun load(): String? = withContext(Dispatchers.IO) {
+        preferences.getString(KEY_ME, null)
+    }
+
+    override suspend fun save(meJson: String): Unit = withContext(Dispatchers.IO) {
+        preferences.edit().putString(KEY_ME, meJson).apply()
+    }
+
+    override suspend fun clear(): Unit = withContext(Dispatchers.IO) {
+        preferences.edit().remove(KEY_ME).apply()
+    }
+
+    private companion object {
+        const val KEY_ME = "me_response"
     }
 }

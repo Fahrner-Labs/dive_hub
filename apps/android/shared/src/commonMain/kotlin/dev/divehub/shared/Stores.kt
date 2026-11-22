@@ -24,3 +24,14 @@ interface InstanceUrlStore {
 interface UserScopedStore {
     suspend fun forget()
 }
+
+/**
+ * The last successful `GET /api/me` answer, as the JSON the API sent, so an offline cold start can show the
+ * signed-in User rather than the sign-in screen (FAH-419). It follows the read store's scoping rules: a change of
+ * User drops it, and a 401 that ends the session keeps it (client contract, Offline reads).
+ */
+interface CachedMeStore {
+    suspend fun load(): String?
+    suspend fun save(meJson: String)
+    suspend fun clear()
+}
