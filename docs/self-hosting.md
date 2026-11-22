@@ -169,6 +169,12 @@ A manual backup is encrypted with a passphrase an admin types for that run:
 The download is a file handoff: the archive is the whole instance's state as an encrypted file.
 Admins still see no other User's Dives in the app, only the archive they can download.
 
+If a backup fails with `Backups need pg_dump, but it was not found on this host`, the running image
+does not contain PostgreSQL's client tools. The official image has shipped them since v0.1.1; check
+the `version` in `/api/health/live` and upgrade an older image (or rebuild a local one from the
+current `Dockerfile`). The release pipeline refuses to publish an image whose `pg_dump`/`pg_restore`
+are not on the runtime user's PATH.
+
 ### Scheduled backups and their recipient key
 
 Dive Hub can write a backup to `/data/backups` on its data volume at an interval. Scheduled archives
