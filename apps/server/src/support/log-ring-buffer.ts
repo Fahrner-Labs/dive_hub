@@ -3,8 +3,9 @@ import {
   emptyRedactionCounters, redactLogObject, redactValue, type RedactionCounters,
 } from './redact.js';
 
-export const LOG_BUFFER_CAPACITY_ENTRIES = 2048;
-export const LOG_BUFFER_CAPACITY_BYTES = 2 * 1024 * 1024;
+// A support bundle should cover hours, not the last ~75 minutes: 4x the entries and bytes of the first bound (FAH-450).
+export const LOG_BUFFER_CAPACITY_ENTRIES = 8192;
+export const LOG_BUFFER_CAPACITY_BYTES = 8 * 1024 * 1024;
 
 export interface LogBufferStats {
   entries: number;
