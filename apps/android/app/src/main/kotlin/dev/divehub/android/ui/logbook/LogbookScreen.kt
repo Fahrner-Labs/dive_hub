@@ -853,11 +853,13 @@ private fun AvatarCircle(person: DiveListViewDivesItemParticipantsItem) {
 private fun Pager(state: LogbookUiState, onPage: (Int) -> Unit) {
     val pages = state.pageCount
     // The actions wrap instead of overflowing: at 320 dp and 200 % two "previous/next page" labels cannot share a row.
+    // The quiet action has no horizontal inner padding, so the row carries the separation the old TextButton gave
+    // its labels; s2 alone read as one tight run (FAH-427).
     FlowRow(
         Modifier
             .fillMaxWidth()
             .padding(horizontal = Spacing.s4, vertical = Spacing.s4),
-        horizontalArrangement = Arrangement.spacedBy(Spacing.s2, Alignment.CenterHorizontally),
+        horizontalArrangement = Arrangement.spacedBy(Spacing.s4, Alignment.CenterHorizontally),
         verticalArrangement = Arrangement.spacedBy(Spacing.s2),
         itemVerticalAlignment = Alignment.CenterVertically,
     ) {

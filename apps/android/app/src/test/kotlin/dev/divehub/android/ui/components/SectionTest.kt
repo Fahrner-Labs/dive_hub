@@ -3,7 +3,13 @@ package dev.divehub.android.ui.components
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.test.getBoundsInRoot
@@ -83,6 +89,38 @@ class SectionTest {
 
         assertTrue("the wrapped action starts its own line: title=$title action=$action", action.top >= title.bottom - 0.5.dp)
         assertEquals(Spacing.s4.value, action.left.value, 1f)
+    }
+
+    @Test
+    fun `an action starts its label at the column edge when less than s2 separates it from the heading`() {
+        var containerWidth by mutableStateOf(600.dp)
+        var alignment by mutableStateOf<Alignment?>(null)
+        compose.setContent {
+            DiveHubTheme(darkTheme = false) {
+                Box(Modifier.width(containerWidth)) {
+                    Section(
+                        title = "Dive details",
+                        showSeparator = false,
+                        action = {
+                            val current = LocalQuietActionAlignment.current
+                            SideEffect { alignment = current }
+                        },
+                    ) {}
+                }
+            }
+        }
+        compose.waitForIdle()
+        val titleBounds = compose.onNodeWithText("Dive details").getBoundsInRoot()
+        val titleWidth = titleBounds.right - titleBounds.left
+
+        // Inside s2 the action is treated as wrapped, so a short label ends on the column's edge (FAH-427).
+        compose.runOnIdle { containerWidth = titleWidth + QuietActionTarget + Spacing.s2 - 2.dp }
+        compose.waitForIdle()
+        assertEquals(Alignment.CenterStart, alignment)
+
+        compose.runOnIdle { containerWidth = titleWidth + QuietActionTarget + Spacing.s2 + 2.dp }
+        compose.waitForIdle()
+        assertEquals(Alignment.CenterEnd, alignment)
     }
 
     private fun render(fontScale: Float?, content: @androidx.compose.runtime.Composable () -> Unit) {

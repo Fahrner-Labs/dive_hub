@@ -79,8 +79,12 @@ fun Section(
                 // answer cannot be wrong for a longer label.
                 val titleWidth = rememberTextMeasurer()
                     .measure(AnnotatedString(title), style = DiveHubText.section).size.width
-                val target = with(LocalDensity.current) { QuietActionTarget.roundToPx() }
-                val actionAtEnd = titleWidth + target <= constraints.maxWidth
+                val density = LocalDensity.current
+                val gap = with(density) { Spacing.s2.roundToPx() }
+                val target = with(density) { QuietActionTarget.roundToPx() }
+                // Keep s2 between the heading and the target, so an action that only just fits shares the line with
+                // air around it instead of landing flush against the heading (FAH-427).
+                val actionAtEnd = titleWidth + gap + target <= constraints.maxWidth
                 FlowRow(
                     Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,

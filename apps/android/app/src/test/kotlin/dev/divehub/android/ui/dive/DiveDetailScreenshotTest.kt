@@ -18,6 +18,7 @@ import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
@@ -848,6 +849,22 @@ class DiveDetailScreenshotTest {
         capture("dive_narrow_2x_water.png")
         compose.onNodeWithTag("dive_scroll").performScrollToNode(hasTestTag("dive_profile_chart"))
         capture("dive_narrow_2x_profile.png")
+    }
+
+    @Test
+    @Config(qualifiers = "en-rUS-w320dp-h891dp-xxhdpi")
+    fun `a numberless dive is titled by its start date at 320 dp and 200 percent`() {
+        render(state(dive = dive(number = null)), fontScale = 2f)
+        compose.onAllNodesWithText("Thu 2 Apr 2026, 11:00 (UTC+2)").onFirst().assertIsDisplayed()
+        capture("dive_no_number_narrow_2x.png")
+    }
+
+    @Test
+    @Config(qualifiers = "de-rDE-w320dp-h891dp-xxhdpi", fontScale = 2f)
+    fun `the german numberless dive is titled by its start date at 320 dp and 200 percent`() {
+        render(state(dive = dive(number = null)), fontScale = 2f)
+        compose.onAllNodesWithText("Do. 2. Apr. 2026, 11:00 (UTC+2)").onFirst().assertIsDisplayed()
+        capture("dive_de_no_number_narrow_2x.png")
     }
 
     @Test

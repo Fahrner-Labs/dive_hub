@@ -8,6 +8,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performScrollToIndex
 import dev.divehub.android.ui.DiveHubTheme
+import dev.divehub.android.ui.Spacing
 import dev.divehub.api.models.DiveListView
 import dev.divehub.api.models.DiveListViewCounts
 import dev.divehub.api.models.DiveListViewDivesItem
@@ -141,6 +142,19 @@ class LogbookScreenTest {
 
         compose.onNodeWithText("Next page").assertIsDisplayed()
         compose.onNodeWithText("Page 1 of 3").assertIsDisplayed()
+    }
+
+    @Test
+    fun `the pager's three labels keep a full step apart`() {
+        render(state(listOf(dive("apr", "2026-04-02T09:00:00Z", "April Reef")), total = 60, paged = true))
+
+        val previous = compose.onNodeWithText("Previous page").getBoundsInRoot()
+        val page = compose.onNodeWithText("Page 1 of 3").getBoundsInRoot()
+        val next = compose.onNodeWithText("Next page").getBoundsInRoot()
+
+        // The quiet action carries no horizontal padding, so the row owns the separation (FAH-427).
+        assertEquals(Spacing.s4.value, (page.left - previous.right).value, 1f)
+        assertEquals(Spacing.s4.value, (next.left - page.right).value, 1f)
     }
 
     private fun render(
