@@ -4,6 +4,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -41,10 +42,11 @@ class SettingsDebugScreenTest {
     }
 
     @Test
-    fun `back returns to settings`() {
+    fun `the back arrow returns to settings`() {
         render()
 
-        compose.onNodeWithText("Back").performClick()
+        compose.onNodeWithContentDescription("Back").assertIsDisplayed().performClick()
+        compose.onNodeWithText("Back").assertDoesNotExist()
 
         assertEquals(1, backs)
     }
