@@ -637,6 +637,7 @@
     "suggestion_dive_not_found": "Dieser Tauchgang gehört nicht zum Logbuch des eingeladenen Tauchers.",
     "suggestion_dive_not_overlapping": "Dieser Tauchgang überschneidet sich nicht mehr mit dem empfohlenen.",
     "suggestion_link_conflict": "Beide Tauchgänge gehören bereits zu unterschiedlichen gemeinsamen Tauchgängen und lassen sich daher nicht verknüpfen.",
+    "joint_offer_not_valid": "Dieses Übernahmeangebot ist nicht mehr gültig: Der Tauchgang wurde geändert oder der andere Tauchgang hat den Wert nicht mehr. Lade die Angebote neu.",
     "merge_not_possible": "Nur zwei verschiedene Tauchgänge desselben Tauchers lassen sich zusammenführen.",
     "continuation_not_possible": "Anhängen lässt sich nur ein späterer Tauchgang desselben Tauchers mit genau einer Aufzeichnung desselben Computers, ohne Tauchgang dazwischen.",
     "recording_is_part": "Diese Aufzeichnung ist Teil eines angehängten Tauchgangs: Sie lässt sich nicht allein zur primären machen oder abtrennen.",
@@ -983,6 +984,7 @@
       "fill": "Aus einem Tauchgang bei einem Dienst ergänzt",
       "continuation": "Späteren Tauchgang angehängt",
       "continuation-undo": "Anhängen rückgängig gemacht",
+      "joint-dive-fill": "Aus dem Tauchgang eines Buddy im gemeinsamen Tauchgang übernommen",
       "buddy-accept": "Von einem Buddy-Tauchgang übernommen"
     },
     "field": {
@@ -1222,6 +1224,8 @@
       "things_other": "{{count}} Dinge brauchen deine Entscheidung: {{parts}}.",
       "suggestions_one": "{{count}} Tauchgangs-Empfehlung",
       "suggestions_other": "{{count}} Tauchgangs-Empfehlungen",
+      "offers_one": "{{count}} Angebot, Werte aus dem Tauchgang eines Buddys zu übernehmen",
+      "offers_other": "{{count}} Angebote, Werte aus den Tauchgängen von Buddys zu übernehmen",
       "recordings_one": "{{count}} Aufzeichnung",
       "recordings_other": "{{count}} Aufzeichnungen",
       "pairs_one": "{{count}} Paar Tauchgänge zur selben Zeit",
@@ -1264,6 +1268,23 @@
       "site": "Tauchplatz",
       "avgDepth": "Durchschnittstiefe",
       "centre": "Tauchzentrum"
+    }
+  },
+  "jointOffers": {
+    "title": "Aus dem Tauchgang deines Buddys übernehmen",
+    "intro": "Dein Tauchgang ist mit dem eines Buddys verknüpft. Die leeren Angaben unten können von seinem übernommen werden.",
+    "from": "Aus dem Tauchgang von {{diver}}",
+    "yourDive": "Dein Tauchgang",
+    "compareLabel": "Tauchgang von {{diver}} neben deinem Tauchgang",
+    "consequence": "Beim Annehmen werden diese Werte als deine eigenen übernommen; Ablehnen lässt sie aus. Dein Buddy bekommt nichts davon mit.",
+    "accept": "Annehmen",
+    "decline": "Ablehnen",
+    "field": {
+      "siteId": "Tauchplatz",
+      "startsAt": "Zeit",
+      "durationSeconds": "Dauer",
+      "maxDepthM": "Max. Tiefe",
+      "avgDepthM": "Durchschnittstiefe"
     }
   },
   "deleted": {

@@ -14,6 +14,7 @@ import { managementOf } from '../divers/management.js';
 import { renumber } from '../divers/dive-numbers.js';
 import { DAY_MS, MAX_OFFSET_MS, OVERLAP_TOLERANCE_SECONDS, alignedForMatching, overlapWindow, overlaps } from '../dives/matching.js';
 import { writeRevision, type Actor } from '../revisions/revisions.js';
+import { emitJointOfferHint } from './offer-service.js';
 
 export class SuggestionError extends Error {
   constructor(readonly code:
@@ -108,9 +109,75 @@ async function acceptLinked(tx: Tx, args: {
     ?? (await tx.insert(jointDive).values({}).returning({ id: jointDive.id }))[0]!.id;
   if (source.jointDiveId !== jointDiveId) await tx.update(dive).set({ jointDiveId }).where(eq(dive.id, source.id));
   if (target.jointDiveId !== jointDiveId) await tx.update(dive).set({ jointDiveId }).where(eq(dive.id, target.id));
+  await unionJointDiveParticipants(tx, jointDiveId);
   await emitSuggestionHints(tx, [{ id: args.id, diverId: suggestion.diverId }]);
+  // The new link makes both members' shared facts offerable to each other (FAH-411), and neither write above is a Revision.
+  await emitJointOfferHint(tx, jointDiveId);
 
   return { id: args.id, status: 'accepted' as const, resolvedAt: at.toISOString(), diveId: target.id, jointDiveId };
+}
+
+type JointRole = (typeof PARTICIPANT_ROLES)[number];
+type JointParticipant = { diverId: string; role: JointRole };
+type JointMember = { id: string; diverId: string };
+type JointInsert = { diveId: string } & JointParticipant;
+
+/** Adds the other members' people to one member, skipping the receiving Dive's own Diver and anyone it already lists. */
+function unionInto(
+  member: JointMember, members: JointMember[], people: Map<string, Map<string, JointRole>>,
+): JointInsert[] {
+  const own = people.get(member.id)!;
+  const inserts: JointInsert[] = [];
+  for (const other of members) {
+    if (other.id === member.id) continue;
+    // The other member's own Diver is a person on the descent too; it joins as a buddy like the branch A copy does.
+    const onOther: [string, JointRole][] = [[other.diverId, 'buddy'], ...people.get(other.id)!.entries()];
+    for (const [diverId, role] of onOther) {
+      if (diverId === member.diverId || own.has(diverId)) continue;
+      own.set(diverId, role);
+      inserts.push({ diveId: member.id, diverId, role });
+    }
+  }
+  return inserts;
+}
+
+/**
+ * Union on link (FAH-410): every member of the Joint dive gains every other member's people — its own Diver as a buddy
+ * and its Participants with their roles, the receiving member's own Diver excluded. A Dive that already lists a person
+ * keeps its own role; the unique key makes a repeated union a no-op. Runs in the acceptance's transaction, after the
+ * members carry the Joint dive.
+ */
+export async function unionJointDiveParticipants(tx: Tx, jointDiveId: string): Promise<void> {
+  const members: JointMember[] = await tx.select({ id: dive.id, diverId: dive.diverId }).from(dive)
+    .where(and(eq(dive.jointDiveId, jointDiveId), isNull(dive.deletedAt)))
+    .orderBy(dive.id);
+  if (members.length < 2) return;
+  const rows = await tx.select({ diveId: participant.diveId, diverId: participant.diverId, role: participant.role })
+    .from(participant).where(inArray(participant.diveId, members.map((member) => member.id)));
+  const people = new Map<string, Map<string, JointRole>>();
+  for (const member of members) people.set(member.id, new Map());
+  for (const row of rows) people.get(row.diveId)!.set(row.diverId, row.role);
+
+  const inserts = members.flatMap((member) => unionInto(member, members, people));
+  if (inserts.length > 0) await tx.insert(participant).values(inserts).onConflictDoNothing();
+}
+
+/**
+ * Ongoing adds (FAH-410): a Participant added to one member of a Joint dive joins every other member too, with the same
+ * role, unless that member is the person's own Dive. Removals never reach here; a row already present stays untouched.
+ */
+export async function propagateAddedParticipants(tx: Tx, diveId: string, added: JointParticipant[]): Promise<void> {
+  if (added.length === 0) return;
+  const [current] = await tx.select({ jointDiveId: dive.jointDiveId }).from(dive).where(eq(dive.id, diveId));
+  if (!current?.jointDiveId) return;
+  const others = await tx.select({ id: dive.id, diverId: dive.diverId }).from(dive)
+    .where(and(eq(dive.jointDiveId, current.jointDiveId), isNull(dive.deletedAt)));
+  const rows = others
+    .filter((member) => member.id !== diveId)
+    .flatMap((member) => added
+      .filter((person) => person.diverId !== member.diverId)
+      .map((person) => ({ diveId: member.id, diverId: person.diverId, role: person.role })));
+  if (rows.length > 0) await tx.insert(participant).values(rows).onConflictDoNothing();
 }
 
 /** The suggestion's own changes, each with the id of the Diver whose Users hear about it. */
@@ -386,6 +453,8 @@ export function createSuggestionService(db: Db) {
         });
         await renumber(tx, [row.suggestion.diverId]);
         await emitSuggestionHints(tx, [{ id, diverId: row.suggestion.diverId }]);
+        // The copy's empty site and depths are now offerable from the source Dive (FAH-411).
+        await emitJointOfferHint(tx, jointDiveId);
 
         return { id, status: 'accepted' as const, resolvedAt: at.toISOString(), diveId: created!.id, jointDiveId };
       });

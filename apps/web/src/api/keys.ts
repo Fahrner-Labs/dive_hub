@@ -37,6 +37,9 @@ export const keys = {
   /** Buddy suggestions (ADR 0070); a preview sits under the list, so accepting or declining refreshes both. */
   buddySuggestions: ['buddy-suggestions'] as const,
   buddySuggestion: (id: string) => ['buddy-suggestions', id] as const,
+  /** Joint-dive fill offers (FAH-411, ADR 0070): the Review list, and one Dive's inline offers under it. */
+  jointOffers: ['joint-offers'] as const,
+  jointOffersOf: (diveId: string) => ['joint-offers', 'dive', diveId] as const,
   samples: (recordingId: string) => ['recordings', recordingId, 'samples'] as const,
   sites: ['sites'] as const,
   site: (id: string) => ['sites', id] as const,

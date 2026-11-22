@@ -1125,6 +1125,34 @@ dives, all off until the User turns them on. *Web:* `ProviderAutomation.tsx` (se
   the suggestion to refetch (accepting and declining emit it too), as every hint does. *Web:* `BuddySuggestions.tsx`
   (the Review page's "To decide" part); its count joins the Review strip and the navigation's "to decide" count.
 
+### Joint-dive fill offers
+(FAH-411; `GET /api/joint-dives/offers`, `GET /api/dives/{id}/joint-offers`,
+`POST /api/joint-dives/offers/accept`, `POST /api/joint-dives/offers/decline`)
+- **Show "fill from your buddy's dive" only where the offer exists:** one entry per source Dive, with the signed-in
+  User's Dive's shared facts (`dive`) beside the other member's (`source`: `diveId`, the member's Diver by name, and the
+  same facts) and the `fields` it can fill. The shared set is the site, the start with its UTC offset, the duration, and
+  the max and average depth — the same facts ADR 0070's preview already exposes. An offer exists only where the User's
+  field is empty and another member has a value; two different filled values are never offered, and the User's own value
+  wins silently. With more than two members the newest filled value is the source. Never show the other member's
+  Recording, notes, suit, weighting, cylinders, lead, Overrides or provider links: the response never carries them.
+- **Accept (`POST /api/joint-dives/offers/accept`, body `{ diveId, fields[] }`, 200)** answers
+  `{ diveId, fields, version, values }`: the server copied the offering member's **current** values for those fields into
+  the User's Dive as own values, through the normal Revision history (`joint-dive-fill`). Refresh the Dive and the
+  offers; its `version` moved to the one in the answer. 409 `joint_offer_not_valid` when the Dive is no longer in a
+  Joint dive, a requested field was filled meanwhile, or the source lost its value: read the offers again. 404
+  `dive_not_found` unless the User manages the Dive.
+- **Decline (`POST /api/joint-dives/offers/decline`, body `{ diveId, fields[] }`, 200)** answers `{ diveId, fields }`.
+  The fields are not offered again for that Dive of that Joint dive, also after the other members' values change. The
+  source keeps its value and gets no negative signal.
+- **List mine or one Dive's:** `GET /api/joint-dives/offers` returns every offer for the Dives the User manages;
+  `GET /api/dives/{id}/joint-offers` the same for one Dive (404 `dive_not_found` if it is not the User's). Deriving them
+  at read time means an edit, an Import, a merge or a member leaving resolves an offer without any state to clean up.
+- **A member leaves:** soft-deleting a Dive clears its Joint dive link; a Joint dive left with fewer than two live
+  members is deleted with its dismissals. The `jointDiveOffer` live hint names the Joint dive to refetch (accepting a
+  Buddy suggestion that links or creates a Dive emits it too), as every hint does. *Web:* `JointOffers.tsx` (the Review
+  page's "To decide" cards beside Buddy suggestions, and the inline prompt on `DivePage.tsx`); its count joins the
+  Review strip and the navigation's "to decide" count.
+
 ### Duplicate candidates
 - **Show them where the User decides,** on a page of their own ("Review", reached from one line on the logbook and a count
   in the navigation), with the Recording (time, depth, duration, Device), why it waits (`reason`) and the Dives it might

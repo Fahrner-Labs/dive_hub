@@ -62,6 +62,7 @@ export const PROBLEMS = {
   suggestion_dive_not_found: 'That Dive is not in the invited Diver\'s logbook',
   suggestion_dive_not_overlapping: 'That Dive does not overlap the suggested one (anymore); read the suggestion again',
   suggestion_link_conflict: 'Both Dives are already in different Joint dives',
+  joint_offer_not_valid: 'This fill offer is no longer valid; the Dive changed or the other member has no such value anymore',
   merge_not_possible: 'Only two different dives of one diver can be merged',
   check_not_found: 'These two dives are not at the same time (anymore)',
   continuation_not_possible: 'Only later dives of the same diver, each with one recording of the same computer and none between, can be appended',

@@ -5,7 +5,7 @@
 import { useSyncExternalStore } from 'react';
 import type { QueryClient } from '@tanstack/react-query';
 
-export const HINT_KINDS = ['dive', 'site', 'waitingPush', 'import', 'siteImport', 'pushRun', 'certification', 'connection', 'buddySuggestion'] as const;
+export const HINT_KINDS = ['dive', 'site', 'waitingPush', 'import', 'siteImport', 'pushRun', 'certification', 'connection', 'buddySuggestion', 'jointDiveOffer'] as const;
 export type HintKind = (typeof HINT_KINDS)[number];
 
 export interface LiveHint {
@@ -73,6 +73,12 @@ async function applyHints(queryClient: QueryClient, hints: LiveHint[]): Promise<
   // The Review inbox's suggestions, and each card's preview with them (ADR 0070). The key is a literal because
   // `api.ts` imports this module; `keys.buddySuggestions` is the same value.
   if (kindsSeen.has('buddySuggestion')) await queryClient.invalidateQueries({ queryKey: ['buddy-suggestions'] });
+  // Fill offers change with the Dives' shared facts (FAH-411, ADR 0070): read the offers and the Dives again. The
+  // literal is `keys.jointOffers`, for the same import cycle as the suggestion key above.
+  if (kindsSeen.has('jointDiveOffer')) await Promise.all([
+    queryClient.invalidateQueries({ queryKey: ['joint-offers'] }),
+    invalidateDives(queryClient),
+  ]);
   if (kindsSeen.has('connection')) {
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: ['connections'] }),

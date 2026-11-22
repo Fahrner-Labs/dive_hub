@@ -43,6 +43,7 @@ import { siteRoutes } from './sites/routes.js';
 import { centreRoutes } from './centres/routes.js';
 import { siteImportRoutes } from './sites/import/site-import-routes.js';
 import { suggestionRoutes } from './social/routes.js';
+import { offerRoutes } from './social/offer-routes.js';
 import { providerAnswers, ProviderProblemSchema } from './providers/route-parts.js';
 import type { ProviderServiceError } from './providers/registry.js';
 import type { DiveProviderAnswers } from './dives/provider-port.js';
@@ -154,6 +155,7 @@ export async function buildApp(deps: AppDeps, app: Server = createServer()) {
   await app.register(siteRoutes, { prefix: '/api', auth, sites: deps.sites });
   await app.register(centreRoutes, { prefix: '/api', auth, centres, divers });
   await app.register(suggestionRoutes, { prefix: '/api', auth, suggestions: deps.suggestions });
+  await app.register(offerRoutes, { prefix: '/api', auth, offers: deps.offers });
   await app.register(siteImportRoutes, { prefix: '/api', auth, siteImports: deps.siteImports });
   await app.register(providerRoutes, { prefix: '/api', auth, ...deps.providers, assessments });
   await app.register(aiAccessRoutes, { prefix: '/api', auth, accesses: deps.aiAccesses, baseUrl });

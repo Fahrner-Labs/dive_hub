@@ -192,6 +192,14 @@ coverage, validity; B5), **Medical exam** (date, result, valid until, examiner),
 
 **Joint dive** — the link between the Dives of Divers who made the same descent together. Created when a Buddy
 suggestion is accepted; nothing is copied or merged into it. The Joint dive's own visibility comes in a later slice.
+*Implemented (FAH-410, FAH-411, ADR 0070):* linking unions the members' Participants (own Diver excepted, roles kept)
+and later adds propagate to every member; removals never do. A member's **fill offer** is derived at read time from the
+shared facts (site, start with UTC offset, duration, max and average depth) where the member's field is empty and
+another member has a value; accepting copies the source's current value through the Revision machinery (cause
+`joint-dive-fill`), while declining stores a `joint_dive_dismissal` row so the field is not offered again for that Dive
+of that Joint dive. Recording, notes, suit, weighting, cylinders, lead, Overrides and provider links never cross. A
+soft-deleted member leaves its Joint dive; one left with fewer than two live members is deleted and its dismissals
+cascade.
 
 **Participant** — `(Dive, Diver, role)`, with roles `buddy`, `guide`, `instructor`,
 `student`, `team member` (B7). If the Diver is managed by another User, a **Buddy

@@ -752,6 +752,30 @@ export const buddySuggestion = pgTable(
   ],
 );
 
+/**
+ * The shared facts a Joint dive may fill from another member (ADR 0070; FAH-411). Each is offered only where the
+ * receiving Dive's own value is empty and never overwrites one it has.
+ */
+export const JOINT_FILL_FIELDS = ['siteId', 'startsAt', 'durationSeconds', 'maxDepthM', 'avgDepthM'] as const;
+export type JointFillField = (typeof JOINT_FILL_FIELDS)[number];
+
+/**
+ * A field the User said no to for one Dive of a Joint dive (FAH-411): the offer is derived from the members' shared
+ * facts, so a dismissal is the only thing stored. The unique key makes answering twice a no-op, and the rows go with the
+ * Joint dive.
+ */
+export const jointDiveDismissal = pgTable(
+  'joint_dive_dismissal',
+  {
+    id: id(),
+    jointDiveId: uuid('joint_dive_id').notNull().references(() => jointDive.id, { onDelete: 'cascade' }),
+    diveId: uuid('dive_id').notNull().references(() => dive.id, { onDelete: 'cascade' }),
+    field: text('field').$type<JointFillField>().notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [uniqueIndex('joint_dive_dismissal_uq').on(t.jointDiveId, t.diveId, t.field)],
+);
+
 /** A Device's own summary of a Recording, in our vocabulary (ADR 0015). */
 export type RecordingSummary = {
   diveNumber?: number;
