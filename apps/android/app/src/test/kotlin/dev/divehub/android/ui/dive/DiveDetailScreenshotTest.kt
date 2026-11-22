@@ -819,7 +819,8 @@ class DiveDetailScreenshotTest {
             swipe(start = Offset(width / 2f, height * 0.9f), end = Offset(width / 2f, 0f), durationMillis = 200)
         }
         compose.waitForIdle()
-        val gap = compose.onRoot().getBoundsInRoot().bottom - compose.onNodeWithTag("dive_position").getBoundsInRoot().bottom
+        val gap = compose.onNodeWithTag("dive_scroll").getBoundsInRoot().bottom -
+            compose.onNodeWithTag("dive_position").getBoundsInRoot().bottom
         assertEquals(Spacing.s5.value, gap.value, 0.5f)
         capture("dive_bottom_spacing.png")
     }

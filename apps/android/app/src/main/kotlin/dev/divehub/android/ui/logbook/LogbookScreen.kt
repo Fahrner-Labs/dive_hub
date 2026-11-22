@@ -500,8 +500,9 @@ private fun LogbookList(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.surface),
-        // The list ends in plain rows: keep the rhythm above the bottom bar (FAH-424).
-        contentPadding = PaddingValues(bottom = Spacing.s5),
+        // The list ends in plain rows: keep the rhythm above the bottom bar (FAH-424). The empty state stays
+        // centred in the full viewport, as the offline and error states are.
+        contentPadding = if (data.total == 0) PaddingValues() else PaddingValues(bottom = Spacing.s5),
     ) {
         item(key = "header") {
             Column(Modifier.fillMaxWidth()) {

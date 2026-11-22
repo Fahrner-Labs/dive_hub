@@ -21,6 +21,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -92,7 +93,8 @@ fun SettingsDebugScreen(
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
                 // The last row is a plain ListItem: keep the rhythm above the bottom bar (FAH-424).
-                .padding(bottom = Spacing.s5),
+                .padding(bottom = Spacing.s5)
+                .testTag("settings_debug_scroll"),
         ) {
             ListItem(
                 headlineContent = { Text(stringResource(R.string.settings_debug_diagnostics)) },
@@ -172,7 +174,7 @@ fun SettingsDebugScreen(
             }
 
             ListItem(
-                modifier = Modifier.clickable(onClick = onShareLogs),
+                modifier = Modifier.clickable(onClick = onShareLogs).testTag("settings_share_row"),
                 headlineContent = { Text(stringResource(R.string.settings_debug_share)) },
                 supportingContent = {
                     Text(
