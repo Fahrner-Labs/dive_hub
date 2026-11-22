@@ -79,6 +79,7 @@ class AppNavHostTest {
         setContent()
         compose.runOnIdle {
             controller.navigate(MainRoute)
+            controller.navigate(ToolsRoute())
             controller.navigate(ToolsRoute(ToolPage.Lead))
         }
         compose.waitForIdle()
@@ -187,6 +188,7 @@ class AppNavHostTest {
         setContent()
         compose.runOnIdle {
             controller.navigate(MainRoute)
+            controller.navigate(ToolsRoute())
             controller.navigate(ToolsRoute(ToolPage.Lead))
         }
         compose.runOnIdle { screens.toolsOpenDive!!.invoke("dive-1") }
@@ -243,6 +245,7 @@ class AppNavHostTest {
         restoration.setContent { start(destination = null) }
         compose.runOnIdle {
             controller.navigate(MainRoute)
+            controller.navigate(ToolsRoute())
             controller.navigate(ToolsRoute(ToolPage.Loadings))
         }
         compose.waitForIdle()

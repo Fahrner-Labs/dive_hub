@@ -52,6 +52,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.divehub.android.R
 import dev.divehub.android.ui.DiveHubTopBar
 import dev.divehub.android.ui.Formats
+import dev.divehub.android.ui.Spacing
 import dev.divehub.android.ui.dive.DiveDetailText
 import dev.divehub.android.ui.formatSyncTime
 import dev.divehub.api.models.ApiToolsBottomTimeGet200Response
@@ -128,7 +129,7 @@ fun ToolsIndexScreen(onOpen: (ToolPage) -> Unit) {
                 .padding(padding)
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(vertical = 8.dp),
+                .padding(top = 8.dp, bottom = Spacing.s5),
         ) {
             ToolLink(
                 title = stringResource(R.string.tools_gas_numbers),
@@ -181,7 +182,7 @@ fun ToolsScreen(
     onReload: () -> Unit,
 ) {
     Scaffold(
-        topBar = { DiveHubTopBar(title = stringResource(R.string.tools_title), onBack = onBack) },
+        topBar = { DiveHubTopBar(title = stringResource(R.string.tools_gas_numbers), onBack = onBack) },
     ) { padding ->
         Column(
             Modifier
