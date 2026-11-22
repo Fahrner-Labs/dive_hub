@@ -8,13 +8,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -27,6 +24,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.divehub.android.R
+import dev.divehub.android.ui.DiveHubTopBar
 import dev.divehub.android.ui.Spacing
 import dev.divehub.shared.ErrorCodes
 import dev.divehub.shared.diagnostics.DiagnosticEntry
@@ -66,7 +64,6 @@ fun SettingsDebugRoute(viewModel: SettingsViewModel, onBack: () -> Unit) {
  * allows uploads, and *Share local logs*, which stays available whatever the instance setting says. It only draws
  * [diagnostics]; the capture layer and the upload live in `:shared` (FAH-321).
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsDebugScreen(
     diagnostics: SettingsDiagnosticsState,
@@ -79,11 +76,9 @@ fun SettingsDebugScreen(
     Scaffold(
         modifier = modifier,
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.settings_section_debug)) },
-                navigationIcon = {
-                    TextButton(onClick = onBack) { Text(stringResource(R.string.settings_debug_back)) }
-                },
+            DiveHubTopBar(
+                title = stringResource(R.string.settings_section_debug),
+                onBack = onBack,
             )
         },
     ) { padding ->
