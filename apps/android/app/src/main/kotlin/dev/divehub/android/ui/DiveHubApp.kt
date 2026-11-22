@@ -113,7 +113,9 @@ fun DiveHubApp(
                 navController = navController,
                 screens = screens,
                 destination = sessionDestination(state),
-                diveId = { dive.state.value.diveId },
+                // The id and position go together: `diveId` moves to the requested Dive before its page and list
+                // position arrive, and the logbook focus needs the row that is actually on screen (FAH-421 review).
+                diveId = { dive.state.value.dive?.id },
                 divePosition = { dive.state.value.neighbours?.position },
             )
             when {
