@@ -37,15 +37,15 @@ class SyncLineTest {
     fun `connected shows no sync line`() {
         render(syncedAt = "2026-11-18T12:00:00Z", connected = true)
 
-        compose.onNodeWithText("Last synced", substring = true).assertDoesNotExist()
+        compose.onNodeWithText("Polling", substring = true).assertDoesNotExist()
         compose.onNodeWithText("No connection", substring = true).assertDoesNotExist()
     }
 
     @Test
-    fun `disconnected says when the store was last filled`() {
+    fun `a stream that is down while polling answers says it is polling`() {
         render(syncedAt = "2026-11-18T12:00:00Z", connected = false)
 
-        compose.onNodeWithText("Last synced 18 Nov 2026, 13:00.").assertIsDisplayed()
+        compose.onNodeWithText("Polling — last synced 18 Nov 2026, 13:00.").assertIsDisplayed()
     }
 
     @Test

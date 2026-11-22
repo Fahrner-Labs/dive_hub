@@ -1,6 +1,7 @@
 package dev.divehub.shared.sync
 
 import dev.divehub.shared.ApiClient
+import dev.divehub.shared.DiveHubException
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
 import io.ktor.http.HttpHeaders
@@ -11,6 +12,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
 
 private val JSON = Json { ignoreUnknownKeys = true; explicitNulls = false }
@@ -73,5 +75,35 @@ class LiveHintsTest {
         val events = SseLiveHints(api(body)).events().toList()
 
         assertEquals(listOf(LiveEvent.Connected, LiveEvent.Hint(LiveHint("dive", "kept"))), events)
+    }
+
+    @Test
+    fun `a refused stream throws the refusal code and status`() = runTest {
+        val hints = SseLiveHints(
+            api(
+                """{"code":"live_unavailable","error":"The live channel is not available"}""",
+                HttpStatusCode.ServiceUnavailable,
+            ),
+        )
+
+        val error = assertFailsWith<DiveHubException> { hints.events().toList() }
+
+        assertEquals("live_unavailable", error.code)
+        assertEquals(503, error.status)
+    }
+
+    @Test
+    fun `a stream over the account limit throws its own refusal code`() = runTest {
+        val hints = SseLiveHints(
+            api(
+                """{"code":"too_many_live_streams","error":"Too many live connections"}""",
+                HttpStatusCode.TooManyRequests,
+            ),
+        )
+
+        val error = assertFailsWith<DiveHubException> { hints.events().toList() }
+
+        assertEquals("too_many_live_streams", error.code)
+        assertEquals(429, error.status)
     }
 }

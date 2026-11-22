@@ -181,7 +181,7 @@
     <string name="dive_sac_litres_value">%1$s L/min</string>
     <string name="dive_sac_bar_value">%1$s/min</string>
 
-    <string name="sync_last">Last synced %1$s.</string>
+    <string name="sync_last">Polling — last synced %1$s.</string>
     <string name="sync_date_pattern">d MMM yyyy, HH:mm</string>
 
     <string name="logbook_title">Logbook</string>
@@ -564,7 +564,8 @@
     <string name="settings_section_connection">Connection</string>
     <string name="settings_instance">Instance</string>
     <string name="settings_connection_connected">Connected</string>
-    <string name="settings_connection_offline">Offline — last synced %1$s.</string>
+    <string name="settings_connection_polling">Polling · %1$s</string>
+    <string name="settings_connection_offline">Offline · %1$s</string>
     <string name="settings_connection_never">Offline — not synced yet.</string>
     <string name="settings_change_instance_title">Change instance?</string>
     <string name="settings_change_instance_body">Changing the instance signs you out and clears the local data on this device.</string>

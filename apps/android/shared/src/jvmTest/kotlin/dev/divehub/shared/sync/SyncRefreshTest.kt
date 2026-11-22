@@ -2,6 +2,7 @@ package dev.divehub.shared.sync
 
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import dev.divehub.shared.ApiClient
+import dev.divehub.shared.DiveHubException
 import dev.divehub.shared.NoAnswerException
 import dev.divehub.shared.store.DiveStore
 import io.ktor.client.engine.mock.MockEngine
@@ -13,7 +14,9 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.CancellationException
 import kotlinx.serialization.json.Json
@@ -631,6 +634,127 @@ class SyncRefreshTest {
         assertFailsWith<NoAnswerException> { refresher.runLive() }
 
         assertFalse(refresher.streamHealthy.value)
+    }
+
+    @Test
+    fun `a refused stream keeps polling and stays out of the offline state`() = runTest {
+        val harness = seeded()
+        val live = LiveHints {
+            flow<LiveEvent> { throw DiveHubException("live_unavailable", 503) }
+        }
+        val refresher = SyncRefresher(harness.engine, live)
+
+        assertFailsWith<DiveHubException> { refresher.runLive() }
+        assertFalse(refresher.streamHealthy.value)
+        assertFalse(refresher.offline.value)
+
+        harness.paths.clear()
+        refresher.pollOnce()
+
+        // The poll still ran (the store is fresh) and did not turn the refusal into "offline".
+        assertTrue(harness.paths.contains("/api/dives?limit=200&offset=0"))
+        assertFalse(refresher.offline.value)
+    }
+
+    @Test
+    fun `a stream refusal is reported once per state change`() = runTest {
+        val harness = seeded()
+        val failures = mutableListOf<StreamFailure>()
+        var code = "live_unavailable"
+        var status = 503
+        val live = LiveHints {
+            flow<LiveEvent> { throw DiveHubException(code, status) }
+        }
+        val refresher = SyncRefresher(harness.engine, live, onStreamFailure = { failures += it })
+
+        assertFailsWith<DiveHubException> { refresher.runLive() }
+        assertFailsWith<DiveHubException> { refresher.runLive() }
+
+        assertEquals(1, failures.size)
+        assertEquals("live_unavailable", failures.single().code)
+        assertEquals(503, failures.single().status)
+
+        code = "too_many_live_streams"
+        status = 429
+        assertFailsWith<DiveHubException> { refresher.runLive() }
+
+        assertEquals(2, failures.size)
+        assertEquals("too_many_live_streams", failures.last().code)
+        assertEquals(429, failures.last().status)
+    }
+
+    @Test
+    fun `a reconnect resets the reported stream failure`() = runTest {
+        val harness = seeded()
+        val failures = mutableListOf<StreamFailure>()
+        val live = LiveHints {
+            flow {
+                emit(LiveEvent.Connected)
+                throw DiveHubException("live_unavailable", 503)
+            }
+        }
+        val refresher = SyncRefresher(harness.engine, live, onStreamFailure = { failures += it })
+
+        assertFailsWith<DiveHubException> { refresher.runLive() }
+        assertEquals(1, failures.size)
+
+        // A new connection lets the same refusal be reported again when the fresh stream drops.
+        assertFailsWith<DiveHubException> { refresher.runLive() }
+
+        assertEquals(2, failures.size)
+    }
+
+    @Test
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    fun `a refused stream backs off instead of reconnecting on every interval`() = runTest {
+        val harness = seeded()
+        val attempts = mutableListOf<Long>()
+        val live = LiveHints {
+            flow<LiveEvent> {
+                attempts += testScheduler.currentTime
+                throw DiveHubException("live_unavailable", 503)
+            }
+        }
+        val refresher = SyncRefresher(
+            harness.engine,
+            live,
+            reconnectDelayMs = 1_000,
+            maxReconnectDelayMs = 8_000,
+            pollIntervalMs = 1_000_000,
+        )
+
+        refresher.start(backgroundScope)
+        runCurrent()
+        advanceTimeBy(30_000)
+        runCurrent()
+
+        assertEquals(listOf(0L, 1_000L, 3_000L, 7_000L, 15_000L, 23_000L), attempts)
+    }
+
+    @Test
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    fun `a no-answer stream keeps the base reconnect interval`() = runTest {
+        val harness = seeded()
+        val attempts = mutableListOf<Long>()
+        val live = LiveHints {
+            flow<LiveEvent> {
+                attempts += testScheduler.currentTime
+                throw NoAnswerException()
+            }
+        }
+        val refresher = SyncRefresher(
+            harness.engine,
+            live,
+            reconnectDelayMs = 1_000,
+            pollIntervalMs = 1_000_000,
+        )
+
+        refresher.start(backgroundScope)
+        runCurrent()
+        advanceTimeBy(3_500)
+        runCurrent()
+
+        assertEquals(listOf(0L, 1_000L, 2_000L, 3_000L), attempts)
     }
 
     @Test

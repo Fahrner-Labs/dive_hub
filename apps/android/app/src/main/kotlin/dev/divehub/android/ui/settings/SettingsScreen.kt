@@ -40,8 +40,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.heading
@@ -133,7 +134,7 @@ fun SettingsScreen(
                 supportingContent = {
                     Column {
                         state.instanceUrl?.let { Text(it) }
-                        ConnectionStatus(connected = state.connected, syncedAt = state.syncedAt)
+                        ConnectionStatus(connected = state.connected, offline = state.offline, syncedAt = state.syncedAt)
                     }
                 },
                 trailingContent = {
@@ -266,33 +267,49 @@ fun SettingsScreen(
 }
 
 /**
- * The instance row's permanent connection state (FAH-342): a green dot and "Connected" while the live stream is
- * delivering, or a muted dot and "Offline — last synced …" when it is down. Only the stream state counts; a reachable
- * network is not evidence.
+ * The instance row's permanent connection state (FAH-342, FAH-420): a green dot and "Connected" while the live
+ * stream is delivering; while it is down but polling still answers, "Polling · <last sync>"; when the last sync got
+ * no answer, "Offline · <last sync>". The row's URL above and the date below already say what the date is, so the
+ * compact form holds at 200 % (FAH-437). Only the stream and the sync state count; a reachable network is not
+ * evidence.
  */
 @Composable
-internal fun ConnectionStatus(connected: Boolean, syncedAt: String?, modifier: Modifier = Modifier) {
+internal fun ConnectionStatus(connected: Boolean, offline: Boolean, syncedAt: String?, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val locale = context.resources.configuration.locales[0] ?: Locale.getDefault()
     val pattern = stringResource(R.string.sync_date_pattern)
     val text = when {
         connected -> stringResource(R.string.settings_connection_connected)
-        syncedAt != null -> stringResource(
+        syncedAt == null -> stringResource(R.string.settings_connection_never)
+        offline -> stringResource(
             R.string.settings_connection_offline,
             formatSyncTime(syncedAt, locale, pattern),
         )
-        else -> stringResource(R.string.settings_connection_never)
+        else -> stringResource(
+            R.string.settings_connection_polling,
+            formatSyncTime(syncedAt, locale, pattern),
+        )
     }
     val dot = if (connected) {
         successColor()
     } else {
         MaterialTheme.colorScheme.outline
     }
+    // Top-aligned and optically centred on the first line: when the status wraps at 200 %, the dot must not float
+    // between lines like a bullet on the date (FAH-437).
+    val lineHeight = with(LocalDensity.current) { MaterialTheme.typography.bodyMedium.lineHeight.toDp() }
+    val dotOffset = ((lineHeight - 8.dp) / 2f).coerceAtLeast(0.dp)
     Row(
         modifier = modifier.semantics { liveRegion = LiveRegionMode.Polite },
-        verticalAlignment = Alignment.CenterVertically,
+        verticalAlignment = Alignment.Top,
     ) {
-        Box(Modifier.size(8.dp).clip(CircleShape).background(dot))
+        Box(
+            Modifier
+                .padding(top = dotOffset)
+                .size(8.dp)
+                .clip(CircleShape)
+                .background(dot),
+        )
         Spacer(Modifier.width(6.dp))
         Text(
             text,

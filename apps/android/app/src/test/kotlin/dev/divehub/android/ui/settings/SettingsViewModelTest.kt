@@ -57,14 +57,16 @@ class SettingsViewModelTest {
     }
 
     @Test
-    fun `the sync line follows the store revision and the connection flag`() = runTest(dispatcher) {
+    fun `the sync line follows the store revision and the connection and offline flags`() = runTest(dispatcher) {
         val store = DiveStore.create(driver)
         val revision = MutableStateFlow(0L)
         val connected = MutableStateFlow(false)
-        val viewModel = viewModel(store = store, revision = revision, connected = connected)
+        val offline = MutableStateFlow(false)
+        val viewModel = viewModel(store = store, revision = revision, connected = connected, offline = offline)
         advanceUntilIdle()
         assertEquals(null, viewModel.state.value.syncedAt)
         assertFalse(viewModel.state.value.connected)
+        assertFalse(viewModel.state.value.offline)
 
         store.saveSyncState(SyncState(lastFullSyncAt = "2026-11-18T12:00:00Z", schemaVersion = DiveStore.schemaVersion))
         revision.value = 1
@@ -74,6 +76,10 @@ class SettingsViewModelTest {
         connected.value = true
         advanceUntilIdle()
         assertTrue(viewModel.state.value.connected)
+
+        offline.value = true
+        advanceUntilIdle()
+        assertTrue(viewModel.state.value.offline)
     }
 
     @Test
@@ -219,12 +225,14 @@ class SettingsViewModelTest {
         store: DiveStore = DiveStore.create(driver),
         revision: MutableStateFlow<Long> = MutableStateFlow(0L),
         connected: MutableStateFlow<Boolean> = MutableStateFlow(false),
+        offline: MutableStateFlow<Boolean> = MutableStateFlow(false),
         refreshSync: suspend () -> Unit = {},
         diagnostics: DiagnosticsAccess = FakeDiagnostics(),
     ) = SettingsViewModel(
         settings = SettingsRepository(FakeInstances(), store),
         revision = revision,
         connectedState = connected,
+        offlineState = offline,
         refreshSync = refreshSync,
         diagnostics = diagnostics,
         io = dispatcher,

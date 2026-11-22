@@ -60,15 +60,23 @@ class SettingsScreenTest {
         compose.onNodeWithText("Connected").assertIsDisplayed()
         compose.onNodeWithText("elena@example.com").assertIsDisplayed()
         compose.onNodeWithText("0.1.0 (1001)").assertIsDisplayed()
-        compose.onNodeWithText("Last synced", substring = true).assertDoesNotExist()
+        compose.onNodeWithText("Polling", substring = true).assertDoesNotExist()
+    }
+
+    @Test
+    fun `a stream that is down while polling answers says polling beside the instance`() {
+        render(connected = false)
+
+        compose.onNodeWithText("Polling · 18 Nov 2026, 13:00").assertIsDisplayed()
+        compose.onNodeWithText("Offline · 18 Nov 2026, 13:00").assertDoesNotExist()
     }
 
     @Test
     fun `offline shows the last sync beside the instance`() {
-        render(connected = false)
+        render(connected = false, offline = true)
 
-        compose.onNodeWithText("Offline — last synced 18 Nov 2026, 13:00.").assertIsDisplayed()
-        compose.onNodeWithText("Last synced 18 Nov 2026, 13:00.").assertDoesNotExist()
+        compose.onNodeWithText("Offline · 18 Nov 2026, 13:00").assertIsDisplayed()
+        compose.onNodeWithText("Polling · 18 Nov 2026, 13:00").assertDoesNotExist()
     }
 
     @Test
@@ -185,6 +193,7 @@ class SettingsScreenTest {
         connected: Boolean = true,
         syncedAt: String? = "2026-11-18T12:00:00Z",
         syncing: Boolean = false,
+        offline: Boolean = false,
     ) {
         compose.setContent {
             DiveHubTheme(darkTheme = false) {
@@ -194,6 +203,7 @@ class SettingsScreenTest {
                         syncedAt = syncedAt,
                         connected = connected,
                         syncing = syncing,
+                        offline = offline,
                     ),
                     email = "elena@example.com",
                     versionName = "0.1.0",

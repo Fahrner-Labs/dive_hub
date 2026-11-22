@@ -631,16 +631,24 @@ class DiveDetailScreenshotTest {
     }
 
     @Test
-    fun `the sync line says when the store was last filled`() {
+    fun `the sync line says it is polling and when the store was last filled`() {
         render(state(dive = dive(), syncedAt = "2026-11-18T12:00:00Z"))
-        compose.onNodeWithText("Last synced 18 Nov 2026, 13:00.").assertIsDisplayed()
+        compose.onNodeWithText("Polling — last synced 18 Nov 2026, 13:00.").assertIsDisplayed()
         capture("dive_synced.png")
+    }
+
+    @Test
+    @Config(qualifiers = "en-rUS-w320dp-h891dp-xxhdpi")
+    fun `the polling sync line at 320 dp and 200 percent`() {
+        render(state(dive = dive(), syncedAt = "2026-11-18T12:00:00Z"), fontScale = 2f)
+        compose.onNodeWithText("Polling — last synced 18 Nov 2026, 13:00.").assertIsDisplayed()
+        capture("dive_polling_narrow_2x.png")
     }
 
     @Test
     fun `while connected the sync line stays quiet`() {
         render(state(dive = dive(), syncedAt = "2026-11-18T12:00:00Z", connected = true))
-        compose.onNodeWithText("Last synced", substring = true).assertDoesNotExist()
+        compose.onNodeWithText("Polling", substring = true).assertDoesNotExist()
         capture("dive_connected.png")
     }
 

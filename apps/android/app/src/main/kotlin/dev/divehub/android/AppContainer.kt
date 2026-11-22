@@ -18,6 +18,7 @@ import dev.divehub.shared.dive.DiveRepository
 import dev.divehub.shared.logbook.LogbookRepository
 import dev.divehub.shared.logbook.StoreLogbook
 import dev.divehub.shared.UserScopedStore
+import dev.divehub.shared.diagnostics.DiagnosticLevel
 import dev.divehub.shared.settings.SettingsRepository
 import dev.divehub.shared.sync.SseLiveHints
 import dev.divehub.shared.sync.SyncEngine
@@ -100,7 +101,21 @@ class AppContainer(context: Context) {
 
     /** The sync engine and its refresh loop; the UI reads the store, never the API, from D4 on. */
     val sync = SyncEngine(session.client, diveStore)
-    private val refresher = SyncRefresher(sync, SseLiveHints(session.client))
+    private val refresher = SyncRefresher(
+        sync,
+        SseLiveHints(session.client),
+        onStreamFailure = { failure ->
+            // ADR 0080: name why the stream could not connect (404/503/429/timeout) so a field report is diagnosable.
+            diagnostics.capture(
+                level = DiagnosticLevel.WARN,
+                code = failure.code,
+                message = failure.message,
+                context = buildMap {
+                    failure.status?.let { put("status", it.toString()) }
+                },
+            )
+        },
+    )
 
     /** Open screens reread the store when a sync or hint writes it, and say "cached" when the last attempt got no answer. */
     val syncRevision = refresher.revision
