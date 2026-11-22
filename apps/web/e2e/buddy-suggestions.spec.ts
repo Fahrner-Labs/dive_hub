@@ -51,6 +51,10 @@ test.afterEach(async ({ request }) => {
   await clearParticipants(request, dive.id);
   const source = await (await request.get(`/api/dives/${dive.id}`)).json() as Dive;
   if (source.site) await request.patch(`/api/dives/${dive.id}`, { data: { version: source.version, siteId: null }, headers });
+  // A link above leaves a Joint dive behind; with the seeded Dive's site cleared, a fill offer would wait in the
+  // Review inbox of the specs after this one. Decline what these tests left, for both Users.
+  await declineOffers(request);
+  await declineOffers(other);
 });
 
 test('a Participant another User keeps raises a suggestion in that User\'s Review inbox', { tag: ['@dives', '@divers'] }, async ({ page, request, browser }) => {
@@ -111,6 +115,7 @@ test('accepting "Create a new dive" copies the shared facts into the invited Div
   await setBuddies(request, dive.id, [diverId]);
 
   const { page, close } = await openAsOther(browser);
+  let copyId: string | undefined;
   try {
     await page.goto('/#/review');
     await suggestionPanel(page).getByRole('button', { name: /^Accept/ }).click();
@@ -120,6 +125,7 @@ test('accepting "Create a new dive" copies the shared facts into the invited Div
     const answered = page.waitForResponse((r) => r.request().method() === 'POST' && r.url().endsWith('/accept'));
     await dialog.getByRole('button', { name: 'Create a new dive' }).click();
     const accepted = await (await answered).json() as { diveId: string; jointDiveId: string };
+    copyId = accepted.diveId;
     expect(accepted.diveId).not.toBe(dive.id);
     expect(accepted.jointDiveId).toBeTruthy();
     // The contract opens the Dive that was added to the User's logbook.
@@ -143,6 +149,8 @@ test('accepting "Create a new dive" copies the shared facts into the invited Div
     expect(copy.participants.map((p) => p.name)).toEqual(['Erika']);
   } finally {
     await close();
+    // The copy joined a Joint dive with the seeded Dive; deleting it leaves the seeded Dive free for the tests after.
+    if (copyId) await softDeleteDive(other, copyId);
   }
 });
 
@@ -177,11 +185,12 @@ test('accepting "Link to your dive" joins the overlapping dives without copying 
     await expect(page).toHaveURL(new RegExp(`#/dives/${existing}$`));
     await expect(page.locator('#main')).toContainText(notes);
 
-    // Linking copies and merges nothing: the Dive keeps its Recording, its notes and its own Participants.
+    // Linking copies no facts and merges nothing: the Dive keeps its Recording and its notes. Its Participants gain
+    // the source Dive's people (FAH-410), here the source's own Diver.
     const linked = await (await other.get(`/api/dives/${existing}`)).json() as Dive;
     expect(linked.recordings).toHaveLength(1);
     expect(linked.notes).toBe(notes);
-    expect(linked.participants).toEqual([]);
+    expect(linked.participants.map((p) => p.name)).toContain('Erika');
   } finally {
     await close();
   }
@@ -286,4 +295,21 @@ async function otherOverlappingDive(): Promise<string> {
   await expect.poll(async () => (await (await other.get(url)).json() as { status: string }).status, { timeout: 20_000 }).toBe('done');
   const { outcome } = await (await other.get(url)).json() as { outcome: { diveId?: string }[] };
   return outcome[0]!.diveId!;
+}
+
+/** Moves a Dive this spec made to Deleted dives (soft delete), so a Joint dive it joined does not outlive the test. */
+async function softDeleteDive(api: APIRequestContext, id: string) {
+  const dive = await (await api.get(`/api/dives/${id}`)).json() as { version: number };
+  const deleted = await api.delete(`/api/dives/${id}`, { data: { version: dive.version }, headers });
+  if (!deleted.ok()) throw new Error(`deleting the Dive failed: ${deleted.status()} ${await deleted.text()}`);
+}
+
+type PendingOffer = { dive: { id: string }; fields: string[] };
+
+/** Declines every fill offer left waiting for this User, so the Review inbox the specs after start with is empty. */
+async function declineOffers(api: APIRequestContext) {
+  const offers = await (await api.get('/api/joint-dives/offers')).json() as PendingOffer[];
+  for (const offer of offers) {
+    await api.post('/api/joint-dives/offers/decline', { data: { diveId: offer.dive.id, fields: offer.fields }, headers });
+  }
 }

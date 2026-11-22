@@ -1224,6 +1224,8 @@
       "things_other": "{{count}} Dinge brauchen deine Entscheidung: {{parts}}.",
       "suggestions_one": "{{count}} Tauchgangs-Empfehlung",
       "suggestions_other": "{{count}} Tauchgangs-Empfehlungen",
+      "offers_one": "{{count}} Angebot, Werte aus dem Tauchgang eines Buddys zu übernehmen",
+      "offers_other": "{{count}} Angebote, Werte aus den Tauchgängen von Buddys zu übernehmen",
       "recordings_one": "{{count}} Aufzeichnung",
       "recordings_other": "{{count}} Aufzeichnungen",
       "pairs_one": "{{count}} Paar Tauchgänge zur selben Zeit",

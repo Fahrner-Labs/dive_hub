@@ -1224,6 +1224,8 @@
       "things_other": "{{count}} things need your decision: {{parts}}.",
       "suggestions_one": "{{count}} dive suggestion",
       "suggestions_other": "{{count}} dive suggestions",
+      "offers_one": "{{count}} offer to fill from a buddy’s dive",
+      "offers_other": "{{count}} offers to fill from a buddy’s dive",
       "recordings_one": "{{count}} recording",
       "recordings_other": "{{count}} recordings",
       "pairs_one": "{{count}} pair of dives at the same time",
