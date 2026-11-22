@@ -1,17 +1,18 @@
-import { lazy, Suspense, useLayoutEffect } from 'react';
+import { Suspense, useLayoutEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Me } from './api.ts';
 import { DisplaySettings, ReportProblemSettings, SecuritySettings } from './AccountSettings.tsx';
 import { AiAccess } from './AiAccess.tsx';
 import { Connections } from './Connections.tsx';
 import { Devices } from './Devices.tsx';
+import { lazyWithReload } from './lib/lazy-reload.ts';
 import { useRoomy, useWide } from './lib/narrow.ts';
 import { usePageTitle } from './lib/page.ts';
 import { isSettingsSection, SETTINGS_SECTIONS, settingsHref, type SettingsSection } from './lib/settings.ts';
 import { Icon, Notice, PageHeader, RowsSkeleton } from './ui/index.ts';
 
 // Administration loads on demand: most people never open it (it was a chunk of its own as a page).
-const AdminSettings = lazy(() => import('./AdminSettings.tsx').then((m) => ({ default: m.AdminSettings })));
+const AdminSettings = lazyWithReload(() => import('./AdminSettings.tsx').then((m) => ({ default: m.AdminSettings })));
 
 /**
  * Settings (UI overhaul, "The shell"): one area with a view per section, the section's name its h1. From 64rem
