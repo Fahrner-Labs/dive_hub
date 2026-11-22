@@ -191,15 +191,24 @@ coverage, validity; B5), **Medical exam** (date, result, valid until, examiner),
   `deleted_earlier`, and its Originals stay because another Dive can share them. A Dive a Continuation uses is kept.
 
 **Joint dive** — the link between the Dives of Divers who made the same descent together. Created when a Buddy
-suggestion is accepted; nothing is copied or merged into it. The Joint dive's own visibility comes in a later slice.
-*Implemented (FAH-410, FAH-411, ADR 0070):* linking unions the members' Participants (own Diver excepted, roles kept)
-and later adds propagate to every member; removals never do. A member's **fill offer** is derived at read time from the
-shared facts (site, start with UTC offset, duration, max and average depth) where the member's field is empty and
-another member has a value; accepting copies the source's current value through the Revision machinery (cause
-`joint-dive-fill`), while declining stores a `joint_dive_dismissal` row so the field is not offered again for that Dive
-of that Joint dive. Recording, notes, suit, weighting, cylinders, lead, Overrides and provider links never cross. A
-soft-deleted member leaves its Joint dive; one left with fewer than two live members is deleted and its dismissals
-cascade.
+suggestion is accepted; nothing is copied or merged into it, and each Dive keeps its own owner and data. Its members
+share facts in two ways and keep the rest to themselves ([ADR 0082](../decisions/0082-joint-dive-sync.md)):
+
+| Class | Fields | Rule |
+|---|---|---|
+| Shared — auto-synced | Participants | United on link and when a Participant is added later: every member gains the other members' people (their own Divers as `buddy`, roles kept), with the receiving Dive's own Diver excluded. Removals never propagate. |
+| Shared — offered to fill | `siteId`, `startsAt` + `utcOffsetSeconds`, `durationSeconds`, `maxDepthM`, `avgDepthM` | Offered only where the receiving member's field is empty; accepting copies the source's current value as an own value through a Revision (cause `joint-dive-fill`); declining stores a dismissal. Two filled values are neither offered nor a conflict. |
+| Individual — never crosses | Recording/profile, notes, suit, weighting, cylinders, lead, `overrides`, provider links | Never read by another User, never offered. |
+
+*Implemented (FAH-410, FAH-411, FAH-412, FAH-414; ADR 0082):* offers are derived at read time from the shared facts, so
+an edit, an Import, a merge, the source losing its value or a member leaving resolves one without cleanup.
+`joint_dive_dismissal` (`id`, `joint_dive_id`, `dive_id`, `field`, `created_at`; unique
+`(joint_dive_id, dive_id, field)`, cascading from both the Joint dive and the Dive) is the only stored offer state: it
+keeps a declined field from being offered again for that Dive of that Joint dive. A soft-deleted member leaves its
+Joint dive; one left with fewer than two live members is deleted and its dismissals cascade. Migration
+`0064_union_joint_dive_participants` applies the Participant union once to Joint dives linked before FAH-410; it adds
+only and is idempotent. The Joint dive has no page of its own: its shared facts reach another User only through the
+offers above.
 
 **Participant** — `(Dive, Diver, role)`, with roles `buddy`, `guide`, `instructor`,
 `student`, `team member` (B7). If the Diver is managed by another User, a **Buddy
@@ -221,7 +230,8 @@ meet the suggested time window, with the tolerance and offset alignment of Recor
 them instead: both Dives join one `joint_dive`, nothing is copied, and no Diver's data is merged into another's. A Dive
 belongs to at most one Joint dive, so an existing one is reused and two different ones are refused. `POST
 /api/buddy-suggestions/{id}/decline` marks the one suggestion row `declined` for every User who manages the invited
-Diver now, creates nothing and keeps the inviter's Participant. The Joint dive's own visibility comes in a later slice.
+Diver now, creates nothing and keeps the inviter's Participant. The link unions both Dives' Participants and makes
+their shared facts offerable to each other ([ADR 0082](../decisions/0082-joint-dive-sync.md)).
 
 **Recording** — data from one Device for one Dive.
 - Device, Import, Original(s) plus position within the Original (one file can hold many dives).

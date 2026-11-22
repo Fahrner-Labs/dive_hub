@@ -1,16 +1,22 @@
 ---
 title: "ADR 0070: Buddy suggestions and Joint dives"
 summary: A Participant whose Diver is not the Dive's own raises a Buddy suggestion for whoever manages that Diver, computed at read time; accepting it later creates or links a Dive in a Joint dive. This is Dive Hub's first cross-user visibility of a Dive, and it is limited to shared facts.
-status: proposed
+status: accepted
 date: 2026-11-13
 ---
 
 # ADR 0070: Buddy suggestions and Joint dives
 
 ## Status
-Proposed – 2026-11-13 – by Elena. Discussion and the accepted plan:
+Accepted – 2026-11-22 – by the owner. Proposed 2026-11-13 by Elena; discussion and the accepted plan:
 [FAH-193](/FAH/issues/FAH-193); this slice: [FAH-194](/FAH/issues/FAH-194). The owner reviews and merges the pull
 request, as the schema, migrations and decisions need their approval ([CODEOWNERS](../../.github/CODEOWNERS)).
+
+**As built (2026-11-22).** Both accept branches and decline shipped. Accepting without a body creates the invited
+Diver's Dive from the shared facts only; accepting `{ diveId }` links one of their overlapping Dives and copies nothing;
+declining resolves the suggestion without copying anything. There is no Joint-dive page of its own: the shared facts
+reach another User through the suggestion preview, and later through the derived fill offers and automatic Participant
+union decided in [ADR 0082](0082-joint-dive-sync.md).
 
 ## Context
 A Dive lists its Participants (ADR 0028) by Diver, and every User sees every Diver by name. Dive Hub knows when a

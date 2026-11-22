@@ -444,3 +444,59 @@ describe.skipIf(!(await databaseReachable()))('0055: an Equipment item for every
     expect((await q('select count(*)::int as n from equipment_item')).rows[0].n).toBe(2);
   });
 });
+
+describe.skipIf(!(await databaseReachable()))('0064: Participants of Joint dives linked before FAH-410', () => {
+  let t: TestDatabase;
+  let before: string;
+  beforeAll(async () => {
+    before = await migrationsBefore('0064_union_joint_dive_participants');
+    t = await createTestDatabase({ migrationsFolder: before });
+  });
+  afterAll(async () => {
+    await t?.drop();
+    if (before) await rm(before, { recursive: true, force: true });
+  });
+
+  it('unions every member’s people into every member, keeping existing roles and adding only', async () => {
+    const q = (sql: string, params: unknown[] = []) => t.pool.query(sql, params);
+    const diver = async (name: string) => (await q('insert into diver (name) values ($1) returning id', [name])).rows[0].id as string;
+    const alice = await diver('Alice');
+    const bob = await diver('Bob');
+    const carol = await diver('Carol');
+    const dave = await diver('Dave');
+    const joint = (await q('insert into joint_dive default values returning id')).rows[0].id as string;
+    const dive = async (id: string, diverId: string) => {
+      await q(`insert into dive (id, diver_id, starts_at, duration_seconds, joint_dive_id) values ($1, $2, now(), 1800, $3)`, [id, diverId, joint]);
+      return id;
+    };
+    const a = await dive('00000000-0000-0000-0000-000000000001', alice);
+    const b = await dive('00000000-0000-0000-0000-000000000002', bob);
+    const c = await dive('00000000-0000-0000-0000-000000000003', carol);
+    // A lists Carol as guide and Dave as buddy; B lists Dave as instructor and Alice as buddy. Dave's role differs
+    // between the members, so each keeps its own.
+    await q(`insert into participant (dive_id, diver_id, role) values ($1, $2, 'guide'), ($1, $3, 'buddy')`, [a, carol, dave]);
+    await q(`insert into participant (dive_id, diver_id, role) values ($1, $2, 'instructor'), ($1, $3, 'buddy')`, [b, dave, alice]);
+
+    await migrateDatabase(t.db, t.pool, migrations);
+
+    const people = async (diveId: string) => (await q(
+      `select p.diver_id, p.role from participant p join diver d on d.id = p.diver_id
+       where p.dive_id = $1 order by d.name`, [diveId],
+    )).rows;
+    expect(await people(a)).toEqual([
+      { diver_id: bob, role: 'buddy' }, { diver_id: carol, role: 'guide' }, { diver_id: dave, role: 'buddy' },
+    ]);
+    expect(await people(b)).toEqual([
+      { diver_id: alice, role: 'buddy' }, { diver_id: carol, role: 'guide' }, { diver_id: dave, role: 'instructor' },
+    ]);
+    expect(await people(c)).toEqual([
+      { diver_id: alice, role: 'buddy' }, { diver_id: bob, role: 'buddy' }, { diver_id: dave, role: 'buddy' },
+    ]);
+
+    // Idempotent: running the one-time union again adds nothing and changes no role.
+    await t.pool.query(readFileSync(join(migrations, '0064_union_joint_dive_participants.sql'), 'utf8'));
+    expect(await people(a)).toEqual([
+      { diver_id: bob, role: 'buddy' }, { diver_id: carol, role: 'guide' }, { diver_id: dave, role: 'buddy' },
+    ]);
+  });
+});
