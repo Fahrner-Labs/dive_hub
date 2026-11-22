@@ -111,8 +111,8 @@ class SettingsScreenTest {
         val sync = compose.onNodeWithText("Sync now").getBoundsInRoot()
         val account = compose.onNodeWithText("Account").getBoundsInRoot()
 
-        assertTrue("sync row top ${sync.top} above connection heading bottom ${connection.bottom}", sync.top >= connection.bottom)
-        assertTrue("sync row top ${sync.top} above instance row top ${instance.top}", sync.top >= instance.top)
+        assertTrue("sync row top ${sync.top} not below connection heading bottom ${connection.bottom}", sync.top >= connection.bottom)
+        assertTrue("sync row top ${sync.top} not below instance row bottom ${instance.bottom}", sync.top >= instance.bottom)
         assertTrue("sync row top ${sync.top} not above account heading top ${account.top}", sync.top < account.top)
     }
 

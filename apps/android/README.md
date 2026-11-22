@@ -346,11 +346,12 @@ server-answered filter was stepped from. Back from the logbook (the `main` graph
 and never walks back through sign-in.
 
 The settings screen (`ui/settings/`) is a grouped M3 list: **Connection** shows the instance from
-`PreferencesInstanceUrlStore` and "Change instance" asks first, then signs out, wipes the local data and forgets the
+`PreferencesInstanceUrlStore`, its live sync state (FAH-342), and "Sync now", which reuses the logbook's `SyncLine`
+source (`sync_state.lastFullSyncAt` and the refresher's offline flag) and runs the same guarded `refreshNow` path as the
+periodic worker; "Change instance" asks first, then signs out, wipes the local data and forgets the
 address so the app asks for an instance again ([settings/SettingsRepository.kt](shared/src/commonMain/kotlin/dev/divehub/shared/settings/SettingsRepository.kt)).
 **Account** shows the `/api/me` e-mail and owns sign-out, which used to sit on the logbook app bar; it wipes the
-session and the graph pops to sign-in. **Sync** reuses the logbook's `SyncLine` source (`sync_state.lastFullSyncAt`
-and the refresher's offline flag) and "Sync now" runs the same guarded `refreshNow` path as the periodic worker.
+session and the graph pops to sign-in.
 **About** shows `versionName (versionCode)` from `BuildConfig` (real values stamped by the release lane, ADR 0077) and
 opens the bundled Poppins OFL licence from `assets/licenses/`.
 
