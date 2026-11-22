@@ -649,6 +649,8 @@ V1 of the native client reads offline: phones lose signal where dives are, and t
   (`POST /api/external-divers`), and save the whole list with the Dive's version (`PUT /api/dives/{id}/participants`;
   `dive_changed` 409, `participant_invalid` for a Diver twice or the Dive's own). A role can be changed in place (the same
   route, the whole list). Every remove button and role field names the person. The history shows who was added (with the role) and who was removed (change `participants`).
+  Adding a Participant to a Dive in a Joint dive also adds them to the other members (their own Diver excepted, the
+  role kept); a removal stays on this Dive ([ADR 0082](../decisions/0082-joint-dive-sync.md)).
   *Web:* `Participants.tsx`, `DiveHistory.tsx`.
 - **Water type** (ADR 0025): the Dive's `waterType` is its site's and can't be edited on the Dive. Without a site,
   suggest choosing one; with a site that has none, say it isn't known for the site. Label the Recording's
@@ -1126,8 +1128,9 @@ dives, all off until the User turns them on. *Web:* `ProviderAutomation.tsx` (se
   (the Review page's "To decide" part); its count joins the Review strip and the navigation's "to decide" count.
 
 ### Joint-dive fill offers
-(FAH-411; `GET /api/joint-dives/offers`, `GET /api/dives/{id}/joint-offers`,
-`POST /api/joint-dives/offers/accept`, `POST /api/joint-dives/offers/decline`)
+(FAH-411, [ADR 0082](../decisions/0082-joint-dive-sync.md); `GET /api/joint-dives/offers`,
+`GET /api/dives/{id}/joint-offers`, `POST /api/joint-dives/offers/accept`,
+`POST /api/joint-dives/offers/decline`)
 - **Show "fill from your buddy's dive" only where the offer exists:** one entry per source Dive, with the signed-in
   User's Dive's shared facts (`dive`) beside the other member's (`source`: `diveId`, the member's Diver by name, and the
   same facts) and the `fields` it can fill. The shared set is the site, the start with its UTC offset, the duration, and
