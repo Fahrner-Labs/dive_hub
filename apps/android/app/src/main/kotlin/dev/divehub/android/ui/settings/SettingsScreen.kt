@@ -40,8 +40,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.heading
@@ -267,8 +268,10 @@ fun SettingsScreen(
 
 /**
  * The instance row's permanent connection state (FAH-342, FAH-420): a green dot and "Connected" while the live
- * stream is delivering; while it is down but polling still answers, "Polling — last synced …"; when the last sync got
- * no answer, "Offline — last synced …". Only the stream and the sync state count; a reachable network is not evidence.
+ * stream is delivering; while it is down but polling still answers, "Polling · <last sync>"; when the last sync got
+ * no answer, "Offline · <last sync>". The row's URL above and the date below already say what the date is, so the
+ * compact form holds at 200 % (FAH-437). Only the stream and the sync state count; a reachable network is not
+ * evidence.
  */
 @Composable
 internal fun ConnectionStatus(connected: Boolean, offline: Boolean, syncedAt: String?, modifier: Modifier = Modifier) {
@@ -292,11 +295,21 @@ internal fun ConnectionStatus(connected: Boolean, offline: Boolean, syncedAt: St
     } else {
         MaterialTheme.colorScheme.outline
     }
+    // Top-aligned and optically centred on the first line: when the status wraps at 200 %, the dot must not float
+    // between lines like a bullet on the date (FAH-437).
+    val lineHeight = with(LocalDensity.current) { MaterialTheme.typography.bodyMedium.lineHeight.toDp() }
+    val dotOffset = ((lineHeight - 8.dp) / 2f).coerceAtLeast(0.dp)
     Row(
         modifier = modifier.semantics { liveRegion = LiveRegionMode.Polite },
-        verticalAlignment = Alignment.CenterVertically,
+        verticalAlignment = Alignment.Top,
     ) {
-        Box(Modifier.size(8.dp).clip(CircleShape).background(dot))
+        Box(
+            Modifier
+                .padding(top = dotOffset)
+                .size(8.dp)
+                .clip(CircleShape)
+                .background(dot),
+        )
         Spacer(Modifier.width(6.dp))
         Text(
             text,

@@ -67,16 +67,16 @@ class SettingsScreenTest {
     fun `a stream that is down while polling answers says polling beside the instance`() {
         render(connected = false)
 
-        compose.onNodeWithText("Polling — last synced 18 Nov 2026, 13:00.").assertIsDisplayed()
-        compose.onNodeWithText("Offline — last synced 18 Nov 2026, 13:00.").assertDoesNotExist()
+        compose.onNodeWithText("Polling · 18 Nov 2026, 13:00").assertIsDisplayed()
+        compose.onNodeWithText("Offline · 18 Nov 2026, 13:00").assertDoesNotExist()
     }
 
     @Test
     fun `offline shows the last sync beside the instance`() {
         render(connected = false, offline = true)
 
-        compose.onNodeWithText("Offline — last synced 18 Nov 2026, 13:00.").assertIsDisplayed()
-        compose.onNodeWithText("Polling — last synced 18 Nov 2026, 13:00.").assertDoesNotExist()
+        compose.onNodeWithText("Offline · 18 Nov 2026, 13:00").assertIsDisplayed()
+        compose.onNodeWithText("Polling · 18 Nov 2026, 13:00").assertDoesNotExist()
     }
 
     @Test

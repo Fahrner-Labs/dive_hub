@@ -92,15 +92,42 @@ class SettingsScreenshotTest {
     fun `settings polling shows the state and age beside the instance`() {
         render(darkTheme = false, connected = false)
 
-        compose.onNodeWithText("Polling — last synced 18 Nov 2026, 13:00.").assertIsDisplayed()
+        compose.onNodeWithText("Polling · 18 Nov 2026, 13:00").assertIsDisplayed()
         capture("settings_polling_en_light.png")
+    }
+
+    @Test
+    @Config(qualifiers = "de-rDE-w411dp-h891dp-xxhdpi")
+    fun `settings polling in German and light`() {
+        render(darkTheme = false, connected = false)
+
+        compose.onNodeWithText("Polling · 18. Nov. 2026, 13:00").assertIsDisplayed()
+        capture("settings_polling_de_light.png")
+    }
+
+    @Test
+    @Config(qualifiers = "en-rUS-w411dp-h891dp-night-xxhdpi")
+    fun `settings polling in English and dark`() {
+        render(darkTheme = true, connected = false)
+
+        compose.onNodeWithText("Polling · 18 Nov 2026, 13:00").assertIsDisplayed()
+        capture("settings_polling_en_dark.png")
+    }
+
+    @Test
+    @Config(qualifiers = "en-rUS-w320dp-h891dp-xxhdpi", fontScale = 2f)
+    fun `settings polling at 320 dp and 200 percent keeps the dot on the first line`() {
+        render(darkTheme = false, connected = false)
+
+        compose.onNodeWithText("Polling", substring = true).assertIsDisplayed()
+        capture("settings_polling_narrow_2x.png")
     }
 
     @Test
     fun `settings offline shows the state and age beside the instance`() {
         render(darkTheme = false, connected = false, offline = true)
 
-        compose.onNodeWithText("Offline — last synced 18 Nov 2026, 13:00.").assertIsDisplayed()
+        compose.onNodeWithText("Offline · 18 Nov 2026, 13:00").assertIsDisplayed()
         capture("settings_offline_en_light.png")
     }
 

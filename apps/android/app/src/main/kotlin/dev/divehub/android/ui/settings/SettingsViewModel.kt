@@ -25,11 +25,11 @@ import kotlinx.coroutines.withContext
 /** What the settings screens draw; the email and the app version come from the session and the build. */
 data class SettingsUiState(
     val instanceUrl: String? = null,
-    /** The store's last full sync; the instance row's "Offline — last synced …" when the stream is down. */
+    /** The store's last successful sync; the date the instance row shows beside "Polling" or "Offline". */
     val syncedAt: String? = null,
     /** The live hint stream is delivering; the instance row says "Connected". */
     val connected: Boolean = false,
-    /** The last sync attempt got no answer; the instance row says "Offline — last synced …" instead of "Polling". */
+    /** The last sync attempt got no answer; the instance row says "Offline · …" instead of "Polling · …". */
     val offline: Boolean = false,
     val syncing: Boolean = false,
     val diagnostics: SettingsDiagnosticsState = SettingsDiagnosticsState(),

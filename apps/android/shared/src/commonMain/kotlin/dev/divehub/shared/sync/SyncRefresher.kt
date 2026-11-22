@@ -187,8 +187,9 @@ class SyncRefresher(
         profilesAgain = false
         if (live != null) {
             liveJob = scope.launch {
-                // Non-answer drops retry on the base interval; a refusal (404/503/429) backs off so a broken or
-                // overloaded server does not get a reconnect every few seconds.
+                // Any answer that is not a timeout backs off (server refusals 404/503/429 and generic stream errors),
+                // so a broken or overloaded server does not get a reconnect every few seconds; a no-answer drop keeps
+                // the base retry, since a phone out of signal should reconnect as soon as it can.
                 var refusals = 0
                 while (isActive) {
                     var failure: Exception? = null
