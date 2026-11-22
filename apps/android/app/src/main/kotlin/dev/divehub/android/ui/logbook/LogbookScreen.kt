@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -499,6 +500,9 @@ private fun LogbookList(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.surface),
+        // The list ends in plain rows: keep the rhythm above the bottom bar (FAH-424). The empty state stays
+        // centred in the full viewport, as the offline and error states are.
+        contentPadding = if (data.total == 0) PaddingValues() else PaddingValues(bottom = Spacing.s5),
     ) {
         item(key = "header") {
             Column(Modifier.fillMaxWidth()) {

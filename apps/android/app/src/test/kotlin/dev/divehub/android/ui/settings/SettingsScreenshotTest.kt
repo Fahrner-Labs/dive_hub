@@ -1,15 +1,23 @@
 package dev.divehub.android.ui.settings
 
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipe
 import com.github.takahirom.roborazzi.captureRoboImage
 import dev.divehub.android.ui.DiveHubTheme
+import dev.divehub.android.ui.Spacing
 import dev.divehub.shared.diagnostics.DiagnosticEntry
 import dev.divehub.shared.diagnostics.DiagnosticLevel
 import java.util.TimeZone
 import org.junit.After
+import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -123,6 +131,36 @@ class SettingsScreenshotTest {
         capture("settings_debug_off_de_dark.png")
     }
 
+    @Test
+    @Config(qualifiers = "en-rUS-w320dp-h891dp-xxhdpi", fontScale = 2f)
+    fun `the last settings row keeps the section rhythm above the bottom bar`() {
+        render(darkTheme = false)
+        compose.onNodeWithText("Debug").performScrollTo()
+        compose.onNodeWithTag("settings_scroll").performTouchInput {
+            swipe(start = Offset(width / 2f, height * 0.9f), end = Offset(width / 2f, 0f), durationMillis = 200)
+        }
+        compose.waitForIdle()
+        val gap = compose.onRoot().getBoundsInRoot().bottom -
+            compose.onNodeWithTag("settings_debug_row").getBoundsInRoot().bottom
+        assertEquals(Spacing.s5.value, gap.value, 0.5f)
+        capture("settings_bottom_spacing.png")
+    }
+
+    @Test
+    @Config(qualifiers = "en-rUS-w320dp-h891dp-xxhdpi", fontScale = 2f)
+    fun `the last debug row keeps the section rhythm above the bottom bar`() {
+        renderDebug(darkTheme = false, enabled = true, previews = 10)
+        compose.onNodeWithText("Share local logs").performScrollTo()
+        compose.onNodeWithTag("settings_debug_scroll").performTouchInput {
+            swipe(start = Offset(width / 2f, height * 0.9f), end = Offset(width / 2f, 0f), durationMillis = 200)
+        }
+        compose.waitForIdle()
+        val gap = compose.onRoot().getBoundsInRoot().bottom -
+            compose.onNodeWithTag("settings_share_row").getBoundsInRoot().bottom
+        assertEquals(Spacing.s5.value, gap.value, 0.5f)
+        capture("settings_debug_bottom_spacing.png")
+    }
+
     private fun render(darkTheme: Boolean, connected: Boolean = true) {
         compose.setContent {
             DiveHubTheme(darkTheme = darkTheme) {
@@ -144,24 +182,19 @@ class SettingsScreenshotTest {
         }
     }
 
-    private fun renderDebug(darkTheme: Boolean, enabled: Boolean) {
+    private fun renderDebug(darkTheme: Boolean, enabled: Boolean, previews: Int = 2) {
         val diagnostics = SettingsDiagnosticsState(
             enabled = enabled,
-            count = 2,
-            preview = listOf(
+            count = previews,
+            preview = List(previews) { index ->
+                val error = index % 2 == 0
                 DiagnosticEntry(
                     occurredAt = "2026-11-18T12:00:00Z",
-                    level = DiagnosticLevel.ERROR,
-                    code = "http_500",
-                    message = "Server error on /api/dives",
-                ),
-                DiagnosticEntry(
-                    occurredAt = "2026-11-18T11:00:00Z",
-                    level = DiagnosticLevel.WARN,
-                    code = "offline",
-                    message = "No answer while syncing",
-                ),
-            ),
+                    level = if (error) DiagnosticLevel.ERROR else DiagnosticLevel.WARN,
+                    code = if (error) "http_500" else "offline",
+                    message = if (error) "Server error on /api/dives" else "No answer while syncing",
+                )
+            },
         )
         compose.setContent {
             DiveHubTheme(darkTheme = darkTheme) {

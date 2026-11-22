@@ -38,6 +38,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
@@ -48,6 +49,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.divehub.android.R
 import dev.divehub.android.ui.DiveHubTopBar
+import dev.divehub.android.ui.Spacing
 import dev.divehub.android.ui.formatSyncTime
 import dev.divehub.android.ui.successColor
 import java.util.Locale
@@ -115,7 +117,10 @@ fun SettingsScreen(
             Modifier
                 .padding(padding)
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState()),
+                .verticalScroll(rememberScrollState())
+                // The last row is a plain ListItem: keep the rhythm above the bottom bar (FAH-424).
+                .padding(bottom = Spacing.s5)
+                .testTag("settings_scroll"),
         ) {
             Section(R.string.settings_section_connection)
 
@@ -175,7 +180,7 @@ fun SettingsScreen(
             HorizontalDivider()
 
             ListItem(
-                modifier = Modifier.clickable(onClick = onOpenDebug),
+                modifier = Modifier.clickable(onClick = onOpenDebug).testTag("settings_debug_row"),
                 headlineContent = { Text(stringResource(R.string.settings_section_debug)) },
                 supportingContent = { Text(stringResource(R.string.settings_debug_summary)) },
                 trailingContent = {
