@@ -251,9 +251,9 @@ class LogbookScreenshotTest {
     }
 
     @Test
-    fun `the sync line says when the store was last filled`() {
+    fun `the sync line says it is polling and when the store was last filled`() {
         render(page(dives = listOf(reef), filters = emptySet()).copy(syncedAt = "2026-11-18T12:00:00Z"))
-        compose.onNodeWithText("Last synced 18 Nov 2026, 13:00.").assertIsDisplayed()
+        compose.onNodeWithText("Polling — last synced 18 Nov 2026, 13:00.").assertIsDisplayed()
         capture("logbook_synced.png")
     }
 
@@ -265,7 +265,7 @@ class LogbookScreenshotTest {
                 connected = true,
             ),
         )
-        compose.onNodeWithText("Last synced", substring = true).assertDoesNotExist()
+        compose.onNodeWithText("Polling", substring = true).assertDoesNotExist()
     }
 
     @Test

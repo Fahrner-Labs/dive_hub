@@ -59,6 +59,7 @@ class SettingsRouteTest {
             settings = SettingsRepository(FakeInstances(), DiveStore.create(driver)),
             revision = MutableStateFlow(0L),
             connectedState = MutableStateFlow(true),
+            offlineState = MutableStateFlow(false),
             refreshSync = {},
             diagnostics = diagnostics,
             io = Dispatchers.Unconfined,

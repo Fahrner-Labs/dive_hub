@@ -89,8 +89,16 @@ class SettingsScreenshotTest {
     }
 
     @Test
-    fun `settings offline shows the state and age beside the instance`() {
+    fun `settings polling shows the state and age beside the instance`() {
         render(darkTheme = false, connected = false)
+
+        compose.onNodeWithText("Polling — last synced 18 Nov 2026, 13:00.").assertIsDisplayed()
+        capture("settings_polling_en_light.png")
+    }
+
+    @Test
+    fun `settings offline shows the state and age beside the instance`() {
+        render(darkTheme = false, connected = false, offline = true)
 
         compose.onNodeWithText("Offline — last synced 18 Nov 2026, 13:00.").assertIsDisplayed()
         capture("settings_offline_en_light.png")
@@ -161,7 +169,7 @@ class SettingsScreenshotTest {
         capture("settings_debug_bottom_spacing.png")
     }
 
-    private fun render(darkTheme: Boolean, connected: Boolean = true) {
+    private fun render(darkTheme: Boolean, connected: Boolean = true, offline: Boolean = false) {
         compose.setContent {
             DiveHubTheme(darkTheme = darkTheme) {
                 SettingsScreen(
@@ -169,6 +177,7 @@ class SettingsScreenshotTest {
                         instanceUrl = "https://dive.example",
                         syncedAt = "2026-11-18T12:00:00Z",
                         connected = connected,
+                        offline = offline,
                     ),
                     email = "elena@example.com",
                     versionName = "0.1.0",

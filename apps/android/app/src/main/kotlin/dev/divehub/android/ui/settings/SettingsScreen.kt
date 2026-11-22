@@ -133,7 +133,7 @@ fun SettingsScreen(
                 supportingContent = {
                     Column {
                         state.instanceUrl?.let { Text(it) }
-                        ConnectionStatus(connected = state.connected, syncedAt = state.syncedAt)
+                        ConnectionStatus(connected = state.connected, offline = state.offline, syncedAt = state.syncedAt)
                     }
                 },
                 trailingContent = {
@@ -266,22 +266,26 @@ fun SettingsScreen(
 }
 
 /**
- * The instance row's permanent connection state (FAH-342): a green dot and "Connected" while the live stream is
- * delivering, or a muted dot and "Offline — last synced …" when it is down. Only the stream state counts; a reachable
- * network is not evidence.
+ * The instance row's permanent connection state (FAH-342, FAH-420): a green dot and "Connected" while the live
+ * stream is delivering; while it is down but polling still answers, "Polling — last synced …"; when the last sync got
+ * no answer, "Offline — last synced …". Only the stream and the sync state count; a reachable network is not evidence.
  */
 @Composable
-internal fun ConnectionStatus(connected: Boolean, syncedAt: String?, modifier: Modifier = Modifier) {
+internal fun ConnectionStatus(connected: Boolean, offline: Boolean, syncedAt: String?, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val locale = context.resources.configuration.locales[0] ?: Locale.getDefault()
     val pattern = stringResource(R.string.sync_date_pattern)
     val text = when {
         connected -> stringResource(R.string.settings_connection_connected)
-        syncedAt != null -> stringResource(
+        syncedAt == null -> stringResource(R.string.settings_connection_never)
+        offline -> stringResource(
             R.string.settings_connection_offline,
             formatSyncTime(syncedAt, locale, pattern),
         )
-        else -> stringResource(R.string.settings_connection_never)
+        else -> stringResource(
+            R.string.settings_connection_polling,
+            formatSyncTime(syncedAt, locale, pattern),
+        )
     }
     val dot = if (connected) {
         successColor()

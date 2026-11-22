@@ -1,5 +1,7 @@
 package dev.divehub.shared.sync
 
+import dev.divehub.shared.DiveHubException
+import dev.divehub.shared.ErrorCodes
 import dev.divehub.shared.NoAnswerException
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -14,6 +16,30 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 /**
+ * One reason the live stream stopped. The app turns it into a diagnostics entry (ADR 0080) so a field report names
+ * the refusal instead of only "offline": a status such as 404/503/429, or [ErrorCodes.NO_ANSWER] for a timeout.
+ */
+data class StreamFailure(val code: String, val status: Int?, val message: String)
+
+internal fun Throwable.toStreamFailure(): StreamFailure = when (this) {
+    is NoAnswerException -> StreamFailure(
+        code = ErrorCodes.NO_ANSWER,
+        status = null,
+        message = "Live stream got no answer (timeout or unreachable)",
+    )
+    is DiveHubException -> StreamFailure(
+        code = code,
+        status = status,
+        message = "Live stream refused with HTTP ${status ?: "?"} ($code)",
+    )
+    else -> StreamFailure(
+        code = "live_stream_failed",
+        status = null,
+        message = "Live stream failed: ${javaClass.simpleName}",
+    )
+}
+
+/**
  * Keeps the store fresh (ADR 0066): while the live stream is healthy it applies its hints; when it drops, the
  * foreground poll re-runs phase 1 until a reconnect resyncs. [revision] moves after every write so open screens can
  * refresh from the store, and [streamHealthy] lets the app show or suspend polling.
@@ -23,6 +49,12 @@ class SyncRefresher(
     private val live: LiveHints?,
     private val reconnectDelayMs: Long = 5_000,
     private val pollIntervalMs: Long = 60_000,
+    private val maxReconnectDelayMs: Long = 60_000,
+    /**
+     * Called once per stream-failure state change (not on every retry). The app records it in the diagnostics buffer
+     * (ADR 0080); a refusal that repeats at the same code and status is already represented by the previous entry.
+     */
+    private val onStreamFailure: (StreamFailure) -> Unit = {},
 ) {
     private val _revision = MutableStateFlow(0L)
 
@@ -61,6 +93,9 @@ class SyncRefresher(
     private var profilesAgain = false
     private var scope: CoroutineScope? = null
 
+    /** The failure already reported, so a retry loop does not fill the buffer with the same refusal (ADR 0080). */
+    private var lastStreamFailure: String? = null
+
     /**
      * One event from the stream. A connect re-runs phase 1 (hints are not replayed, so this is the resync); a Dive hint
      * re-reads its list row and detail, and a site hint that site. Unknown kinds are ignored (ADR 0076).
@@ -70,6 +105,7 @@ class SyncRefresher(
             LiveEvent.Connected -> {
                 _streamHealthy.value = true
                 _offline.value = false
+                lastStreamFailure = null
                 mark(engine.refresh())
                 profilesSoon()
             }
@@ -133,6 +169,11 @@ class SyncRefresher(
         val source = live ?: return
         try {
             source.events().collect { handle(it) }
+        } catch (error: CancellationException) {
+            throw error
+        } catch (error: Exception) {
+            recordStreamFailure(error)
+            throw error
         } finally {
             _streamHealthy.value = false
         }
@@ -146,16 +187,32 @@ class SyncRefresher(
         profilesAgain = false
         if (live != null) {
             liveJob = scope.launch {
+                // Non-answer drops retry on the base interval; a refusal (404/503/429) backs off so a broken or
+                // overloaded server does not get a reconnect every few seconds.
+                var refusals = 0
                 while (isActive) {
+                    var failure: Exception? = null
                     try {
                         runLive()
                     } catch (error: CancellationException) {
                         throw error
                     } catch (error: Exception) {
+                        failure = error
                         if (error is NoAnswerException) _offline.value = true
                         _streamHealthy.value = false
                     }
-                    delay(reconnectDelayMs)
+                    val wait = when {
+                        failure == null || failure is NoAnswerException -> {
+                            refusals = 0
+                            reconnectDelayMs
+                        }
+                        else -> {
+                            val step = backoffDelay(refusals)
+                            refusals += 1
+                            step
+                        }
+                    }
+                    delay(wait)
                 }
             }
         }
@@ -174,10 +231,28 @@ class SyncRefresher(
         }
     }
 
+    /** Report a stream failure once per state change; a repeated code and status is the state still being down. */
+    private fun recordStreamFailure(error: Throwable) {
+        val failure = error.toStreamFailure()
+        val key = "${failure.code}:${failure.status}"
+        if (key == lastStreamFailure) return
+        lastStreamFailure = key
+        onStreamFailure(failure)
+    }
+
+    private fun backoffDelay(refusals: Int): Long {
+        var delay = reconnectDelayMs
+        repeat(refusals.coerceAtMost(MAX_BACKOFF_DOUBLINGS)) {
+            delay = (delay * 2).coerceAtMost(maxReconnectDelayMs)
+        }
+        return delay
+    }
+
     fun stop() {
         running.value = false
         _offline.value = false
         _progress.value = SyncProgress.EMPTY
+        lastStreamFailure = null
         liveJob?.cancel()
         pollJob?.cancel()
         profilesJob?.cancel()
@@ -224,5 +299,10 @@ class SyncRefresher(
     private fun bump() {
         _revision.update { it + 1 }
         _progress.value = engine.progress()
+    }
+
+    private companion object {
+        /** Cap the doubling so a long refusal streak cannot overflow the delay arithmetic. */
+        const val MAX_BACKOFF_DOUBLINGS = 6
     }
 }

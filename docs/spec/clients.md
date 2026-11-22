@@ -272,9 +272,10 @@ V1 of the native client reads offline: phones lose signal where dives are, and t
   replayed (ADR 0066). Polling remains the automatic fallback. Deleted Dives arrive as tombstones (`deletedAt`),
   never a local hard delete, and the profiles phase requests each Recording's samples at the endpoint's 20,000-point
   cap so an offline replay keeps the peaks.
-- **The connection state is the live stream's, not the network's.** While the stream is delivering, the logbook and
-  dive pages stay quiet; "Last synced …" appears only when it is down (with the cached wording when the last sync got
-  no answer), and Settings always shows the state beside the instance ("Connected", or "Offline — last synced …").
+- **The connection state is the live stream's, not the network's.** There are three states. While the stream is
+  delivering, the logbook and dive pages stay quiet and Settings says "Connected". When the stream is down but polling
+  still answers (the last sync completed), they say "Polling — last synced …": syncing works, only the hints are
+  missing. When the last sync got no answer, the cached wording appears and Settings says "Offline — last synced …".
   A proxy that buffers the stream, or a server that accepts it without framing a line, reads as not connected: the
   socket opening is not evidence.
 - **Every offline calculation against synced data shows its age:** "Based on dives synced as of …" with the

@@ -29,6 +29,8 @@ data class SettingsUiState(
     val syncedAt: String? = null,
     /** The live hint stream is delivering; the instance row says "Connected". */
     val connected: Boolean = false,
+    /** The last sync attempt got no answer; the instance row says "Offline — last synced …" instead of "Polling". */
+    val offline: Boolean = false,
     val syncing: Boolean = false,
     val diagnostics: SettingsDiagnosticsState = SettingsDiagnosticsState(),
 )
@@ -56,6 +58,7 @@ class SettingsViewModel(
     private val settings: SettingsRepository,
     private val revision: StateFlow<Long>,
     private val connectedState: StateFlow<Boolean>,
+    private val offlineState: StateFlow<Boolean>,
     private val refreshSync: suspend () -> Unit,
     private val diagnostics: DiagnosticsAccess,
     private val io: CoroutineDispatcher = Dispatchers.IO,
@@ -78,6 +81,9 @@ class SettingsViewModel(
         }
         viewModelScope.launch {
             connectedState.collect { connected -> _state.update { it.copy(connected = connected) } }
+        }
+        viewModelScope.launch {
+            offlineState.collect { offline -> _state.update { it.copy(offline = offline) } }
         }
     }
 
@@ -180,6 +186,7 @@ class SettingsViewModel(
                     settings = container.settings,
                     revision = container.syncRevision,
                     connectedState = container.syncConnected,
+                    offlineState = container.syncOffline,
                     refreshSync = container::refreshNow,
                     diagnostics = container.diagnostics,
                 )
