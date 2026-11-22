@@ -21,6 +21,8 @@
 
     <string name="form_email">E-Mail</string>
     <string name="loading">Wird geladen…</string>
+    <string name="action_expanded">Ausgeklappt</string>
+    <string name="action_collapsed">Eingeklappt</string>
     <string name="password_show">Anzeigen: %1$s</string>
     <string name="password_show_short">Anzeigen</string>
     <string name="password_hide_short">Verbergen</string>
@@ -62,7 +64,7 @@
     <string name="dive_no_water_type">Keine</string>
     <string name="dive_water_from_site">Kommt vom Tauchplatz</string>
     <string name="dive_water_unknown">Für diesen Tauchplatz nicht bekannt</string>
-    <string name="dive_choose_site_for_water">Wähle einen Tauchplatz, dann übernimmt der Tauchgang seine Wasserart.</string>
+    <string name="dive_choose_site_for_water">Die Wasserart kommt vom Tauchplatz. Wähle einen Tauchplatz, um sie festzulegen.</string>
     <string name="dive_water_mismatch">Dein Computer war auf %1$s eingestellt; dieser Platz ist %2$s.</string>
     <string name="dive_water_reads_shallow">Die Tiefen lesen sich etwa %1$s %% zu flach.</string>
     <string name="dive_water_reads_deep">Die Tiefen lesen sich etwa %1$s %% zu tief.</string>
@@ -87,7 +89,7 @@
 
     <string name="dive_recordings">Aufzeichnungen</string>
     <string name="dive_recording_n">Aufzeichnung %1$d</string>
-    <string name="dive_primary">primär</string>
+    <string name="dive_primary">Primär</string>
     <string name="dive_computer_water">Wassereinstellung am Computer</string>
     <string name="dive_no_recording">Dieser Tauchgang hat keine Aufzeichnung.</string>
     <string name="dive_no_recording_from">Noch keine Aufzeichnung: Dieser Tauchgang kommt aus deinem %1$s-Logbuch und wurde von Hand eingetragen.</string>
@@ -139,12 +141,10 @@
     <string name="dive_cylinder_pressures_used">%1$s → %2$s (%3$s verbraucht)</string>
     <string name="dive_cylinder_pressures_unknown">Drücke nicht bekannt</string>
     <string name="dive_cylinder_from_pod">von einem Tank-Pod</string>
-    <string name="dive_sac_litres">AMV %1$s l/min</string>
-    <string name="dive_sac_bar">AMV %1$s/min</string>
-    <string name="dive_sac_missing">AMV nicht bekannt</string>
-    <string name="dive_sac_missing_too_short">Kein AMV: der Tauchgang ist kürzer als 15 Minuten.</string>
-    <string name="dive_sac_missing_no_average_depth">Kein AMV: dem Tauchgang fehlt die Durchschnittstiefe.</string>
-    <string name="dive_sac_missing_cylinder_incomplete">Kein AMV: eine Flasche braucht ihre Größe und beide Drücke.</string>
+    <string name="dive_sac_missing">Nicht bekannt</string>
+    <string name="dive_sac_missing_too_short">Der Tauchgang ist kürzer als 15 Minuten.</string>
+    <string name="dive_sac_missing_no_average_depth">Dem Tauchgang fehlt die Durchschnittstiefe.</string>
+    <string name="dive_sac_missing_cylinder_incomplete">Eine Flasche braucht ihre Größe und beide Drücke.</string>
 
     <string name="dive_weighting">Beschwerung</string>
     <string name="dive_suit">Anzug</string>
@@ -169,11 +169,17 @@
     <string name="dive_position_east">%1$s° O</string>
     <string name="dive_position_west">%1$s° W</string>
 
-    <string name="dive_offline">Keine Verbindung. Prüfe deine Verbindung und versuche es erneut.</string>
+    <string name="dive_offline">Prüfe deine Verbindung und versuche es erneut.</string>
     <string name="dive_offline_cached">Keine Verbindung. Dieser Tauchgang ist synchronisiert bis %1$s.</string>
     <string name="dive_profile_pending">Das Tiefenprofil wird noch synchronisiert; es erscheint, sobald die Synchronisierung fertig ist.</string>
     <string name="dive_retry">Erneut versuchen</string>
+    <string name="dive_offline_title">Keine Verbindung</string>
+    <string name="dive_error_title">Etwas ist schiefgelaufen</string>
+    <string name="dive_not_found_title">Tauchgang nicht gefunden</string>
     <string name="dive_error_not_found">Dieser Tauchgang existiert nicht oder gehört dir nicht.</string>
+    <string name="dive_sac">AMV</string>
+    <string name="dive_sac_litres_value">%1$s l/min</string>
+    <string name="dive_sac_bar_value">%1$s/min</string>
 
     <string name="sync_last">Zuletzt synchronisiert: %1$s.</string>
     <string name="sync_date_pattern">d. MMM yyyy, HH:mm</string>

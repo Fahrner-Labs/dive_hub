@@ -83,3 +83,10 @@ actions. They are icon-only, as the platform's top-app-bar convention, each with
 "Back", the chevrons "Previous dive" / "Next dive", saying "(unavailable)" and disabled at the ends of the list. The web
 client keeps its icons beside text; this exception is the Android top bar only. The swipe's spring-back at the ends is
 the gesture's end-stop feedback, not a page-change transition.
+
+## Amendment (2026-11-21): large-text layout in the Android dive page
+At 150 % font scale and above, the Android dive page gives text the full width instead of keeping a two-column
+geometry: the top app bar's title moves to its own row under the navigation icons, left-aligned to the gutter, and a
+`FactRow` puts its value under its label, start-aligned. Both keep their normal type styles; the text grows and never
+breaks inside a word. Below 150 % the Dive title stays centred between the icons and facts keep their label/value
+columns. This is a layout rule only: the motion and icon decisions above still stand.

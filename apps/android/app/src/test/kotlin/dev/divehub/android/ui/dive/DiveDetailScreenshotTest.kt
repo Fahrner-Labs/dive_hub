@@ -1,14 +1,18 @@
 package dev.divehub.android.ui.dive
 
+import android.provider.Settings
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.hasTestTag
@@ -25,6 +29,7 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.swipe
+import androidx.compose.ui.unit.Density
 import com.github.takahirom.roborazzi.captureRoboImage
 import dev.divehub.android.ui.DiveHubTheme
 import dev.divehub.api.models.DiveView
@@ -50,6 +55,7 @@ import dev.divehub.api.models.NeighboursViewNext
 import dev.divehub.api.models.NeighboursViewPrevious
 import dev.divehub.api.models.RecordingSamplesView
 import dev.divehub.api.models.RecordingSamplesViewSeriesItem
+import dev.divehub.shared.ErrorCodes
 import dev.divehub.shared.logbook.ProviderDirectory
 import kotlinx.serialization.json.JsonPrimitive
 import java.util.TimeZone
@@ -61,6 +67,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
@@ -82,11 +89,22 @@ class DiveDetailScreenshotTest {
     fun pinZone() {
         previousZone = TimeZone.getDefault()
         TimeZone.setDefault(TimeZone.getTimeZone("Europe/Berlin"))
+        // A still skeleton: the pulse is ADR 0064 motion, and a moving bar is not a stable golden.
+        Settings.Global.putFloat(
+            RuntimeEnvironment.getApplication().contentResolver,
+            Settings.Global.ANIMATOR_DURATION_SCALE,
+            0f,
+        )
     }
 
     @After
     fun restoreZone() {
         TimeZone.setDefault(previousZone)
+        Settings.Global.putFloat(
+            RuntimeEnvironment.getApplication().contentResolver,
+            Settings.Global.ANIMATOR_DURATION_SCALE,
+            1f,
+        )
     }
 
     @Test
@@ -106,7 +124,7 @@ class DiveDetailScreenshotTest {
     @Test
     fun `the time zone note says where the offset came from`() {
         render(state(dive = dive(source = "position")))
-        compose.onNodeWithText("Time zone from where the dive was").assertIsDisplayed()
+        compose.onNodeWithText("Time zone from the dive’s position").assertIsDisplayed()
         capture("dive_time_zone_note.png")
     }
 
@@ -123,6 +141,9 @@ class DiveDetailScreenshotTest {
         ).assertIsDisplayed()
         compose.onNodeWithText(
             "When you import the dive computer’s file, its recording is added, and its values replace these.",
+        ).assertIsDisplayed()
+        compose.onNodeWithText(
+            "The water type comes from the dive site. Choose a site to set it.",
         ).assertIsDisplayed()
         capture("dive_no_recording.png")
     }
@@ -481,8 +502,43 @@ class DiveDetailScreenshotTest {
     @Test
     fun `offline before the first sync is an empty state, not a stale dive`() {
         render(DiveDetailUiState(loading = false, offline = true))
-        compose.onNodeWithText("No connection. Check your connection and try again.").assertIsDisplayed()
+        compose.onNodeWithText("No connection").assertIsDisplayed()
+        compose.onNodeWithText("Check your connection and try again.").assertIsDisplayed()
         capture("dive_offline_empty.png")
+    }
+
+    @Test
+    fun `a server error says what happened and offers a retry`() {
+        render(DiveDetailUiState(loading = false, error = ErrorCodes.SERVER_ERROR))
+        compose.onNodeWithText("Something went wrong").assertIsDisplayed()
+        compose.onNodeWithText("The instance had a problem. Try again later.").assertIsDisplayed()
+        capture("dive_error.png")
+    }
+
+    @Test
+    fun `a missing dive says it is not there`() {
+        render(DiveDetailUiState(loading = false, error = "not_found"))
+        compose.onNodeWithText("Dive not found").assertIsDisplayed()
+        compose.onNodeWithText("This dive doesn’t exist or isn’t yours.").assertIsDisplayed()
+    }
+
+    @Test
+    fun `the first load is the page's skeleton, not a spinner`() {
+        render(DiveDetailUiState(loading = true))
+        compose.onNodeWithContentDescription("Loading…").assertExists()
+        compose.mainClock.advanceTimeBy(250)
+        capture("dive_loading.png")
+    }
+
+    @Test
+    fun `the page skeleton waits 150 ms so a fast load does not flash`() {
+        compose.mainClock.autoAdvance = false
+        render(DiveDetailUiState(loading = true))
+        compose.onNodeWithTag("dive_skeleton_bars").assertDoesNotExist()
+        compose.mainClock.advanceTimeBy(149)
+        compose.onNodeWithTag("dive_skeleton_bars").assertDoesNotExist()
+        compose.mainClock.advanceTimeBy(2)
+        compose.onNodeWithTag("dive_skeleton_bars").assertExists()
     }
 
     @Test
@@ -499,6 +555,7 @@ class DiveDetailScreenshotTest {
         compose.onNodeWithText("Dive 42").assertIsDisplayed()
         compose.onNodeWithTag("dive_scroll").performScrollToNode(hasText("The instance had a problem. Try again later."))
         compose.onNodeWithText("The instance had a problem. Try again later.").assertIsDisplayed()
+        compose.onNodeWithText("Try again").assertIsDisplayed()
         capture("dive_profile_failed.png")
     }
 
@@ -535,8 +592,8 @@ class DiveDetailScreenshotTest {
         list.performScrollToNode(hasText("Cylinder 1"))
         compose.onNodeWithText("12 L · Steel · 232 bar working pressure · Air").assertIsDisplayed()
         compose.onNodeWithText("200 bar → 50 bar (150 bar used)").assertIsDisplayed()
-        compose.onNodeWithText("SAC 16.5 L/min").assertIsDisplayed()
-        compose.onNodeWithText("SAC 11.0 bar/min").assertIsDisplayed()
+        compose.onNodeWithText("16.5 L/min").assertIsDisplayed()
+        compose.onNodeWithText("11.0 bar/min").assertIsDisplayed()
         list.performScrollToNode(hasText("Weighting"))
         compose.onNodeWithText("Wetsuit, 5 mm, with hood").assertIsDisplayed()
         compose.onNodeWithText("4.0 kg on a belt\n1.0 kg trim\nTotal 5.0 kg").assertIsDisplayed()
@@ -568,8 +625,186 @@ class DiveDetailScreenshotTest {
             ),
             units = "imperial",
         )
-        compose.onNodeWithTag("dive_scroll").performScrollToNode(hasText("SAC 160 psi/min"))
-        compose.onNodeWithText("SAC 160 psi/min").assertIsDisplayed()
+        compose.onNodeWithTag("dive_scroll").performScrollToNode(hasText("160 psi/min"))
+        compose.onNodeWithText("160 psi/min").assertIsDisplayed()
+    }
+
+    @Test
+    fun `a too short dive says why there is no SAC without repeating the label`() {
+        render(
+            state(
+                dive = dive(
+                    cylinders = listOf(
+                        DiveViewCylindersItem(
+                            volumeL = 12.0,
+                            workingPressureBar = 232.0,
+                            material = "steel",
+                            gas = DiveViewCylindersItemGas(o2 = 21.0, he = 0.0),
+                            startPressureBar = 200.0,
+                            endPressureBar = 50.0,
+                            fromPod = false,
+                            series = null,
+                        ),
+                    ),
+                    durationSeconds = 600.0,
+                    sacMissing = "too_short",
+                ),
+            ),
+        )
+        compose.onNodeWithTag("dive_scroll").performScrollToNode(hasText("The dive is shorter than 15 minutes."))
+        compose.onNodeWithText("SAC").assertTextEquals("SAC", "The dive is shorter than 15 minutes.")
+        compose.onNodeWithText("The dive is shorter than 15 minutes.").assertIsDisplayed()
+        capture("dive_sac_missing.png")
+    }
+
+    @Test
+    @Config(qualifiers = "en-rUS-w411dp-h891dp-night-xxhdpi")
+    fun `the dive page in the dark scheme`() {
+        render(
+            state(dive = dive(notes = "Drifted along the wall and met a turtle.")),
+            darkTheme = true,
+        )
+        compose.onNodeWithText("Dive 42").assertIsDisplayed()
+        capture("dive_dark.png")
+        compose.onNodeWithTag("dive_scroll").performScrollToNode(hasTestTag("dive_profile_chart"))
+        capture("dive_profile_dark.png")
+    }
+
+    @Test
+    @Config(qualifiers = "en-rUS-w320dp-h891dp-xxhdpi")
+    fun `the dive page at 320 dp and 200 percent`() {
+        render(
+            state(
+                dive = dive(
+                    waterMismatch = DiveViewWaterMismatch(computer = "salt", site = "fresh", depthPercent = -2.0),
+                ),
+            ),
+            fontScale = 2f,
+        )
+        compose.onNodeWithText("Dive 42").assertIsDisplayed()
+        capture("dive_narrow_2x.png")
+        compose.onNodeWithTag("dive_scroll").performScrollToNode(hasText("Its depths read about 2 % shallow."))
+        capture("dive_narrow_2x_water.png")
+        compose.onNodeWithTag("dive_scroll").performScrollToNode(hasTestTag("dive_profile_chart"))
+        capture("dive_narrow_2x_profile.png")
+    }
+
+    @Test
+    @Config(qualifiers = "de-rDE-w320dp-h891dp-xxhdpi", fontScale = 2f)
+    fun `the german dive page at 320 dp and 200 percent with crowded data`() {
+        render(
+            state(
+                dive = dive(
+                    notes = "Entlang der Steilwand gedriftet und eine Schildkröte getroffen.",
+                    participants = listOf(
+                        DiveViewParticipantsItem("diver-2", "Anastasia von Hohenberg", "buddy"),
+                        DiveViewParticipantsItem("diver-3", "Bo Chen", "guide"),
+                    ),
+                ),
+            ),
+            fontScale = 2f,
+        )
+        compose.onNodeWithText("Tauchgang 42").assertIsDisplayed()
+        capture("dive_de_narrow_2x.png")
+        compose.onNodeWithTag("dive_scroll").performScrollToNode(hasText("Aufzeichnungen"))
+        capture("dive_de_narrow_2x_recordings.png")
+        compose.onNodeWithTag("dive_scroll").performScrollToNode(hasText("Anastasia von Hohenberg", substring = true))
+        compose.onNodeWithText("Anastasia von Hohenberg", substring = true).assertIsDisplayed()
+        capture("dive_de_narrow_2x_participants.png")
+    }
+
+    @Test
+    @Config(qualifiers = "en-rUS-w320dp-h891dp-xxhdpi")
+    fun `the profile table is readable at 320 dp and 200 percent`() {
+        render(state(dive = dive()), fontScale = 2f)
+        compose.onNodeWithTag("dive_scroll").performScrollToNode(hasText("Profile as a table"))
+        compose.onNodeWithText("Profile as a table").performClick()
+        compose.onNodeWithTag("dive_profile_table").assertExists()
+        compose.onNodeWithTag("dive_scroll").performTouchInput {
+            swipe(start = Offset(width / 2f, height * 0.8f), end = Offset(width / 2f, height * 0.2f), durationMillis = 200)
+        }
+        capture("dive_table_narrow_2x.png")
+    }
+
+    @Test
+    @Config(qualifiers = "de-rDE-w320dp-h891dp-xxhdpi")
+    fun `the german profile table is readable at 320 dp and 200 percent`() {
+        render(state(dive = dive()), fontScale = 2f)
+        compose.onNodeWithTag("dive_scroll").performScrollToNode(hasText("Profil als Tabelle"))
+        compose.onNodeWithText("Profil als Tabelle").performClick()
+        compose.onNodeWithTag("dive_profile_table").assertExists()
+        compose.onNodeWithTag("dive_scroll").performTouchInput {
+            swipe(start = Offset(width / 2f, height * 0.8f), end = Offset(width / 2f, height * 0.2f), durationMillis = 200)
+        }
+        capture("dive_table_de_narrow_2x.png")
+    }
+
+    @Test
+    @Config(qualifiers = "en-rUS-w320dp-h891dp-night-xxhdpi")
+    fun `the dark dive page at 320 dp and 200 percent`() {
+        render(
+            state(dive = dive(notes = "Drifted along the wall and met a turtle.")),
+            darkTheme = true,
+            fontScale = 2f,
+        )
+        capture("dive_dark_narrow_2x.png")
+        compose.onNodeWithTag("dive_scroll").performScrollToNode(hasTestTag("dive_profile_chart"))
+        capture("dive_dark_narrow_2x_profile.png")
+    }
+
+    @Test
+    @Config(qualifiers = "en-rUS-w360dp-h891dp-xxhdpi")
+    fun `the dive page at 360 dp`() {
+        render(state(dive = dive()))
+        capture("dive_360.png")
+    }
+
+    @Test
+    @Config(qualifiers = "en-rUS-w390dp-h891dp-xxhdpi")
+    fun `the dive page at 390 dp`() {
+        render(state(dive = dive()))
+        capture("dive_390.png")
+    }
+
+    @Test
+    @Config(qualifiers = "en-rUS-w320dp-h891dp-xxhdpi")
+    fun `the offline empty state at 320 dp and 200 percent`() {
+        render(DiveDetailUiState(loading = false, offline = true), fontScale = 2f)
+        compose.onNodeWithText("No connection").assertIsDisplayed()
+        capture("dive_offline_narrow_2x.png")
+    }
+
+    @Test
+    @Config(qualifiers = "en-rUS-w320dp-h891dp-xxhdpi")
+    fun `the error empty state at 320 dp and 200 percent`() {
+        render(DiveDetailUiState(loading = false, error = ErrorCodes.SERVER_ERROR), fontScale = 2f)
+        compose.onNodeWithText("Something went wrong").assertIsDisplayed()
+        capture("dive_error_narrow_2x.png")
+    }
+
+    @Test
+    @Config(qualifiers = "en-rUS-w411dp-h891dp-night-xxhdpi")
+    fun `the first load in the dark`() {
+        render(DiveDetailUiState(loading = true), darkTheme = true)
+        compose.onNodeWithContentDescription("Loading…").assertExists()
+        compose.mainClock.advanceTimeBy(250)
+        capture("dive_loading_dark.png")
+    }
+
+    @Test
+    @Config(qualifiers = "en-rUS-w320dp-h891dp-xxhdpi")
+    fun `the first load at 320 dp and 200 percent`() {
+        render(DiveDetailUiState(loading = true), fontScale = 2f)
+        compose.onNodeWithContentDescription("Loading…").assertExists()
+        compose.mainClock.advanceTimeBy(250)
+        capture("dive_loading_narrow_2x.png")
+    }
+
+    @Test
+    fun `the primary recording is marked`() {
+        render(state(dive = dive()))
+        compose.onNodeWithTag("dive_scroll").performScrollToNode(hasText("Primary"))
+        compose.onNodeWithText("Primary").assertIsDisplayed()
     }
 
     private fun render(
@@ -577,16 +812,23 @@ class DiveDetailScreenshotTest {
         units: String = "metric",
         onBack: () -> Unit = {},
         onOpenDive: (String) -> Unit = {},
+        darkTheme: Boolean = false,
+        fontScale: Float? = null,
     ) {
         compose.setContent {
-            DiveHubTheme(darkTheme = false) {
-                DiveDetailScreen(
-                    state = state,
-                    units = units,
-                    onBack = onBack,
-                    onRetry = {},
-                    onOpenDive = onOpenDive,
-                )
+            DiveHubTheme(darkTheme = darkTheme) {
+                val density = LocalDensity.current
+                CompositionLocalProvider(
+                    LocalDensity provides Density(density.density, fontScale ?: density.fontScale),
+                ) {
+                    DiveDetailScreen(
+                        state = state,
+                        units = units,
+                        onBack = onBack,
+                        onRetry = {},
+                        onOpenDive = onOpenDive,
+                    )
+                }
             }
         }
     }
@@ -632,13 +874,19 @@ class DiveDetailScreenshotTest {
         waterType: String? = "salt",
         waterMismatch: DiveViewWaterMismatch? = null,
         fromRecording: DiveViewFromRecording? = fromRecording(),
+        durationSeconds: Double = 3_000.0,
         notes: String? = null,
         cylinders: List<DiveViewCylindersItem> = emptyList(),
         sac: DiveViewSac? = null,
+        sacMissing: String? = null,
         suit: DiveViewSuit? = null,
         lead: List<DiveViewLeadItem> = emptyList(),
         leadTotalKg: Double? = null,
         weightingFeedback: DiveViewWeightingFeedback? = null,
+        participants: List<DiveViewParticipantsItem> = listOf(
+            DiveViewParticipantsItem("diver-2", "Ada Byron", "buddy"),
+            DiveViewParticipantsItem("diver-3", "Bo Chen", "guide"),
+        ),
     ) = DiveView(
         id = "d1",
         diverId = "diver",
@@ -646,7 +894,7 @@ class DiveDetailScreenshotTest {
         values = DiveViewValues(
             number = number,
             startsAt = DiveViewValuesStartsAt("2026-04-02T09:00:00Z", 7200),
-            durationSeconds = 3_000.0,
+            durationSeconds = durationSeconds,
             maxDepthM = 24.3,
             avgDepthM = 12.0,
             waterTemperatureC = 18.0,
@@ -667,11 +915,8 @@ class DiveDetailScreenshotTest {
         weightingFeedback = weightingFeedback,
         suit = suit,
         sac = sac,
-        sacMissing = null,
-        participants = listOf(
-            DiveViewParticipantsItem("diver-2", "Ada Byron", "buddy"),
-            DiveViewParticipantsItem("diver-3", "Bo Chen", "guide"),
-        ),
+        sacMissing = sacMissing,
+        participants = participants,
         verificationCodes = emptyList(),
     )
 

@@ -100,6 +100,11 @@ Rules:
 - Muted is a colour, not a size. A lead sentence stays at `body`; `meta` is for secondary text only.
 - Use `sp` for text. Support font scale up to 200% without clipping: a row grows, it does not truncate a label to
   fit.
+- **At 150 % and above, text takes the full width instead of keeping a two-column geometry.** A top app bar title
+  stacks under its icons, left-aligned to the gutter; a `FactRow` puts its value under its label, start-aligned.
+  Below 150 % the Dive title stays centred and facts keep their label/value columns.
+  The run of text grows instead of breaking inside a word ([ADR 0018](../decisions/0018-icons-and-motion.md),
+  2026-11-21 amendment).
 
 ## Shape and surfaces
 
@@ -207,7 +212,7 @@ heading or empty state. The table maps each one to the web component it translat
 | Android component | Web counterpart | Rules |
 |---|---|---|
 | `Section` | `Panel` | A titled section of the sheet: heading, optional action, content. A hairline with `s5` above separates it from the section before. No card, outline or elevation. `attention` paints it with `accent-soft` for something waiting for the User; a single form uses the same section with a narrow content width. |
-| `FactRow` | facts in `PageHeader`, table rows | A label–value line: label in `label` and muted, value in `body` and end-aligned. An edited mark and a note sit under the value in `meta`. Vertical padding `s3`. |
+| `FactRow` | facts in `PageHeader`, table rows | A label–value line: label in `label` and muted, value in `body` and end-aligned. An edited mark and a note sit under the value in `meta`. Vertical padding `s3`. At 150 % and above the value starts under the label, so neither column has to break inside a word. |
 | `DiveRow` | `DiveList` | The logbook's row: title in `bodyStrong`, aligned depth, duration and facts, participant avatars. The whole row is the target; month headings sit above the rows. |
 | `EmptyState` | the empty and not-found rule | Says why it is empty and offers the way on. No dead end. The action is a `Button` or a quiet `TextButton`. |
 | `Button` | `Button` | `primary` is ink; `secondary` is tonal with a control border; `quiet` is text-like; `danger` confirms a destructive action. A 48 dp target; `small` may look 40 dp but keeps the 48 dp target. One primary per section. No Material pill. |
@@ -223,7 +228,7 @@ heading or empty state. The table maps each one to the web component it translat
 | `Notice` | `Notice` | What just happened: info, success or danger, announced once. One line and an action. |
 | `Dialog` | `Dialog`, `ConfirmDialog` | `Radius.sheet`, a scrim, focus kept inside, a close button with a name. A destructive action asks first and says what will happen. |
 | `BottomSheet` | `ActionMenu` on a phone | Secondary actions in a sheet: 16 dp top corners, 48 dp rows, a hairline, a drag handle. The panel keeps only its main action. The logbook's filter panel is the other use: a heading with wrapped `FilterChip`s, padded `s5`, scrolling when the content is taller than the sheet, with no rows or hairline. |
-| `TopAppBar` | the web shell's top bar | Frame tone, flat, no shadow. Title in `section` (20 sp); a screen without a top bar uses `title` (28 sp). Navigation icons on the start; the main action does not live here. The Dive page centres its title between the back arrow and the neighbour chevrons (ADR 0018, 2026-11-20 amendment). |
+| `TopAppBar` | the web shell's top bar | Frame tone, flat, no shadow. Title in `section` (20 sp); a screen without a top bar uses `title` (28 sp). Navigation icons on the start; the main action does not live here. The Dive page centres its title between the back arrow and the neighbour chevrons (ADR 0018, 2026-11-20 amendment); at 150 % and above that title stacks under the icons, left-aligned to the gutter (ADR 0018, 2026-11-21 amendment). |
 | `BottomBar` | the web shell's bottom bar | The signed-in top-level places (Logbook, Tools, Settings today), frame tone, flat, labels always visible. |
 | `Skeleton` | `Skeleton` | Flat bars in the final layout, shown after 150 ms. No "Loading…". A hidden label and a busy state for TalkBack; content fades in over the bars. |
 | `ProfileChart` | the depth profile | The one bold element: depth ramp, ascent colours, a text summary and a "profile as a table" view. Scrubbable, with the scrub readout as text. |
