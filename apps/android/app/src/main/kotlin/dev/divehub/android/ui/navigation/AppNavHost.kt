@@ -146,7 +146,9 @@ internal fun AppNavHost(
                             onPage = { page ->
                                 when {
                                     page == route.page -> Unit
-                                    page == ToolPage.Gas -> navController.popBackStack()
+                                    page == ToolPage.Index -> {
+                                        navController.popBackStack(ToolsRoute(), inclusive = false)
+                                    }
                                     else -> navController.navigate(ToolsRoute(page))
                                 }
                             },

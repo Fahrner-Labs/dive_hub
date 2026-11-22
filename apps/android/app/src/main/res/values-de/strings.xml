@@ -243,8 +243,11 @@
     </plurals>
 
     <string name="tools_title">Werkzeuge</string>
+    <string name="tools_gas_numbers_summary">MOD, bestes Gemisch und Grundzeit.</string>
+    <string name="tools_plan_summary">Plane Gas für jede Ebene und Taucher.</string>
+    <string name="tools_lead_summary">Schätze das Blei, das du brauchst.</string>
+    <string name="tools_loadings_summary">Belastung deiner letzten Tauchgänge.</string>
     <string name="tools_notice">Eine Schätzung, kein Rat: Tauchcomputer und Ausbildung entscheiden. Kein Modell garantiert Sicherheit.</string>
-    <string name="tools_more_tools">Weitere Werkzeuge</string>
     <string name="tools_estimate_short">Eine Schätzung, kein Rat.</string>
     <string name="tools_empty_store">Auf diesem Gerät sind noch keine Tauchgänge synchronisiert. Die Zahlen nutzen nur deine Eingaben; dein Logbuch wird synchronisiert, sobald du online bist.</string>
 
@@ -279,6 +282,7 @@
 
     <string name="tools_gas_numbers">Gaszahlen</string>
     <string name="tools_gas_empty">Gib den Sauerstoff des Gemischs ein, um die Grenzen zu sehen.</string>
+    <string name="tools_gas_mix_title">Das Gemisch</string>
     <string name="tools_gas_mod_working">MOD bei %1$s bar</string>
     <string name="tools_gas_mod_contingency">MOD bei %1$s bar</string>
     <string name="tools_gas_ppo2">ppO2 bei %1$s</string>

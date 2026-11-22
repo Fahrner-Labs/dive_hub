@@ -81,3 +81,12 @@ is first-party, type-safe, gives saved-state restoration for free, and is the pa
 - Tests can exercise the shell with stand-in screens: the graph, back stack and restoration no longer require a
   session or a store. Roborazzi screenshot tests still render screens directly and stay unchanged.
 - The logged-in graph is still not a separate task/activity; the session remains the single source of truth.
+
+## Amendment 2026-11-22 — Tools tab root is an index (FAH-423)
+RC feedback ([FAH-418](https://paperclip.privatenode.de/FAH/issues/FAH-418)) rejected the gas calculator as the Tools
+tab root: it buried the other tools in a "More tools" section mid-page. The root is now `ToolPage.Index`, a plain list
+of all four tools (gas numbers, gas plan, lead estimate, current loadings), and every tool — the gas calculator
+included — is pushed above it with the shared top bar's back arrow. This supersedes D2's `tools` line and D4's
+tool-page bullet: back from a tool returns to the tools index, back from the index returns to the logbook (or exits
+from the start destination), and the bottom bar stays on Tools throughout. A bottom sheet was rejected because modal
+sheets are for transient, contextual choices, not primary destinations.

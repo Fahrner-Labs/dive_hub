@@ -3,6 +3,7 @@ package dev.divehub.android.ui.tools
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
@@ -111,54 +112,74 @@ class ToolsScreenshotTest {
     }
 
     @Test
-    fun `the root lists the sibling tools and keeps no leftover logbook nav`() {
-        var opened: ToolPage? = null
+    fun `the index lists every tool and opens it`() {
+        val opened = mutableListOf<ToolPage>()
+        compose.setContent {
+            DiveHubTheme(darkTheme = false) {
+                ToolsIndexScreen(onOpen = { opened += it })
+            }
+        }
+
+        compose.onNodeWithText("Gas numbers").assertIsDisplayed()
+        compose.onNodeWithText("MOD, best mix and bottom time.").assertIsDisplayed()
+        compose.onNodeWithText("Gas plan").assertIsDisplayed()
+        compose.onNodeWithText("Plan the gas for every level and Diver.").assertIsDisplayed()
+        compose.onNodeWithText("Lead estimate").assertIsDisplayed()
+        compose.onNodeWithText("Estimate the lead you need.").assertIsDisplayed()
+        compose.onNodeWithText("Current loadings").assertIsDisplayed()
+        compose.onNodeWithText("The loadings your recent dives leave.").assertIsDisplayed()
+        capture("tools_index.png")
+
+        compose.onNodeWithText("Gas numbers").performClick()
+        compose.onNodeWithText("Gas plan").performClick()
+        compose.onNodeWithText("Lead estimate").performClick()
+        compose.onNodeWithText("Current loadings").performClick()
+
+        assertEquals(listOf(ToolPage.Gas, ToolPage.Plan, ToolPage.Lead, ToolPage.Loadings), opened)
+    }
+
+    @Test
+    @Config(qualifiers = "de-rDE-w411dp-h891dp-xxhdpi")
+    fun `the index in German keeps every purpose on one line`() {
+        compose.setContent {
+            DiveHubTheme(darkTheme = false) {
+                ToolsIndexScreen(onOpen = {})
+            }
+        }
+
+        compose.onNodeWithText("Gaszahlen").assertIsDisplayed()
+        compose.onNodeWithText("MOD, bestes Gemisch und Grundzeit.").assertIsDisplayed()
+        compose.onNodeWithText("Plane Gas für jede Ebene und Taucher.").assertIsDisplayed()
+        compose.onNodeWithText("Schätze das Blei, das du brauchst.").assertIsDisplayed()
+        compose.onNodeWithText("Belastung deiner letzten Tauchgänge.").assertIsDisplayed()
+        capture("tools_index_de.png")
+    }
+
+    @Test
+    fun `the gas calculator is a pushed screen with a back arrow`() {
+        var backs = 0
         compose.setContent {
             DiveHubTheme(darkTheme = false) {
                 ToolsScreen(
                     state = ToolsUiState(loading = false),
                     imperial = false,
-                    onOpenPlan = { opened = ToolPage.Plan },
-                    onOpenLead = {},
-                    onOpenLoadings = {},
+                    onBack = { backs++ },
                     onChange = {},
                     onReload = {},
                 )
             }
         }
 
-        compose.onNodeWithText("Logbook").assertDoesNotExist()
-        compose.onNodeWithText("Gas plan").assertIsDisplayed().performClick()
+        compose.onNodeWithText("Gas numbers").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Back").assertIsDisplayed().performClick()
 
-        assertEquals(ToolPage.Plan, opened)
-    }
-
-    @Test
-    fun `the sibling tools stay reachable while the gas store loads`() {
-        var opened: ToolPage? = null
-        compose.setContent {
-            DiveHubTheme(darkTheme = false) {
-                ToolsScreen(
-                    state = ToolsUiState(loading = true),
-                    imperial = false,
-                    onOpenPlan = {},
-                    onOpenLead = {},
-                    onOpenLoadings = { opened = ToolPage.Loadings },
-                    onChange = {},
-                    onReload = {},
-                )
-            }
-        }
-
-        compose.onNodeWithText("Current loadings").assertIsDisplayed().performClick()
-
-        assertEquals(ToolPage.Loadings, opened)
+        assertEquals(1, backs)
     }
 
     private fun render(state: ToolsUiState) {
         compose.setContent {
             DiveHubTheme(darkTheme = false) {
-                ToolsScreen(state = state, imperial = false, onOpenPlan = {}, onOpenLead = {}, onOpenLoadings = {}, onChange = {}, onReload = {})
+                ToolsScreen(state = state, imperial = false, onBack = {}, onChange = {}, onReload = {})
             }
         }
     }

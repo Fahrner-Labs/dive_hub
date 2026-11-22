@@ -52,6 +52,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.divehub.android.R
 import dev.divehub.android.ui.DiveHubTopBar
 import dev.divehub.android.ui.Formats
+import dev.divehub.android.ui.Spacing
 import dev.divehub.android.ui.dive.DiveDetailText
 import dev.divehub.android.ui.formatSyncTime
 import dev.divehub.api.models.ApiToolsBottomTimeGet200Response
@@ -66,8 +67,8 @@ import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-/** Which tool the Tools route shows; the gas numbers are its home. */
-enum class ToolPage { Gas, Plan, Lead, Loadings }
+/** Which tool the Tools route shows; [Index] is the tab root and every tool is pushed above it. */
+enum class ToolPage { Index, Gas, Plan, Lead, Loadings }
 
 /** The tools route: opens the synced store once so a Diver's values are there before the first keystroke. */
 @Composable
@@ -88,31 +89,82 @@ fun ToolsRoute(
     LaunchedEffect(Unit) { viewModel.start(imperial) }
     LaunchedEffect(imperial) { viewModel.setUnits(imperial) }
     when (page) {
+        ToolPage.Index -> ToolsIndexScreen(onOpen = onPage)
         ToolPage.Plan -> GasPlanRoute(
             viewModel = planViewModel,
             units = units,
-            onBack = { onPage(ToolPage.Gas) },
+            onBack = { onPage(ToolPage.Index) },
         )
         ToolPage.Lead -> LeadEstimateRoute(
             viewModel = leadViewModel,
             units = units,
-            onBack = { onPage(ToolPage.Gas) },
+            onBack = { onPage(ToolPage.Index) },
             onOpenDive = onOpenDive,
         )
         ToolPage.Loadings -> LoadingsRoute(
             viewModel = loadingsViewModel,
-            onBack = { onPage(ToolPage.Gas) },
+            onBack = { onPage(ToolPage.Index) },
         )
         ToolPage.Gas -> ToolsScreen(
             state = state,
             imperial = imperial,
-            onOpenPlan = { onPage(ToolPage.Plan) },
-            onOpenLead = { onPage(ToolPage.Lead) },
-            onOpenLoadings = { onPage(ToolPage.Loadings) },
+            onBack = { onPage(ToolPage.Index) },
             onChange = viewModel::update,
             onReload = viewModel::reload,
         )
     }
+}
+
+/**
+ * The Tools tab root (FAH-423): a plain list of every tool, the same shape as the Settings list. Each row pushes its
+ * tool full-screen; the bottom bar stays on Tools and back returns here.
+ */
+@Composable
+fun ToolsIndexScreen(onOpen: (ToolPage) -> Unit) {
+    Scaffold(
+        topBar = { DiveHubTopBar(title = stringResource(R.string.tools_title)) },
+    ) { padding ->
+        Column(
+            Modifier
+                .padding(padding)
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(top = 8.dp, bottom = Spacing.s5),
+        ) {
+            ToolLink(
+                title = stringResource(R.string.tools_gas_numbers),
+                summary = stringResource(R.string.tools_gas_numbers_summary),
+                onClick = { onOpen(ToolPage.Gas) },
+            )
+            ToolLink(
+                title = stringResource(R.string.tools_plan_title),
+                summary = stringResource(R.string.tools_plan_summary),
+                onClick = { onOpen(ToolPage.Plan) },
+            )
+            ToolLink(
+                title = stringResource(R.string.tools_lead_title),
+                summary = stringResource(R.string.tools_lead_summary),
+                onClick = { onOpen(ToolPage.Lead) },
+            )
+            ToolLink(
+                title = stringResource(R.string.tools_loadings_title),
+                summary = stringResource(R.string.tools_loadings_summary),
+                onClick = { onOpen(ToolPage.Loadings) },
+            )
+        }
+    }
+}
+
+@Composable
+private fun ToolLink(title: String, summary: String, onClick: () -> Unit) {
+    ListItem(
+        headlineContent = { Text(title) },
+        supportingContent = { Text(summary) },
+        trailingContent = {
+            Icon(painterResource(R.drawable.ic_chevron_right), contentDescription = null)
+        },
+        modifier = Modifier.clickable(onClick = onClick),
+    )
 }
 
 /**
@@ -125,14 +177,12 @@ fun ToolsRoute(
 fun ToolsScreen(
     state: ToolsUiState,
     imperial: Boolean,
-    onOpenPlan: () -> Unit,
-    onOpenLead: () -> Unit,
-    onOpenLoadings: () -> Unit,
+    onBack: () -> Unit,
     onChange: ((ToolsInputs) -> ToolsInputs) -> Unit,
     onReload: () -> Unit,
 ) {
     Scaffold(
-        topBar = { DiveHubTopBar(title = stringResource(R.string.tools_title)) },
+        topBar = { DiveHubTopBar(title = stringResource(R.string.tools_gas_numbers), onBack = onBack) },
     ) { padding ->
         Column(
             Modifier
@@ -165,8 +215,6 @@ fun ToolsScreen(
                 }
             }
             Spacer(Modifier.height(16.dp))
-            ToolLinks(onOpenPlan, onOpenLead, onOpenLoadings)
-            Spacer(Modifier.height(20.dp))
             if (state.loading) {
                 Box(
                     Modifier.fillMaxWidth().padding(vertical = 48.dp),
@@ -192,30 +240,6 @@ fun ToolsScreen(
             }
         }
     }
-}
-
-/**
- * The Tools root is where a Diver moves between tools (FAH-335): the sibling tools are a list here, not text buttons
- * in every subpage's app bar.
- */
-@Composable
-private fun ToolLinks(onOpenPlan: () -> Unit, onOpenLead: () -> Unit, onOpenLoadings: () -> Unit) {
-    Heading(stringResource(R.string.tools_more_tools))
-    Spacer(Modifier.height(4.dp))
-    ToolLink(stringResource(R.string.tools_plan_title), onOpenPlan)
-    ToolLink(stringResource(R.string.tools_lead_title), onOpenLead)
-    ToolLink(stringResource(R.string.tools_loadings_title), onOpenLoadings)
-}
-
-@Composable
-private fun ToolLink(title: String, onClick: () -> Unit) {
-    ListItem(
-        headlineContent = { Text(title) },
-        trailingContent = {
-            Icon(painterResource(R.drawable.ic_chevron_right), contentDescription = null)
-        },
-        modifier = Modifier.clickable(onClick = onClick),
-    )
 }
 
 @Composable
@@ -592,7 +616,7 @@ private fun Assumptions(
 private fun GasAnswer(state: ToolsUiState, imperial: Boolean) {
     val context = LocalContext.current
     val locale = context.resources.configuration.locales[0] ?: Locale.getDefault()
-    Heading(stringResource(R.string.tools_gas_numbers))
+    Heading(stringResource(R.string.tools_gas_mix_title))
     when {
         state.gasError != null -> ErrorText(state.gasError)
         state.gas == null -> Muted(stringResource(R.string.tools_gas_empty))
