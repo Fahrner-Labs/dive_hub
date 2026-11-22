@@ -8,6 +8,7 @@ import androidx.compose.ui.test.hasProgressBarRangeInfo
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onLast
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -139,16 +140,21 @@ class SettingsScreenTest {
     }
 
     @Test
-    fun `sign out asks first and only the confirmation ends the session`() {
+    fun `sign out is an icon on the account row and asks first`() {
         render()
 
-        compose.onNodeWithText("Sign out").performClick()
+        compose.onNodeWithText("Signing out removes the session and the local data from this device.").assertDoesNotExist()
+
+        compose.onNodeWithText("Signed in as").performClick()
+        compose.onNodeWithText("Sign out?").assertDoesNotExist()
+
+        compose.onNodeWithContentDescription("Sign out").performClick()
         compose.onNodeWithText("Sign out?").assertIsDisplayed()
         compose.onNodeWithText("Cancel").performClick()
         assertEquals(0, signOuts)
 
+        compose.onNodeWithContentDescription("Sign out").performClick()
         compose.onNodeWithText("Sign out").performClick()
-        compose.onAllNodesWithText("Sign out").onLast().performClick()
 
         assertEquals(1, signOuts)
     }

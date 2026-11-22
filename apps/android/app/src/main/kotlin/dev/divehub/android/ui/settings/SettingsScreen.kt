@@ -17,6 +17,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.AlertDialog
@@ -24,6 +25,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -81,8 +83,9 @@ fun SettingsRoute(
 }
 
 /**
- * The grouped settings list (M3 list layout): connection (with the sync action), account, about and the Debug entry,
- * in that order. It draws only [state], so its EN/DE and light/dark shapes have screenshot tests (ADR 0064, ADR 0079).
+ * The grouped settings list (M3 list layout): connection (with the sync action), account (with sign out), about and
+ * the Debug entry, in that order. It draws only [state], so its EN/DE and light/dark shapes have screenshot tests
+ * (ADR 0064, ADR 0079).
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -153,11 +156,15 @@ fun SettingsScreen(
             ListItem(
                 headlineContent = { Text(stringResource(R.string.settings_signed_in_as)) },
                 supportingContent = { email?.let { Text(it) } },
-            )
-            Action(
-                title = R.string.sign_out,
-                supporting = R.string.settings_sign_out_body,
-                onClick = { confirmingSignOut = true },
+                trailingContent = {
+                    IconButton(onClick = { confirmingSignOut = true }) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.ExitToApp,
+                            contentDescription = stringResource(R.string.sign_out),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                },
             )
 
             HorizontalDivider()
