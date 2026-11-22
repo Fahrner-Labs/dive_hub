@@ -121,13 +121,13 @@ class ToolsScreenshotTest {
         }
 
         compose.onNodeWithText("Gas numbers").assertIsDisplayed()
-        compose.onNodeWithText("MOD, best mix and equivalent depths for a mix.").assertIsDisplayed()
+        compose.onNodeWithText("MOD, best mix and bottom time.").assertIsDisplayed()
         compose.onNodeWithText("Gas plan").assertIsDisplayed()
-        compose.onNodeWithText("Gas for every level and Diver.").assertIsDisplayed()
+        compose.onNodeWithText("Plan the gas for every level and Diver.").assertIsDisplayed()
         compose.onNodeWithText("Lead estimate").assertIsDisplayed()
-        compose.onNodeWithText("Where to start with your weight.").assertIsDisplayed()
+        compose.onNodeWithText("Estimate the lead you need.").assertIsDisplayed()
         compose.onNodeWithText("Current loadings").assertIsDisplayed()
-        compose.onNodeWithText("What recent dives leave in you.").assertIsDisplayed()
+        compose.onNodeWithText("The loadings your recent dives leave.").assertIsDisplayed()
         capture("tools_index.png")
 
         compose.onNodeWithText("Gas numbers").performClick()
@@ -136,6 +136,23 @@ class ToolsScreenshotTest {
         compose.onNodeWithText("Current loadings").performClick()
 
         assertEquals(listOf(ToolPage.Gas, ToolPage.Plan, ToolPage.Lead, ToolPage.Loadings), opened)
+    }
+
+    @Test
+    @Config(qualifiers = "de-rDE-w411dp-h891dp-xxhdpi")
+    fun `the index in German keeps every purpose on one line`() {
+        compose.setContent {
+            DiveHubTheme(darkTheme = false) {
+                ToolsIndexScreen(onOpen = {})
+            }
+        }
+
+        compose.onNodeWithText("Gaszahlen").assertIsDisplayed()
+        compose.onNodeWithText("MOD, bestes Gemisch und Grundzeit.").assertIsDisplayed()
+        compose.onNodeWithText("Plane Gas für jede Ebene und Taucher.").assertIsDisplayed()
+        compose.onNodeWithText("Schätze das Blei, das du brauchst.").assertIsDisplayed()
+        compose.onNodeWithText("Belastung deiner letzten Tauchgänge.").assertIsDisplayed()
+        capture("tools_index_de.png")
     }
 
     @Test
@@ -153,6 +170,7 @@ class ToolsScreenshotTest {
             }
         }
 
+        compose.onNodeWithText("Gas numbers").assertIsDisplayed()
         compose.onNodeWithContentDescription("Back").assertIsDisplayed().performClick()
 
         assertEquals(1, backs)

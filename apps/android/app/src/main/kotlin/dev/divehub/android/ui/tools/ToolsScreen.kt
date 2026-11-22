@@ -616,7 +616,7 @@ private fun Assumptions(
 private fun GasAnswer(state: ToolsUiState, imperial: Boolean) {
     val context = LocalContext.current
     val locale = context.resources.configuration.locales[0] ?: Locale.getDefault()
-    Heading(stringResource(R.string.tools_gas_numbers))
+    Heading(stringResource(R.string.tools_gas_mix_title))
     when {
         state.gasError != null -> ErrorText(state.gasError)
         state.gas == null -> Muted(stringResource(R.string.tools_gas_empty))
