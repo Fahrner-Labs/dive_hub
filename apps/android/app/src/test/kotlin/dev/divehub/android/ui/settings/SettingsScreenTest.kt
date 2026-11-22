@@ -1,6 +1,10 @@
 package dev.divehub.android.ui.settings
 
+import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.getBoundsInRoot
+import androidx.compose.ui.test.hasProgressBarRangeInfo
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onLast
@@ -11,6 +15,7 @@ import dev.divehub.android.ui.DiveHubTheme
 import java.util.TimeZone
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -98,12 +103,39 @@ class SettingsScreenTest {
     }
 
     @Test
+    fun `the sync row sits under the connection state and above the account`() {
+        render()
+
+        val connection = compose.onNodeWithText("Connection").getBoundsInRoot()
+        val instance = compose.onNodeWithText("Instance").getBoundsInRoot()
+        val sync = compose.onNodeWithText("Sync now").getBoundsInRoot()
+        val account = compose.onNodeWithText("Account").getBoundsInRoot()
+
+        assertTrue("sync row top ${sync.top} not below connection heading bottom ${connection.bottom}", sync.top >= connection.bottom)
+        assertTrue("sync row top ${sync.top} not below instance row bottom ${instance.bottom}", sync.top >= instance.bottom)
+        assertTrue("sync row top ${sync.top} not above account heading top ${account.top}", sync.top < account.top)
+    }
+
+    @Test
     fun `sync now triggers one refresh`() {
         render()
 
         compose.onNodeWithText("Sync now").performClick()
 
         assertEquals(1, syncs)
+    }
+
+    @Test
+    fun `the sync row is disabled and says it is syncing while a sync runs`() {
+        render(syncing = true)
+
+        compose.onNodeWithText("Sync now").assertIsNotEnabled()
+        compose.onNodeWithText("Syncing…").assertIsDisplayed()
+        compose.onNode(hasProgressBarRangeInfo(ProgressBarRangeInfo.Indeterminate)).assertExists()
+
+        compose.onNodeWithText("Sync now").performClick()
+
+        assertEquals(0, syncs)
     }
 
     @Test
@@ -134,6 +166,7 @@ class SettingsScreenTest {
     private fun render(
         connected: Boolean = true,
         syncedAt: String? = "2026-11-18T12:00:00Z",
+        syncing: Boolean = false,
     ) {
         compose.setContent {
             DiveHubTheme(darkTheme = false) {
@@ -142,6 +175,7 @@ class SettingsScreenTest {
                         instanceUrl = "https://dive.example",
                         syncedAt = syncedAt,
                         connected = connected,
+                        syncing = syncing,
                     ),
                     email = "elena@example.com",
                     versionName = "0.1.0",

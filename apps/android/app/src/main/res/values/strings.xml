@@ -569,7 +569,6 @@
     <string name="settings_signed_in_as">Signed in as</string>
     <string name="settings_sign_out_title">Sign out?</string>
     <string name="settings_sign_out_body">Signing out removes the session and the local data from this device.</string>
-    <string name="settings_section_sync">Sync</string>
     <string name="settings_sync_now">Sync now</string>
     <string name="settings_syncing">Syncing…</string>
     <string name="settings_section_about">About</string>

@@ -81,8 +81,8 @@ fun SettingsRoute(
 }
 
 /**
- * The grouped settings list (M3 list layout): connection, account, sync, about and the Debug entry, in that order. It
- * draws only [state], so its EN/DE and light/dark shapes have screenshot tests (ADR 0064, ADR 0079).
+ * The grouped settings list (M3 list layout): connection (with the sync action), account, about and the Debug entry,
+ * in that order. It draws only [state], so its EN/DE and light/dark shapes have screenshot tests (ADR 0064, ADR 0079).
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -136,6 +136,16 @@ fun SettingsScreen(
                     )
                 },
             )
+            ListItem(
+                modifier = Modifier.clickable(enabled = !state.syncing, onClick = onSyncNow),
+                headlineContent = { Text(stringResource(R.string.settings_sync_now)) },
+                supportingContent = {
+                    if (state.syncing) Text(stringResource(R.string.settings_syncing))
+                },
+                trailingContent = {
+                    if (state.syncing) CircularProgressIndicator(Modifier.size(20.dp))
+                },
+            )
 
             HorizontalDivider()
 
@@ -148,20 +158,6 @@ fun SettingsScreen(
                 title = R.string.sign_out,
                 supporting = R.string.settings_sign_out_body,
                 onClick = { confirmingSignOut = true },
-            )
-
-            HorizontalDivider()
-
-            Section(R.string.settings_section_sync)
-            ListItem(
-                modifier = Modifier.clickable(enabled = !state.syncing, onClick = onSyncNow),
-                headlineContent = { Text(stringResource(R.string.settings_sync_now)) },
-                supportingContent = {
-                    if (state.syncing) Text(stringResource(R.string.settings_syncing))
-                },
-                trailingContent = {
-                    if (state.syncing) CircularProgressIndicator(Modifier.size(20.dp))
-                },
             )
 
             HorizontalDivider()
