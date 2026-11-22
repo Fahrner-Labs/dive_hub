@@ -92,15 +92,16 @@ class AppNavHostTest {
     }
 
     @Test
-    fun `a tool page pushes and pops without losing the gas page underneath`() {
+    fun `a tool page pushes and pops without losing the index underneath`() {
         setContent()
         compose.runOnIdle { controller.navigate(MainRoute) }
         compose.onNodeWithText("Tools").performClick()
-        compose.runOnIdle { screens.toolsOnPage!!.invoke(ToolPage.Plan) }
-        compose.runOnIdle { assertEquals(ToolPage.Plan, controller.currentBackStackEntry?.toRoute<ToolsRoute>()?.page) }
-
+        compose.runOnIdle { assertEquals(ToolPage.Index, controller.currentBackStackEntry?.toRoute<ToolsRoute>()?.page) }
         compose.runOnIdle { screens.toolsOnPage!!.invoke(ToolPage.Gas) }
         compose.runOnIdle { assertEquals(ToolPage.Gas, controller.currentBackStackEntry?.toRoute<ToolsRoute>()?.page) }
+
+        compose.runOnIdle { screens.toolsOnPage!!.invoke(ToolPage.Index) }
+        compose.runOnIdle { assertEquals(ToolPage.Index, controller.currentBackStackEntry?.toRoute<ToolsRoute>()?.page) }
 
         compose.runOnIdle { assertTrue(controller.popBackStack()) }
         assertRoute<LogbookRoute>()
@@ -334,7 +335,7 @@ class AppNavHostTest {
     }
 
     @Test
-    fun `tapping the selected Tools tab leaves a dive for the gas page`() {
+    fun `tapping the selected Tools tab leaves a dive for the index`() {
         compose.setContent { start(destination = null) }
         compose.runOnIdle { controller.navigate(MainRoute) }
         compose.onNodeWithText("Tools").performClick()
@@ -344,7 +345,7 @@ class AppNavHostTest {
         compose.onNodeWithText("Tools").performClick()
 
         assertRoute<ToolsRoute>()
-        compose.runOnIdle { assertEquals(ToolPage.Gas, controller.currentBackStackEntry?.toRoute<ToolsRoute>()?.page) }
+        compose.runOnIdle { assertEquals(ToolPage.Index, controller.currentBackStackEntry?.toRoute<ToolsRoute>()?.page) }
     }
 
     @Test
@@ -360,7 +361,7 @@ class AppNavHostTest {
         assertRoute<ToolsRoute>()
         compose.runOnIdle {
             assertEquals(root?.id, controller.currentBackStackEntry?.id)
-            assertEquals(ToolPage.Gas, controller.currentBackStackEntry?.toRoute<ToolsRoute>()?.page)
+            assertEquals(ToolPage.Index, controller.currentBackStackEntry?.toRoute<ToolsRoute>()?.page)
         }
     }
 
@@ -378,7 +379,7 @@ class AppNavHostTest {
 
         assertRoute<ToolsRoute>()
         compose.runOnIdle {
-            assertEquals(ToolPage.Gas, controller.currentBackStackEntry?.toRoute<ToolsRoute>()?.page)
+            assertEquals(ToolPage.Index, controller.currentBackStackEntry?.toRoute<ToolsRoute>()?.page)
             assertEquals(root.id, controller.currentBackStackEntry?.id)
             assertEquals(root.id, controller.currentBackStack.value.first { it.destination.hasRoute(ToolsRoute::class) }.id)
         }
@@ -439,7 +440,7 @@ class AppNavHostTest {
         compose.onNodeWithText("Tools").performClick()
 
         assertRoute<ToolsRoute>()
-        compose.runOnIdle { assertEquals(ToolPage.Gas, controller.currentBackStackEntry?.toRoute<ToolsRoute>()?.page) }
+        compose.runOnIdle { assertEquals(ToolPage.Index, controller.currentBackStackEntry?.toRoute<ToolsRoute>()?.page) }
     }
 
     @Test
@@ -454,7 +455,7 @@ class AppNavHostTest {
         compose.onNodeWithText("Tools").performClick()
 
         assertRoute<ToolsRoute>()
-        compose.runOnIdle { assertEquals(ToolPage.Gas, controller.currentBackStackEntry?.toRoute<ToolsRoute>()?.page) }
+        compose.runOnIdle { assertEquals(ToolPage.Index, controller.currentBackStackEntry?.toRoute<ToolsRoute>()?.page) }
     }
 
     private fun setContent(diveId: String? = null, divePosition: Int? = null) {

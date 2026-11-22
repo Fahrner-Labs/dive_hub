@@ -23,7 +23,7 @@ internal data object LogbookRoute
 internal data class DiveRoute(val id: String)
 
 @Serializable
-internal data class ToolsRoute(val page: ToolPage = ToolPage.Gas)
+internal data class ToolsRoute(val page: ToolPage = ToolPage.Index)
 
 @Serializable
 internal data object SettingsRoute

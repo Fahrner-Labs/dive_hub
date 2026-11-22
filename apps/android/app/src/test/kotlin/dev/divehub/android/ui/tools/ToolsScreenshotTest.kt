@@ -3,6 +3,7 @@ package dev.divehub.android.ui.tools
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
@@ -111,54 +112,56 @@ class ToolsScreenshotTest {
     }
 
     @Test
-    fun `the root lists the sibling tools and keeps no leftover logbook nav`() {
-        var opened: ToolPage? = null
+    fun `the index lists every tool and opens it`() {
+        val opened = mutableListOf<ToolPage>()
+        compose.setContent {
+            DiveHubTheme(darkTheme = false) {
+                ToolsIndexScreen(onOpen = { opened += it })
+            }
+        }
+
+        compose.onNodeWithText("Gas numbers").assertIsDisplayed()
+        compose.onNodeWithText("MOD, best mix and equivalent depths for a mix.").assertIsDisplayed()
+        compose.onNodeWithText("Gas plan").assertIsDisplayed()
+        compose.onNodeWithText("Gas for every level and Diver.").assertIsDisplayed()
+        compose.onNodeWithText("Lead estimate").assertIsDisplayed()
+        compose.onNodeWithText("Where to start with your weight.").assertIsDisplayed()
+        compose.onNodeWithText("Current loadings").assertIsDisplayed()
+        compose.onNodeWithText("What recent dives leave in you.").assertIsDisplayed()
+        capture("tools_index.png")
+
+        compose.onNodeWithText("Gas numbers").performClick()
+        compose.onNodeWithText("Gas plan").performClick()
+        compose.onNodeWithText("Lead estimate").performClick()
+        compose.onNodeWithText("Current loadings").performClick()
+
+        assertEquals(listOf(ToolPage.Gas, ToolPage.Plan, ToolPage.Lead, ToolPage.Loadings), opened)
+    }
+
+    @Test
+    fun `the gas calculator is a pushed screen with a back arrow`() {
+        var backs = 0
         compose.setContent {
             DiveHubTheme(darkTheme = false) {
                 ToolsScreen(
                     state = ToolsUiState(loading = false),
                     imperial = false,
-                    onOpenPlan = { opened = ToolPage.Plan },
-                    onOpenLead = {},
-                    onOpenLoadings = {},
+                    onBack = { backs++ },
                     onChange = {},
                     onReload = {},
                 )
             }
         }
 
-        compose.onNodeWithText("Logbook").assertDoesNotExist()
-        compose.onNodeWithText("Gas plan").assertIsDisplayed().performClick()
+        compose.onNodeWithContentDescription("Back").assertIsDisplayed().performClick()
 
-        assertEquals(ToolPage.Plan, opened)
-    }
-
-    @Test
-    fun `the sibling tools stay reachable while the gas store loads`() {
-        var opened: ToolPage? = null
-        compose.setContent {
-            DiveHubTheme(darkTheme = false) {
-                ToolsScreen(
-                    state = ToolsUiState(loading = true),
-                    imperial = false,
-                    onOpenPlan = {},
-                    onOpenLead = {},
-                    onOpenLoadings = { opened = ToolPage.Loadings },
-                    onChange = {},
-                    onReload = {},
-                )
-            }
-        }
-
-        compose.onNodeWithText("Current loadings").assertIsDisplayed().performClick()
-
-        assertEquals(ToolPage.Loadings, opened)
+        assertEquals(1, backs)
     }
 
     private fun render(state: ToolsUiState) {
         compose.setContent {
             DiveHubTheme(darkTheme = false) {
-                ToolsScreen(state = state, imperial = false, onOpenPlan = {}, onOpenLead = {}, onOpenLoadings = {}, onChange = {}, onReload = {})
+                ToolsScreen(state = state, imperial = false, onBack = {}, onChange = {}, onReload = {})
             }
         }
     }

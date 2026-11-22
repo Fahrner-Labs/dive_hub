@@ -243,8 +243,11 @@
     </plurals>
 
     <string name="tools_title">Werkzeuge</string>
+    <string name="tools_gas_numbers_summary">MOD, bestes Gemisch und äquivalente Tiefen für ein Gemisch.</string>
+    <string name="tools_plan_summary">Gas für jede Ebene und jeden Taucher.</string>
+    <string name="tools_lead_summary">Womit du beim Gewicht startest.</string>
+    <string name="tools_loadings_summary">Was letzte Tauchgänge in dir hinterlassen.</string>
     <string name="tools_notice">Eine Schätzung, kein Rat: Tauchcomputer und Ausbildung entscheiden. Kein Modell garantiert Sicherheit.</string>
-    <string name="tools_more_tools">Weitere Werkzeuge</string>
     <string name="tools_estimate_short">Eine Schätzung, kein Rat.</string>
     <string name="tools_empty_store">Auf diesem Gerät sind noch keine Tauchgänge synchronisiert. Die Zahlen nutzen nur deine Eingaben; dein Logbuch wird synchronisiert, sobald du online bist.</string>
 
