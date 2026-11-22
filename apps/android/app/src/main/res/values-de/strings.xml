@@ -569,7 +569,6 @@
     <string name="settings_signed_in_as">Angemeldet als</string>
     <string name="settings_sign_out_title">Abmelden?</string>
     <string name="settings_sign_out_body">Beim Abmelden werden die Sitzung und die lokalen Daten von diesem Gerät entfernt.</string>
-    <string name="settings_section_sync">Synchronisierung</string>
     <string name="settings_sync_now">Jetzt synchronisieren</string>
     <string name="settings_syncing">Wird synchronisiert…</string>
     <string name="settings_section_about">Über</string>
