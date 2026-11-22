@@ -8,7 +8,9 @@ import androidx.compose.ui.test.hasProgressBarRangeInfo
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onLast
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import dev.divehub.android.ui.DiveHubTheme
@@ -139,16 +141,32 @@ class SettingsScreenTest {
     }
 
     @Test
-    fun `sign out asks first and only the confirmation ends the session`() {
+    fun `sign out is an icon on the account row and asks first`() {
         render()
 
-        compose.onNodeWithText("Sign out").performClick()
+        compose.onNodeWithText("Signing out removes the session and the local data from this device.").assertDoesNotExist()
+
+        val headline = compose.onNodeWithText("Signed in as").getBoundsInRoot()
+        val email = compose.onNodeWithText("elena@example.com").getBoundsInRoot()
+        val icon = compose.onNodeWithContentDescription("Sign out").getBoundsInRoot()
+        val screen = compose.onRoot().getBoundsInRoot()
+        val iconCentre = (icon.top + icon.bottom) / 2
+        assertTrue("sign-out icon ${icon.left} is not in the trailing quarter of the ${screen.right} screen", icon.left >= screen.right * 0.75f)
+        assertTrue(
+            "sign-out icon centre $iconCentre is outside the account row ($headline–$email)",
+            iconCentre >= headline.top && iconCentre <= email.bottom,
+        )
+
+        compose.onNodeWithText("Signed in as").performClick()
+        compose.onNodeWithText("Sign out?").assertDoesNotExist()
+
+        compose.onNodeWithContentDescription("Sign out").performClick()
         compose.onNodeWithText("Sign out?").assertIsDisplayed()
         compose.onNodeWithText("Cancel").performClick()
         assertEquals(0, signOuts)
 
+        compose.onNodeWithContentDescription("Sign out").performClick()
         compose.onNodeWithText("Sign out").performClick()
-        compose.onAllNodesWithText("Sign out").onLast().performClick()
 
         assertEquals(1, signOuts)
     }

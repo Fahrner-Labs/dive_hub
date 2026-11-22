@@ -90,3 +90,11 @@ geometry: the top app bar's title moves to its own row under the navigation icon
 `FactRow` puts its value under its label, start-aligned. Both keep their normal type styles; the text grows and never
 breaks inside a word. Below 150 % the Dive title stays centred between the icons and facts keep their label/value
 columns. This is a layout rule only: the motion and icon decisions above still stand.
+
+## Amendment (2026-11-22): icon-only sign-out in the Android settings account row
+The native Android client's settings page puts sign-out on the "Signed in as" row as a trailing icon button
+([FAH-426](/FAH/issues/FAH-426), from the 2026-11-22 RC feedback): the exit icon (`ExitToApp` from the core icon
+set), named "Sign out", tinted like the instance row's edit icon. The row itself stays not clickable; only the icon
+opens the unchanged confirm dialog that says signing out removes the session and the local data. Sign-out is rare and
+destructive, so the dialog stays; the label the icon replaces was redundant with its accessible name and that
+confirmation. This exception is the Android settings account row only, and the web client keeps its icons beside text.

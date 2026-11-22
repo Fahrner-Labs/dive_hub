@@ -1528,8 +1528,9 @@ An LLM client is an API client Dive Hub can't make follow this contract, so the 
   heading; when a form closes, back to the button that opened it. *Web:* `lib/focus.ts`.
 - **Buttons repeated per row name their row** in their accessible name ("Revoke: anna@example.com").
 - **Icons always beside text,** never icon-only controls ([ADR 0018](../decisions/0018-icons-and-motion.md)), but a
-  dialog's close button, a password field's eye and the Android dive header's back arrow and previous/next chevrons,
-  each with its full accessible name (amendments 2026-11-02 and 2026-11-20).
+  dialog's close button, a password field's eye, the Android dive header's back arrow and previous/next chevrons, and
+  the Android settings account row's sign-out, each with its full accessible name (amendments 2026-11-02,
+  2026-11-20 and 2026-11-22).
 - **A password or secret field has a button that shows it:** one name ("Show: <field label>") and its state as pressed
   or not; the field keeps its name and autofill hints so password managers fill it; sending the form hides it again.
   Never shown by default. *Web:* `ui/TextField.tsx` (`PasswordField`).
