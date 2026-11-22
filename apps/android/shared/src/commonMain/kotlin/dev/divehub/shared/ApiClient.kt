@@ -6,6 +6,7 @@ import io.ktor.client.call.body
 import io.ktor.client.engine.HttpClientEngine
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.header
+import io.ktor.client.request.prepareRequest
 import io.ktor.client.request.request
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
@@ -56,11 +57,33 @@ class ApiClient(
         send(HttpMethod.Post, path, body, authenticated, retry = true)
 
     /**
-     * Open a long-lived response without reading it (the live hint stream, ADR 0066). No retry: the caller owns
-     * reconnect timing, and a stream that fails must hand back to polling rather than block here.
+     * Open a long-lived response and consume it inside [block] (the live hint stream, ADR 0066). Ordinary responses go
+     * through Ktor's `SaveBody` plugin, which reads the whole body into memory before returning it; a live stream would
+     * therefore never surface a line. `prepareRequest(...).execute` is the supported way to stream instead. No retry:
+     * the caller owns reconnect timing, and a stream that fails must hand back to polling rather than block here.
      */
-    suspend fun stream(path: String, authenticated: Boolean = true): HttpResponse =
-        send(HttpMethod.Get, path, null, authenticated, retry = false)
+    suspend fun <T> stream(
+        path: String,
+        authenticated: Boolean = true,
+        block: suspend (HttpResponse) -> T,
+    ): T {
+        check(baseUrl.isNotEmpty()) { "the instance URL is not set" }
+        val authorization = if (authenticated) token() else null
+        return try {
+            client.prepareRequest("$baseUrl$path") {
+                method = HttpMethod.Get
+                header(HttpHeaders.UserAgent, "$ANDROID_USER_AGENT_PREFIX$versionName")
+                authorization?.let { header(HttpHeaders.Authorization, "Bearer $it") }
+            }.execute { response ->
+                if (response.status.value == 401 && authenticated) onUnauthorized()
+                block(response)
+            }
+        } catch (error: CancellationException) {
+            throw error
+        } catch (error: IOException) {
+            throw NoAnswerException(error)
+        }
+    }
 
     /**
      * Decode a response body. A body that does not decode is a [DecodeException], not a serializer exception escaping

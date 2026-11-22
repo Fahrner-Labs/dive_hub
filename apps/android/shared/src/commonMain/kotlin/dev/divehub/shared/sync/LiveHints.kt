@@ -36,25 +36,26 @@ class SseLiveHints(
     private val json: Json = Json { ignoreUnknownKeys = true; explicitNulls = false },
 ) : LiveHints {
     override fun events(): Flow<LiveEvent> = flow {
-        val response = api.stream("/api/live")
-        if (!response.status.isSuccess()) throw api.failure(response)
+        api.stream("/api/live") { response ->
+            if (!response.status.isSuccess()) throw api.failure(response)
 
-        val channel = response.bodyAsChannel()
-        var event = ""
-        var connected = false
-        while (true) {
-            val line = channel.readUTF8Line() ?: break
-            if (!connected) {
-                connected = true
-                emit(LiveEvent.Connected)
-            }
-            when {
-                line.startsWith("event:") -> event = line.substringAfter(':').trim()
-                line.startsWith("data:") -> {
-                    if (event == "hint") decode(line.substringAfter(':').trim())?.let { emit(LiveEvent.Hint(it)) }
-                    event = ""
+            val channel = response.bodyAsChannel()
+            var event = ""
+            var connected = false
+            while (true) {
+                val line = channel.readUTF8Line() ?: break
+                if (!connected) {
+                    connected = true
+                    emit(LiveEvent.Connected)
                 }
-                line.isBlank() -> event = ""
+                when {
+                    line.startsWith("event:") -> event = line.substringAfter(':').trim()
+                    line.startsWith("data:") -> {
+                        if (event == "hint") decode(line.substringAfter(':').trim())?.let { emit(LiveEvent.Hint(it)) }
+                        event = ""
+                    }
+                    line.isBlank() -> event = ""
+                }
             }
         }
     }
