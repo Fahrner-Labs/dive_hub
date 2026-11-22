@@ -1,6 +1,7 @@
 package dev.divehub.shared.sync
 
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
+import dev.divehub.shared.CachedMeStore
 import dev.divehub.shared.InstanceUrlStore
 import dev.divehub.shared.SessionRepository
 import dev.divehub.shared.TokenStore
@@ -44,6 +45,12 @@ private class FakeInstances(initial: String? = "https://dive.example") : Instanc
     }
 }
 
+private class FakeCachedMe : CachedMeStore {
+    override suspend fun load(): String? = null
+    override suspend fun save(meJson: String) = Unit
+    override suspend fun clear() = Unit
+}
+
 class SyncAuthTest {
     private val driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
     private val store: DiveStore = DiveStore.create(driver)
@@ -82,6 +89,7 @@ class SyncAuthTest {
         tokens = tokens,
         instances = FakeInstances(),
         userData = store,
+        cachedMe = FakeCachedMe(),
         versionName = "0.1.0-dev",
     )
 
@@ -121,6 +129,7 @@ class SyncAuthTest {
             tokens = tokens,
             instances = FakeInstances(),
             userData = store,
+            cachedMe = FakeCachedMe(),
             versionName = "0.1.0-dev",
         )
 

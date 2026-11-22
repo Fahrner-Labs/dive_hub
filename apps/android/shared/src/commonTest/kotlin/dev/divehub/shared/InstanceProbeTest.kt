@@ -35,6 +35,12 @@ private class ProbeCache : UserScopedStore {
     override suspend fun forget() = Unit
 }
 
+private class ProbeCachedMe : CachedMeStore {
+    override suspend fun load(): String? = null
+    override suspend fun save(meJson: String) = Unit
+    override suspend fun clear() = Unit
+}
+
 private fun probeRepository(
     handler: suspend MockRequestHandleScope.(HttpRequestData) -> HttpResponseData,
 ): SessionRepository = SessionRepository(
@@ -42,6 +48,7 @@ private fun probeRepository(
     ProbeTokens(),
     ProbeInstances(),
     ProbeCache(),
+    ProbeCachedMe(),
     versionName = "0.1.0-dev",
 )
 

@@ -290,6 +290,10 @@ V1 of the native client reads offline: phones lose signal where dives are, and t
   `residualN2` when a recent Dive's profile can be replayed; the Android client has no replay in this slice, so it
   sets `residualN2` to null, still carries `recentDiveEndedAt`, and says the limit starts from clean tissues. The
   rest of the answer is shaped like the server's, and a personalized answer says "Based on dives synced as of …".
+- **A cold start offline keeps its session.** With a stored token and a last successful `/api/me`, a start with no
+  answer (offline, unreachable) or a server error shows the remembered User and the logbook from the store; only a
+  401 ends the session. Without that remembered answer (this device never signed in online) the sign-in screen is
+  correct. *Android:* `SessionRepository` (`restore`, `CachedMeStore`).
 - **A revoked session keeps the store readable.** When the session has ended, cached data stays readable offline;
   V1 has no offline writes, so nothing is gated. While online, the client shows sign-in, and the logbook returns
   after signing in. This is the approved V1 trade-off: a lost phone's holder can read the last synced logbook

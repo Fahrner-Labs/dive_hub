@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
@@ -47,6 +48,7 @@ class SessionRepository(
     private val tokens: TokenStore,
     private val instances: InstanceUrlStore,
     private val userData: UserScopedStore,
+    private val cachedMe: CachedMeStore,
     versionName: String,
 ) {
     private val json = Json {
@@ -118,7 +120,11 @@ class SessionRepository(
     /** Whether this device holds both an instance and a session token: what a background sync needs before a request. */
     suspend fun hasSession(): Boolean = instances.load() != null && tokens.load() != null
 
-    /** A stored token is proven by GET /api/me; without one (or after a 401) the sign-in screen shows. */
+    /**
+     * A stored token is proven by GET /api/me; without one the sign-in screen shows. With one but no answer (offline,
+     * unreachable) or a server error, the last successful answer restores the session instead of declaring the User
+     * signed out (FAH-419); only a 401 ends it. Without a cached answer the sign-in screen stays correct.
+     */
     suspend fun restore(): SessionState {
         val url = instances.load()
         if (url == null) {
@@ -132,15 +138,15 @@ class SessionRepository(
         }
         return try {
             val me = me()
+            rememberMe(me)
             SessionState.SignedIn(url, me.user, me.preferences).also { _state.value = it }
         } catch (error: DiveHubException) {
             if (error.code == ErrorCodes.CLIENT_TOO_OLD) return _state.value
-            SessionState.SignedOut(url).also { _state.value = it }
-            if (error.status != 401) throw error
-            _state.value
+            // A 401 already ended the session in onUnauthorized; the token is gone and the state is SignedOut.
+            if (error.status == 401) return _state.value
+            cachedOrSignedOut(url, error)
         } catch (error: NoAnswerException) {
-            SessionState.SignedOut(url).also { _state.value = it }
-            throw error
+            cachedOrSignedOut(url, error)
         }
     }
 
@@ -152,6 +158,7 @@ class SessionRepository(
         // write the old rows back after the store is cleared (client contract §1).
         tokens.clear()
         userData.forget()
+        cachedMe.clear()
 
         val body = json.encodeToString(SignInEmailRequest(email = email, password = password))
         val response = api.post("/api/auth/sign-in/email", body, authenticated = false)
@@ -177,6 +184,7 @@ class SessionRepository(
         }
 
         instances.save(url)
+        rememberMe(me)
         return me.user.also { _state.value = SessionState.SignedIn(url, it, me.preferences) }
     }
 
@@ -217,6 +225,38 @@ class SessionRepository(
         return api.decode(response)
     }
 
+    /** Keep the last successful answer for a cold start with no network; a write failure only costs that fallback. */
+    private suspend fun rememberMe(me: ApiMeGet200Response) {
+        try {
+            cachedMe.save(json.encodeToString(me))
+        } catch (error: CancellationException) {
+            throw error
+        } catch (_: Exception) {
+            // The session is already good; only the offline cold start loses its remembered answer.
+        }
+    }
+
+    /**
+     * A failed `me` with no 401 (offline, unreachable, server down) restores the last successful answer if there is
+     * one. Without it the sign-in screen is correct, and the failure still reaches the caller as before.
+     */
+    private suspend fun cachedOrSignedOut(url: String, error: Throwable): SessionState {
+        val stored = cachedMe.load()
+        if (stored != null) {
+            try {
+                val me = json.decodeFromString<ApiMeGet200Response>(stored)
+                return SessionState.SignedIn(url, me.user, me.preferences).also { _state.value = it }
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                // A cache from another shape is no answer; drop it rather than fail the cold start again.
+                cachedMe.clear()
+            }
+        }
+        SessionState.SignedOut(url).also { _state.value = it }
+        throw error
+    }
+
     private suspend fun signInFailure(response: io.ktor.client.statement.HttpResponse): DiveHubException {
         val body = api.errorBody(response)
         if (body?.code == ErrorCodes.CLIENT_TOO_OLD) {
@@ -246,6 +286,7 @@ class SessionRepository(
     private suspend fun forgetUser() {
         tokens.clear()
         userData.forget()
+        cachedMe.clear()
         _state.value = SessionState.SignedOut(instances.load())
     }
 }

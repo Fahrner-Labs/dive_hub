@@ -1,5 +1,6 @@
 package dev.divehub.android.ui
 
+import dev.divehub.shared.CachedMeStore
 import dev.divehub.shared.ErrorCodes
 import dev.divehub.shared.InstanceProbeResult
 import dev.divehub.shared.InstanceUrlStore
@@ -40,6 +41,12 @@ private class FakeInstances(var value: String? = null) : InstanceUrlStore {
 
 private class FakeCache : UserScopedStore {
     override suspend fun forget() = Unit
+}
+
+private class FakeCachedMe : CachedMeStore {
+    override suspend fun load(): String? = null
+    override suspend fun save(meJson: String) = Unit
+    override suspend fun clear() = Unit
 }
 
 /** Onboarding asks for credentials only after the instance answers (FAH-332). */
@@ -181,6 +188,7 @@ class MainViewModelTest {
             FakeTokens(),
             instances,
             FakeCache(),
+            FakeCachedMe(),
             versionName = "0.1.0-dev",
         )
         return MainViewModel(session, startSync = {}, stopSync = {}, probeInstance = probeInstance)
