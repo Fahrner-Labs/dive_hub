@@ -705,6 +705,23 @@
         },
         {
           "dynamic": false,
+          "module": "./social/offer-routes.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/social/offer-routes.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./social/routes.js",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -1091,6 +1108,7 @@
         "apps/server/src/providers/push/push-run-routes.ts",
         "apps/server/src/sites/import/site-import-routes.ts",
         "apps/server/src/sites/routes.ts",
+        "apps/server/src/social/offer-routes.ts",
         "apps/server/src/social/routes.ts",
         "apps/server/src/support/client-diagnostics-routes.ts",
         "apps/server/src/support/support-routes.ts",
@@ -1176,6 +1194,8 @@
         "apps/server/src/providers/site-pick.ts",
         "apps/server/src/providers/waiting-push/waiting-push-service.ts",
         "apps/server/src/sites/import/site-import-service.ts",
+        "apps/server/src/social/offer-service.ts",
+        "apps/server/src/social/suggestion-changes.ts",
         "apps/server/src/social/suggestion-service.ts",
         "apps/server/src/support/client-diagnostics-service.ts",
         "apps/server/src/support/support-service.ts",
@@ -1482,6 +1502,8 @@
         "apps/server/src/sites/import/site-import-view.ts",
         "apps/server/src/sites/routes.ts",
         "apps/server/src/sites/site-view.ts",
+        "apps/server/src/social/offer-routes.ts",
+        "apps/server/src/social/offer-view.ts",
         "apps/server/src/social/routes.ts",
         "apps/server/src/social/suggestion-view.ts",
         "apps/server/src/support/client-diagnostics-routes.ts",
@@ -1719,6 +1741,7 @@
         "apps/server/src/providers/routes.ts",
         "apps/server/src/sites/import/site-import-routes.ts",
         "apps/server/src/sites/routes.ts",
+        "apps/server/src/social/offer-routes.ts",
         "apps/server/src/social/routes.ts",
         "apps/server/src/support/client-diagnostics-routes.ts",
         "apps/server/src/support/support-routes.ts",
@@ -1999,6 +2022,7 @@
         "apps/server/src/providers/site-pick.ts",
         "apps/server/src/providers/waiting-push/waiting-push-service.ts",
         "apps/server/src/sites/import/site-import-service.ts",
+        "apps/server/src/social/offer-service.ts",
         "apps/server/src/social/suggestion-changes.ts",
         "apps/server/src/social/suggestion-service.ts",
         "apps/server/src/support/client-diagnostics-service.ts",
@@ -2222,6 +2246,8 @@
         "apps/server/src/providers/site-pick.ts",
         "apps/server/src/providers/waiting-push/waiting-push-service.ts",
         "apps/server/src/sites/import/site-import-service.ts",
+        "apps/server/src/social/offer-service.ts",
+        "apps/server/src/social/suggestion-changes.ts",
         "apps/server/src/social/suggestion-service.ts",
         "apps/server/src/support/client-diagnostics-service.ts",
         "apps/server/src/users/invitation-service.ts",
@@ -2251,6 +2277,7 @@
         "apps/server/src/providers/connection-routes.ts",
         "apps/server/src/providers/dive-import/dive-import-routes.ts",
         "apps/server/src/sites/import/site-import-view.ts",
+        "apps/server/src/social/offer-view.ts",
         "apps/server/src/social/suggestion-view.ts",
         "apps/server/src/users/views.ts",
         "apps/server/src/auth/cli-config.ts"
@@ -2545,6 +2572,7 @@
         "apps/server/src/providers/push/push-run-routes.ts",
         "apps/server/src/sites/import/site-import-routes.ts",
         "apps/server/src/sites/routes.ts",
+        "apps/server/src/social/offer-routes.ts",
         "apps/server/src/social/routes.ts",
         "apps/server/src/support/client-diagnostics-routes.ts",
         "apps/server/src/support/support-routes.ts",
@@ -2664,6 +2692,7 @@
         "apps/server/src/sites/import/site-import-routes.ts",
         "apps/server/src/sites/import/site-import-view.ts",
         "apps/server/src/sites/routes.ts",
+        "apps/server/src/social/offer-routes.ts",
         "apps/server/src/social/routes.ts",
         "apps/server/src/support/client-diagnostics-routes.ts",
         "apps/server/src/support/support-routes.ts",
@@ -2739,6 +2768,8 @@
         "apps/server/src/sites/import/site-import-view.ts",
         "apps/server/src/sites/routes.ts",
         "apps/server/src/sites/site-view.ts",
+        "apps/server/src/social/offer-routes.ts",
+        "apps/server/src/social/offer-view.ts",
         "apps/server/src/social/routes.ts",
         "apps/server/src/social/suggestion-view.ts",
         "apps/server/src/support/client-diagnostics-routes.ts",
@@ -3012,6 +3043,7 @@
         "apps/server/src/providers/push/outgoing-dive.ts",
         "apps/server/src/providers/push/push-run-service.ts",
         "apps/server/src/providers/waiting-push/waiting-push-service.ts",
+        "apps/server/src/social/offer-service.ts",
         "apps/server/src/social/suggestion-service.ts",
         "apps/server/src/mcp/tool.ts"
       ],
@@ -5023,6 +5055,7 @@
         "apps/server/src/providers/dive-import/dive-import.ts",
         "apps/server/src/providers/push/site-for-send.ts",
         "apps/server/src/sites/import/site-import-service.ts",
+        "apps/server/src/social/offer-service.ts",
         "apps/server/src/social/suggestion-changes.ts",
         "apps/server/src/social/suggestion-service.ts",
         "apps/server/src/dives/routes.ts",
@@ -6819,6 +6852,7 @@
         "apps/server/src/providers/push/push-run-service.ts",
         "apps/server/src/providers/waiting-push/waiting-push-service.ts",
         "apps/server/src/sites/import/site-import-service.ts",
+        "apps/server/src/social/offer-service.ts",
         "apps/server/src/social/suggestion-service.ts"
       ],
       "orphan": false,
@@ -7451,6 +7485,23 @@
             "import"
           ],
           "resolved": "apps/server/src/sites/sources.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./social/offer-service.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/social/offer-service.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -8336,6 +8387,7 @@
         "apps/server/src/providers/dive-import/dive-changes.ts",
         "apps/server/src/providers/push/outgoing-dive.ts",
         "apps/server/src/providers/push/buddies-for-send.ts",
+        "apps/server/src/social/offer-service.ts",
         "apps/server/src/dives/routes.ts",
         "apps/server/src/mcp/read-service.ts"
       ],
@@ -8559,6 +8611,7 @@
         "apps/server/src/dives/dive-service.ts",
         "apps/server/src/dives/merging-service.ts",
         "apps/server/src/providers/dive-import/dive-changes.ts",
+        "apps/server/src/social/offer-service.ts",
         "apps/server/src/dives/dive-view-of.ts",
         "apps/server/src/dives/routes.ts"
       ],
@@ -19142,7 +19195,7 @@
       "valid": true
     },
     {
-      "source": "apps/server/src/social/suggestion-changes.ts",
+      "source": "apps/server/src/social/offer-service.ts",
       "dependencies": [
         {
           "dynamic": false,
@@ -19155,6 +19208,91 @@
             "import"
           ],
           "resolved": "apps/server/src/db/client.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../db/schema.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/db/schema.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../divers/management.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/divers/management.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../dives/dive-service.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/dives/dive-service.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../dives/dive-values.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/dives/dive-values.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../live/emit.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/live/emit.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -19182,6 +19320,106 @@
         },
         {
           "dynamic": false,
+          "module": "drizzle-orm",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "npm",
+            "import"
+          ],
+          "resolved": "apps/server/node_modules/drizzle-orm/index.cjs",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": true,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/server/src/compose.ts",
+        "apps/server/src/social/suggestion-changes.ts",
+        "apps/server/src/social/suggestion-service.ts",
+        "apps/server/src/social/offer-routes.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/server/src/social/suggestion-changes.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../db/client.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/db/client.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../db/schema.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/db/schema.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../revisions/revisions.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/revisions/revisions.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./offer-service.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/social/offer-service.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./suggestion-service.js",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -19194,6 +19432,23 @@
           "followable": true,
           "couldNotResolve": false,
           "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "drizzle-orm",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "npm",
+            "import"
+          ],
+          "resolved": "apps/server/node_modules/drizzle-orm/index.cjs",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": true,
           "circular": false,
           "valid": true
         }
@@ -19337,6 +19592,23 @@
             "import"
           ],
           "resolved": "apps/server/src/revisions/revisions.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./offer-service.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/social/offer-service.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -28286,6 +28558,213 @@
       "valid": true
     },
     {
+      "source": "apps/server/src/social/offer-routes.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../auth/auth.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/auth/auth.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../auth/fastify.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/auth/fastify.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../http/problems.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/http/problems.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../http/schemas.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/http/schemas.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./offer-service.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/social/offer-service.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./offer-view.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/social/offer-view.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@fastify/type-provider-typebox",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "npm",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/node_modules/@fastify/type-provider-typebox/dist/cjs/index.js",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": true,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "typebox",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "unknown"
+          ],
+          "resolved": "typebox",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": true,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/server/src/app.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/server/src/social/offer-view.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../db/schema.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/db/schema.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../http/schemas.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/http/schemas.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "typebox",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "unknown"
+          ],
+          "resolved": "typebox",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": true,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/server/src/social/offer-routes.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "apps/server/src/social/routes.ts",
       "dependencies": [
         {
@@ -32794,6 +33273,7 @@
         "apps/web/src/LeadHint.tsx",
         "apps/web/src/DiveGear.tsx",
         "apps/web/src/DiveHistory.tsx",
+        "apps/web/src/JointOffers.tsx",
         "apps/web/src/Participants.tsx",
         "apps/web/src/ProviderPanel.tsx",
         "apps/web/src/LinkOrAdd.tsx",
@@ -32895,6 +33375,8 @@
         "apps/web/src/Weighting.tsx",
         "apps/web/src/DiveGear.tsx",
         "apps/web/src/DiveHistory.tsx",
+        "apps/web/src/JointOffers.tsx",
+        "apps/web/src/ReviewRows.tsx",
         "apps/web/src/Participants.tsx",
         "apps/web/src/ProviderPanel.tsx",
         "apps/web/src/LinkOrAdd.tsx",
@@ -32911,7 +33393,6 @@
         "apps/web/src/ImportPanel.tsx",
         "apps/web/src/BuddySuggestions.tsx",
         "apps/web/src/DecisionTimeline.tsx",
-        "apps/web/src/ReviewRows.tsx",
         "apps/web/src/Decisions.tsx",
         "apps/web/src/GoneDives.tsx",
         "apps/web/src/LogbookChecks.tsx",
@@ -32988,6 +33469,8 @@
         "apps/web/src/Weighting.tsx",
         "apps/web/src/DiveGear.tsx",
         "apps/web/src/DiveHistory.tsx",
+        "apps/web/src/JointOffers.tsx",
+        "apps/web/src/ReviewRows.tsx",
         "apps/web/src/Participants.tsx",
         "apps/web/src/ProviderPanel.tsx",
         "apps/web/src/LinkOrAdd.tsx",
@@ -33006,7 +33489,6 @@
         "apps/web/src/ReviewPage.tsx",
         "apps/web/src/BuddySuggestions.tsx",
         "apps/web/src/DecisionTimeline.tsx",
-        "apps/web/src/ReviewRows.tsx",
         "apps/web/src/Decisions.tsx",
         "apps/web/src/GoneDives.tsx",
         "apps/web/src/LogbookChecks.tsx",
@@ -33297,6 +33779,7 @@
         "apps/web/src/lib/dive-values.ts",
         "apps/web/src/DiveGear.tsx",
         "apps/web/src/DiveHistory.tsx",
+        "apps/web/src/JointOffers.tsx",
         "apps/web/src/Participants.tsx",
         "apps/web/src/ProviderPanel.tsx",
         "apps/web/src/LinkOrAdd.tsx",
@@ -34696,6 +35179,7 @@
         "apps/web/src/Weighting.tsx",
         "apps/web/src/DiveGear.tsx",
         "apps/web/src/DiveHistory.tsx",
+        "apps/web/src/JointOffers.tsx",
         "apps/web/src/Participants.tsx",
         "apps/web/src/ProviderPanel.tsx",
         "apps/web/src/LinkOrAdd.tsx",
@@ -34796,6 +35280,7 @@
         "apps/web/src/lib/live-arrivals.ts",
         "apps/web/src/DivePage.tsx",
         "apps/web/src/Assessment.tsx",
+        "apps/web/src/JointOffers.tsx",
         "apps/web/src/Participants.tsx",
         "apps/web/src/ProviderPanel.tsx",
         "apps/web/src/DiverPage.tsx",
@@ -35307,6 +35792,7 @@
         "apps/web/src/Weighting.tsx",
         "apps/web/src/DiveGear.tsx",
         "apps/web/src/DiveHistory.tsx",
+        "apps/web/src/JointOffers.tsx",
         "apps/web/src/Participants.tsx",
         "apps/web/src/ProviderPanel.tsx",
         "apps/web/src/LinkOrAdd.tsx",
@@ -39184,8 +39670,8 @@
         "apps/web/src/App.tsx",
         "apps/web/src/DeletedDives.tsx",
         "apps/web/src/PushRun.tsx",
-        "apps/web/src/ReviewPage.tsx",
         "apps/web/src/ReviewRows.tsx",
+        "apps/web/src/ReviewPage.tsx",
         "apps/web/src/ReviewStrip.tsx",
         "apps/web/src/ProviderAutomation.tsx",
         "apps/web/src/ui/Shell.tsx"
@@ -40458,6 +40944,23 @@
             "import"
           ],
           "resolved": "apps/web/src/DiveHistory.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./JointOffers.tsx",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/web/src/JointOffers.tsx",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -43144,6 +43647,219 @@
       "valid": true
     },
     {
+      "source": "apps/web/src/JointOffers.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./api.ts",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/web/src/api.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./lib/display.ts",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/web/src/lib/display.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./lib/focus.ts",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/web/src/lib/focus.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./ReviewRows.tsx",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/web/src/ReviewRows.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./ui/index.ts",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/web/src/ui/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@tanstack/react-query",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "npm",
+            "import"
+          ],
+          "resolved": "apps/web/node_modules/@tanstack/react-query/build/legacy/index.cjs",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": true,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "react",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "npm",
+            "import"
+          ],
+          "resolved": "apps/web/node_modules/react/index.js",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": true,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "react-i18next",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "npm",
+            "import"
+          ],
+          "resolved": "apps/web/node_modules/react-i18next/dist/commonjs/index.js",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": true,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/web/src/DivePage.tsx",
+        "apps/web/src/ReviewPage.tsx"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/web/src/ReviewRows.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./lib/review.ts",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/web/src/lib/review.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "react",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "npm",
+            "import"
+          ],
+          "resolved": "apps/web/node_modules/react/index.js",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": true,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "react-i18next",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "npm",
+            "import"
+          ],
+          "resolved": "apps/web/node_modules/react-i18next/dist/commonjs/index.js",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": true,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/web/src/JointOffers.tsx",
+        "apps/web/src/BuddySuggestions.tsx",
+        "apps/web/src/Decisions.tsx",
+        "apps/web/src/GoneDives.tsx",
+        "apps/web/src/LogbookChecks.tsx",
+        "apps/web/src/ProviderConflictsSection.tsx"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "apps/web/src/Participants.tsx",
       "dependencies": [
         {
@@ -45823,6 +46539,23 @@
         },
         {
           "dynamic": false,
+          "module": "./JointOffers.tsx",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/web/src/JointOffers.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./lib/page.ts",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -46214,71 +46947,6 @@
         "apps/web/src/DecisionTimeline.tsx",
         "apps/web/src/Decisions.tsx",
         "apps/web/src/LogbookChecks.tsx"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "apps/web/src/ReviewRows.tsx",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./lib/review.ts",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "apps/web/src/lib/review.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "react",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "npm",
-            "import"
-          ],
-          "resolved": "apps/web/node_modules/react/index.js",
-          "coreModule": false,
-          "followable": false,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": true,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "react-i18next",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "npm",
-            "import"
-          ],
-          "resolved": "apps/web/node_modules/react-i18next/dist/commonjs/index.js",
-          "coreModule": false,
-          "followable": false,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": true,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "apps/web/src/BuddySuggestions.tsx",
-        "apps/web/src/Decisions.tsx",
-        "apps/web/src/GoneDives.tsx",
-        "apps/web/src/LogbookChecks.tsx",
-        "apps/web/src/ProviderConflictsSection.tsx"
       ],
       "orphan": false,
       "valid": true
@@ -50846,8 +51514,8 @@
     "baselineSize": 0,
     "baselineStale": 0,
     "advisedExitCode": 0,
-    "totalCruised": 482,
-    "totalDependenciesCruised": 2537,
+    "totalCruised": 486,
+    "totalDependenciesCruised": 2572,
     "optionsUsed": {
       "baseDir": "/home/runner/work/dive_hub/dive_hub",
       "combinedDependencies": false,
