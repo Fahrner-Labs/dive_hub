@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -471,7 +472,11 @@ private fun DiveBody(
     val imperial = Formats.imperial(units, locale)
     val primary = profileRecording(dive.recordings)
 
-    LazyColumn(Modifier.fillMaxSize().testTag("dive_scroll")) {
+    LazyColumn(
+        modifier = Modifier.fillMaxSize().testTag("dive_scroll"),
+        // The last section is plain text: leave the rhythm between sections above the bottom bar (FAH-424).
+        contentPadding = PaddingValues(bottom = Spacing.s5),
+    ) {
         item { SyncLine(state.syncedAt, state.connected, state.offline, R.string.dive_offline_cached) }
         item { Facts(dive, locale, imperial) }
         item { Cylinders(dive, locale, imperial) }
@@ -1266,7 +1271,7 @@ private fun Position(latitude: Double, longitude: Double, locale: Locale) {
     val context = LocalContext.current
     Section(
         stringResource(R.string.dive_position),
-        Modifier.fillMaxWidth().padding(horizontal = Spacing.s4),
+        Modifier.fillMaxWidth().padding(horizontal = Spacing.s4).testTag("dive_position"),
     ) {
         Text(DiveDetailText.position(context, latitude, longitude, locale), style = DiveHubText.body)
     }

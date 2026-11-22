@@ -48,6 +48,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.divehub.android.R
 import dev.divehub.android.ui.DiveHubTopBar
+import dev.divehub.android.ui.Spacing
 import dev.divehub.android.ui.formatSyncTime
 import dev.divehub.android.ui.successColor
 import java.util.Locale
@@ -115,7 +116,9 @@ fun SettingsScreen(
             Modifier
                 .padding(padding)
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState()),
+                .verticalScroll(rememberScrollState())
+                // The last row is a plain ListItem: keep the rhythm above the bottom bar (FAH-424).
+                .padding(bottom = Spacing.s5),
         ) {
             Section(R.string.settings_section_connection)
 

@@ -32,6 +32,7 @@ import androidx.compose.ui.test.swipe
 import androidx.compose.ui.unit.Density
 import com.github.takahirom.roborazzi.captureRoboImage
 import dev.divehub.android.ui.DiveHubTheme
+import dev.divehub.android.ui.Spacing
 import dev.divehub.api.models.DiveView
 import dev.divehub.api.models.DiveViewCylindersItem
 import dev.divehub.api.models.DiveViewCylindersItemGas
@@ -39,6 +40,7 @@ import dev.divehub.api.models.DiveViewFromRecording
 import dev.divehub.api.models.DiveViewFromRecordingStartsAt
 import dev.divehub.api.models.DiveViewLeadItem
 import dev.divehub.api.models.DiveViewParticipantsItem
+import dev.divehub.api.models.DiveViewPosition
 import dev.divehub.api.models.DiveViewSac
 import dev.divehub.api.models.DiveViewRecordingsItem
 import dev.divehub.api.models.DiveViewRecordingsItemDevice
@@ -807,6 +809,21 @@ class DiveDetailScreenshotTest {
         compose.onNodeWithText("Primary").assertIsDisplayed()
     }
 
+    @Test
+    fun `the last section keeps the section rhythm above the bottom bar`() {
+        render(state(dive = dive(position = DiveViewPosition(52.1, 4.3))))
+        val scroll = compose.onNodeWithTag("dive_scroll")
+        scroll.performScrollToNode(hasTestTag("dive_position"))
+        // Past the end, the list stops with the content padding showing: one section rhythm above the bar.
+        scroll.performTouchInput {
+            swipe(start = Offset(width / 2f, height * 0.9f), end = Offset(width / 2f, 0f), durationMillis = 200)
+        }
+        compose.waitForIdle()
+        val gap = compose.onRoot().getBoundsInRoot().bottom - compose.onNodeWithTag("dive_position").getBoundsInRoot().bottom
+        assertEquals(Spacing.s5.value, gap.value, 0.5f)
+        capture("dive_bottom_spacing.png")
+    }
+
     private fun render(
         state: DiveDetailUiState,
         units: String = "metric",
@@ -887,6 +904,7 @@ class DiveDetailScreenshotTest {
             DiveViewParticipantsItem("diver-2", "Ada Byron", "buddy"),
             DiveViewParticipantsItem("diver-3", "Bo Chen", "guide"),
         ),
+        position: DiveViewPosition? = null,
     ) = DiveView(
         id = "d1",
         diverId = "diver",
@@ -907,7 +925,7 @@ class DiveDetailScreenshotTest {
         site = if (fromProvider == null) dev.divehub.api.models.DiveViewSite("site-1", "Lighthouse Reef") else null,
         waterType = waterType,
         waterMismatch = waterMismatch,
-        position = null,
+        position = position,
         recordings = recordings,
         cylinders = cylinders,
         lead = lead,

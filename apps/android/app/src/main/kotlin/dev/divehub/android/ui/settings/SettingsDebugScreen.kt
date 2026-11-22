@@ -26,6 +26,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.divehub.android.R
+import dev.divehub.android.ui.Spacing
 import dev.divehub.shared.ErrorCodes
 import dev.divehub.shared.diagnostics.DiagnosticEntry
 import dev.divehub.shared.diagnostics.ReportProblemResult
@@ -89,7 +90,9 @@ fun SettingsDebugScreen(
             Modifier
                 .padding(padding)
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState()),
+                .verticalScroll(rememberScrollState())
+                // The last row is a plain ListItem: keep the rhythm above the bottom bar (FAH-424).
+                .padding(bottom = Spacing.s5),
         ) {
             ListItem(
                 headlineContent = { Text(stringResource(R.string.settings_debug_diagnostics)) },
