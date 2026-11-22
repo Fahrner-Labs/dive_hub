@@ -1,13 +1,7 @@
 package dev.divehub.android.ui.logbook
 
 import android.content.Context
-import android.provider.Settings
 import androidx.compose.animation.Crossfade
-import androidx.compose.animation.core.EaseInOut
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -39,8 +33,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Badge
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
@@ -51,7 +43,6 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -65,7 +56,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -82,7 +72,6 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.divehub.android.R
@@ -91,8 +80,16 @@ import dev.divehub.android.ui.DiveHubText
 import dev.divehub.android.ui.DiveHubTopBar
 import dev.divehub.android.ui.Spacing
 import dev.divehub.android.ui.SyncLine
+import dev.divehub.android.ui.components.ContentRevealMs
 import dev.divehub.android.ui.components.DiveRow
 import dev.divehub.android.ui.components.EmptyState
+import dev.divehub.android.ui.components.InkButton
+import dev.divehub.android.ui.components.QuietButton
+import dev.divehub.android.ui.components.Radius
+import dev.divehub.android.ui.components.SkeletonBar
+import dev.divehub.android.ui.components.SkeletonDelayMs
+import dev.divehub.android.ui.components.rememberReducedMotion
+import dev.divehub.android.ui.components.rememberSkeletonAlpha
 import dev.divehub.api.models.DiveListView
 import dev.divehub.api.models.DiveListViewDivesItem
 import dev.divehub.api.models.DiveListViewDivesItemParticipantsItem
@@ -115,10 +112,6 @@ import java.util.Locale
 /** The participant circle's fixed size, not a spacing step. */
 private val AvatarSize = 24.dp
 
-/** The brief's `Radius.control` for a filled action, and `Radius.sheet` for a bottom sheet's visible corners. */
-private val ControlCorner = 8.dp
-private val SheetCorner = 16.dp
-
 /** A chip's 1 dp outline and the progress track's end gap (the brief's pill chip; no M3 stop dot). */
 private val ChipBorder = 1.dp
 private val ProgressGap = 0.dp
@@ -126,29 +119,11 @@ private val ProgressGap = 0.dp
 /** The dive-number label column: a minimum so titles start on the same line, wide enough for four digits. */
 private val NumberColumn = 32.dp
 
-/** The skeleton's bar height, chip and row count, and the pause before it replaces a blank sheet (the brief's 150 ms). */
-private val SkeletonBarHeight = 12.dp
+/** The skeleton's chip and row count; its bar height and corner come from the shared skeleton. */
 private val SkeletonChipHeight = 32.dp
 private val SkeletonFigureWidth = 48.dp
 private val SkeletonFigureShortWidth = 36.dp
 private const val SkeletonRows = 6
-private const val SkeletonDelayMs = 150L
-private const val SkeletonPulseMs = 1_600
-private const val SkeletonPulseAlpha = 0.55f
-private const val AnimatorScaleDisabled = 0f
-
-/** The content's arrival over the skeleton (ADR 0064): 150 ms, and instant when animations are off. */
-private const val ContentRevealMs = 150
-
-/** ADR 0064: reduce or remove motion when the system's animations are off. */
-@Composable
-private fun rememberReducedMotion(): Boolean {
-    val context = LocalContext.current
-    return remember(context) {
-        Settings.Global.getFloat(context.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) ==
-            AnimatorScaleDisabled
-    }
-}
 
 /** Which of the screen's exclusive states is on stage; [Crossfade] fades the content in over the skeleton. */
 private enum class LogbookPhase { Loading, Offline, Error, List }
@@ -338,7 +313,7 @@ private fun FilterSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        shape = RoundedCornerShape(topStart = SheetCorner, topEnd = SheetCorner),
+        shape = RoundedCornerShape(topStart = Radius.sheet, topEnd = Radius.sheet),
         containerColor = MaterialTheme.colorScheme.surface,
     ) {
         Column(
@@ -383,20 +358,7 @@ private fun Loading(modifier: Modifier, progress: SyncProgress?) {
         showBars = true
     }
     // ADR 0064: the bars pulse gently, and stand still when the system's animations are off.
-    val reducedMotion = rememberReducedMotion()
-    val barAlpha = if (reducedMotion) {
-        1f
-    } else {
-        rememberInfiniteTransition(label = "logbook skeleton").animateFloat(
-            initialValue = 1f,
-            targetValue = SkeletonPulseAlpha,
-            animationSpec = infiniteRepeatable(
-                animation = tween(SkeletonPulseMs, easing = EaseInOut),
-                repeatMode = RepeatMode.Reverse,
-            ),
-            label = "skeleton bar alpha",
-        ).value
-    }
+    val barAlpha = rememberSkeletonAlpha("logbook skeleton")
     // The brief's rule 7: the logbook's own shape in flat bars, not a centred spinner. The quiet meta line keeps the
     // determinate sync count; the bars are decoration, so only the label speaks.
     Column(
@@ -470,17 +432,6 @@ private fun SkeletonDiveRow(index: Int, alpha: Float) {
             SkeletonBar(Modifier.width(SkeletonFigureShortWidth), alpha = alpha)
         }
     }
-}
-
-@Composable
-private fun SkeletonBar(modifier: Modifier, height: Dp = SkeletonBarHeight, alpha: Float = 1f) {
-    Box(
-        modifier
-            .height(height)
-            .alpha(alpha)
-            .clip(RoundedCornerShape(ControlCorner))
-            .background(MaterialTheme.colorScheme.surfaceVariant),
-    )
 }
 
 @Composable
@@ -914,36 +865,6 @@ private fun Pager(state: LogbookUiState, onPage: (Int) -> Unit) {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         QuietButton(stringResource(R.string.logbook_next), { onPage(state.page + 1) }, enabled = state.page < pages)
-    }
-}
-
-/** The brief's ink primary button: ink in the light, the inverted ink in the dark, with the control radius. */
-@Composable
-private fun InkButton(text: String, onClick: () -> Unit) {
-    Button(
-        onClick = onClick,
-        shape = RoundedCornerShape(ControlCorner),
-        colors = ButtonDefaults.buttonColors(
-            containerColor = DiveHubColors.ink,
-            contentColor = DiveHubColors.onInk,
-        ),
-    ) {
-        Text(text)
-    }
-}
-
-/**
- * A text-like action (paging, "Show all dives", retry): no fill and no accent, because the accent means a link, focus
- * or data and these are navigation.
- */
-@Composable
-private fun QuietButton(text: String, onClick: () -> Unit, enabled: Boolean = true) {
-    TextButton(
-        onClick = onClick,
-        enabled = enabled,
-        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.onSurface),
-    ) {
-        Text(text)
     }
 }
 

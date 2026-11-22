@@ -22,10 +22,8 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import dev.divehub.android.ui.DiveHubText
+import dev.divehub.android.ui.LargeTextFontScale
 import dev.divehub.android.ui.Spacing
-
-/** At 150 % and above the figures go under the facts: the title keeps the width instead of breaking inside a word. */
-private const val StackedFiguresFontScale = 1.5f
 
 /**
  * The logbook's row: a title in [DiveHubText.bodyStrong] with its facts under it in [DiveHubText.meta], an optional
@@ -50,7 +48,7 @@ fun DiveRow(
     footer: (@Composable () -> Unit)? = null,
     onClick: () -> Unit,
 ) {
-    val stacked = LocalDensity.current.fontScale >= StackedFiguresFontScale
+    val stacked = LocalDensity.current.fontScale >= LargeTextFontScale
     val row = modifier
         .fillMaxWidth()
         .clickable(role = Role.Button, onClick = onClick)

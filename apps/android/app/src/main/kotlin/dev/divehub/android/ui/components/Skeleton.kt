@@ -21,13 +21,18 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
-/** The skeleton bar's fixed height and the brief's `Radius.control` corner; not spacing steps. */
+/** The skeleton bar's fixed height; not a spacing step. Its corner is the brief's [Radius.control]. */
 private val SkeletonBarHeight = 12.dp
-private val SkeletonBarCorner = 8.dp
 
 private const val SkeletonPulseMs = 1_600
 private const val SkeletonPulseAlpha = 0.7f
 private const val AnimatorScaleDisabled = 0f
+
+/** ADR 0064's pause before a skeleton replaces a blank slot; every screen's skeleton waits the same 150 ms. */
+internal const val SkeletonDelayMs = 150L
+
+/** ADR 0064's content arrival: the skeleton gives way to the page over the same 150 ms, instantly with motion off. */
+internal const val ContentRevealMs = 150
 
 /**
  * ADR 0064's reduced motion: the system's animations are off, so the skeleton stands still and content arrives
@@ -64,7 +69,7 @@ fun SkeletonBar(modifier: Modifier, height: Dp = SkeletonBarHeight, alpha: Float
         modifier
             .height(height)
             .alpha(alpha)
-            .clip(RoundedCornerShape(SkeletonBarCorner))
+            .clip(RoundedCornerShape(Radius.control))
             // A visible tone, not surfaceVariant: 1.08:1 on the sheet read as an empty page (FAH-366 critique).
             .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.32f)),
     )

@@ -26,13 +26,9 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.rememberTextMeasurer
-import androidx.compose.ui.unit.dp
 import dev.divehub.android.ui.DiveHubColors
 import dev.divehub.android.ui.DiveHubText
 import dev.divehub.android.ui.Spacing
-
-/** The brief's `Radius.box`: a box inside the sheet. Not a spacing step, so it stays named here. */
-private val BoxCornerRadius = 10.dp
 
 /**
  * A titled part of the sheet, the Android [Panel]: a heading, an optional action and the content, separated from the
@@ -40,8 +36,14 @@ private val BoxCornerRadius = 10.dp
  * gutter belongs to the screen's content column. The first section on a screen passes `showSeparator = false`.
  *
  * `attention` paints a section that waits for the User with the accent-soft tone, as the brief's box inside the sheet.
- * The heading and its action wrap: at 320 dp or 200% font scale the action moves below the heading instead of
+ * The heading and its action wrap: when they no longer fit together, the action moves below the heading instead of
  * squeezing it.
+ *
+ * The action is end-aligned only while it shares the heading's line; once it wraps it starts the next line. The rule
+ * compares the heading's measured width with the action's minimum 48 dp target. That is exact for this brief's quiet
+ * action, not a guess: the target is [QuietActionTarget] wide at its narrowest, and a label longer than the target is
+ * as wide as its own box, so a wrapped label is already flush with the line's start edge and the internal alignment
+ * cannot inset it.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -61,7 +63,7 @@ fun Section(
         }
         Column(
             if (attention) {
-                val shape = RoundedCornerShape(BoxCornerRadius)
+                val shape = RoundedCornerShape(Radius.box)
                 Modifier
                     .fillMaxWidth()
                     .clip(shape)
@@ -72,15 +74,13 @@ fun Section(
             },
         ) {
             BoxWithConstraints(Modifier.fillMaxWidth()) {
-                // A short action lines up with the column's outer edge: End while it shares the heading's line,
-                // Start once the action wraps below it. Guessing the action's 48 dp target is enough because a
-                // longer label is as wide as its own box, so the edge cannot inset it.
+                // End while the action's 48 dp target fits beside the heading, Start once it wraps. See the KDoc:
+                // the target's minimum width is the only width the internal alignment can inset a label by, so the
+                // answer cannot be wrong for a longer label.
                 val titleWidth = rememberTextMeasurer()
                     .measure(AnnotatedString(title), style = DiveHubText.section).size.width
-                val density = LocalDensity.current
-                val gap = with(density) { Spacing.s2.roundToPx() }
-                val target = with(density) { QuietActionTarget.roundToPx() }
-                val actionAtEnd = titleWidth + gap + target <= constraints.maxWidth
+                val target = with(LocalDensity.current) { QuietActionTarget.roundToPx() }
+                val actionAtEnd = titleWidth + target <= constraints.maxWidth
                 FlowRow(
                     Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,

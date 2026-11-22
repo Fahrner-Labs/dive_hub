@@ -29,9 +29,6 @@ import dev.divehub.android.ui.DiveHubColors
 import dev.divehub.android.ui.DiveHubText
 import dev.divehub.android.ui.Spacing
 
-/** The brief's `Radius.control`: a button is not Material's pill. */
-private val ControlCorner = 8.dp
-
 /** The quiet action's disclosure chevron; not a spacing step. */
 private val QuietActionIcon = 18.dp
 
@@ -54,7 +51,7 @@ fun InkButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier) 
     Button(
         onClick = onClick,
         modifier = modifier,
-        shape = RoundedCornerShape(ControlCorner),
+        shape = RoundedCornerShape(Radius.control),
         colors = ButtonDefaults.buttonColors(
             containerColor = DiveHubColors.ink,
             contentColor = DiveHubColors.onInk,

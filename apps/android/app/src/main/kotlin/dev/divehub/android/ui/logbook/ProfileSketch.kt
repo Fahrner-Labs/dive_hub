@@ -17,6 +17,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.dp
 import dev.divehub.android.ui.DiveHubColors
+import dev.divehub.android.ui.components.Radius
 import dev.divehub.api.models.DiveProfileView
 import dev.divehub.shared.logbook.SKETCH_HEIGHT
 import dev.divehub.shared.logbook.SKETCH_WIDTH
@@ -24,8 +25,7 @@ import dev.divehub.shared.logbook.SketchCurve
 import dev.divehub.shared.logbook.sketchGeometry
 import dev.divehub.shared.logbook.toSketchProfile
 
-/** The sketch's fixed marks, not spacing steps: the brief's `Radius.sm` and hairline widths. */
-private val SketchCorner = 2.dp
+/** The sketch's fixed marks, not spacing steps: the brief's hairline widths (its corner is [Radius.sm]). */
 private val SketchHairline = 1.dp
 private val SketchOutlineWidth = 1.2.dp
 private val SketchDashOn = 5.dp
@@ -50,7 +50,7 @@ fun ProfileSketch(profile: DiveProfileView?, hasRecording: Boolean, scaleM: Doub
                     color = outline,
                     topLeft = Offset.Zero,
                     size = Size(size.width, size.height),
-                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(SketchCorner.toPx()),
+                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(Radius.sm.toPx()),
                     style = Stroke(
                         width = SketchHairline.toPx(),
                         pathEffect = PathEffect.dashPathEffect(floatArrayOf(SketchDashOn.toPx(), SketchDashOff.toPx())),
