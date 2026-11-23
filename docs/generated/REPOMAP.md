@@ -4,7 +4,7 @@
 > `pnpm check` fails when this map is stale. Symbols are ranked by how widely the code references them;
 > each module shows its most-referenced ones (exported symbols rank higher). Search here before walking the tree.
 
-Files: 425 · symbols: 3918 · shown: 253
+Files: 425 · symbols: 3919 · shown: 253
 
 ### server/(root)
 apps/server/src/vocabulary.ts:13 type SiteWaterType
@@ -257,10 +257,10 @@ apps/server/src/support/client-diagnostics-service.ts:21 class ClientDiagnostics
 ### server/sync
 apps/server/src/sync/changes-service.ts:17 class SyncError
 apps/server/src/sync/routes.ts:40 const STATUS
-apps/server/src/sync/changes-service.ts:65 fn createSyncService
+apps/server/src/sync/changes-service.ts:89 fn createSyncService
 apps/server/src/sync/changes-service.ts:13 const CHANGES_DEFAULT_LIMIT
 apps/server/src/sync/routes.ts:13 iface SyncRouteDeps
-… 16 more symbols in this module
+… 17 more symbols in this module
 
 ### server/users
 apps/server/src/users/views.ts:23 const UserView
