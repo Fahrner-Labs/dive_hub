@@ -16,15 +16,15 @@ export interface SyncRouteDeps {
 }
 
 const ChangesQuery = Type.Object({
-  cursor: Type.Optional(Type.Integer({
-    minimum: 0,
-    description: 'The seq of the last change the client applied. Omit it to bootstrap: the answer then carries only the cursor.',
+  cursor: Type.Optional(Type.String({
+    pattern: '^\\d+:\\d+$',
+    description: 'Opaque feed position from the previous answer. Omit it to bootstrap: the answer then carries only the cursor.',
   })),
   limit: Type.Optional(Type.Integer({ minimum: 1, maximum: CHANGES_MAX_LIMIT, default: CHANGES_DEFAULT_LIMIT })),
 }, { additionalProperties: false });
 
 const ChangeEventView = Type.Object({
-  seq: Type.Integer({ description: 'The change\'s place in the feed; the answer\'s cursor is the last one' }),
+  seq: Type.Integer({ description: 'The hint\'s identity within its transaction; the cursor, not this, orders the feed' }),
   entityType: Type.Enum([...REVISION_ENTITY_TYPES], { description: 'Which kind of thing changed' }),
   entityId: Type.String({ format: 'uuid' }),
   kind: Type.Enum(['changed', 'deleted'], {
@@ -33,8 +33,8 @@ const ChangeEventView = Type.Object({
 });
 
 const ChangesView = Type.Object({
-  cursor: Type.Integer({ description: 'Send this back as cursor to continue where this answer stopped' }),
-  events: Type.Array(ChangeEventView, { description: 'In seq order; empty for a bootstrap' }),
+  cursor: Type.String({ description: 'Opaque position; send this back as cursor to continue where this answer stopped' }),
+  events: Type.Array(ChangeEventView, { description: 'In feed order; empty for a bootstrap' }),
 });
 
 const STATUS: Record<SyncError['code'], number> = { sync_resync_required: 410 };
@@ -47,10 +47,11 @@ export const syncRoutes: FastifyPluginAsyncTypebox<SyncRouteDeps> = async (scope
   app.get('/sync/changes', {
     schema: {
       summary: 'The logbook change feed: what changed since a cursor (ADR 0083)',
-      description: 'Append-only and ordered by seq. Events carry IDs and kinds only: refetch each entity through its '
-        + 'normal API and tombstone it locally on 404/403 or kind=deleted. Without a cursor it answers only the '
-        + 'bootstrap cursor for a full sync. A cursor older than the feed\'s 180-day retention answers 410 '
-        + 'sync_resync_required; the client then resyncs and rebases its queued writes.',
+      description: 'Append-only and ordered by the cursor position, not by seq. Events carry IDs and kinds only: '
+        + 'refetch each entity through its normal API and tombstone it locally on 404/403 or kind=deleted. Without a '
+        + 'cursor it answers only the bootstrap cursor for a full sync. A cursor older than the feed\'s 180-day '
+        + 'retention answers 410 sync_resync_required (even when the sweep has emptied the log); the client then '
+        + 'resyncs and rebases its queued writes.',
       querystring: ChangesQuery,
       response: { 200: ChangesView, 400: Problem, 410: Problem },
     },

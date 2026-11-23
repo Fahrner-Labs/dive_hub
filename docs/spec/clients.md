@@ -293,13 +293,14 @@ V1 of the native client reads offline: phones lose signal where dives are, and t
   (`deletedAt`), never a local hard delete, and the profiles phase requests each Recording's samples at the
   endpoint's 20,000-point cap so an offline replay keeps the peaks.
 - **The feed carries IDs, kinds and a cursor — never payloads.** `GET /api/sync/changes?cursor=&limit=` answers
-  `{cursor, events}`, each event `{seq, entityType, entityId, kind}` in `seq` order; send the returned `cursor`
-  next. Without a cursor it answers only the high-water cursor: bootstrap there, full-sync, then follow the feed
+  `{cursor, events}`, each event `{seq, entityType, entityId, kind}` in feed order; send the returned `cursor` back
+  next. The cursor is opaque — a `<xid>:<seq>` position, not a number and not the event's `seq`; treat it as a token.
+  Without a cursor it answers only the high-water cursor: bootstrap there, full-sync, then follow the feed
   (ADR 0083 D6). `entityType` is one of the logbook kinds and `kind` is `changed` or `deleted`. The client
   refetches every event's entity through its normal API; `deleted`, a 404 and a 403 all mean the local tombstone.
   The feed is not a second read model: it applies no per-User visibility, which is what lets a revoked scope
   arrive as an event whose refetch answers 403. A cursor older than the 180-day retention answers 410
-  `sync_resync_required` (above).
+  `sync_resync_required` (above), even when the sweep has emptied the log.
 - **The connection state is the live stream's, not the network's.** There are three states. While the stream is
   delivering, the logbook and dive pages stay quiet and Settings says "Connected". When the stream is down but the
   last sync attempt still got an answer (it may have failed, but not by timing out), the pages say
