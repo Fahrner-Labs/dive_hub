@@ -4,7 +4,7 @@
 > `pnpm check` fails when this map is stale. Symbols are ranked by how widely the code references them;
 > each module shows its most-referenced ones (exported symbols rank higher). Search here before walking the tree.
 
-Files: 422 · symbols: 3876 · shown: 248
+Files: 422 · symbols: 3880 · shown: 248
 
 ### server/(root)
 apps/server/src/vocabulary.ts:13 type SiteWaterType
@@ -25,9 +25,9 @@ apps/server/src/assessment/signals.ts:5 iface Series
 ### server/auth
 apps/server/src/auth/fastify.ts:81 fn userOf
 apps/server/src/auth/fastify.ts:68 fn requireUser
-apps/server/src/auth/auth.ts:149 type Auth
+apps/server/src/auth/auth.ts:151 type Auth
 apps/server/src/auth/fastify.ts:99 fn requireAdmin
-apps/server/src/auth/auth.ts:60 fn createAuth
+apps/server/src/auth/auth.ts:61 fn createAuth
 … 24 more symbols in this module
 
 ### server/backups
@@ -61,15 +61,15 @@ apps/server/src/certifications/routes.ts:19 const Text
 ### server/db
 apps/server/src/db/client.ts:5 type Db
 apps/server/src/db/client.ts:8 type Queryable
-apps/server/src/db/schema.ts:661 const dive
+apps/server/src/db/schema.ts:673 const dive
 apps/server/src/db/client.ts:6 type Tx
-apps/server/src/db/schema.ts:454 const diveSite
-apps/server/src/db/schema.ts:819 const recording
-apps/server/src/db/schema.ts:75 const diverManagement
+apps/server/src/db/schema.ts:466 const diveSite
+apps/server/src/db/schema.ts:831 const recording
+apps/server/src/db/schema.ts:87 const diverManagement
 apps/server/src/db/auth-schema.ts:20 const user
 apps/server/src/db/import-types.ts:12 iface ImportedValues
 apps/server/src/db/import-types.ts:6 type ImportArea
-… 159 more symbols in this module
+… 162 more symbols in this module
 
 ### server/divers
 apps/server/src/divers/management.ts:8 fn managedDiverIds
@@ -197,12 +197,12 @@ apps/server/src/providers/provider.ts:83 type DiveField
 … 497 more symbols in this module
 
 ### server/revisions
-apps/server/src/revisions/revisions.ts:81 fn writeRevision
+apps/server/src/revisions/revisions.ts:88 fn writeRevision
 apps/server/src/revisions/revisions.ts:5 type Actor
 apps/server/src/revisions/revisions.ts:36 type Changes
 apps/server/src/revisions/revisions.ts:71 fn changeListener
 apps/server/src/revisions/revisions.ts:8 const userActor
-… 6 more symbols in this module
+… 7 more symbols in this module
 
 ### server/scripts
 apps/server/src/scripts/write-planning-vectors.ts:9 const write

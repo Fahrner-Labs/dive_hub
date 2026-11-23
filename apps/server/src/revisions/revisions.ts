@@ -1,5 +1,5 @@
 import type { Tx } from '../db/client.js';
-import { revision } from '../db/schema.js';
+import { changeEvent, revision } from '../db/schema.js';
 
 /** Who or what changed logbook data: a User, an Import, a Site import (ADR 0021), or the hub itself. */
 export type Actor = { type: 'user' | 'import' | 'system' | 'site_import'; id: string };
@@ -78,10 +78,20 @@ export function changeListenerOrNull(): ChangeListener | null {
   return listener;
 }
 
+/**
+ * Whether the Revision removed its entity: a soft delete (`deletedAt` set), or a merge/continuation that left the row
+ * behind as a tombstone pointing elsewhere (`mergedInto` set). A restore sets `deletedAt` back to null, so it is a
+ * change, not a delete.
+ */
+const removed = (changes: Changes): boolean => changes.deletedAt?.to != null || changes.mergedInto?.to != null;
+
 export async function writeRevision(
   tx: Tx, entityType: 'dive' | 'recording' | 'device' | 'dive_site' | 'diver' | 'dive_centre' | 'equipment_item', entityId: string, actor: Actor, cause: RevisionCause, changes: Changes,
 ): Promise<{ at: Date }> {
   const [written] = await tx.insert(revision).values({ entityType, entityId, actorType: actor.type, actorId: actor.id, cause, changes }).returning({ at: revision.at });
+  // The change feed's hint is written in this same transaction (ADR 0083): no Revision without its hint, and a
+  // rolled-back write leaves neither behind. No payload — clients refetch the entity through the normal API.
+  await tx.insert(changeEvent).values({ entityType, entityId, kind: removed(changes) ? 'deleted' : 'changed' });
   // Every change to a Dive may need to go to a Provider by itself (ADR 0056): the listener hears it, at the Revision's time.
   // Every dive site Revision tells open pages (ADR 0066), so no site write can forget to announce itself.
   if (entityType === 'dive') await changeListener().diveChanged(tx, entityId, cause, written!.at, actor, changes);
