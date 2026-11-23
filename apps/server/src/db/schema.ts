@@ -1388,9 +1388,10 @@ export const changeEventKind = pgEnum('change_event_kind', ['changed', 'deleted'
 
 /**
  * The change feed's append-only hint log (ADR 0083): one row per Revision, in the same transaction, naming the entity and
- * whether it changed or is gone. It carries no payload — clients refetch through the normal API — and `seq` is the
- * cursor. `xid` lets `GET /sync/changes` hold back events from a still-running transaction so a client never skips a
- * change it passed. Kept 180 days; older cursors answer 410 and resync.
+ * whether it changed or is gone. It carries no payload — clients refetch through the normal API — and `(xid, seq)` is
+ * the feed position. `seq` alone cannot be the cursor: it is allocated when the hint is inserted, while `xid` binds at the
+ * transaction's first write, so two writes can commit in the opposite order to their `seq`s. Ordering by `xid` first,
+ * and filtering by `xmin`, stops a cursor passing a still-running transaction. Kept 180 days; older cursors answer 410.
  */
 export const changeEvent = pgTable(
   'change_event',
@@ -1402,8 +1403,21 @@ export const changeEvent = pgTable(
     kind: changeEventKind('kind').notNull(),
     at: timestamp('at', { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [index('change_event_at_idx').on(t.at)],
+  (t) => [index('change_event_xid_seq_idx').on(t.xid, t.seq)],
 );
+
+/**
+ * The change feed's retention floor (ADR 0083): one row holding the position of the last event the sweep deleted. It is
+ * what lets an empty log answer 410 instead of pretending nothing was missed. The sweep only deletes a feed-order
+ * prefix, so the retained log is always the suffix after this position.
+ */
+export const changeFeedFloor = pgTable('change_feed_floor', {
+  /** Always true: the table holds one row. */
+  id: boolean('id').primaryKey().default(true),
+  xid: xid8('xid').notNull().default(sql`'0'::xid8`),
+  seq: bigint('seq', { mode: 'number' }).notNull().default(0),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});
 
 /**
  * Whether this instance offers the MCP endpoint (ADR 0035): one row once an admin decided, none means off. Switching

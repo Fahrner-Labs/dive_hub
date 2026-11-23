@@ -2000,13 +2000,13 @@ export interface paths {
         };
         /**
          * The logbook change feed: what changed since a cursor (ADR 0083)
-         * @description Append-only and ordered by seq. Events carry IDs and kinds only: refetch each entity through its normal API and tombstone it locally on 404/403 or kind=deleted. Without a cursor it answers only the bootstrap cursor for a full sync. A cursor older than the feed's 180-day retention answers 410 sync_resync_required; the client then resyncs and rebases its queued writes.
+         * @description Append-only and ordered by the cursor position, not by seq. Events carry IDs and kinds only: refetch each entity through its normal API and tombstone it locally on 404/403 or kind=deleted. Without a cursor it answers only the bootstrap cursor for a full sync. A cursor older than the feed's 180-day retention answers 410 sync_resync_required (even when the sweep has emptied the log); the client then resyncs and rebases its queued writes.
          */
         get: {
             parameters: {
                 query?: {
-                    /** @description The seq of the last change the client applied. Omit it to bootstrap: the answer then carries only the cursor. */
-                    cursor?: number;
+                    /** @description Opaque feed position from the previous answer. Omit it to bootstrap: the answer then carries only the cursor. */
+                    cursor?: string;
                     limit?: number;
                 };
                 header?: never;
@@ -2022,11 +2022,11 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
-                            /** @description Send this back as cursor to continue where this answer stopped */
-                            cursor: number;
-                            /** @description In seq order; empty for a bootstrap */
+                            /** @description Opaque position; send this back as cursor to continue where this answer stopped */
+                            cursor: string;
+                            /** @description In feed order; empty for a bootstrap */
                             events: {
-                                /** @description The change's place in the feed; the answer's cursor is the last one */
+                                /** @description The hint's identity within its transaction; the cursor, not this, orders the feed */
                                 seq: number;
                                 /**
                                  * @description Which kind of thing changed

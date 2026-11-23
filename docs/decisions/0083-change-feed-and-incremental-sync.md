@@ -50,12 +50,24 @@ the **same transaction** as every logbook write, through the existing `writeRevi
 seam (`apps/server/src/revisions/revisions.ts`) — every write path (routes, imports, merges, joint-dive
 propagation, MCP) already funnels through it, so no future write path can forget the feed.
 
-`GET /sync/changes?cursor=&limit=` returns events with `seq > cursor`, filtered by the safe high-water mark
-`xid < pg_snapshot_xmin(pg_current_snapshot())`, ordered by `seq`. The new cursor is the last `seq` returned.
-The xmin filter (research §3.3) closes the in-flight-transaction race: a long transaction that commits after
-a client passed its `seq` is never skipped, because its events stay invisible until every older transaction
-has finished. **Cursor bootstrap:** called without a cursor, the endpoint returns only the current high-water
-cursor (used by install migration, D6).
+`GET /sync/changes?cursor=&limit=` returns the events after the opaque position `cursor` (encoded `<xid>:<seq>`),
+filtered by the safe high-water mark `xid < pg_snapshot_xmin(pg_current_snapshot())` and ordered by `(xid, seq)`. The
+new cursor is the last position returned. `xid` and `seq` bind at different moments — `xid` at the transaction's
+first write, `seq` when its hint row is inserted — so two concurrent writes can commit in the opposite order to their
+`seq`s; a `seq`-only cursor let a higher-`seq` transaction hand out a position that a lower-`seq` transaction then
+committed behind, and the change was skipped. Ordering by `xid` first makes that impossible: a lower-xid transaction
+can never be passed by a higher-xid one, and the xmin filter still holds back a transaction that may yet commit. `xid`
+is `xid8`, so the order does not wrap at 2^32. The feed orders by position, not wall-clock; the client refetches, so
+order carries no conflict meaning. **Cursor bootstrap:** called without a cursor, the endpoint returns only the current
+high-water position — the maximum committed position, or the retention floor when the log is empty — for the install
+migration and full sync (D6).
+
+The high-water is read from `pg_snapshot_xmin`, which needs no privilege and is correct across xid epochs. Where the
+role may see other backends' `backend_xid`, it is scoped to transactions on the current database (only those can write
+this log, so a long transaction in another database must not stall the feed); a role that may not see them falls back to
+the conservative cluster-wide xmin rather than `xmax`, which would hold nothing back. The price of the cluster fallback
+is that a long transaction in another database holds the feed until it ends — conservative, not unsafe.
+
 
 The feed carries **IDs and kinds only — no payloads**, exactly the SSE-hint discipline of
 [ADR 0066](0066-live-updates-via-sse-hints.md). The client refetches changed entities through the normal API;
@@ -73,8 +85,12 @@ covers every entity kind uniformly. The blueprint's *properties* (ordered cursor
 tombstones) are all preserved.
 
 **Retention:** feed entries are kept **180 days** (server setting; one sweep next to the existing purge job
-of ADR 0072). A cursor older than the oldest retained entry answers **410 Gone** with the problem code
-`sync_resync_required`; the client resyncs (D6) and rebases its write queue instead of discarding it
+of ADR 0072). A one-row `change_feed_floor` records the position of the last swept event. The sweep deletes only a
+feed-order prefix of events older than the retention and moves the floor past it in the same statement, so the retained
+log is always the suffix after the floor and a crash cannot leave the floor disagreeing with it. Deleting by `at` alone
+could leave a hole above a lower position (`at` is the transaction's start, the position its first write). A cursor
+before the floor answers **410 Gone** with the problem code `sync_resync_required`, including when the sweep has emptied
+the log; the client resyncs (D6) and rebases its write queue instead of discarding it
 ([ADR 0084](0084-offline-writes-in-the-native-core.md), 410-rebase). 180 days against the 30-day dive
 tombstone purge is safe: the deletion *event* survives in the log after the Dive row is gone.
 
