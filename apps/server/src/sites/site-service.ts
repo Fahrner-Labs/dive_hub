@@ -338,10 +338,11 @@ export function createSiteService(db: Db) {
       }));
     },
 
-    /** The creator or an admin, and only while no Dive (of any User) is at the site. */
-    async remove(actor: Caller, id: string) {
+    /** The creator or an admin, and only while no Dive (of any User) is at the site; `version` when an If-Match sent one. */
+    async remove(actor: Caller, id: string, version?: number) {
       await db.transaction(async (tx) => {
         const current = await lock(tx, id);
+        if (version !== undefined && current.version !== version) throw new SiteError('site_changed');
         if (!actor.isAdmin && current.createdBy !== actor.userId) throw new SiteError('site_not_deletable');
         const [used] = await tx.select({ id: dive.id }).from(dive).where(and(eq(dive.siteId, id), isNull(dive.deletedAt))).limit(1);
         if (used) throw new SiteError('site_in_use');
