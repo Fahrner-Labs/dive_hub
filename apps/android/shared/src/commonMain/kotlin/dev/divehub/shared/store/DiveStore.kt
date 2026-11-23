@@ -169,6 +169,11 @@ class DiveStore internal constructor(private val database: DiveHubDatabase) : Us
 
     fun allDiveSites(): List<DiveSite> = queries.selectAllDiveSites().executeAsList().map(Dive_site::toModel)
 
+    /** Hide a site the feed reported gone: a tombstone, never a hard delete (ADR 0083 D1). */
+    fun markDiveSiteDeleted(id: String, deletedAt: String) {
+        queries.markDiveSiteDeleted(deletedAt = deletedAt, id = id)
+    }
+
     fun upsertDiveSite(site: DiveSite) {
         queries.upsertDiveSite(
             id = site.id,
@@ -191,6 +196,11 @@ class DiveStore internal constructor(private val database: DiveHubDatabase) : Us
     fun divers(): List<Diver> = queries.selectLiveDivers().executeAsList().map(DiverRow::toModel)
 
     fun allDivers(): List<Diver> = queries.selectAllDivers().executeAsList().map(DiverRow::toModel)
+
+    /** Hide a Diver the feed reported gone: a tombstone, never a hard delete (ADR 0083 D1). */
+    fun markDiverDeleted(id: String, deletedAt: String) {
+        queries.markDiverDeleted(deletedAt = deletedAt, id = id)
+    }
 
     fun upsertDiver(diver: Diver) {
         queries.upsertDiver(
@@ -238,7 +248,7 @@ class DiveStore internal constructor(private val database: DiveHubDatabase) : Us
 
     /** The schema version is the store's, never the caller's: it is what [migrate] advances. */
     fun saveSyncState(state: SyncState) {
-        queries.upsertSyncState(state.lastFullSyncAt, state.lastHintAt, schemaVersion, state.countsJson)
+        queries.upsertSyncState(state.lastFullSyncAt, state.lastHintAt, schemaVersion, state.countsJson, state.feedCursor)
     }
 
     /** The last list page's per-filter counts, kept so the chips survive offline; null before the first list sync. */
@@ -269,7 +279,13 @@ class DiveStore internal constructor(private val database: DiveHubDatabase) : Us
             queries.deleteAllBodyWeights()
             queries.deleteAllCheckpoints()
             queries.deleteAllSyncState()
-            queries.upsertSyncState(lastFullSyncAt = null, lastHintAt = null, schemaVersion = schemaVersion, countsJson = null)
+            queries.upsertSyncState(
+                lastFullSyncAt = null,
+                lastHintAt = null,
+                schemaVersion = schemaVersion,
+                countsJson = null,
+                feedCursor = null,
+            )
         }
     }
 
@@ -279,7 +295,7 @@ class DiveStore internal constructor(private val database: DiveHubDatabase) : Us
     private fun reconcileSchemaVersion() {
         val state = syncState()
         if (state.schemaVersion != schemaVersion) {
-            queries.upsertSyncState(state.lastFullSyncAt, state.lastHintAt, schemaVersion, state.countsJson)
+            queries.upsertSyncState(state.lastFullSyncAt, state.lastHintAt, schemaVersion, state.countsJson, state.feedCursor)
         }
     }
 
@@ -415,4 +431,5 @@ private fun Sync_state.toModel() = SyncState(
     lastHintAt = lastHintAt,
     schemaVersion = schemaVersion,
     countsJson = countsJson,
+    feedCursor = feedCursor,
 )

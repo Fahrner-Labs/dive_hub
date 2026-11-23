@@ -192,6 +192,8 @@ private fun routes(data: RouteData = RouteData()): (String) -> Reply = { path ->
                 ?: "2026-11-01T10:00:00Z"
             data.detail(id, startsAt)
         }
+        // These tests run the paged sync; a pre-feed server is the default here (feed tests live in SyncRefreshTest).
+        path.startsWith("/api/sync/changes") -> status(HttpStatusCode.NotFound)
         else -> error("unexpected $path")
     }
 }

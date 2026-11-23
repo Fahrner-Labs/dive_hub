@@ -1,0 +1,4 @@
+-- v4 adds the change feed's durable cursor (ADR 0083 D6): the opaque `<xid>:<seq>` position the next refresh follows.
+-- It is null until a feed-capable server answers the bootstrap; a store that only ever saw a pre-feed server stays on
+-- the paged refresh, and a 410 clears it through a full resync (bootstrap, paged rebuild, follow again).
+ALTER TABLE sync_state ADD COLUMN feedCursor TEXT;

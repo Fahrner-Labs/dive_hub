@@ -96,6 +96,13 @@ class DiagnosticsBufferTest {
     fun `migration 2 creates the diagnostics table`() {
         val migrated = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
         try {
+            // A v2 store already has sync_state (with the counts column from v1→v2); later migrations alter it.
+            migrated.execute(
+                null,
+                "CREATE TABLE sync_state (id INTEGER NOT NULL PRIMARY KEY, lastFullSyncAt TEXT, lastHintAt TEXT, " +
+                    "schemaVersion INTEGER NOT NULL, countsJson TEXT)",
+                0,
+            )
             DiveHubDatabase.Schema.migrate(migrated, 2, DiveHubDatabase.Schema.version)
             val migratedBuffer = DiagnosticsBuffer(DiveHubDatabase(migrated))
 

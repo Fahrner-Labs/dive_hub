@@ -4,6 +4,7 @@ import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import dev.divehub.shared.ApiClient
 import dev.divehub.shared.DiveHubException
 import dev.divehub.shared.NoAnswerException
+import dev.divehub.shared.store.Dive
 import dev.divehub.shared.store.DiveStore
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
@@ -39,6 +40,9 @@ private sealed interface RefreshReply {
     data object Offline : RefreshReply
     data class Hold(val gate: CompletableDeferred<Unit>) : RefreshReply
 }
+
+/** One hint in the fake change feed; its position is its index in [RefreshData.feedEntries]. */
+private data class FeedEntry(val entityType: String, val entityId: String, val kind: String = "changed")
 
 private fun refreshJson(text: String): RefreshReply = RefreshReply.Body(text)
 
@@ -155,6 +159,19 @@ private object RefreshData {
     val details = mutableMapOf("dive-1" to refreshDetailJson())
     val samplePeak = mutableMapOf("recording-dive-1" to 31.4)
     var deletedPages: List<Pair<List<String>, String?>> = emptyList()
+
+    /** Whether the fake server answers the change feed (ADR 0083); false models a pre-feed server. */
+    var feedAvailable = false
+
+    /** The feed's log; the cursor is `c<count>` and each entry's index is its position. */
+    val feedEntries = mutableListOf<FeedEntry>()
+
+    /** A per-request refusal for the feed page starting at that count (to model a 410 or a failure). */
+    val feedStatus = mutableMapOf<Int, HttpStatusCode>()
+
+    /** Per-entity refusals for the normal refetch routes. */
+    val diveStatus = mutableMapOf<String, HttpStatusCode>()
+    val siteStatus = mutableMapOf<String, HttpStatusCode>()
 }
 
 private fun resetRefreshData() {
@@ -169,6 +186,11 @@ private fun resetRefreshData() {
     RefreshData.samplePeak.clear()
     RefreshData.samplePeak["recording-dive-1"] = 31.4
     RefreshData.deletedPages = emptyList()
+    RefreshData.feedAvailable = false
+    RefreshData.feedEntries.clear()
+    RefreshData.feedStatus.clear()
+    RefreshData.diveStatus.clear()
+    RefreshData.siteStatus.clear()
 }
 
 private fun refreshPathId(path: String): String = path.substringAfterLast('/').substringBefore('?')
@@ -189,7 +211,26 @@ private fun refreshDetailsPage(items: List<String>): String {
     "totals":{"dives":${RefreshData.dives.size},"durationSeconds":0,"deepestM":null,"lastDiveAt":null},"months":[]}"""
 }
 
+/** The fake feed: a bootstrap without a cursor, else the entries after the requested position, page-limited. */
+private fun refreshFeedPage(path: String): RefreshReply {
+    if (!RefreshData.feedAvailable) return RefreshReply.Status(HttpStatusCode.NotFound)
+    val cursor = refreshQuery(path, "cursor")
+    if (cursor == null) {
+        return refreshJson("""{"cursor":"c${RefreshData.feedEntries.size}","events":[]}""")
+    }
+    val from = cursor.removePrefix("c").toInt()
+    RefreshData.feedStatus[from]?.let { return RefreshReply.Status(it) }
+    val limit = refreshQuery(path, "limit")?.toInt() ?: 200
+    val slice = RefreshData.feedEntries.drop(from).take(limit)
+    val next = from + slice.size
+    val events = slice.mapIndexed { index, entry ->
+        """{"seq":${from + index + 1},"entityType":"${entry.entityType}","entityId":"${entry.entityId}","kind":"${entry.kind}"}"""
+    }
+    return refreshJson("""{"cursor":"c$next","events":[${events.joinToString(",")}]}""")
+}
+
 private fun refreshRoutes(path: String): RefreshReply = when {
+    path.startsWith("/api/sync/changes") -> refreshFeedPage(path)
     path == "/api/divers" -> refreshJson("[${RefreshData.divers.joinToString(",")}]")
     path.startsWith("/api/divers/") && path.endsWith("/body-weights") -> refreshJson(refreshWeightsJson())
     path.startsWith("/api/dive-sites?") -> {
@@ -197,7 +238,11 @@ private fun refreshRoutes(path: String): RefreshReply = when {
         val limit = refreshQuery(path, "limit")?.toInt() ?: 200
         refreshJson(refreshSitePage(RefreshData.sites.drop(offset).take(limit)))
     }
-    path.startsWith("/api/dive-sites/") -> refreshJson(RefreshData.sites.first { it.contains("\"id\":\"${refreshPathId(path)}\"") })
+    path.startsWith("/api/dive-sites/") -> {
+        val id = refreshPathId(path)
+        RefreshData.siteStatus[id]?.let { return RefreshReply.Status(it) }
+        refreshJson(RefreshData.sites.first { it.contains("\"id\":\"$id\"") })
+    }
     path.startsWith("/api/dives/deleted?") -> {
         val cursor = refreshQuery(path, "cursor")
         val index = if (cursor == null) 0 else cursor.removePrefix("c").toInt()
@@ -219,7 +264,11 @@ private fun refreshRoutes(path: String): RefreshReply = when {
         val channels = refreshQuery(path, "channels")?.split(',')?.filter { it.isNotEmpty() }.orEmpty()
         refreshJson(refreshSamplesJson(id, channels, RefreshData.samplePeak[id] ?: 31.4))
     }
-    path.startsWith("/api/dives/") -> refreshJson(RefreshData.details[refreshPathId(path)] ?: refreshDetailJson(refreshPathId(path)))
+    path.startsWith("/api/dives/") -> {
+        val id = refreshPathId(path)
+        RefreshData.diveStatus[id]?.let { return RefreshReply.Status(it) }
+        refreshJson(RefreshData.details[id] ?: refreshDetailJson(id))
+    }
     else -> error("unexpected $path")
 }
 
@@ -236,6 +285,15 @@ class SyncRefreshTest {
     private suspend fun seeded(handler: (String) -> RefreshReply = ::refreshRoutes): RefreshHarness {
         val harness = RefreshHarness(store, handler)
         harness.engine.sync()
+        harness.paths.clear()
+        return harness
+    }
+
+    /** A seeded store whose server answers the change feed, with the cursor at the log's start. */
+    private suspend fun seededWithFeed(): RefreshHarness {
+        RefreshData.feedAvailable = true
+        val harness = seeded()
+        store.saveSyncState(store.syncState().copy(feedCursor = "c0"))
         harness.paths.clear()
         return harness
     }
@@ -844,4 +902,258 @@ class SyncRefreshTest {
         assertEquals(RefreshNow, seen.last().lastFullSyncAt)
         assertEquals(seen.last(), harness.refresher.progress.value)
     }
+    @Test
+    fun `a store with no cursor bootstraps and full-syncs before it follows`() = runTest {
+        RefreshData.feedAvailable = true
+        val harness = seeded()
+        RefreshData.dives += refreshDiveListItem(id = "dive-2", startsAt = "2026-10-01T10:00:00Z", number = 2)
+        RefreshData.details["dive-2"] = refreshDetailJson(id = "dive-2", startsAt = "2026-10-01T10:00:00Z")
+        harness.paths.clear()
+
+        assertEquals(SyncResult.Complete, harness.engine.refresh())
+
+        val bootstrap = harness.paths.indexOf("/api/sync/changes")
+        val pages = harness.paths.indexOfFirst { it.startsWith("/api/dives?limit=200&offset=0") }
+        assertTrue(bootstrap >= 0 && pages > bootstrap, "bootstrap before the pages: ${harness.paths}")
+        assertTrue(harness.paths.any { it.startsWith("/api/sync/changes?cursor=c0") })
+        assertEquals("c0", store.syncState().feedCursor)
+        assertNotNull(store.dive("dive-2"))
+    }
+
+    @Test
+    fun `a refresh drains the feed and refetches only what changed`() = runTest {
+        val harness = seededWithFeed()
+        RefreshData.details["dive-1"] = refreshDetailJson(version = 4, notes = "Changed elsewhere")
+        RefreshData.dives[0] = refreshDiveListItem(number = 9, findings = 3)
+        RefreshData.feedEntries += FeedEntry("dive", "dive-1")
+
+        assertEquals(SyncResult.Complete, harness.engine.refresh())
+
+        assertEquals(4L, store.dive("dive-1")!!.version)
+        assertEquals("Changed elsewhere", store.dive("dive-1")!!.notes)
+        assertEquals(3L, store.dive("dive-1")!!.findingsCount)
+        assertEquals("c1", store.syncState().feedCursor)
+        assertEquals(RefreshNow, store.syncState().lastFullSyncAt)
+        assertTrue(harness.paths.contains("/api/sync/changes?cursor=c0&limit=200"))
+        assertTrue(harness.paths.contains("/api/dives/dive-1"))
+        assertTrue(harness.paths.contains("/api/dives?limit=200&offset=0"))
+        assertTrue(harness.paths.none { it.contains("include=details") })
+    }
+
+    @Test
+    fun `a deleted event tombstones a Dive without refetching it`() = runTest {
+        val harness = seededWithFeed()
+        RefreshData.dives.clear()
+        RefreshData.feedEntries += FeedEntry("dive", "dive-1", "deleted")
+
+        assertEquals(SyncResult.Complete, harness.engine.refresh())
+
+        assertNull(store.dive("dive-1"))
+        assertNotNull(store.diveIncludingDeleted("dive-1")!!.deletedAt)
+        assertTrue(harness.paths.none { it == "/api/dives/dive-1" })
+        assertEquals("c1", store.syncState().feedCursor)
+    }
+
+    @Test
+    fun `a 403 on a Dive refetch tombstones it`() = runTest {
+        val harness = seededWithFeed()
+        RefreshData.dives.clear()
+        RefreshData.diveStatus["dive-1"] = HttpStatusCode.Forbidden
+        RefreshData.feedEntries += FeedEntry("dive", "dive-1")
+
+        assertEquals(SyncResult.Complete, harness.engine.refresh())
+
+        assertNull(store.dive("dive-1"))
+        assertNotNull(store.diveIncludingDeleted("dive-1")!!.deletedAt)
+    }
+
+    @Test
+    fun `deleted site and Diver events tombstone locally`() = runTest {
+        val harness = seededWithFeed()
+        RefreshData.feedEntries += FeedEntry("dive_site", "site-1", "deleted")
+        RefreshData.feedEntries += FeedEntry("diver", "diver-1", "deleted")
+
+        assertEquals(SyncResult.Complete, harness.engine.refresh())
+
+        assertTrue(store.diveSites().isEmpty())
+        assertNotNull(store.diveSiteIncludingDeleted("site-1")!!.deletedAt)
+        assertTrue(store.divers().isEmpty())
+        assertNotNull(store.diverIncludingDeleted("diver-1")!!.deletedAt)
+        assertEquals("c2", store.syncState().feedCursor)
+    }
+
+    @Test
+    fun `a changed site refetches through the API and a 404 tombstones it`() = runTest {
+        val harness = seededWithFeed()
+        RefreshData.sites[0] = refreshSiteJson(name = "New Reef")
+        RefreshData.feedEntries += FeedEntry("dive_site", "site-1")
+
+        assertEquals(SyncResult.Complete, harness.engine.refresh())
+        assertEquals(listOf("New Reef"), store.diveSites().map { it.name })
+
+        RefreshData.siteStatus["site-1"] = HttpStatusCode.NotFound
+        RefreshData.feedEntries += FeedEntry("dive_site", "site-1")
+        assertEquals(SyncResult.Complete, harness.engine.refresh())
+
+        assertTrue(store.diveSites().isEmpty())
+        assertNotNull(store.diveSiteIncludingDeleted("site-1")!!.deletedAt)
+    }
+
+    @Test
+    fun `a changed Diver refetches the Diver list`() = runTest {
+        val harness = seededWithFeed()
+        RefreshData.divers[0] = refreshDiverJson(name = "Ada Lovelace")
+        RefreshData.feedEntries += FeedEntry("diver", "diver-1")
+
+        assertEquals(SyncResult.Complete, harness.engine.refresh())
+
+        assertEquals(listOf("Ada Lovelace"), store.divers().map { it.name })
+        assertTrue(harness.paths.contains("/api/divers"))
+    }
+
+    @Test
+    fun `hints for entities this store does not hold are ignored`() = runTest {
+        val harness = seededWithFeed()
+        RefreshData.feedEntries += FeedEntry("device", "device-1")
+        RefreshData.feedEntries += FeedEntry("dive_centre", "centre-1")
+        RefreshData.feedEntries += FeedEntry("equipment_item", "item-1")
+
+        assertEquals(SyncResult.Complete, harness.engine.refresh())
+
+        assertEquals("c3", store.syncState().feedCursor)
+        // Only the feed and the paged body-weight gap (ADR 0083): no entity refetch and no list page.
+        assertEquals(
+            listOf("/api/sync/changes?cursor=c0&limit=200", "/api/divers/diver-1/body-weights"),
+            harness.paths,
+        )
+    }
+
+    @Test
+    fun `a Recording hint refetches its parent Dive when the store holds it`() = runTest {
+        val harness = seededWithFeed()
+        RefreshData.feedEntries += FeedEntry("recording", "recording-dive-1")
+
+        assertEquals(SyncResult.Complete, harness.engine.refresh())
+
+        assertTrue(harness.paths.contains("/api/dives/dive-1"))
+    }
+
+    @Test
+    fun `an interrupted drain resumes at the last complete page`() = runTest {
+        val harness = seededWithFeed()
+        repeat(200) { RefreshData.feedEntries += FeedEntry("dive", "dive-1") }
+        RefreshData.details["dive-2"] = refreshDetailJson(id = "dive-2", startsAt = "2026-10-01T10:00:00Z")
+        RefreshData.feedEntries += FeedEntry("dive", "dive-2")
+        RefreshData.feedStatus[200] = HttpStatusCode.InternalServerError
+
+        val first = harness.engine.refresh()
+
+        assertIs<SyncResult.Stopped>(first)
+        assertEquals("c200", store.syncState().feedCursor)
+        assertNotNull(store.dive("dive-1"))
+        assertNull(store.dive("dive-2"))
+
+        harness.paths.clear()
+        RefreshData.feedStatus.clear()
+        assertEquals(SyncResult.Complete, harness.engine.refresh())
+
+        assertEquals("c201", store.syncState().feedCursor)
+        assertNotNull(store.dive("dive-2"))
+        assertTrue(harness.paths.any { it.startsWith("/api/sync/changes?cursor=c200") })
+        assertTrue(harness.paths.none { it.startsWith("/api/sync/changes?cursor=c0") })
+    }
+
+    @Test
+    fun `a 410 resyncs through the paged machinery without wiping the store`() = runTest {
+        val harness = seededWithFeed()
+        store.upsertDive(
+            Dive(
+                id = "local-only",
+                diverId = "diver-1",
+                version = 5,
+                startsAt = "2026-09-01T10:00:00Z",
+                listJson = "{}",
+                detailJson = "{}",
+            ),
+        )
+        RefreshData.feedStatus[0] = HttpStatusCode.Gone
+        RefreshData.feedEntries += FeedEntry("dive", "dive-1")
+
+        assertEquals(SyncResult.Complete, harness.engine.refresh())
+
+        assertTrue(harness.paths.contains("/api/dives?limit=200&offset=0"))
+        assertEquals("c1", store.syncState().feedCursor)
+        // Nothing was wiped: a local row the pages do not carry stays (a schema-v5 write queue lives beside it).
+        assertNotNull(store.dive("local-only"))
+        assertNotNull(store.dive("dive-1"))
+    }
+
+    @Test
+    fun `a pre-feed server keeps the paged refresh and leaves no cursor`() = runTest {
+        RefreshData.feedAvailable = false
+        val harness = seeded()
+        RefreshData.divers[0] = refreshDiverJson(name = "Ada Lovelace")
+        harness.paths.clear()
+
+        assertEquals(SyncResult.Complete, harness.engine.refresh())
+
+        assertNull(store.syncState().feedCursor)
+        assertEquals(listOf("Ada Lovelace"), store.divers().map { it.name })
+        assertTrue(harness.paths.contains("/api/sync/changes"))
+        assertTrue(harness.paths.any { it.startsWith("/api/dives?limit=200&offset=0") })
+    }
+
+    @Test
+    fun `a bootstrap whose paged reload fails is retried, never followed`() = runTest {
+        RefreshData.feedAvailable = true
+        var failDivers = 2
+        val harness = RefreshHarness(store, handler = { path ->
+            if (path == "/api/divers" && failDivers > 0) {
+                failDivers -= 1
+                RefreshReply.Status(HttpStatusCode.InternalServerError)
+            } else {
+                refreshRoutes(path)
+            }
+        })
+
+        assertIs<SyncResult.Stopped>(harness.engine.refresh())
+        assertNull(store.syncState().feedCursor)
+
+        assertEquals(SyncResult.Complete, harness.engine.refresh())
+        assertNotNull(store.syncState().feedCursor)
+        assertEquals(2, harness.paths.count { it == "/api/sync/changes" })
+    }
+
+    @Test
+    fun `a hint drains the feed when the server has one`() = runTest {
+        val harness = seededWithFeed()
+        RefreshData.details["dive-2"] = refreshDetailJson(
+            id = "dive-2",
+            startsAt = "2026-10-01T10:00:00Z",
+            notes = "Elsewhere",
+        )
+        RefreshData.feedEntries += FeedEntry("dive", "dive-2")
+
+        harness.refresher.handle(LiveEvent.Hint(LiveHint("dive", "dive-1")))
+
+        assertEquals("Elsewhere", store.dive("dive-2")!!.notes)
+        assertTrue(harness.paths.any { it.startsWith("/api/sync/changes?cursor=c0") })
+        assertTrue(harness.paths.contains("/api/dives/dive-2"))
+        assertTrue(harness.paths.none { it == "/api/dives/dive-1" })
+    }
+
+    @Test
+    fun `a hint against a pre-feed server refetches only the hinted thing`() = runTest {
+        RefreshData.feedAvailable = false
+        val harness = seeded()
+        RefreshData.details["dive-1"] = refreshDetailJson(version = 4)
+        harness.paths.clear()
+
+        harness.refresher.handle(LiveEvent.Hint(LiveHint("dive", "dive-1")))
+
+        assertEquals(4L, store.dive("dive-1")!!.version)
+        assertTrue(harness.paths.none { it.startsWith("/api/sync/changes") })
+        assertTrue(harness.paths.contains("/api/dives/dive-1"))
+    }
+
 }
