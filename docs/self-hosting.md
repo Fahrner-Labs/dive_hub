@@ -360,3 +360,20 @@ are **forward-only**.
 **Never downgrade across a migration.** An older image cannot undo a newer schema. If an upgrade
 goes wrong, restore the backup from step 1 (database *and* files) and start the previous tag
 again.
+
+## A worker job that gave up
+
+The support bundle's `jobs.json` lists jobs with a stored error. A job whose `attempts` reached
+`maxAttempts` has stopped retrying and stays in the queue as a tombstone: it runs nothing, and a job
+the worker queues at every start (such as `assess-dives`,
+[ADR 0036](decisions/0036-dive-assessment.md)) is queued anew on the next start. The row only
+clutters the next bundle. To remove the ones that gave up (Graphile Worker keeps them in its private
+table; `attempts = max_attempts and locked_at is null` is its own "permanently failed" rule):
+
+```sh
+docker compose exec -T db psql -U divehub -d divehub -c \
+  "delete from graphile_worker._private_jobs where attempts = max_attempts and locked_at is null"
+```
+
+Take the support bundle first if you want to keep their errors. A job that fails again after this
+points at a real fault: its stored error names the database's own message.
