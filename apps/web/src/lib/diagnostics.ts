@@ -20,6 +20,8 @@ export interface DiagnosticEntry {
   occurredAt: string;
   level: 'error' | 'warn';
   code?: string;
+  /** The build the entry was captured in, so a stale tab's error keeps its version past a reload (FAH-456). */
+  clientVersion?: string;
   message: string;
   stack?: string;
   context?: Record<string, string>;
@@ -127,6 +129,7 @@ function prepareEntry(entry: DiagnosticEntry): DiagnosticEntry {
   const clean: DiagnosticEntry = {
     occurredAt: Number.isNaN(at.getTime()) ? new Date().toISOString() : at.toISOString(),
     level: entry.level === 'warn' ? 'warn' : 'error',
+    clientVersion: entry.clientVersion ?? CLIENT_VERSION,
     message: truncate(withoutQueryStrings(entry.message), MESSAGE_MAX_LENGTH),
   };
   if (entry.code) clean.code = truncate(withoutQueryStrings(entry.code), 200);
@@ -162,6 +165,7 @@ export function diagnosticFromError(
   return {
     occurredAt: new Date().toISOString(),
     level,
+    clientVersion: CLIENT_VERSION,
     ...(code && { code }),
     message,
     ...(error instanceof Error && error.stack && { stack: error.stack }),
