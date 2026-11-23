@@ -1,0 +1,16 @@
+-- v5 adds the offline write queue (ADR 0084 D4): the user's pending edits survive process death and upgrades.
+CREATE TABLE pending_write(
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    kind TEXT NOT NULL,
+    entityType TEXT NOT NULL,
+    entityId TEXT NOT NULL,
+    payloadJson TEXT NOT NULL,
+    baseVersion INTEGER,
+    baseJson TEXT,
+    status TEXT NOT NULL DEFAULT 'pending',
+    enqueuedAt TEXT NOT NULL,
+    lastError TEXT,
+    conflictJson TEXT
+);
+
+CREATE INDEX pending_write_status_order ON pending_write(status, id);
