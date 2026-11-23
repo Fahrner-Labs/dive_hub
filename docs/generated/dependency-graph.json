@@ -33391,6 +33391,7 @@
         "apps/web/src/EquipmentDue.tsx",
         "apps/web/src/EquipmentPage.tsx",
         "apps/web/src/ImportPanel.tsx",
+        "apps/web/src/lib/lazy-reload.ts",
         "apps/web/src/BuddySuggestions.tsx",
         "apps/web/src/DecisionTimeline.tsx",
         "apps/web/src/Decisions.tsx",
@@ -35481,6 +35482,7 @@
       "dependents": [
         "apps/web/src/ReportProblem.tsx",
         "apps/web/src/ui/ErrorBoundary.tsx",
+        "apps/web/src/lib/lazy-reload.ts",
         "apps/web/src/main.tsx"
       ],
       "orphan": false,
@@ -38136,6 +38138,23 @@
             "import"
           ],
           "resolved": "apps/web/src/lib/display.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./lib/lazy-reload.ts",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/web/src/lib/lazy-reload.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -46450,6 +46469,52 @@
       "valid": true
     },
     {
+      "source": "apps/web/src/lib/lazy-reload.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./diagnostics.ts",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/web/src/lib/diagnostics.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "react",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "npm",
+            "import"
+          ],
+          "resolved": "apps/web/node_modules/react/index.js",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": true,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/web/src/App.tsx",
+        "apps/web/src/SettingsPage.tsx",
+        "apps/web/src/main.tsx"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "apps/web/src/ReviewPage.tsx",
       "dependencies": [
         {
@@ -47953,6 +48018,23 @@
             "import"
           ],
           "resolved": "apps/web/src/Devices.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./lib/lazy-reload.ts",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/web/src/lib/lazy-reload.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -51297,6 +51379,23 @@
         },
         {
           "dynamic": false,
+          "module": "./lib/lazy-reload.ts",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/web/src/lib/lazy-reload.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./pages.css",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -51514,8 +51613,8 @@
     "baselineSize": 0,
     "baselineStale": 0,
     "advisedExitCode": 0,
-    "totalCruised": 486,
-    "totalDependenciesCruised": 2572,
+    "totalCruised": 487,
+    "totalDependenciesCruised": 2577,
     "optionsUsed": {
       "baseDir": "/home/runner/work/dive_hub/dive_hub",
       "combinedDependencies": false,
