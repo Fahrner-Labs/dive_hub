@@ -20,6 +20,11 @@ export interface CentreRouteDeps {
 
 const Name = Type.String({ minLength: 1, maxLength: 200, pattern: '\\S', description: 'As the centre spells it; for an SSI code, exactly as SSI does' });
 const TypedId = Type.String({ minLength: 1, maxLength: 300, description: 'As the User typed or pasted it: the bare number, or the centre\'s whole code' });
+const ClientId = Type.String({
+  format: 'uuid',
+  pattern: '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$',
+  description: 'A uuidv7 the client made, so an offline create replays as itself: the same id answers 200 with the centre, never a second one (ADR 0084)',
+});
 
 const ListQuery = Type.Object({
   q: Type.Optional(Type.String({ maxLength: 100, description: 'Words from the name' })),
@@ -29,6 +34,7 @@ const ListQuery = Type.Object({
 });
 
 const CreateBody = Type.Object({
+  id: Type.Optional(ClientId),
   name: Name,
   externalIds: Type.Optional(Type.Array(Type.Object({ source: Source, externalId: TypedId }, { additionalProperties: false }), { maxItems: CENTRE_SOURCES.length })),
   siteIds: Type.Optional(Type.Array(Type.String({ format: 'uuid' }), { maxItems: 200, description: 'Dive sites the centre is responsible for' })),
@@ -104,13 +110,15 @@ export const centreRoutes: FastifyPluginAsyncTypebox<CentreRouteDeps> = async (a
   app.post('/dive-centres', {
     schema: {
       summary: 'Create a Dive centre; every User of the instance sees it',
-      description: 'With its numbers and Dive sites in one step, or not at all. 409 centre_external_id_taken names the centre that has the number.',
-      body: CreateBody, response: { 201: CentreView, ...errors },
+      description: 'With its numbers and Dive sites in one step, or not at all. 409 centre_external_id_taken names the centre that has the number. '
+        + 'A native client may send its own uuidv7 id: a re-POST with the same id answers 200 with the centre, never a duplicate and never an '
+        + 'overwrite; a centre with that id deleted meanwhile answers 404 centre_not_found and is not recreated (ADR 0084).',
+      body: CreateBody, response: { 200: CentreView, 201: CentreView, ...errors },
     },
   }, async (request, reply) => {
-    const { name, externalIds, siteIds } = request.body;
-    const id = await centres.create(callerOf(request), { name: name.trim(), externalIds, siteIds });
-    return reply.code(201).send(toCentreView(await centres.get(callerOf(request), id)));
+    const { id, name, externalIds, siteIds } = request.body;
+    const created = await centres.create(callerOf(request), { id, name: name.trim(), externalIds, siteIds });
+    return reply.code(created.created ? 201 : 200).send(toCentreView(await centres.get(callerOf(request), created.id)));
   });
 
   app.patch('/dive-centres/:id', {

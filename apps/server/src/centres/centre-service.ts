@@ -144,26 +144,39 @@ export function createCentreService(db: Db, displayNames: CentreDisplayNames) {
       return view(actor, row);
     },
 
-    /** Name, numbers and sites in one step, so a centre made from a pasted code is whole or not there. */
-    async create(actor: Caller, input: { name: string; externalIds?: { source: CentreSource; externalId: string }[] | undefined; siteIds?: string[] | undefined }) {
+    /**
+     * Name, numbers and sites in one step, so a centre made from a pasted code is whole or not there. A client-supplied
+     * uuidv7 replays as itself: an id that is already a live centre answers that centre without a second row or Revision
+     * (ADR 0084); one that a delete tombstoned is `centre_not_found`, never silently brought back.
+     */
+    async create(actor: Caller, input: { id?: string | undefined; name: string; externalIds?: { source: CentreSource; externalId: string }[] | undefined; siteIds?: string[] | undefined }) {
       const ids = (input.externalIds ?? []).map((e) => ({ source: e.source, externalId: typedId(e.source, e.externalId) }));
       if (ids.some((e) => e.externalId === null) || new Set(ids.map((e) => e.source)).size !== ids.length) throw new CentreError('invalid_input');
       return db.transaction(async (tx) => {
-        const [created] = await tx.insert(diveCentre).values({ name: input.name, createdBy: actor.userId }).returning();
+        const [created] = input.id
+          ? await tx.insert(diveCentre).values({ id: input.id, name: input.name, createdBy: actor.userId })
+            .onConflictDoNothing({ target: diveCentre.id }).returning()
+          : await tx.insert(diveCentre).values({ name: input.name, createdBy: actor.userId }).returning();
+        if (!created) {
+          const [existing] = await tx.select({ deletedAt: diveCentre.deletedAt }).from(diveCentre)
+            .where(eq(diveCentre.id, input.id!));
+          if (!existing || existing.deletedAt) throw new CentreError('centre_not_found');
+          return { id: input.id!, created: false };
+        }
         const changes: Changes = { name: { from: null, to: input.name } };
         for (const e of ids) {
-          await setExternal(tx, created!.id, e.source, e.externalId);
+          await setExternal(tx, created.id, e.source, e.externalId);
           changes[revisionKey(e.source)] = { from: null, to: e.externalId };
         }
         const siteIds = [...new Set(input.siteIds ?? [])];
         if (siteIds.length > 0) {
           const sites = await tx.select({ id: diveSite.id, name: diveSite.name }).from(diveSite).where(and(inArray(diveSite.id, siteIds), isNull(diveSite.deletedAt)));
           if (sites.length !== siteIds.length) throw new CentreError('site_not_found');
-          await tx.insert(diveCentreSite).values(sites.map((s) => ({ centreId: created!.id, siteId: s.id })));
+          await tx.insert(diveCentreSite).values(sites.map((s) => ({ centreId: created.id, siteId: s.id })));
           changes.sites = { from: null, to: sites };
         }
-        await writeRevision(tx, 'dive_centre', created!.id, { type: 'user', id: actor.userId }, 'create', changes);
-        return created!.id;
+        await writeRevision(tx, 'dive_centre', created.id, { type: 'user', id: actor.userId }, 'create', changes);
+        return { id: created.id, created: true };
       });
     },
 

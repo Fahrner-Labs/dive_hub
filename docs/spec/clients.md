@@ -1422,6 +1422,10 @@ dives, all off until the User turns them on. *Web:* `ProviderAutomation.tsx` (se
   `centre`, and say so when `existing` names a centre that already has the number; say that a `buddy` or
   `professional` code is not a centre's and keep nothing of it (it holds a person's e-mail); `code_not_recognised`
   for anything else.
+- **A native client sends its own uuidv7 `id` on create** ([ADR 0084](../decisions/0084-offline-writes-in-the-native-core.md)),
+  so a queued create replays as itself: the same `id` answers 200 with the centre as it is (201 on the first create),
+  never a second centre and never an overwrite; a centre with that `id` deleted meanwhile answers 404
+  `centre_not_found` and nothing is recreated.
 - **Should offer scanning a code**, by camera and from an image file, wherever a code's text can be pasted. Send the
   text that was read to `POST /api/verification-codes/read`, unchanged, and take only what it answers; don't put the
   scanned text into a field. Ask for the camera only when the User starts scanning, release it as soon as a code is
