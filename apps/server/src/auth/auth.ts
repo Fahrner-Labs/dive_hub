@@ -10,6 +10,7 @@ import { twoFactor } from 'better-auth/plugins/two-factor';
 import { apiKey } from '@better-auth/api-key';
 import type { Db } from '../db/client.js';
 import { diver, diverManagement } from '../db/schema.js';
+import { userActor, writeRevision } from '../revisions/revisions.js';
 import { hashPassword, MAX_PASSWORD_LENGTH, MIN_PASSWORD_LENGTH, verifyPassword } from './password.js';
 
 /**
@@ -138,6 +139,7 @@ export function createAuth({ db, baseUrl, secret, trustedOrigins = [], rateLimit
             await db.transaction(async (tx) => {
               const [own] = await tx.insert(diver).values({ name: user.name }).returning({ id: diver.id });
               await tx.insert(diverManagement).values({ userId: user.id, diverId: own!.id, isOwn: true });
+              await writeRevision(tx, 'diver', own!.id, userActor(user.id), 'create', { name: { from: null, to: user.name } });
             });
           },
         },

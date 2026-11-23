@@ -63,9 +63,12 @@ export async function mergeExternalDiver(tx: Tx, fromId: string, intoId: string,
   // What the merged Diver's code said fills the gaps of the kept one; the deleted row keeps no personal data.
   await tx.update(diver).set({
     firstName: into.firstName ?? from.firstName, lastName: into.lastName ?? from.lastName,
-    email: into.email ?? from.email, leaderNumber: into.leaderNumber ?? from.leaderNumber, updatedAt: at,
+    email: into.email ?? from.email, leaderNumber: into.leaderNumber ?? from.leaderNumber,
+    version: sql`${diver.version} + 1`, updatedAt: at,
   }).where(eq(diver.id, intoId));
-  await tx.update(diver).set({ deletedAt: at, mergedInto: intoId, updatedAt: at, firstName: null, lastName: null, email: null, leaderNumber: null }).where(eq(diver.id, fromId));
+  await tx.update(diver).set({
+    deletedAt: at, mergedInto: intoId, version: sql`${diver.version} + 1`, updatedAt: at, firstName: null, lastName: null, email: null, leaderNumber: null,
+  }).where(eq(diver.id, fromId));
   await writeRevision(tx, 'diver', fromId, actor, 'merge', { mergedInto: { from: null, to: { id: into.id, name: into.name } } });
   await writeRevision(tx, 'diver', intoId, actor, 'merge', { merged: { from: { id: from.id, name: from.name }, to: null }, dives: { from: null, to: dives } });
   // What waited on the merged-away Diver follows to the survivor (ADR 0070): its pending Buddy suggestions become the
