@@ -4,7 +4,7 @@
 > `pnpm check` fails when this map is stale. Symbols are ranked by how widely the code references them;
 > each module shows its most-referenced ones (exported symbols rank higher). Search here before walking the tree.
 
-Files: 423 · symbols: 3892 · shown: 248
+Files: 423 · symbols: 3893 · shown: 248
 
 ### server/(root)
 apps/server/src/vocabulary.ts:13 type SiteWaterType
@@ -44,11 +44,11 @@ apps/server/src/backups/backup-service.ts:453 type BackupService
 
 ### server/centres
 apps/server/src/centres/centre-view.ts:24 const CentreView
-apps/server/src/centres/centre-service.ts:254 type CentreService
+apps/server/src/centres/centre-service.ts:267 type CentreService
 apps/server/src/centres/centre-service.ts:12 const CENTRE_SOURCES
 apps/server/src/centres/centre-service.ts:18 class CentreError
 apps/server/src/centres/centre-view.ts:7 const Source
-… 26 more symbols in this module
+… 27 more symbols in this module
 
 ### server/certifications
 apps/server/src/certifications/certification-service.ts:457 type CertificationService
