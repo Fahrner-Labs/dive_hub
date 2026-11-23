@@ -47,6 +47,7 @@ import type { BlobStore } from './storage/blob-store.js';
 import { createLogRingBuffer, type LogRingBuffer } from './support/log-ring-buffer.js';
 import { createClientDiagnosticsService } from './support/client-diagnostics-service.js';
 import { createSupportService } from './support/support-service.js';
+import { createSyncService } from './sync/changes-service.js';
 import { createInvitationService } from './users/invitation-service.js';
 import { createPasswordResetService } from './users/password-reset-service.js';
 import { createProfileService } from './users/profile-service.js';
@@ -97,6 +98,7 @@ export function createServices({
     encryptionKey, log: backupLog, now: clock ? () => clock.now() : undefined,
   });
   const clientDiagnostics = createClientDiagnosticsService(db);
+  const sync = createSyncService(db);
   const support = createSupportService({
     db, buffer: logBuffer, migrationsFolder: fileURLToPath(new URL('../drizzle', import.meta.url)),
     appVersion: process.env.DIVEHUB_VERSION ?? 'dev', databaseUrl, dataDir, encryptionKey, clientDiagnostics,
@@ -117,7 +119,7 @@ export function createServices({
   // Restoring a Dive an append took undoes the append (ADR 0063).
   const dives = createDiveService(db, continuation);
   return {
-    db, blobs, auth, assessments, backups, support, clientDiagnostics, providers, imports, logBuffer,
+    db, blobs, auth, assessments, backups, support, clientDiagnostics, sync, providers, imports, logBuffer,
     siteImports: createSiteImportService({ db, sources: siteSources }),
     aiAccesses: createAiAccessService(db, auth),
     setup: createSetupService(db, clock ? () => clock.now() : undefined),
@@ -153,5 +155,5 @@ export type Services = ReturnType<typeof createServices>;
 export const workerDeps = (s: Services, log: FastifyBaseLogger): WorkerDeps => ({
   backups: s.backups, imports: s.imports, siteImports: s.siteImports, aiAccesses: s.aiAccesses, assessments: s.assessments, pushRuns: s.providers.pushRuns,
   waitingPushes: s.providers.waitingPushes, scheduledFetch: s.providers.scheduledFetch, certifications: s.providers.certifications,
-  purges: s.purge, clientDiagnostics: s.clientDiagnostics, log,
+  purges: s.purge, clientDiagnostics: s.clientDiagnostics, sync: s.sync, log,
 });

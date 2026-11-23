@@ -1849,6 +1849,8 @@ export interface paths {
                             level: "error" | "warn";
                             /** @description A stable client code; clients translate what they know */
                             code?: string;
+                            /** @description The build the entry was captured in; older clients omit it and the upload's client.version is used */
+                            clientVersion?: string;
                             message: string;
                             stack?: string;
                             /** @description Client context; the server re-redacts keys such as token and strings such as e-mail addresses */
@@ -1987,6 +1989,87 @@ export interface paths {
                 };
             };
         };
+        trace?: never;
+    };
+    "/api/sync/changes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The logbook change feed: what changed since a cursor (ADR 0083)
+         * @description Append-only and ordered by seq. Events carry IDs and kinds only: refetch each entity through its normal API and tombstone it locally on 404/403 or kind=deleted. Without a cursor it answers only the bootstrap cursor for a full sync. A cursor older than the feed's 180-day retention answers 410 sync_resync_required; the client then resyncs and rebases its queued writes.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description The seq of the last change the client applied. Omit it to bootstrap: the answer then carries only the cursor. */
+                    cursor?: number;
+                    limit?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @description Send this back as cursor to continue where this answer stopped */
+                            cursor: number;
+                            /** @description In seq order; empty for a bootstrap */
+                            events: {
+                                /** @description The change's place in the feed; the answer's cursor is the last one */
+                                seq: number;
+                                /**
+                                 * @description Which kind of thing changed
+                                 * @enum {unknown}
+                                 */
+                                entityType: "dive" | "recording" | "device" | "dive_site" | "diver" | "dive_centre" | "equipment_item";
+                                /** Format: uuid */
+                                entityId: string;
+                                /**
+                                 * @description deleted: it is gone or merged away; a refetch answers 404, and a 403 is a tombstone too (ADR 0083)
+                                 * @enum {unknown}
+                                 */
+                                kind: "changed" | "deleted";
+                            }[];
+                        };
+                    };
+                };
+                /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
+                410: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/imports": {
@@ -2451,7 +2534,10 @@ export interface paths {
         delete: {
             parameters: {
                 query?: never;
-                header?: never;
+                header?: {
+                    /** @description The version the change started from, as a read's ETag carried it (e.g. "3"); it overrides the body's version */
+                    "if-match"?: string;
+                };
                 path: {
                     id: string;
                 };
@@ -2460,7 +2546,7 @@ export interface paths {
             requestBody: {
                 content: {
                     "application/json": {
-                        version: number;
+                        version?: number;
                         /** @description Providers to delete the Dive's copy at too; ask the User first (docs/spec/clients.md) */
                         alsoAt?: string[];
                     };
@@ -2513,6 +2599,17 @@ export interface paths {
                         "application/json": components["schemas"]["DeleteProblem"];
                     };
                 };
+                /** @description A stale If-Match: the problem and the Dive as it is now */
+                412: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"] & {
+                            dive: components["schemas"]["DiveView"];
+                        };
+                    };
+                };
                 /** @description A refusal while deleting a Dive: a Problem, with the copies at Providers */
                 502: {
                     headers: {
@@ -2528,12 +2625,15 @@ export interface paths {
         head?: never;
         /**
          * Edit a Dive: set values (they become Overrides), reset Overrides, change notes, the Dive site or the Cylinders
-         * @description Send the version you started from; if the Dive changed meanwhile the answer is 409 dive_changed.
+         * @description Send the version you started from; if the Dive changed meanwhile the answer is 409 dive_changed. A native client sends it as If-Match instead: a stale one answers 412 with the Dive as it is now (ADR 0083).
          */
         patch: {
             parameters: {
                 query?: never;
-                header?: never;
+                header?: {
+                    /** @description The version the change started from, as a read's ETag carried it (e.g. "3"); it overrides the body's version */
+                    "if-match"?: string;
+                };
                 path: {
                     id: string;
                 };
@@ -2542,7 +2642,7 @@ export interface paths {
             requestBody: {
                 content: {
                     "application/json": {
-                        version: number;
+                        version?: number;
                         /** @description Values to override. The number of the Dive is none of them (ADR 0048): naming it is 400 */
                         set?: {
                             startsAt?: {
@@ -2642,6 +2742,17 @@ export interface paths {
                     };
                     content: {
                         "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description A stale If-Match: the problem and the Dive as it is now */
+                412: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"] & {
+                            dive: components["schemas"]["DiveView"];
+                        };
                     };
                 };
             };
@@ -2795,7 +2906,10 @@ export interface paths {
         put: {
             parameters: {
                 query?: never;
-                header?: never;
+                header?: {
+                    /** @description The version the change started from, as a read's ETag carried it (e.g. "3"); it overrides the body's version */
+                    "if-match"?: string;
+                };
                 path: {
                     id: string;
                 };
@@ -2804,7 +2918,7 @@ export interface paths {
             requestBody: {
                 content: {
                     "application/json": {
-                        version: number;
+                        version?: number;
                         participants: {
                             /** Format: uuid */
                             diverId: string;
@@ -2854,6 +2968,17 @@ export interface paths {
                         "application/json": components["schemas"]["Problem"];
                     };
                 };
+                /** @description A stale If-Match: the problem and the Dive as it is now */
+                412: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"] & {
+                            dive: components["schemas"]["DiveView"];
+                        };
+                    };
+                };
             };
         };
         post?: never;
@@ -2878,7 +3003,10 @@ export interface paths {
         put: {
             parameters: {
                 query?: never;
-                header?: never;
+                header?: {
+                    /** @description The version the change started from, as a read's ETag carried it (e.g. "3"); it overrides the body's version */
+                    "if-match"?: string;
+                };
                 path: {
                     id: string;
                 };
@@ -2889,7 +3017,7 @@ export interface paths {
                     "application/json": {
                         /** Format: uuid */
                         recordingId: string;
-                        version: number;
+                        version?: number;
                     };
                 };
             };
@@ -2930,6 +3058,17 @@ export interface paths {
                         "application/json": components["schemas"]["Problem"];
                     };
                 };
+                /** @description A stale If-Match: the problem and the Dive as it is now */
+                412: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"] & {
+                            dive: components["schemas"]["DiveView"];
+                        };
+                    };
+                };
             };
         };
         post?: never;
@@ -2955,7 +3094,10 @@ export interface paths {
         post: {
             parameters: {
                 query?: never;
-                header?: never;
+                header?: {
+                    /** @description The version the change started from, as a read's ETag carried it (e.g. "3"); it overrides the body's version */
+                    "if-match"?: string;
+                };
                 path: {
                     id: string;
                 };
@@ -2966,7 +3108,7 @@ export interface paths {
                     "application/json": {
                         /** Format: uuid */
                         diverId: string;
-                        version: number;
+                        version?: number;
                     };
                 };
             };
@@ -2996,6 +3138,17 @@ export interface paths {
                     };
                     content: {
                         "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description A stale If-Match: the problem and the Dive as it is now */
+                412: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"] & {
+                            dive: components["schemas"]["DiveView"];
+                        };
                     };
                 };
             };
@@ -6292,12 +6445,15 @@ export interface paths {
         head?: never;
         /**
          * Change an Equipment item; send the version you started from
-         * @description 409 equipment_changed when it changed meanwhile. When the status leaves in use the server stamps inUseUntil (today unless sent); returning to in use clears it. Only what is sent changes.
+         * @description 409 equipment_changed when it changed meanwhile. When the status leaves in use the server stamps inUseUntil (today unless sent); returning to in use clears it. Only what is sent changes. A native client sends the version as If-Match instead: a stale one answers 412 with the item as it is now (ADR 0083).
          */
         patch: {
             parameters: {
                 query?: never;
-                header?: never;
+                header?: {
+                    /** @description The version the change started from, as a read's ETag carried it (e.g. "3"); it overrides the body's version */
+                    "if-match"?: string;
+                };
                 path: {
                     id: string;
                 };
@@ -6306,7 +6462,7 @@ export interface paths {
             requestBody: {
                 content: {
                     "application/json": {
-                        version: number;
+                        version?: number;
                         /** @enum {unknown} */
                         category?: "regulator" | "bcd" | "wing" | "backplate" | "cylinder" | "drysuit" | "wetsuit" | "dive_computer" | "transmitter" | "light" | "camera" | "other";
                         name?: string;
@@ -6362,6 +6518,17 @@ export interface paths {
                     };
                     content: {
                         "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description A stale If-Match: the problem and the Equipment item as it is now */
+                412: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"] & {
+                            equipment: components["schemas"]["EquipmentItemDetail"];
+                        };
                     };
                 };
             };
@@ -8350,11 +8517,17 @@ export interface paths {
         };
         put?: never;
         post?: never;
-        /** Delete a Dive site: its creator or an admin, while no Dive is there */
+        /**
+         * Delete a Dive site: its creator or an admin, while no Dive is there
+         * @description A native client sends the version it saw as If-Match: a stale one answers 412 with the site as it is now (ADR 0083).
+         */
         delete: {
             parameters: {
                 query?: never;
-                header?: never;
+                header?: {
+                    /** @description The version the change started from, as a read's ETag carried it (e.g. "3"); it overrides the body's version */
+                    "if-match"?: string;
+                };
                 path: {
                     id: string;
                 };
@@ -8405,18 +8578,32 @@ export interface paths {
                         "application/json": components["schemas"]["Problem"];
                     };
                 };
+                /** @description A stale If-Match: the problem and the site as it is now */
+                412: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"] & {
+                            site: components["schemas"]["SiteView"];
+                        };
+                    };
+                };
             };
         };
         options?: never;
         head?: never;
         /**
          * Edit a Dive site (any User)
-         * @description Send the version you started from; if the site changed meanwhile the answer is 409 site_changed.
+         * @description Send the version you started from; if the site changed meanwhile the answer is 409 site_changed. A native client sends it as If-Match instead: a stale one answers 412 with the site as it is now (ADR 0083).
          */
         patch: {
             parameters: {
                 query?: never;
-                header?: never;
+                header?: {
+                    /** @description The version the change started from, as a read's ETag carried it (e.g. "3"); it overrides the body's version */
+                    "if-match"?: string;
+                };
                 path: {
                     id: string;
                 };
@@ -8426,7 +8613,7 @@ export interface paths {
                 content: {
                     "application/json": {
                         /** @description The version the edit started from */
-                        version: number;
+                        version?: number;
                         name?: string;
                         position?: null | {
                             latitude: number;
@@ -8484,6 +8671,17 @@ export interface paths {
                     };
                     content: {
                         "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description A stale If-Match: the problem and the site as it is now */
+                412: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"] & {
+                            site: components["schemas"]["SiteView"];
+                        };
                     };
                 };
             };
@@ -8681,7 +8879,10 @@ export interface paths {
         post: {
             parameters: {
                 query?: never;
-                header?: never;
+                header?: {
+                    /** @description The version the change started from, as a read's ETag carried it (e.g. "3"); it overrides the body's version */
+                    "if-match"?: string;
+                };
                 path: {
                     id: string;
                 };
@@ -8696,7 +8897,7 @@ export interface paths {
                          */
                         source: "osm" | "wikidata" | "ssi";
                         /** @description The version the User saw */
-                        version: number;
+                        version?: number;
                     };
                 };
             };
@@ -8744,6 +8945,17 @@ export interface paths {
                     };
                     content: {
                         "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description A stale If-Match: the problem and the site as it is now */
+                412: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"] & {
+                            site: components["schemas"]["SiteView"];
+                        };
                     };
                 };
             };
@@ -9096,12 +9308,15 @@ export interface paths {
         head?: never;
         /**
          * Rename a Dive centre (any User)
-         * @description Send the version you started from; if the centre was renamed meanwhile the answer is 409 centre_changed.
+         * @description Send the version you started from; if the centre was renamed meanwhile the answer is 409 centre_changed. A native client sends it as If-Match instead: a stale one answers 412 with the centre as it is now (ADR 0083).
          */
         patch: {
             parameters: {
                 query?: never;
-                header?: never;
+                header?: {
+                    /** @description The version the change started from, as a read's ETag carried it (e.g. "3"); it overrides the body's version */
+                    "if-match"?: string;
+                };
                 path: {
                     id: string;
                 };
@@ -9110,7 +9325,7 @@ export interface paths {
             requestBody: {
                 content: {
                     "application/json": {
-                        version: number;
+                        version?: number;
                         /** @description As the centre spells it; for an SSI code, exactly as SSI does */
                         name: string;
                     };
@@ -9160,6 +9375,17 @@ export interface paths {
                     };
                     content: {
                         "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description A stale If-Match: the problem and the centre as it is now */
+                412: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"] & {
+                            centre: components["schemas"]["CentreView"];
+                        };
                     };
                 };
             };
@@ -14357,7 +14583,7 @@ export interface components {
              * @description Stable, machine-readable reason; clients translate it
              * @enum {unknown}
              */
-            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "two_factor_password_invalid" | "two_factor_code_invalid" | "two_factor_not_enabled" | "too_many_attempts" | "too_many_live_streams" | "live_unavailable" | "client_too_old" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "suggestion_not_found" | "suggestion_not_pending" | "suggestion_dive_not_found" | "suggestion_dive_not_overlapping" | "suggestion_link_conflict" | "joint_offer_not_valid" | "merge_not_possible" | "check_not_found" | "continuation_not_possible" | "recording_is_part" | "device_not_found" | "equipment_not_found" | "equipment_changed" | "equipment_in_use" | "equipment_use_mismatch" | "schedule_not_found" | "schedule_interval_required" | "record_not_found" | "equipment_item_not_cylinder" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "backup_not_found" | "backup_in_progress" | "backup_running" | "backup_not_ready" | "backup_file_missing" | "backup_passphrase_missing" | "backup_settings_invalid" | "backup_recipient_missing" | "backup_recipient_invalid" | "setup_restore_source_missing" | "setup_restore_archive_missing" | "setup_restore_key_missing" | "setup_restore_decrypt_failed" | "setup_restore_key_required" | "setup_restore_key_unexpected" | "setup_restore_key_differs" | "setup_restore_schema_newer" | "setup_restore_failed" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "fetch_interval_too_short" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "waiting_push_not_found" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "client_diagnostics_disabled" | "client_diagnostics_limited" | "provider_site_unknown" | "provider_buddy_not_found" | "provider_site_data_not_confirmed";
+            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "two_factor_password_invalid" | "two_factor_code_invalid" | "two_factor_not_enabled" | "too_many_attempts" | "too_many_live_streams" | "live_unavailable" | "client_too_old" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "suggestion_not_found" | "suggestion_not_pending" | "suggestion_dive_not_found" | "suggestion_dive_not_overlapping" | "suggestion_link_conflict" | "joint_offer_not_valid" | "merge_not_possible" | "check_not_found" | "continuation_not_possible" | "recording_is_part" | "device_not_found" | "equipment_not_found" | "equipment_changed" | "equipment_in_use" | "equipment_use_mismatch" | "schedule_not_found" | "schedule_interval_required" | "record_not_found" | "equipment_item_not_cylinder" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "backup_not_found" | "backup_in_progress" | "backup_running" | "backup_not_ready" | "backup_file_missing" | "backup_passphrase_missing" | "backup_settings_invalid" | "backup_recipient_missing" | "backup_recipient_invalid" | "setup_restore_source_missing" | "setup_restore_archive_missing" | "setup_restore_key_missing" | "setup_restore_decrypt_failed" | "setup_restore_key_required" | "setup_restore_key_unexpected" | "setup_restore_key_differs" | "setup_restore_schema_newer" | "setup_restore_failed" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "fetch_interval_too_short" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "waiting_push_not_found" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "client_diagnostics_disabled" | "client_diagnostics_limited" | "sync_resync_required" | "provider_site_unknown" | "provider_buddy_not_found" | "provider_site_data_not_confirmed";
             /** @description English description, for logs and scripts */
             error: string;
             /** @description The Provider a provider_* code is about (ADR 0027) */
@@ -15057,7 +15283,7 @@ export interface components {
                 source: "osm" | "wikidata" | "ssi";
             })[];
             /** @description Why it failed (a problem code) */
-            failureCode: null | ("sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "two_factor_password_invalid" | "two_factor_code_invalid" | "two_factor_not_enabled" | "too_many_attempts" | "too_many_live_streams" | "live_unavailable" | "client_too_old" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "suggestion_not_found" | "suggestion_not_pending" | "suggestion_dive_not_found" | "suggestion_dive_not_overlapping" | "suggestion_link_conflict" | "joint_offer_not_valid" | "merge_not_possible" | "check_not_found" | "continuation_not_possible" | "recording_is_part" | "device_not_found" | "equipment_not_found" | "equipment_changed" | "equipment_in_use" | "equipment_use_mismatch" | "schedule_not_found" | "schedule_interval_required" | "record_not_found" | "equipment_item_not_cylinder" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "backup_not_found" | "backup_in_progress" | "backup_running" | "backup_not_ready" | "backup_file_missing" | "backup_passphrase_missing" | "backup_settings_invalid" | "backup_recipient_missing" | "backup_recipient_invalid" | "setup_restore_source_missing" | "setup_restore_archive_missing" | "setup_restore_key_missing" | "setup_restore_decrypt_failed" | "setup_restore_key_required" | "setup_restore_key_unexpected" | "setup_restore_key_differs" | "setup_restore_schema_newer" | "setup_restore_failed" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "fetch_interval_too_short" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "waiting_push_not_found" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "client_diagnostics_disabled" | "client_diagnostics_limited" | "provider_site_unknown" | "provider_buddy_not_found" | "provider_site_data_not_confirmed");
+            failureCode: null | ("sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "two_factor_password_invalid" | "two_factor_code_invalid" | "two_factor_not_enabled" | "too_many_attempts" | "too_many_live_streams" | "live_unavailable" | "client_too_old" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "suggestion_not_found" | "suggestion_not_pending" | "suggestion_dive_not_found" | "suggestion_dive_not_overlapping" | "suggestion_link_conflict" | "joint_offer_not_valid" | "merge_not_possible" | "check_not_found" | "continuation_not_possible" | "recording_is_part" | "device_not_found" | "equipment_not_found" | "equipment_changed" | "equipment_in_use" | "equipment_use_mismatch" | "schedule_not_found" | "schedule_interval_required" | "record_not_found" | "equipment_item_not_cylinder" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "backup_not_found" | "backup_in_progress" | "backup_running" | "backup_not_ready" | "backup_file_missing" | "backup_passphrase_missing" | "backup_settings_invalid" | "backup_recipient_missing" | "backup_recipient_invalid" | "setup_restore_source_missing" | "setup_restore_archive_missing" | "setup_restore_key_missing" | "setup_restore_decrypt_failed" | "setup_restore_key_required" | "setup_restore_key_unexpected" | "setup_restore_key_differs" | "setup_restore_schema_newer" | "setup_restore_failed" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "fetch_interval_too_short" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "waiting_push_not_found" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "client_diagnostics_disabled" | "client_diagnostics_limited" | "sync_resync_required" | "provider_site_unknown" | "provider_buddy_not_found" | "provider_site_data_not_confirmed");
             /** Format: date-time */
             createdAt: string;
             finishedAt: null | string;
@@ -15069,7 +15295,7 @@ export interface components {
             diverId: string;
             /** @enum {unknown} */
             status: "queued" | "running" | "done" | "cancelled" | "stopped";
-            stopCode: null | ("sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "two_factor_password_invalid" | "two_factor_code_invalid" | "two_factor_not_enabled" | "too_many_attempts" | "too_many_live_streams" | "live_unavailable" | "client_too_old" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "suggestion_not_found" | "suggestion_not_pending" | "suggestion_dive_not_found" | "suggestion_dive_not_overlapping" | "suggestion_link_conflict" | "joint_offer_not_valid" | "merge_not_possible" | "check_not_found" | "continuation_not_possible" | "recording_is_part" | "device_not_found" | "equipment_not_found" | "equipment_changed" | "equipment_in_use" | "equipment_use_mismatch" | "schedule_not_found" | "schedule_interval_required" | "record_not_found" | "equipment_item_not_cylinder" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "backup_not_found" | "backup_in_progress" | "backup_running" | "backup_not_ready" | "backup_file_missing" | "backup_passphrase_missing" | "backup_settings_invalid" | "backup_recipient_missing" | "backup_recipient_invalid" | "setup_restore_source_missing" | "setup_restore_archive_missing" | "setup_restore_key_missing" | "setup_restore_decrypt_failed" | "setup_restore_key_required" | "setup_restore_key_unexpected" | "setup_restore_key_differs" | "setup_restore_schema_newer" | "setup_restore_failed" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "fetch_interval_too_short" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "waiting_push_not_found" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "client_diagnostics_disabled" | "client_diagnostics_limited" | "provider_site_unknown" | "provider_buddy_not_found" | "provider_site_data_not_confirmed");
+            stopCode: null | ("sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "two_factor_password_invalid" | "two_factor_code_invalid" | "two_factor_not_enabled" | "too_many_attempts" | "too_many_live_streams" | "live_unavailable" | "client_too_old" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "suggestion_not_found" | "suggestion_not_pending" | "suggestion_dive_not_found" | "suggestion_dive_not_overlapping" | "suggestion_link_conflict" | "joint_offer_not_valid" | "merge_not_possible" | "check_not_found" | "continuation_not_possible" | "recording_is_part" | "device_not_found" | "equipment_not_found" | "equipment_changed" | "equipment_in_use" | "equipment_use_mismatch" | "schedule_not_found" | "schedule_interval_required" | "record_not_found" | "equipment_item_not_cylinder" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "backup_not_found" | "backup_in_progress" | "backup_running" | "backup_not_ready" | "backup_file_missing" | "backup_passphrase_missing" | "backup_settings_invalid" | "backup_recipient_missing" | "backup_recipient_invalid" | "setup_restore_source_missing" | "setup_restore_archive_missing" | "setup_restore_key_missing" | "setup_restore_decrypt_failed" | "setup_restore_key_required" | "setup_restore_key_unexpected" | "setup_restore_key_differs" | "setup_restore_schema_newer" | "setup_restore_failed" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "fetch_interval_too_short" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "waiting_push_not_found" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "client_diagnostics_disabled" | "client_diagnostics_limited" | "sync_resync_required" | "provider_site_unknown" | "provider_buddy_not_found" | "provider_site_data_not_confirmed");
             updates: boolean;
             updatesRemovingVerification: boolean;
             numbers: boolean;
@@ -15236,7 +15462,7 @@ export interface components {
                 remoteNumber: null | number;
                 /** @description The remote dive was found deleted at the Provider */
                 remoteGone: boolean;
-                failureCode: null | ("sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "two_factor_password_invalid" | "two_factor_code_invalid" | "two_factor_not_enabled" | "too_many_attempts" | "too_many_live_streams" | "live_unavailable" | "client_too_old" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "suggestion_not_found" | "suggestion_not_pending" | "suggestion_dive_not_found" | "suggestion_dive_not_overlapping" | "suggestion_link_conflict" | "joint_offer_not_valid" | "merge_not_possible" | "check_not_found" | "continuation_not_possible" | "recording_is_part" | "device_not_found" | "equipment_not_found" | "equipment_changed" | "equipment_in_use" | "equipment_use_mismatch" | "schedule_not_found" | "schedule_interval_required" | "record_not_found" | "equipment_item_not_cylinder" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "backup_not_found" | "backup_in_progress" | "backup_running" | "backup_not_ready" | "backup_file_missing" | "backup_passphrase_missing" | "backup_settings_invalid" | "backup_recipient_missing" | "backup_recipient_invalid" | "setup_restore_source_missing" | "setup_restore_archive_missing" | "setup_restore_key_missing" | "setup_restore_decrypt_failed" | "setup_restore_key_required" | "setup_restore_key_unexpected" | "setup_restore_key_differs" | "setup_restore_schema_newer" | "setup_restore_failed" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "fetch_interval_too_short" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "waiting_push_not_found" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "client_diagnostics_disabled" | "client_diagnostics_limited" | "provider_site_unknown" | "provider_buddy_not_found" | "provider_site_data_not_confirmed");
+                failureCode: null | ("sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "two_factor_password_invalid" | "two_factor_code_invalid" | "two_factor_not_enabled" | "too_many_attempts" | "too_many_live_streams" | "live_unavailable" | "client_too_old" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "suggestion_not_found" | "suggestion_not_pending" | "suggestion_dive_not_found" | "suggestion_dive_not_overlapping" | "suggestion_link_conflict" | "joint_offer_not_valid" | "merge_not_possible" | "check_not_found" | "continuation_not_possible" | "recording_is_part" | "device_not_found" | "equipment_not_found" | "equipment_changed" | "equipment_in_use" | "equipment_use_mismatch" | "schedule_not_found" | "schedule_interval_required" | "record_not_found" | "equipment_item_not_cylinder" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "backup_not_found" | "backup_in_progress" | "backup_running" | "backup_not_ready" | "backup_file_missing" | "backup_passphrase_missing" | "backup_settings_invalid" | "backup_recipient_missing" | "backup_recipient_invalid" | "setup_restore_source_missing" | "setup_restore_archive_missing" | "setup_restore_key_missing" | "setup_restore_decrypt_failed" | "setup_restore_key_required" | "setup_restore_key_unexpected" | "setup_restore_key_differs" | "setup_restore_schema_newer" | "setup_restore_failed" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "fetch_interval_too_short" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "waiting_push_not_found" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "client_diagnostics_disabled" | "client_diagnostics_limited" | "sync_resync_required" | "provider_site_unknown" | "provider_buddy_not_found" | "provider_site_data_not_confirmed");
                 leftOut: null | {
                     diverId: string;
                     name: string;

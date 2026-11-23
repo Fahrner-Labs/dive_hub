@@ -706,6 +706,7 @@
     "ai_access_off": "Der KI-Zugang ist auf diesem Dive Hub ausgeschaltet. Ein Admin kann ihn einschalten.",
     "client_diagnostics_disabled": "Die Client-Diagnose ist auf diesem Dive Hub ausgeschaltet. Ein Admin kann sie einschalten.",
     "client_diagnostics_limited": "Zu viele Diagnose-Uploads in der letzten Stunde. Versuche es später erneut.",
+    "sync_resync_required": "Diese App hinkt dem Änderungs-Feed zu weit hinterher. Sie lädt das ganze Logbuch neu, um aufzuholen.",
     "finding_not_found": "Diesen Hinweis hat der Tauchgang nicht mehr. Lade die Seite neu.",
     "centre_not_found": "Diese Tauchbasis gibt es nicht (mehr).",
     "centre_changed": "Jemand hat die Tauchbasis inzwischen umbenannt. Lade die Seite neu und versuche es noch einmal.",

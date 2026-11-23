@@ -78,6 +78,12 @@ export function changeListenerOrNull(): ChangeListener | null {
   return listener;
 }
 
+/** Every kind of thing a Revision names, and so every entity type the change feed carries (ADR 0083). */
+export const REVISION_ENTITY_TYPES = [
+  'dive', 'recording', 'device', 'dive_site', 'diver', 'dive_centre', 'equipment_item',
+] as const;
+export type RevisionEntityType = (typeof REVISION_ENTITY_TYPES)[number];
+
 /**
  * Whether the Revision removed its entity: a soft delete (`deletedAt` set), or a merge/continuation that left the row
  * behind as a tombstone pointing elsewhere (`mergedInto` set). A restore sets `deletedAt` back to null, so it is a
@@ -86,7 +92,7 @@ export function changeListenerOrNull(): ChangeListener | null {
 const removed = (changes: Changes): boolean => changes.deletedAt?.to != null || changes.mergedInto?.to != null;
 
 export async function writeRevision(
-  tx: Tx, entityType: 'dive' | 'recording' | 'device' | 'dive_site' | 'diver' | 'dive_centre' | 'equipment_item', entityId: string, actor: Actor, cause: RevisionCause, changes: Changes,
+  tx: Tx, entityType: RevisionEntityType, entityId: string, actor: Actor, cause: RevisionCause, changes: Changes,
 ): Promise<{ at: Date }> {
   const [written] = await tx.insert(revision).values({ entityType, entityId, actorType: actor.type, actorId: actor.id, cause, changes }).returning({ at: revision.at });
   // The change feed's hint is written in this same transaction (ADR 0083): no Revision without its hint, and a

@@ -30,6 +30,9 @@ const MODULE_IMPORTS = {
   social: ['dives', 'divers', 'live', 'revisions'],
   // The support bundle reads shared infrastructure only, like backups: no domain module (ADR 0078).
   support: [],
+  // The change feed (ADR 0083) reads the log and names its entity types from the Revision writer that defines them;
+  // it reads no domain data, so revisions (which imports no domain module) is its only edge.
+  sync: ['revisions'],
   // Live hints (ADR 0066) read Dive and site Revisions only through revisions/revisions.ts's type.
   live: ['revisions:type'],
   users: ['divers'],
