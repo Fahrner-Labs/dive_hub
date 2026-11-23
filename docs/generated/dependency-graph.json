@@ -773,6 +773,23 @@
         },
         {
           "dynamic": false,
+          "module": "./sync/routes.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/sync/routes.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./users/account-routes.js",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -1112,6 +1129,7 @@
         "apps/server/src/social/routes.ts",
         "apps/server/src/support/client-diagnostics-routes.ts",
         "apps/server/src/support/support-routes.ts",
+        "apps/server/src/sync/routes.ts",
         "apps/server/src/users/account-routes.ts",
         "apps/server/src/users/admin-routes.ts",
         "apps/server/src/users/routes.ts",
@@ -1199,6 +1217,7 @@
         "apps/server/src/social/suggestion-service.ts",
         "apps/server/src/support/client-diagnostics-service.ts",
         "apps/server/src/support/support-service.ts",
+        "apps/server/src/sync/changes-service.ts",
         "apps/server/src/users/invitation-service.ts",
         "apps/server/src/users/password-reset-service.ts",
         "apps/server/src/users/profile-service.ts",
@@ -1513,6 +1532,7 @@
         "apps/server/src/social/suggestion-view.ts",
         "apps/server/src/support/client-diagnostics-routes.ts",
         "apps/server/src/support/support-routes.ts",
+        "apps/server/src/sync/routes.ts",
         "apps/server/src/users/account-routes.ts",
         "apps/server/src/users/views.ts",
         "apps/server/src/users/admin-routes.ts",
@@ -1767,6 +1787,7 @@
         "apps/server/src/social/routes.ts",
         "apps/server/src/support/client-diagnostics-routes.ts",
         "apps/server/src/support/support-routes.ts",
+        "apps/server/src/sync/routes.ts",
         "apps/server/src/users/account-routes.ts",
         "apps/server/src/users/admin-routes.ts",
         "apps/server/src/users/routes.ts",
@@ -2049,6 +2070,7 @@
         "apps/server/src/social/suggestion-service.ts",
         "apps/server/src/support/client-diagnostics-service.ts",
         "apps/server/src/support/support-service.ts",
+        "apps/server/src/sync/changes-service.ts",
         "apps/server/src/users/invitation-service.ts",
         "apps/server/src/users/password-reset-service.ts",
         "apps/server/src/users/profile-service.ts",
@@ -2521,8 +2543,10 @@
         "apps/server/src/social/offer-service.ts",
         "apps/server/src/social/suggestion-changes.ts",
         "apps/server/src/social/suggestion-service.ts",
+        "apps/server/src/sync/changes-service.ts",
         "apps/server/src/dives/routes.ts",
-        "apps/server/src/sites/routes.ts"
+        "apps/server/src/sites/routes.ts",
+        "apps/server/src/sync/routes.ts"
       ],
       "orphan": false,
       "valid": true
@@ -2675,6 +2699,7 @@
         "apps/server/src/social/routes.ts",
         "apps/server/src/support/client-diagnostics-routes.ts",
         "apps/server/src/support/support-routes.ts",
+        "apps/server/src/sync/routes.ts",
         "apps/server/src/users/account-routes.ts",
         "apps/server/src/users/admin-routes.ts",
         "apps/server/src/users/routes.ts"
@@ -2812,6 +2837,7 @@
         "apps/server/src/social/routes.ts",
         "apps/server/src/support/client-diagnostics-routes.ts",
         "apps/server/src/support/support-routes.ts",
+        "apps/server/src/sync/routes.ts",
         "apps/server/src/users/account-routes.ts",
         "apps/server/src/users/views.ts",
         "apps/server/src/users/admin-routes.ts",
@@ -7728,6 +7754,23 @@
             "import"
           ],
           "resolved": "apps/server/src/support/support-service.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./sync/changes-service.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/sync/changes-service.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -20101,6 +20144,71 @@
       "valid": true
     },
     {
+      "source": "apps/server/src/sync/changes-service.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../db/client.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/db/client.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../revisions/revisions.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/revisions/revisions.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "drizzle-orm",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "npm",
+            "import"
+          ],
+          "resolved": "apps/server/node_modules/drizzle-orm/index.cjs",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": true,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/server/src/compose.ts",
+        "apps/server/src/worker.ts",
+        "apps/server/src/sync/routes.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "apps/server/src/users/invitation-service.ts",
       "dependencies": [
         {
@@ -20890,6 +20998,24 @@
             "import"
           ],
           "resolved": "apps/server/src/support/client-diagnostics-service.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./sync/changes-service.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/sync/changes-service.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -29411,6 +29537,136 @@
             "import"
           ],
           "resolved": "apps/server/src/support/support-service.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@fastify/type-provider-typebox",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "npm",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/node_modules/@fastify/type-provider-typebox/dist/cjs/index.js",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": true,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "typebox",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "unknown"
+          ],
+          "resolved": "typebox",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": true,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/server/src/app.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/server/src/sync/routes.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../auth/auth.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/auth/auth.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../auth/fastify.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/auth/fastify.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../http/problems.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/http/problems.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../revisions/revisions.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/revisions/revisions.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./changes-service.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/sync/changes-service.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -51823,8 +52079,8 @@
     "baselineSize": 0,
     "baselineStale": 0,
     "advisedExitCode": 0,
-    "totalCruised": 488,
-    "totalDependenciesCruised": 2588,
+    "totalCruised": 490,
+    "totalDependenciesCruised": 2601,
     "optionsUsed": {
       "baseDir": "/home/runner/work/dive_hub/dive_hub",
       "combinedDependencies": false,
@@ -51886,7 +52142,7 @@
             "path": "^apps/server/src/revisions/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|backups|centres|certifications|divers|dives|equipment|imports|lead|mcp|planning|providers|sites|social|support|live|users|version)/"
+            "path": "^apps/server/src/(assessment|backups|centres|certifications|divers|dives|equipment|imports|lead|mcp|planning|providers|sites|social|support|sync|live|users|version)/"
           },
           "scope": "module"
         },
@@ -51898,7 +52154,7 @@
             "path": "^apps/server/src/assessment/"
           },
           "to": {
-            "path": "^apps/server/src/(revisions|backups|centres|certifications|dives|equipment|lead|mcp|planning|providers|sites|social|support|live|users|version)/"
+            "path": "^apps/server/src/(revisions|backups|centres|certifications|dives|equipment|lead|mcp|planning|providers|sites|social|support|sync|live|users|version)/"
           },
           "scope": "module"
         },
@@ -51910,7 +52166,7 @@
             "path": "^apps/server/src/backups/"
           },
           "to": {
-            "path": "^apps/server/src/(revisions|assessment|centres|certifications|divers|dives|equipment|imports|lead|mcp|planning|providers|sites|social|support|live|users|version)/"
+            "path": "^apps/server/src/(revisions|assessment|centres|certifications|divers|dives|equipment|imports|lead|mcp|planning|providers|sites|social|support|sync|live|users|version)/"
           },
           "scope": "module"
         },
@@ -51922,7 +52178,7 @@
             "path": "^apps/server/src/centres/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|backups|certifications|dives|equipment|imports|lead|mcp|planning|providers|social|support|live|users|version)/"
+            "path": "^apps/server/src/(assessment|backups|certifications|dives|equipment|imports|lead|mcp|planning|providers|social|support|sync|live|users|version)/"
           },
           "scope": "module"
         },
@@ -51934,7 +52190,7 @@
             "path": "^apps/server/src/certifications/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|backups|centres|equipment|imports|lead|mcp|planning|providers|sites|social|support|users|version)/"
+            "path": "^apps/server/src/(assessment|backups|centres|equipment|imports|lead|mcp|planning|providers|sites|social|support|sync|users|version)/"
           },
           "scope": "module"
         },
@@ -51946,7 +52202,7 @@
             "path": "^apps/server/src/divers/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|backups|centres|certifications|dives|equipment|imports|lead|mcp|planning|providers|sites|social|support|live|users|version)/"
+            "path": "^apps/server/src/(assessment|backups|centres|certifications|dives|equipment|imports|lead|mcp|planning|providers|sites|social|support|sync|live|users|version)/"
           },
           "scope": "module"
         },
@@ -51958,7 +52214,7 @@
             "path": "^apps/server/src/dives/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|backups|certifications|equipment|imports|lead|mcp|planning|providers|social|support|live|users|version)/"
+            "path": "^apps/server/src/(assessment|backups|certifications|equipment|imports|lead|mcp|planning|providers|social|support|sync|live|users|version)/"
           },
           "scope": "module"
         },
@@ -51970,7 +52226,7 @@
             "path": "^apps/server/src/equipment/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|backups|centres|certifications|dives|imports|lead|mcp|planning|providers|sites|social|support|live|users|version)/"
+            "path": "^apps/server/src/(assessment|backups|centres|certifications|dives|imports|lead|mcp|planning|providers|sites|social|support|sync|live|users|version)/"
           },
           "scope": "module"
         },
@@ -51982,7 +52238,7 @@
             "path": "^apps/server/src/imports/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|backups|centres|certifications|lead|mcp|planning|providers|social|support|users|version)/"
+            "path": "^apps/server/src/(assessment|backups|centres|certifications|lead|mcp|planning|providers|social|support|sync|users|version)/"
           },
           "scope": "module"
         },
@@ -51994,7 +52250,7 @@
             "path": "^apps/server/src/lead/"
           },
           "to": {
-            "path": "^apps/server/src/(revisions|assessment|backups|centres|certifications|equipment|imports|mcp|providers|sites|social|support|live|users|version)/"
+            "path": "^apps/server/src/(revisions|assessment|backups|centres|certifications|equipment|imports|mcp|providers|sites|social|support|sync|live|users|version)/"
           },
           "scope": "module"
         },
@@ -52021,7 +52277,7 @@
             "path": "^apps/server/src/mcp/"
           },
           "to": {
-            "path": "^apps/server/src/(revisions|backups|centres|certifications|imports|lead|providers|social|support|live|users|version)/"
+            "path": "^apps/server/src/(revisions|backups|centres|certifications|imports|lead|providers|social|support|sync|live|users|version)/"
           },
           "scope": "module"
         },
@@ -52033,7 +52289,7 @@
             "path": "^apps/server/src/planning/"
           },
           "to": {
-            "path": "^apps/server/src/(revisions|backups|centres|certifications|equipment|imports|lead|mcp|providers|sites|social|support|live|users|version)/"
+            "path": "^apps/server/src/(revisions|backups|centres|certifications|equipment|imports|lead|mcp|providers|sites|social|support|sync|live|users|version)/"
           },
           "scope": "module"
         },
@@ -52045,7 +52301,7 @@
             "path": "^apps/server/src/providers/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|backups|centres|equipment|lead|mcp|planning|social|support|users|version)/"
+            "path": "^apps/server/src/(assessment|backups|centres|equipment|lead|mcp|planning|social|support|sync|users|version)/"
           },
           "scope": "module"
         },
@@ -52057,7 +52313,7 @@
             "path": "^apps/server/src/sites/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|backups|centres|certifications|divers|dives|equipment|imports|lead|mcp|planning|providers|social|support|users|version)/"
+            "path": "^apps/server/src/(assessment|backups|centres|certifications|divers|dives|equipment|imports|lead|mcp|planning|providers|social|support|sync|users|version)/"
           },
           "scope": "module"
         },
@@ -52069,7 +52325,7 @@
             "path": "^apps/server/src/social/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|backups|centres|certifications|equipment|imports|lead|mcp|planning|providers|sites|support|users|version)/"
+            "path": "^apps/server/src/(assessment|backups|centres|certifications|equipment|imports|lead|mcp|planning|providers|sites|support|sync|users|version)/"
           },
           "scope": "module"
         },
@@ -52081,7 +52337,19 @@
             "path": "^apps/server/src/support/"
           },
           "to": {
-            "path": "^apps/server/src/(revisions|assessment|backups|centres|certifications|divers|dives|equipment|imports|lead|mcp|planning|providers|sites|social|live|users|version)/"
+            "path": "^apps/server/src/(revisions|assessment|backups|centres|certifications|divers|dives|equipment|imports|lead|mcp|planning|providers|sites|social|sync|live|users|version)/"
+          },
+          "scope": "module"
+        },
+        {
+          "name": "module-imports-sync",
+          "severity": "error",
+          "comment": "sync/ may import only these domain modules: revisions (MODULE_IMPORTS in .dependency-cruiser.cjs, ADR 0053).",
+          "from": {
+            "path": "^apps/server/src/sync/"
+          },
+          "to": {
+            "path": "^apps/server/src/(assessment|backups|centres|certifications|divers|dives|equipment|imports|lead|mcp|planning|providers|sites|social|support|live|users|version)/"
           },
           "scope": "module"
         },
@@ -52093,7 +52361,7 @@
             "path": "^apps/server/src/live/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|backups|centres|certifications|divers|dives|equipment|imports|lead|mcp|planning|providers|sites|social|support|users|version)/"
+            "path": "^apps/server/src/(assessment|backups|centres|certifications|divers|dives|equipment|imports|lead|mcp|planning|providers|sites|social|support|sync|users|version)/"
           },
           "scope": "module"
         },
@@ -52120,7 +52388,7 @@
             "path": "^apps/server/src/users/"
           },
           "to": {
-            "path": "^apps/server/src/(revisions|assessment|backups|centres|certifications|dives|equipment|imports|lead|mcp|planning|providers|sites|social|support|live|version)/"
+            "path": "^apps/server/src/(revisions|assessment|backups|centres|certifications|dives|equipment|imports|lead|mcp|planning|providers|sites|social|support|sync|live|version)/"
           },
           "scope": "module"
         },
@@ -52132,7 +52400,7 @@
             "path": "^apps/server/src/version/"
           },
           "to": {
-            "path": "^apps/server/src/(revisions|assessment|backups|centres|certifications|divers|dives|equipment|imports|lead|mcp|planning|providers|sites|social|support|live|users)/"
+            "path": "^apps/server/src/(revisions|assessment|backups|centres|certifications|divers|dives|equipment|imports|lead|mcp|planning|providers|sites|social|support|sync|live|users)/"
           },
           "scope": "module"
         },

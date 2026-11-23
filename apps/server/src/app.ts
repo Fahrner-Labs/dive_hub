@@ -56,6 +56,7 @@ import { adminRoutes } from './users/admin-routes.js';
 import { backupRoutes } from './backups/backup-routes.js';
 import { clientDiagnosticsRoutes } from './support/client-diagnostics-routes.js';
 import { supportRoutes } from './support/support-routes.js';
+import { syncRoutes } from './sync/routes.js';
 import { setupRestoreRoutes } from './users/setup-restore-routes.js';
 import { userRoutes } from './users/routes.js';
 import { clientVersionGate } from './version/gate.js';
@@ -133,6 +134,7 @@ export async function buildApp(deps: AppDeps, app: Server = createServer()) {
   await app.register(backupRoutes, { prefix: '/api', auth, backups: deps.backups });
   await app.register(supportRoutes, { prefix: '/api', auth, support: deps.support });
   await app.register(clientDiagnosticsRoutes, { prefix: '/api', auth, clientDiagnostics: deps.clientDiagnostics });
+  await app.register(syncRoutes, { prefix: '/api', auth, sync: deps.sync });
   await app.register(importRoutes, { prefix: '/api', auth, imports: deps.imports, waitingPushes, maxUploadBytes: deps.maxUploadBytes });
   await app.register(logbookRoutes, { prefix: '/api', auth, logbook, pushes, waitingPushes, centres, divers, certifications });
   // dives owns the shapes it needs (dives/provider-port.ts); this is where the real Provider answerer is wired in.
