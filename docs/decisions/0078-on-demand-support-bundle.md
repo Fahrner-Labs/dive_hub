@@ -46,6 +46,11 @@ both are module constants, not new environment variables. Worst case is a few MB
 window; the manifest and preview report `entries`, `droppedEntries`, `oldestAt` and `newestAt` so the admin
 sees the real coverage window. The buffer captures whatever `DIVEHUB_LOG_LEVEL` lets through.
 
+> **Amended 2026-11-23 ([FAH-450](https://paperclip.privatenode.de/FAH/issues/FAH-450)):** capacity is
+> **8192 entries and 8 MiB** (4x), after a real bundle covered only ~75 minutes and dropped 4726 entries.
+> `/api/health/live` and `/api/health/ready` also set the Fastify route option `logLevel: 'silent'`, so the
+> deployment's probe polls no longer fill the buffer; the worst case is ~8 MiB of RAM per process.
+
 ### D2 — Redaction at capture, whitelist sourcing
 One pure redactor (`apps/server/src/support/redact.ts`) is applied at buffer capture — the buffer never
 holds raw PII — and again over the configuration and job sections at bundle build. Rules: a key-name
