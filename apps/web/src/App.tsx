@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient, type UseQueryResult } from '@tanstack/react-query';
-import { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import { Suspense, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AcceptInvitation, ResetPassword, Setup, SignIn, useSignOut } from './SignedOut.tsx';
 import { api, divesQuery, meQuery, setupQuery, type Me } from './api.ts';
@@ -16,6 +16,7 @@ import { ReportProblem } from './ReportProblem.tsx';
 import { ReviewMore, ReviewStrip } from './ReviewStrip.tsx';
 import { useErrorText } from './lib/display.ts';
 import { mayLeave } from './lib/leave-guard.ts';
+import { lazyWithReload } from './lib/lazy-reload.ts';
 import { startLive } from './lib/live.ts';
 import { useFocusOnNavigate, useTypingMark } from './lib/page.ts';
 import { reviewTab } from './lib/review.ts';
@@ -24,20 +25,20 @@ import { ErrorBoundary, LogbookSkeleton, Notice, PageHeader, RowsSkeleton } from
 import { PlainShell, Shell } from './ui/Shell.tsx';
 
 // Pages most visits don't need load on demand: the chart library, Settings.
-const DivePage = lazy(() => import('./DivePage.tsx').then((m) => ({ default: m.DivePage })));
-const SettingsPage = lazy(() => import('./SettingsPage.tsx').then((m) => ({ default: m.SettingsPage })));
-const DiversPage = lazy(() => import('./DiversPage.tsx').then((m) => ({ default: m.DiversPage })));
-const DiverPage = lazy(() => import('./DiverPage.tsx').then((m) => ({ default: m.DiverPage })));
-const SitesPage = lazy(() => import('./SitesPage.tsx').then((m) => ({ default: m.SitesPage })));
-const SitePage = lazy(() => import('./SitesPage.tsx').then((m) => ({ default: m.SitePage })));
-const CentresPage = lazy(() => import('./CentresPage.tsx').then((m) => ({ default: m.CentresPage })));
-const CentrePage = lazy(() => import('./CentresPage.tsx').then((m) => ({ default: m.CentrePage })));
-const ReviewPage = lazy(() => import('./ReviewPage.tsx').then((m) => ({ default: m.ReviewPage })));
-const ToolsPage = lazy(() => import('./ToolsPage.tsx').then((m) => ({ default: m.ToolsPage })));
-const EquipmentPage = lazy(() => import('./EquipmentPage.tsx').then((m) => ({ default: m.EquipmentPage })));
-const SiteImportPage = lazy(() => import('./SiteImportPage.tsx').then((m) => ({ default: m.SiteImportPage })));
-const BackupsPage = lazy(() => import('./BackupsPage.tsx').then((m) => ({ default: m.BackupsPage })));
-const SupportBundlePage = lazy(() => import('./SupportBundlePage.tsx').then((m) => ({ default: m.SupportBundlePage })));
+const DivePage = lazyWithReload(() => import('./DivePage.tsx').then((m) => ({ default: m.DivePage })));
+const SettingsPage = lazyWithReload(() => import('./SettingsPage.tsx').then((m) => ({ default: m.SettingsPage })));
+const DiversPage = lazyWithReload(() => import('./DiversPage.tsx').then((m) => ({ default: m.DiversPage })));
+const DiverPage = lazyWithReload(() => import('./DiverPage.tsx').then((m) => ({ default: m.DiverPage })));
+const SitesPage = lazyWithReload(() => import('./SitesPage.tsx').then((m) => ({ default: m.SitesPage })));
+const SitePage = lazyWithReload(() => import('./SitesPage.tsx').then((m) => ({ default: m.SitePage })));
+const CentresPage = lazyWithReload(() => import('./CentresPage.tsx').then((m) => ({ default: m.CentresPage })));
+const CentrePage = lazyWithReload(() => import('./CentresPage.tsx').then((m) => ({ default: m.CentrePage })));
+const ReviewPage = lazyWithReload(() => import('./ReviewPage.tsx').then((m) => ({ default: m.ReviewPage })));
+const ToolsPage = lazyWithReload(() => import('./ToolsPage.tsx').then((m) => ({ default: m.ToolsPage })));
+const EquipmentPage = lazyWithReload(() => import('./EquipmentPage.tsx').then((m) => ({ default: m.EquipmentPage })));
+const SiteImportPage = lazyWithReload(() => import('./SiteImportPage.tsx').then((m) => ({ default: m.SiteImportPage })));
+const BackupsPage = lazyWithReload(() => import('./BackupsPage.tsx').then((m) => ({ default: m.BackupsPage })));
+const SupportBundlePage = lazyWithReload(() => import('./SupportBundlePage.tsx').then((m) => ({ default: m.SupportBundlePage })));
 
 /**
  * Minimal hash routing: "#/" (logbook, "#/?diver=<id>" for one Diver, "#/?site=<id>" for one Dive site),

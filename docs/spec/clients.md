@@ -135,6 +135,15 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   discarded ones ([ADR 0016](../decisions/0016-recording-decisions-and-divers.md)). *Web:* `Decisions.tsx`.
 - **Should guard unsaved changes** when leaving a form, including through the address, and release the guard
   once saved before navigating. *Web:* `lib/leave-guard.ts` (the release `useLeaveGuard` returns), `App.tsx` (`useRoute`).
+- **Should recover an open session from a deploy that removed a lazy chunk (web client).** A deploy content-hashes
+  the chunks a `lazy()` page loads, so an open session can ask for a file that no longer exists. Reload once on a
+  failed dynamic import (Vite's `vite:preloadError`, or a rejected `lazy()` import) instead of showing the generic
+  failure, and keep a per-tab timestamp so that if the chunk still fails after that reload the client does not
+  reload again until the guard window has passed; it falls through to its ordinary error fallback instead. A chunk
+  that loads from cache does not reset the timestamp. Never reload for an error that is not a missing chunk, and
+  never reload when the marker cannot be stored (a browser without sessionStorage must not be able to loop).
+  *Web:* `lib/lazy-reload.ts` (`lazyWithReload`, `installStaleChunkReload`), `App.tsx`, `SettingsPage.tsx`,
+  `main.tsx`.
 - **Must send `null` to clear a field, and leave a field out to keep it.** The two mean different things in every
   PATCH. A Dive edit sends only the fields the User changed (`set`) and the ones to give back to the recording
   (`reset`); see [Dives](#dives).
