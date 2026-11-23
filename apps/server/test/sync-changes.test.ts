@@ -237,6 +237,81 @@ describe.skipIf(!(await databaseReachable()))('GET /api/sync/changes', () => {
     expect((await get(`?cursor=${boot.cursor}`)).statusCode).toBe(200);
   });
 
+  it('answers 410 when the floor has moved past the cursor but events remain', async () => {
+    await t.db.update(changeEvent).set({ at: daysAgo(200) });
+    await ctx.sync.purge();
+    const start = (await page()).cursor;
+
+    const swept = await insertEvent({ at: daysAgo(200) });
+    const sweptPosition = await position(swept.seq);
+    const retained = await insertEvent({ at: daysAgo(1) });
+    expect(await ctx.sync.purge()).toBe(1);
+
+    // The cursor is before the new floor, even though the log still holds a later event: it must resync, not skip.
+    const gone = await get(`?cursor=${start}`);
+    expect(gone.statusCode).toBe(410);
+    expect(gone.json()).toMatchObject({ code: 'sync_resync_required' });
+
+    // A client resyncing from the floor still receives the retained event.
+    const fromFloor = await page(`?cursor=${sweptPosition}`);
+    expect(fromFloor.events.map((event) => event.seq)).toEqual([retained.seq]);
+  });
+
+  it('checks the floor against the same snapshot as the page when a sweep commits in between', async () => {
+    await t.db.update(changeEvent).set({ at: daysAgo(200) });
+    await ctx.sync.purge();
+    const start = (await page()).cursor;
+
+    const oldFirst = await insertEvent({ at: daysAgo(200) });
+    const oldSecond = await insertEvent({ at: daysAgo(200) });
+    const retained = await insertEvent({ at: daysAgo(1) });
+    const floorPosition = await position(oldSecond.seq);
+
+    const sweeper = await t.pool.connect();
+    let committed = false;
+    try {
+      await sweeper.query('begin');
+      // Hold the event table so the request cannot read the page yet. The floor read does not touch it, so a floor
+      // checked in an earlier statement (the old two-statement shape) would run against the pre-sweep floor.
+      await sweeper.query('lock table change_event in access exclusive mode');
+
+      const request = get(`?cursor=${start}`);
+      // Wait until the request is blocked on change_event, which means any earlier statement has finished.
+      let blocked = false;
+      for (let attempt = 0; attempt < 500 && !blocked; attempt += 1) {
+        const { rowCount } = await t.pool.query(
+          `select 1 from pg_stat_activity
+           where datname = current_database() and wait_event_type = 'Lock' and query like '%change_event%'
+           limit 1`,
+        );
+        blocked = (rowCount ?? 0) > 0;
+        if (!blocked) await new Promise((resolve) => setTimeout(resolve, 10));
+      }
+      expect(blocked).toBe(true);
+
+      // The sweep commits in the window between a separate floor read and the page.
+      const [xid, seq] = floorPosition.split(':');
+      await sweeper.query('delete from change_event where seq in ($1, $2)', [oldFirst.seq, oldSecond.seq]);
+      await sweeper.query(
+        'update change_feed_floor set xid = $1::xid8, seq = $2::bigint, updated_at = now() where id',
+        [xid, seq],
+      );
+      await sweeper.query('commit');
+      committed = true;
+
+      const response = await request;
+      expect(response.statusCode).toBe(410);
+      expect(response.json()).toMatchObject({ code: 'sync_resync_required' });
+
+      // The retained event survives the sweep and is served from the moved floor.
+      const resynced = await page(`?cursor=${floorPosition}`);
+      expect(resynced.events.map((event) => event.seq)).toEqual([retained.seq]);
+    } finally {
+      if (!committed) await sweeper.query('rollback').catch(() => {});
+      sweeper.release();
+    }
+  });
+
   it('sweeps only a feed-order prefix, so the retained log never has a hole above the floor', async () => {
     await t.db.update(changeEvent).set({ at: daysAgo(200) });
     await ctx.sync.purge();
