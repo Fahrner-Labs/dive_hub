@@ -122,4 +122,9 @@ data class SyncState(
     val schemaVersion: Long,
     /** The last list page's per-filter counts, JSON as `DiveListViewCounts`; null before the first list sync. */
     val countsJson: String? = null,
+    /**
+     * The change feed's durable position (ADR 0083 D6), opaque (`<xid>:<seq>`); null until a feed-capable server is
+     * bootstrapped, and while only a pre-feed server has answered. The next refresh follows it.
+     */
+    val feedCursor: String? = null,
 )

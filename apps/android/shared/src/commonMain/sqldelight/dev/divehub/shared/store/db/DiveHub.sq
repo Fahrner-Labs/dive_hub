@@ -116,7 +116,9 @@ CREATE TABLE sync_state (
     lastFullSyncAt TEXT,
     lastHintAt TEXT,
     schemaVersion INTEGER NOT NULL,
-    countsJson TEXT
+    countsJson TEXT,
+    -- The change feed's opaque position (ADR 0083 D6); null until a feed-capable server is bootstrapped.
+    feedCursor TEXT
 );
 
 -- The local diagnostics ring buffer (ADR 0080 D1). It is not read by the logbook: `DiagnosticsBuffer` owns the
@@ -251,6 +253,9 @@ INSERT OR REPLACE INTO dive_site(
     :id, :version, :name, :waterType, :positionJson, :countryCode, :mergedInto, :deletedAt, :payloadJson
 );
 
+markDiveSiteDeleted:
+UPDATE dive_site SET deletedAt = :deletedAt WHERE id = :id;
+
 deleteAllDiveSites:
 DELETE FROM dive_site;
 
@@ -272,6 +277,9 @@ INSERT OR REPLACE INTO diver(
 ) VALUES (
     :id, :name, :isOwn, :external, :apneaCounts, :divesBefore, :mergedInto, :deletedAt, :payloadJson
 );
+
+markDiverDeleted:
+UPDATE diver SET deletedAt = :deletedAt WHERE id = :id;
 
 deleteAllDivers:
 DELETE FROM diver;
@@ -305,8 +313,8 @@ selectSyncState:
 SELECT * FROM sync_state WHERE id = 1;
 
 upsertSyncState:
-INSERT OR REPLACE INTO sync_state(id, lastFullSyncAt, lastHintAt, schemaVersion, countsJson)
-VALUES (1, :lastFullSyncAt, :lastHintAt, :schemaVersion, :countsJson);
+INSERT OR REPLACE INTO sync_state(id, lastFullSyncAt, lastHintAt, schemaVersion, countsJson, feedCursor)
+VALUES (1, :lastFullSyncAt, :lastHintAt, :schemaVersion, :countsJson, :feedCursor);
 
 deleteAllSyncState:
 DELETE FROM sync_state;

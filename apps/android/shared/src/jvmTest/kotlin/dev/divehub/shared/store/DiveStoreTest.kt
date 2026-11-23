@@ -285,6 +285,39 @@ class DiveStoreTest {
     }
 
     @Test
+    fun `the feed cursor persists beside the rest of the sync state and a wipe clears it`() {
+        val store = newStore()
+        store.saveSyncState(
+            SyncState(
+                lastFullSyncAt = "2026-11-18T12:00:00.000Z",
+                schemaVersion = DiveStore.schemaVersion,
+                feedCursor = "42:7",
+            ),
+        )
+
+        assertEquals("42:7", store.syncState().feedCursor)
+
+        store.wipe()
+
+        assertNull(store.syncState().feedCursor)
+    }
+
+    @Test
+    fun `site and Diver tombstones hide the row without removing it`() {
+        val store = newStore()
+        store.upsertDiveSite(DiveSite(id = "site-1", name = "Site"))
+        store.upsertDiver(Diver("diver-1", "Ada", isOwn = true, external = false, apneaCounts = true, divesBefore = 0))
+
+        store.markDiveSiteDeleted("site-1", "2026-11-18T12:00:00.000Z")
+        store.markDiverDeleted("diver-1", "2026-11-18T12:00:00.000Z")
+
+        assertEquals(0, store.diveSites().size)
+        assertEquals("2026-11-18T12:00:00.000Z", store.diveSiteIncludingDeleted("site-1")!!.deletedAt)
+        assertEquals(0, store.divers().size)
+        assertEquals("2026-11-18T12:00:00.000Z", store.diverIncludingDeleted("diver-1")!!.deletedAt)
+    }
+
+    @Test
     fun `wipe clears every table and resets the sync state`() {
         val store = newStore()
         store.upsertDive(testDive())
@@ -360,7 +393,7 @@ class DiveStoreTest {
 
     @Test
     fun `migration from v1 adds the API payload columns and keeps the store usable`() {
-        assertEquals(3L, DiveStore.schemaVersion)
+        assertEquals(4L, DiveStore.schemaVersion)
         assertContains(DiveHubDatabase.allTableNames(), "sync_checkpoint")
 
         val old = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)

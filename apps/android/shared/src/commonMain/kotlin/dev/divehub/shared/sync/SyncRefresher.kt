@@ -97,8 +97,10 @@ class SyncRefresher(
     private var lastStreamFailure: String? = null
 
     /**
-     * One event from the stream. A connect re-runs phase 1 (hints are not replayed, so this is the resync); a Dive hint
-     * re-reads its list row and detail, and a site hint that site. Unknown kinds are ignored (ADR 0076).
+     * One event from the stream. A connect refreshes (hints are not replayed, so this is also the resync). A dive or
+     * site hint drains the change feed from its durable cursor when the server has one — it covers everything since
+     * then, not only the hinted thing (ADR 0083 D6) — and falls back to the hint's own refetch on a pre-feed server.
+     * Unknown kinds are ignored (ADR 0076).
      */
     suspend fun handle(event: LiveEvent) {
         when (event) {
@@ -111,15 +113,10 @@ class SyncRefresher(
             }
             is LiveEvent.Hint -> {
                 _streamHealthy.value = true
-                val dive = event.hint.kind == "dive"
-                val result = when (event.hint.kind) {
-                    "dive" -> engine.applyDiveHint(event.hint.id)
-                    "site" -> engine.applySiteHint(event.hint.id)
-                    else -> return
-                }
-                mark(result)
-                // A dive hint marked its profiles pending; the background phase picks that work up.
-                if (dive) profilesSoon()
+                if (event.hint.kind != "dive" && event.hint.kind != "site") return
+                mark(engine.applyHint(event.hint.kind, event.hint.id))
+                // A drain (or a dive hint) may have marked a Dive's profiles pending; the background phase picks it up.
+                profilesSoon()
             }
         }
     }
