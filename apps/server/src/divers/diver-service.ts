@@ -10,7 +10,7 @@ import {
 } from '../db/schema.js';
 import { managedDiverIds, managementOf } from './management.js';
 import { renumber } from './dive-numbers.js';
-import { changeListener, userActor, writeRevision } from '../revisions/revisions.js';
+import { changeListener, userActor, writeRevision, type Changes } from '../revisions/revisions.js';
 import { DiverError } from './diver-error.js';
 import { mergeExternalDiver } from './merge.js';
 import { tidyName } from './diver-name.js';
@@ -133,7 +133,7 @@ export function createDiverService(db: Db) {
       changes[field] = field === 'email' ? { from: current.email !== null, to: value !== null } : { from: current[field], to: value };
     }
     if (Object.keys(set).length === 0) return;
-    await tx.update(diver).set({ ...set, updatedAt: new Date() }).where(eq(diver.id, id));
+    await tx.update(diver).set({ ...set, version: sql`${diver.version} + 1`, updatedAt: new Date() }).where(eq(diver.id, id));
     await writeRevision(tx, 'diver', id, userActor(actor.userId), 'edit', changes);
   }
 
@@ -167,6 +167,7 @@ export function createDiverService(db: Db) {
     }
     await tx.delete(diverExternalId).where(and(eq(diverExternalId.diverId, diverId), eq(diverExternalId.source, source)));
     if (externalId !== null) await tx.insert(diverExternalId).values({ diverId, source, externalId });
+    await tx.update(diver).set({ version: sql`${diver.version} + 1`, updatedAt: new Date() }).where(eq(diver.id, diverId));
     await writeRevision(tx, 'diver', diverId, userActor(actor.userId), 'edit', { [accountKey(source)]: { from, to: externalId } });
     await changeListener().fingerprintInputsChanged?.(tx, [diverId]);
   }
@@ -316,6 +317,7 @@ export function createDiverService(db: Db) {
       return db.transaction(async (tx) => {
         const [created] = await tx.insert(diver).values({ name, createdBy: userId }).returning();
         await tx.insert(diverManagement).values({ userId, diverId: created!.id, isOwn: false });
+        await writeRevision(tx, 'diver', created!.id, userActor(userId), 'create', { name: { from: null, to: name } });
         return created!;
       });
     },
@@ -327,8 +329,18 @@ export function createDiverService(db: Db) {
     async update(userId: string, diverId: string, change: { name?: string; divesBefore?: number; apneaCounts?: boolean }) {
       await requireManagedDiver(userId, diverId);
       await db.transaction(async (tx) => {
-        await tx.update(diver).set({ ...change, updatedAt: new Date() }).where(eq(diver.id, diverId));
+        // No key update, the lock a plain UPDATE takes: it reads the values the Revision names without holding up new
+        // Dives of this Diver (their foreign-key check takes a key-share lock).
+        const [current] = await tx.select().from(diver).where(and(eq(diver.id, diverId), live)).for('no key update');
+        if (!current) throw new DiverError('diver_not_found');
+        const changes: Changes = {};
+        for (const field of ['name', 'divesBefore', 'apneaCounts'] as const) {
+          if (change[field] !== undefined && change[field] !== current[field]) changes[field] = { from: current[field], to: change[field] };
+        }
+        if (Object.keys(changes).length === 0) return;
+        await tx.update(diver).set({ ...change, version: sql`${diver.version} + 1`, updatedAt: new Date() }).where(eq(diver.id, diverId));
         if (change.divesBefore !== undefined || change.apneaCounts !== undefined) await renumber(tx, [diverId]);
+        await writeRevision(tx, 'diver', diverId, userActor(userId), 'edit', changes);
       });
     },
 
@@ -380,6 +392,8 @@ export function createDiverService(db: Db) {
         await tx.delete(diverExternalId).where(eq(diverExternalId.diverId, diverId));
         await tx.delete(diverManagement).where(eq(diverManagement.diverId, diverId));
         await tx.delete(diver).where(eq(diver.id, diverId));
+        // The row is gone, but the change feed still has to tell clients to drop it (ADR 0083).
+        await writeRevision(tx, 'diver', diverId, userActor(userId), 'delete', { deletedAt: { from: null, to: new Date().toISOString() } });
       });
     },
 
@@ -432,7 +446,7 @@ export function createDiverService(db: Db) {
       await db.transaction(async (tx) => {
         const current = await lockExternal(tx, id);
         if (current.name === name) return;
-        await tx.update(diver).set({ name, updatedAt: new Date() }).where(eq(diver.id, id));
+        await tx.update(diver).set({ name, version: sql`${diver.version} + 1`, updatedAt: new Date() }).where(eq(diver.id, id));
         await writeRevision(tx, 'diver', id, userActor(actor.userId), 'edit', { name: { from: current.name, to: name } });
       });
     },
@@ -448,7 +462,7 @@ export function createDiverService(db: Db) {
         await tx.delete(diverExternalId).where(eq(diverExternalId.diverId, id));
         const at = new Date();
         // The row stays for the history, without the personal data its code held.
-        await tx.update(diver).set({ deletedAt: at, updatedAt: at, firstName: null, lastName: null, email: null, leaderNumber: null }).where(eq(diver.id, id));
+        await tx.update(diver).set({ deletedAt: at, version: sql`${diver.version} + 1`, updatedAt: at, firstName: null, lastName: null, email: null, leaderNumber: null }).where(eq(diver.id, id));
         await writeRevision(tx, 'diver', id, userActor(actor.userId), 'delete', { deletedAt: { from: null, to: at.toISOString() } });
       });
     },
