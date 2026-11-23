@@ -460,7 +460,7 @@ _Avoid_: Sync, upload
 _German_: Import
 
 **Conflict**:
-A Dive value that was changed in two places since their last common state, such as in the hub and at the Source, found by an import or a send; one from a Push run waits in Needs your decision. The value already in the hub stays until the User decides. Choosing the Provider's value is taking it over ("Take over"; `take` in the code: `takeChanges`); filling is taking the Provider's value only where the Dive has none (`fillFromProvider`). Adopting is an Offer's, never a Provider's value.
+A Dive value that was changed in two places since their last common state. In the hub and at the Source, found by an import or a send; one from a Push run waits in Needs your decision. In the hub and on a native client — worded "this phone" vs "the server" — found when the client's queued write meets a newer version ([ADR 0084](decisions/0084-offline-writes-in-the-native-core.md)). The value already in the hub stays until the User decides; against a Provider "keep Dive Hub's" is preselected, against the phone the User's own fresh edit is. Choosing the Provider's value is taking it over ("Take over"; `take` in the code: `takeChanges`); filling is taking the Provider's value only where the Dive has none (`fillFromProvider`). Adopting is an Offer's, never a Provider's value.
 _Avoid_: Merge error, Duplicate candidate
 _German_: Konflikt
 

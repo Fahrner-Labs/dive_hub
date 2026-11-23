@@ -1,6 +1,6 @@
 ---
 title: Client contract
-summary: What every client of the Dive Hub API must do (web client, native mobile app, scripts) - obligations first, then each area's duties and conventions; with reasons, ADRs and where the web client does it; importing dives from a Provider (settings, preview, decisions, outcome), times without a time zone, Dives without a Recording; the dive assessment (findings as facts with sources, the fixed note, no score); AI accesses (what to say before one is made, the key once, the log), the MCP endpoint (what it promises LLM clients) and admin backups (a manual run, its download, the schedule); plus server gaps found while writing it.
+summary: What every client of the Dive Hub API must do (web client, native mobile app, scripts) - obligations first, then each area's duties and conventions; with reasons, ADRs and where the web client does it; importing dives from a Provider (settings, preview, decisions, outcome), times without a time zone, Dives without a Recording; the dive assessment (findings as facts with sources, the fixed note, no score); AI accesses (what to say before one is made, the key once, the log), the MCP endpoint (what it promises LLM clients) and admin backups (a manual run, its download, the schedule); offline reads and writes on the native client (the store, the change feed, the write queue, Conflicts); plus server gaps found while writing it.
 status: living
 date: 2026-10-06
 ---
@@ -118,6 +118,11 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   recording, splitting off, deleting and restoring it; the site's `version`; both sites' versions for a merge. On 409 `dive_changed` or
   `site_changed`, **offer to reload instead of overwriting**
   ([ADR 0015](../decisions/0015-overrides-vocabulary-and-browser-tests.md)). *Web:* `DiveEditForm.tsx`, `SiteForm.tsx`, `DivePage.tsx`.
+- **A native client may send the version as `If-Match: "<version>"`** instead of in the body
+  ([ADR 0083](../decisions/0083-change-feed-and-incremental-sync.md)): reads carry `ETag: "<version>"`, and a
+  stale `If-Match` answers 412 with the problem code *plus the current entity view* — one round trip, which
+  the offline write queue's three-way merge works from ([Offline writes](#offline-writes-native-client)).
+  A request that carries both must agree; `If-Match` wins.
 - **Must confirm what can't be undone, and say what will happen:**
 
   | Action | Confirmation | *Web:* |
@@ -280,9 +285,13 @@ V1 of the native client reads offline: phones lose signal where dives are, and t
   drops the whole value, and the offline lead estimate then cannot use that Dive.
 - **Refresh keeps the store current.** While online the client opens the live hint stream; a Dive or site hint
   refetches that thing through the normal API, and every (re)connect re-runs the list sync because hints are not
-  replayed (ADR 0066). Polling remains the automatic fallback. Deleted Dives arrive as tombstones (`deletedAt`),
-  never a local hard delete, and the profiles phase requests each Recording's samples at the endpoint's 20,000-point
-  cap so an offline replay keeps the peaks.
+  replayed (ADR 0066). Against a server with the change feed
+  ([ADR 0083](../decisions/0083-change-feed-and-incremental-sync.md)) refresh is feed-following instead: the
+  client keeps a durable cursor, a hint drains the feed from it, and the feed covers a gap on its own — hints
+  never guaranteed that. The paged list sync stays as the bootstrap on install and upgrade and as the answer to
+  a 410 `sync_resync_required`. Polling remains the automatic fallback. Deleted Dives arrive as tombstones
+  (`deletedAt`), never a local hard delete, and the profiles phase requests each Recording's samples at the
+  endpoint's 20,000-point cap so an offline replay keeps the peaks.
 - **The connection state is the live stream's, not the network's.** There are three states. While the stream is
   delivering, the logbook and dive pages stay quiet and Settings says "Connected". When the stream is down but the
   last sync attempt still got an answer (it may have failed, but not by timing out), the pages say
@@ -311,13 +320,62 @@ V1 of the native client reads offline: phones lose signal where dives are, and t
   401 ends the session. Without that remembered answer (this device never signed in online) the sign-in screen is
   correct. *Android:* `SessionRepository` (`restore`, `CachedMeStore`).
 - **A revoked session keeps the store readable.** When the session has ended, cached data stays readable offline;
-  V1 has no offline writes, so nothing is gated. While online, the client shows sign-in, and the logbook returns
-  after signing in. This is the approved V1 trade-off: a lost phone's holder can read the last synced logbook
+  queued offline writes are likewise kept — replay stops and resumes on sign-in as the same User
+  ([Offline writes](#offline-writes-native-client)). While online, the client shows sign-in, and the logbook
+  returns after signing in. This is the approved V1 trade-off: a lost phone's holder can read the last synced logbook
   until the device is wiped. It is not a change of User: an explicit sign-out, or signing in as someone else,
   still drops the store and every cached response (§1, Security).
 - **The offline failure wording of §2 applies unchanged.** The store answers the logbook reads it holds; whatever
-  it cannot answer (a sync, another area, a write, a server-only count) is still said as "no answer at all", not
-  as an unknown error. V1 has no offline writes, so conflicts are not handled offline yet.
+  it cannot answer (a sync, another area, a server-only count) is still said as "no answer at all", not
+  as an unknown error. A write that cannot go is queued, not lost; see
+  [Offline writes](#offline-writes-native-client).
+
+### Offline writes (native client)
+
+Writes from the native client go through the on-device write queue
+([ADR 0084](../decisions/0084-offline-writes-in-the-native-core.md)), so the logbook is editable without
+signal. The binding product principles (FAH-457): never silently overwrite; write as if online; offline write
+beats no write; the API stays the source of truth; queued writes are the User's data; destructive verbs stay
+online.
+
+- **Write as if online.** An edit applies to the store at once and enqueues a `patch` entry with the base
+  `version` it started from; nothing the native client can edit goes as a direct online-only call. Repeated
+  edits to one thing coalesce into one entry (the latest values, the original base version).
+- **The queue is visible and honest.** While entries wait, the client says so ("2 changes waiting to sync")
+  with a way to see what waits; an entry that cannot go is a state on that thing, never a toast.
+- **Replay sends `If-Match: "<base version>"`** in enqueue order (FIFO per thing). A 2xx writes the answer
+  into the store and drops the entry. A 412 answers with the current view (§1, Data safety), and the client
+  merges field by field against the base: a field changed on only one side merges quietly and is sent again
+  with the fresh version; a field changed on both sides becomes a Conflict. Which fields merge how (scalars,
+  whole lists, Participants element-wise by `diverId`) is decided in
+  [ADR 0084](../decisions/0084-offline-writes-in-the-native-core.md).
+- **A Conflict waits for the User, own edit preselected.** The entry parks as "needs your decision" and shows
+  both values, worded "this phone" vs "the server" (the widened **Conflict** of the
+  [glossary](../glossary.md)), with the User's own fresh edit preselected — the same UX as
+  [Conflicts with a Provider](#conflicts-with-a-provider), with the preselected side and the wording changed.
+  Deciding re-queues the entry with the chosen values and the fresh version. Nothing is silently overwritten;
+  nothing is silently lost.
+- **A 404 or 410 on replay means the thing is gone** (deleted or merged meanwhile): the entry drops with a
+  notice naming what happened, linking the kept Dive (`mergedInto`) where known. Nothing is re-applied
+  unasked.
+- **A 401 stops replay, never the queue.** The session has ended: the entries wait, the store stays readable,
+  and sign-in as the same User resumes replay. Signing in as another User — or an explicit sign-out — with
+  entries waiting **blocks with a warning** ("N changes haven't synced") offering *Sync now* or *Discard and
+  sign out*. A queued write survives a lost session until sign-in returns; it never survives an explicit
+  sign-out.
+- **A 410 `sync_resync_required` rebases, never discards.** After the full resync
+  ([ADR 0083](../decisions/0083-change-feed-and-incremental-sync.md)) each waiting entry whose thing still
+  exists is merged against the fresh state as if it had answered 412; an entry whose thing is gone drops with
+  a notice.
+- **Destructive verbs stay online.** Deleting, merging, moving, appending a continuation and deleting at a
+  Provider reach across the instance and to Providers: offline they are shown disabled with the standard
+  online-only wording ("no answer at all", above), never queued.
+- **An old server means read-only, probed not parsed.** Once per session the client probes
+  `GET /sync/changes`: a 404 hides the write UI for that session (hidden, not disabled); any 2xx means
+  writeable. There is no version parsing.
+- **The feed keeps the base versions fresh.** Live hints drain the change feed
+  ([Offline reads](#offline-reads-native-client)), so a queued edit replays against what the server actually
+  holds.
 
 ## 3. Area by area
 
@@ -1601,9 +1659,12 @@ Rules that only the web client kept. Both moved to the server on 2026-10-04, so 
 ## For the mobile client
 - Authentication: bearer tokens, decided in [ADR 0074](../decisions/0074-bearer-tokens-for-native-clients.md).
   Still open: how a phone finds a self-hosted instance beyond typing its URL at first start.
-- Offline use: read-only in V1, from the on-device read store ([Offline reads](#offline-reads-native-client)).
-  Offline writes and their conflict handling come later
-  ([data, sync, upload](../research/2026-10-02-data-sync-upload-auth.md)).
+- Offline use: reads from the on-device read store ([Offline reads](#offline-reads-native-client)), kept
+  current by the change feed ([ADR 0083](../decisions/0083-change-feed-and-incremental-sync.md)); writes
+  through the offline write queue with user-decided Conflicts
+  ([Offline writes](#offline-writes-native-client),
+  [ADR 0084](../decisions/0084-offline-writes-in-the-native-core.md)). The contract is decided; it ships in
+  the phased rollout of FAH-457, and this ledger line flips to "writeable" when it lands.
 - Uploading from the phone: still open. The share sheet, files from a watch app, large account exports (resumable
   uploads, [architecture](architecture.md#open-questions)).
 - Push notifications for finished Imports: still open.
