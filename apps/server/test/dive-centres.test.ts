@@ -64,10 +64,18 @@ describe.skipIf(!(await databaseReachable()))('Dive centres', () => {
 
   it('replays a create with the same id: 200 with the centre as it is, never a duplicate and never an overwrite', async () => {
     const id = '0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a6c';
-    expect((await call('POST', '/api/dive-centres', tim, { id, name: 'Erst' })).statusCode).toBe(201);
-    const again = await call('POST', '/api/dive-centres', anna, { id, name: 'Zweit' });
+    const reef = await site('Replay-Riff');
+    expect((await call('POST', '/api/dive-centres', tim, {
+      id, name: 'Erst', externalIds: [{ source: 'ssi', externalId: '700061' }], siteIds: [reef.id],
+    })).statusCode).toBe(201);
+    const again = await call('POST', '/api/dive-centres', anna, {
+      id, name: 'Zweit', externalIds: [{ source: 'ssi', externalId: '700062' }], siteIds: [reef.id],
+    });
     expect(again.statusCode).toBe(200);
-    expect(again.json()).toMatchObject({ id, name: 'Erst', version: 1, canDelete: false });
+    expect(again.json()).toMatchObject({
+      id, name: 'Erst', version: 1, canDelete: false,
+      externalIds: [{ externalId: '700061' }], sites: [{ id: reef.id, name: 'Replay-Riff' }],
+    });
     expect((await call('GET', '/api/dive-centres?q=Erst', tim)).json()).toMatchObject({ total: 1 });
     expect((await call('GET', '/api/dive-centres?q=Zweit', tim)).json()).toMatchObject({ total: 0 });
     expect(await history(id)).toHaveLength(1);
