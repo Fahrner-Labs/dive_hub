@@ -329,7 +329,9 @@ export function createDiverService(db: Db) {
     async update(userId: string, diverId: string, change: { name?: string; divesBefore?: number; apneaCounts?: boolean }) {
       await requireManagedDiver(userId, diverId);
       await db.transaction(async (tx) => {
-        const [current] = await tx.select().from(diver).where(and(eq(diver.id, diverId), live)).for('update');
+        // No key update, the lock a plain UPDATE takes: it reads the values the Revision names without holding up new
+        // Dives of this Diver (their foreign-key check takes a key-share lock).
+        const [current] = await tx.select().from(diver).where(and(eq(diver.id, diverId), live)).for('no key update');
         if (!current) throw new DiverError('diver_not_found');
         const changes: Changes = {};
         for (const field of ['name', 'divesBefore', 'apneaCounts'] as const) {
