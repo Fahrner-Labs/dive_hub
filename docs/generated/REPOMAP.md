@@ -249,7 +249,7 @@ apps/server/src/storage/blob-store.ts:39 fn createLocalBlobStore
 ### server/support
 apps/server/src/support/redact.ts:68 fn redactValue
 apps/server/src/support/redact.ts:1 iface RedactionCounters
-apps/server/src/support/log-ring-buffer.ts:30 class LogRingBuffer
+apps/server/src/support/log-ring-buffer.ts:31 class LogRingBuffer
 apps/server/src/support/redact.ts:23 const emptyRedactionCounters
 apps/server/src/support/client-diagnostics-service.ts:21 class ClientDiagnosticsError
 … 68 more symbols in this module

@@ -110,8 +110,9 @@ export async function buildApp(deps: AppDeps, app: Server = createServer()) {
   ]) app.addSchema(schema);
   await app.register(multipart, { limits: { files: 1, fileSize: deps.maxUploadBytes } });
 
-  app.get('/api/health/live', { schema: { hide: true } }, async () => ({ status: 'ok', version: process.env.DIVEHUB_VERSION || 'dev' }));
-  app.get('/api/health/ready', { schema: { hide: true } }, async () => {
+  // Probes poll every few seconds: at info they would crowd the support bundle's ring buffer, so they log nothing (FAH-450).
+  app.get('/api/health/live', { schema: { hide: true }, logLevel: 'silent' }, async () => ({ status: 'ok', version: process.env.DIVEHUB_VERSION || 'dev' }));
+  app.get('/api/health/ready', { schema: { hide: true }, logLevel: 'silent' }, async () => {
     await deps.db.execute(sql`select 1`);
     return { status: 'ok' };
   });

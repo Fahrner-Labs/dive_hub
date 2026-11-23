@@ -8,8 +8,8 @@ const line = (index: number, extra: Record<string, unknown> = {}) =>
 
 describe('the support log ring buffer', () => {
   it('keeps the module bounds', () => {
-    expect(LOG_BUFFER_CAPACITY_ENTRIES).toBe(2048);
-    expect(LOG_BUFFER_CAPACITY_BYTES).toBe(2 * 1024 * 1024);
+    expect(LOG_BUFFER_CAPACITY_ENTRIES).toBe(8192);
+    expect(LOG_BUFFER_CAPACITY_BYTES).toBe(8 * 1024 * 1024);
   });
 
   it('forwards every line unchanged and evicts oldest entries by count', () => {
