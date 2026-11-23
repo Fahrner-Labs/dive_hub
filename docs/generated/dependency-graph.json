@@ -1557,6 +1557,23 @@
         },
         {
           "dynamic": false,
+          "module": "../revisions/revisions.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/revisions/revisions.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./password.js",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -1959,12 +1976,12 @@
       ],
       "dependents": [
         "apps/server/src/auth/auth.ts",
+        "apps/server/src/revisions/revisions.ts",
         "apps/server/src/assessment/assessment-service.ts",
         "apps/server/src/divers/management.ts",
         "apps/server/src/backups/backup-service.ts",
         "apps/server/src/db/migrate.ts",
         "apps/server/src/centres/centre-service.ts",
-        "apps/server/src/revisions/revisions.ts",
         "apps/server/src/sites/site-service.ts",
         "apps/server/src/sites/site-ids.ts",
         "apps/server/src/divers/diver-service.ts",
@@ -2176,11 +2193,11 @@
       "dependents": [
         "apps/server/src/auth/auth.ts",
         "apps/server/src/db/client.ts",
+        "apps/server/src/revisions/revisions.ts",
         "apps/server/src/assessment/assessment-service.ts",
         "apps/server/src/divers/management.ts",
         "apps/server/src/backups/backup-service.ts",
         "apps/server/src/centres/centre-service.ts",
-        "apps/server/src/revisions/revisions.ts",
         "apps/server/src/sites/site-service.ts",
         "apps/server/src/sites/sources.ts",
         "apps/server/src/sites/site-ids.ts",
@@ -2424,6 +2441,83 @@
         "apps/server/src/sites/import/site-source.ts",
         "apps/server/src/sites/import/import-plan.ts",
         "apps/server/src/sites/import/site-import-view.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/server/src/revisions/revisions.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../db/client.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/db/client.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../db/schema.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/db/schema.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/server/src/auth/auth.ts",
+        "apps/server/src/centres/centre-service.ts",
+        "apps/server/src/sites/site-service.ts",
+        "apps/server/src/sites/site-ids.ts",
+        "apps/server/src/divers/diver-service.ts",
+        "apps/server/src/divers/merge.ts",
+        "apps/server/src/certifications/certification-service.ts",
+        "apps/server/src/compose.ts",
+        "apps/server/src/dives/candidates/candidate-service.ts",
+        "apps/server/src/dives/dive-service.ts",
+        "apps/server/src/sites/dive-site-link.ts",
+        "apps/server/src/dives/cylinders.ts",
+        "apps/server/src/dives/weighting.ts",
+        "apps/server/src/dives/continuation/continuation-service.ts",
+        "apps/server/src/dives/merging-service.ts",
+        "apps/server/src/dives/continuation/joined-recording.ts",
+        "apps/server/src/equipment/equipment-service.ts",
+        "apps/server/src/imports/import-service.ts",
+        "apps/server/src/imports/placement.ts",
+        "apps/server/src/live/revision-hints.ts",
+        "apps/server/src/providers/layer.ts",
+        "apps/server/src/providers/connection-service.ts",
+        "apps/server/src/providers/list-entries.ts",
+        "apps/server/src/providers/dive-import/dive-changes.ts",
+        "apps/server/src/sites/provider-sites.ts",
+        "apps/server/src/providers/dive-import/dive-import.ts",
+        "apps/server/src/providers/push/site-for-send.ts",
+        "apps/server/src/sites/import/site-import-service.ts",
+        "apps/server/src/social/offer-service.ts",
+        "apps/server/src/social/suggestion-changes.ts",
+        "apps/server/src/social/suggestion-service.ts",
+        "apps/server/src/dives/routes.ts",
+        "apps/server/src/sites/routes.ts"
       ],
       "orphan": false,
       "valid": true
@@ -4983,82 +5077,6 @@
         "apps/server/src/providers/buddies/buddy-service.ts",
         "apps/server/src/divers/routes.ts",
         "apps/server/src/providers/account-routes.ts",
-        "apps/server/src/sites/routes.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "apps/server/src/revisions/revisions.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../db/client.js",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "import"
-          ],
-          "resolved": "apps/server/src/db/client.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../db/schema.js",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "apps/server/src/db/schema.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "apps/server/src/centres/centre-service.ts",
-        "apps/server/src/sites/site-service.ts",
-        "apps/server/src/sites/site-ids.ts",
-        "apps/server/src/divers/diver-service.ts",
-        "apps/server/src/divers/merge.ts",
-        "apps/server/src/certifications/certification-service.ts",
-        "apps/server/src/compose.ts",
-        "apps/server/src/dives/candidates/candidate-service.ts",
-        "apps/server/src/dives/dive-service.ts",
-        "apps/server/src/sites/dive-site-link.ts",
-        "apps/server/src/dives/cylinders.ts",
-        "apps/server/src/dives/weighting.ts",
-        "apps/server/src/dives/continuation/continuation-service.ts",
-        "apps/server/src/dives/merging-service.ts",
-        "apps/server/src/dives/continuation/joined-recording.ts",
-        "apps/server/src/equipment/equipment-service.ts",
-        "apps/server/src/imports/import-service.ts",
-        "apps/server/src/imports/placement.ts",
-        "apps/server/src/live/revision-hints.ts",
-        "apps/server/src/providers/layer.ts",
-        "apps/server/src/providers/connection-service.ts",
-        "apps/server/src/providers/list-entries.ts",
-        "apps/server/src/providers/dive-import/dive-changes.ts",
-        "apps/server/src/sites/provider-sites.ts",
-        "apps/server/src/providers/dive-import/dive-import.ts",
-        "apps/server/src/providers/push/site-for-send.ts",
-        "apps/server/src/sites/import/site-import-service.ts",
-        "apps/server/src/social/offer-service.ts",
-        "apps/server/src/social/suggestion-changes.ts",
-        "apps/server/src/social/suggestion-service.ts",
-        "apps/server/src/dives/routes.ts",
         "apps/server/src/sites/routes.ts"
       ],
       "orphan": false,
@@ -51614,7 +51632,7 @@
     "baselineStale": 0,
     "advisedExitCode": 0,
     "totalCruised": 487,
-    "totalDependenciesCruised": 2577,
+    "totalDependenciesCruised": 2578,
     "optionsUsed": {
       "baseDir": "/home/runner/work/dive_hub/dive_hub",
       "combinedDependencies": false,
