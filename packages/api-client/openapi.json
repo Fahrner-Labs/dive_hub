@@ -9565,16 +9565,13 @@
       },
       "patch": {
         "summary": "Edit a Dive: set values (they become Overrides), reset Overrides, change notes, the Dive site or the Cylinders",
-        "description": "Send the version you started from; if the Dive changed meanwhile the answer is 409 dive_changed.",
+        "description": "Send the version you started from; if the Dive changed meanwhile the answer is 409 dive_changed. A native client sends it as If-Match instead: a stale one answers 412 with the Dive as it is now (ADR 0083).",
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "version"
-                ],
                 "properties": {
                   "version": {
                     "type": "integer"
@@ -9987,6 +9984,16 @@
             "in": "path",
             "name": "id",
             "required": true
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\"\\d+\"$"
+            },
+            "in": "header",
+            "name": "if-match",
+            "required": false,
+            "description": "The version the change started from, as a read's ETag carried it (e.g. \"3\"); it overrides the body's version"
           }
         ],
         "responses": {
@@ -10029,6 +10036,32 @@
                 }
               }
             }
+          },
+          "412": {
+            "description": "A stale If-Match: the problem and the Dive as it is now",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Problem"
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "dive"
+                      ],
+                      "properties": {
+                        "dive": {
+                          "$ref": "#/components/schemas/DiveView"
+                        }
+                      }
+                    }
+                  ],
+                  "description": "A stale If-Match: the problem and the Dive as it is now"
+                }
+              }
+            }
           }
         }
       },
@@ -10041,9 +10074,6 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "version"
-                ],
                 "properties": {
                   "version": {
                     "type": "integer"
@@ -10069,6 +10099,16 @@
             "in": "path",
             "name": "id",
             "required": true
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\"\\d+\"$"
+            },
+            "in": "header",
+            "name": "if-match",
+            "required": false,
+            "description": "The version the change started from, as a read's ETag carried it (e.g. \"3\"); it overrides the body's version"
           }
         ],
         "responses": {
@@ -10136,6 +10176,32 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/DeleteProblem"
+                }
+              }
+            }
+          },
+          "412": {
+            "description": "A stale If-Match: the problem and the Dive as it is now",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Problem"
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "dive"
+                      ],
+                      "properties": {
+                        "dive": {
+                          "$ref": "#/components/schemas/DiveView"
+                        }
+                      }
+                    }
+                  ],
+                  "description": "A stale If-Match: the problem and the Dive as it is now"
                 }
               }
             }
@@ -10501,7 +10567,6 @@
               "schema": {
                 "type": "object",
                 "required": [
-                  "version",
                   "participants"
                 ],
                 "properties": {
@@ -10549,6 +10614,16 @@
             "in": "path",
             "name": "id",
             "required": true
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\"\\d+\"$"
+            },
+            "in": "header",
+            "name": "if-match",
+            "required": false,
+            "description": "The version the change started from, as a read's ETag carried it (e.g. \"3\"); it overrides the body's version"
           }
         ],
         "responses": {
@@ -10591,6 +10666,32 @@
                 }
               }
             }
+          },
+          "412": {
+            "description": "A stale If-Match: the problem and the Dive as it is now",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Problem"
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "dive"
+                      ],
+                      "properties": {
+                        "dive": {
+                          "$ref": "#/components/schemas/DiveView"
+                        }
+                      }
+                    }
+                  ],
+                  "description": "A stale If-Match: the problem and the Dive as it is now"
+                }
+              }
+            }
           }
         }
       }
@@ -10606,8 +10707,7 @@
               "schema": {
                 "type": "object",
                 "required": [
-                  "recordingId",
-                  "version"
+                  "recordingId"
                 ],
                 "properties": {
                   "recordingId": {
@@ -10631,6 +10731,16 @@
             "in": "path",
             "name": "id",
             "required": true
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\"\\d+\"$"
+            },
+            "in": "header",
+            "name": "if-match",
+            "required": false,
+            "description": "The version the change started from, as a read's ETag carried it (e.g. \"3\"); it overrides the body's version"
           }
         ],
         "responses": {
@@ -10673,6 +10783,32 @@
                 }
               }
             }
+          },
+          "412": {
+            "description": "A stale If-Match: the problem and the Dive as it is now",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Problem"
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "dive"
+                      ],
+                      "properties": {
+                        "dive": {
+                          "$ref": "#/components/schemas/DiveView"
+                        }
+                      }
+                    }
+                  ],
+                  "description": "A stale If-Match: the problem and the Dive as it is now"
+                }
+              }
+            }
           }
         }
       }
@@ -10688,8 +10824,7 @@
               "schema": {
                 "type": "object",
                 "required": [
-                  "diverId",
-                  "version"
+                  "diverId"
                 ],
                 "properties": {
                   "diverId": {
@@ -10713,6 +10848,16 @@
             "in": "path",
             "name": "id",
             "required": true
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\"\\d+\"$"
+            },
+            "in": "header",
+            "name": "if-match",
+            "required": false,
+            "description": "The version the change started from, as a read's ETag carried it (e.g. \"3\"); it overrides the body's version"
           }
         ],
         "responses": {
@@ -10742,6 +10887,32 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "412": {
+            "description": "A stale If-Match: the problem and the Dive as it is now",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Problem"
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "dive"
+                      ],
+                      "properties": {
+                        "dive": {
+                          "$ref": "#/components/schemas/DiveView"
+                        }
+                      }
+                    }
+                  ],
+                  "description": "A stale If-Match: the problem and the Dive as it is now"
                 }
               }
             }
@@ -16714,16 +16885,13 @@
       },
       "patch": {
         "summary": "Change an Equipment item; send the version you started from",
-        "description": "409 equipment_changed when it changed meanwhile. When the status leaves in use the server stamps inUseUntil (today unless sent); returning to in use clears it. Only what is sent changes.",
+        "description": "409 equipment_changed when it changed meanwhile. When the status leaves in use the server stamps inUseUntil (today unless sent); returning to in use clears it. Only what is sent changes. A native client sends the version as If-Match instead: a stale one answers 412 with the item as it is now (ADR 0083).",
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "version"
-                ],
                 "properties": {
                   "version": {
                     "type": "integer"
@@ -16850,6 +17018,16 @@
             "in": "path",
             "name": "id",
             "required": true
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\"\\d+\"$"
+            },
+            "in": "header",
+            "name": "if-match",
+            "required": false,
+            "description": "The version the change started from, as a read's ETag carried it (e.g. \"3\"); it overrides the body's version"
           }
         ],
         "responses": {
@@ -16889,6 +17067,32 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "412": {
+            "description": "A stale If-Match: the problem and the Equipment item as it is now",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Problem"
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "equipment"
+                      ],
+                      "properties": {
+                        "equipment": {
+                          "$ref": "#/components/schemas/EquipmentItemDetail"
+                        }
+                      }
+                    }
+                  ],
+                  "description": "A stale If-Match: the problem and the Equipment item as it is now"
                 }
               }
             }
@@ -21168,16 +21372,13 @@
       },
       "patch": {
         "summary": "Edit a Dive site (any User)",
-        "description": "Send the version you started from; if the site changed meanwhile the answer is 409 site_changed.",
+        "description": "Send the version you started from; if the site changed meanwhile the answer is 409 site_changed. A native client sends it as If-Match instead: a stale one answers 412 with the site as it is now (ADR 0083).",
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "version"
-                ],
                 "properties": {
                   "version": {
                     "type": "integer",
@@ -21295,6 +21496,16 @@
             "in": "path",
             "name": "id",
             "required": true
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\"\\d+\"$"
+            },
+            "in": "header",
+            "name": "if-match",
+            "required": false,
+            "description": "The version the change started from, as a read's ETag carried it (e.g. \"3\"); it overrides the body's version"
           }
         ],
         "responses": {
@@ -21347,11 +21558,38 @@
                 }
               }
             }
+          },
+          "412": {
+            "description": "A stale If-Match: the problem and the site as it is now",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Problem"
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "site"
+                      ],
+                      "properties": {
+                        "site": {
+                          "$ref": "#/components/schemas/SiteView"
+                        }
+                      }
+                    }
+                  ],
+                  "description": "A stale If-Match: the problem and the site as it is now"
+                }
+              }
+            }
           }
         }
       },
       "delete": {
         "summary": "Delete a Dive site: its creator or an admin, while no Dive is there",
+        "description": "A native client sends the version it saw as If-Match: a stale one answers 412 with the site as it is now (ADR 0083).",
         "parameters": [
           {
             "schema": {
@@ -21361,6 +21599,16 @@
             "in": "path",
             "name": "id",
             "required": true
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\"\\d+\"$"
+            },
+            "in": "header",
+            "name": "if-match",
+            "required": false,
+            "description": "The version the change started from, as a read's ETag carried it (e.g. \"3\"); it overrides the body's version"
           }
         ],
         "responses": {
@@ -21403,6 +21651,32 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "412": {
+            "description": "A stale If-Match: the problem and the site as it is now",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Problem"
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "site"
+                      ],
+                      "properties": {
+                        "site": {
+                          "$ref": "#/components/schemas/SiteView"
+                        }
+                      }
+                    }
+                  ],
+                  "description": "A stale If-Match: the problem and the site as it is now"
                 }
               }
             }
@@ -21631,8 +21905,7 @@
               "schema": {
                 "type": "object",
                 "required": [
-                  "source",
-                  "version"
+                  "source"
                 ],
                 "properties": {
                   "source": {
@@ -21662,6 +21935,16 @@
             "in": "path",
             "name": "id",
             "required": true
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\"\\d+\"$"
+            },
+            "in": "header",
+            "name": "if-match",
+            "required": false,
+            "description": "The version the change started from, as a read's ETag carried it (e.g. \"3\"); it overrides the body's version"
           }
         ],
         "responses": {
@@ -21711,6 +21994,32 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "412": {
+            "description": "A stale If-Match: the problem and the site as it is now",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Problem"
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "site"
+                      ],
+                      "properties": {
+                        "site": {
+                          "$ref": "#/components/schemas/SiteView"
+                        }
+                      }
+                    }
+                  ],
+                  "description": "A stale If-Match: the problem and the site as it is now"
                 }
               }
             }
@@ -22231,7 +22540,7 @@
       },
       "patch": {
         "summary": "Rename a Dive centre (any User)",
-        "description": "Send the version you started from; if the centre was renamed meanwhile the answer is 409 centre_changed.",
+        "description": "Send the version you started from; if the centre was renamed meanwhile the answer is 409 centre_changed. A native client sends it as If-Match instead: a stale one answers 412 with the centre as it is now (ADR 0083).",
         "requestBody": {
           "required": true,
           "content": {
@@ -22239,7 +22548,6 @@
               "schema": {
                 "type": "object",
                 "required": [
-                  "version",
                   "name"
                 ],
                 "properties": {
@@ -22268,6 +22576,16 @@
             "in": "path",
             "name": "id",
             "required": true
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\"\\d+\"$"
+            },
+            "in": "header",
+            "name": "if-match",
+            "required": false,
+            "description": "The version the change started from, as a read's ETag carried it (e.g. \"3\"); it overrides the body's version"
           }
         ],
         "responses": {
@@ -22317,6 +22635,32 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "412": {
+            "description": "A stale If-Match: the problem and the centre as it is now",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Problem"
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "centre"
+                      ],
+                      "properties": {
+                        "centre": {
+                          "$ref": "#/components/schemas/CentreView"
+                        }
+                      }
+                    }
+                  ],
+                  "description": "A stale If-Match: the problem and the centre as it is now"
                 }
               }
             }

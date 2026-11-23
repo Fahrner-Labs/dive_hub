@@ -4,7 +4,7 @@
 > `pnpm check` fails when this map is stale. Symbols are ranked by how widely the code references them;
 > each module shows its most-referenced ones (exported symbols rank higher). Search here before walking the tree.
 
-Files: 424 · symbols: 3898 · shown: 253
+Files: 425 · symbols: 3910 · shown: 253
 
 ### server/(root)
 apps/server/src/vocabulary.ts:13 type SiteWaterType
@@ -48,7 +48,7 @@ apps/server/src/centres/centre-service.ts:254 type CentreService
 apps/server/src/centres/centre-service.ts:12 const CENTRE_SOURCES
 apps/server/src/centres/centre-service.ts:18 class CentreError
 apps/server/src/centres/centre-view.ts:7 const Source
-… 25 more symbols in this module
+… 26 more symbols in this module
 
 ### server/certifications
 apps/server/src/certifications/certification-service.ts:457 type CertificationService
@@ -99,7 +99,7 @@ apps/server/src/dives/provider-port.ts:47 iface DiveWaitingPushes
 apps/server/src/dives/recording-units.ts:9 const isUnit
 apps/server/src/dives/weighting.ts:23 const leadTotalKg
 apps/server/src/dives/weighting.ts:96 iface Suit
-… 312 more symbols in this module
+… 313 more symbols in this module
 
 ### server/equipment
 apps/server/src/equipment/usage.ts:37 fn usageMap
@@ -108,15 +108,15 @@ apps/server/src/equipment/due.ts:59 const DAY_MS
 apps/server/src/equipment/usage.ts:16 iface Usage
 apps/server/src/equipment/due.ts:86 const round
 apps/server/src/equipment/due.ts:36 iface ScheduleDue
-… 93 more symbols in this module
+… 94 more symbols in this module
 
 ### server/http
 apps/server/src/http/schemas.ts:10 const Nullable
 apps/server/src/http/schemas.ts:5 const DateTime
 apps/server/src/http/schemas.ts:4 const IdParams
-apps/server/src/http/problems.ts:198 const Problem
-apps/server/src/http/problems.ts:201 const problem
-… 25 more symbols in this module
+apps/server/src/http/problems.ts:199 const Problem
+apps/server/src/http/problems.ts:202 const problem
+… 33 more symbols in this module
 
 ### server/imports
 apps/server/src/imports/parsed-recording.ts:36 iface ParsedRecording
@@ -230,7 +230,7 @@ apps/server/src/sites/import/site-source.ts:27 iface SourceSite
 apps/server/src/sites/sources.ts:10 const SITE_SOURCES
 apps/server/src/sites/sources.ts:33 const SOURCE_INFO
 apps/server/src/sites/sources.ts:14 const IMPORT_SOURCES
-… 166 more symbols in this module
+… 167 more symbols in this module
 
 ### server/social
 apps/server/src/social/suggestion-service.ts:19 class SuggestionError

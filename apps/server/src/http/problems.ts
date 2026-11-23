@@ -1,7 +1,8 @@
 // Error responses (ADR 0014): every refusal carries a stable `code`, which clients translate,
 // and an English `error` text for logs, scripts and anything without a translation.
-import type { FastifyError, FastifyInstance, FastifyReply } from 'fastify';
+import type { FastifyError, FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { Type } from 'typebox';
+import { usesIfMatch } from './conditional.js';
 import { Nullable, oneOf, refTo } from './schemas.js';
 
 export const PROBLEMS = {
@@ -205,26 +206,46 @@ export const providerProblem = (code: ProblemCode, provider: { id: string; name:
   ({ ...problem(code), provider: provider.id, providerName: provider.name });
 
 /** How a route plugin answers one kind of error: it replies to an error it knows and answers undefined to any other. */
-export type ErrorAnswer = (error: unknown, reply: FastifyReply) => FastifyReply | undefined;
+export type ErrorAnswer = (
+  error: unknown, request: FastifyRequest, reply: FastifyReply,
+) => FastifyReply | undefined | Promise<FastifyReply | undefined>;
+
+/**
+ * A stale `If-Match` (ADR 0083): the module's version-changed code is answered 412 with the current entity view,
+ * which the client's three-way merge needs. Only a request that sent `If-Match` gets this; the web's body version
+ * still answers the code's own status (409).
+ */
+export interface StalePrecondition {
+  /** The module's refusal codes that mean "the version sent was not the current one". */
+  codes: readonly ProblemCode[];
+  /** The current entity as the refusal carries it (e.g. `{ dive }`), or undefined when it is gone. */
+  current: (request: FastifyRequest) => Promise<object | undefined>;
+}
 
 /**
  * Answers a module's error by its code: the status from the module's STATUS, which the code union keeps exhaustive,
- * and the problem with the extras `extras` names (such as the Diver that has an account).
+ * and the problem with the extras `extras` names (such as the Diver that has an account). With a stale precondition,
+ * a version-changed code on a request carrying `If-Match` answers 412 and `current` instead.
  */
 export const answers = <E extends Error & { code: ProblemCode }>(
   type: abstract new (...args: never[]) => E,
   status: Record<E['code'], number>,
   extras: (error: E) => object | undefined = () => undefined,
-): ErrorAnswer => (error, reply) => {
+  stale?: StalePrecondition,
+): ErrorAnswer => async (error, request, reply) => {
   if (!(error instanceof type)) return undefined;
   const code: number = status[error.code as E['code']];
+  if (stale && code === 409 && stale.codes.includes(error.code) && usesIfMatch(request)) {
+    const current = await stale.current(request).catch(() => undefined);
+    return reply.code(412).send({ ...problem(error.code), ...extras(error), ...current });
+  }
   return reply.code(code).send({ ...problem(error.code), ...extras(error) });
 };
 
 /** A route plugin's error handler: the first answer that knows the error replies; any other error goes on to useProblemErrors. */
-export const answerErrors = (...answered: ErrorAnswer[]) => (error: Error, _request: unknown, reply: FastifyReply) => {
+export const answerErrors = (...answered: ErrorAnswer[]) => async (error: Error, request: FastifyRequest, reply: FastifyReply) => {
   for (const answer of answered) {
-    const sent = answer(error, reply);
+    const sent = await answer(error, request, reply);
     if (sent) return sent;
   }
   throw error;

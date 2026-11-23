@@ -9,6 +9,7 @@ import {
   CYLINDER_MATERIALS, PARTICIPANT_ROLES, UTC_OFFSET_SOURCES,
 } from '../db/schema.js';
 import { answerErrors, answers, Problem, problem } from '../http/problems.js';
+import { IfMatchHeaders, setETag, versionOf } from '../http/conditional.js';
 import { Copies, decodeDeletedCursor, DeleteProblemSchema } from './deletion-view.js';
 import {
   CylinderInput, CylinderValues, CylinderView, DiveView, Field, LeadEntry, LeadInput, Role, SuitInput, SuitValues, valueProperties, ValuesSchema,
@@ -68,7 +69,7 @@ export interface DiveRouteDeps {
 
 
 const EditBody = Type.Object({
-  version: Type.Integer(),
+  version: Type.Optional(Type.Integer()),
   set: Type.Optional(Type.Object({
     startsAt: Type.Optional(valueProperties.startsAt), durationSeconds: Type.Optional(valueProperties.durationSeconds),
     maxDepthM: Type.Optional(valueProperties.maxDepthM), avgDepthM: Type.Optional(valueProperties.avgDepthM),
@@ -243,16 +244,16 @@ const CheckView = Type.Object({
 });
 
 const DeleteProblem = refTo(DeleteProblemSchema);
+/** A stale `If-Match` answers the problem code and the Dive as it is now, for the client's three-way merge (ADR 0083). */
+const DiveChanged = Type.Intersect([Problem, Type.Object({ dive: DiveView })], {
+  description: 'A stale If-Match: the problem and the Dive as it is now',
+});
 
 export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, { auth, dives, logbook, divers, centres, merging, checks, pushes, waitingPushes, deletion, merge, continuation, append, assessments, providerAnswers, certifications }) => {
   app.addHook('onRequest', requireUser(auth));
   refreshAssessmentsAfterChange(app, assessments);
 
-  app.setErrorHandler(answerErrors(
-    answers(DiveError, STATUS), answers(CylinderError, CYLINDER_STATUS), answers(WeightingError, WEIGHTING_STATUS), providerAnswers.answer,
-  ));
-
-
+  const view = createDiveView({ logbook, centres, divers, certifications });
   /** The Dive if the signed-in User manages its Diver. */
   const findDive = (request: FastifyRequest, id: string) => logbook.findManagedDive(userOf(request).id, id);
   /** The view of a Dive a change just kept: it must exist, so its absence is a bug, not a 404. */
@@ -261,8 +262,18 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
     if (!row) throw new Error(`Dive ${id} is gone right after its change`);
     return view(row, userOf(request).id);
   };
+  /** The Dive a stale If-Match is about, as the 412 carries it (undefined when it is gone). */
+  const currentDive = async (request: FastifyRequest) => {
+    const id = (request.params as { id?: string }).id;
+    if (!id) return undefined;
+    const row = await logbook.findManagedDive(userOf(request).id, id);
+    return row ? { dive: await view(row, userOf(request).id) } : undefined;
+  };
 
-  const view = createDiveView({ logbook, centres, divers, certifications });
+  app.setErrorHandler(answerErrors(
+    answers(DiveError, STATUS, undefined, { codes: ['dive_changed'], current: currentDive }),
+    answers(CylinderError, CYLINDER_STATUS), answers(WeightingError, WEIGHTING_STATUS), providerAnswers.answer,
+  ));
 
   app.get('/dives/:id', {
     schema: {
@@ -271,23 +282,29 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
     },
   }, async (request, reply) => {
     const row = await findDive(request, request.params.id);
-    return row ? view(row, userOf(request).id) : reply.code(404).send(problem('dive_not_found'));
+    if (!row) return reply.code(404).send(problem('dive_not_found'));
+    const found = await view(row, userOf(request).id);
+    return setETag(reply, found.version).send(found);
   });
 
   app.patch('/dives/:id', {
     schema: {
       summary: 'Edit a Dive: set values (they become Overrides), reset Overrides, change notes, the Dive site or the Cylinders',
-      description: 'Send the version you started from; if the Dive changed meanwhile the answer is 409 dive_changed.',
-      params: IdParams, body: EditBody, response: { 200: DiveView, 400: Problem, 404: Problem, 409: Problem },
+      description: 'Send the version you started from; if the Dive changed meanwhile the answer is 409 dive_changed. A native '
+        + 'client sends it as If-Match instead: a stale one answers 412 with the Dive as it is now (ADR 0083).',
+      params: IdParams, headers: IfMatchHeaders, body: EditBody,
+      response: { 200: DiveView, 400: Problem, 404: Problem, 409: Problem, 412: DiveChanged },
     },
-  }, async (request) => {
+  }, async (request, reply) => {
     const { version, set, reset, notes, siteId, cylinders, lead, weightingFeedback, suit } = request.body;
     await dives.edit(userOf(request).id, request.params.id, {
-      version, ...(set && { set: fromValues(set) }), ...(reset && { reset }), ...(notes !== undefined && { notes }),
+      version: versionOf(request, version),
+      ...(set && { set: fromValues(set) }), ...(reset && { reset }), ...(notes !== undefined && { notes }),
       ...(siteId !== undefined && { siteId }), ...(cylinders && { cylinders }), ...(lead && { lead }),
       ...(weightingFeedback !== undefined && { weightingFeedback }), ...(suit !== undefined && { suit }),
     });
-    return viewOfKept(request, request.params.id);
+    const kept = await viewOfKept(request, request.params.id);
+    return setETag(reply, kept.version).send(kept);
   });
 
   app.get('/cylinder-catalogue', {
@@ -346,28 +363,35 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
       summary: 'Set who else was on the Dive, as one list: any Diver of the instance (GET /divers/search) but the Dive\'s own, one role each',
       description: 'Send the version you started from (409 dive_changed). 400 participant_invalid for a Diver twice or the Dive\'s own; '
         + '404 diver_not_found for one that doesn\'t exist. Providers that take buddies see the Dive changed (ADR 0028, 0029).',
-      params: IdParams,
+      params: IdParams, headers: IfMatchHeaders,
       body: Type.Object({
-        version: Type.Integer(),
+        version: Type.Optional(Type.Integer()),
         participants: Type.Array(Type.Object({ diverId: Type.String({ format: 'uuid' }), role: Role }, { additionalProperties: false }), { maxItems: 50 }),
       }, { additionalProperties: false }),
-      response: { 200: DiveView, 400: Problem, 404: Problem, 409: Problem },
+      response: { 200: DiveView, 400: Problem, 404: Problem, 409: Problem, 412: DiveChanged },
     },
-  }, async (request) => {
-    await dives.setParticipants(userOf(request).id, request.params.id, request.body.version, request.body.participants);
-    return viewOfKept(request, request.params.id);
+  }, async (request, reply) => {
+    await dives.setParticipants(
+      userOf(request).id, request.params.id, versionOf(request, request.body.version), request.body.participants,
+    );
+    const kept = await viewOfKept(request, request.params.id);
+    return setETag(reply, kept.version).send(kept);
   });
 
   app.put('/dives/:id/primary-recording', {
     schema: {
       summary: 'Make one of the Dive\'s Recordings the Primary one; values without Override follow it',
       description: 'Not a part of a joined Recording: 400 recording_is_part (ADR 0063).',
-      params: IdParams, body: Type.Object({ recordingId: Type.String({ format: 'uuid' }), version: Type.Integer() }),
-      response: { 200: DiveView, 400: Problem, 404: Problem, 409: Problem },
+      params: IdParams, headers: IfMatchHeaders,
+      body: Type.Object({ recordingId: Type.String({ format: 'uuid' }), version: Type.Optional(Type.Integer()) }),
+      response: { 200: DiveView, 400: Problem, 404: Problem, 409: Problem, 412: DiveChanged },
     },
-  }, async (request) => {
-    await dives.setPrimary(userOf(request).id, request.params.id, request.body.recordingId, request.body.version);
-    return viewOfKept(request, request.params.id);
+  }, async (request, reply) => {
+    await dives.setPrimary(
+      userOf(request).id, request.params.id, request.body.recordingId, versionOf(request, request.body.version),
+    );
+    const kept = await viewOfKept(request, request.params.id);
+    return setETag(reply, kept.version).send(kept);
   });
 
   app.post('/dives/:id/move', {
@@ -376,12 +400,16 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
       description: 'A Dive linked to a Provider moves as a copy with a new `id` (ADR 0038): the old Dive is deleted and keeps its '
         + 'links, so the old Diver\'s imports don\'t make it again; it is listed in GET /dives/deleted with `movedTo`. Follow the `id` '
         + 'of the answer.',
-      params: IdParams, body: Type.Object({ diverId: Type.String({ format: 'uuid' }), version: Type.Integer() }),
-      response: { 200: DiveView, 404: Problem, 409: Problem },
+      params: IdParams, headers: IfMatchHeaders,
+      body: Type.Object({ diverId: Type.String({ format: 'uuid' }), version: Type.Optional(Type.Integer()) }),
+      response: { 200: DiveView, 404: Problem, 409: Problem, 412: DiveChanged },
     },
-  }, async (request) => {
-    const id = await merging.move(userOf(request).id, request.params.id, request.body.diverId, request.body.version);
-    return viewOfKept(request, id);
+  }, async (request, reply) => {
+    const id = await merging.move(
+      userOf(request).id, request.params.id, request.body.diverId, versionOf(request, request.body.version),
+    );
+    const kept = await viewOfKept(request, id);
+    return setETag(reply, kept.version).send(kept);
   });
 
   app.get('/dives/:id/merge-candidates', {
@@ -571,19 +599,21 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
         + 'to delete it at first (SSI\'s app can\'t bring it back). With several, each is checked first; if one refuses (provider_* '
         + 'codes), the Dive stays here and `providers` says which copies are gone already. The others keep it, and the deleted '
         + 'Dive keeps reminding (`stillAt` in GET /dives/deleted). ADR 0026, 0027.',
-      params: IdParams,
+      params: IdParams, headers: IfMatchHeaders,
       body: Type.Object({
-        version: Type.Integer(),
+        version: Type.Optional(Type.Integer()),
         alsoAt: Type.Optional(Type.Array(Type.String(), { description: 'Providers to delete the Dive\'s copy at too; ask the User first (docs/spec/clients.md)' })),
       }),
       response: {
         200: Type.Object({ providers: Copies }),
-        400: DeleteProblem, 404: Problem, 409: DeleteProblem, 502: DeleteProblem,
+        400: DeleteProblem, 404: Problem, 409: DeleteProblem, 412: DiveChanged, 502: DeleteProblem,
       },
     },
   }, async (request, reply) => {
-    const { version, alsoAt = [] } = request.body;
-    const { providers, failure } = await deletion.remove(userOf(request).id, request.params.id, version, alsoAt);
+    const { alsoAt = [] } = request.body;
+    const { providers, failure } = await deletion.remove(
+      userOf(request).id, request.params.id, versionOf(request, request.body.version), alsoAt,
+    );
     if (failure) return providerAnswers.reply(failure, reply, { providers });
     return { providers };
   });

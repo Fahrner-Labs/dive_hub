@@ -2534,7 +2534,10 @@ export interface paths {
         delete: {
             parameters: {
                 query?: never;
-                header?: never;
+                header?: {
+                    /** @description The version the change started from, as a read's ETag carried it (e.g. "3"); it overrides the body's version */
+                    "if-match"?: string;
+                };
                 path: {
                     id: string;
                 };
@@ -2543,7 +2546,7 @@ export interface paths {
             requestBody: {
                 content: {
                     "application/json": {
-                        version: number;
+                        version?: number;
                         /** @description Providers to delete the Dive's copy at too; ask the User first (docs/spec/clients.md) */
                         alsoAt?: string[];
                     };
@@ -2596,6 +2599,17 @@ export interface paths {
                         "application/json": components["schemas"]["DeleteProblem"];
                     };
                 };
+                /** @description A stale If-Match: the problem and the Dive as it is now */
+                412: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"] & {
+                            dive: components["schemas"]["DiveView"];
+                        };
+                    };
+                };
                 /** @description A refusal while deleting a Dive: a Problem, with the copies at Providers */
                 502: {
                     headers: {
@@ -2611,12 +2625,15 @@ export interface paths {
         head?: never;
         /**
          * Edit a Dive: set values (they become Overrides), reset Overrides, change notes, the Dive site or the Cylinders
-         * @description Send the version you started from; if the Dive changed meanwhile the answer is 409 dive_changed.
+         * @description Send the version you started from; if the Dive changed meanwhile the answer is 409 dive_changed. A native client sends it as If-Match instead: a stale one answers 412 with the Dive as it is now (ADR 0083).
          */
         patch: {
             parameters: {
                 query?: never;
-                header?: never;
+                header?: {
+                    /** @description The version the change started from, as a read's ETag carried it (e.g. "3"); it overrides the body's version */
+                    "if-match"?: string;
+                };
                 path: {
                     id: string;
                 };
@@ -2625,7 +2642,7 @@ export interface paths {
             requestBody: {
                 content: {
                     "application/json": {
-                        version: number;
+                        version?: number;
                         /** @description Values to override. The number of the Dive is none of them (ADR 0048): naming it is 400 */
                         set?: {
                             startsAt?: {
@@ -2725,6 +2742,17 @@ export interface paths {
                     };
                     content: {
                         "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description A stale If-Match: the problem and the Dive as it is now */
+                412: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"] & {
+                            dive: components["schemas"]["DiveView"];
+                        };
                     };
                 };
             };
@@ -2878,7 +2906,10 @@ export interface paths {
         put: {
             parameters: {
                 query?: never;
-                header?: never;
+                header?: {
+                    /** @description The version the change started from, as a read's ETag carried it (e.g. "3"); it overrides the body's version */
+                    "if-match"?: string;
+                };
                 path: {
                     id: string;
                 };
@@ -2887,7 +2918,7 @@ export interface paths {
             requestBody: {
                 content: {
                     "application/json": {
-                        version: number;
+                        version?: number;
                         participants: {
                             /** Format: uuid */
                             diverId: string;
@@ -2937,6 +2968,17 @@ export interface paths {
                         "application/json": components["schemas"]["Problem"];
                     };
                 };
+                /** @description A stale If-Match: the problem and the Dive as it is now */
+                412: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"] & {
+                            dive: components["schemas"]["DiveView"];
+                        };
+                    };
+                };
             };
         };
         post?: never;
@@ -2961,7 +3003,10 @@ export interface paths {
         put: {
             parameters: {
                 query?: never;
-                header?: never;
+                header?: {
+                    /** @description The version the change started from, as a read's ETag carried it (e.g. "3"); it overrides the body's version */
+                    "if-match"?: string;
+                };
                 path: {
                     id: string;
                 };
@@ -2972,7 +3017,7 @@ export interface paths {
                     "application/json": {
                         /** Format: uuid */
                         recordingId: string;
-                        version: number;
+                        version?: number;
                     };
                 };
             };
@@ -3013,6 +3058,17 @@ export interface paths {
                         "application/json": components["schemas"]["Problem"];
                     };
                 };
+                /** @description A stale If-Match: the problem and the Dive as it is now */
+                412: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"] & {
+                            dive: components["schemas"]["DiveView"];
+                        };
+                    };
+                };
             };
         };
         post?: never;
@@ -3038,7 +3094,10 @@ export interface paths {
         post: {
             parameters: {
                 query?: never;
-                header?: never;
+                header?: {
+                    /** @description The version the change started from, as a read's ETag carried it (e.g. "3"); it overrides the body's version */
+                    "if-match"?: string;
+                };
                 path: {
                     id: string;
                 };
@@ -3049,7 +3108,7 @@ export interface paths {
                     "application/json": {
                         /** Format: uuid */
                         diverId: string;
-                        version: number;
+                        version?: number;
                     };
                 };
             };
@@ -3079,6 +3138,17 @@ export interface paths {
                     };
                     content: {
                         "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description A stale If-Match: the problem and the Dive as it is now */
+                412: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"] & {
+                            dive: components["schemas"]["DiveView"];
+                        };
                     };
                 };
             };
@@ -6375,12 +6445,15 @@ export interface paths {
         head?: never;
         /**
          * Change an Equipment item; send the version you started from
-         * @description 409 equipment_changed when it changed meanwhile. When the status leaves in use the server stamps inUseUntil (today unless sent); returning to in use clears it. Only what is sent changes.
+         * @description 409 equipment_changed when it changed meanwhile. When the status leaves in use the server stamps inUseUntil (today unless sent); returning to in use clears it. Only what is sent changes. A native client sends the version as If-Match instead: a stale one answers 412 with the item as it is now (ADR 0083).
          */
         patch: {
             parameters: {
                 query?: never;
-                header?: never;
+                header?: {
+                    /** @description The version the change started from, as a read's ETag carried it (e.g. "3"); it overrides the body's version */
+                    "if-match"?: string;
+                };
                 path: {
                     id: string;
                 };
@@ -6389,7 +6462,7 @@ export interface paths {
             requestBody: {
                 content: {
                     "application/json": {
-                        version: number;
+                        version?: number;
                         /** @enum {unknown} */
                         category?: "regulator" | "bcd" | "wing" | "backplate" | "cylinder" | "drysuit" | "wetsuit" | "dive_computer" | "transmitter" | "light" | "camera" | "other";
                         name?: string;
@@ -6445,6 +6518,17 @@ export interface paths {
                     };
                     content: {
                         "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description A stale If-Match: the problem and the Equipment item as it is now */
+                412: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"] & {
+                            equipment: components["schemas"]["EquipmentItemDetail"];
+                        };
                     };
                 };
             };
@@ -8433,11 +8517,17 @@ export interface paths {
         };
         put?: never;
         post?: never;
-        /** Delete a Dive site: its creator or an admin, while no Dive is there */
+        /**
+         * Delete a Dive site: its creator or an admin, while no Dive is there
+         * @description A native client sends the version it saw as If-Match: a stale one answers 412 with the site as it is now (ADR 0083).
+         */
         delete: {
             parameters: {
                 query?: never;
-                header?: never;
+                header?: {
+                    /** @description The version the change started from, as a read's ETag carried it (e.g. "3"); it overrides the body's version */
+                    "if-match"?: string;
+                };
                 path: {
                     id: string;
                 };
@@ -8488,18 +8578,32 @@ export interface paths {
                         "application/json": components["schemas"]["Problem"];
                     };
                 };
+                /** @description A stale If-Match: the problem and the site as it is now */
+                412: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"] & {
+                            site: components["schemas"]["SiteView"];
+                        };
+                    };
+                };
             };
         };
         options?: never;
         head?: never;
         /**
          * Edit a Dive site (any User)
-         * @description Send the version you started from; if the site changed meanwhile the answer is 409 site_changed.
+         * @description Send the version you started from; if the site changed meanwhile the answer is 409 site_changed. A native client sends it as If-Match instead: a stale one answers 412 with the site as it is now (ADR 0083).
          */
         patch: {
             parameters: {
                 query?: never;
-                header?: never;
+                header?: {
+                    /** @description The version the change started from, as a read's ETag carried it (e.g. "3"); it overrides the body's version */
+                    "if-match"?: string;
+                };
                 path: {
                     id: string;
                 };
@@ -8509,7 +8613,7 @@ export interface paths {
                 content: {
                     "application/json": {
                         /** @description The version the edit started from */
-                        version: number;
+                        version?: number;
                         name?: string;
                         position?: null | {
                             latitude: number;
@@ -8567,6 +8671,17 @@ export interface paths {
                     };
                     content: {
                         "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description A stale If-Match: the problem and the site as it is now */
+                412: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"] & {
+                            site: components["schemas"]["SiteView"];
+                        };
                     };
                 };
             };
@@ -8764,7 +8879,10 @@ export interface paths {
         post: {
             parameters: {
                 query?: never;
-                header?: never;
+                header?: {
+                    /** @description The version the change started from, as a read's ETag carried it (e.g. "3"); it overrides the body's version */
+                    "if-match"?: string;
+                };
                 path: {
                     id: string;
                 };
@@ -8779,7 +8897,7 @@ export interface paths {
                          */
                         source: "osm" | "wikidata" | "ssi";
                         /** @description The version the User saw */
-                        version: number;
+                        version?: number;
                     };
                 };
             };
@@ -8827,6 +8945,17 @@ export interface paths {
                     };
                     content: {
                         "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description A stale If-Match: the problem and the site as it is now */
+                412: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"] & {
+                            site: components["schemas"]["SiteView"];
+                        };
                     };
                 };
             };
@@ -9179,12 +9308,15 @@ export interface paths {
         head?: never;
         /**
          * Rename a Dive centre (any User)
-         * @description Send the version you started from; if the centre was renamed meanwhile the answer is 409 centre_changed.
+         * @description Send the version you started from; if the centre was renamed meanwhile the answer is 409 centre_changed. A native client sends it as If-Match instead: a stale one answers 412 with the centre as it is now (ADR 0083).
          */
         patch: {
             parameters: {
                 query?: never;
-                header?: never;
+                header?: {
+                    /** @description The version the change started from, as a read's ETag carried it (e.g. "3"); it overrides the body's version */
+                    "if-match"?: string;
+                };
                 path: {
                     id: string;
                 };
@@ -9193,7 +9325,7 @@ export interface paths {
             requestBody: {
                 content: {
                     "application/json": {
-                        version: number;
+                        version?: number;
                         /** @description As the centre spells it; for an SSI code, exactly as SSI does */
                         name: string;
                     };
@@ -9243,6 +9375,17 @@ export interface paths {
                     };
                     content: {
                         "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description A stale If-Match: the problem and the centre as it is now */
+                412: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"] & {
+                            centre: components["schemas"]["CentreView"];
+                        };
                     };
                 };
             };

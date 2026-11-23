@@ -1,7 +1,7 @@
 // What dives needs of the provider layer, and nothing more (ADR 0053's seam for dives and providers): a Dive's copies
 // at Providers (its remote dives and its Waiting pushes), and the Provider's answer when one refuses. dives owns these
 // shapes; the provider layer implements them and compose.ts/app.ts pass the real services in.
-import type { FastifyReply } from 'fastify';
+import type { FastifyReply, FastifyRequest } from 'fastify';
 import type { SQL } from 'drizzle-orm';
 import type { push } from '../db/schema.js';
 import type { WaitingPushView } from './waiting-push-view.js';
@@ -52,5 +52,5 @@ export interface DiveWaitingPushes {
 /** How a refusal about a Provider is answered (providers/route-parts.ts), passed in by app.ts. */
 export interface DiveProviderAnswers {
   reply(error: DiveProviderRefusal, reply: FastifyReply, extra?: object): FastifyReply;
-  answer(error: unknown, reply: FastifyReply): FastifyReply | undefined;
+  answer(error: unknown, request: FastifyRequest, reply: FastifyReply): FastifyReply | undefined | Promise<FastifyReply | undefined>;
 }
