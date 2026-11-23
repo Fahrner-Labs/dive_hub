@@ -1,10 +1,12 @@
 // Dive sites, shared by every User (ADR 0020).
 import type { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
+import type { FastifyRequest } from 'fastify';
 import { Type, type Static } from 'typebox';
 import type { Auth } from '../auth/auth.js';
 import { requireUser } from '../auth/fastify.js';
 import { callerOf } from '../http/caller.js';
 import { answerErrors, answers, Problem, problem } from '../http/problems.js';
+import { IfMatchHeaders, ifMatchVersion, setETag, versionOf } from '../http/conditional.js';
 import { REVISION_CAUSES } from '../revisions/revisions.js';
 import { SITE_WATER_TYPES } from '../vocabulary.js';
 import { NEARBY_M, SITE_SORTS, SiteError, type SiteService } from './site-service.js';
@@ -40,7 +42,7 @@ const CreateBody = Type.Object({
 }, { additionalProperties: false });
 
 const EditBody = Type.Object({
-  version: Type.Integer({ description: 'The version the edit started from' }),
+  version: Type.Optional(Type.Integer({ description: 'The version the edit started from' })),
   name: Type.Optional(Name),
   position: Type.Optional(Nullable(PositionSchema)),
   country: Type.Optional(Country),
@@ -71,7 +73,7 @@ const MergeBody = Type.Object({
 
 const AdoptBody = Type.Object({
   source: Type.Enum([...IMPORT_SOURCES], { description: 'The Source whose offered values to take' }),
-  version: Type.Integer({ description: 'The version the User saw' }),
+  version: Type.Optional(Type.Integer({ description: 'The version the User saw' })),
 }, { additionalProperties: false });
 
 const SiteRef = Type.Object({ id: Type.String(), name: Type.String({ description: 'The name it had then' }) });
@@ -102,13 +104,29 @@ const STATUS: Record<SiteError['code'], number> = {
   site_offer_not_found: 404, site_source_not_typed: 400, invalid_input: 400,
 };
 const errors = { 400: Problem, 403: Problem, 404: Problem, 409: Problem };
+/** A stale `If-Match` answers the problem code and the site as it is now (ADR 0083). */
+const SiteChanged = Type.Intersect([Problem, Type.Object({ site: SiteView })], {
+  description: 'A stale If-Match: the problem and the site as it is now',
+});
 
 /** Blank text is no text. */
 const text = (v: string | null | undefined) => (v === undefined ? undefined : v?.trim() || null);
 
 export const siteRoutes: FastifyPluginAsyncTypebox<SiteRouteDeps> = async (app, { auth, sites }) => {
   app.addHook('onRequest', requireUser(auth));
-  app.setErrorHandler(answerErrors(answers(SiteError, STATUS)));
+  /** The site a stale If-Match is about, as the 412 carries it (undefined when it is gone). */
+  const currentSite = async (request: FastifyRequest) => {
+    const id = (request.params as { id?: string }).id;
+    if (!id) return undefined;
+    try {
+      return { site: toSiteView(await sites.get(callerOf(request), id)) };
+    } catch {
+      return undefined;
+    }
+  };
+  app.setErrorHandler(answerErrors(
+    answers(SiteError, STATUS, undefined, { codes: ['site_changed'], current: currentSite }),
+  ));
 
   app.get('/dive-sites', {
     schema: {
@@ -128,7 +146,10 @@ export const siteRoutes: FastifyPluginAsyncTypebox<SiteRouteDeps> = async (app, 
 
   app.get('/dive-sites/:id', {
     schema: { summary: 'One Dive site', params: IdParams, response: { 200: SiteView, 404: Problem } },
-  }, async (request) => toSiteView(await sites.get(callerOf(request), request.params.id)));
+  }, async (request, reply) => {
+    const site = toSiteView(await sites.get(callerOf(request), request.params.id));
+    return setETag(reply, site.version).send(site);
+  });
 
   app.post('/dive-sites', {
     schema: { summary: 'Create a Dive site; every User of the instance sees it', body: CreateBody, response: { 201: SiteView, ...errors } },
@@ -145,12 +166,14 @@ export const siteRoutes: FastifyPluginAsyncTypebox<SiteRouteDeps> = async (app, 
   app.patch('/dive-sites/:id', {
     schema: {
       summary: 'Edit a Dive site (any User)',
-      description: 'Send the version you started from; if the site changed meanwhile the answer is 409 site_changed.',
-      params: IdParams, body: EditBody, response: { 200: SiteView, ...errors },
+      description: 'Send the version you started from; if the site changed meanwhile the answer is 409 site_changed. A native '
+        + 'client sends it as If-Match instead: a stale one answers 412 with the site as it is now (ADR 0083).',
+      params: IdParams, headers: IfMatchHeaders, body: EditBody,
+      response: { 200: SiteView, ...errors, 412: SiteChanged },
     },
-  }, async (request) => {
+  }, async (request, reply) => {
     const { version, name, position, country, waterBody, description, maxDepthM, waterType } = request.body;
-    await sites.edit(callerOf(request), request.params.id, version, {
+    await sites.edit(callerOf(request), request.params.id, versionOf(request, version), {
       ...(name !== undefined && { name: name.trim() }),
       ...(position !== undefined && { position }),
       ...(country !== undefined && { country }),
@@ -159,7 +182,8 @@ export const siteRoutes: FastifyPluginAsyncTypebox<SiteRouteDeps> = async (app, 
       ...(maxDepthM !== undefined && { maxDepthM }),
       ...(waterType !== undefined && { waterType }),
     });
-    return toSiteView(await sites.get(callerOf(request), request.params.id));
+    const site = toSiteView(await sites.get(callerOf(request), request.params.id));
+    return setETag(reply, site.version).send(site);
   });
 
   app.put('/dive-sites/:id/external-ids/:source', {
@@ -195,11 +219,14 @@ export const siteRoutes: FastifyPluginAsyncTypebox<SiteRouteDeps> = async (app, 
     schema: {
       summary: 'Take up the data a Source offers for this hand-made Dive site (any User)',
       description: 'Empty fields take the Source\'s values, filled ones stay; the Source then provides data, so later imports keep those fields current (ADR 0025). 404 site_offer_not_found without an offer; 409 site_changed if the version differs.',
-      params: IdParams, body: AdoptBody, response: { 200: SiteView, ...errors },
+      params: IdParams, headers: IfMatchHeaders, body: AdoptBody, response: { 200: SiteView, ...errors, 412: SiteChanged },
     },
-  }, async (request) => {
-    await sites.adopt(callerOf(request), request.params.id, request.body.version, request.body.source);
-    return toSiteView(await sites.get(callerOf(request), request.params.id));
+  }, async (request, reply) => {
+    await sites.adopt(
+      callerOf(request), request.params.id, versionOf(request, request.body.version), request.body.source,
+    );
+    const site = toSiteView(await sites.get(callerOf(request), request.params.id));
+    return setETag(reply, site.version).send(site);
   });
 
   app.get('/dive-sites/:id/revisions', {
@@ -217,10 +244,11 @@ export const siteRoutes: FastifyPluginAsyncTypebox<SiteRouteDeps> = async (app, 
   app.delete('/dive-sites/:id', {
     schema: {
       summary: 'Delete a Dive site: its creator or an admin, while no Dive is there',
-      params: IdParams, response: { 204: Type.Null(), ...errors },
+      description: 'A native client sends the version it saw as If-Match: a stale one answers 412 with the site as it is now (ADR 0083).',
+      params: IdParams, headers: IfMatchHeaders, response: { 204: Type.Null(), ...errors, 412: SiteChanged },
     },
   }, async (request, reply) => {
-    await sites.remove(callerOf(request), request.params.id);
+    await sites.remove(callerOf(request), request.params.id, ifMatchVersion(request));
     return reply.code(204).send(null);
   });
 };

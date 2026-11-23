@@ -1,10 +1,12 @@
 // Dive centres and their SSI verification codes (ADR 0043).
 import type { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
+import type { FastifyRequest } from 'fastify';
 import { Type } from 'typebox';
 import type { Auth } from '../auth/auth.js';
 import { requireUser } from '../auth/fastify.js';
 import { callerOf } from '../http/caller.js';
 import { answerErrors, answers, Problem, problem } from '../http/problems.js';
+import { IfMatchHeaders, setETag, versionOf } from '../http/conditional.js';
 import type { DiverService } from '../divers/diver-service.js';
 import { CENTRE_SOURCES, CentreError, type CentreService } from './centre-service.js';
 import { IdParams, Nullable } from '../http/schemas.js';
@@ -65,11 +67,27 @@ const STATUS: Record<CentreError['code'], number> = {
   centre_not_found: 404, centre_changed: 409, centre_not_deletable: 403, centre_external_id_taken: 409, site_not_found: 404, invalid_input: 400,
 };
 const errors = { 400: Problem, 403: Problem, 404: Problem, 409: Problem };
+/** A stale `If-Match` answers the problem code and the centre as it is now (ADR 0083). */
+const CentreChanged = Type.Intersect([Problem, Type.Object({ centre: CentreView })], {
+  description: 'A stale If-Match: the problem and the centre as it is now',
+});
 
 
 export const centreRoutes: FastifyPluginAsyncTypebox<CentreRouteDeps> = async (app, { auth, centres, divers }) => {
   app.addHook('onRequest', requireUser(auth));
-  app.setErrorHandler(answerErrors(answers(CentreError, STATUS, (error) => error.centre && { centre: error.centre })));
+  /** The centre a stale If-Match is about, as the 412 carries it (undefined when it is gone). */
+  const currentCentre = async (request: FastifyRequest) => {
+    const id = (request.params as { id?: string }).id;
+    if (!id) return undefined;
+    try {
+      return { centre: toCentreView(await centres.get(callerOf(request), id)) };
+    } catch {
+      return undefined;
+    }
+  };
+  app.setErrorHandler(answerErrors(answers(CentreError, STATUS, (error) => error.centre && { centre: error.centre }, {
+    codes: ['centre_changed'], current: currentCentre,
+  })));
 
   app.get('/dive-centres', {
     schema: {
@@ -84,7 +102,10 @@ export const centreRoutes: FastifyPluginAsyncTypebox<CentreRouteDeps> = async (a
 
   app.get('/dive-centres/:id', {
     schema: { summary: 'One Dive centre', params: IdParams, response: { 200: CentreView, 404: Problem } },
-  }, async (request) => toCentreView(await centres.get(callerOf(request), request.params.id)));
+  }, async (request, reply) => {
+    const centre = toCentreView(await centres.get(callerOf(request), request.params.id));
+    return setETag(reply, centre.version).send(centre);
+  });
 
   app.post('/dive-centres', {
     schema: {
@@ -103,13 +124,18 @@ export const centreRoutes: FastifyPluginAsyncTypebox<CentreRouteDeps> = async (a
   app.patch('/dive-centres/:id', {
     schema: {
       summary: 'Rename a Dive centre (any User)',
-      description: 'Send the version you started from; if the centre was renamed meanwhile the answer is 409 centre_changed.',
-      params: IdParams, body: Type.Object({ version: Type.Integer(), name: Name }, { additionalProperties: false }),
-      response: { 200: CentreView, ...errors },
+      description: 'Send the version you started from; if the centre was renamed meanwhile the answer is 409 centre_changed. '
+        + 'A native client sends it as If-Match instead: a stale one answers 412 with the centre as it is now (ADR 0083).',
+      params: IdParams, headers: IfMatchHeaders,
+      body: Type.Object({ version: Type.Optional(Type.Integer()), name: Name }, { additionalProperties: false }),
+      response: { 200: CentreView, ...errors, 412: CentreChanged },
     },
-  }, async (request) => {
-    await centres.rename(callerOf(request), request.params.id, request.body.version, request.body.name.trim());
-    return toCentreView(await centres.get(callerOf(request), request.params.id));
+  }, async (request, reply) => {
+    await centres.rename(
+      callerOf(request), request.params.id, versionOf(request, request.body.version), request.body.name.trim(),
+    );
+    const centre = toCentreView(await centres.get(callerOf(request), request.params.id));
+    return setETag(reply, centre.version).send(centre);
   });
 
   app.put('/dive-centres/:id/external-ids/:source', {

@@ -1,11 +1,13 @@
 // Equipment over HTTP (ADR 0034): items, schedules, records, the due list and a Dive's gear. Every route is scoped to
 // the Divers the User manages; another User's Diver or item answers 404, never 403.
 import type { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
+import type { FastifyRequest } from 'fastify';
 import { Type, type Static } from 'typebox';
 import type { Auth } from '../auth/auth.js';
 import { requireUser, userOf } from '../auth/fastify.js';
 import { EQUIPMENT_CATEGORIES, EQUIPMENT_STATUSES } from '../vocabulary.js';
 import { answerErrors, answers, Problem } from '../http/problems.js';
+import { IfMatchHeaders, setETag, versionOf } from '../http/conditional.js';
 import { IdParams, Nullable, refTo } from '../http/schemas.js';
 import { EquipmentError } from './equipment-error.js';
 import {
@@ -60,7 +62,7 @@ const ItemCreateBody = Type.Object({
 }, { additionalProperties: false });
 
 const ItemEditBody = Type.Object({
-  version: Type.Integer(),
+  version: Type.Optional(Type.Integer()),
   category: Type.Optional(Type.Enum([...EQUIPMENT_CATEGORIES])),
   name: Type.Optional(Name),
   maker: OptionalText(200), model: OptionalText(200), serial: OptionalText(200),
@@ -100,10 +102,26 @@ const recordInput = (body: Static<typeof RecordBody>): RecordInput => ({
 });
 
 const errors = { 400: Problem, 404: Problem, 409: Problem };
+/** A stale `If-Match` answers the problem code and the Equipment item as it is now (ADR 0083). */
+const EquipmentChanged = Type.Intersect([Problem, Type.Object({ equipment: refTo(EquipmentDetailViewSchema) })], {
+  description: 'A stale If-Match: the problem and the Equipment item as it is now',
+});
 
 export const equipmentRoutes: FastifyPluginAsyncTypebox<EquipmentRouteDeps> = async (app, { auth, equipment }) => {
   app.addHook('onRequest', requireUser(auth));
-  app.setErrorHandler(answerErrors(answers(EquipmentError, STATUS)));
+  /** The item a stale If-Match is about, as the 412 carries it (undefined when it is gone). */
+  const currentEquipment = async (request: FastifyRequest) => {
+    const id = (request.params as { id?: string }).id;
+    if (!id) return undefined;
+    try {
+      return { equipment: await equipment.detail(userOf(request).id, id) };
+    } catch {
+      return undefined;
+    }
+  };
+  app.setErrorHandler(answerErrors(answers(EquipmentError, STATUS, undefined, {
+    codes: ['equipment_changed'], current: currentEquipment,
+  })));
 
   app.get('/divers/:id/equipment', {
     schema: {
@@ -142,16 +160,25 @@ export const equipmentRoutes: FastifyPluginAsyncTypebox<EquipmentRouteDeps> = as
       summary: 'An Equipment item with schedules, usage, records and the last Cylinder that named it',
       params: IdParams, response: { 200: refTo(EquipmentDetailViewSchema), ...errors },
     },
-  }, async (request) => equipment.detail(userOf(request).id, request.params.id));
+  }, async (request, reply) => {
+    const item = await equipment.detail(userOf(request).id, request.params.id);
+    return setETag(reply, item.version).send(item);
+  });
 
   app.patch('/equipment/:id', {
     schema: {
       summary: 'Change an Equipment item; send the version you started from',
       description: '409 equipment_changed when it changed meanwhile. When the status leaves in use the server stamps '
-        + 'inUseUntil (today unless sent); returning to in use clears it. Only what is sent changes.',
-      params: IdParams, body: ItemEditBody, response: { 200: refTo(EquipmentDetailViewSchema), ...errors },
+        + 'inUseUntil (today unless sent); returning to in use clears it. Only what is sent changes. A native client sends '
+        + 'the version as If-Match instead: a stale one answers 412 with the item as it is now (ADR 0083).',
+      params: IdParams, headers: IfMatchHeaders, body: ItemEditBody,
+      response: { 200: refTo(EquipmentDetailViewSchema), ...errors, 412: EquipmentChanged },
     },
-  }, async (request) => equipment.edit(userOf(request).id, request.params.id, request.body));
+  }, async (request, reply) => {
+    const { version, ...body } = request.body;
+    const item = await equipment.edit(userOf(request).id, request.params.id, { ...body, version: versionOf(request, version) });
+    return setETag(reply, item.version).send(item);
+  });
 
   app.delete('/equipment/:id', {
     schema: {

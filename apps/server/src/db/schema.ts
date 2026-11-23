@@ -4,8 +4,10 @@
 import { sql } from 'drizzle-orm';
 import {
   bigint,
+  bigserial,
   boolean,
   check,
+  customType,
   date,
   doublePrecision,
   type AnyPgColumn,
@@ -37,6 +39,14 @@ const updatedAt = () => timestamp('updated_at', { withTimezone: true }).notNull(
 const deletedAt = () => timestamp('deleted_at', { withTimezone: true });
 
 /**
+ * A transaction ID as `pg_current_xact_id()` writes it (ADR 0083). Not a `bigint`: `xid8` is the type that compares
+ * with `pg_snapshot_xmin(pg_current_snapshot())`, which is what keeps the change feed from skipping in-flight writes.
+ */
+const xid8 = customType<{ data: string; driverData: string }>({
+  dataType: () => 'xid8',
+});
+
+/**
  * A person who dives (ADR 0016, 0028). Every User sees every Diver by name; one without managing Users is external
  * (a buddy), shared like a Dive site: anyone renames it, `created_by` or an admin deletes it while no Dive lists it.
  */
@@ -63,6 +73,8 @@ export const diver = pgTable('diver', {
    * account at a Provider, or merged by an admin. It is deleted then, and kept for the history.
    */
   mergedInto: uuid('merged_into').references((): AnyPgColumn => diver.id),
+  /** Increases with every change; clients name the version they started from (ADR 0083, optimistic locking). */
+  version: integer('version').notNull().default(1),
   createdAt: createdAt(),
   updatedAt: updatedAt(),
   deletedAt: deletedAt(),
@@ -1372,6 +1384,27 @@ export const revision = pgTable(
   (t) => [index('revision_entity_idx').on(t.entityType, t.entityId)],
 );
 
+export const changeEventKind = pgEnum('change_event_kind', ['changed', 'deleted']);
+
+/**
+ * The change feed's append-only hint log (ADR 0083): one row per Revision, in the same transaction, naming the entity and
+ * whether it changed or is gone. It carries no payload — clients refetch through the normal API — and `seq` is the
+ * cursor. `xid` lets `GET /sync/changes` hold back events from a still-running transaction so a client never skips a
+ * change it passed. Kept 180 days; older cursors answer 410 and resync.
+ */
+export const changeEvent = pgTable(
+  'change_event',
+  {
+    seq: bigserial('seq', { mode: 'number' }).primaryKey(),
+    xid: xid8('xid').notNull().default(sql`pg_current_xact_id()`),
+    entityType: text('entity_type').notNull(),
+    entityId: uuid('entity_id').notNull(),
+    kind: changeEventKind('kind').notNull(),
+    at: timestamp('at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index('change_event_at_idx').on(t.at)],
+);
+
 /**
  * Whether this instance offers the MCP endpoint (ADR 0035): one row once an admin decided, none means off. Switching
  * it off rejects every AI access at once; the accesses stay, so switching it on again restores those not revoked.
@@ -1586,7 +1619,7 @@ export const certification = pgTable(
   },
   (t) => [
     index('certification_diver_idx').on(t.diverId),
-    uniqueIndex('certification_card_uq').on(t.diverId, t.source, t.externalId).where(sql`${t.externalId} is not null`),
+    uniqueIndex('certification_card_uq').on(t.diverId, t.source, t.externalId).where(sql`${t.externalId} is not null and ${t.deletedAt} is null`),
     check('certification_source_ck', sql`(${t.source} is null) = (${t.externalId} is null)`),
     check('certification_dives_ck', sql`${t.divesAtIssue} between 0 and 100000`),
   ],
