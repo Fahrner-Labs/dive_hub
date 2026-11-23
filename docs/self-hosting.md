@@ -169,6 +169,12 @@ A manual backup is encrypted with a passphrase an admin types for that run:
 The download is a file handoff: the archive is the whole instance's state as an encrypted file.
 Admins still see no other User's Dives in the app, only the archive they can download.
 
+If a backup fails with `Backups need pg_dump, but it was not found on this host`, the running image
+does not contain PostgreSQL's client tools. The official image has shipped them since v0.1.1; check
+the `version` in `/api/health/live` and upgrade an older image (or rebuild a local one from the
+current `Dockerfile`). The release pipeline refuses to publish an image whose `pg_dump`/`pg_restore`
+are not on the runtime user's PATH.
+
 ### Scheduled backups and their recipient key
 
 Dive Hub can write a backup to `/data/backups` on its data volume at an interval. Scheduled archives
@@ -354,3 +360,20 @@ are **forward-only**.
 **Never downgrade across a migration.** An older image cannot undo a newer schema. If an upgrade
 goes wrong, restore the backup from step 1 (database *and* files) and start the previous tag
 again.
+
+## A worker job that gave up
+
+The support bundle's `jobs.json` lists jobs with a stored error. A job whose `attempts` reached
+`maxAttempts` has stopped retrying and stays in the queue as a tombstone: it runs nothing, and a job
+the worker queues at every start (such as `assess-dives`,
+[ADR 0036](decisions/0036-dive-assessment.md)) is queued anew on the next start. The row only
+clutters the next bundle. To remove the ones that gave up (Graphile Worker keeps them in its private
+table; `attempts = max_attempts and locked_at is null` is its own "permanently failed" rule):
+
+```sh
+docker compose exec -T db psql -U divehub -d divehub -c \
+  "delete from graphile_worker._private_jobs where attempts = max_attempts and locked_at is null"
+```
+
+Take the support bundle first if you want to keep their errors. A job that fails again after this
+points at a real fault: its stored error names the database's own message.

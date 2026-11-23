@@ -197,7 +197,10 @@ the read store in three phases, in order:
    completion per Dive in `sync_checkpoint` (`profiles:<diveId>`), so `SyncEngine.profileSynced(diveId)` and
    `SyncProgress.divesAwaitingProfiles` let a screen mark profiles "not yet synced" for one Dive only.
 
-While online the app opens `GET /api/live` with the bearer token. A `dive` hint refetches list page 1 and that Dive's
+While online the app opens `GET /api/live` with the bearer token. The stream is opened with
+`prepareRequest(...).execute` rather than the ordinary request path: since Ktor 3.6 that path saves the whole response
+body in memory (`SaveBody`), so a live stream would not surface its first line until it ended (FAH-444).
+`SseLiveHintsEngineTest` guards it against a real socket. A `dive` hint refetches list page 1 and that Dive's
 detail, then marks its profiles pending; a `site` hint refetches that site. On every (re)connect the list sync runs
 again, because hints are not replayed. When the stream is down the foreground poll re-runs phase 1 every minute, and
 WorkManager runs the same refresh every 15 minutes; the scheduler is the `PeriodicSyncScheduler` interface in

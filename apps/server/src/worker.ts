@@ -1,4 +1,4 @@
-import { run, type Runner } from 'graphile-worker';
+import { run, type JobHelpers, type Runner } from 'graphile-worker';
 import type pg from 'pg';
 import type { FastifyBaseLogger } from 'fastify';
 import { BACKUP_RUN_TASK, type BackupService } from './backups/backup-service.js';
@@ -41,6 +41,29 @@ function idOf(payload: unknown, key: string): string {
   const id = (payload as Record<string, unknown> | null | undefined)?.[key];
   if (typeof id !== 'string' || id === '') throw new Error(`the job payload has no ${key}`);
   return id;
+}
+
+type WorkerTask = (payload: unknown, helpers: JobHelpers) => Promise<void>;
+
+/**
+ * What the job's stored `last_error` says. Graphile Worker keeps just the message, and a query error keeps the
+ * database's own words in its cause (Drizzle's message names the query and its parameters only).
+ */
+export function failureMessage(error: unknown): string {
+  const message = error instanceof Error ? error.message : String(error);
+  const cause = error instanceof Error && error.cause instanceof Error ? error.cause.message : '';
+  return cause !== '' && !message.includes(cause) ? `${message}\nCaused by: ${cause}` : message;
+}
+
+/** Wraps every task so a failure carries its cause into the stored error the operator reads a stuck job through. */
+export function withFailureCause(tasks: Record<string, WorkerTask>): Record<string, WorkerTask> {
+  return Object.fromEntries(Object.entries(tasks).map(([name, task]) => [name, async (payload: unknown, helpers: JobHelpers) => {
+    try {
+      await task(payload, helpers);
+    } catch (error) {
+      throw new Error(failureMessage(error), { cause: error });
+    }
+  }]));
 }
 
 /**
@@ -102,7 +125,7 @@ export async function startWorker(pool: pg.Pool, deps: WorkerDeps): Promise<Runn
     noHandleSignals: true,
     // Every night at 03:17, 03:37 and 03:57 (UTC), the waiting Imports every hour, and automation every minute (ADR 0056).
     crontab: `17 3 * * * ${PURGE_AI_ACCESS_LOG_TASK}\n37 3 * * * ${PURGE_DELETED_DIVES_TASK}\n57 3 * * * ${PURGE_CLIENT_DIAGNOSTICS_TASK}\n47 * * * * ${EXPIRE_WAITING_IMPORTS_TASK}\n* * * * * ${AUTOMATION_TICK_TASK}`,
-    taskList: {
+    taskList: withFailureCause({
       [BACKUP_RUN_TASK]: backupTask(backups, log),
       [PROCESS_IMPORT_TASK]: processImportTask(imports, waitingPushes, scheduledFetch, log),
       [IMPORT_DIVE_SITES_TASK]: async (payload) => {
@@ -166,7 +189,7 @@ export async function startWorker(pool: pg.Pool, deps: WorkerDeps): Promise<Runn
         const divers = await assessments.refreshAll();
         log.info({ divers }, 'dive assessments are up to date');
       },
-    },
+    }),
   });
   // Once per start; the job key keeps it to one queued job however many workers start.
   await runner.addJob(ASSESS_DIVES_TASK, {}, { jobKey: ASSESS_DIVES_TASK });
