@@ -706,6 +706,7 @@
     "ai_access_off": "AI access is switched off on this Dive Hub. An admin can switch it on.",
     "client_diagnostics_disabled": "Client diagnostics are switched off on this Dive Hub. An admin can switch them on.",
     "client_diagnostics_limited": "Too many diagnostic uploads in the last hour. Try again later.",
+    "sync_resync_required": "This app is too far behind the change feed. It reloads the whole logbook to catch up.",
     "finding_not_found": "This dive no longer has that finding. Reload the page.",
     "centre_not_found": "This dive centre doesn’t exist (anymore).",
     "centre_changed": "Someone renamed the dive centre meanwhile. Reload the page and try again.",

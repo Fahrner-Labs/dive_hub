@@ -4,15 +4,15 @@
 > `pnpm check` fails when this map is stale. Symbols are ranked by how widely the code references them;
 > each module shows its most-referenced ones (exported symbols rank higher). Search here before walking the tree.
 
-Files: 422 · symbols: 3880 · shown: 248
+Files: 424 · symbols: 3898 · shown: 253
 
 ### server/(root)
 apps/server/src/vocabulary.ts:13 type SiteWaterType
 apps/server/src/errors.ts:2 const errorMessage
 apps/server/src/vocabulary.ts:12 const SITE_WATER_TYPES
 apps/server/src/vocabulary.ts:51 type ImportSource
-apps/server/src/compose.ts:84 fn createServices
-… 45 more symbols in this module
+apps/server/src/compose.ts:85 fn createServices
+… 46 more symbols in this module
 
 ### server/assessment
 apps/server/src/assessment/rules.ts:50 const RULES
@@ -114,8 +114,8 @@ apps/server/src/equipment/due.ts:36 iface ScheduleDue
 apps/server/src/http/schemas.ts:10 const Nullable
 apps/server/src/http/schemas.ts:5 const DateTime
 apps/server/src/http/schemas.ts:4 const IdParams
-apps/server/src/http/problems.ts:197 const Problem
-apps/server/src/http/problems.ts:200 const problem
+apps/server/src/http/problems.ts:198 const Problem
+apps/server/src/http/problems.ts:201 const problem
 … 25 more symbols in this module
 
 ### server/imports
@@ -197,12 +197,12 @@ apps/server/src/providers/provider.ts:83 type DiveField
 … 497 more symbols in this module
 
 ### server/revisions
-apps/server/src/revisions/revisions.ts:88 fn writeRevision
+apps/server/src/revisions/revisions.ts:94 fn writeRevision
 apps/server/src/revisions/revisions.ts:5 type Actor
 apps/server/src/revisions/revisions.ts:36 type Changes
 apps/server/src/revisions/revisions.ts:71 fn changeListener
 apps/server/src/revisions/revisions.ts:8 const userActor
-… 7 more symbols in this module
+… 9 more symbols in this module
 
 ### server/scripts
 apps/server/src/scripts/write-planning-vectors.ts:9 const write
@@ -253,6 +253,14 @@ apps/server/src/support/log-ring-buffer.ts:31 class LogRingBuffer
 apps/server/src/support/redact.ts:23 const emptyRedactionCounters
 apps/server/src/support/client-diagnostics-service.ts:21 class ClientDiagnosticsError
 … 68 more symbols in this module
+
+### server/sync
+apps/server/src/sync/changes-service.ts:17 class SyncError
+apps/server/src/sync/routes.ts:40 const STATUS
+apps/server/src/sync/changes-service.ts:38 fn createSyncService
+apps/server/src/sync/changes-service.ts:13 const CHANGES_DEFAULT_LIMIT
+apps/server/src/sync/routes.ts:13 iface SyncRouteDeps
+… 10 more symbols in this module
 
 ### server/users
 apps/server/src/users/views.ts:23 const UserView
