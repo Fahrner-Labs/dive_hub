@@ -1849,6 +1849,8 @@ export interface paths {
                             level: "error" | "warn";
                             /** @description A stable client code; clients translate what they know */
                             code?: string;
+                            /** @description The build the entry was captured in; older clients omit it and the upload's client.version is used */
+                            clientVersion?: string;
                             message: string;
                             stack?: string;
                             /** @description Client context; the server re-redacts keys such as token and strings such as e-mail addresses */
@@ -8912,7 +8914,7 @@ export interface paths {
         put?: never;
         /**
          * Create a Dive centre; every User of the instance sees it
-         * @description With its numbers and Dive sites in one step, or not at all. 409 centre_external_id_taken names the centre that has the number.
+         * @description With its numbers and Dive sites in one step, or not at all. 409 centre_external_id_taken names the centre that has the number. A native client may send its own uuidv7 id: a re-POST with the same id answers 200 with the centre, never a duplicate and never an overwrite; a centre with that id deleted meanwhile answers 404 centre_not_found and is not recreated (ADR 0084).
          */
         post: {
             parameters: {
@@ -8924,6 +8926,11 @@ export interface paths {
             requestBody: {
                 content: {
                     "application/json": {
+                        /**
+                         * Format: uuid
+                         * @description A uuidv7 the client made, so an offline create replays as itself: the same id answers 200 with the centre, never a second one (ADR 0084)
+                         */
+                        id?: string;
                         /** @description As the centre spells it; for an SSI code, exactly as SSI does */
                         name: string;
                         externalIds?: {
@@ -8938,6 +8945,15 @@ export interface paths {
                 };
             };
             responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CentreView"];
+                    };
+                };
                 /** @description Default Response */
                 201: {
                     headers: {

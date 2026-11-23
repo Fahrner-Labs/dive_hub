@@ -8664,6 +8664,11 @@
                           "maxLength": 200,
                           "description": "A stable client code; clients translate what they know"
                         },
+                        "clientVersion": {
+                          "type": "string",
+                          "maxLength": 100,
+                          "description": "The build the entry was captured in; older clients omit it and the upload's client.version is used"
+                        },
                         "message": {
                           "type": "string"
                         },
@@ -21958,7 +21963,7 @@
       },
       "post": {
         "summary": "Create a Dive centre; every User of the instance sees it",
-        "description": "With its numbers and Dive sites in one step, or not at all. 409 centre_external_id_taken names the centre that has the number.",
+        "description": "With its numbers and Dive sites in one step, or not at all. 409 centre_external_id_taken names the centre that has the number. A native client may send its own uuidv7 id: a re-POST with the same id answers 200 with the centre, never a duplicate and never an overwrite; a centre with that id deleted meanwhile answers 404 centre_not_found and is not recreated (ADR 0084).",
         "requestBody": {
           "required": true,
           "content": {
@@ -21969,6 +21974,12 @@
                   "name"
                 ],
                 "properties": {
+                  "id": {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+                    "description": "A uuidv7 the client made, so an offline create replays as itself: the same id answers 200 with the centre, never a second one (ADR 0084)"
+                  },
                   "name": {
                     "type": "string",
                     "minLength": 1,
@@ -22017,6 +22028,16 @@
           }
         },
         "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CentreView"
+                }
+              }
+            }
+          },
           "201": {
             "description": "Default Response",
             "content": {

@@ -52,6 +52,56 @@ describe.skipIf(!(await databaseReachable()))('Dive centres', () => {
     expect((await call('POST', '/api/dive-centres', tim, { name: '   ' })).statusCode).toBe(400);
   });
 
+  it('takes a client-supplied uuidv7 as its id, as an offline create replays with one', async () => {
+    const id = '0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b';
+    const answer = await call('POST', '/api/dive-centres', tim, {
+      id, name: 'Vom Telefon', externalIds: [{ source: 'ssi', externalId: '700060' }],
+    });
+    expect(answer.statusCode).toBe(201);
+    expect(answer.json()).toMatchObject({ id, name: 'Vom Telefon', version: 1, externalIds: [{ externalId: '700060' }] });
+    expect((await get(id, anna)).id).toBe(id);
+  });
+
+  it('replays a create with the same id: 200 with the centre as it is, never a duplicate and never an overwrite', async () => {
+    const id = '0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a6c';
+    expect((await call('POST', '/api/dive-centres', tim, { id, name: 'Erst' })).statusCode).toBe(201);
+    const again = await call('POST', '/api/dive-centres', anna, { id, name: 'Zweit' });
+    expect(again.statusCode).toBe(200);
+    expect(again.json()).toMatchObject({ id, name: 'Erst', version: 1, canDelete: false });
+    expect((await call('GET', '/api/dive-centres?q=Erst', tim)).json()).toMatchObject({ total: 1 });
+    expect((await call('GET', '/api/dive-centres?q=Zweit', tim)).json()).toMatchObject({ total: 0 });
+    expect(await history(id)).toHaveLength(1);
+  });
+
+  it('creates one centre when the same client id races itself', async () => {
+    const id = '0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a6d';
+    const answers = await Promise.all([
+      call('POST', '/api/dive-centres', tim, { id, name: 'Wettlauf' }),
+      call('POST', '/api/dive-centres', tim, { id, name: 'Wettlauf' }),
+    ]);
+    expect(answers.map((a) => a.statusCode).sort()).toEqual([200, 201]);
+    expect((await call('GET', '/api/dive-centres?q=Wettlauf', tim)).json()).toMatchObject({ total: 1 });
+    expect(await history(id)).toHaveLength(1);
+  });
+
+  it('answers a replayed create whose centre was deleted meanwhile with 404 and recreates nothing', async () => {
+    const id = '0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a6e';
+    await centre({ id, name: 'Schon weg' });
+    expect((await call('DELETE', `/api/dive-centres/${id}`, tim)).statusCode).toBe(204);
+    const again = await call('POST', '/api/dive-centres', tim, { id, name: 'Schon weg' });
+    expect(again.statusCode).toBe(404);
+    expect(again.json()).toMatchObject({ code: 'centre_not_found' });
+    expect((await call('GET', '/api/dive-centres?q=Schon weg', tim)).json()).toMatchObject({ total: 0 });
+  });
+
+  it('refuses an id that is not a uuidv7', async () => {
+    for (const id of ['00000000-0000-4000-8000-000000000000', '00000000-0000-7000-7000-000000000000', 'nicht-eine-uuid']) {
+      const answer = await call('POST', '/api/dive-centres', tim, { id, name: 'Keine ID' });
+      expect(answer.statusCode).toBe(400);
+      expect(answer.json()).toMatchObject({ code: 'invalid_input' });
+    }
+  });
+
   it('with its SSI centre number has the verification code, built from number and name', async () => {
     const created = await centre({ name: 'Example Divers GmbH, Musterstadt', externalIds: [{ source: 'ssi', externalId: '700001' }] });
     expect(created.externalIds).toEqual([{ source: 'ssi', name: 'SSI', externalId: '700001' }]);
