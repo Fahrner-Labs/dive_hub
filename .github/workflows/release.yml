@@ -163,6 +163,12 @@ jobs:
             exit 1
           fi
 
+      - name: The image ships the PostgreSQL client tools backups need (ADR 0069)
+        run: |
+          # Run as the image's own user and PATH: a backup runs pg_dump in this environment.
+          docker run --rm --user node --entrypoint sh "divehub-smoke:${{ needs.verify.outputs.tag }}" \
+            -c 'pg_dump --version && pg_restore --version'
+
       - name: No Garmin FIT SDK in the image (ADR 0006)
         run: |
           if docker run --rm --entrypoint sh "divehub-smoke:${{ needs.verify.outputs.tag }}" \

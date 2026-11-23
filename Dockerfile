@@ -41,7 +41,10 @@ COPY --from=build /repo/apps/server/drizzle ./drizzle
 COPY --from=build /repo/apps/web/dist ./web
 COPY LICENSE NOTICE ./
 # pg_dump/pg_restore for instance backups (ADR 0069); the major version tracks the postgres service image.
+# The apk trigger links the versioned client tools into /usr/bin; fail the build here if that ever stops.
 RUN apk add --no-cache postgresql18-client \
+ && pg_dump --version \
+ && pg_restore --version \
  && mkdir -p /data && chown node:node /data
 USER node
 EXPOSE 3000
