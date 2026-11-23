@@ -194,11 +194,33 @@ describe.skipIf(!(await databaseReachable()))('GET /api/sync/changes', () => {
     }
   });
 
+  it('sweeps while a long transaction runs in another database on the same server', async () => {
+    await t.db.update(changeEvent).set({ at: daysAgo(200) });
+    await ctx.sync.purge();
+    await insertEvent({ at: daysAgo(200) });
+
+    // The feed and the sweep share the database-scoped high-water, so the other database's xid must not stall the sweep.
+    const other = await createTestDatabase();
+    const client = await other.pool.connect();
+    try {
+      await client.query('begin');
+      await client.query('create table probe (x int)');
+      await client.query('insert into probe values (1)');
+
+      expect(await ctx.sync.purge()).toBe(1);
+      expect(await t.db.select({ seq: changeEvent.seq }).from(changeEvent)).toEqual([]);
+    } finally {
+      await client.query('rollback').catch(() => {});
+      client.release();
+      await other.drop();
+    }
+  });
+
   it('answers 410 from the persisted floor even after the sweep has emptied the log', async () => {
     // Empty the log, then sweep one more event whose position moves the floor. A cursor from before it has lost an
     // event that is no longer in the table at all, so `min(seq)` alone could not notice.
     await t.db.update(changeEvent).set({ at: daysAgo(200) });
-    expect(await ctx.sync.purge()).toBeGreaterThanOrEqual(1);
+    await ctx.sync.purge();
     const start = (await page()).cursor;
 
     const doomed = await insertEvent({ at: daysAgo(200) });

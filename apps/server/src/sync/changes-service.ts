@@ -62,38 +62,35 @@ const floorOf = (row: { floor_xid: string; floor_seq: string }): FeedPosition =>
   xid: BigInt(row.floor_xid), seq: BigInt(row.floor_seq),
 });
 
+/**
+ * The safe high-water xid, shared by the feed and the sweep so both agree on which events are settled.
+ *
+ * An event from a transaction at or above xmin may commit after a client passed its position, so nothing from it is
+ * handed out yet. The bound is database-scoped where the role may see other backends' `backend_xid` (only a
+ * transaction connected to this database can write this log, so a long transaction in another database must not stall
+ * the feed or the sweep). A role that may not see them falls back to the cluster-wide xmin, which is conservative but
+ * safe; that is why the fallback is not `xmax` (which holds nothing back). `greatest(..., cluster_xmin)` also keeps a
+ * 32-bit `backend_xid` correct if the cluster has advanced past its first xid epoch.
+ */
+const XMIN_BOUND = sql`case
+  when not current_setting('track_activities')::boolean
+    then pg_snapshot_xmin(pg_current_snapshot())::text::bigint
+  when not (current_setting('is_superuser')::boolean
+            or pg_has_role(current_user, 'pg_read_all_stats', 'member'))
+    then pg_snapshot_xmin(pg_current_snapshot())::text::bigint
+  else greatest(
+    coalesce(
+      (select min(backend_xid::text::bigint) from pg_stat_activity
+       where datname = current_database() and backend_xid is not null),
+      pg_snapshot_xmax(pg_current_snapshot())::text::bigint),
+    pg_snapshot_xmin(pg_current_snapshot())::text::bigint)
+end`;
+
 export function createSyncService(db: Db) {
-  /**
-   * The safe high-water xid, the retention floor and the sweep's oldest retained position, read together.
-   *
-   * An event from a transaction at or above xmin may commit after a client passed its position, so nothing from it is
-   * handed out yet. The bound is database-scoped where the role may see other backends' `backend_xid` (only a
-   * transaction connected to this database can write this log, so a long transaction in another database must not stall
-   * the feed). A role that may not see them falls back to the cluster-wide xmin, which is conservative but safe; that is
-   * why the fallback is not `xmax` (which holds nothing back). `greatest(..., cluster_xmin)` also keeps a 32-bit
-   * `backend_xid` correct if the cluster has advanced past its first xid epoch.
-   */
+  /** The safe high-water xid and the retention floor, read together. */
   async function feedBounds(): Promise<{ xmin: bigint; floor: FeedPosition }> {
     const [row] = (await db.execute(sql`
-      with snapshot as (
-        select pg_snapshot_xmin(pg_current_snapshot())::text::bigint as cluster_xmin,
-               pg_snapshot_xmax(pg_current_snapshot())::text::bigint as xmax
-      ), active as (
-        select min(backend_xid::text::bigint) as xid
-        from pg_stat_activity
-        where datname = current_database() and backend_xid is not null
-      ), visible as (
-        select current_setting('is_superuser')::boolean
-               or pg_has_role(current_user, 'pg_read_all_stats', 'member') as can_see
-      )
-      select case
-               when not current_setting('track_activities')::boolean then (select cluster_xmin from snapshot)
-               when not (select can_see from visible) then (select cluster_xmin from snapshot)
-               else greatest(
-                 coalesce((select xid from active), (select xmax from snapshot)),
-                 (select cluster_xmin from snapshot)
-               )
-             end::text as xmin,
+      select (${XMIN_BOUND})::text as xmin,
              coalesce((select xid::text from change_feed_floor where id), '0') as floor_xid,
              coalesce((select seq::text from change_feed_floor where id), '0') as floor_seq
     `)).rows as { xmin: string; floor_xid: string; floor_seq: string }[];
@@ -151,7 +148,7 @@ export function createSyncService(db: Db) {
       const cutoff = new Date(now.getTime() - CHANGE_EVENT_RETENTION_DAYS * 24 * 60 * 60 * 1000);
       const removed = await db.execute(sql`
         with horizon as (
-          select pg_snapshot_xmin(pg_current_snapshot()) as xmin
+          select (${XMIN_BOUND})::text::xid8 as xmin
         ), ordered as (
           select xid, seq,
                  bool_and(at < ${cutoff}) over (
