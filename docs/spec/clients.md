@@ -69,8 +69,10 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   (web: localStorage, 50 entries / 64 KiB; Android: 200 entries) at all times, but upload only when the User presses
   *Report a problem*, and only when `GET /api/client-diagnostics/status` says `enabled`. `POST
   /api/client-diagnostics` carries `{ client: { name: 'web' | 'android', version }, capturedAt, entries }`, where each
-  entry is `{ occurredAt, level: 'error' | 'warn', code?, message, stack?, context? }` and the buffer holds at most 50
-  entries; on 403 `client_diagnostics_disabled` treat the
+  entry is `{ occurredAt, level: 'error' | 'warn', code?, clientVersion?, message, stack?, context? }` and the buffer
+  holds at most 50 entries. Each entry carries the build it was captured in, so a stale tab's error keeps its version
+  after the User reloads into a newer build; the server falls back to the upload's `client.version` when an old buffer
+  has none. On 403 `client_diagnostics_disabled` treat the
   setting as turned off meanwhile and **keep the local buffer** instead of retrying. On 429
   `client_diagnostics_limited` say to try again later. The server truncates and re-redacts every entry, so the
   client's own hygiene (no dive contents, tokens or URLs with query strings) is the first line, not the only one.

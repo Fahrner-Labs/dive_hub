@@ -28,6 +28,8 @@ export interface ClientDiagnosticsEntryInput {
   occurredAt: string;
   level: 'error' | 'warn';
   code?: string;
+  /** The build the client captured this entry in; absent in buffers written before FAH-456. */
+  clientVersion?: string;
   message: string;
   stack?: string;
   context?: Record<string, string>;
@@ -56,6 +58,7 @@ function prepareEntry(entry: ClientDiagnosticsEntryInput): ClientDiagnosticsEntr
     occurredAt: entry.occurredAt,
     level: entry.level,
     ...(entry.code !== undefined && { code: entry.code }),
+    ...(entry.clientVersion !== undefined && { clientVersion: entry.clientVersion.slice(0, 100) }),
     message: entry.message.slice(0, MESSAGE_MAX_LENGTH),
     ...(entry.stack !== undefined && { stack: entry.stack.slice(0, STACK_MAX_LENGTH) }),
     ...(entry.context !== undefined && { context: entry.context }),
@@ -119,7 +122,7 @@ export function createClientDiagnosticsService(db: Db) {
         await tx.insert(clientDiagnostic).values(entries.map((entry) => ({
           userId,
           clientName: upload.client.name,
-          clientVersion: upload.client.version,
+          clientVersion: entry.clientVersion ?? upload.client.version,
           capturedAt: new Date(upload.capturedAt),
           occurredAt: new Date(entry.occurredAt),
           level: entry.level,

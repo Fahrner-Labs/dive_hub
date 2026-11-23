@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { ApiError } from '../src/api/request.ts';
 import {
-  captureDiagnostic, clearDiagnostics, DIAGNOSTICS_KEY, diagnosticFromError, MAX_ENTRIES, MAX_SERIALIZED_BYTES,
-  readDiagnostics, withoutQueryStrings, type DiagnosticEntry, type DiagnosticStore,
+  captureDiagnostic, clearDiagnostics, CLIENT_VERSION, DIAGNOSTICS_KEY, diagnosticFromError, MAX_ENTRIES,
+  MAX_SERIALIZED_BYTES, readDiagnostics, withoutQueryStrings, type DiagnosticEntry, type DiagnosticStore,
 } from '../src/lib/diagnostics.ts';
 
 class MemoryStore implements DiagnosticStore {
@@ -110,5 +110,23 @@ describe('a captured entry', () => {
     expect(diagnosticFromError(new ApiError('nope', 429, 'client_diagnostics_limited')).code)
       .toBe('client_diagnostics_limited');
     expect(diagnosticFromError(new Error('plain')).code).toBeUndefined();
+  });
+});
+
+describe('the capture-time client version', () => {
+  it('stamps a captured entry with the build it was captured in', () => {
+    const store = new MemoryStore();
+    captureDiagnostic(entry('failure'), store);
+    expect(readDiagnostics(store)[0]!.clientVersion).toBe(CLIENT_VERSION);
+  });
+
+  it('stamps an entry built from an error with the build it was captured in', () => {
+    expect(diagnosticFromError(new Error('plain')).clientVersion).toBe(CLIENT_VERSION);
+  });
+
+  it('keeps a version the caller already set', () => {
+    const store = new MemoryStore();
+    captureDiagnostic(entry('failure', { clientVersion: '0.3.0-rc3' }), store);
+    expect(readDiagnostics(store)[0]!.clientVersion).toBe('0.3.0-rc3');
   });
 });

@@ -135,6 +135,17 @@ describe.skipIf(!(await databaseReachable()))('client diagnostics', () => {
     expect(limited.json().code).toBe('client_diagnostics_limited');
   });
 
+  it('prefers the version captured with an entry over the upload\'s own', async () => {
+    const accepted = await call('POST', '/api/client-diagnostics', admin, upload({
+      client: { name: 'web', version: '9.9.9' },
+      entries: [entry({ code: 'E_STALE', clientVersion: '0.3.0-rc3' })],
+    }));
+    expect(accepted.statusCode).toBe(204);
+
+    const [row] = await t.db.select().from(clientDiagnostic).where(eq(clientDiagnostic.code, 'E_STALE'));
+    expect(row!.clientVersion).toBe('0.3.0-rc3');
+  });
+
   it('evicts the oldest row when the 500 newest cap is exceeded', async () => {
     await t.db.delete(clientDiagnostic);
     const old = new Date(Date.now() - 2 * 60 * 60 * 1000);

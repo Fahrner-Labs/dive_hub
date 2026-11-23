@@ -26,6 +26,10 @@ const EntryInput = Type.Object({
   occurredAt: DateTime,
   level: Type.Union([Type.Literal('error'), Type.Literal('warn')]),
   code: Type.Optional(Type.String({ maxLength: 200, description: 'A stable client code; clients translate what they know' })),
+  clientVersion: Type.Optional(Type.String({
+    maxLength: 100,
+    description: 'The build the entry was captured in; older clients omit it and the upload\'s client.version is used',
+  })),
   message: Type.String(),
   stack: Type.Optional(Type.String()),
   context: Type.Optional(Type.Record(Type.String(), Type.String(), {
