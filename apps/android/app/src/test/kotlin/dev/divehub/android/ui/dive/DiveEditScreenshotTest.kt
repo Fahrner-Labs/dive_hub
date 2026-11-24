@@ -12,6 +12,8 @@ import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
@@ -199,23 +201,78 @@ class DiveEditScreenshotTest {
 
         compose.onNodeWithText(sharedHint).assertExists()
         compose.onNodeWithText("Cleo").assertExists()
+        // A Diver the User keeps but does not own is still "You manage this diver", never another User's.
+        compose.onAllNodesWithText("You manage this diver").assertCountEquals(2)
+        compose.onNodeWithText("Another user’s diver").assertDoesNotExist()
         compose.onNode(hasText("Instructor") and hasClickAction())
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.RadioButton))
         capture("dive_edit_participant_add.png")
     }
 
     @Test
-    fun `the add sheet with no candidates says why and how and hides the search`() {
+    fun `the add sheet with no cached divers still offers the live search`() {
         render(state(draft = DiveEditDraft.of(dive(participants = people())), divers = emptyList()))
 
         openAddParticipant()
 
         compose.onNodeWithText(
-            "No other divers to add. Divers arrive on this device with a sync; to add an external diver, use the web.",
+            "Type a name to search every diver. To add someone new, use the web.",
         ).assertExists()
-        compose.onNode(hasSetTextAction() and hasText("Find a diver")).assertDoesNotExist()
+        compose.onNodeWithTag("dive_edit_participant_search").assertExists()
+        capture("dive_edit_participant_add_no_cached.png")
+    }
+
+    @Test
+    fun `offline with no cached divers says how to search and add`() {
+        render(
+            state(draft = DiveEditDraft.of(dive(participants = people())), online = false, divers = emptyList()),
+        )
+
+        openAddParticipant()
+
+        compose.onNodeWithText(
+            "No other divers on this device. Connect to search every diver; to add someone new, use the web.",
+        ).assertExists()
         compose.onNodeWithTag("dive_edit_participant_search").assertDoesNotExist()
-        capture("dive_edit_participant_add_no_candidates.png")
+        capture("dive_edit_participant_add_offline_no_cached.png")
+    }
+
+    @Test
+    fun `offline the add sheet lists only the cached divers and says so`() {
+        render(state(draft = DiveEditDraft.of(dive(participants = people())), online = false))
+
+        openAddParticipant()
+
+        compose.onNodeWithText(
+            "Offline: only the divers on this device. Connect to search every diver.",
+        ).assertExists()
+        compose.onNodeWithText("Cleo").assertExists()
+        capture("dive_edit_participant_add_offline.png")
+    }
+
+    @Test
+    fun `live search results say whose logbook each diver is in`() {
+        render(
+            state(
+                draft = DiveEditDraft.of(dive(participants = people())),
+                participantSearch = DiverSearchState.Found(
+                    "a",
+                    listOf(
+                        DiverChoice("diver-4", "Anna", managed = true, external = false),
+                        DiverChoice("diver-5", "Mara", managed = false, external = false),
+                        DiverChoice("diver-6", "Cara", managed = false, external = true),
+                    ),
+                ),
+            ),
+        )
+
+        openAddParticipant()
+        compose.onNodeWithTag("dive_edit_participant_search").performTextInput("a")
+
+        compose.onNodeWithText("You manage this diver").assertExists()
+        compose.onNodeWithText("Another user’s diver").assertExists()
+        compose.onNodeWithText("External diver").assertExists()
+        capture("dive_edit_participant_search.png")
     }
 
     @Test
@@ -349,6 +406,8 @@ class DiveEditScreenshotTest {
                         onEdit = {},
                         onSave = {},
                         onRetry = {},
+                        onSearchParticipants = {},
+                        onResetParticipantSearch = {},
                     )
                 }
             }
@@ -359,6 +418,7 @@ class DiveEditScreenshotTest {
         draft: DiveEditDraft,
         online: Boolean = true,
         divers: List<Diver> = listOf(diver("diver-2", "Bea"), diver("diver-3", "Cleo")),
+        participantSearch: DiverSearchState = DiverSearchState.Idle,
     ) = DiveEditUiState(
         loading = false,
         draft = draft,
@@ -369,6 +429,7 @@ class DiveEditScreenshotTest {
         ),
         divers = divers,
         ownerDiverId = "diver",
+        participantSearch = participantSearch,
         online = online,
     )
 

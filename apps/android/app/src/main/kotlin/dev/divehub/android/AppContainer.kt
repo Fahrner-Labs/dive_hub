@@ -16,6 +16,8 @@ import dev.divehub.shared.TokenStore
 import dev.divehub.shared.diagnostics.Diagnostics
 import dev.divehub.shared.diagnostics.DiagnosticsBuffer
 import dev.divehub.shared.dive.DiveRepository
+import dev.divehub.shared.divers.ApiDiverSearch
+import dev.divehub.shared.divers.DiverSearch
 import dev.divehub.shared.logbook.LogbookRepository
 import dev.divehub.shared.logbook.StoreLogbook
 import dev.divehub.shared.UserScopedStore
@@ -131,6 +133,9 @@ class AppContainer(context: Context) {
         Diagnostics(diagnosticsBuffer, session.client, BuildConfig.VERSION_NAME)
     }
     val dive = DiveRepository(session.client)
+
+    /** The Participants add sheet's live search over every Diver of the instance (FAH-488); online only. */
+    val diverSearch: DiverSearch by lazy { ApiDiverSearch(session.client) }
 
     /** The D4 read side: the list, one Dive, its neighbours and its profiles come from the store, never a request. */
     val storeLogbook = StoreLogbook(diveStore)

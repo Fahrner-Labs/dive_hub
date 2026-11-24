@@ -149,6 +149,8 @@ fun DiveEditScreenRoute(
         onEdit = viewModel::edit,
         onSave = viewModel::save,
         onRetry = viewModel::retry,
+        onSearchParticipants = viewModel::searchParticipants,
+        onResetParticipantSearch = viewModel::resetParticipantSearch,
     )
 }
 
@@ -166,6 +168,8 @@ fun DiveEditScreen(
     onEdit: ((DiveEditDraft) -> DiveEditDraft) -> Unit,
     onSave: () -> Unit,
     onRetry: () -> Unit,
+    onSearchParticipants: (String) -> Unit,
+    onResetParticipantSearch: () -> Unit,
 ) {
     val context = LocalContext.current
     val locale = context.resources.configuration.locales[0] ?: Locale.getDefault()
@@ -227,11 +231,15 @@ fun DiveEditScreen(
                     imperial = imperial,
                     locale = locale,
                     resetToken = resetToken,
+                    online = state.online,
+                    participantSearch = state.participantSearch,
                     onEdit = onEdit,
                     onReset = { field ->
                         resetToken += 1
                         onEdit { it.resetToRecording(field) }
                     },
+                    onSearchParticipants = onSearchParticipants,
+                    onResetParticipantSearch = onResetParticipantSearch,
                 )
             }
         }
@@ -325,8 +333,12 @@ private fun EditForm(
     imperial: Boolean,
     locale: Locale,
     resetToken: Int,
+    online: Boolean,
+    participantSearch: DiverSearchState,
     onEdit: ((DiveEditDraft) -> DiveEditDraft) -> Unit,
     onReset: (DiveValue) -> Unit,
+    onSearchParticipants: (String) -> Unit,
+    onResetParticipantSearch: () -> Unit,
 ) {
     var pickingSite by remember { mutableStateOf(false) }
     var addingParticipant by remember { mutableStateOf(false) }
@@ -510,7 +522,11 @@ private fun EditForm(
     if (addingParticipant) {
         AddParticipantSheet(
             divers = divers,
+            search = participantSearch,
+            online = online,
             excluded = setOfNotNull(ownerDiverId) + draft.participants.map { it.diverId },
+            onSearch = onSearchParticipants,
+            onResetSearch = onResetParticipantSearch,
             onDismiss = { addingParticipant = false },
             onPick = { diver, role ->
                 onEdit { it.addParticipant(diver.id, diver.name, role) }
@@ -634,27 +650,50 @@ private fun RemoveButton(remove: String, onClick: () -> Unit) {
 @Composable
 private fun AddParticipantSheet(
     divers: List<dev.divehub.shared.store.Diver>,
+    search: DiverSearchState,
+    online: Boolean,
     excluded: Set<String>,
+    onSearch: (String) -> Unit,
+    onResetSearch: () -> Unit,
     onDismiss: () -> Unit,
-    onPick: (dev.divehub.shared.store.Diver, String) -> Unit,
+    onPick: (DiverChoice, String) -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var query by remember { mutableStateOf("") }
     var role by remember { mutableStateOf("buddy") }
-    val candidates = remember(divers, excluded) {
-        divers.filterNot { it.id in excluded }.sortedBy { it.name.lowercase() }
+    // A re-open starts from the cached Divers; an answer for an earlier sheet must never look like this sheet's.
+    LaunchedEffect(Unit) { onResetSearch() }
+    val close = {
+        onResetSearch()
+        onDismiss()
     }
-    val matching = remember(query, candidates) {
-        if (query.isBlank()) {
-            candidates
-        } else {
-            candidates.filter { it.name.contains(query.trim(), ignoreCase = true) }
-        }
+    // Everything GET /api/divers brings is managed by the User (their own or a Diver they keep), so offline all are
+    // "yours"; the live search is what can name another User's or an external Diver.
+    val cached = remember(divers, excluded) {
+        divers.filterNot { it.id in excluded }
+            .sortedBy { it.name.lowercase() }
+            .map { DiverChoice(it.id, it.name, managed = true, external = it.external) }
     }
+    val typed = query.trim()
+    val localMatches = remember(typed, cached) {
+        if (typed.isEmpty()) cached else cached.filter { it.name.contains(typed, ignoreCase = true) }
+    }
+    val answer = (search as? DiverSearchState.Found)?.takeIf { it.query == typed }
+    val searching = search is DiverSearchState.Searching && search.query == typed
+    val failed = search is DiverSearchState.Failed && search.query == typed
+    // A typed name asks every Diver while online; the cached matches stand in until the answer, so the list never
+    // jumps from empty to full. With nothing typed, the cached managed Divers are the list.
+    val results = when {
+        !online -> localMatches
+        typed.isEmpty() -> cached
+        answer != null -> answer.divers.filterNot { it.id in excluded }
+        else -> localMatches
+    }
+    val showSearch = online || cached.isNotEmpty()
     val largeText = LocalDensity.current.fontScale >= LargeTextFontScale
     val asLabel = stringResource(R.string.dive_edit_as_role)
     ModalBottomSheet(
-        onDismissRequest = onDismiss,
+        onDismissRequest = close,
         sheetState = sheetState,
         shape = RoundedCornerShape(topStart = Radius.sheet, topEnd = Radius.sheet),
         containerColor = MaterialTheme.colorScheme.surface,
@@ -671,7 +710,7 @@ private fun AddParticipantSheet(
                     style = DiveHubText.section,
                 )
             }
-            if (candidates.isEmpty()) {
+            if (!showSearch) {
                 item {
                     Spacer(Modifier.height(Spacing.s2))
                     Text(
@@ -716,7 +755,10 @@ private fun AddParticipantSheet(
                     }
                     OutlinedTextField(
                         value = query,
-                        onValueChange = { query = it },
+                        onValueChange = { value ->
+                            query = value
+                            onSearch(value)
+                        },
                         modifier = Modifier.fillMaxWidth().testTag("dive_edit_participant_search"),
                         label = if (largeText) {
                             null
@@ -727,7 +769,12 @@ private fun AddParticipantSheet(
                         singleLine = true,
                         trailingIcon = if (query.isNotBlank()) {
                             {
-                                IconButton(onClick = { query = "" }) {
+                                IconButton(
+                                    onClick = {
+                                        query = ""
+                                        onSearch("")
+                                    },
+                                ) {
                                     Icon(
                                         Icons.Filled.Close,
                                         contentDescription = stringResource(R.string.dive_edit_clear_search),
@@ -745,29 +792,63 @@ private fun AddParticipantSheet(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-                if (query.isNotBlank() && matching.isEmpty()) {
+                if (online && typed.isEmpty() && cached.isEmpty()) {
                     item {
-                        Spacer(Modifier.height(Spacing.s2))
-                        Text(
-                            stringResource(R.string.dive_edit_no_diver_match),
-                            modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
-                            style = DiveHubText.meta,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
+                        AddSheetNote(stringResource(R.string.dive_edit_search_hint))
                     }
                 }
-                itemsIndexed(matching, key = { _, diver -> diver.id }) { index, diver ->
+                if (!online) {
+                    item {
+                        AddSheetNote(stringResource(R.string.dive_edit_search_offline))
+                    }
+                }
+                if (searching) {
+                    item {
+                        AddSheetNote(stringResource(R.string.dive_edit_searching))
+                    }
+                }
+                if (failed) {
+                    item {
+                        AddSheetNote(stringResource(R.string.dive_edit_search_failed))
+                    }
+                }
+                if (typed.isNotEmpty() && !searching && results.isEmpty()) {
+                    item {
+                        AddSheetNote(stringResource(R.string.dive_edit_no_diver_match))
+                    }
+                    if (online) {
+                        item {
+                            AddSheetNote(stringResource(R.string.dive_edit_add_new_web))
+                        }
+                    }
+                }
+                itemsIndexed(results, key = { _, diver -> diver.id }) { index, diver ->
                     DiverRow(
                         name = diver.name,
                         detail = diverDetail(diver),
-                        query = query.trim(),
-                        showDivider = index < matching.lastIndex,
-                        onClick = { onPick(diver, role) },
+                        query = typed,
+                        showDivider = index < results.lastIndex,
+                        onClick = {
+                            onResetSearch()
+                            onPick(diver, role)
+                        },
                     )
                 }
             }
         }
     }
+}
+
+/** A short line under the search field; live so TalkBack hears "searching" and its outcome when they arrive. */
+@Composable
+private fun AddSheetNote(text: String) {
+    Spacer(Modifier.height(Spacing.s2))
+    Text(
+        text,
+        modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+        style = DiveHubText.meta,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
 }
 
 /** The role chip: one choice of a radio group, pressed with a check mark and `selected`, never colour alone. */
@@ -800,10 +881,10 @@ private fun RoleChoiceChip(label: String, selected: Boolean, onClick: () -> Unit
     }
 }
 
-/** What the roster says about a Diver beside the name: whose it is, as the web's add list does. */
+/** What the roster says about a Diver beside the name: whose logbook it is in, as the web's add list does. */
 @Composable
-private fun diverDetail(diver: dev.divehub.shared.store.Diver): String? = when {
-    diver.isOwn -> stringResource(R.string.dive_edit_diver_yours)
+private fun diverDetail(diver: DiverChoice): String? = when {
+    diver.managed -> stringResource(R.string.dive_edit_diver_yours)
     diver.external -> stringResource(R.string.dive_edit_diver_external)
     else -> stringResource(R.string.dive_edit_diver_other_user)
 }
