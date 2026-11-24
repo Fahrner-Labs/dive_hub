@@ -59,6 +59,9 @@ internal fun CylindersFields(
     locale: Locale,
     onEdit: ((DiveEditDraft) -> DiveEditDraft) -> Unit,
 ) {
+    val repeatedSeries = cylinders.mapIndexedNotNull { index, cylinder ->
+        cylinder.series?.let { index to it }
+    }.groupBy { it.second }.values.flatMap { entries -> entries.drop(1).map { it.first } }.toSet()
     if (cylinders.isEmpty()) {
         Text(
             stringResource(R.string.dive_edit_no_cylinders),
@@ -74,6 +77,7 @@ internal fun CylindersFields(
             seriesOptions = seriesOptions,
             imperial = imperial,
             locale = locale,
+            seriesTwice = index in repeatedSeries,
             onChange = { changed ->
                 onEdit { draft ->
                     draft.setCylinders(draft.cylinders.toMutableList().also { it[index] = changed })
@@ -111,6 +115,7 @@ private fun CylinderFields(
     seriesOptions: List<DiveEditSeriesOption>,
     imperial: Boolean,
     locale: Locale,
+    seriesTwice: Boolean,
     onChange: (DiveEditCylinder) -> Unit,
     onRemove: () -> Unit,
 ) {
@@ -269,6 +274,7 @@ private fun CylinderFields(
                 )
             }
         }
+        if (seriesTwice) CylinderProblemText(CylinderProblem.SERIES_TWICE)
     }
 }
 
@@ -518,6 +524,7 @@ private fun placementLabel(placement: String): Int = when (placement) {
 private fun problemText(problem: CylinderProblem): Int = when (problem) {
     CylinderProblem.END_ABOVE_START -> R.string.dive_edit_cylinder_end_above_start
     CylinderProblem.GAS_OVER_100 -> R.string.dive_edit_cylinder_gas_over_100
+    CylinderProblem.SERIES_TWICE -> R.string.dive_edit_cylinder_series_twice
 }
 
 @Composable

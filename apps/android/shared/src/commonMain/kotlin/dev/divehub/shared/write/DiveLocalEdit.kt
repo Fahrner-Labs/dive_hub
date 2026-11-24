@@ -1,6 +1,10 @@
 package dev.divehub.shared.write
 
 import dev.divehub.api.models.DiveView
+import dev.divehub.shared.planning.GasMix
+import dev.divehub.shared.planning.SacCylinder
+import dev.divehub.shared.planning.SacDive
+import dev.divehub.shared.planning.sacOfDive
 import dev.divehub.shared.store.DiveStore
 import dev.divehub.shared.sync.writeDiveDetail
 import kotlinx.serialization.json.Json
@@ -11,6 +15,7 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.doubleOrNull
 import kotlinx.serialization.json.put
 
 /**
@@ -58,6 +63,13 @@ internal object DiveLocalEdit {
         }
         result["values"] = JsonObject(values)
         result["overrides"] = JsonArray(overrides.map(::JsonPrimitive))
+        // SAC is computed from the Cylinders: an edited list must not leave the page showing the old figure.
+        if (patch.containsKey("cylinders")) {
+            sacFor(result["values"], result["cylinders"])?.let { (sac, missing) ->
+                result["sac"] = sac
+                result["sacMissing"] = missing
+            }
+        }
 
         write(store, JsonObject(result))
     }
@@ -107,6 +119,34 @@ internal object DiveLocalEdit {
         val rightChannel = (rightSeries["channel"] as? JsonPrimitive)?.content ?: return false
         return leftRecording == rightRecording && leftChannel == rightChannel
     }
+
+    /** The SAC the server would compute from the edited Cylinders (ADR 0045), as the dive page reads it. */
+    private fun sacFor(values: JsonElement?, cylinders: JsonElement?): Pair<JsonElement, JsonElement>? {
+        val valueObject = values as? JsonObject ?: return null
+        val durationSeconds = number(valueObject["durationSeconds"]) ?: return null
+        val avgDepthM = number(valueObject["avgDepthM"])
+        val list = (cylinders as? JsonArray).orEmpty().mapNotNull { element ->
+            val cylinder = element as? JsonObject ?: return@mapNotNull null
+            val gas = cylinder["gas"] as? JsonObject
+            SacCylinder(
+                volumeL = number(cylinder["volumeL"]),
+                startPressureBar = number(cylinder["startPressureBar"]),
+                endPressureBar = number(cylinder["endPressureBar"]),
+                gas = gas?.let { GasMix(number(it["o2"]) ?: 21.0, number(it["he"]) ?: 0.0) },
+            )
+        }
+        val outcome = sacOfDive(SacDive(durationSeconds, avgDepthM), list)
+        val sac = outcome.sac?.let { values ->
+            buildJsonObject {
+                put("litresPerMinute", values.litresPerMinute)
+                values.barPerMinute?.let { put("barPerMinute", it) }
+            }
+        } ?: JsonNull
+        val missing = outcome.missing?.let { JsonPrimitive(it.name) } ?: JsonNull
+        return sac to missing
+    }
+
+    private fun number(element: JsonElement?): Double? = (element as? JsonPrimitive)?.doubleOrNull
 
     /** The server's `leadTotalKg`: null when there are no entries, the rounded sum otherwise. */
     private fun leadTotal(lead: JsonArray): JsonElement {

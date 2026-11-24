@@ -254,6 +254,7 @@
     <string name="dive_edit_series_tank">tank %1$d</string>
     <string name="dive_edit_cylinder_end_above_start">The end pressure is above the start pressure.</string>
     <string name="dive_edit_cylinder_gas_over_100">Oxygen and helium add up to more than 100 %.</string>
+    <string name="dive_edit_cylinder_series_twice">This tank pod already measures another cylinder.</string>
     <string name="dive_edit_lead_help">Empty = unknown; 0 = no lead.</string>
     <string name="dive_edit_lead_n">Lead %1$d</string>
     <string name="dive_edit_lead_amount">Amount</string>

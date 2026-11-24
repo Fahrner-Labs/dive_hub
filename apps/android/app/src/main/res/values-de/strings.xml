@@ -254,6 +254,7 @@
     <string name="dive_edit_series_tank">Flasche %1$d</string>
     <string name="dive_edit_cylinder_end_above_start">Der Enddruck liegt über dem Startdruck.</string>
     <string name="dive_edit_cylinder_gas_over_100">Sauerstoff und Helium ergeben zusammen mehr als 100 %.</string>
+    <string name="dive_edit_cylinder_series_twice">Dieser Tank-Pod misst bereits eine andere Flasche.</string>
     <string name="dive_edit_lead_help">Leer = unbekannt, 0 = kein Blei.</string>
     <string name="dive_edit_lead_n">Blei %1$d</string>
     <string name="dive_edit_lead_amount">Menge</string>

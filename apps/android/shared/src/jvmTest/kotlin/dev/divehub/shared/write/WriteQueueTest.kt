@@ -1,6 +1,10 @@
 package dev.divehub.shared.write
 
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
+import dev.divehub.shared.planning.GasMix
+import dev.divehub.shared.planning.SacCylinder
+import dev.divehub.shared.planning.SacDive
+import dev.divehub.shared.planning.sacOfDive
 import dev.divehub.shared.store.DiveStore
 import dev.divehub.shared.store.PendingWriteStatus
 import kotlinx.serialization.json.JsonArray
@@ -237,10 +241,18 @@ class WriteQueueTest {
             ),
         )
 
-        val detail = jsonOf(store.dive("dive-1")!!.detailJson!!)
+        val dive = store.dive("dive-1")!!
+        val detail = jsonOf(dive.detailJson!!)
         val cylinder = (detail["cylinders"] as JsonArray).single() as JsonObject
         assertEquals(60.0, (cylinder["endPressureBar"] as JsonPrimitive).content.toDouble())
         assertEquals("true", cylinder["fromPod"].toString())
+        // The SAC is computed from the Cylinders, so the queued edit must not leave the old figure on the page.
+        val expectedSac = sacOfDive(
+            SacDive(durationSeconds = 3000.0, avgDepthM = 12.0),
+            listOf(SacCylinder(12.0, 220.0, 60.0, GasMix(21.0, 0.0))),
+        ).sac!!
+        assertEquals(expectedSac.litresPerMinute, dive.sacLitresPerMinute)
+        assertNull(dive.sacMissing)
     }
 
     @Test

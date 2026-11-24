@@ -85,7 +85,7 @@ data class DiveEditCylinder(
     }
 }
 
-enum class CylinderProblem { END_ABOVE_START, GAS_OVER_100 }
+enum class CylinderProblem { END_ABOVE_START, GAS_OVER_100, SERIES_TWICE }
 
 /** One Lead entry in the edit form (ADR 0031): the amount in kilograms and where it was carried. */
 data class DiveEditLead(

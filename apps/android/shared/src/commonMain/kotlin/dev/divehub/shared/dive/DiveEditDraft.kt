@@ -108,7 +108,20 @@ data class DiveEditDraft(
 
     /** Whether every Cylinder the server would receive is one it accepts (docs/spec/clients.md, `cylinder_invalid`). */
     val cylindersFit: Boolean
-        get() = cylinderValues().all { it.problem() == null }
+        get() = cylinderValues().all { it.problem() == null } && repeatedSeriesIndex() == null
+
+    /**
+     * The second Cylinder that claims a pressure series another one already has, if any: the server refuses that whole
+     * list (`cylinder_invalid`), so the form must say it at that Cylinder and hold Save.
+     */
+    fun repeatedSeriesIndex(): Int? {
+        val taken = mutableSetOf<DiveEditSeries>()
+        cylinders.forEachIndexed { index, cylinder ->
+            val series = cylinder.series ?: return@forEachIndexed
+            if (!taken.add(series)) return index
+        }
+        return null
+    }
 
     fun setNotes(value: String): DiveEditDraft = copy(notes = value)
 

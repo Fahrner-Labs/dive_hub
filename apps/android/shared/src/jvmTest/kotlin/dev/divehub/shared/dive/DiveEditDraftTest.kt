@@ -346,6 +346,17 @@ class DiveEditDraftTest {
     }
 
     @Test
+    fun `the same series on two cylinders does not fit`() {
+        val draft = DiveEditDraft.of(gearDive())
+        val changed = draft.setCylinders(
+            listOf(draft.cylinders[0], draft.cylinders[1].copy(series = draft.cylinders[0].series)),
+        )
+
+        assertFalse(changed.cylindersFit)
+        assertEquals(1, changed.repeatedSeriesIndex())
+    }
+
+    @Test
     fun `a cylinder gas over one hundred percent does not fit`() {
         val draft = DiveEditDraft.of(gearDive())
         val changed = draft.setCylinders(
