@@ -391,7 +391,8 @@ online.
   online-only wording ("no answer at all", above), never queued.
 - **An old server means read-only, probed not parsed.** Once per session the client probes
   `GET /sync/changes`: a 404 hides the write UI for that session (hidden, not disabled); any 2xx means
-  writeable. There is no version parsing.
+  writeable. If the first attempt gets no answer, it asks again when a connection first answers, so a
+  pre-feed server reached later is still found. There is no version parsing.
 - **The feed keeps the base versions fresh.** Live hints drain the change feed
   ([Offline reads](#offline-reads-native-client)), so a queued edit replays against what the server actually
   holds.

@@ -494,6 +494,35 @@ class AppNavHostTest {
         compose.runOnIdle { assertEquals(ToolPage.Index, controller.currentBackStackEntry?.toRoute<ToolsRoute>()?.page) }
     }
 
+    @Test
+    fun `a merged dive in the conflict screen opens the dive`() {
+        compose.setContent { start(destination = null) }
+        compose.runOnIdle {
+            controller.navigate(MainRoute)
+            controller.navigate(ConflictsRoute)
+        }
+        assertRoute<ConflictsRoute>()
+
+        compose.runOnIdle { screens.conflictsOpenDive!!.invoke("dive-9") }
+
+        assertRoute<DiveRoute>()
+        compose.runOnIdle { assertEquals("dive-9", controller.currentBackStackEntry?.toRoute<DiveRoute>()?.id) }
+    }
+
+    @Test
+    fun `the conflict screen opens above the logbook and back returns to it`() {
+        compose.setContent { start(destination = null) }
+        compose.runOnIdle {
+            controller.navigate(MainRoute)
+            controller.navigate(ConflictsRoute)
+        }
+        assertRoute<ConflictsRoute>()
+
+        compose.runOnIdle { screens.conflictsBack!!.invoke() }
+
+        assertRoute<LogbookRoute>()
+    }
+
     private fun setContent(diveId: String? = null, divePosition: Int? = null) {
         compose.setContent { start(diveId = diveId, divePosition = divePosition) }
     }
@@ -546,6 +575,9 @@ class AppNavHostTest {
         var settingsOpenScan: (() -> Unit)? = null
         var settingsDebugShown = false
         var settingsDebugBack: (() -> Unit)? = null
+        var conflictsShown = false
+        var conflictsBack: (() -> Unit)? = null
+        var conflictsOpenDive: ((String) -> Unit)? = null
         var scanShown = false
         var scanBack: (() -> Unit)? = null
 
@@ -622,6 +654,14 @@ class AppNavHostTest {
             settingsDebugShown = true
             settingsDebugBack = onBack
             Text("settings debug")
+        }
+
+        @Composable
+        override fun conflicts(onBack: () -> Unit, onOpenDive: (String) -> Unit) {
+            conflictsShown = true
+            conflictsBack = onBack
+            conflictsOpenDive = onOpenDive
+            Text("conflicts")
         }
     }
 }

@@ -45,6 +45,8 @@ data class WriteNotice(
     val reason: WriteDropReason,
     /** The Dive a merge kept, when the server named it. */
     val mergedInto: String? = null,
+    /** That Dive's number when this device still holds it, for the notice's words and its link. */
+    val mergedIntoNumber: Int? = null,
 )
 
 /** What one [WriteReplayer.replay] call did. */
@@ -292,8 +294,47 @@ class WriteReplayer(
                         localAction = it.localAction,
                     )
                 },
+                diveNumber = diveNumber(entry.entityId),
             )
         }
+
+    /**
+     * The entries still waiting to reach the server, oldest first, as the queue's "what waits" list (client contract,
+     * Offline writes). Failed entries are included with their reason; a parked conflict is not, because it waits for a
+     * decision rather than for the connection.
+     */
+    fun queued(): List<QueuedWriteView> =
+        (store.pendingWrites(PendingWriteStatus.Pending) + store.pendingWrites(PendingWriteStatus.Failed))
+            .sortedBy { it.id }
+            .mapNotNull { entry ->
+                if (entry.kind != PendingWriteKind.Patch) return@mapNotNull null
+                QueuedWriteView(
+                    entryId = entry.id,
+                    fields = patchFields(entry.payloadJson),
+                    failed = entry.status == PendingWriteStatus.Failed,
+                    diveNumber = diveNumber(entry.entityId),
+                )
+            }
+
+    /**
+     * The queue's counts for the pending indicator (ADR 0084 D4); reading the store never triggers a replay. Actions
+     * are Phase C and [queued] cannot show them, so they are not counted here either.
+     */
+    fun snapshot(): WriteQueueSnapshot = WriteQueueSnapshot(
+        pending = store.pendingWrites(PendingWriteStatus.Pending).count { it.kind == PendingWriteKind.Patch },
+        conflicted = store.pendingWrites(PendingWriteStatus.Conflicted).count { it.kind == PendingWriteKind.Patch },
+        failed = store.pendingWrites(PendingWriteStatus.Failed).count { it.kind == PendingWriteKind.Patch },
+    )
+
+    /**
+     * Put failed entries back in line for one more try (the pending indicator's *Try again*): a failure is a state,
+     * and the User must be able to act on it without waiting for a queue that no longer contains the entry.
+     */
+    fun retryFailed() {
+        store.pendingWrites(PendingWriteStatus.Failed).forEach { entry ->
+            store.updatePendingWrite(entry.copy(status = PendingWriteStatus.Pending, lastError = null))
+        }
+    }
 
     /**
      * Apply the User's choices to a parked entry (ADR 0084 D3). The fresh server view lands in the store at once, the
@@ -450,6 +491,33 @@ class WriteReplayer(
         return result
     }
 
+    private fun diveNumber(entityId: String): Int? =
+        store.diveIncludingDeleted(entityId)
+            ?.detailJson
+            ?.let(::decodeDive)
+            ?.values
+            ?.number
+
+    /** The field names a queued patch touches, in the merge engine's own vocabulary (`notes`, `set.depthM`, …). */
+    private fun patchFields(payloadJson: String): List<String> {
+        val payload = parseObject(payloadJson) ?: return emptyList()
+        val fields = LinkedHashSet<String>()
+        payload["set"]?.let { element ->
+            (element as? JsonObject)?.keys?.forEach { fields += "set.$it" }
+        }
+        payload["reset"]?.let { element ->
+            (element as? JsonArray)?.forEach { item ->
+                ((item as? JsonPrimitive)?.takeIf { primitive -> primitive.isString })?.content?.let {
+                    fields += "reset.$it"
+                }
+            }
+        }
+        payload.keys.forEach { key ->
+            if (key != "set" && key != "reset") fields += key
+        }
+        return fields.toList()
+    }
+
     private fun decodeConflict(text: String?): WriteConflict? {
         if (text.isNullOrBlank()) return null
         return runCatching { json.decodeFromString(WriteConflict.serializer(), text) }.getOrNull()
@@ -515,18 +583,21 @@ class WriteReplayer(
                 }
                 status == 403 || status == 404 || status == 410 -> {
                     val text = response.bodyTextOrNull()
+                    val reason = when (status) {
+                        403 -> WriteDropReason.Forbidden
+                        410 -> WriteDropReason.Gone
+                        else -> WriteDropReason.NotFound
+                    }
+                    val mergedInto = mergedInto(text)
                     store.deletePendingWrite(entry.id)
                     return EntryOutcome.Dropped(
                         WriteNotice(
                             entityType = entry.entityType,
                             entityId = entry.entityId,
                             status = status,
-                            reason = when (status) {
-                                403 -> WriteDropReason.Forbidden
-                                410 -> WriteDropReason.Gone
-                                else -> WriteDropReason.NotFound
-                            },
-                            mergedInto = mergedInto(text),
+                            reason = reason,
+                            mergedInto = mergedInto,
+                            mergedIntoNumber = mergedInto?.let(::diveNumber),
                         ),
                     )
                 }

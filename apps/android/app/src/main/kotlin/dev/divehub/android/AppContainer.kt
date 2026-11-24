@@ -25,6 +25,8 @@ import dev.divehub.shared.sync.SseLiveHints
 import dev.divehub.shared.sync.SyncEngine
 import dev.divehub.shared.sync.SyncRefresher
 import dev.divehub.shared.sync.SyncResult
+import dev.divehub.shared.write.ConflictResolution
+import dev.divehub.shared.write.ConflictSide
 import dev.divehub.shared.write.WriteCapability
 import dev.divehub.shared.write.WriteQueue
 import dev.divehub.shared.write.WriteReplayer
@@ -35,8 +37,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancelChildren
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
@@ -100,16 +104,21 @@ class AppContainer(context: Context) {
         versionName = BuildConfig.VERSION_NAME,
         pendingWrites = object : PendingWriteQueue {
             override suspend fun queuedWriteCount(): Long =
-                withContext(Dispatchers.IO) { diveStore.pendingWriteCount() }
+                withContext(Dispatchers.IO) { diveStore.queuedWriteCount() }
         },
     )
 
     /**
-     * The offline write queue: screens enqueue here and the store shows the edit at once (ADR 0084 D4). The scanner's
-     * actions replay through it too; T7 owns the session/sync triggers that drain it, and until then the scanner
-     * triggers its own replay.
+     * The offline write queue: screens enqueue here and the store shows the edit at once (ADR 0084 D4). [queueRevision]
+     * lets the pending indicator re-read the queue after an edit, before any sync trigger runs. The scanner's actions
+     * replay through it too; T7 owns the session/sync triggers that drain it, and until then the scanner triggers its
+     * own replay.
      */
-    val writeQueue: WriteQueue by lazy { WriteQueue(diveStore) }
+    private val _queueRevision = MutableStateFlow(0L)
+    val queueRevision: StateFlow<Long> = _queueRevision.asStateFlow()
+    val writeQueue: WriteQueue by lazy {
+        WriteQueue(diveStore, onEnqueued = { _queueRevision.value = _queueRevision.value + 1 })
+    }
 
     /** The replay/conflict side: drains the queue on sync triggers and answers the resolution surface (ADR 0084 D3). */
     val writeReplayer: WriteReplayer by lazy { WriteReplayer(session.client, diveStore) }
@@ -157,6 +166,8 @@ class AppContainer(context: Context) {
     val syncProgress = refresher.progress
     val syncOffline = refresher.offline
     val syncConnected = refresher.streamHealthy
+    /** Dropped-change notices from the last replay, until the User reads them (ADR 0084 D3 step 4). */
+    val writeNotices = refresher.notices
     private val periodicSync = WorkManagerPeriodicSync(application)
     private val syncScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     // The container outlives every session, so a UI-only combination must not sit in `syncScope` (which a sign-out
@@ -247,6 +258,37 @@ class AppContainer(context: Context) {
             if (!session.hasSession()) return@withLock
             refresher.drainWritesNow()
         }
+    }
+
+    /** *Try again* on the pending indicator: failed entries rejoin the queue, then one replay attempt runs. */
+    suspend fun retryWrites() {
+        val url = session.knownInstance() ?: return
+        session.client.baseUrl = url
+        if (!session.hasSession()) return
+        wipeLock.withLock {
+            if (!session.hasSession()) return@withLock
+            withContext(Dispatchers.IO) { writeReplayer.retryFailed() }
+            refresher.drainWritesNow()
+        }
+    }
+
+    /**
+     * The queue screen's conflict decision (ADR 0084 D3): [wipeLock] and the session check keep a sign-out wipe from
+     * interleaving with re-queueing the User's choices, like every other store write.
+     */
+    suspend fun resolveWriteConflict(entryId: Long, choices: Map<String, ConflictSide>): ConflictResolution? {
+        val url = session.knownInstance() ?: return null
+        session.client.baseUrl = url
+        if (!session.hasSession()) return null
+        return wipeLock.withLock {
+            if (!session.hasSession()) return@withLock null
+            withContext(Dispatchers.IO) { writeReplayer.resolve(entryId, choices) }
+        }
+    }
+
+    /** The User has read the dropped-change notices (ADR 0084 D3 step 4). */
+    fun dismissWriteNotices() {
+        refresher.dismissNotices()
     }
 
     /**

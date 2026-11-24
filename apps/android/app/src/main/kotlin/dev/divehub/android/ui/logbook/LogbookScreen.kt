@@ -81,6 +81,7 @@ import dev.divehub.android.ui.DiveHubText
 import dev.divehub.android.ui.DiveHubTopBar
 import dev.divehub.android.ui.Spacing
 import dev.divehub.android.ui.SyncLine
+import dev.divehub.android.ui.writes.WriteQueueLine
 import dev.divehub.android.ui.components.ContentRevealMs
 import dev.divehub.android.ui.components.DiveRow
 import dev.divehub.android.ui.components.EmptyState
@@ -507,6 +508,7 @@ private fun LogbookList(
         item(key = "header") {
             Column(Modifier.fillMaxWidth()) {
                 SyncLine(state.syncedAt, state.connected, state.offline, R.string.logbook_offline_cached)
+                WriteQueueLine()
                 Column(Modifier.padding(horizontal = Spacing.s4)) {
                     Summary(data, locale, imperial)
                     if (state.error != null) {

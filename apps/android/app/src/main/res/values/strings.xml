@@ -663,6 +663,84 @@
     <string name="settings_debug_share_empty">There are no entries to share yet.</string>
     <string name="settings_debug_share_title">Share local logs</string>
     <string name="settings_debug_share_subject">DiveHub diagnostics</string>
+    <plurals name="pending_changes_waiting">
+        <item quantity="one">%1$d change waiting to sync</item>
+        <item quantity="other">%1$d changes waiting to sync</item>
+    </plurals>
+    <plurals name="pending_changes_need_decision">
+        <item quantity="one">%1$d change needs your decision</item>
+        <item quantity="other">%1$d changes need your decision</item>
+    </plurals>
+    <plurals name="pending_changes_not_sent">
+        <item quantity="one">%1$d change couldn’t be sent</item>
+        <item quantity="other">%1$d changes couldn’t be sent</item>
+    </plurals>
+    <string name="pending_changes_view">View</string>
+    <string name="pending_changes_review">Review</string>
+    <string name="pending_changes_retry">Try again</string>
+
+    <plurals name="pending_changes_block_sign_out">
+        <item quantity="one">%1$d change hasn’t synced</item>
+        <item quantity="other">%1$d changes haven’t synced</item>
+    </plurals>
+    <plurals name="pending_sign_out_body">
+        <item quantity="one">Sync it before you sign out, or discard it. A discarded change is lost.</item>
+        <item quantity="other">Sync them before you sign out, or discard them. Discarded changes are lost.</item>
+    </plurals>
+    <plurals name="pending_change_instance_body">
+        <item quantity="one">Sync it before you change the instance, or discard it. A discarded change is lost.</item>
+        <item quantity="other">Sync them before you change the instance, or discard them. Discarded changes are lost.</item>
+    </plurals>
+    <string name="pending_discard_sign_out">Discard and sign out</string>
+    <string name="pending_discard_change_instance">Discard and change instance</string>
+    <string name="pending_still_waiting">Some changes still wait. They may need a decision or another try.</string>
+    <plurals name="pending_sign_in_title">
+        <item quantity="one">%1$d change belongs to another account</item>
+        <item quantity="other">%1$d changes belong to another account</item>
+    </plurals>
+    <string name="pending_sign_in_body">Signing in as %1$s discards the changes saved on this phone for the previous account.</string>
+    <string name="pending_discard_sign_in">Discard and sign in</string>
+
+    <string name="conflicts_title">Changes on this phone</string>
+    <string name="conflicts_empty_title">Nothing to sync or decide</string>
+    <string name="conflicts_empty_body">No change on this phone is waiting to sync or for a decision.</string>
+    <string name="conflict_dive_title">Dive %1$d</string>
+    <string name="conflict_dive_unnamed">Saved dive</string>
+    <string name="conflict_this_phone">This phone</string>
+    <string name="conflict_server">The server</string>
+    <string name="conflict_not_set">Not set</string>
+    <string name="conflict_removed">Removed on this phone</string>
+    <string name="conflict_reset">Reset on this phone</string>
+    <string name="conflict_keep_selected">Keep selected</string>
+    <plurals name="write_notices">
+        <item quantity="one">%1$d change couldn’t be applied</item>
+        <item quantity="other">%1$d changes couldn’t be applied</item>
+    </plurals>
+    <string name="queued_notices_title">Changes not applied</string>
+    <string name="notice_deleted">A dive was deleted on the server. Your change was not applied.</string>
+    <string name="notice_gone">A dive is no longer available. Your change was not applied.</string>
+    <string name="notice_forbidden">You no longer have access to a dive. Your change was not applied.</string>
+    <string name="notice_refused">The server refused this change. It was not applied.</string>
+    <string name="notice_merged">A dive was merged into another one. Your change was not applied.</string>
+    <string name="notice_merged_into">This dive was merged into Dive %1$d. Your change was not applied.</string>
+    <string name="notice_open_dive">Open dive</string>
+    <string name="notice_dismiss">Dismiss</string>
+    <string name="queued_changes_title">Waiting to sync</string>
+    <string name="queued_change_not_sent">Couldn’t be sent</string>
+    <string name="conflict_use_server">Use the server’s for everything</string>
+    <string name="conflict_resolve_failed">Your choice couldn’t be saved. Try again.</string>
+    <string name="conflict_field_notes">Notes</string>
+    <string name="conflict_field_site">Dive site</string>
+    <string name="conflict_field_start">Start</string>
+    <string name="conflict_field_suit">Suit</string>
+    <string name="conflict_field_weighting">Weighting</string>
+    <string name="conflict_field_cylinders">Cylinders</string>
+    <string name="conflict_field_lead">Lead</string>
+    <string name="conflict_field_participants">Participants</string>
+    <string name="conflict_field_duration">Duration</string>
+    <string name="conflict_field_max_depth">Max depth</string>
+    <string name="conflict_field_avg_depth">Average depth</string>
+    <string name="conflict_field_water_temperature">Water temperature</string>
 
     <string name="settings_section_logbook">Logbook</string>
     <string name="settings_scan">Scan a code</string>
