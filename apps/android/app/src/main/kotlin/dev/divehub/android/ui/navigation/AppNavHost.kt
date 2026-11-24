@@ -71,6 +71,9 @@ internal interface AppScreens {
     fun settingsDebug(owner: ViewModelStoreOwner, onBack: () -> Unit)
 
     @Composable
+    fun conflicts(onBack: () -> Unit, onOpenDive: (String) -> Unit)
+
+    @Composable
     fun scan(onBack: () -> Unit)
 }
 
@@ -205,6 +208,18 @@ internal fun AppNavHost(
                     val owner = remember { navController.getBackStackEntry<SettingsRoute>() }
                     MainShell(navController) {
                         currentScreens.value.settingsDebug(owner = owner, onBack = { navController.popBackStack() })
+                    }
+                }
+                // The queue screen sits above whatever showed the pending line (logbook or a Dive); the bar keeps the
+                // tab that opened it selected because the tab is read from the whole back stack.
+                composable<ConflictsRoute> {
+                    MainShell(navController) {
+                        currentScreens.value.conflicts(
+                            onBack = { navController.popBackStack() },
+                            onOpenDive = { id ->
+                                navController.navigate(DiveRoute(id)) { launchSingleTop = true }
+                            },
+                        )
                     }
                 }
             }

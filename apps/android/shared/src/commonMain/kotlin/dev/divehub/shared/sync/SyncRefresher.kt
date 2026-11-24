@@ -4,6 +4,7 @@ import dev.divehub.shared.DiveHubException
 import dev.divehub.shared.ErrorCodes
 import dev.divehub.shared.NoAnswerException
 import dev.divehub.shared.write.WriteDrain
+import dev.divehub.shared.write.WriteNotice
 import dev.divehub.shared.write.WriteReplayResult
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -90,6 +91,14 @@ class SyncRefresher(
     val streamHealthy: StateFlow<Boolean> = _streamHealthy.asStateFlow()
 
     private val _offline = MutableStateFlow(false)
+
+    /**
+     * Changes a replay had to drop because their thing is gone (ADR 0084 D3 step 4). They wait here until the User
+     * dismisses them, so opening the queue screen after the drain that dropped them still says what happened; a
+     * process death ends them, as the ADR drops the entry rather than keeping a notice.
+     */
+    private val _notices = MutableStateFlow<List<WriteNotice>>(emptyList())
+    val notices: StateFlow<List<WriteNotice>> = _notices.asStateFlow()
 
     /**
      * True when the last sync attempt got no answer at all (offline, or the instance cannot be reached). Screens with
@@ -272,6 +281,7 @@ class SyncRefresher(
         running.value = false
         _offline.value = false
         _progress.value = SyncProgress.EMPTY
+        _notices.value = emptyList()
         lastStreamFailure = null
         liveJob?.cancel()
         pollJob?.cancel()
@@ -332,11 +342,17 @@ class SyncRefresher(
         }
         when (result) {
             is WriteReplayResult.Drained -> {
+                if (result.notices.isNotEmpty()) _notices.update { it + result.notices }
                 if (result.applied + result.conflicted + result.dropped + result.failed > 0) bump()
             }
             is WriteReplayResult.Stopped -> bump()
             WriteReplayResult.Empty, WriteReplayResult.SessionEnded -> Unit
         }
+    }
+
+    /** The User has read the dropped-change notices. */
+    fun dismissNotices() {
+        _notices.value = emptyList()
     }
 
     private fun bump() {

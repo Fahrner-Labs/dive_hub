@@ -99,6 +99,24 @@ class WriteConflictResolutionTest {
         assertEquals("Server", (field.server as JsonPrimitive).content)
         assertEquals("Local", (field.local as JsonPrimitive).content)
         assertEquals(ConflictSide.ThisPhone, field.preselected)
+        assertEquals(42, conflict.diveNumber)
+    }
+
+    @Test
+    fun `the queue snapshot counts what waits and what needs a decision`() = runTest {
+        seed()
+        queue.enqueueDivePatch("dive-1", jsonOf("""{"notes":"Local"}"""))
+        val harness = ConflictHarness(store) {
+            ConflictReply.Body(
+                """{"code":"dive_changed","dive":${diveObject(version = 5, notes = "Server")}}""",
+                HttpStatusCode.PreconditionFailed,
+            )
+        }
+        assertEquals(WriteQueueSnapshot(pending = 1), harness.replayer.snapshot())
+
+        harness.replayer.replay()
+
+        assertEquals(WriteQueueSnapshot(conflicted = 1), harness.replayer.snapshot())
     }
 
     @Test
