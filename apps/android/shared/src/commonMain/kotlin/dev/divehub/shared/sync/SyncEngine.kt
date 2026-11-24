@@ -785,34 +785,12 @@ class SyncEngine(
     }
 
     /**
-     * One Dive's detail into the store, inside the caller's transaction. The detail is authoritative: Recordings and
-     * Cylinders it no longer lists are removed with their series, so a stale Recording cannot make the profiles phase
-     * fail on a 404 forever.
+     * One Dive's detail into the store, inside the caller's transaction (see `writeDiveDetail`).
      */
-    private fun writeDetail(detail: DiveView) {
-        val diveId = detail.id
-        val existing = store.diveIncludingDeleted(diveId)
-        store.upsertDive(detail.toStore(existing).copy(listJson = detail.toListRow(existing?.listJson)))
-        val kept = detail.recordings.mapTo(mutableSetOf()) { it.id }
-        store.allRecordingsForDive(diveId).filter { it.id !in kept }.forEach { recording ->
-            store.deleteSeries(recording.id)
-            store.deleteRecording(recording.id)
-        }
-        detail.recordings.forEach { store.upsertRecording(it.toStore(diveId)) }
-        store.deleteCylinders(diveId)
-        detail.cylinders.forEachIndexed { position, cylinder ->
-            store.upsertCylinder(cylinder.toStore(diveId, position.toLong()))
-        }
-    }
+    private fun writeDetail(detail: DiveView) = store.writeDiveDetail(detail)
 
-    private fun pendingProfileCheckpoint(diveId: String, now: String): SyncCheckpoint = SyncCheckpoint(
-        entity = profileEntity(diveId),
-        phase = PHASE_PROFILES,
-        cursor = null,
-        pageOffset = 0,
-        done = false,
-        updatedAt = now,
-    )
+    private fun pendingProfileCheckpoint(diveId: String, now: String): SyncCheckpoint =
+        queuedProfileCheckpoint(diveId, now)
 
     /** The channel names the detail pass listed; a malformed local value means no profiles rather than a failed phase. */
     private fun channelsOf(recording: Recording): List<String> = try {

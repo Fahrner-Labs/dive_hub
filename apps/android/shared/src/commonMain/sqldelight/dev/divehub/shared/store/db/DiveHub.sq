@@ -1,7 +1,7 @@
--- The offline read store, schema v1 (ADR 0075). Rows with server identity keep the server id; where the API has a
--- version, a tombstone or a merge target, the row keeps that too. Complex API values stay in JSON columns, identity
--- and ordering fields are real columns. There are deliberately no foreign keys: sync writes pages out of order and
--- keeps tombstones.
+-- The offline read store, schema v1 (ADR 0075), plus the offline write queue, schema v5 (ADR 0084). Rows with server
+-- identity keep the server id; where the API has a version, a tombstone or a merge target, the row keeps that too.
+-- Complex API values stay in JSON columns, identity and ordering fields are real columns. There are deliberately no
+-- foreign keys: sync writes pages out of order and keeps tombstones.
 
 CREATE TABLE dive (
     id TEXT NOT NULL PRIMARY KEY,
@@ -132,6 +132,27 @@ CREATE TABLE diagnosticEntry (
     stack TEXT,
     contextJson TEXT
 );
+
+-- The offline write queue (ADR 0084 D4). A write applies to the store and enqueues here; replay sends it with the
+-- version the edit started from. `id` is the enqueue order (FIFO per entity; actions are global). `payloadJson` is a
+-- PATCH body's field→value patch; `baseJson` is the stored API payload the edit was made against, so the three-way
+-- merge still has its base after a feed refresh. `conflictJson` keeps a parked entry's per-field base/server/local
+-- values for the resolution surface (T6b). The queue is user data: only an explicit wipe removes it.
+CREATE TABLE pending_write(
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    kind TEXT NOT NULL,
+    entityType TEXT NOT NULL,
+    entityId TEXT NOT NULL,
+    payloadJson TEXT NOT NULL,
+    baseVersion INTEGER,
+    baseJson TEXT,
+    status TEXT NOT NULL DEFAULT 'pending',
+    enqueuedAt TEXT NOT NULL,
+    lastError TEXT,
+    conflictJson TEXT
+);
+
+CREATE INDEX pending_write_status_order ON pending_write(status, id);
 
 selectDiveById:
 SELECT * FROM dive WHERE id = ? AND deletedAt IS NULL;
@@ -338,3 +359,40 @@ WHERE id NOT IN (SELECT id FROM diagnosticEntry ORDER BY id DESC LIMIT :keep);
 
 deleteAllDiagnosticEntries:
 DELETE FROM diagnosticEntry;
+
+selectPendingWrites:
+SELECT * FROM pending_write ORDER BY id;
+
+selectPendingWritesWithStatus:
+SELECT * FROM pending_write WHERE status = :status ORDER BY id;
+
+selectPendingWriteById:
+SELECT * FROM pending_write WHERE id = :id;
+
+selectPendingPatchFor:
+SELECT * FROM pending_write WHERE kind = 'patch' AND entityType = :entityType AND entityId = :entityId ORDER BY id LIMIT 1;
+
+countPendingWrites:
+SELECT count(*) FROM pending_write;
+
+countPendingWritesWithStatus:
+SELECT count(*) FROM pending_write WHERE status = :status;
+
+insertPendingWrite:
+INSERT INTO pending_write(kind, entityType, entityId, payloadJson, baseVersion, baseJson, status, enqueuedAt, lastError, conflictJson)
+VALUES (:kind, :entityType, :entityId, :payloadJson, :baseVersion, :baseJson, :status, :enqueuedAt, :lastError, :conflictJson);
+
+selectLastInsertRowId:
+SELECT last_insert_rowid();
+
+updatePendingWrite:
+UPDATE pending_write
+SET payloadJson = :payloadJson, baseVersion = :baseVersion, baseJson = :baseJson, status = :status,
+    lastError = :lastError, conflictJson = :conflictJson
+WHERE id = :id;
+
+deletePendingWrite:
+DELETE FROM pending_write WHERE id = :id;
+
+deleteAllPendingWrites:
+DELETE FROM pending_write;

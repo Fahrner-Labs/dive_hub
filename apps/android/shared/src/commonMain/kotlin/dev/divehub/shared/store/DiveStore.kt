@@ -8,6 +8,7 @@ import dev.divehub.shared.store.db.Dive as DiveRow
 import dev.divehub.shared.store.db.DiveHubDatabase
 import dev.divehub.shared.store.db.Dive_site
 import dev.divehub.shared.store.db.Diver as DiverRow
+import dev.divehub.shared.store.db.Pending_write
 import dev.divehub.shared.store.db.Recording as RecordingRow
 import dev.divehub.shared.store.db.Recording_series
 import dev.divehub.shared.store.db.Sync_checkpoint
@@ -257,6 +258,55 @@ class DiveStore internal constructor(private val database: DiveHubDatabase) : Us
         saveSyncState(state.copy(countsJson = countsJson))
     }
 
+    /** Every queued write, oldest first: the queue's FIFO order (ADR 0084 D4). */
+    fun pendingWrites(): List<PendingWrite> = queries.selectPendingWrites().executeAsList().map(Pending_write::toModel)
+
+    /** The queued writes in one state; replay takes [PendingWriteStatus.Pending], the UI also asks for the others. */
+    fun pendingWrites(status: PendingWriteStatus): List<PendingWrite> =
+        queries.selectPendingWritesWithStatus(status.wire).executeAsList().map(Pending_write::toModel)
+
+    /** The one patch for an entity, whatever its state: coalescing and parking both work on it. */
+    fun pendingPatch(entityType: String, entityId: String): PendingWrite? =
+        queries.selectPendingPatchFor(entityType, entityId).executeAsOneOrNull()?.toModel()
+
+    fun pendingWriteCount(): Long = queries.countPendingWrites().executeAsOne()
+
+    fun pendingWriteCount(status: PendingWriteStatus): Long =
+        queries.countPendingWritesWithStatus(status.wire).executeAsOne()
+
+    /** Insert an entry and return it with the store's enqueue order as its id. */
+    fun addPendingWrite(write: PendingWrite): PendingWrite {
+        queries.insertPendingWrite(
+            kind = write.kind.wire,
+            entityType = write.entityType,
+            entityId = write.entityId,
+            payloadJson = write.payloadJson,
+            baseVersion = write.baseVersion,
+            baseJson = write.baseJson,
+            status = write.status.wire,
+            enqueuedAt = write.enqueuedAt,
+            lastError = write.lastError,
+            conflictJson = write.conflictJson,
+        )
+        return write.copy(id = queries.selectLastInsertRowId().executeAsOne())
+    }
+
+    fun updatePendingWrite(write: PendingWrite) {
+        queries.updatePendingWrite(
+            payloadJson = write.payloadJson,
+            baseVersion = write.baseVersion,
+            baseJson = write.baseJson,
+            status = write.status.wire,
+            lastError = write.lastError,
+            conflictJson = write.conflictJson,
+            id = write.id,
+        )
+    }
+
+    fun deletePendingWrite(id: Long) {
+        queries.deletePendingWrite(id)
+    }
+
     /**
      * One write transaction: a sync page and its checkpoint, or any other group that must not half-happen. A throw
      * inside the block rolls the whole block back.
@@ -279,6 +329,7 @@ class DiveStore internal constructor(private val database: DiveHubDatabase) : Us
             queries.deleteAllBodyWeights()
             queries.deleteAllCheckpoints()
             queries.deleteAllSyncState()
+            queries.deleteAllPendingWrites()
             queries.upsertSyncState(
                 lastFullSyncAt = null,
                 lastHintAt = null,
@@ -432,4 +483,18 @@ private fun Sync_state.toModel() = SyncState(
     schemaVersion = schemaVersion,
     countsJson = countsJson,
     feedCursor = feedCursor,
+)
+
+private fun Pending_write.toModel() = PendingWrite(
+    id = id,
+    kind = PendingWriteKind.fromWire(kind),
+    entityType = entityType,
+    entityId = entityId,
+    payloadJson = payloadJson,
+    enqueuedAt = enqueuedAt,
+    baseVersion = baseVersion,
+    baseJson = baseJson,
+    status = PendingWriteStatus.fromWire(status),
+    lastError = lastError,
+    conflictJson = conflictJson,
 )

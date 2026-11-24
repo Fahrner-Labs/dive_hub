@@ -56,6 +56,30 @@ class ApiClient(
     suspend fun post(path: String, body: String? = null, authenticated: Boolean = true): HttpResponse =
         send(HttpMethod.Post, path, body, authenticated, retry = true)
 
+    /** A native write's write (ADR 0083 D2): [ifMatch] is sent as `If-Match: "<version>"`, the 412 contract's version. */
+    suspend fun put(
+        path: String,
+        body: String? = null,
+        authenticated: Boolean = true,
+        ifMatch: Long? = null,
+        retry: Boolean = true,
+    ): HttpResponse = send(HttpMethod.Put, path, body, authenticated, retry, ifMatch)
+
+    suspend fun patch(
+        path: String,
+        body: String? = null,
+        authenticated: Boolean = true,
+        ifMatch: Long? = null,
+        retry: Boolean = true,
+    ): HttpResponse = send(HttpMethod.Patch, path, body, authenticated, retry, ifMatch)
+
+    suspend fun delete(
+        path: String,
+        authenticated: Boolean = true,
+        ifMatch: Long? = null,
+        retry: Boolean = true,
+    ): HttpResponse = send(HttpMethod.Delete, path, null, authenticated, retry, ifMatch)
+
     /**
      * Open a long-lived response and consume it inside [block] (the live hint stream, ADR 0066). Ordinary responses go
      * through Ktor's `SaveBody` plugin, which reads the whole body into memory before returning it; a live stream would
@@ -140,6 +164,7 @@ class ApiClient(
         body: String?,
         authenticated: Boolean,
         retry: Boolean,
+        ifMatch: Long? = null,
     ): HttpResponse {
         check(baseUrl.isNotEmpty()) { "the instance URL is not set" }
         var attempts = 0
@@ -152,6 +177,7 @@ class ApiClient(
                         contentType(ContentType.Application.Json)
                         setBody(body)
                     }
+                    ifMatch?.let { header("If-Match", "\"$it\"") }
                     if (authenticated) token()?.let { header(HttpHeaders.Authorization, "Bearer $it") }
                 }
                 if (retry && response.status.value in 500..599 && attempts == 0) {

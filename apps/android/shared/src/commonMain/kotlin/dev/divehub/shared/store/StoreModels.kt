@@ -128,3 +128,45 @@ data class SyncState(
      */
     val feedCursor: String? = null,
 )
+
+/** A pending write's kind (ADR 0084 D4): a field patch that merges, or a deferred action that replays verbatim. */
+enum class PendingWriteKind(val wire: String) {
+    Patch("patch"),
+    Action("action"),
+    ;
+
+    companion object {
+        fun fromWire(value: String): PendingWriteKind = entries.firstOrNull { it.wire == value } ?: Patch
+    }
+}
+
+/** Where an entry stands: waiting, parked for the User's decision, or failed with a reason the UI can show. */
+enum class PendingWriteStatus(val wire: String) {
+    Pending("pending"),
+    Conflicted("conflicted"),
+    Failed("failed"),
+    ;
+
+    companion object {
+        fun fromWire(value: String): PendingWriteStatus = entries.firstOrNull { it.wire == value } ?: Pending
+    }
+}
+
+/**
+ * One queued write (ADR 0084 D4). A patch carries the field→value body a replay sends, the `baseVersion` it started
+ * from and the stored API payload it was made against (`baseJson`); the three-way merge needs all three. `conflictJson`
+ * holds a parked entry's per-field base/server/local values for the resolution surface (T6b).
+ */
+data class PendingWrite(
+    val id: Long,
+    val kind: PendingWriteKind,
+    val entityType: String,
+    val entityId: String,
+    val payloadJson: String,
+    val enqueuedAt: String,
+    val baseVersion: Long? = null,
+    val baseJson: String? = null,
+    val status: PendingWriteStatus = PendingWriteStatus.Pending,
+    val lastError: String? = null,
+    val conflictJson: String? = null,
+)
