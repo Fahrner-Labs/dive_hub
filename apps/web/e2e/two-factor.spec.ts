@@ -42,11 +42,15 @@ const wrongCode = (uri: string) => (totpCode(uri) === '000000' ? '000001' : '000
 
 /** A fresh User, signed in in its own browser context, so the second factor belongs to nobody else. */
 async function invitedUser(browser: Browser, request: APIRequestContext, name: string, viewport = { width: 1280, height: 900 }) {
-  const email = `${uniqueWord()}-${name.toLowerCase()}@example.com`;
+  // Unique e-mail and display name: a retry invites another User, and the admin page's row menus are named by name.
+  const unique = uniqueWord();
+  const email = `${unique}-${name.toLowerCase()}@example.com`;
   const invitation = await (await request.post('/api/invitations', { data: { email }, headers })).json() as { url: string };
-  const context = await browser.newContext({ baseURL: E2E_BASE_URL, extraHTTPHeaders: headers, viewport });
+  const context = await browser.newContext({
+    baseURL: E2E_BASE_URL, extraHTTPHeaders: headers, viewport, storageState: { cookies: [], origins: [] },
+  });
   const accepted = await context.request.post('/api/invitations/accept', {
-    data: { token: invitation.url.split('/invite/')[1], name, password: PASSWORD },
+    data: { token: invitation.url.split('/invite/')[1], name: `${name} ${unique}`, password: PASSWORD },
   });
   if (!accepted.ok()) throw new Error(`accepting the invitation failed: ${accepted.status()} ${await accepted.text()}`);
   return { context, email };
@@ -60,7 +64,7 @@ test('turns two-factor authentication on with an authenticator app, shows the ba
     const panel = page.locator('.panel').filter({ has: page.getByRole('heading', { name: 'Two-factor authentication' }) });
 
     await panel.getByRole('button', { name: 'Set up two-factor authentication' }).click();
-    await panel.getByLabel('Current password').fill(PASSWORD);
+    await panel.getByLabel('Current password', { exact: true }).fill(PASSWORD);
     await panel.getByRole('button', { name: 'Continue' }).click();
 
     // The URI is drawn as a QR code and offered as text: an authenticator app can scan it or take the link.
@@ -86,7 +90,7 @@ test('turns two-factor authentication on with an authenticator app, shows the ba
     await expect(panel.getByText('Two-factor authentication is on.')).toBeVisible();
 
     // Turning it off asks the password and a current code, not a second password.
-    await panel.getByLabel('Current password').fill(PASSWORD);
+    await panel.getByLabel('Current password', { exact: true }).fill(PASSWORD);
     await panel.getByLabel('Authenticator code').fill(totpCode(uri));
     await panel.getByRole('button', { name: 'Turn off two-factor authentication' }).click();
     await expect(panel.getByRole('button', { name: 'Set up two-factor authentication' })).toBeVisible();
@@ -115,17 +119,18 @@ test('asks a password sign-in for the second factor and takes a backup code', { 
 
   const context = await browser.newContext({
     baseURL: E2E_BASE_URL, extraHTTPHeaders: headers, viewport: { width: 390, height: 844 },
+    storageState: { cookies: [], origins: [] },
   });
   try {
     const page = await context.newPage();
     await page.goto('/#/');
     await page.getByLabel('E-mail').fill(email);
-    await page.getByLabel('Password').fill(PASSWORD);
+    await page.getByLabel('Password', { exact: true }).fill(PASSWORD);
     await page.getByRole('button', { name: 'Sign in', exact: true }).click();
 
     // No second password: the password sign-in answers with a challenge and the code field.
     await expect(page.getByText('Enter the 6-digit code from your authenticator app.')).toBeVisible();
-    await expect(page.getByLabel('Password')).toHaveCount(0);
+    await expect(page.getByLabel('Password', { exact: true })).toHaveCount(0);
     await expectGoodPage(page, 'Sign in');
 
     await page.getByLabel('Authenticator code').fill(wrongCode(uri));
