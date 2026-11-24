@@ -17,6 +17,18 @@ object WriteEntities {
     const val DIVE_PARTICIPANTS = "dive_participants"
 }
 
+/** The deferred actions the scanner queues (T11): a raw read, taking a person's code, and a centre create. */
+object ScanEntities {
+    /** A scanned code's text, replayed verbatim to `POST /api/verification-codes/read`. */
+    const val SCAN = "scan"
+
+    /** Taking a buddy's or professional's code: `POST /api/divers/from-code`. */
+    const val TAKE_CODE = "take_code"
+
+    /** Creating a Dive centre from its code: `POST /api/dive-centres`, with the client uuid in the body. */
+    const val CENTRE = "centre"
+}
+
 /**
  * The enqueue side of the offline write queue (ADR 0084 D4): a write lands here with the version it started from, and
  * [editDive] / [editDiveParticipants] put it in the store at once ("write as if online"). Repeated edits to one entity coalesce into one entry — the latest field values, the
@@ -104,7 +116,7 @@ class WriteQueue(
 
     /**
      * Queue a deferred action (Phase C: a scanned code, a create). It replays verbatim in global enqueue order and
-     * never merges; T6a only stores it, the scanner flows arrive in T11.
+     * never merges.
      */
     fun enqueueAction(entityType: String, entityId: String, payload: JsonObject): PendingWrite = store.addPendingWrite(
         PendingWrite(
@@ -115,6 +127,53 @@ class WriteQueue(
             payloadJson = payload.toString(),
             enqueuedAt = clock(),
         ),
+    )
+
+    /**
+     * Queue a scanned code's raw text (T11). The client cannot read the server's format, so with no signal the text
+     * waits and resolves when the server answers; [centreId] is the uuidv7 a centre create from this code will carry,
+     * so a different centre made from the same code cannot be created twice.
+     */
+    fun enqueueScan(text: String, centreId: String = UuidV7.generate()): PendingWrite = enqueueAction(
+        entityType = ScanEntities.SCAN,
+        entityId = centreId,
+        payload = buildJsonObject { put("text", JsonPrimitive(text)) },
+    )
+
+    /** Queue taking a person's code; [diverId] names the Diver the User chose, or [create] makes a new external one. */
+    fun enqueueTakeCode(text: String, diverId: String? = null, create: Boolean = false): PendingWrite = enqueueAction(
+        entityType = ScanEntities.TAKE_CODE,
+        entityId = diverId ?: "new",
+        payload = buildJsonObject {
+            put("text", JsonPrimitive(text))
+            if (diverId != null) put("diverId", JsonPrimitive(diverId))
+            if (create) put("create", JsonPrimitive(true))
+        },
+    )
+
+    /** Queue creating a Dive centre from its code's answer, with the client uuidv7 as the replay idempotency key. */
+    fun enqueueCreateCentre(
+        id: String,
+        name: String,
+        number: String? = null,
+        siteIds: List<String> = emptyList(),
+    ): PendingWrite = enqueueAction(
+        entityType = ScanEntities.CENTRE,
+        entityId = id,
+        payload = buildJsonObject {
+            put("id", JsonPrimitive(id))
+            put("name", JsonPrimitive(name))
+            if (!number.isNullOrBlank()) {
+                put(
+                    "externalIds",
+                    JsonArray(listOf(buildJsonObject {
+                        put("source", JsonPrimitive("ssi"))
+                        put("externalId", JsonPrimitive(number))
+                    })),
+                )
+            }
+            if (siteIds.isNotEmpty()) put("siteIds", JsonArray(siteIds.map(::JsonPrimitive)))
+        },
     )
 
     private fun baseOf(diveId: String): Pair<Long, String?> {

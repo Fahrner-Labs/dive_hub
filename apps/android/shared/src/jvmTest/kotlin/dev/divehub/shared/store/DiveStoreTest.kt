@@ -57,10 +57,45 @@ class DiveStoreTest {
         assertEquals(
             setOf(
                 "body_weight", "cylinder", "diagnosticEntry", "dive", "dive_site", "diver", "pending_write",
-                "recording", "recording_series", "sync_checkpoint", "sync_state",
+                "recording", "recording_series", "scan_result", "sync_checkpoint", "sync_state",
             ),
             DiveHubDatabase.allTableNames().toSet(),
         )
+    }
+
+    @Test
+    fun `scan results are newest first and the list stays short`() {
+        val store = newStore()
+        repeat((DiveStore.SCAN_RESULT_KEEP + 3).toInt()) { index ->
+            store.addScanResult(
+                ScanResult(
+                    id = 0,
+                    at = "2026-11-23T10:00:0$index.000Z",
+                    status = ScanStatus.Read,
+                    kind = "centre",
+                    name = "Reef Diving",
+                    entityId = "centre-$index",
+                ),
+            )
+        }
+
+        val results = store.scanResults()
+
+        assertEquals(DiveStore.SCAN_RESULT_KEEP.toInt(), results.size)
+        assertEquals("centre-22", results.first().entityId)
+        assertEquals("centre-3", results.last().entityId)
+        store.deleteScanResult(results.first().id)
+        assertEquals(DiveStore.SCAN_RESULT_KEEP.toInt() - 1, store.scanResults().size)
+    }
+
+    @Test
+    fun `a wipe drops resolved scans with the rest of the User's data`() {
+        val store = newStore()
+        store.addScanResult(ScanResult(0, "2026-11-23T10:00:00Z", ScanStatus.Failed, errorCode = "code_not_recognised"))
+
+        store.wipe()
+
+        assertTrue(store.scanResults().isEmpty())
     }
 
     @Test
@@ -393,8 +428,9 @@ class DiveStoreTest {
 
     @Test
     fun `migration from v1 adds the API payload columns and keeps the store usable`() {
-        assertEquals(5L, DiveStore.schemaVersion)
+        assertEquals(6L, DiveStore.schemaVersion)
         assertContains(DiveHubDatabase.allTableNames(), "sync_checkpoint")
+        assertContains(DiveHubDatabase.allTableNames(), "scan_result")
 
         val old = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
         try {

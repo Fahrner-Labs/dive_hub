@@ -97,6 +97,23 @@ is `shared/src/commonMain/sqldelight/`, the typed facade is `dev.divehub.shared.
 with the Android driver in `app/src/main/kotlin/dev/divehub/android/database/`. The JVM unit tests use the in-memory SQLite
 driver, so `./gradlew :shared:jvmTest` needs no emulator. Schema changes are numbered `.sqm` migrations.
 
+## Scanner (T11)
+
+The scanner reads a Dive centre's or a buddy's verification code and adds what it names. A code's format belongs to
+the server, so the client never parses it: the text is queued as a deferred `action` in the write queue and resolved
+by `POST /api/verification-codes/read` when the server answers (ADR 0084 D4). The screen then shows the answer — a
+centre to add, a person and what taking the code would change, or the refusal's problem code — and the write it leads
+to rides the same queue: taking a code sends the text unchanged, and creating a centre carries the uuidv7 the scan
+kept as the replay idempotency key.
+
+- **Camera and pictures:** `Take a picture` uses the system camera app (no `CAMERA` permission) and `Choose a picture`
+  the system photo picker; both are decoded on the device by ZXing core (`com.google.zxing:core`, Apache 2.0), and the
+  decoded text then takes the server path above. A picture without a code says so; it is not a code error.
+- **Store v6** adds `scan_result`, the scanner's short list of resolved scans (schema `5.sqm`). A read keeps the raw
+  text only until the User takes or dismisses it; a refusal keeps its problem code and drops the text.
+- **Feature flag:** `BuildConfig.SCANNER_ENABLED` is off in release and on in debug, so Phase C merges dark; the
+  Settings → Logbook entry is hidden when it is off. The goldens are `scan_*` and `settings_scan_en_light`.
+
 ## API models
 
 `shared/src/commonMain/kotlin/dev/divehub/api/models/` is generated from

@@ -580,7 +580,9 @@
     <string name="settings_version">Version</string>
     <string name="settings_version_value">%1$s (%2$d)</string>
     <string name="settings_licenses">Open-Source-Lizenzen</string>
-    <string name="settings_licenses_title">Poppins (SIL Open Font License 1.1)</string>
+    <string name="settings_licenses_title">Open-Source-Lizenzen</string>
+    <string name="settings_licenses_poppins">Poppins (SIL Open Font License 1.1)</string>
+    <string name="settings_licenses_zxing">ZXing (Apache-Lizenz 2.0)</string>
     <string name="settings_close">Schließen</string>
 
     <string name="settings_section_debug">Debug</string>
@@ -605,4 +607,63 @@
     <string name="settings_debug_share_empty">Es gibt noch keine Einträge zum Teilen.</string>
     <string name="settings_debug_share_title">Lokale Protokolle teilen</string>
     <string name="settings_debug_share_subject">DiveHub-Diagnose</string>
+
+    <string name="settings_section_logbook">Logbuch</string>
+    <string name="settings_scan">Code scannen</string>
+    <string name="settings_scan_summary">Ein Tauchzentrum oder einen Buddy über den QR-Code hinzufügen.</string>
+
+    <string name="scan_title">Code scannen</string>
+    <string name="scan_intro">Scanne den Code eines Tauchzentrums oder eines Buddys, um ihn hier hinzuzufügen. Ohne Verbindung wartet der Code auf diesem Gerät und wird gelesen, sobald der Server antwortet.</string>
+    <string name="scan_section_read">Scannen oder einfügen</string>
+    <string name="scan_camera">Foto aufnehmen</string>
+    <string name="scan_image">Bild auswählen</string>
+    <string name="scan_paste_label">Code einfügen</string>
+    <string name="scan_read">Code lesen</string>
+    <string name="scan_waiting_title">Wartet auf Synchronisierung</string>
+    <string name="scan_syncing">Wird gelesen…</string>
+    <string name="scan_sync_now">Jetzt synchronisieren</string>
+    <plurals name="scan_waiting">
+        <item quantity="one">%1$d Scan wartet auf Synchronisierung</item>
+        <item quantity="other">%1$d Scans warten auf Synchronisierung</item>
+    </plurals>
+    <string name="scan_section_results">Scans</string>
+    <string name="scan_empty">Noch keine Scans.</string>
+    <string name="scan_dismiss">Verwerfen</string>
+    <string name="scan_error_dismiss">Schließen</string>
+    <string name="scan_centre_result">Code eines Tauchzentrums</string>
+    <string name="scan_buddy_result">Buddy-Code</string>
+    <string name="scan_professional_result">Code eines Professionals</string>
+    <string name="scan_centre_number">SSI-Zentrumsnummer %1$s</string>
+    <string name="scan_centre_here">Schon vorhanden: %1$s.</string>
+    <string name="scan_add_centre">Tauchzentrum hinzufügen</string>
+    <string name="scan_nothing_to_change">Für %1$s gibt es nichts zu ändern.</string>
+    <string name="scan_changes">Das Übernehmen des Codes würde ändern:</string>
+    <string name="scan_change_line">%1$s: %2$s → %3$s</string>
+    <string name="scan_not_set">nicht gesetzt</string>
+    <string name="scan_update_diver">%1$s aktualisieren</string>
+    <string name="scan_not_yours">%1$s gehört nicht zu deinen Tauchern.</string>
+    <string name="scan_who">Wer ist das? Das Konto des Codes gehört noch keinem Taucher hier.</string>
+    <string name="scan_give_to">Code %1$s geben</string>
+    <string name="scan_new_diver">%1$s als neuen Taucher anlegen</string>
+    <string name="scan_add_diver">Taucher hinzufügen</string>
+    <string name="scan_add">Hinzufügen</string>
+    <string name="scan_field_first_name">Vorname</string>
+    <string name="scan_field_last_name">Nachname</string>
+    <string name="scan_field_email">E-Mail</string>
+    <string name="scan_field_leader_number">Leiter-Nummer</string>
+    <string name="scan_result_created_centre">Tauchzentrum hinzugefügt: %1$s.</string>
+    <string name="scan_result_created_diver">Taucher hinzugefügt: %1$s.</string>
+    <string name="scan_result_existing_centre">Schon vorhanden: %1$s.</string>
+    <string name="scan_result_existing_diver">Taucher aktualisiert: %1$s.</string>
+    <string name="scan_result_failed">Nicht hinzugefügt: %1$s</string>
+    <string name="scan_error_not_recognised">Dive Hub kennt diesen Code nicht.</string>
+    <string name="scan_error_centre_taken">ein anderes Tauchzentrum hat diese Nummer bereits.</string>
+    <string name="scan_error_choice">der Server konnte nicht bestimmen, wem der Code gehört. Versuche es online erneut.</string>
+    <string name="scan_error_other_account">dieser Taucher hat bereits ein anderes SSI-Konto.</string>
+    <string name="scan_error_taken_by">ein anderer Taucher hat dieses SSI-Konto bereits.</string>
+    <string name="scan_error_not_person">das ist der Code eines Tauchzentrums, nicht einer Person.</string>
+    <string name="scan_error_offline">keine Verbindung. Der Code bleibt auf diesem Gerät und wird gelesen, sobald der Server antwortet.</string>
+    <string name="scan_error_no_code">kein QR-Code in diesem Bild.</string>
+    <string name="scan_error_no_camera">dieses Gerät hat keine Kamera-App.</string>
+    <string name="scan_error_generic">etwas ist schiefgelaufen. Versuche es später erneut.</string>
 </resources>

@@ -11,6 +11,7 @@ import dev.divehub.shared.store.db.Diver as DiverRow
 import dev.divehub.shared.store.db.Pending_write
 import dev.divehub.shared.store.db.Recording as RecordingRow
 import dev.divehub.shared.store.db.Recording_series
+import dev.divehub.shared.store.db.Scan_result
 import dev.divehub.shared.store.db.Sync_checkpoint
 import dev.divehub.shared.store.db.Sync_state
 
@@ -307,6 +308,30 @@ class DiveStore internal constructor(private val database: DiveHubDatabase) : Us
         queries.deletePendingWrite(id)
     }
 
+    /** What replayed scans resolved to, newest first (T11). */
+    fun scanResults(): List<ScanResult> = queries.selectScanResults().executeAsList().map(Scan_result::toModel)
+
+    /** Record a resolved scan and keep the screen's list short: the queue is the data, this is its outcome. */
+    fun addScanResult(result: ScanResult): ScanResult {
+        queries.insertScanResult(
+            at = result.at,
+            status = result.status.wire,
+            kind = result.kind,
+            name = result.name,
+            entityId = result.entityId,
+            detailJson = result.detailJson,
+            errorCode = result.errorCode,
+            codeText = result.codeText,
+        )
+        val id = queries.selectLastInsertRowId().executeAsOne()
+        queries.trimScanResults(SCAN_RESULT_KEEP)
+        return result.copy(id = id)
+    }
+
+    fun deleteScanResult(id: Long) {
+        queries.deleteScanResult(id)
+    }
+
     /**
      * One write transaction: a sync page and its checkpoint, or any other group that must not half-happen. A throw
      * inside the block rolls the whole block back.
@@ -330,6 +355,7 @@ class DiveStore internal constructor(private val database: DiveHubDatabase) : Us
             queries.deleteAllCheckpoints()
             queries.deleteAllSyncState()
             queries.deleteAllPendingWrites()
+            queries.deleteAllScanResults()
             queries.upsertSyncState(
                 lastFullSyncAt = null,
                 lastHintAt = null,
@@ -353,6 +379,9 @@ class DiveStore internal constructor(private val database: DiveHubDatabase) : Us
     companion object {
         /** The API's list page for the offline meta phase ([ADR 0017]); the store's default page mirrors it. */
         const val DEFAULT_PAGE_SIZE = 200L
+
+        /** How many resolved scans the scanner screen's list keeps; older outcomes fall off. */
+        const val SCAN_RESULT_KEEP = 20L
 
         val schemaVersion: Long get() = DiveHubDatabase.Schema.version
 
@@ -483,6 +512,18 @@ private fun Sync_state.toModel() = SyncState(
     schemaVersion = schemaVersion,
     countsJson = countsJson,
     feedCursor = feedCursor,
+)
+
+private fun Scan_result.toModel() = ScanResult(
+    id = id,
+    at = at,
+    status = ScanStatus.fromWire(status),
+    kind = kind,
+    name = name,
+    entityId = entityId,
+    detailJson = detailJson,
+    errorCode = errorCode,
+    codeText = codeText,
 )
 
 private fun Pending_write.toModel() = PendingWrite(

@@ -9,6 +9,8 @@ import dev.divehub.shared.store.DiveStore
 import dev.divehub.shared.store.PendingWrite
 import dev.divehub.shared.store.PendingWriteKind
 import dev.divehub.shared.store.PendingWriteStatus
+import dev.divehub.shared.store.ScanResult
+import dev.divehub.shared.store.ScanStatus
 import dev.divehub.shared.sync.queuedProfileCheckpoint
 import dev.divehub.shared.sync.writeDiveDetail
 import io.ktor.client.statement.HttpResponse
@@ -25,8 +27,8 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlin.time.Clock
 
-/** Why a queued write left the queue without being applied: the thing it edits is gone. */
-enum class WriteDropReason { Forbidden, NotFound, Gone }
+/** Why a queued write left the queue without being applied: the thing it edits is gone, or the server refused it. */
+enum class WriteDropReason { Forbidden, NotFound, Gone, Refused }
 
 /** A notice naming what happened to a dropped write, so the UI can say it rather than let the edit vanish (D3 step 4). */
 data class WriteNotice(
@@ -86,9 +88,12 @@ class WriteReplayer(
         val notices = mutableListOf<WriteNotice>()
 
         for (entry in entries) {
-            // Deferred actions are Phase C (scans, creates); T6a only stores them.
-            if (entry.kind != PendingWriteKind.Patch) continue
-            when (val outcome = replayEntry(entry)) {
+            // Deferred actions replay verbatim, in the same global enqueue order as patches; they never merge.
+            val outcome = when (entry.kind) {
+                PendingWriteKind.Action -> replayAction(entry)
+                PendingWriteKind.Patch -> replayEntry(entry)
+            }
+            when (outcome) {
                 EntryOutcome.Applied -> applied += 1
                 EntryOutcome.Conflicted -> conflicted += 1
                 is EntryOutcome.Dropped -> {
@@ -102,6 +107,135 @@ class WriteReplayer(
         }
         return WriteReplayResult.Drained(applied, conflicted, dropped, failed, notices)
     }
+
+    /**
+     * Replay one deferred action (T11). The read route's answer is stored as a [ScanResult] for the scanner screen; a
+     * take or a create answers with the Diver or centre it made. A refusal drops the action with its problem code in
+     * the result; a 401 or a transient failure keeps it queued (ADR 0084 D3/D8).
+     */
+    private suspend fun replayAction(entry: PendingWrite): EntryOutcome {
+        val path = when (entry.entityType) {
+            ScanEntities.SCAN -> "/api/verification-codes/read"
+            ScanEntities.TAKE_CODE -> "/api/divers/from-code"
+            ScanEntities.CENTRE -> "/api/dive-centres"
+            else -> return fail(entry, "unsupported_action")
+        }
+        val response = try {
+            api.post(path, entry.payloadJson, retry = false)
+        } catch (error: CancellationException) {
+            throw error
+        } catch (error: NoAnswerException) {
+            return EntryOutcome.RetryLater(error)
+        } catch (error: Exception) {
+            return EntryOutcome.RetryLater(error)
+        }
+
+        val status = response.status.value
+        val text = response.bodyTextOrNull()
+        return when {
+            response.status.isSuccess() -> {
+                if (entry.entityType == ScanEntities.SCAN) recordRead(entry, text) else recordWrite(entry, status, text)
+                EntryOutcome.Applied
+            }
+            status == 401 -> EntryOutcome.SessionEnded
+            status in 500..599 -> EntryOutcome.RetryLater(DiveHubException(ErrorCodes.SERVER_ERROR, status))
+            else -> {
+                recordFailure(entry, status, text)
+                EntryOutcome.Dropped(
+                    WriteNotice(
+                        entityType = entry.entityType,
+                        entityId = entry.entityId,
+                        status = status,
+                        reason = when (status) {
+                            403 -> WriteDropReason.Forbidden
+                            404 -> WriteDropReason.NotFound
+                            410 -> WriteDropReason.Gone
+                            else -> WriteDropReason.Refused
+                        },
+                    ),
+                )
+            }
+        }
+    }
+
+    /** A read's answer: what the code is, and what the screen may next do with it. */
+    private fun recordRead(entry: PendingWrite, text: String?) {
+        val body = parseObject(text)
+        val kind = stringOf(body?.get("kind"))
+        val existing = body?.get("existing") as? JsonObject
+        val result = when (kind) {
+            "centre" -> ScanResult(
+                id = 0,
+                at = clock(),
+                status = ScanStatus.Read,
+                kind = kind,
+                name = stringOf(body?.get("name")),
+                // The centre here, or the id this create will carry when the User confirms it.
+                entityId = stringOf(existing?.get("id")) ?: entry.entityId,
+                detailJson = text,
+                codeText = stringOf(parseObject(entry.payloadJson)?.get("text")),
+            )
+            else -> ScanResult(
+                id = 0,
+                at = clock(),
+                status = ScanStatus.Read,
+                kind = kind,
+                name = pairName(stringOf(body?.get("firstName")), stringOf(body?.get("lastName"))),
+                entityId = stringOf(existing?.get("id")),
+                detailJson = text,
+                codeText = stringOf(parseObject(entry.payloadJson)?.get("text")),
+            )
+        }
+        store.transaction {
+            addScanResult(result)
+            deletePendingWrite(entry.id)
+        }
+    }
+
+    /** A take's or a create's answer: the Diver or centre it made, or the one the server found already here. */
+    private fun recordWrite(entry: PendingWrite, status: Int, text: String?) {
+        val body = parseObject(text)
+        val isCentre = entry.entityType == ScanEntities.CENTRE
+        val kind = if (isCentre) "centre" else if (stringOf(body?.get("leaderNumber")) != null) "professional" else "buddy"
+        val result = ScanResult(
+            id = 0,
+            at = clock(),
+            status = if (status == 201) ScanStatus.Created else ScanStatus.Existing,
+            kind = kind,
+            name = if (isCentre) stringOf(body?.get("displayName")) ?: stringOf(body?.get("name")) else stringOf(body?.get("name")),
+            entityId = stringOf(body?.get("id")),
+        )
+        store.transaction {
+            addScanResult(result)
+            deletePendingWrite(entry.id)
+        }
+    }
+
+    /** A refusal is a state on the scan, never a silent loss: keep the answer and its problem code. */
+    private fun recordFailure(entry: PendingWrite, status: Int, text: String?) {
+        val body = parseObject(text)
+        val result = ScanResult(
+            id = 0,
+            at = clock(),
+            status = ScanStatus.Failed,
+            kind = if (entry.entityType == ScanEntities.CENTRE) "centre" else null,
+            entityId = stringOf((body?.get("centre") as? JsonObject)?.get("id")),
+            detailJson = text,
+            errorCode = stringOf(body?.get("code")) ?: "http_$status",
+        )
+        store.transaction {
+            addScanResult(result)
+            deletePendingWrite(entry.id)
+        }
+    }
+
+    private fun pairName(first: String?, last: String?): String? {
+        val name = listOfNotNull(first, last).joinToString(" ").trim()
+        return name.ifEmpty { null }
+    }
+
+    private fun stringOf(element: kotlinx.serialization.json.JsonElement?): String? =
+        (element as? JsonPrimitive)?.takeIf { it.isString }?.content
 
     private suspend fun replayEntry(entry: PendingWrite): EntryOutcome {
         val baseVersion = entry.baseVersion ?: return fail(entry, "missing_base_version")

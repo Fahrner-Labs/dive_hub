@@ -71,6 +71,8 @@ fun SettingsRoute(
     onChangeInstance: () -> Unit,
     onSignOut: () -> Unit,
     onOpenDebug: () -> Unit,
+    showScan: Boolean = false,
+    onOpenScan: () -> Unit = {},
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     SettingsScreen(
@@ -82,6 +84,8 @@ fun SettingsRoute(
         onSyncNow = viewModel::syncNow,
         onSignOut = onSignOut,
         onOpenDebug = onOpenDebug,
+        showScan = showScan,
+        onOpenScan = onOpenScan,
     )
 }
 
@@ -101,6 +105,8 @@ fun SettingsScreen(
     onSyncNow: () -> Unit,
     onSignOut: () -> Unit,
     onOpenDebug: () -> Unit,
+    showScan: Boolean = false,
+    onOpenScan: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     var confirmingChangeInstance by rememberSaveable { mutableStateOf(false) }
@@ -108,9 +114,15 @@ fun SettingsScreen(
     var showingLicenses by rememberSaveable { mutableStateOf(false) }
     val context = LocalContext.current
     val license = remember {
-        runCatching {
-            context.assets.open("licenses/Poppins-OFL.txt").bufferedReader().use { it.readText() }
-        }.getOrDefault("")
+        // Every bundled library that asks to be named, with its own heading; the font first, as before (FAH-359).
+        listOf(
+            R.string.settings_licenses_poppins to "licenses/Poppins-OFL.txt",
+            R.string.settings_licenses_zxing to "licenses/ZXing-Apache-2.0.txt",
+        ).joinToString("\n\n") { (title, path) ->
+            context.getString(title) + "\n\n" + runCatching {
+                context.assets.open(path).bufferedReader().use { it.readText() }
+            }.getOrDefault("")
+        }
     }
 
     Scaffold(
@@ -155,6 +167,18 @@ fun SettingsScreen(
                     if (state.syncing) CircularProgressIndicator(Modifier.size(20.dp))
                 },
             )
+
+            if (showScan) {
+                HorizontalDivider()
+
+                Section(R.string.settings_section_logbook)
+                Action(
+                    title = R.string.settings_scan,
+                    supporting = R.string.settings_scan_summary,
+                    onClick = onOpenScan,
+                    testTag = "settings_scan_row",
+                )
+            }
 
             HorizontalDivider()
 
@@ -335,9 +359,16 @@ private fun Section(@StringRes title: Int) {
 
 /** A settings row whose whole width is the action. */
 @Composable
-private fun Action(@StringRes title: Int, @StringRes supporting: Int? = null, onClick: () -> Unit) {
+private fun Action(
+    @StringRes title: Int,
+    @StringRes supporting: Int? = null,
+    onClick: () -> Unit,
+    testTag: String? = null,
+) {
     ListItem(
-        modifier = Modifier.clickable(onClick = onClick),
+        modifier = Modifier
+            .clickable(onClick = onClick)
+            .then(if (testTag != null) Modifier.testTag(testTag) else Modifier),
         headlineContent = { Text(stringResource(title)) },
         supportingContent = { supporting?.let { Text(stringResource(it)) } },
     )

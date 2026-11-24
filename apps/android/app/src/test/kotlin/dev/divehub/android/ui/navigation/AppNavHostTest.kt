@@ -314,6 +314,21 @@ class AppNavHostTest {
     }
 
     @Test
+    fun `the scan entry pushes the scanner and back returns to settings`() {
+        compose.setContent { start(destination = null) }
+        compose.runOnIdle { controller.navigate(MainRoute) }
+        compose.onNodeWithText("Settings").performClick()
+        assertRoute<SettingsRoute>()
+
+        compose.runOnIdle { screens.settingsOpenScan!!.invoke() }
+        assertRoute<ScanRoute>()
+        assertTrue(screens.scanShown)
+
+        compose.runOnIdle { screens.scanBack!!.invoke() }
+        assertRoute<SettingsRoute>()
+    }
+
+    @Test
     fun `the settings tab stays selected on debug and reselecting it returns to the root`() {
         compose.setContent { start(destination = null) }
         compose.runOnIdle { controller.navigate(MainRoute) }
@@ -506,8 +521,11 @@ class AppNavHostTest {
         var toolsOpenDive: ((String) -> Unit)? = null
         var settingsShown = false
         var settingsOpenDebug: (() -> Unit)? = null
+        var settingsOpenScan: (() -> Unit)? = null
         var settingsDebugShown = false
         var settingsDebugBack: (() -> Unit)? = null
+        var scanShown = false
+        var scanBack: (() -> Unit)? = null
 
         @Composable
         override fun instance() {
@@ -554,10 +572,18 @@ class AppNavHostTest {
         }
 
         @Composable
-        override fun settings(onOpenDebug: () -> Unit) {
+        override fun settings(onOpenDebug: () -> Unit, onOpenScan: () -> Unit) {
             settingsShown = true
             settingsOpenDebug = onOpenDebug
+            settingsOpenScan = onOpenScan
             Text("settings")
+        }
+
+        @Composable
+        override fun scan(onBack: () -> Unit) {
+            scanShown = true
+            scanBack = onBack
+            Text("scan")
         }
 
         @Composable

@@ -89,6 +89,15 @@ class SettingsScreenshotTest {
     }
 
     @Test
+    fun `the scanner entry sits in the logbook section while its feature flag is on`() {
+        render(darkTheme = false, showScan = true)
+
+        compose.onNodeWithText("Logbook").assertIsDisplayed()
+        compose.onNodeWithText("Scan a code").assertIsDisplayed()
+        capture("settings_scan_en_light.png")
+    }
+
+    @Test
     fun `settings polling shows the state and age beside the instance`() {
         render(darkTheme = false, connected = false)
 
@@ -196,7 +205,12 @@ class SettingsScreenshotTest {
         capture("settings_debug_bottom_spacing.png")
     }
 
-    private fun render(darkTheme: Boolean, connected: Boolean = true, offline: Boolean = false) {
+    private fun render(
+        darkTheme: Boolean,
+        connected: Boolean = true,
+        offline: Boolean = false,
+        showScan: Boolean = false,
+    ) {
         compose.setContent {
             DiveHubTheme(darkTheme = darkTheme) {
                 SettingsScreen(
@@ -213,6 +227,8 @@ class SettingsScreenshotTest {
                     onSyncNow = {},
                     onSignOut = {},
                     onOpenDebug = {},
+                    showScan = showScan,
+                    onOpenScan = {},
                 )
             }
         }

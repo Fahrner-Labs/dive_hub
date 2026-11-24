@@ -24,6 +24,8 @@ import dev.divehub.shared.sync.SseLiveHints
 import dev.divehub.shared.sync.SyncEngine
 import dev.divehub.shared.sync.SyncRefresher
 import dev.divehub.shared.sync.SyncResult
+import dev.divehub.shared.write.WriteQueue
+import dev.divehub.shared.write.WriteReplayer
 import io.ktor.client.engine.okhttp.OkHttp
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.CoroutineScope
@@ -101,6 +103,10 @@ class AppContainer(context: Context) {
 
     /** The sync engine and its refresh loop; the UI reads the store, never the API, from D4 on. */
     val sync = SyncEngine(session.client, diveStore)
+
+    /** The offline write queue and its replay (ADR 0084): the scanner's actions replay through these. */
+    val writeQueue by lazy { WriteQueue(diveStore) }
+    val writeReplayer by lazy { WriteReplayer(session.client, diveStore) }
     private val refresher = SyncRefresher(
         sync,
         SseLiveHints(session.client),

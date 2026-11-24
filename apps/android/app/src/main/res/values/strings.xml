@@ -580,7 +580,9 @@
     <string name="settings_version">Version</string>
     <string name="settings_version_value">%1$s (%2$d)</string>
     <string name="settings_licenses">Open-source licenses</string>
-    <string name="settings_licenses_title">Poppins (SIL Open Font License 1.1)</string>
+    <string name="settings_licenses_title">Open-source licenses</string>
+    <string name="settings_licenses_poppins">Poppins (SIL Open Font License 1.1)</string>
+    <string name="settings_licenses_zxing">ZXing (Apache License 2.0)</string>
     <string name="settings_close">Close</string>
 
     <string name="settings_section_debug">Debug</string>
@@ -605,4 +607,63 @@
     <string name="settings_debug_share_empty">There are no entries to share yet.</string>
     <string name="settings_debug_share_title">Share local logs</string>
     <string name="settings_debug_share_subject">DiveHub diagnostics</string>
+
+    <string name="settings_section_logbook">Logbook</string>
+    <string name="settings_scan">Scan a code</string>
+    <string name="settings_scan_summary">Add a Dive centre or a buddy from their QR code.</string>
+
+    <string name="scan_title">Scan a code</string>
+    <string name="scan_intro">Scan a Dive centre\'s or a buddy\'s code to add it here. Without a connection the code waits on this phone and is read when the server answers.</string>
+    <string name="scan_section_read">Scan or paste</string>
+    <string name="scan_camera">Take a picture</string>
+    <string name="scan_image">Choose a picture</string>
+    <string name="scan_paste_label">Paste a code</string>
+    <string name="scan_read">Read code</string>
+    <string name="scan_waiting_title">Waiting to sync</string>
+    <string name="scan_syncing">Reading…</string>
+    <string name="scan_sync_now">Sync now</string>
+    <plurals name="scan_waiting">
+        <item quantity="one">%1$d scan waiting to sync</item>
+        <item quantity="other">%1$d scans waiting to sync</item>
+    </plurals>
+    <string name="scan_section_results">Scans</string>
+    <string name="scan_empty">No scans yet.</string>
+    <string name="scan_dismiss">Dismiss</string>
+    <string name="scan_error_dismiss">Close</string>
+    <string name="scan_centre_result">Dive centre code</string>
+    <string name="scan_buddy_result">Buddy code</string>
+    <string name="scan_professional_result">Professional\'s code</string>
+    <string name="scan_centre_number">SSI centre number %1$s</string>
+    <string name="scan_centre_here">Already here: %1$s.</string>
+    <string name="scan_add_centre">Add Dive centre</string>
+    <string name="scan_nothing_to_change">Nothing to change for %1$s.</string>
+    <string name="scan_changes">Taking this code would change:</string>
+    <string name="scan_change_line">%1$s: %2$s → %3$s</string>
+    <string name="scan_not_set">not set</string>
+    <string name="scan_update_diver">Update %1$s</string>
+    <string name="scan_not_yours">%1$s is not yours to change.</string>
+    <string name="scan_who">Who is it? The code\'s account belongs to no Diver here yet.</string>
+    <string name="scan_give_to">Give the code to %1$s</string>
+    <string name="scan_new_diver">Add %1$s as a new Diver</string>
+    <string name="scan_add_diver">Add Diver</string>
+    <string name="scan_add">Add</string>
+    <string name="scan_field_first_name">First name</string>
+    <string name="scan_field_last_name">Last name</string>
+    <string name="scan_field_email">E-mail</string>
+    <string name="scan_field_leader_number">Leader number</string>
+    <string name="scan_result_created_centre">Dive centre added: %1$s.</string>
+    <string name="scan_result_created_diver">Diver added: %1$s.</string>
+    <string name="scan_result_existing_centre">Already here: %1$s.</string>
+    <string name="scan_result_existing_diver">Diver updated: %1$s.</string>
+    <string name="scan_result_failed">Not added: %1$s</string>
+    <string name="scan_error_not_recognised">that is not a code Dive Hub knows.</string>
+    <string name="scan_error_centre_taken">another Dive centre already has that number.</string>
+    <string name="scan_error_choice">the server could not tell whose code it is. Try again when online.</string>
+    <string name="scan_error_other_account">that Diver already has another SSI account.</string>
+    <string name="scan_error_taken_by">another Diver already has that SSI account.</string>
+    <string name="scan_error_not_person">this is a Dive centre\'s code, not a person\'s.</string>
+    <string name="scan_error_offline">no connection. The code stays on this phone and is read when the server answers.</string>
+    <string name="scan_error_no_code">no QR code in that picture.</string>
+    <string name="scan_error_no_camera">this device has no camera app.</string>
+    <string name="scan_error_generic">something went wrong. Try again later.</string>
 </resources>

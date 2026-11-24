@@ -1,0 +1,12 @@
+-- v6 keeps what a replayed scan resolved to, for the scanner screen (T11); the raw scanned text is not kept.
+CREATE TABLE scan_result(
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    at TEXT NOT NULL,
+    status TEXT NOT NULL,
+    kind TEXT,
+    name TEXT,
+    entityId TEXT,
+    detailJson TEXT,
+    errorCode TEXT,
+    codeText TEXT
+);
