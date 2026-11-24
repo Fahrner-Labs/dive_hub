@@ -6,6 +6,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasContentDescription
@@ -24,13 +25,21 @@ import androidx.compose.ui.unit.Density
 import com.github.takahirom.roborazzi.captureRoboImage
 import dev.divehub.android.ui.DiveHubTheme
 import dev.divehub.api.models.DiveView
+import dev.divehub.api.models.DiveViewCylindersItem
+import dev.divehub.api.models.DiveViewCylindersItemGas
+import dev.divehub.api.models.DiveViewCylindersItemSeries
 import dev.divehub.api.models.DiveViewFromRecording
 import dev.divehub.api.models.DiveViewFromRecordingStartsAt
 import dev.divehub.api.models.DiveViewParticipantsItem
+import dev.divehub.api.models.DiveViewLeadItem
+import dev.divehub.api.models.DiveViewRecordingsItem
+import dev.divehub.api.models.DiveViewRecordingsItemDevice
+import dev.divehub.api.models.DiveViewRecordingsItemSummary
 import dev.divehub.api.models.DiveViewSite
 import dev.divehub.api.models.DiveViewValues
 import dev.divehub.api.models.DiveViewValuesStartsAt
 import dev.divehub.shared.dive.DiveEditDraft
+import dev.divehub.shared.dive.pressureSeriesOptions
 import dev.divehub.shared.store.DiveSite
 import dev.divehub.shared.store.Diver
 import org.junit.Rule
@@ -42,12 +51,10 @@ import org.robolectric.annotation.GraphicsMode
 
 /**
  * The edit screen's contract-visible states as pictures: a synced Dive being edited, the site picker in its list, no-match
- * and dark states, an edited value with its "use the recording's value" way back, the Participants roster (filled and
- * empty) with the joint dive's union note, the add sheet with candidates, none and dark, the role choice before and
- * after a change, the destructive verbs' not-available note, dark at the top and at the weighting and more actions, and
- * German at 200 % on a narrow phone at the top, over the value fields, at the Notes field, the Participants with an
- * instructor and a long name, the add and role sheets and the true foot. Rendered from a fixed state, so a drawing
- * change shows up as a changed image.
+ * and dark states, an edited value with its "use the recording's value" way back, the destructive verbs' not-available
+ * note, dark at the top and at the weighting and more actions, and German at 200 % on a narrow phone at the top, over
+ * the value fields, at the Notes field and at the true foot. Rendered from a fixed state, so a drawing change shows up
+ * as a changed image.
  */
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
@@ -171,6 +178,149 @@ class DiveEditScreenshotTest {
         compose.onNodeWithTag("dive_edit_scroll")
             .performScrollToNode(hasText("Als Fortsetzung anhängen"))
         capture("dive_edit_de_narrow_2x_foot.png")
+    }
+
+    @Test
+    fun `the cylinders are editable as an ordered list`() {
+        val dive = dive(withGear = true)
+        render(state(draft = DiveEditDraft.of(dive), seriesOptions = pressureSeriesOptions(dive.recordings)))
+
+        compose.onNodeWithTag("dive_edit_scroll").performScrollToNode(hasText("Cylinders"))
+        compose.onNodeWithText("Cylinder 1").assertExists()
+        compose.onNodeWithText("Cylinder 2").assertExists()
+        compose.onNodeWithText("from a tank pod").assertExists()
+        capture("dive_edit_cylinders.png")
+    }
+
+    @Test
+    fun `the lead is editable with its placements and total`() {
+        val dive = dive(withGear = true)
+        render(state(draft = DiveEditDraft.of(dive), seriesOptions = pressureSeriesOptions(dive.recordings)))
+
+        compose.onNodeWithTag("dive_edit_scroll").performScrollToNode(hasText("Total 5.0 kg"))
+        compose.onNodeWithText("Total 5.0 kg").assertExists()
+        capture("dive_edit_lead.png")
+    }
+
+    @Test
+    @Config(qualifiers = "en-rUS-w411dp-h891dp-night-xxhdpi")
+    fun `the cylinders follow the dark theme`() {
+        val dive = dive(withGear = true)
+        render(
+            state(draft = DiveEditDraft.of(dive), seriesOptions = pressureSeriesOptions(dive.recordings)),
+            darkTheme = true,
+        )
+
+        compose.onNodeWithTag("dive_edit_scroll").performScrollToNode(hasText("Cylinders"))
+        capture("dive_edit_cylinders_dark.png")
+    }
+
+    @Test
+    @Config(qualifiers = "de-rDE-w320dp-h891dp-xxhdpi")
+    fun `the cylinders at two hundred percent in german`() {
+        val dive = dive(withGear = true)
+        render(
+            state(draft = DiveEditDraft.of(dive), seriesOptions = pressureSeriesOptions(dive.recordings)),
+            fontScale = 2f,
+        )
+
+        compose.onNodeWithTag("dive_edit_scroll").performScrollToNode(hasText("Flaschen"))
+        capture("dive_edit_de_narrow_2x_cylinders.png")
+    }
+
+    @Test
+    @Config(qualifiers = "de-rDE-w320dp-h891dp-xxhdpi")
+    fun `the lead at two hundred percent in german`() {
+        val dive = dive(withGear = true)
+        render(
+            state(draft = DiveEditDraft.of(dive), seriesOptions = pressureSeriesOptions(dive.recordings)),
+            fontScale = 2f,
+        )
+
+        compose.onNodeWithTag("dive_edit_scroll").performScrollToNode(hasText("Blei 1 entfernen"))
+        capture("dive_edit_de_narrow_2x_lead.png")
+    }
+
+    @Test
+    @Config(qualifiers = "en-rUS-w320dp-h891dp-xxhdpi")
+    fun `the cylinders at three hundred and twenty dp`() {
+        val dive = dive(withGear = true)
+        render(state(draft = DiveEditDraft.of(dive), seriesOptions = pressureSeriesOptions(dive.recordings)))
+
+        compose.onNodeWithTag("dive_edit_scroll").performScrollToNode(hasText("Cylinders"))
+        capture("dive_edit_cylinders_320.png")
+    }
+
+    @Test
+    @Config(qualifiers = "en-rUS-w360dp-h891dp-xxhdpi")
+    fun `the cylinders at three hundred and sixty dp`() {
+        val dive = dive(withGear = true)
+        render(state(draft = DiveEditDraft.of(dive), seriesOptions = pressureSeriesOptions(dive.recordings)))
+
+        compose.onNodeWithTag("dive_edit_scroll").performScrollToNode(hasText("Cylinders"))
+        capture("dive_edit_cylinders_360.png")
+    }
+
+    @Test
+    fun `an invalid cylinder is explained under its pressure fields and holds the save`() {
+        val dive = dive(withGear = true)
+        val opened = DiveEditDraft.of(dive)
+        val draft = opened.setCylinders(
+            opened.cylinders.mapIndexed { index, cylinder ->
+                if (index == 0) cylinder.copy(startPressureBar = 70.0, endPressureBar = 220.0) else cylinder
+            },
+        )
+        render(state(draft = draft, seriesOptions = pressureSeriesOptions(dive.recordings)))
+
+        compose.onNodeWithTag("dive_edit_scroll")
+            .performScrollToNode(hasText("The end pressure is above the start pressure."))
+        compose.onNodeWithText("The end pressure is above the start pressure.").assertExists()
+        compose.onNodeWithText("Fix the cylinder errors before saving.").assertExists()
+        compose.onNodeWithText("Save").assertIsNotEnabled()
+        capture("dive_edit_cylinders_invalid.png")
+    }
+
+    @Test
+    fun `an empty cylinders section offers the add action`() {
+        val dive = dive(withGear = true)
+        val draft = DiveEditDraft.of(dive).setCylinders(emptyList())
+        render(state(draft = draft, seriesOptions = pressureSeriesOptions(dive.recordings)))
+
+        compose.onNodeWithTag("dive_edit_scroll").performScrollToNode(hasText("No cylinders yet."))
+        compose.onNodeWithText("No cylinders yet.").assertExists()
+        capture("dive_edit_cylinders_empty.png")
+    }
+
+    @Test
+    fun `the second cylinder and add action are reachable`() {
+        val dive = dive(withGear = true)
+        render(state(draft = DiveEditDraft.of(dive), seriesOptions = pressureSeriesOptions(dive.recordings)))
+
+        compose.onNodeWithTag("dive_edit_scroll").performScrollToNode(hasText("Add a cylinder"))
+        compose.onNodeWithText("Cylinder 2").assertExists()
+        capture("dive_edit_cylinders_add.png")
+    }
+
+    @Test
+    fun `a cylinder can be removed from its heading`() {
+        val dive = dive(withGear = true)
+        render(state(draft = DiveEditDraft.of(dive), seriesOptions = pressureSeriesOptions(dive.recordings)))
+
+        compose.onNodeWithTag("dive_edit_scroll").performScrollToNode(hasText("Remove cylinder 2"))
+        compose.onNodeWithText("Remove cylinder 2").assertExists()
+        capture("dive_edit_cylinders_remove.png")
+    }
+
+    @Test
+    fun `the cylinders show imperial pressures`() {
+        val dive = dive(withGear = true)
+        render(
+            state(draft = DiveEditDraft.of(dive), seriesOptions = pressureSeriesOptions(dive.recordings)),
+            units = "imperial",
+        )
+
+        compose.onNodeWithTag("dive_edit_scroll").performScrollToNode(hasText("Cylinders"))
+        capture("dive_edit_cylinders_imperial.png")
     }
 
     @Test
@@ -392,7 +542,21 @@ class DiveEditScreenshotTest {
         "Every user of this Dive Hub sees the names of all divers and what their SSI code says: name, e-mail and " +
             "leader number. Nothing else about them."
 
-    private fun render(state: DiveEditUiState, darkTheme: Boolean = false, fontScale: Float? = null) {
+    private fun diver(id: String, name: String) = Diver(
+        id = id,
+        name = name,
+        isOwn = false,
+        external = false,
+        apneaCounts = false,
+        divesBefore = 0,
+    )
+
+    private fun render(
+        state: DiveEditUiState,
+        darkTheme: Boolean = false,
+        fontScale: Float? = null,
+        units: String = "metric",
+    ) {
         compose.setContent {
             DiveHubTheme(darkTheme = darkTheme) {
                 val density = LocalDensity.current
@@ -401,7 +565,7 @@ class DiveEditScreenshotTest {
                 ) {
                     DiveEditScreen(
                         state = state,
-                        units = "metric",
+                        units = units,
                         onBack = {},
                         onEdit = {},
                         onSave = {},
@@ -419,6 +583,7 @@ class DiveEditScreenshotTest {
         online: Boolean = true,
         divers: List<Diver> = listOf(diver("diver-2", "Bea"), diver("diver-3", "Cleo")),
         participantSearch: DiverSearchState = DiverSearchState.Idle,
+        seriesOptions: List<dev.divehub.shared.dive.DiveEditSeriesOption> = emptyList(),
     ) = DiveEditUiState(
         loading = false,
         draft = draft,
@@ -430,20 +595,13 @@ class DiveEditScreenshotTest {
         divers = divers,
         ownerDiverId = "diver",
         participantSearch = participantSearch,
+        seriesOptions = seriesOptions,
         online = online,
-    )
-
-    private fun diver(id: String, name: String) = Diver(
-        id = id,
-        name = name,
-        isOwn = false,
-        external = false,
-        apneaCounts = false,
-        divesBefore = 0,
     )
 
     private fun dive(
         overrides: List<String> = emptyList(),
+        withGear: Boolean = false,
         participants: List<DiveViewParticipantsItem> = emptyList(),
     ) = DiveView(
         id = "d1",
@@ -472,10 +630,52 @@ class DiveEditScreenshotTest {
         waterType = "salt",
         waterMismatch = null,
         position = null,
-        recordings = emptyList(),
-        cylinders = emptyList(),
-        lead = emptyList(),
-        leadTotalKg = null,
+        recordings = if (withGear) {
+            listOf(
+                DiveViewRecordingsItem(
+                    id = "recording-1",
+                    isPrimary = true,
+                    device = DiveViewRecordingsItemDevice("garmin", "Descent Mk3", "123"),
+                    startsAt = "2026-04-02T09:00:00Z",
+                    durationSeconds = 3_000.0,
+                    maxDepthM = 24.3,
+                    parser = "fit",
+                    partOf = null,
+                    summary = DiveViewRecordingsItemSummary(),
+                    channels = listOf("depth", "tankPressure"),
+                ),
+            )
+        } else {
+            emptyList()
+        },
+        cylinders = if (withGear) {
+            listOf(
+                DiveViewCylindersItem(
+                    volumeL = 12.0,
+                    workingPressureBar = 232.0,
+                    material = "steel",
+                    gas = DiveViewCylindersItemGas(o2 = 21.0, he = 0.0),
+                    startPressureBar = 220.0,
+                    endPressureBar = 70.0,
+                    fromPod = true,
+                    series = DiveViewCylindersItemSeries("recording-1", "tankPressure"),
+                ),
+                DiveViewCylindersItem(
+                    volumeL = 11.0,
+                    workingPressureBar = 200.0,
+                    material = "aluminium",
+                    gas = DiveViewCylindersItemGas(o2 = 32.0, he = 0.0),
+                    startPressureBar = 200.0,
+                    endPressureBar = 90.0,
+                    fromPod = false,
+                    series = null,
+                ),
+            )
+        } else {
+            emptyList()
+        },
+        lead = if (withGear) listOf(DiveViewLeadItem(amountKg = 4.0, placement = "belt"), DiveViewLeadItem(amountKg = 1.0, placement = "trim")) else emptyList(),
+        leadTotalKg = if (withGear) 5.0 else null,
         weightingFeedback = null,
         suit = null,
         sac = null,

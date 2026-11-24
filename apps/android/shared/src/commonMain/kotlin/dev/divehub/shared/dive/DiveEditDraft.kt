@@ -38,7 +38,7 @@ data class DiveEditParticipant(val diverId: String, val name: String, val role: 
  * PATCH body those changes add up to. The Participants roster rides along because it saves as its own whole-list PUT.
  *
  * `number` is not here on purpose: the server computes it and refuses it on an edit (ADR 0048). Cylinders and Lead are
- * other editors (T8b).
+ * whole-list fields here (T8b); Participants are another editor (T8c).
  */
 data class DiveEditDraft(
     val diveId: String,
@@ -56,6 +56,10 @@ data class DiveEditDraft(
     val waterTemperatureC: Double?,
     val suit: DiveEditSuit?,
     val weighting: DiveEditWeighting?,
+    /** The Dive's Cylinders in their order; the edit sends the whole list when it changes (T8b). */
+    val cylinders: List<DiveEditCylinder>,
+    /** The Lead entries in their order; the edit sends the whole list when it changes (T8b). */
+    val lead: List<DiveEditLead>,
     /** Who else was on the Dive, in the roster the editor shows; the wire keeps only `diverId` and `role` (ADR 0028). */
     val participants: List<DiveEditParticipant>,
     private val originalNotes: String?,
@@ -67,6 +71,8 @@ data class DiveEditDraft(
     private val originalWaterTemperatureC: Double?,
     private val originalSuit: DiveEditSuit?,
     private val originalWeighting: DiveEditWeighting?,
+    private val originalCylinders: List<DiveEditCylinder>,
+    private val originalLead: List<DiveEditLead>,
     private val originalParticipants: List<DiveEditParticipant>,
     private val recorded: Map<String, RecordedValue>,
     private val overrides: Set<String>,
@@ -98,7 +104,34 @@ data class DiveEditDraft(
             siteId != originalSiteId ||
             suitTouched ||
             weightingTouched ||
+            cylindersChanged ||
+            leadChanged ||
             participantsChanged
+
+    /** Whether the Cylinder list would save differently; a blank row the User added does not count. */
+    val cylindersChanged: Boolean
+        get() = cylinderValues() != originalCylinders
+
+    /** Whether the Lead list would save differently; an entry without an amount is not saved. */
+    val leadChanged: Boolean
+        get() = leadValues() != originalLead
+
+    /** Whether every Cylinder the server would receive is one it accepts (docs/spec/clients.md, `cylinder_invalid`). */
+    val cylindersFit: Boolean
+        get() = cylinderValues().all { it.problem() == null } && repeatedSeriesIndex() == null
+
+    /**
+     * The second Cylinder that claims a pressure series another one already has, if any: the server refuses that whole
+     * list (`cylinder_invalid`), so the form must say it at that Cylinder and hold Save.
+     */
+    fun repeatedSeriesIndex(): Int? {
+        val taken = mutableSetOf<DiveEditSeries>()
+        cylinders.forEachIndexed { index, cylinder ->
+            val series = cylinder.series ?: return@forEachIndexed
+            if (!taken.add(series)) return index
+        }
+        return null
+    }
 
     fun setNotes(value: String): DiveEditDraft = copy(notes = value)
 
@@ -121,6 +154,10 @@ data class DiveEditDraft(
 
     fun setWeighting(value: DiveEditWeighting?): DiveEditDraft =
         copy(weighting = value, weightingTouched = true)
+
+    fun setCylinders(value: List<DiveEditCylinder>): DiveEditDraft = copy(cylinders = value)
+
+    fun setLead(value: List<DiveEditLead>): DiveEditDraft = copy(lead = value)
 
     /** Add someone the store knows; a Diver already on the roster keeps the row it has (ADR 0028: no duplicates). */
     fun addParticipant(diverId: String, name: String, role: String): DiveEditDraft =
@@ -248,9 +285,23 @@ data class DiveEditDraft(
             if (weightingTouched) {
                 put("weightingFeedback", weighting?.toJson() ?: JsonNull)
             }
+            if (cylindersChanged) {
+                put("cylinders", JsonArray(cylinderValues().map { it.toJson() }))
+            }
+            if (leadChanged) {
+                put("lead", JsonArray(leadValues().map { it.toJson() }))
+            }
         }
         return body.takeIf { it.isNotEmpty() }
     }
+
+    /** The Cylinders the edit takes: the ones the Dive had, plus a new one the User filled in. */
+    private fun cylinderValues(): List<DiveEditCylinder> =
+        cylinders.filter { it.existing || !it.blank }.map { it.wire() }
+
+    /** The Lead the edit takes: an entry without an amount is unknown and left out. */
+    private fun leadValues(): List<DiveEditLead> =
+        lead.mapNotNull { entry -> entry.amountKg?.let { entry.wire() } }
 
     private fun mark(field: DiveValue): DiveEditDraft = copy(
         touched = touched + field.wire,
@@ -266,6 +317,8 @@ data class DiveEditDraft(
             val recorded = DiveValue.entries.mapNotNull { field ->
                 dive.recordedValueOf(field)?.let { field.wire to it }
             }.toMap()
+            val cylinders = dive.cylinders.map { it.toEditDraft() }
+            val lead = dive.lead.map { it.toEditDraft() }
             return DiveEditDraft(
                 diveId = dive.id,
                 version = dive.version,
@@ -280,6 +333,9 @@ data class DiveEditDraft(
                 waterTemperatureC = values.waterTemperatureC,
                 suit = dive.suit?.toDraft(),
                 weighting = dive.weightingFeedback?.toDraft(),
+                cylinders = cylinders,
+                // One entry's fields are always there; left empty it is not saved.
+                lead = lead.ifEmpty { listOf(DiveEditLead()) },
                 participants = dive.participants.map {
                     DiveEditParticipant(diverId = it.diverId, name = it.name, role = it.role)
                 },
@@ -292,6 +348,8 @@ data class DiveEditDraft(
                 originalWaterTemperatureC = values.waterTemperatureC,
                 originalSuit = dive.suit?.toDraft(),
                 originalWeighting = dive.weightingFeedback?.toDraft(),
+                originalCylinders = cylinders.map { it.wire() },
+                originalLead = lead.map { it.wire() },
                 originalParticipants = dive.participants.map {
                     DiveEditParticipant(diverId = it.diverId, name = it.name, role = it.role)
                 },
