@@ -19,11 +19,13 @@ import dev.divehub.android.ui.DiveHubTheme
 import dev.divehub.api.models.DiveView
 import dev.divehub.api.models.DiveViewFromRecording
 import dev.divehub.api.models.DiveViewFromRecordingStartsAt
+import dev.divehub.api.models.DiveViewParticipantsItem
 import dev.divehub.api.models.DiveViewSite
 import dev.divehub.api.models.DiveViewValues
 import dev.divehub.api.models.DiveViewValuesStartsAt
 import dev.divehub.shared.dive.DiveEditDraft
 import dev.divehub.shared.store.DiveSite
+import dev.divehub.shared.store.Diver
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -33,10 +35,11 @@ import org.robolectric.annotation.GraphicsMode
 
 /**
  * The edit screen's contract-visible states as pictures: a synced Dive being edited, the site picker in its list, no-match
- * and dark states, an edited value with its "use the recording's value" way back, the destructive verbs' not-available
- * note, dark at the top and at the weighting and more actions, and German at 200 % on a narrow phone at the top, over
- * the value fields, at the Notes field and at the true foot. Rendered from a fixed state, so a drawing change shows up
- * as a changed image.
+ * and dark states, an edited value with its "use the recording's value" way back, the Participants roster with the joint
+ * dive's union note, the add sheet and the role choice, the destructive verbs' not-available note, dark at the top and at
+ * the weighting and more actions, and German at 200 % on a narrow phone at the top, over the value fields, at the Notes
+ * field, at the Participants and at the true foot. Rendered from a fixed state, so a drawing change shows up as a changed
+ * image.
  */
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
@@ -162,6 +165,56 @@ class DiveEditScreenshotTest {
         capture("dive_edit_de_narrow_2x_foot.png")
     }
 
+    @Test
+    fun `the participants section lists people with their roles and says what a joint dive does`() {
+        render(state(draft = DiveEditDraft.of(dive(participants = people()))))
+
+        compose.onNodeWithTag("dive_edit_scroll").performScrollToNode(hasText("Participants"))
+        compose.onNodeWithText("Anna").assertExists()
+        compose.onNodeWithText("Ben").assertExists()
+        compose.onNodeWithText("In a joint dive, adding someone also adds them to the other divers’ dives. Removing someone here leaves them on the others.")
+            .assertExists()
+        capture("dive_edit_participants.png")
+    }
+
+    @Test
+    fun `adding someone searches the divers the store knows and says the names are shared`() {
+        render(state(draft = DiveEditDraft.of(dive(participants = people()))))
+
+        compose.onNodeWithTag("dive_edit_scroll").performScrollToNode(hasText("Add a participant"))
+        compose.onNodeWithText("Add a participant").performClick()
+
+        compose.onNodeWithText("Every user of this Dive Hub sees the names of all divers.").assertExists()
+        compose.onNodeWithText("Cleo").assertExists()
+        capture("dive_edit_participant_add.png")
+    }
+
+    @Test
+    fun `changing a role opens a named choice`() {
+        render(state(draft = DiveEditDraft.of(dive(participants = people()))))
+
+        compose.onNodeWithTag("dive_edit_scroll").performScrollToNode(hasText("Buddy"))
+        compose.onNode(hasText("Buddy") and hasClickAction()).performClick()
+
+        compose.onNodeWithText("Role for Anna").assertExists()
+        compose.onNodeWithText("Instructor").assertExists()
+        capture("dive_edit_participant_role.png")
+    }
+
+    @Test
+    @Config(qualifiers = "de-rDE-w320dp-h891dp-xxhdpi")
+    fun `the participants at two hundred percent in german`() {
+        render(state(draft = DiveEditDraft.of(dive(participants = people()))), fontScale = 2f)
+
+        compose.onNodeWithTag("dive_edit_scroll").performScrollToNode(hasText("Teilnehmende"))
+        capture("dive_edit_de_narrow_2x_participants.png")
+    }
+
+    private fun people() = listOf(
+        DiveViewParticipantsItem(diverId = "anna", name = "Anna", role = "buddy"),
+        DiveViewParticipantsItem(diverId = "ben", name = "Ben", role = "guide"),
+    )
+
     private fun render(state: DiveEditUiState, darkTheme: Boolean = false, fontScale: Float? = null) {
         compose.setContent {
             DiveHubTheme(darkTheme = darkTheme) {
@@ -182,7 +235,11 @@ class DiveEditScreenshotTest {
         }
     }
 
-    private fun state(draft: DiveEditDraft, online: Boolean = true) = DiveEditUiState(
+    private fun state(
+        draft: DiveEditDraft,
+        online: Boolean = true,
+        divers: List<Diver> = listOf(diver("diver-2", "Bea"), diver("diver-3", "Cleo")),
+    ) = DiveEditUiState(
         loading = false,
         draft = draft,
         originalSiteName = "Lighthouse Reef",
@@ -190,10 +247,24 @@ class DiveEditScreenshotTest {
             DiveSite(id = "site-1", name = "Lighthouse Reef"),
             DiveSite(id = "site-2", name = "Blue Hole"),
         ),
+        divers = divers,
+        ownerDiverId = "diver",
         online = online,
     )
 
-    private fun dive(overrides: List<String> = emptyList()) = DiveView(
+    private fun diver(id: String, name: String) = Diver(
+        id = id,
+        name = name,
+        isOwn = false,
+        external = false,
+        apneaCounts = false,
+        divesBefore = 0,
+    )
+
+    private fun dive(
+        overrides: List<String> = emptyList(),
+        participants: List<DiveViewParticipantsItem> = emptyList(),
+    ) = DiveView(
         id = "d1",
         diverId = "diver",
         version = 3,
@@ -228,7 +299,7 @@ class DiveEditScreenshotTest {
         suit = null,
         sac = null,
         sacMissing = null,
-        participants = emptyList(),
+        participants = participants,
         verificationCodes = emptyList(),
     )
 

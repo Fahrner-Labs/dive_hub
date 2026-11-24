@@ -6,6 +6,7 @@ import dev.divehub.shared.logbook.StoreLogbook
 import dev.divehub.shared.store.Dive
 import dev.divehub.shared.store.DiveSite
 import dev.divehub.shared.store.DiveStore
+import dev.divehub.shared.store.Diver
 import dev.divehub.shared.write.WriteQueue
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -46,6 +47,7 @@ class DiveEditViewModelTest {
         try {
             store.upsertDive(dive())
             store.upsertDiveSite(DiveSite(id = "site-1", name = "Lighthouse Reef"))
+            store.upsertDiver(diver("diver-2", "Bea"))
             val viewModel = viewModel(store)
 
             viewModel.open("dive-1")
@@ -54,8 +56,63 @@ class DiveEditViewModelTest {
             assertFalse(viewModel.state.value.loading)
             assertEquals("Lighthouse Reef", viewModel.state.value.originalSiteName)
             assertEquals(listOf("Lighthouse Reef"), viewModel.state.value.sites.map { it.name })
+            assertEquals(listOf("Bea"), viewModel.state.value.divers.map { it.name })
+            assertEquals("diver-1", viewModel.state.value.ownerDiverId)
             assertEquals("A good dive", viewModel.state.value.draft?.notes)
             assertEquals(42, viewModel.state.value.draft?.number)
+        } finally {
+            driver.close()
+        }
+    }
+
+    @Test
+    fun `a Participants edit queues its own PUT and shows it at once`() = runTest(dispatcher) {
+        val driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
+        val store = DiveStore.create(driver)
+        try {
+            store.upsertDive(dive())
+            store.upsertDiver(diver("diver-2", "Bea"))
+            var reread = 0
+            val viewModel = viewModel(store, onStoreWrite = { reread += 1 })
+            viewModel.open("dive-1")
+            advanceUntilIdle()
+
+            viewModel.edit { it.addParticipant("diver-2", "Bea", "buddy") }
+            assertEquals(listOf("Bea"), viewModel.state.value.draft?.participants?.map { it.name })
+            viewModel.save()
+            advanceUntilIdle()
+
+            assertEquals(1, reread)
+            assertTrue(viewModel.state.value.saved)
+            val queued = store.pendingWrites().single()
+            assertEquals("dive_participants", queued.entityType)
+            assertTrue(queued.payloadJson.contains("diver-2"))
+            assertFalse(queued.payloadJson.contains("Bea"))
+            assertTrue(store.dive("dive-1")?.detailJson?.contains("Bea") == true)
+        } finally {
+            driver.close()
+        }
+    }
+
+    @Test
+    fun `one Save queues the scalars and the roster as two entries`() = runTest(dispatcher) {
+        val driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
+        val store = DiveStore.create(driver)
+        try {
+            store.upsertDive(dive())
+            store.upsertDiver(diver("diver-2", "Bea"))
+            val viewModel = viewModel(store)
+            viewModel.open("dive-1")
+            advanceUntilIdle()
+
+            viewModel.edit { it.setNotes("Wreck log").addParticipant("diver-2", "Bea", "guide") }
+            viewModel.save()
+            advanceUntilIdle()
+
+            assertEquals(
+                listOf("dive", "dive_participants"),
+                store.pendingWrites().map { it.entityType },
+            )
         } finally {
             driver.close()
         }
@@ -166,6 +223,15 @@ class DiveEditViewModelTest {
         online = online,
         onStoreWrite = onStoreWrite,
         ioDispatcher = dispatcher,
+    )
+
+    private fun diver(id: String, name: String) = Diver(
+        id = id,
+        name = name,
+        isOwn = false,
+        external = false,
+        apneaCounts = false,
+        divesBefore = 0,
     )
 
     private fun dive(overrides: List<String> = emptyList(), withRecording: Boolean = true): Dive {

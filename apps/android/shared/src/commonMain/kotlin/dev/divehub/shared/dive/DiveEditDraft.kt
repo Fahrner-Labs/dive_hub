@@ -29,13 +29,16 @@ data class DiveEditSuit(
 /** How the weighting felt; `amountKg` is only meaningful for `too_heavy` and `too_light`. */
 data class DiveEditWeighting(val felt: String, val amountKg: Double? = null)
 
+/** One person on the Dive: the wire's two fields plus the name the store already knows, for the list. */
+data class DiveEditParticipant(val diverId: String, val name: String, val role: String)
+
 /**
- * The Dive's scalar edit form ("write as if online", ADR 0084): an immutable draft that knows the value it was opened
+ * The Dive's edit form ("write as if online", ADR 0084): an immutable draft that knows the value it was opened
  * with, which fields the User set by hand ([touched]), which were given back to the Recording ([reset]), and the
- * PATCH body those changes add up to.
+ * PATCH body those changes add up to. The Participants roster rides along because it saves as its own whole-list PUT.
  *
- * `number` is not here on purpose: the server computes it and refuses it on an edit (ADR 0048). Cylinders, Lead and
- * Participants are other editors (T8b, T8c).
+ * `number` is not here on purpose: the server computes it and refuses it on an edit (ADR 0048). Cylinders and Lead are
+ * other editors (T8b).
  */
 data class DiveEditDraft(
     val diveId: String,
@@ -53,6 +56,8 @@ data class DiveEditDraft(
     val waterTemperatureC: Double?,
     val suit: DiveEditSuit?,
     val weighting: DiveEditWeighting?,
+    /** Who else was on the Dive, in the roster the editor shows; the wire keeps only `diverId` and `role` (ADR 0028). */
+    val participants: List<DiveEditParticipant>,
     private val originalNotes: String?,
     private val originalSiteId: String?,
     private val originalStart: DiveEditStart,
@@ -62,6 +67,7 @@ data class DiveEditDraft(
     private val originalWaterTemperatureC: Double?,
     private val originalSuit: DiveEditSuit?,
     private val originalWeighting: DiveEditWeighting?,
+    private val originalParticipants: List<DiveEditParticipant>,
     private val recorded: Map<String, RecordedValue>,
     private val overrides: Set<String>,
     val touched: Set<String> = emptySet(),
@@ -82,13 +88,17 @@ data class DiveEditDraft(
     /** Whether this session set [field] by hand; the UI marks it while typing, before saving. */
     fun wasSetHere(field: DiveValue): Boolean = field.wire in touched && field.wire !in reset
 
+    /** Whether the roster differs from the one the editor opened with; an unchanged list sends no PUT. */
+    val participantsChanged: Boolean get() = participants != originalParticipants
+
     val dirty: Boolean
         get() = touched.isNotEmpty() ||
             reset.any { it in overrides } ||
             notes != (originalNotes ?: "") ||
             siteId != originalSiteId ||
             suitTouched ||
-            weightingTouched
+            weightingTouched ||
+            participantsChanged
 
     fun setNotes(value: String): DiveEditDraft = copy(notes = value)
 
@@ -111,6 +121,46 @@ data class DiveEditDraft(
 
     fun setWeighting(value: DiveEditWeighting?): DiveEditDraft =
         copy(weighting = value, weightingTouched = true)
+
+    /** Add someone the store knows; a Diver already on the roster keeps the row it has (ADR 0028: no duplicates). */
+    fun addParticipant(diverId: String, name: String, role: String): DiveEditDraft =
+        if (participants.any { it.diverId == diverId }) {
+            this
+        } else {
+            copy(participants = participants + DiveEditParticipant(diverId, name, role))
+        }
+
+    fun setParticipantRole(diverId: String, role: String): DiveEditDraft = copy(
+        participants = participants.map { person ->
+            if (person.diverId == diverId) person.copy(role = role) else person
+        },
+    )
+
+    fun removeParticipant(diverId: String): DiveEditDraft = copy(
+        participants = participants.filterNot { it.diverId == diverId },
+    )
+
+    /**
+     * The roster as `PUT /api/dives/{id}/participants` takes it (`{diverId, role}` only), or null when it did not
+     * change. The names are the store's to keep for showing, never the endpoint's to receive.
+     *
+     * [alsoKeep] is the store's roster at save time: a person the feed added since the form opened (ADR 0082's joint-dive
+     * union) is carried along, because the form never saw them and so could not have meant to remove them.
+     */
+    fun participantsJson(alsoKeep: List<DiveEditParticipant> = emptyList()): JsonArray? {
+        if (!participantsChanged) return null
+        val known = originalParticipants.map { it.diverId }.toSet()
+        val shown = participants.map { it.diverId }.toSet()
+        val fromFeed = alsoKeep.filter { it.diverId !in known && it.diverId !in shown }
+        return JsonArray(
+            (participants + fromFeed).map { person ->
+                buildJsonObject {
+                    put("diverId", person.diverId)
+                    put("role", person.role)
+                }
+            },
+        )
+    }
 
     /**
      * Give [field] back to the Recording (ADR 0015): the draft takes the recorded value again so the page shows what
@@ -211,6 +261,9 @@ data class DiveEditDraft(
                 waterTemperatureC = values.waterTemperatureC,
                 suit = dive.suit?.toDraft(),
                 weighting = dive.weightingFeedback?.toDraft(),
+                participants = dive.participants.map {
+                    DiveEditParticipant(diverId = it.diverId, name = it.name, role = it.role)
+                },
                 originalNotes = dive.notes,
                 originalSiteId = dive.site?.id,
                 originalStart = DiveEditStart(local, offset),
@@ -220,6 +273,9 @@ data class DiveEditDraft(
                 originalWaterTemperatureC = values.waterTemperatureC,
                 originalSuit = dive.suit?.toDraft(),
                 originalWeighting = dive.weightingFeedback?.toDraft(),
+                originalParticipants = dive.participants.map {
+                    DiveEditParticipant(diverId = it.diverId, name = it.name, role = it.role)
+                },
                 recorded = recorded,
                 overrides = dive.overrides.toSet(),
             )

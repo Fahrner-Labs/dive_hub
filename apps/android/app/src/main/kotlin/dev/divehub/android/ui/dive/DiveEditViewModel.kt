@@ -7,8 +7,10 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import dev.divehub.android.AppContainer
 import dev.divehub.shared.dive.DiveEditDraft
+import dev.divehub.shared.dive.DiveEditParticipant
 import dev.divehub.shared.logbook.StoreLogbook
 import dev.divehub.shared.store.DiveSite
+import dev.divehub.shared.store.Diver
 import dev.divehub.shared.write.WriteQueue
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
@@ -28,6 +30,9 @@ data class DiveEditUiState(
     val draft: DiveEditDraft? = null,
     val originalSiteName: String? = null,
     val sites: List<DiveSite> = emptyList(),
+    /** Every Diver the store knows, for the Participants sheet; the Dive's own Diver is filtered out there. */
+    val divers: List<Diver> = emptyList(),
+    val ownerDiverId: String? = null,
     val online: Boolean = false,
     val saving: Boolean = false,
     val saved: Boolean = false,
@@ -60,9 +65,14 @@ class DiveEditViewModel(
         if (_state.value.draft?.diveId == id && !_state.value.loading) return
         viewModelScope.launch {
             val read = withContext(ioDispatcher) {
-                val stored = store.dive(id)
-                val sites = store.sites()
-                stored?.let { it.dive to sites }
+                store.dive(id)?.let { stored ->
+                    EditSource(
+                        dive = stored.dive,
+                        sites = store.sites(),
+                        divers = store.divers(),
+                        ownerDiverId = stored.dive.diverId,
+                    )
+                }
             }
             _state.update { current ->
                 if (read == null) {
@@ -71,9 +81,11 @@ class DiveEditViewModel(
                     current.copy(
                         loading = false,
                         missing = false,
-                        draft = DiveEditDraft.of(read.first),
-                        originalSiteName = read.first.site?.name,
-                        sites = read.second,
+                        draft = DiveEditDraft.of(read.dive),
+                        originalSiteName = read.dive.site?.name,
+                        sites = read.sites,
+                        divers = read.divers,
+                        ownerDiverId = read.ownerDiverId,
                     )
                 }
             }
@@ -93,18 +105,28 @@ class DiveEditViewModel(
         open(id)
     }
 
-    /** Queue the draft's PATCH; the local store shows it at once, so the Dive page behind the editor updates too. */
+    /** Queue the draft's PATCH and, when it changed, its Participants PUT; the store shows both at once. */
     fun save() {
         val draft = _state.value.draft ?: return
         val patch = draft.patch()
-        if (patch == null) {
+        if (patch == null && !draft.participantsChanged) {
             _state.update { it.copy(saved = true) }
             return
         }
         viewModelScope.launch {
             _state.update { it.copy(saving = true, failed = false) }
             try {
-                withContext(ioDispatcher) { queue.editDive(draft.diveId, patch) }
+                withContext(ioDispatcher) {
+                    if (patch != null) queue.editDive(draft.diveId, patch)
+                    if (draft.participantsChanged) {
+                        // A joint dive's union may have reached the store since the form opened (ADR 0082): keep those
+                        // people, or the whole-list PUT would read as the User removing them.
+                        val fromFeed = store.dive(draft.diveId)?.dive?.participants.orEmpty().map {
+                            DiveEditParticipant(diverId = it.diverId, name = it.name, role = it.role)
+                        }
+                        draft.participantsJson(fromFeed)?.let { queue.editDiveParticipants(draft.diveId, it) }
+                    }
+                }
                 onStoreWrite()
                 _state.update { it.copy(saving = false, saved = true) }
             } catch (error: CancellationException) {
@@ -128,3 +150,11 @@ class DiveEditViewModel(
         }
     }
 }
+
+/** The store reads an edit needs: the Dive, where its site and the roster picker come from, and the Dive's own Diver. */
+private data class EditSource(
+    val dive: dev.divehub.api.models.DiveView,
+    val sites: List<DiveSite>,
+    val divers: List<Diver>,
+    val ownerDiverId: String,
+)
