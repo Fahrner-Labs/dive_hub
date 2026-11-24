@@ -7,6 +7,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.unit.Density
 import com.github.takahirom.roborazzi.captureRoboImage
@@ -54,6 +55,17 @@ class DiveEditScreenshotTest {
         compose.onNodeWithText("edited · recording: 20.0 m").assertExists()
         compose.onNodeWithText("Use the recording’s value (20.0 m)").assertExists()
         capture("dive_edit_edited.png")
+    }
+
+    @Test
+    fun `the site picker lists the cached sites and the current one`() {
+        render(state(draft = DiveEditDraft.of(dive())))
+
+        compose.onNodeWithText("Choose a dive site").performClick()
+
+        compose.onNodeWithText("Blue Hole").assertExists()
+        compose.onNodeWithText("✓ Lighthouse Reef").assertExists()
+        capture("dive_edit_site_picker.png")
     }
 
     @Test
