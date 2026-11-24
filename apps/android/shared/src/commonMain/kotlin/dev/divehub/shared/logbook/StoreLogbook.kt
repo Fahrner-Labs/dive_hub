@@ -26,6 +26,7 @@ import dev.divehub.api.models.NeighboursViewPrevious
 import dev.divehub.api.models.RecordingSamplesView
 import dev.divehub.api.models.RecordingSamplesViewSeriesItem
 import dev.divehub.shared.store.Dive
+import dev.divehub.shared.store.DiveSite
 import dev.divehub.shared.store.DiveStore
 import dev.divehub.shared.store.Recording
 import kotlinx.serialization.json.Json
@@ -138,6 +139,12 @@ class StoreLogbook(private val store: DiveStore) {
 
     /** Whether the store holds any series row for this Recording, even one that no longer decodes. */
     fun hasSeries(recordingId: String): Boolean = store.series(recordingId).isNotEmpty()
+
+    /**
+     * The live Dive sites the store holds, by name: the same server-existing sites a picker may choose from, already
+     * cached by the full sync, so a site can be chosen with no connection (ADR 0075, client contract "Offline writes").
+     */
+    fun sites(): List<DiveSite> = store.diveSites()
 
     /** The stored depth and temperature series, or null when the profiles phase has not written them yet. */
     fun samples(recordingId: String): RecordingSamplesView? = store.transaction {

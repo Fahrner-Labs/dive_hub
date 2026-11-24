@@ -68,6 +68,12 @@ class SyncRefresher(
     /** Bumped after each hint or refresh that left the store changed; open screens read it to refetch. */
     val revision: StateFlow<Long> = _revision.asStateFlow()
 
+    /**
+     * A write to the store that did not come from a sync: the offline queue's local edit ("write as if online",
+     * ADR 0084). Open screens reread the store on the same revision they already follow.
+     */
+    fun noteStoreWrite() = bump()
+
     private val _progress = MutableStateFlow(SyncProgress.EMPTY)
 
     /**

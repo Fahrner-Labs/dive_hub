@@ -13,6 +13,10 @@ val releaseSigningEnv = listOf(
 )
 val missingReleaseSigningEnv = releaseSigningEnv.filter { providers.environmentVariable(it).orNull.isNullOrBlank() }
 
+// Phase B/C UI merges dark (FAH-457): the Dive edit screen stays hidden unless a build asks for the slice, e.g.
+// `./gradlew assembleDebug -Pdivehub.editDiveScalars=true`. The default is what ships.
+val editDiveScalars = providers.gradleProperty("divehub.editDiveScalars").orNull?.toBoolean() ?: false
+
 fun envInt(name: String, fallback: Int): Int {
     val raw = providers.environmentVariable(name).orNull ?: return fallback
     return raw.toIntOrNull() ?: throw GradleException("$name must be an integer, got '$raw'")
@@ -31,6 +35,7 @@ android {
         // Phase C merges dark (ADR 0084): the scanner is visible in debug builds, hidden in release until the
         // conflict surface ships.
         buildConfigField("boolean", "SCANNER_ENABLED", "false")
+        buildConfigField("boolean", "EDIT_DIVE_SCALARS", editDiveScalars.toString())
     }
 
     signingConfigs {
