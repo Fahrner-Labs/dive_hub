@@ -1,6 +1,8 @@
 package dev.divehub.shared.write
 
+import dev.divehub.api.models.CentreView
 import dev.divehub.api.models.DiveView
+import dev.divehub.api.models.DiverDetailsView
 import dev.divehub.shared.ApiClient
 import dev.divehub.shared.DiveHubException
 import dev.divehub.shared.ErrorCodes
@@ -173,7 +175,7 @@ class WriteReplayer(
                 // The centre here, or the id this create will carry when the User confirms it.
                 entityId = stringOf(existing?.get("id")) ?: entry.entityId,
                 detailJson = text,
-                codeText = stringOf(parseObject(entry.payloadJson)?.get("text")),
+                actionId = entry.id,
             )
             else -> ScanResult(
                 id = 0,
@@ -183,32 +185,48 @@ class WriteReplayer(
                 name = pairName(stringOf(body?.get("firstName")), stringOf(body?.get("lastName"))),
                 entityId = stringOf(existing?.get("id")),
                 detailJson = text,
-                codeText = stringOf(parseObject(entry.payloadJson)?.get("text")),
+                actionId = entry.id,
             )
         }
+        store.transaction {
+            // The action stays as the User's pending data: taking a person's code needs its text again, and this
+            // result points back at it (ADR 0043: the text is never copied into this table).
+            updatePendingWrite(entry.copy(status = PendingWriteStatus.Awaiting, lastError = null))
+            addScanResult(result)
+        }
+    }
+
+    /** A take's or a create's answer: the Diver or centre it made, or the one the server found already here. */
+    private fun recordWrite(entry: PendingWrite, status: Int, text: String?) {
+        val isCentre = entry.entityType == ScanEntities.CENTRE
+        val body = parseObject(text)
+        val centre = if (isCentre) text?.let { body -> decoded { json.decodeFromString(CentreView.serializer(), body) } } else null
+        val diver = if (isCentre) null else text?.let { body -> decoded { json.decodeFromString(DiverDetailsView.serializer(), body) } }
+        val result = ScanResult(
+            id = 0,
+            at = clock(),
+            status = if (status == 201) ScanStatus.Created else ScanStatus.Existing,
+            kind = when {
+                isCentre -> "centre"
+                diver?.leaderNumber != null || stringOf(body?.get("leaderNumber")) != null -> "professional"
+                else -> "buddy"
+            },
+            name = centre?.displayName ?: diver?.name
+                ?: stringOf(body?.get("displayName")) ?: stringOf(body?.get("name")),
+            entityId = centre?.id ?: diver?.id ?: stringOf(body?.get("id")),
+        )
         store.transaction {
             addScanResult(result)
             deletePendingWrite(entry.id)
         }
     }
 
-    /** A take's or a create's answer: the Diver or centre it made, or the one the server found already here. */
-    private fun recordWrite(entry: PendingWrite, status: Int, text: String?) {
-        val body = parseObject(text)
-        val isCentre = entry.entityType == ScanEntities.CENTRE
-        val kind = if (isCentre) "centre" else if (stringOf(body?.get("leaderNumber")) != null) "professional" else "buddy"
-        val result = ScanResult(
-            id = 0,
-            at = clock(),
-            status = if (status == 201) ScanStatus.Created else ScanStatus.Existing,
-            kind = kind,
-            name = if (isCentre) stringOf(body?.get("displayName")) ?: stringOf(body?.get("name")) else stringOf(body?.get("name")),
-            entityId = stringOf(body?.get("id")),
-        )
-        store.transaction {
-            addScanResult(result)
-            deletePendingWrite(entry.id)
-        }
+    private fun <T> decoded(block: () -> T): T? = try {
+        block()
+    } catch (error: CancellationException) {
+        throw error
+    } catch (_: Exception) {
+        null
     }
 
     /** A refusal is a state on the scan, never a silent loss: keep the answer and its problem code. */

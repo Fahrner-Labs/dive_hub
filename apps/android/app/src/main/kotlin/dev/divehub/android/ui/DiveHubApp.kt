@@ -90,11 +90,12 @@ fun DiveHubApp(
     gasPlan: GasPlanViewModel,
     lead: LeadEstimateViewModel,
     loadings: LoadingsViewModel,
+    scan: ScanViewModel,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val navController = rememberNavController()
-    val screens = remember(container, viewModel, logbook, dive, tools, gasPlan, lead, loadings) {
-        DiveHubScreens(container, viewModel, logbook, dive, tools, gasPlan, lead, loadings)
+    val screens = remember(container, viewModel, logbook, dive, tools, gasPlan, lead, loadings, scan) {
+        DiveHubScreens(container, viewModel, logbook, dive, tools, gasPlan, lead, loadings, scan)
     }
     // A sign-out (or another User) drops the saved screens with the session (client contract §1 Security). Once the
     // restore has resolved (not while loading), it also drops Navigation's saved tab stacks.
@@ -106,6 +107,7 @@ fun DiveHubApp(
             gasPlan.forget()
             lead.forget()
             loadings.forget()
+            scan.forget()
             if (!state.loading) navController.clearSavedTabStates()
         }
     }
@@ -138,6 +140,7 @@ private class DiveHubScreens(
     private val gasPlan: GasPlanViewModel,
     private val lead: LeadEstimateViewModel,
     private val loadings: LoadingsViewModel,
+    private val scan: ScanViewModel,
 ) : AppScreens {
     @Composable
     override fun instance() {
@@ -212,7 +215,6 @@ private class DiveHubScreens(
 
     @Composable
     override fun scan(onBack: () -> Unit) {
-        val scan: ScanViewModel = viewModel(factory = ScanViewModel.factory(container))
         ScanCodeRoute(viewModel = scan, onBack = onBack)
     }
 

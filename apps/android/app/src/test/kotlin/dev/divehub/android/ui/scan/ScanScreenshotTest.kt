@@ -36,7 +36,7 @@ class ScanScreenshotTest {
     fun `a scan with no signal waits and says so`() {
         render(ScanUiState(pending = 2))
 
-        compose.onNodeWithText("2 scans waiting to sync").assertExists()
+        compose.onNodeWithText("2 changes waiting to sync").assertExists()
         capture("scan_waiting_en_light.png")
     }
 

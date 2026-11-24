@@ -266,6 +266,10 @@ class DiveStore internal constructor(private val database: DiveHubDatabase) : Us
     fun pendingWrites(status: PendingWriteStatus): List<PendingWrite> =
         queries.selectPendingWritesWithStatus(status.wire).executeAsList().map(Pending_write::toModel)
 
+    /** The queued entry by its id, whatever its kind and state: a scan result points back at its read. */
+    fun pendingWrite(id: Long): PendingWrite? =
+        queries.selectPendingWriteById(id).executeAsOneOrNull()?.toModel()
+
     /** The one patch for an entity, whatever its state: coalescing and parking both work on it. */
     fun pendingPatch(entityType: String, entityId: String): PendingWrite? =
         queries.selectPendingPatchFor(entityType, entityId).executeAsOneOrNull()?.toModel()
@@ -321,7 +325,7 @@ class DiveStore internal constructor(private val database: DiveHubDatabase) : Us
             entityId = result.entityId,
             detailJson = result.detailJson,
             errorCode = result.errorCode,
-            codeText = result.codeText,
+            actionId = result.actionId,
         )
         val id = queries.selectLastInsertRowId().executeAsOne()
         queries.trimScanResults(SCAN_RESULT_KEEP)
@@ -523,7 +527,7 @@ private fun Scan_result.toModel() = ScanResult(
     entityId = entityId,
     detailJson = detailJson,
     errorCode = errorCode,
-    codeText = codeText,
+    actionId = actionId,
 )
 
 private fun Pending_write.toModel() = PendingWrite(

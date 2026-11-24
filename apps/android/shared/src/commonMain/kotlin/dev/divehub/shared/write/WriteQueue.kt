@@ -1,5 +1,9 @@
 package dev.divehub.shared.write
 
+import dev.divehub.api.models.ApiDiveCentresPostRequest
+import dev.divehub.api.models.ApiDiveCentresPostRequestExternalIdsItem
+import dev.divehub.api.models.ApiDiversFromCodePostRequest
+import dev.divehub.api.models.ApiVerificationCodesReadPostRequest
 import dev.divehub.shared.store.DiveStore
 import dev.divehub.shared.store.PendingWrite
 import dev.divehub.shared.store.PendingWriteKind
@@ -41,6 +45,9 @@ class WriteQueue(
     private val store: DiveStore,
     private val clock: () -> String = { Clock.System.now().toString() },
 ) {
+    /** The generated request models are the wire contract; nulls stay out of an action's body. */
+    private val json = Json { explicitNulls = false }
+
     /**
      * Apply a Dive edit to the store at once ("write as if online") and queue it. The store keeps the base version; the
      * replay's 2xx replaces the detail with the server's answer (ADR 0084 D3 step 2).
@@ -137,18 +144,16 @@ class WriteQueue(
     fun enqueueScan(text: String, centreId: String = UuidV7.generate()): PendingWrite = enqueueAction(
         entityType = ScanEntities.SCAN,
         entityId = centreId,
-        payload = buildJsonObject { put("text", JsonPrimitive(text)) },
+        payload = actionBody(ApiVerificationCodesReadPostRequest(text = text)),
     )
 
     /** Queue taking a person's code; [diverId] names the Diver the User chose, or [create] makes a new external one. */
     fun enqueueTakeCode(text: String, diverId: String? = null, create: Boolean = false): PendingWrite = enqueueAction(
         entityType = ScanEntities.TAKE_CODE,
         entityId = diverId ?: "new",
-        payload = buildJsonObject {
-            put("text", JsonPrimitive(text))
-            if (diverId != null) put("diverId", JsonPrimitive(diverId))
-            if (create) put("create", JsonPrimitive(true))
-        },
+        payload = actionBody(
+            ApiDiversFromCodePostRequest(text = text, diverId = diverId, create = if (create) true else null),
+        ),
     )
 
     /** Queue creating a Dive centre from its code's answer, with the client uuidv7 as the replay idempotency key. */
@@ -160,21 +165,27 @@ class WriteQueue(
     ): PendingWrite = enqueueAction(
         entityType = ScanEntities.CENTRE,
         entityId = id,
-        payload = buildJsonObject {
-            put("id", JsonPrimitive(id))
-            put("name", JsonPrimitive(name))
-            if (!number.isNullOrBlank()) {
-                put(
-                    "externalIds",
-                    JsonArray(listOf(buildJsonObject {
-                        put("source", JsonPrimitive("ssi"))
-                        put("externalId", JsonPrimitive(number))
-                    })),
-                )
-            }
-            if (siteIds.isNotEmpty()) put("siteIds", JsonArray(siteIds.map(::JsonPrimitive)))
-        },
+        payload = actionBody(
+            ApiDiveCentresPostRequest(
+                id = id,
+                name = name,
+                externalIds = number?.takeIf { it.isNotBlank() }?.let {
+                    listOf(ApiDiveCentresPostRequestExternalIdsItem(source = "ssi", externalId = it))
+                },
+                siteIds = siteIds.ifEmpty { null },
+            ),
+        ),
     )
+
+    /** The raw text of a queued scan whose action the User is still deciding on, or null when it is gone. */
+    fun pendingScanText(actionId: Long): String? {
+        val entry = store.pendingWrite(actionId) ?: return null
+        val payload = runCatching { Json.parseToJsonElement(entry.payloadJson) as? JsonObject }.getOrNull() ?: return null
+        return (payload["text"] as? JsonPrimitive)?.takeIf { it.isString }?.content
+    }
+
+    private inline fun <reified T> actionBody(request: T): JsonObject =
+        Json.parseToJsonElement(json.encodeToString(request)) as JsonObject
 
     private fun baseOf(diveId: String): Pair<Long, String?> {
         val dive = store.diveIncludingDeleted(diveId)

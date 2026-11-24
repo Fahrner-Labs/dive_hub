@@ -140,9 +140,13 @@ enum class PendingWriteKind(val wire: String) {
     }
 }
 
-/** Where an entry stands: waiting, parked for the User's decision, or failed with a reason the UI can show. */
+/**
+ * Where an entry stands: waiting, read and waiting for the User's decision (a scan), parked as a conflict, or failed
+ * with a reason the UI can show. [Awaiting] is never replayed until the User acts; the queue still holds its payload.
+ */
 enum class PendingWriteStatus(val wire: String) {
     Pending("pending"),
+    Awaiting("awaiting"),
     Conflicted("conflicted"),
     Failed("failed"),
     ;
@@ -175,8 +179,9 @@ enum class ScanStatus(val wire: String) {
 /**
  * One resolved scan on the scanner screen (T11). [detailJson] is the API's own answer for a [ScanStatus.Read] (a
  * centre's fields, or a person's and what taking the code would change); [entityId] is the Diver or centre it names,
- * or for a centre not here yet the client uuid its create will carry. [codeText] is kept only on a read that the User
- * has not acted on yet, because taking a person's code needs the same text; dismissing the result deletes the row.
+ * or for a centre not here yet the client uuid its create will carry. [actionId] is the queued read the result came
+ * from: taking a person's code needs that action's text, which stays in the queue, never in this table. Acting or
+ * dismissing deletes the action and the row.
  */
 data class ScanResult(
     val id: Long,
@@ -187,7 +192,7 @@ data class ScanResult(
     val entityId: String? = null,
     val detailJson: String? = null,
     val errorCode: String? = null,
-    val codeText: String? = null,
+    val actionId: Long? = null,
 )
 
 /**

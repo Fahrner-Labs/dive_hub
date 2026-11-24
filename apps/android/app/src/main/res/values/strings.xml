@@ -623,8 +623,8 @@
     <string name="scan_syncing">Reading…</string>
     <string name="scan_sync_now">Sync now</string>
     <plurals name="scan_waiting">
-        <item quantity="one">%1$d scan waiting to sync</item>
-        <item quantity="other">%1$d scans waiting to sync</item>
+        <item quantity="one">%1$d change waiting to sync</item>
+        <item quantity="other">%1$d changes waiting to sync</item>
     </plurals>
     <string name="scan_section_results">Scans</string>
     <string name="scan_empty">No scans yet.</string>

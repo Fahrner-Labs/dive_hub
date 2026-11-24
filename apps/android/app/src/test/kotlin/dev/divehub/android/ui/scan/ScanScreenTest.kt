@@ -99,7 +99,6 @@ class ScanScreenTest {
         status = ScanStatus.Read,
         kind = "buddy",
         entityId = if (existing) "diver-1" else null,
-        codeText = "SSI;buddy;ada",
         detailJson = if (existing) {
             """{"kind":"buddy","accountId":"ssi-1","firstName":"Ada","lastName":"Lovelace","email":"ada@example.com","existing":{"id":"diver-1","name":"Ada Lovelace","canEdit":true,"changes":[{"field":"email","from":"old@example.com","to":"ada@example.com"}]},"candidates":[]}"""
         } else {

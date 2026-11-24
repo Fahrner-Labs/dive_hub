@@ -9,6 +9,7 @@ import dev.divehub.android.AppContainer
 import dev.divehub.shared.ErrorCodes
 import dev.divehub.shared.NoAnswerException
 import dev.divehub.shared.store.DiveStore
+import dev.divehub.shared.store.PendingWriteStatus
 import dev.divehub.shared.store.ScanResult
 import dev.divehub.shared.write.WriteQueue
 import dev.divehub.shared.write.WriteReplayResult
@@ -69,12 +70,19 @@ class ScanViewModel(
         }
     }
 
-    /** Take a person's code for [diverId], or create a new external Diver when [create]. */
+    /**
+     * Take a person's code for [diverId], or create a new external Diver when [create]. The raw text comes from the
+     * queued read the result points back at; taking it consumes that read.
+     */
     fun take(result: ScanResult, diverId: String?, create: Boolean) {
-        val text = result.codeText ?: return
+        val action = result.actionId ?: return
+        val text = queue.pendingScanText(action) ?: return
         viewModelScope.launch(ioDispatcher) {
             queue.enqueueTakeCode(text, diverId = diverId, create = create)
-            store.deleteScanResult(result.id)
+            store.transaction {
+                deletePendingWrite(action)
+                deleteScanResult(result.id)
+            }
             replayNow()
         }
     }
@@ -83,16 +91,24 @@ class ScanViewModel(
     fun createCentre(result: ScanResult, read: ReadCode) {
         val id = result.entityId ?: return
         val name = read.name ?: return
+        val action = result.actionId ?: return
         viewModelScope.launch(ioDispatcher) {
             queue.enqueueCreateCentre(id = id, name = name, number = read.centreNumber)
-            store.deleteScanResult(result.id)
+            store.transaction {
+                deletePendingWrite(action)
+                deleteScanResult(result.id)
+            }
             replayNow()
         }
     }
 
+    /** Dismissing a read drops its queued text with it; a finished outcome has no action left. */
     fun dismiss(result: ScanResult) {
         viewModelScope.launch(ioDispatcher) {
-            store.deleteScanResult(result.id)
+            store.transaction {
+                result.actionId?.let { deletePendingWrite(it) }
+                deleteScanResult(result.id)
+            }
             reload()
         }
     }
@@ -134,7 +150,10 @@ class ScanViewModel(
 
     private fun reload() {
         _state.update {
-            it.copy(pending = store.pendingWriteCount().toInt(), results = store.scanResults())
+            it.copy(
+                pending = store.pendingWriteCount(PendingWriteStatus.Pending).toInt(),
+                results = store.scanResults(),
+            )
         }
     }
 

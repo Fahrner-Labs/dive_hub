@@ -155,8 +155,8 @@ CREATE TABLE pending_write(
 CREATE INDEX pending_write_status_order ON pending_write(status, id);
 
 -- v6 keeps what a replayed scan resolved to, for the scanner screen (T11): what the code was, the Diver or centre it
--- became, and a refusal's problem code. The raw scanned text is never kept once the action leaves the queue: a buddy
--- code holds a person's e-mail (client contract, Dive centres and verification codes).
+-- became, and a refusal's problem code. The raw scanned text stays in its queued action — the User's data, and what a
+-- take needs — and never in this table: a buddy code holds a person's e-mail (ADR 0043).
 CREATE TABLE scan_result(
     id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     at TEXT NOT NULL,
@@ -166,7 +166,7 @@ CREATE TABLE scan_result(
     entityId TEXT,
     detailJson TEXT,
     errorCode TEXT,
-    codeText TEXT
+    actionId INTEGER
 );
 
 selectDiveById:
@@ -416,8 +416,8 @@ selectScanResults:
 SELECT * FROM scan_result ORDER BY id DESC;
 
 insertScanResult:
-INSERT INTO scan_result(at, status, kind, name, entityId, detailJson, errorCode, codeText)
-VALUES (:at, :status, :kind, :name, :entityId, :detailJson, :errorCode, :codeText);
+INSERT INTO scan_result(at, status, kind, name, entityId, detailJson, errorCode, actionId)
+VALUES (:at, :status, :kind, :name, :entityId, :detailJson, :errorCode, :actionId);
 
 trimScanResults:
 DELETE FROM scan_result WHERE id NOT IN (SELECT id FROM scan_result ORDER BY id DESC LIMIT :keep);

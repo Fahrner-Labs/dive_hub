@@ -3,6 +3,7 @@ package dev.divehub.shared.write
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import dev.divehub.shared.ApiClient
 import dev.divehub.shared.store.DiveStore
+import dev.divehub.shared.store.PendingWriteStatus
 import dev.divehub.shared.store.ScanStatus
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
@@ -15,7 +16,6 @@ import kotlinx.io.IOException
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
@@ -101,15 +101,33 @@ class ScanReplayTest {
 
         assertIs<WriteReplayResult.Drained>(result)
         assertEquals(1, result.applied)
-        assertTrue(store.pendingWrites().isEmpty())
+        // The read resolved but the User has not decided: the action waits with its text, never re-read on its own.
+        val waiting = store.pendingWrites().single()
+        assertEquals(PendingWriteStatus.Awaiting, waiting.status)
+        assertEquals("""{"text":"SSI;1;centre;12345;Reef Diving, Sharm"}""", waiting.payloadJson)
         val scan = store.scanResults().single()
         assertEquals(ScanStatus.Read, scan.status)
         assertEquals("centre", scan.kind)
         assertEquals("Reef Diving, Sharm", scan.name)
         assertEquals(CENTRE_ID, scan.entityId)
+        assertEquals(waiting.id, scan.actionId)
         assertTrue(scan.detailJson!!.contains("12345"))
-        // Taking a person's code later needs the same text, so a read keeps it until the User acts.
-        assertEquals("SSI;1;centre;12345;Reef Diving, Sharm", scan.codeText)
+    }
+
+    @Test
+    fun `a read that awaits the User is not replayed again`() = runTest {
+        queue.enqueueScan("SSI;1;centre;12345;Reef Diving, Sharm", centreId = CENTRE_ID)
+        var reads = 0
+        val harness = ScanHarness(store) {
+            reads += 1
+            ScanReply.Body(centreAnswer())
+        }
+
+        harness.replayer.replay()
+        val again = harness.replayer.replay()
+
+        assertIs<WriteReplayResult.Empty>(again)
+        assertEquals(1, reads)
     }
 
     @Test
@@ -197,7 +215,7 @@ class ScanReplayTest {
         val scan = store.scanResults().single()
         assertEquals(ScanStatus.Failed, scan.status)
         assertEquals("code_not_recognised", scan.errorCode)
-        assertNull(scan.codeText)
+        assertNull(scan.actionId)
     }
 
     @Test
@@ -261,18 +279,22 @@ class ScanReplayTest {
         harness.replayer.replay()
 
         assertEquals(listOf("/api/verification-codes/read", "/api/dive-centres", "/api/divers/from-code"), harness.calls.map { it.path })
-        assertTrue(store.pendingWrites().isEmpty())
+        // Only the refused read left an action behind, and a refusal drops it; the two writes are done.
+        assertTrue(store.pendingWrites(PendingWriteStatus.Pending).isEmpty())
         assertEquals(listOf(ScanStatus.Created, ScanStatus.Created, ScanStatus.Failed), store.scanResults().map { it.status })
     }
 
     @Test
-    fun `the queued scan keeps the raw text only until it resolves`() = runTest {
-        queue.enqueueScan("raw text with an e-mail ada@example.com")
+    fun `a resolved read keeps its text in the queue, never in the result`() = runTest {
+        queue.enqueueScan("SSI;buddy;ada", centreId = CENTRE_ID)
         assertEquals(1, store.pendingWrites().size)
 
         ScanHarness(store) { ScanReply.Body(buddyAnswer()) }.replayer.replay()
 
-        assertTrue(store.pendingWrites().isEmpty())
-        assertFalse(store.scanResults().single().detailJson!!.contains("raw text with an e-mail"))
+        val scan = store.scanResults().single()
+        assertNotNull(scan.actionId)
+        assertTrue(scan.detailJson!!.contains("Ada"))
+        assertEquals(1, store.pendingWrites().size)
+        assertEquals(PendingWriteStatus.Awaiting, store.pendingWrites().single().status)
     }
 }

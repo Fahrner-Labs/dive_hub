@@ -623,8 +623,8 @@
     <string name="scan_syncing">Wird gelesen…</string>
     <string name="scan_sync_now">Jetzt synchronisieren</string>
     <plurals name="scan_waiting">
-        <item quantity="one">%1$d Scan wartet auf Synchronisierung</item>
-        <item quantity="other">%1$d Scans warten auf Synchronisierung</item>
+        <item quantity="one">%1$d Änderung wartet auf Synchronisierung</item>
+        <item quantity="other">%1$d Änderungen warten auf Synchronisierung</item>
     </plurals>
     <string name="scan_section_results">Scans</string>
     <string name="scan_empty">Noch keine Scans.</string>

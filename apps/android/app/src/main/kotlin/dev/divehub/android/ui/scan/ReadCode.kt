@@ -1,5 +1,7 @@
 package dev.divehub.android.ui.scan
 
+import dev.divehub.api.models.ApiVerificationCodesReadPost200Response
+import dev.divehub.api.models.ApiVerificationCodesReadPost200ResponseCandidatesItem
 import dev.divehub.shared.store.ScanResult
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -20,7 +22,7 @@ data class ReadCode(
     val lastName: String? = null,
     val email: String? = null,
     val leaderNumber: String? = null,
-    val candidates: List<ReadCandidate> = emptyList(),
+    val candidates: List<ApiVerificationCodesReadPost200ResponseCandidatesItem> = emptyList(),
 ) {
     val isCentre: Boolean get() = kind == "centre"
     val personName: String get() = listOfNotNull(firstName, lastName).joinToString(" ").trim()
@@ -37,9 +39,6 @@ data class ReadExisting(
 @Serializable
 data class ReadChange(val field: String, val from: String? = null, val to: String)
 
-@Serializable
-data class ReadCandidate(val id: String, val name: String)
-
 object ReadCodes {
     private val json = Json { ignoreUnknownKeys = true; explicitNulls = false }
 
@@ -47,6 +46,23 @@ object ReadCodes {
     fun parse(result: ScanResult): ReadCode? {
         if (result.status != dev.divehub.shared.store.ScanStatus.Read) return null
         val text = result.detailJson ?: return null
-        return runCatching { json.decodeFromString<ReadCode>(text) }.getOrNull()
+        val wire = runCatching { json.decodeFromString<ApiVerificationCodesReadPost200Response>(text) }.getOrNull()
+            ?: return null
+        // The route's two `existing` shapes are one JsonElement in the generated model; the screen needs the union.
+        val existing = wire.existing?.let { element ->
+            runCatching { json.decodeFromString<ReadExisting>(element.toString()) }.getOrNull()
+        }
+        return ReadCode(
+            kind = wire.kind,
+            centreNumber = wire.centreNumber,
+            name = wire.name,
+            existing = existing,
+            accountId = wire.accountId,
+            firstName = wire.firstName,
+            lastName = wire.lastName,
+            email = wire.email,
+            leaderNumber = wire.leaderNumber,
+            candidates = wire.candidates ?: emptyList(),
+        )
     }
 }

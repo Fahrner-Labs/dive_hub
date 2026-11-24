@@ -81,14 +81,16 @@ class ScanViewModelTest {
     @Test
     fun `creating the centre a read found queues a create with the uuid the scan kept`() = runTest(dispatcher) {
         val store = DiveStore.create(driver)
+        val queue = WriteQueue(store, clock = { "2026-11-23T10:00:00Z" })
+        val scan = queue.enqueueScan("SSI;1;centre;12345;Reef Diving, Sharm", centreId = CENTRE_ID)
         val read = ScanResult(
             id = 1,
             at = "2026-11-23T10:00:00Z",
             status = ScanStatus.Read,
             kind = "centre",
-            entityId = "01930000-0000-7000-8000-000000000001",
+            entityId = CENTRE_ID,
             detailJson = """{"kind":"centre","centreNumber":"12345","name":"Reef Diving, Sharm","existing":null}""",
-            codeText = "SSI;1;centre;12345;Reef Diving, Sharm",
+            actionId = scan.id,
         )
         store.addScanResult(read)
         val viewModel = viewModel(store, offline = true)
@@ -99,25 +101,49 @@ class ScanViewModelTest {
         val queued = store.pendingWrites().single()
         assertEquals("centre", queued.entityType)
         val payload = Json.parseToJsonElement(queued.payloadJson) as JsonObject
-        assertEquals(
-            "01930000-0000-7000-8000-000000000001",
-            (payload["id"] as JsonPrimitive).content,
-        )
+        assertEquals(CENTRE_ID, (payload["id"] as JsonPrimitive).content)
         assertEquals("Reef Diving, Sharm", (payload["name"] as JsonPrimitive).content)
-        // The read it came from is gone: its answer and text are no longer needed once the write is queued.
+        // The read it came from is gone with the write queued; its text was only ever in that action.
         assertTrue(store.scanResults().isEmpty())
     }
 
     @Test
-    fun `dismissing a read drops its kept text`() = runTest(dispatcher) {
+    fun `taking a person's code queues it with the text of the read action`() = runTest(dispatcher) {
         val store = DiveStore.create(driver)
+        val scan = WriteQueue(store, clock = { "2026-11-23T10:00:00Z" }).enqueueScan("SSI;buddy;ada")
         val read = ScanResult(
             id = 1,
             at = "2026-11-23T10:00:00Z",
             status = ScanStatus.Read,
             kind = "buddy",
             detailJson = "{}",
-            codeText = "SSI;buddy;ada",
+            actionId = scan.id,
+        )
+        store.addScanResult(read)
+        val viewModel = viewModel(store, offline = true)
+
+        viewModel.take(read, diverId = "diver-1", create = false)
+        advanceUntilIdle()
+
+        val queued = store.pendingWrites().single()
+        assertEquals("take_code", queued.entityType)
+        val payload = Json.parseToJsonElement(queued.payloadJson) as JsonObject
+        assertEquals("SSI;buddy;ada", (payload["text"] as JsonPrimitive).content)
+        assertEquals("diver-1", (payload["diverId"] as JsonPrimitive).content)
+        assertTrue(store.scanResults().isEmpty())
+    }
+
+    @Test
+    fun `dismissing a read drops its queued text with it`() = runTest(dispatcher) {
+        val store = DiveStore.create(driver)
+        val scan = WriteQueue(store, clock = { "2026-11-23T10:00:00Z" }).enqueueScan("SSI;buddy;ada")
+        val read = ScanResult(
+            id = 1,
+            at = "2026-11-23T10:00:00Z",
+            status = ScanStatus.Read,
+            kind = "buddy",
+            detailJson = "{}",
+            actionId = scan.id,
         )
         store.addScanResult(read)
         val viewModel = viewModel(store, offline = true)
@@ -126,6 +152,11 @@ class ScanViewModelTest {
         advanceUntilIdle()
 
         assertTrue(store.scanResults().isEmpty())
+        assertTrue(store.pendingWrites().isEmpty())
+    }
+
+    private companion object {
+        const val CENTRE_ID = "01930000-0000-7000-8000-000000000001"
     }
 
     private fun viewModel(store: DiveStore, offline: Boolean): ScanViewModel {

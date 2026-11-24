@@ -109,8 +109,10 @@ kept as the replay idempotency key.
 - **Camera and pictures:** `Take a picture` uses the system camera app (no `CAMERA` permission) and `Choose a picture`
   the system photo picker; both are decoded on the device by ZXing core (`com.google.zxing:core`, Apache 2.0), and the
   decoded text then takes the server path above. A picture without a code says so; it is not a code error.
-- **Store v6** adds `scan_result`, the scanner's short list of resolved scans (schema `5.sqm`). A read keeps the raw
-  text only until the User takes or dismisses it; a refusal keeps its problem code and drops the text.
+- **Store v6** adds `scan_result`, the scanner's short list of resolved scans (schema `5.sqm`). A read's answer is
+  stored there; the raw text stays in the queued action it points at (`actionId`) until the User takes or dismisses
+  it, and is never copied into the result (ADR 0043: a buddy code holds an e-mail). A refusal keeps its problem code
+  and drops the text. The resolved read's action is `awaiting`, not replayed until the User acts.
 - **Feature flag:** `BuildConfig.SCANNER_ENABLED` is off in release and on in debug, so Phase C merges dark; the
   Settings → Logbook entry is hidden when it is off. The goldens are `scan_*` and `settings_scan_en_light`.
 
