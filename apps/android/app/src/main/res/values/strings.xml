@@ -664,6 +664,7 @@
     <string name="notice_deleted">A dive was deleted on the server. Your change was not applied.</string>
     <string name="notice_gone">A dive is no longer available. Your change was not applied.</string>
     <string name="notice_forbidden">You no longer have access to a dive. Your change was not applied.</string>
+    <string name="notice_refused">The server refused this change. It was not applied.</string>
     <string name="notice_merged">A dive was merged into another one. Your change was not applied.</string>
     <string name="notice_merged_into">This dive was merged into Dive %1$d. Your change was not applied.</string>
     <string name="notice_open_dive">Open dive</string>

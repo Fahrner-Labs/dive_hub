@@ -337,6 +337,7 @@ private fun noticeText(context: android.content.Context, notice: WriteNotice): S
     notice.mergedInto != null -> context.getString(R.string.notice_merged)
     notice.reason == WriteDropReason.Forbidden -> context.getString(R.string.notice_forbidden)
     notice.reason == WriteDropReason.Gone -> context.getString(R.string.notice_gone)
+    notice.reason == WriteDropReason.Refused -> context.getString(R.string.notice_refused)
     else -> context.getString(R.string.notice_deleted)
 }
 

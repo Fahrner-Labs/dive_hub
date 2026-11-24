@@ -664,6 +664,7 @@
     <string name="notice_deleted">Ein Tauchgang wurde auf dem Server gelöscht. Deine Änderung wurde nicht übernommen.</string>
     <string name="notice_gone">Ein Tauchgang ist nicht mehr verfügbar. Deine Änderung wurde nicht übernommen.</string>
     <string name="notice_forbidden">Du hast keinen Zugriff mehr auf einen Tauchgang. Deine Änderung wurde nicht übernommen.</string>
+    <string name="notice_refused">Der Server hat diese Änderung abgelehnt. Sie wurde nicht übernommen.</string>
     <string name="notice_merged">Ein Tauchgang wurde in einen anderen zusammengeführt. Deine Änderung wurde nicht übernommen.</string>
     <string name="notice_merged_into">Dieser Tauchgang wurde in Tauchgang %1$d zusammengeführt. Deine Änderung wurde nicht übernommen.</string>
     <string name="notice_open_dive">Tauchgang öffnen</string>

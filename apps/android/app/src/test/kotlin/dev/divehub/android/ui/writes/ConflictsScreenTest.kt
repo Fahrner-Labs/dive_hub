@@ -216,6 +216,28 @@ class ConflictsScreenTest {
     }
 
     @Test
+    fun `a refused scan names the refusal rather than a deleted dive`() {
+        render(
+            state = WritesUiState(
+                capability = WriteCapability.Writeable,
+                notices = listOf(
+                    WriteNotice(
+                        entityType = "scan",
+                        entityId = "scan-1",
+                        status = 422,
+                        reason = WriteDropReason.Refused,
+                    ),
+                ),
+            ),
+        )
+
+        compose.onNodeWithText("The server refused this change. It was not applied.")
+            .assertIsDisplayed()
+        compose.onNodeWithText("A dive was deleted on the server. Your change was not applied.")
+            .assertDoesNotExist()
+    }
+
+    @Test
     fun `a merged dive is named and can be opened from the notice`() {
         var opened: String? = null
         render(
