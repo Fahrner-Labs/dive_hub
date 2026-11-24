@@ -4,6 +4,8 @@ package dev.divehub.shared.tools
 // converts only for display and back. Kept in shared/ so iOS uses the same arithmetic and the same input ranges.
 const val FEET_PER_METRE = 1 / 0.3048
 const val PSI_PER_BAR = 14.5038
+const val KG_PER_POUND = 0.45359237
+const val FAHRENHEIT_PER_CELSIUS = 9.0 / 5.0
 
 fun depthIn(metres: Double, imperial: Boolean): Double = if (imperial) metres * FEET_PER_METRE else metres
 
@@ -12,6 +14,16 @@ fun depthFromDisplay(value: Double, imperial: Boolean): Double = if (imperial) v
 fun pressureIn(bar: Double, imperial: Boolean): Double = if (imperial) bar * PSI_PER_BAR else bar
 
 fun pressureFromDisplay(value: Double, imperial: Boolean): Double = if (imperial) value / PSI_PER_BAR else value
+
+fun massIn(kilograms: Double, imperial: Boolean): Double = if (imperial) kilograms / KG_PER_POUND else kilograms
+
+fun massFromDisplay(value: Double, imperial: Boolean): Double = if (imperial) value * KG_PER_POUND else value
+
+fun temperatureIn(celsius: Double, imperial: Boolean): Double =
+    if (imperial) celsius * FAHRENHEIT_PER_CELSIUS + 32 else celsius
+
+fun temperatureFromDisplay(value: Double, imperial: Boolean): Double =
+    if (imperial) (value - 32) / FAHRENHEIT_PER_CELSIUS else value
 
 /** The ranges the API's query schemas accept; the screen refuses the same ones. */
 object ToolRanges {

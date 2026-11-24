@@ -1,0 +1,158 @@
+package dev.divehub.android.ui.dive
+
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.performScrollToNode
+import androidx.compose.ui.unit.Density
+import com.github.takahirom.roborazzi.captureRoboImage
+import dev.divehub.android.ui.DiveHubTheme
+import dev.divehub.api.models.DiveView
+import dev.divehub.api.models.DiveViewFromRecording
+import dev.divehub.api.models.DiveViewFromRecordingStartsAt
+import dev.divehub.api.models.DiveViewSite
+import dev.divehub.api.models.DiveViewValues
+import dev.divehub.api.models.DiveViewValuesStartsAt
+import dev.divehub.shared.dive.DiveEditDraft
+import dev.divehub.shared.store.DiveSite
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
+
+/**
+ * The edit screen's contract-visible states as pictures: a synced Dive being edited, an edited value with its
+ * "use the recording's value" way back, the offline wording on the destructive verbs, dark, and German at 200 % on a
+ * narrow phone. Rendered from a fixed state, so a drawing change shows up as a changed image.
+ */
+@RunWith(RobolectricTestRunner::class)
+@GraphicsMode(GraphicsMode.Mode.NATIVE)
+@Config(sdk = [36], qualifiers = "en-rUS-w411dp-h891dp-xxhdpi")
+class DiveEditScreenshotTest {
+    @get:Rule
+    val compose = createComposeRule()
+
+    @Test
+    fun `a synced dive opens for editing`() {
+        render(state(draft = DiveEditDraft.of(dive())))
+
+        compose.onNodeWithText("Edit dive").assertExists()
+        compose.onNodeWithText("Lighthouse Reef").assertExists()
+        capture("dive_edit_light.png")
+    }
+
+    @Test
+    fun `an edited value says what the recording had and offers its value back`() {
+        render(state(draft = DiveEditDraft.of(dive(overrides = listOf("maxDepthM")))))
+
+        compose.onNodeWithText("edited · recording: 20.0 m").assertExists()
+        compose.onNodeWithText("Use the recording’s value (20.0 m)").assertExists()
+        capture("dive_edit_edited.png")
+    }
+
+    @Test
+    fun `offline the destructive verbs say why they cannot go`() {
+        render(state(draft = DiveEditDraft.of(dive()), online = false))
+
+        compose.onNodeWithTag("dive_edit_scroll").performScrollToNode(hasText("More actions"))
+        compose.onNodeWithText("No answer from the instance. Check the address and your connection.").assertExists()
+        capture("dive_edit_offline_actions.png")
+    }
+
+    @Test
+    @Config(qualifiers = "en-rUS-w411dp-h891dp-night-xxhdpi")
+    fun `the editor follows the dark theme`() {
+        render(state(draft = DiveEditDraft.of(dive())), darkTheme = true)
+
+        capture("dive_edit_dark.png")
+    }
+
+    @Test
+    @Config(qualifiers = "de-rDE-w320dp-h891dp-xxhdpi")
+    fun `the editor at two hundred percent in german`() {
+        render(state(draft = DiveEditDraft.of(dive())), fontScale = 2f)
+
+        compose.onNodeWithText("Tauchgang bearbeiten").assertExists()
+        capture("dive_edit_de_narrow_2x.png")
+    }
+
+    private fun render(state: DiveEditUiState, darkTheme: Boolean = false, fontScale: Float? = null) {
+        compose.setContent {
+            DiveHubTheme(darkTheme = darkTheme) {
+                val density = LocalDensity.current
+                CompositionLocalProvider(
+                    LocalDensity provides Density(density.density, fontScale ?: density.fontScale),
+                ) {
+                    DiveEditScreen(
+                        state = state,
+                        units = "metric",
+                        onBack = {},
+                        onEdit = {},
+                        onSave = {},
+                        onRetry = {},
+                    )
+                }
+            }
+        }
+    }
+
+    private fun state(draft: DiveEditDraft, online: Boolean = true) = DiveEditUiState(
+        loading = false,
+        draft = draft,
+        originalSiteName = "Lighthouse Reef",
+        sites = listOf(
+            DiveSite(id = "site-1", name = "Lighthouse Reef"),
+            DiveSite(id = "site-2", name = "Blue Hole"),
+        ),
+        online = online,
+    )
+
+    private fun dive(overrides: List<String> = emptyList()) = DiveView(
+        id = "d1",
+        diverId = "diver",
+        version = 3,
+        values = DiveViewValues(
+            number = 42,
+            startsAt = DiveViewValuesStartsAt("2026-04-02T09:00:00Z", 7200),
+            durationSeconds = 3_000.0,
+            maxDepthM = 24.3,
+            avgDepthM = 12.0,
+            waterTemperatureC = 18.0,
+        ),
+        overrides = overrides,
+        utcOffsetSource = "device",
+        fromProvider = null,
+        fromRecording = DiveViewFromRecording(
+            startsAt = DiveViewFromRecordingStartsAt("2026-04-02T09:00:00Z", 7200),
+            durationSeconds = 3_000.0,
+            maxDepthM = 20.0,
+            avgDepthM = 12.0,
+            waterTemperatureC = 18.0,
+        ),
+        notes = "Two barracuda on the wreck.",
+        site = DiveViewSite("site-1", "Lighthouse Reef"),
+        waterType = "salt",
+        waterMismatch = null,
+        position = null,
+        recordings = emptyList(),
+        cylinders = emptyList(),
+        lead = emptyList(),
+        leadTotalKg = null,
+        weightingFeedback = null,
+        suit = null,
+        sac = null,
+        sacMissing = null,
+        participants = emptyList(),
+        verificationCodes = emptyList(),
+    )
+
+    private fun capture(name: String) {
+        compose.onRoot().captureRoboImage("src/test/screenshots/$name")
+    }
+}

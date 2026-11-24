@@ -25,6 +25,7 @@ import dev.divehub.shared.sync.SseLiveHints
 import dev.divehub.shared.sync.SyncEngine
 import dev.divehub.shared.sync.SyncRefresher
 import dev.divehub.shared.sync.SyncResult
+import dev.divehub.shared.write.WriteCapability
 import dev.divehub.shared.write.WriteQueue
 import dev.divehub.shared.write.WriteReplayer
 import io.ktor.client.engine.okhttp.OkHttp
@@ -34,6 +35,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancelChildren
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -120,6 +126,10 @@ class AppContainer(context: Context) {
     /** The D4 read side: the list, one Dive, its neighbours and its profiles come from the store, never a request. */
     val storeLogbook = StoreLogbook(diveStore)
 
+    /** D7's capability probe: only an instance that answers the feed gets the write UI at all. */
+    val writeCapability = WriteCapability(session.client)
+    val writeable = writeCapability.writeable
+
     /** What the settings screen reads: the stored instance address and the sync state the logbook also reads. */
     val settings: SettingsRepository by lazy { SettingsRepository(instances, diveStore) }
 
@@ -149,8 +159,22 @@ class AppContainer(context: Context) {
     val syncConnected = refresher.streamHealthy
     private val periodicSync = WorkManagerPeriodicSync(application)
     private val syncScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    // The container outlives every session, so a UI-only combination must not sit in `syncScope` (which a sign-out
+    // cancels): a later sign-in would otherwise keep a stale value.
+    private val uiScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val wipeLock = Mutex()
     private var syncing = false
+
+    /**
+     * Whether the live stream is answering: online-only actions (the destructive verbs) are offered while it is true.
+     * The offline flag wins, so a dropped poll shows them as unavailable even before the stream notices.
+     */
+    val online: StateFlow<Boolean> = combine(refresher.streamHealthy, refresher.offline) { connected, offline ->
+        connected && !offline
+    }.stateIn(uiScope, SharingStarted.Eagerly, false)
+
+    /** A local edit reached the store (the queue's optimistic write): open screens reread it without a sync. */
+    fun noteStoreWrite() = refresher.noteStoreWrite()
 
     /**
      * Start syncing for a signed-in User: the initial phases in the background, the live/poll refresh loop, and the
@@ -162,6 +186,12 @@ class AppContainer(context: Context) {
         refresher.start(syncScope)
         periodicSync.schedule()
         syncScope.launch {
+            // D7: one capability probe per session, so a pre-feed server hides the write UI instead of failing edits.
+            val url = session.knownInstance()
+            if (url != null) {
+                session.client.baseUrl = url
+                if (session.hasSession()) writeCapability.probe()
+            }
             val result = sync.sync()
             if (result == SyncResult.SessionEnded) return@launch
             refresher.initialFinished(result)
@@ -169,11 +199,18 @@ class AppContainer(context: Context) {
             refresher.drainWritesNow()
             refresher.profilesOnce()
         }
+        // A cold start with no answer must not hide writes for the whole session: ask again once the stream answers.
+        syncScope.launch {
+            online.collect { connected ->
+                if (connected && writeCapability.writeable.value == null) writeCapability.probe()
+            }
+        }
     }
 
     fun stopSync() {
         if (!syncing) return
         syncing = false
+        writeCapability.reset()
         refresher.stop()
         periodicSync.cancel()
         syncScope.coroutineContext.cancelChildren()

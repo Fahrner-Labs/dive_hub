@@ -2,6 +2,7 @@ package dev.divehub.shared.dive
 
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
 import kotlin.time.Instant
 
@@ -39,6 +40,10 @@ fun diveLocalTime(startsAt: String, utcOffsetSeconds: Int?): LocalDateTime? = ru
     val zone = utcOffsetSeconds?.let { TimeZone.of(offsetId(it)) } ?: TimeZone.UTC
     Instant.parse(startsAt).toLocalDateTime(zone)
 }.getOrNull()
+
+/** The UTC instant of a wall-clock time at a site offset, as the edit form sends it (`startsAt.at`). */
+fun diveStartAt(local: LocalDateTime, utcOffsetSeconds: Int): String =
+    local.toInstant(TimeZone.of(offsetId(utcOffsetSeconds))).toString()
 
 /** The UTC offset a page puts beside the time, "UTC+2", "UTC-3:30"; null where no offset is shown. */
 fun utcOffsetText(utcOffsetSeconds: Int?): String? {

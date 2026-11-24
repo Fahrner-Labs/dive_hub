@@ -350,6 +350,9 @@ online.
 - **Write as if online.** An edit applies to the store at once and enqueues a `patch` entry with the base
   `version` it started from; nothing the native client can edit goes as a direct online-only call. Repeated
   edits to one thing coalesce into one entry (the latest values, the original base version).
+- **A Dive's site is chosen from what the device holds.** The full sync caches the Dive sites, so a native edit may
+  choose one of those or clear the site with no connection; creating a new site offline is not offered. The choice
+  rides the `patch` (`siteId`), never a separate call.
 - **The queue is visible and honest.** While entries wait, the client says so ("2 changes waiting to sync")
   with a way to see what waits; an entry that cannot go is a state on that thing, never a toast.
 - **A scanned code is a deferred action: verbatim, never merged.** With no signal the raw code text queues and
