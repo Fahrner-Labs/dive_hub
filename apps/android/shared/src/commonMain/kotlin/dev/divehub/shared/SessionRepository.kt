@@ -50,6 +50,7 @@ class SessionRepository(
     private val userData: UserScopedStore,
     private val cachedMe: CachedMeStore,
     versionName: String,
+    private val pendingWrites: PendingWriteQueue? = null,
 ) {
     private val json = Json {
         ignoreUnknownKeys = true
@@ -68,11 +69,20 @@ class SessionRepository(
     /** The signed-in User's HTTP layer, for repositories that read their data (the logbook). */
     val client: ApiClient get() = api
 
+    /**
+     * True while a sign-in is proving the new User. [hasSession] stays false so a background worker cannot start a
+     * sync with the new token before the previous User's store is either kept (same User) or wiped (ADR 0084 D8).
+     */
+    private var signingIn = false
+
     private val _state = MutableStateFlow<SessionState>(SessionState.Loading)
     val state: StateFlow<SessionState> = _state.asStateFlow()
 
     /** The instance URL the sign-in screen starts from, if one was used before. */
     suspend fun knownInstance(): String? = instances.load()
+
+    /** How many writes are still waiting to reach the server; sign-out and a change of User must not drop them silently. */
+    suspend fun pendingWriteCount(): Long = pendingWrites?.queuedWriteCount() ?: 0
 
     /**
      * Probe `GET /api/health/live` before asking for credentials (FAH-332). The route is unauthenticated, so a typo,
@@ -118,7 +128,7 @@ class SessionRepository(
     }
 
     /** Whether this device holds both an instance and a session token: what a background sync needs before a request. */
-    suspend fun hasSession(): Boolean = instances.load() != null && tokens.load() != null
+    suspend fun hasSession(): Boolean = !signingIn && instances.load() != null && tokens.load() != null
 
     /**
      * A stored token is proven by GET /api/me; without one the sign-in screen shows. With one but no answer (offline,
@@ -150,55 +160,118 @@ class SessionRepository(
         }
     }
 
-    suspend fun signIn(instanceUrl: String, email: String, password: String): UserView {
+    /**
+     * Sign in and prove the token with `GET /api/me`. The previous User's queued writes survive a lost session: when
+     * the same User signs back in they are kept and replay resumes (ADR 0084 D8). A different User is a switch, and
+     * when that switch would discard queued writes it must be an explicit decision — the caller retries with
+     * [discardPending] after the warning. A first sign-in with no remembered User still wipes first, before the new
+     * token is stored, so no background sync can write the old rows back (client contract §1).
+     */
+    suspend fun signIn(
+        instanceUrl: String,
+        email: String,
+        password: String,
+        discardPending: Boolean = false,
+    ): UserView {
         val url = InstanceUrl.normalize(instanceUrl)
             ?: throw DiveHubException(ErrorCodes.INVALID_INSTANCE_URL)
         api.baseUrl = url
-        // The previous User's token goes first, so a background sync waiting on the wipe cannot refresh with it and
-        // write the old rows back after the store is cleared (client contract §1).
-        tokens.clear()
-        userData.forget()
-        cachedMe.clear()
+        // The last successful answer survives a 401, so it still names the User the queued writes belong to.
+        val previousUserId = cachedMe.load()?.let(::cachedUserId)
+        val queuedAtStart = pendingWriteCount()
 
-        val body = json.encodeToString(SignInEmailRequest(email = email, password = password))
-        val response = api.post("/api/auth/sign-in/email", body, authenticated = false)
-        if (!response.status.isSuccess()) throw signInFailure(response)
-
-        // The sign-in response carries the session token in `set-auth-token`, never as a cookie (ADR 0074).
-        val token = response.headers[SET_AUTH_TOKEN]
-            ?: throw DiveHubException(ErrorCodes.MISSING_TOKEN, response.status.value)
-        tokens.save(token)
-
-        val me = try {
-            me()
-        } catch (error: DiveHubException) {
-            if (error.code != ErrorCodes.CLIENT_TOO_OLD) {
-                tokens.clear()
-                userData.forget()
-            }
-            throw error
-        } catch (error: NoAnswerException) {
+        signingIn = true
+        try {
+            // The previous User's token goes first, so a background sync waiting on the wipe cannot refresh with it.
             tokens.clear()
-            userData.forget()
-            throw error
-        }
+            // With no remembered User there is no same-User resume to protect: wipe before the new token is stored.
+            // A queue present in that state belongs to a User we cannot identify, so it waits for an explicit decision.
+            if (previousUserId == null && queuedAtStart == 0L) {
+                userData.forget()
+                cachedMe.clear()
+            }
 
-        instances.save(url)
-        rememberMe(me)
-        return me.user.also { _state.value = SessionState.SignedIn(url, it, me.preferences) }
+            val body = json.encodeToString(SignInEmailRequest(email = email, password = password))
+            val response = api.post("/api/auth/sign-in/email", body, authenticated = false)
+            if (!response.status.isSuccess()) throw signInFailure(response)
+
+            // The sign-in response carries the session token in `set-auth-token`, never as a cookie (ADR 0074).
+            val token = response.headers[SET_AUTH_TOKEN]
+                ?: throw DiveHubException(ErrorCodes.MISSING_TOKEN, response.status.value)
+            tokens.save(token)
+
+            val me = try {
+                me()
+            } catch (error: DiveHubException) {
+                if (error.code != ErrorCodes.CLIENT_TOO_OLD) tokens.clear()
+                throw error
+            } catch (error: NoAnswerException) {
+                tokens.clear()
+                throw error
+            }
+
+            if (previousUserId == null) {
+                if (queuedAtStart > 0 && !discardPending) {
+                    tokens.clear()
+                    throw PendingWritesException(queuedAtStart)
+                }
+                if (queuedAtStart > 0) {
+                    userData.forget()
+                    cachedMe.clear()
+                }
+            } else if (previousUserId != me.user.id) {
+                val queued = pendingWriteCount()
+                if (queued > 0 && !discardPending) {
+                    // Do not leave the new User's token usable over the previous User's store.
+                    tokens.clear()
+                    throw PendingWritesException(queued)
+                }
+                userData.forget()
+                cachedMe.clear()
+            }
+
+            instances.save(url)
+            rememberMe(me)
+            return me.user.also { _state.value = SessionState.SignedIn(url, it, me.preferences) }
+        } finally {
+            signingIn = false
+        }
     }
 
     /**
      * Ends the session here whatever the server answers; the server call is best effort. The instance URL stays, so
      * the next person sees the sign-in form rather than the first-start question again.
+     *
+     * A non-empty queue blocks the sign-out: the caller warns ("N changes haven't synced") and offers *Sync now* or
+     * *Discard and sign out* (ADR 0084 D8). [signOutDiscardingPending] is the confirmed discard.
      */
-    suspend fun signOut() = endSession(keepAddress = true)
+    suspend fun signOut(): SignOutOutcome = endSessionGuarded(keepAddress = true)
+
+    /** *Discard and sign out*: the User accepted losing the queued writes, so the wipe proceeds (ADR 0084 D8). */
+    suspend fun signOutDiscardingPending(): SignOutOutcome {
+        endSession(keepAddress = true)
+        return SignOutOutcome.SignedOut
+    }
 
     /**
      * The settings screen's "Change instance": sign out (which wipes the previous User's local data) and forget the
-     * address too, so the next start asks for an instance instead of falling back to the old one.
+     * address too, so the next start asks for an instance instead of falling back to the old one. A non-empty queue
+     * blocks it exactly like [signOut].
      */
-    suspend fun changeInstance() = endSession(keepAddress = false)
+    suspend fun changeInstance(): SignOutOutcome = endSessionGuarded(keepAddress = false)
+
+    /** *Discard and sign out* for a change of instance (ADR 0084 D8). */
+    suspend fun changeInstanceDiscardingPending(): SignOutOutcome {
+        endSession(keepAddress = false)
+        return SignOutOutcome.SignedOut
+    }
+
+    private suspend fun endSessionGuarded(keepAddress: Boolean): SignOutOutcome {
+        val queued = pendingWriteCount()
+        if (queued > 0) return SignOutOutcome.PendingChanges(queued)
+        endSession(keepAddress)
+        return SignOutOutcome.SignedOut
+    }
 
     private suspend fun endSession(keepAddress: Boolean) {
         try {
@@ -223,6 +296,13 @@ class SessionRepository(
         val response = api.get("/api/me")
         if (!response.status.isSuccess()) throw api.failure(response)
         return api.decode(response)
+    }
+
+    /** The User the last successful answer named; a cache from another shape is no answer. */
+    private fun cachedUserId(cached: String): String? = try {
+        json.decodeFromString<ApiMeGet200Response>(cached).user.id
+    } catch (_: Exception) {
+        null
     }
 
     /** Keep the last successful answer for a cold start with no network; a write failure only costs that fallback. */
@@ -294,6 +374,20 @@ class SessionRepository(
 /** `GET /api/health/live`'s shape (FAH-332): only the status proves the host is a Dive Hub. */
 @Serializable
 private data class HealthView(val status: String)
+
+/** What a sign-out or change-of-User did: it ended the session, or it needs the User's decision first (ADR 0084 D8). */
+sealed interface SignOutOutcome {
+    data object SignedOut : SignOutOutcome
+
+    /** The queue is non-empty; the session stays until the caller offers *Sync now* or *Discard and sign out*. */
+    data class PendingChanges(val count: Long) : SignOutOutcome
+}
+
+/** A sign-in as another User would discard queued writes: an explicit decision is required (ADR 0084 D8). */
+class PendingWritesException(val count: Long) : DiveHubException(
+    code = ErrorCodes.PENDING_WRITES,
+    serverMessage = "$count queued writes belong to the previous User",
+)
 
 private const val HEALTH_LIVE_PATH = "/api/health/live"
 private const val HEALTHY_STATUS = "ok"

@@ -3,6 +3,8 @@ package dev.divehub.shared.sync
 import dev.divehub.shared.DiveHubException
 import dev.divehub.shared.ErrorCodes
 import dev.divehub.shared.NoAnswerException
+import dev.divehub.shared.write.WriteDrain
+import dev.divehub.shared.write.WriteReplayResult
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -55,6 +57,11 @@ class SyncRefresher(
      * (ADR 0080); a refusal that repeats at the same code and status is already represented by the previous entry.
      */
     private val onStreamFailure: (StreamFailure) -> Unit = {},
+    /**
+     * The offline write queue's replay (ADR 0084 D3). Draining after a refresh/hint is what turns a queued edit into a
+     * server write — and a 412 into a parked conflict — on the same triggers the read side uses.
+     */
+    private val writes: WriteDrain? = null,
 ) {
     private val _revision = MutableStateFlow(0L)
 
@@ -109,12 +116,14 @@ class SyncRefresher(
                 _offline.value = false
                 lastStreamFailure = null
                 mark(engine.refresh())
+                drainWrites()
                 profilesSoon()
             }
             is LiveEvent.Hint -> {
                 _streamHealthy.value = true
                 if (event.hint.kind != "dive" && event.hint.kind != "site") return
                 mark(engine.applyHint(event.hint.kind, event.hint.id))
+                drainWrites()
                 // A drain (or a dive hint) may have marked a Dive's profiles pending; the background phase picks it up.
                 profilesSoon()
             }
@@ -134,12 +143,19 @@ class SyncRefresher(
     /** The opened Dive's detail again, so a change missed while the stream was down is not shown as fresh. */
     suspend fun refreshDiveOnce(id: String) {
         mark(engine.applyDiveHint(id))
+        drainWrites()
         profilesSoon()
     }
 
     /** One refresh regardless of stream health; the WorkManager worker runs this without a foreground poll. */
     suspend fun refreshOnce() {
         mark(engine.refresh())
+        drainWrites()
+    }
+
+    /** *Sync now* from the sign-out warning, or the app's initial run: drain the queue and tell open screens. */
+    suspend fun drainWritesNow() {
+        drainWrites()
     }
 
     /** Drain the pending profiles phase and tell open screens; a no-op when every Dive already has its profiles. */
@@ -292,6 +308,29 @@ class SyncRefresher(
     private fun mark(result: SyncResult) {
         _offline.value = result is SyncResult.Stopped && result.error is NoAnswerException
         if (result != SyncResult.SessionEnded) bump()
+    }
+
+    /**
+     * Replay the queue after the store may have moved. A replay that applied, parked, dropped or failed something
+     * changes what open screens should show; a 401 already ended the session and left the queue intact (ADR 0084 D8).
+     */
+    private suspend fun drainWrites() {
+        val drain = writes ?: return
+        val result = try {
+            drain.drain()
+        } catch (error: CancellationException) {
+            throw error
+        } catch (_: Exception) {
+            // A transient replay failure is a state on the entry, not a reason to break the read refresh loop.
+            return
+        }
+        when (result) {
+            is WriteReplayResult.Drained -> {
+                if (result.applied + result.conflicted + result.dropped + result.failed > 0) bump()
+            }
+            is WriteReplayResult.Stopped -> bump()
+            WriteReplayResult.Empty, WriteReplayResult.SessionEnded -> Unit
+        }
     }
 
     private fun bump() {

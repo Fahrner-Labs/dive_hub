@@ -14,6 +14,7 @@ import dev.divehub.shared.InstanceUrl
 import dev.divehub.shared.NoAnswerException
 import dev.divehub.shared.SessionRepository
 import dev.divehub.shared.SessionState
+import dev.divehub.shared.SignOutOutcome
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -138,9 +139,14 @@ class MainViewModel(
         cancelProbe()
         viewModelScope.launch {
             _state.update { it.copy(busy = true, error = null) }
-            session.changeInstance()
+            val outcome = session.changeInstance()
             _state.update {
-                it.copy(busy = false, instanceUrl = null, user = null, units = null, error = null, reachability = Reachability.Unknown)
+                if (outcome == SignOutOutcome.SignedOut) {
+                    it.copy(busy = false, instanceUrl = null, user = null, units = null, error = null, reachability = Reachability.Unknown)
+                } else {
+                    // Queued writes block the switch until the User decides (the warning UI is T7).
+                    it.copy(busy = false, error = null)
+                }
             }
         }
     }

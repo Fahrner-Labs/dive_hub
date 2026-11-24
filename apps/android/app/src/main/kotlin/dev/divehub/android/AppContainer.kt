@@ -9,6 +9,7 @@ import dev.divehub.android.database.AndroidDiveStore
 import dev.divehub.android.sync.WorkManagerPeriodicSync
 import dev.divehub.shared.CachedMeStore
 import dev.divehub.shared.InstanceUrlStore
+import dev.divehub.shared.PendingWriteQueue
 import dev.divehub.shared.SessionRepository
 import dev.divehub.shared.store.DiveStore
 import dev.divehub.shared.TokenStore
@@ -24,6 +25,8 @@ import dev.divehub.shared.sync.SseLiveHints
 import dev.divehub.shared.sync.SyncEngine
 import dev.divehub.shared.sync.SyncRefresher
 import dev.divehub.shared.sync.SyncResult
+import dev.divehub.shared.write.WriteQueue
+import dev.divehub.shared.write.WriteReplayer
 import io.ktor.client.engine.okhttp.OkHttp
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.CoroutineScope
@@ -82,7 +85,24 @@ class AppContainer(context: Context) {
         }
     }
 
-    val session = SessionRepository(httpEngine, tokens, instances, userData, cachedMe, versionName = BuildConfig.VERSION_NAME)
+    val session = SessionRepository(
+        httpEngine,
+        tokens,
+        instances,
+        userData,
+        cachedMe,
+        versionName = BuildConfig.VERSION_NAME,
+        pendingWrites = object : PendingWriteQueue {
+            override suspend fun queuedWriteCount(): Long =
+                withContext(Dispatchers.IO) { diveStore.pendingWriteCount() }
+        },
+    )
+
+    /** The offline write queue: screens enqueue here and the store shows the edit at once (ADR 0084 D4). */
+    val writeQueue: WriteQueue by lazy { WriteQueue(diveStore) }
+
+    /** The replay/conflict side: drains the queue on sync triggers and answers the resolution surface (ADR 0084 D3). */
+    val writeReplayer: WriteReplayer by lazy { WriteReplayer(session.client, diveStore) }
 
     /** The logbook's and dive page's read sides share the session's HTTP layer (instance URL and bearer token). */
     val logbook = LogbookRepository(session.client)
@@ -115,6 +135,7 @@ class AppContainer(context: Context) {
                 },
             )
         },
+        writes = writeReplayer,
     )
 
     /** Open screens reread the store when a sync or hint writes it, and say "cached" when the last attempt got no answer. */
@@ -140,6 +161,8 @@ class AppContainer(context: Context) {
             val result = sync.sync()
             if (result == SyncResult.SessionEnded) return@launch
             refresher.initialFinished(result)
+            // A resumed same-User session may already hold queued writes (ADR 0084 D8); replay them before the profiles.
+            refresher.drainWritesNow()
             refresher.profilesOnce()
         }
     }
@@ -172,8 +195,23 @@ class AppContainer(context: Context) {
     }
 
     /**
+     * *Sync now* from the sign-out warning (ADR 0084 D8): replay the queue without waiting for the poll or worker. The
+     * session stays signed in; the caller re-reads the queue size to decide whether sign-out may proceed.
+     */
+    suspend fun drainWrites() {
+        val url = session.knownInstance() ?: return
+        session.client.baseUrl = url
+        if (!session.hasSession()) return
+        wipeLock.withLock {
+            if (!session.hasSession()) return@withLock
+            refresher.drainWritesNow()
+        }
+    }
+
+    /**
      * One scheduled run (WorkManager): phase 1, tombstones and pending profiles, only when this device holds a
-     * session. [wipeLock] keeps it from writing after a sign-out wipe.
+     * session. [wipeLock] keeps it from writing after a sign-out wipe. [SyncRefresher.refreshOnce] also drains the
+     * offline write queue (ADR 0084 D3), so a background run sends pending edits, not only reads.
      */
     suspend fun refreshNow() {
         val url = session.knownInstance() ?: return

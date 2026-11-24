@@ -16,13 +16,18 @@ import io.ktor.client.statement.bodyAsText
 import io.ktor.http.encodeURLParameter
 import io.ktor.http.isSuccess
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import kotlin.time.Clock
 
 /** Why a queued write left the queue without being applied: the thing it edits is gone. */
@@ -66,16 +71,24 @@ sealed interface WriteReplayResult {
  * changed on both sides park the entry as `conflicted`. A 404/403/410 drops the entry with a notice; a 401 stops
  * replay and keeps the whole queue (D8).
  *
- * T6a stops at parking: the conflict state is stored (`conflictJson`) but the resolution surface is T6b/T7.
+ * A parked conflict is a first-class record: [conflicts] shows both values and [resolve] puts the User's decisions
+ * back into the queue against the fresh version. The Android decision screen itself is T7.
  */
 class WriteReplayer(
     private val api: ApiClient,
     private val store: DiveStore,
     private val clock: () -> String = { Clock.System.now().toString() },
-) {
+) : WriteDrain {
     private val json = Json { ignoreUnknownKeys = true; explicitNulls = false }
 
-    suspend fun replay(): WriteReplayResult {
+    /** One replay at a time: the live stream, the foreground poll and WorkManager share the queue. */
+    private val lock = Mutex()
+
+    override suspend fun drain(): WriteReplayResult = replay()
+
+    suspend fun replay(): WriteReplayResult = lock.withLock { replayLocked() }
+
+    private suspend fun replayLocked(): WriteReplayResult {
         val entries = store.pendingWrites(PendingWriteStatus.Pending)
         if (entries.isEmpty()) return WriteReplayResult.Empty
 
@@ -101,6 +114,190 @@ class WriteReplayer(
             }
         }
         return WriteReplayResult.Drained(applied, conflicted, dropped, failed, notices)
+    }
+
+    /**
+     * Every parked conflict as the UI's decision records, oldest first (ADR 0084 D3). An entry whose stored state
+     * cannot be read is left out rather than shown half-decoded; the queue keeps it for a later replay attempt.
+     */
+    fun conflicts(): List<WriteConflictView> =
+        store.pendingWrites(PendingWriteStatus.Conflicted).mapNotNull { entry ->
+            val state = decodeConflict(entry.conflictJson) ?: return@mapNotNull null
+            WriteConflictView(
+                entryId = entry.id,
+                entityType = entry.entityType,
+                entityId = entry.entityId,
+                serverVersion = state.serverVersion,
+                fields = state.fields.map {
+                    ConflictFieldView(
+                        field = it.field,
+                        base = it.base,
+                        server = it.server,
+                        local = it.local,
+                        localAction = it.localAction,
+                    )
+                },
+            )
+        }
+
+    /**
+     * Apply the User's choices to a parked entry (ADR 0084 D3). The fresh server view lands in the store at once, the
+     * fields kept as "this phone" go back into the queue against [WriteConflict.serverVersion], and replay can drain
+     * them. A field without a choice keeps the preselected "this phone" side.
+     *
+     * When every field takes the server's value there is nothing left to send: the entry leaves the queue and the
+     * store holds the server's view.
+     */
+    fun resolve(entryId: Long, choices: Map<String, ConflictSide>): ConflictResolution {
+        val entry = store.pendingWrites(PendingWriteStatus.Conflicted).firstOrNull { it.id == entryId }
+            ?: throw IllegalArgumentException("No parked conflict with id $entryId")
+        val state = decodeConflict(entry.conflictJson)
+            ?: throw IllegalArgumentException("Pending write $entryId has no readable conflict state")
+        val base = parseObject(entry.baseJson)
+            ?: throw IllegalArgumentException("Pending write $entryId has no base payload")
+        val patch = parseObject(entry.payloadJson)
+            ?: throw IllegalArgumentException("Pending write $entryId has no queued payload")
+        val serverView = decodeDive(state.server.toString())
+            ?: throw IllegalArgumentException("Pending write $entryId has no server view")
+
+        val resolved = when (entry.entityType) {
+            WriteEntities.DIVE -> resolveDive(base, state.server, patch, choices)
+            WriteEntities.DIVE_PARTICIPANTS -> resolveParticipants(base, state.server, patch, choices)
+            else -> throw IllegalArgumentException("Unsupported entity type for pending write $entryId")
+        }
+
+        // The decision is visible at once: the fresh server view, then the kept "this phone" values on top.
+        store.transaction { writeDiveDetail(serverView) }
+        if (resolved.isNotEmpty()) applyResolved(entry, resolved)
+
+        if (resolved.isEmpty()) {
+            store.deletePendingWrite(entry.id)
+            return ConflictResolution.KeptServer(entry.entityType, entry.entityId)
+        }
+        store.updatePendingWrite(
+            entry.copy(
+                payloadJson = resolved.toString(),
+                baseVersion = state.serverVersion,
+                baseJson = state.server.toString(),
+                status = PendingWriteStatus.Pending,
+                lastError = null,
+                conflictJson = null,
+            ),
+        )
+        return ConflictResolution.Requeued(entry.id)
+    }
+
+    private fun resolveDive(
+        base: JsonObject,
+        server: JsonObject,
+        patch: JsonObject,
+        choices: Map<String, ConflictSide>,
+    ): JsonObject {
+        val merge = DiveMerge.mergeDive(base, server, patch)
+        val merged = merge.patch.toMutableMap()
+        val set = (merged["set"] as? JsonObject)?.toMutableMap() ?: linkedMapOf()
+        val reset = (merged["reset"] as? JsonArray)
+            ?.mapNotNull { (it as? JsonPrimitive)?.takeIf { primitive -> primitive.isString }?.content }
+            ?.toMutableSet()
+            ?: linkedSetOf()
+
+        for (conflict in merge.conflicts) {
+            if ((choices[conflict.field] ?: ConflictSide.ThisPhone) != ConflictSide.ThisPhone) continue
+            when (conflict.localAction) {
+                "set" -> {
+                    val field = conflict.field.removePrefix("set.")
+                    set[field] = conflict.local ?: JsonNull
+                    reset.remove(field)
+                }
+                "reset" -> {
+                    val field = conflict.field.removePrefix("reset.")
+                    reset.add(field)
+                    set.remove(field)
+                }
+                else -> merged[conflict.field] = conflict.local ?: JsonNull
+            }
+        }
+
+        if (set.isEmpty()) merged.remove("set") else merged["set"] = JsonObject(set)
+        if (reset.isEmpty()) merged.remove("reset") else merged["reset"] = JsonArray(reset.map(::JsonPrimitive))
+        return JsonObject(merged)
+    }
+
+    private fun resolveParticipants(
+        base: JsonObject,
+        server: JsonObject,
+        patch: JsonObject,
+        choices: Map<String, ConflictSide>,
+    ): JsonObject {
+        val local = patch["participants"] as? JsonArray ?: JsonArray(emptyList())
+        val merge = DiveMerge.mergeParticipants(base, server, local)
+        val resolved = LinkedHashMap(roles(merge.participants))
+
+        for (conflict in merge.conflicts) {
+            val diverId = conflict.field.removePrefix("participants.")
+            when (choices[conflict.field] ?: ConflictSide.ThisPhone) {
+                ConflictSide.ThisPhone -> when (conflict.localAction) {
+                    "remove" -> resolved.remove(diverId)
+                    else -> (conflict.local as? JsonPrimitive)
+                        ?.takeIf { primitive -> primitive.isString }
+                        ?.content
+                        ?.let { resolved[diverId] = it }
+                }
+                ConflictSide.Server -> {
+                    val role = (conflict.server as? JsonPrimitive)
+                        ?.takeIf { primitive -> primitive.isString }
+                        ?.content
+                    if (role == null) resolved.remove(diverId) else resolved[diverId] = role
+                }
+            }
+        }
+
+        // Nothing local survived: the server's roster is already in the store, so the entry has nothing to send.
+        if (resolved == roles(server["participants"])) return JsonObject(emptyMap())
+        return JsonObject(
+            mapOf(
+                "participants" to JsonArray(
+                    resolved.map { (diverId, role) ->
+                        buildJsonObject {
+                            put("diverId", diverId)
+                            put("role", role)
+                        }
+                    },
+                ),
+            ),
+        )
+    }
+
+    private fun applyResolved(entry: PendingWrite, resolved: JsonObject) {
+        if (entry.entityType == WriteEntities.DIVE_PARTICIPANTS) {
+            val roster = resolved["participants"] as? JsonArray ?: return
+            DiveLocalEdit.applyParticipants(store, entry.entityId, roster)
+        } else {
+            DiveLocalEdit.apply(store, entry.entityId, resolved)
+        }
+    }
+
+    private fun roles(element: JsonElement?): Map<String, String> {
+        val array = element as? JsonArray ?: return emptyMap()
+        val result = LinkedHashMap<String, String>()
+        for (item in array) {
+            val entry = item as? JsonObject ?: continue
+            val diverId = (entry["diverId"] as? JsonPrimitive)
+                ?.takeIf { primitive -> primitive.isString }
+                ?.content
+                ?: continue
+            val role = (entry["role"] as? JsonPrimitive)
+                ?.takeIf { primitive -> primitive.isString }
+                ?.content
+                ?: continue
+            result[diverId] = role
+        }
+        return result
+    }
+
+    private fun decodeConflict(text: String?): WriteConflict? {
+        if (text.isNullOrBlank()) return null
+        return runCatching { json.decodeFromString(WriteConflict.serializer(), text) }.getOrNull()
     }
 
     private suspend fun replayEntry(entry: PendingWrite): EntryOutcome {
