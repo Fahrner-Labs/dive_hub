@@ -4,6 +4,7 @@ import android.text.format.DateFormat
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,8 +25,11 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
@@ -97,6 +101,7 @@ import dev.divehub.android.ui.components.SecondaryButton
 import dev.divehub.android.ui.components.Section
 import dev.divehub.android.ui.tools.NumberField
 import dev.divehub.shared.dive.DiveEditDraft
+import dev.divehub.shared.dive.DiveEditParticipant
 import dev.divehub.shared.dive.DiveEditStart
 import dev.divehub.shared.dive.DiveEditSuit
 import dev.divehub.shared.dive.DiveEditWeighting
@@ -122,6 +127,9 @@ private const val MIN_OFFSET_SECONDS = -12 * 3600
 private const val MAX_OFFSET_SECONDS = 14 * 3600
 private const val SHEET_MAX_HEIGHT_DP = 520
 
+/** The check in a role chip; a fixed icon size, not a spacing step. */
+private val RoleChoiceIcon = 18.dp
+
 /** The editor's route: it only wires the screen to its state holder. */
 @Composable
 fun DiveEditScreenRoute(
@@ -145,10 +153,10 @@ fun DiveEditScreenRoute(
 }
 
 /**
- * The Dive's scalar editor: Notes, its site, start and UTC offset, the five values set by hand (with the Recording's
- * value and a way back to it), the suit and how the weighting felt. Every change stays on the device through the
- * offline queue; the number is shown, never editable (ADR 0048), and the destructive verbs say why they are not
- * available here.
+ * The Dive's editor: Notes, its site, start and UTC offset, the five values set by hand (with the Recording's
+ * value and a way back to it), the suit and how the weighting felt, and who else was on it, with their roles and the
+ * joint dive's union rule. Every change stays on the device through the offline queue; the number is shown, never
+ * editable (ADR 0048), and the destructive verbs say why they are not available here.
  */
 @Composable
 fun DiveEditScreen(
@@ -213,6 +221,8 @@ fun DiveEditScreen(
                 else -> EditForm(
                     draft = draft,
                     sites = state.sites,
+                    divers = state.divers,
+                    ownerDiverId = state.ownerDiverId,
                     seriesOptions = state.seriesOptions,
                     originalSiteName = state.originalSiteName,
                     imperial = imperial,
@@ -319,6 +329,8 @@ private fun SaveBar(
 private fun EditForm(
     draft: DiveEditDraft,
     sites: List<dev.divehub.shared.store.DiveSite>,
+    divers: List<dev.divehub.shared.store.Diver>,
+    ownerDiverId: String?,
     seriesOptions: List<dev.divehub.shared.dive.DiveEditSeriesOption>,
     originalSiteName: String?,
     imperial: Boolean,
@@ -328,6 +340,8 @@ private fun EditForm(
     onReset: (DiveValue) -> Unit,
 ) {
     var pickingSite by remember { mutableStateOf(false) }
+    var addingParticipant by remember { mutableStateOf(false) }
+    var changingRole by remember { mutableStateOf<DiveEditParticipant?>(null) }
     LazyColumn(
         Modifier.fillMaxSize().testTag("dive_edit_scroll"),
         contentPadding = PaddingValues(bottom = Spacing.s6),
@@ -433,6 +447,19 @@ private fun EditForm(
         }
         item {
             Section(
+                title = stringResource(R.string.dive_participants),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.s4),
+            ) {
+                ParticipantsFields(
+                    draft = draft,
+                    onAdd = { addingParticipant = true },
+                    onChangeRole = { changingRole = it },
+                    onEdit = onEdit,
+                )
+            }
+        }
+        item {
+            Section(
                 title = stringResource(R.string.dive_notes),
                 modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.s4),
             ) {
@@ -511,7 +538,409 @@ private fun EditForm(
             },
         )
     }
+
+    if (addingParticipant) {
+        AddParticipantSheet(
+            divers = divers,
+            excluded = setOfNotNull(ownerDiverId) + draft.participants.map { it.diverId },
+            onDismiss = { addingParticipant = false },
+            onPick = { diver, role ->
+                onEdit { it.addParticipant(diver.id, diver.name, role) }
+                addingParticipant = false
+            },
+        )
+    }
+
+    changingRole?.let { person ->
+        RoleSheet(
+            person = person,
+            onDismiss = { changingRole = null },
+            onPick = { role ->
+                onEdit { it.setParticipantRole(person.diverId, role) }
+                changingRole = null
+            },
+        )
+    }
 }
+
+@Composable
+private fun ParticipantsFields(
+    draft: DiveEditDraft,
+    onAdd: () -> Unit,
+    onChangeRole: (DiveEditParticipant) -> Unit,
+    onEdit: ((DiveEditDraft) -> DiveEditDraft) -> Unit,
+) {
+    if (draft.participants.isEmpty()) {
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(Radius.box))
+                .background(MaterialTheme.colorScheme.surfaceVariant)
+                .padding(Spacing.s3),
+        ) {
+            Text(
+                stringResource(R.string.dive_edit_no_participants),
+                style = DiveHubText.meta,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    } else {
+        draft.participants.forEach { person ->
+            ParticipantRow(
+                person = person,
+                onChangeRole = { onChangeRole(person) },
+                onRemove = { onEdit { it.removeParticipant(person.diverId) } },
+            )
+        }
+    }
+    Spacer(Modifier.height(Spacing.s2))
+    SecondaryButton(stringResource(R.string.dive_edit_add_participant), onAdd)
+    Spacer(Modifier.height(Spacing.s3))
+    // ADR 0082: the union runs on the server and arrives through the feed; a removal stays on this Dive.
+    Text(
+        stringResource(R.string.dive_edit_participants_joint),
+        style = DiveHubText.meta,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun ParticipantRow(
+    person: DiveEditParticipant,
+    onChangeRole: () -> Unit,
+    onRemove: () -> Unit,
+) {
+    val role = roleLabel(person.role)
+    val changeRole = stringResource(R.string.dive_edit_change_role, person.name)
+    val remove = stringResource(R.string.dive_edit_remove_person, person.name)
+    if (LocalDensity.current.fontScale >= LargeTextFontScale) {
+        // At 200 % "Tauchlehrer" and "Entfernen" need more than the column has: the actions wrap instead of clipping.
+        Column(Modifier.fillMaxWidth().padding(vertical = Spacing.s3)) {
+            Text(person.name, style = DiveHubText.bodyStrong)
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(Spacing.s2),
+                verticalArrangement = Arrangement.spacedBy(Spacing.s2),
+            ) {
+                RoleButton(role = role, changeRole = changeRole, onClick = onChangeRole)
+                RemoveButton(remove = remove, onClick = onRemove)
+            }
+        }
+    } else {
+        Row(
+            Modifier.fillMaxWidth().padding(vertical = Spacing.s3),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(person.name, modifier = Modifier.weight(1f), style = DiveHubText.bodyStrong)
+            RoleButton(role = role, changeRole = changeRole, onClick = onChangeRole)
+            Spacer(Modifier.width(Spacing.s2))
+            RemoveButton(remove = remove, onClick = onRemove)
+        }
+    }
+}
+
+/**
+ * The role looks like a picker, not a bare value: the chevron says it opens a choice. The role stays the accessible
+ * name, and [changeRole] is the action label, so TalkBack names both the value and what a tap does.
+ */
+@Composable
+private fun RoleButton(role: String, changeRole: String, onClick: () -> Unit) {
+    QuietButton(
+        text = role,
+        onClick = onClick,
+        expanded = false,
+        onClickLabel = changeRole,
+    )
+}
+
+@Composable
+private fun RemoveButton(remove: String, onClick: () -> Unit) {
+    QuietButton(
+        text = stringResource(R.string.dive_edit_remove),
+        onClick = onClick,
+        modifier = Modifier.semantics { contentDescription = remove },
+    )
+}
+
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
+@Composable
+private fun AddParticipantSheet(
+    divers: List<dev.divehub.shared.store.Diver>,
+    excluded: Set<String>,
+    onDismiss: () -> Unit,
+    onPick: (dev.divehub.shared.store.Diver, String) -> Unit,
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    var query by remember { mutableStateOf("") }
+    var role by remember { mutableStateOf("buddy") }
+    val candidates = remember(divers, excluded) {
+        divers.filterNot { it.id in excluded }.sortedBy { it.name.lowercase() }
+    }
+    val matching = remember(query, candidates) {
+        if (query.isBlank()) {
+            candidates
+        } else {
+            candidates.filter { it.name.contains(query.trim(), ignoreCase = true) }
+        }
+    }
+    val largeText = LocalDensity.current.fontScale >= LargeTextFontScale
+    val asLabel = stringResource(R.string.dive_edit_as_role)
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        shape = RoundedCornerShape(topStart = Radius.sheet, topEnd = Radius.sheet),
+        containerColor = MaterialTheme.colorScheme.surface,
+    ) {
+        // One scroll: the role, the field and the list move together, so the sheet never runs past a 200 % viewport.
+        LazyColumn(
+            Modifier.fillMaxWidth().testTag("dive_edit_participant_add_scroll"),
+            contentPadding = PaddingValues(Spacing.s5),
+        ) {
+            item {
+                Text(
+                    stringResource(R.string.dive_edit_add_participant),
+                    modifier = Modifier.semantics { heading() },
+                    style = DiveHubText.section,
+                )
+            }
+            if (candidates.isEmpty()) {
+                item {
+                    Spacer(Modifier.height(Spacing.s2))
+                    Text(
+                        stringResource(R.string.dive_edit_no_other_divers),
+                        modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+                        style = DiveHubText.meta,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            } else {
+                item {
+                    Spacer(Modifier.height(Spacing.s3))
+                    Text(
+                        asLabel,
+                        style = DiveHubText.label,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Spacer(Modifier.height(Spacing.s1))
+                    FlowRow(
+                        Modifier.selectableGroup().semantics { contentDescription = asLabel },
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.s2),
+                        verticalArrangement = Arrangement.spacedBy(Spacing.s2),
+                    ) {
+                        PARTICIPANT_ROLES.forEach { choice ->
+                            RoleChoiceChip(
+                                label = roleLabel(choice),
+                                selected = role == choice,
+                                onClick = { role = choice },
+                            )
+                        }
+                    }
+                }
+                item {
+                    Spacer(Modifier.height(Spacing.s4))
+                    if (largeText) {
+                        Text(
+                            stringResource(R.string.dive_edit_find_diver),
+                            style = DiveHubText.label,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Spacer(Modifier.height(Spacing.s1))
+                    }
+                    OutlinedTextField(
+                        value = query,
+                        onValueChange = { query = it },
+                        modifier = Modifier.fillMaxWidth().testTag("dive_edit_participant_search"),
+                        label = if (largeText) {
+                            null
+                        } else {
+                            { Text(stringResource(R.string.dive_edit_find_diver)) }
+                        },
+                        shape = RoundedCornerShape(Radius.control),
+                        singleLine = true,
+                        trailingIcon = if (query.isNotBlank()) {
+                            {
+                                IconButton(onClick = { query = "" }) {
+                                    Icon(
+                                        Icons.Filled.Close,
+                                        contentDescription = stringResource(R.string.dive_edit_clear_search),
+                                    )
+                                }
+                            }
+                        } else {
+                            null
+                        },
+                    )
+                    Spacer(Modifier.height(Spacing.s1))
+                    Text(
+                        stringResource(R.string.dive_edit_divers_shared),
+                        style = DiveHubText.meta,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                if (query.isNotBlank() && matching.isEmpty()) {
+                    item {
+                        Spacer(Modifier.height(Spacing.s2))
+                        Text(
+                            stringResource(R.string.dive_edit_no_diver_match),
+                            modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+                            style = DiveHubText.meta,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+                itemsIndexed(matching, key = { _, diver -> diver.id }) { index, diver ->
+                    DiverRow(
+                        name = diver.name,
+                        detail = diverDetail(diver),
+                        query = query.trim(),
+                        showDivider = index < matching.lastIndex,
+                        onClick = { onPick(diver, role) },
+                    )
+                }
+            }
+        }
+    }
+}
+
+/** The role chip: one choice of a radio group, pressed with a check mark and `selected`, never colour alone. */
+@Composable
+private fun RoleChoiceChip(label: String, selected: Boolean, onClick: () -> Unit) {
+    val shape = RoundedCornerShape(Radius.control)
+    val fill = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface
+    Box(Modifier.heightIn(min = QuietActionTarget), contentAlignment = Alignment.CenterStart) {
+        Row(
+            Modifier
+                .clip(shape)
+                .background(fill)
+                .border(1.dp, if (selected) fill else MaterialTheme.colorScheme.outline, shape)
+                .selectable(selected = selected, role = Role.RadioButton, onClick = onClick)
+                .semantics(mergeDescendants = true) {}
+                .padding(horizontal = Spacing.s3, vertical = Spacing.s2),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            if (selected) {
+                Icon(
+                    Icons.Filled.Check,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.size(RoleChoiceIcon),
+                )
+                Spacer(Modifier.width(Spacing.s1))
+            }
+            Text(label, style = DiveHubText.label)
+        }
+    }
+}
+
+/** What the roster says about a Diver beside the name: whose it is, as the web's add list does. */
+@Composable
+private fun diverDetail(diver: dev.divehub.shared.store.Diver): String? = when {
+    diver.isOwn -> stringResource(R.string.dive_edit_diver_yours)
+    diver.external -> stringResource(R.string.dive_edit_diver_external)
+    else -> stringResource(R.string.dive_edit_diver_other_user)
+}
+
+@Composable
+private fun DiverRow(
+    name: String,
+    detail: String?,
+    query: String,
+    showDivider: Boolean,
+    onClick: () -> Unit,
+) {
+    Column(Modifier.fillMaxWidth()) {
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(Radius.control))
+                .clickable(role = Role.Button, onClick = onClick)
+                .semantics(mergeDescendants = true) {}
+                .padding(vertical = Spacing.s3)
+                .heightIn(min = QuietActionTarget),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(Modifier.weight(1f)) {
+                Text(markedName(name, query), style = DiveHubText.body)
+                detail?.let {
+                    Text(it, style = DiveHubText.meta, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+        }
+        if (showDivider) {
+            HorizontalDivider(color = DiveHubColors.border)
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun RoleSheet(
+    person: DiveEditParticipant,
+    onDismiss: () -> Unit,
+    onPick: (String) -> Unit,
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        shape = RoundedCornerShape(topStart = Radius.sheet, topEnd = Radius.sheet),
+        containerColor = MaterialTheme.colorScheme.surface,
+    ) {
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .padding(Spacing.s5),
+        ) {
+            Text(
+                stringResource(R.string.dive_edit_role_title, person.name),
+                modifier = Modifier.semantics { heading() },
+                style = DiveHubText.section,
+            )
+            Spacer(Modifier.height(Spacing.s2))
+            HorizontalDivider(color = DiveHubColors.border)
+            Column(Modifier.selectableGroup()) {
+                PARTICIPANT_ROLES.forEach { role ->
+                    RoleRow(
+                        label = roleLabel(role),
+                        selected = person.role == role,
+                        onClick = { onPick(role) },
+                    )
+                }
+            }
+        }
+    }
+}
+
+/** One role in the picker: the whole 48 dp row is the target, the fill and the check mark the current role. */
+@Composable
+private fun RoleRow(label: String, selected: Boolean, onClick: () -> Unit) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(Radius.control))
+            .background(if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface)
+            .selectable(selected = selected, role = Role.RadioButton, onClick = onClick)
+            .semantics(mergeDescendants = true) {}
+            .padding(vertical = Spacing.s3)
+            .heightIn(min = QuietActionTarget),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(Modifier.size(24.dp), contentAlignment = Alignment.Center) {
+            if (selected) {
+                Icon(Icons.Filled.Check, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface)
+            }
+        }
+        Spacer(Modifier.width(Spacing.s2))
+        Text(label, style = DiveHubText.body)
+    }
+}
+
+/** The three roles ADR 0028 defines; the order the web's picker uses. */
+private val PARTICIPANT_ROLES = listOf("buddy", "guide", "instructor")
+
+@Composable
+private fun roleLabel(role: String): String = Formats.role(LocalContext.current, role)
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable

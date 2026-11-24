@@ -3,6 +3,7 @@ package dev.divehub.shared.dive
 import dev.divehub.api.models.DiveView
 import dev.divehub.shared.write.JSON
 import dev.divehub.shared.write.diveObject
+import dev.divehub.shared.write.participants
 import kotlinx.datetime.LocalDateTime
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonNull
@@ -391,5 +392,79 @@ class DiveEditDraftTest {
 
         assertEquals(0, (patch["lead"] as JsonArray).size)
         assertTrue(draft.setLead(listOf(DiveEditLead())).leadChanged)
+    }
+
+    @Test
+    fun `a fresh draft keeps the Dive's participants and sends no roster`() {
+        val draft = DiveEditDraft.of(dive(diveObject(participants = participants("a" to "buddy"))))
+
+        assertEquals(listOf("a"), draft.participants.map { it.diverId })
+        assertEquals(listOf("a"), draft.participants.map { it.name })
+        assertFalse(draft.participantsChanged)
+        assertFalse(draft.dirty)
+        assertNull(draft.participantsJson())
+    }
+
+    @Test
+    fun `adding, changing and removing people is the roster the PUT takes`() {
+        val draft = DiveEditDraft.of(dive(diveObject(participants = participants("a" to "buddy"))))
+            .addParticipant("b", "Bea", "guide")
+            .setParticipantRole("a", "instructor")
+            .removeParticipant("b")
+
+        assertEquals(listOf("a" to "instructor"), draft.participants.map { it.diverId to it.role })
+        assertTrue(draft.participantsChanged)
+        assertTrue(draft.dirty)
+        val roster = draft.participantsJson()!!
+        assertEquals(
+            listOf("a" to "instructor"),
+            roster.map {
+                val entry = it as JsonObject
+                (entry["diverId"] as JsonPrimitive).content to (entry["role"] as JsonPrimitive).content
+            },
+        )
+        assertFalse(roster.toString().contains("name"))
+    }
+
+    @Test
+    fun `a roster returned to its first state is clean again`() {
+        val draft = DiveEditDraft.of(dive(diveObject(participants = participants("a" to "buddy"))))
+            .addParticipant("b", "Bea", "guide")
+            .removeParticipant("b")
+
+        assertFalse(draft.participantsChanged)
+        assertFalse(draft.dirty)
+        assertNull(draft.participantsJson())
+    }
+
+    @Test
+    fun `a Diver already on the roster is not added twice`() {
+        val draft = DiveEditDraft.of(dive(diveObject(participants = participants("a" to "buddy"))))
+            .addParticipant("a", "Ada", "guide")
+
+        assertEquals(listOf("a" to "buddy"), draft.participants.map { it.diverId to it.role })
+        assertFalse(draft.participantsChanged)
+        assertEquals("a", draft.participants.single().name)
+    }
+
+    @Test
+    fun `a participant the feed added since opening is carried along`() {
+        val draft = DiveEditDraft.of(dive(diveObject(participants = participants("a" to "buddy"))))
+            .setParticipantRole("a", "guide")
+
+        val roster = draft.participantsJson(
+            alsoKeep = listOf(
+                DiveEditParticipant("a", "Ada", "buddy"),
+                DiveEditParticipant("b", "Bea", "instructor"),
+            ),
+        )!!
+
+        assertEquals(
+            listOf("a" to "guide", "b" to "instructor"),
+            roster.map {
+                val entry = it as JsonObject
+                (entry["diverId"] as JsonPrimitive).content to (entry["role"] as JsonPrimitive).content
+            },
+        )
     }
 }

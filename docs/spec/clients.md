@@ -749,7 +749,9 @@ online.
   route, the whole list). Every remove button and role field names the person. The history shows who was added (with the role) and who was removed (change `participants`).
   Adding a Participant to a Dive in a Joint dive also adds them to the other members (their own Diver excepted, the
   role kept); a removal stays on this Dive ([ADR 0082](../decisions/0082-joint-dive-sync.md)).
-  *Web:* `Participants.tsx`, `DiveHistory.tsx`.
+  *Web:* `Participants.tsx`, `DiveHistory.tsx`. *Android:* the edit sheet offers the Divers the device's sync holds
+  (the User's own and managed); another User's Diver, an external Diver and a new external Diver are still added on the
+  web.
 - **Water type** (ADR 0025): the Dive's `waterType` is its site's and can't be edited on the Dive. Without a site,
   suggest choosing one; with a site that has none, say it isn't known for the site. Label the Recording's
   `summary.waterType` as the computer's water setting ("Water setting on the computer"), not as the Dive's water.

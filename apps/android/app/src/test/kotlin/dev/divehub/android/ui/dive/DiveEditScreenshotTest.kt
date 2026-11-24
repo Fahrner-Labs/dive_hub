@@ -2,9 +2,14 @@ package dev.divehub.android.ui.dive
 
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -23,6 +28,7 @@ import dev.divehub.api.models.DiveViewCylindersItemGas
 import dev.divehub.api.models.DiveViewCylindersItemSeries
 import dev.divehub.api.models.DiveViewFromRecording
 import dev.divehub.api.models.DiveViewFromRecordingStartsAt
+import dev.divehub.api.models.DiveViewParticipantsItem
 import dev.divehub.api.models.DiveViewLeadItem
 import dev.divehub.api.models.DiveViewRecordingsItem
 import dev.divehub.api.models.DiveViewRecordingsItemDevice
@@ -33,6 +39,7 @@ import dev.divehub.api.models.DiveViewValuesStartsAt
 import dev.divehub.shared.dive.DiveEditDraft
 import dev.divehub.shared.dive.pressureSeriesOptions
 import dev.divehub.shared.store.DiveSite
+import dev.divehub.shared.store.Diver
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -314,6 +321,179 @@ class DiveEditScreenshotTest {
         capture("dive_edit_cylinders_imperial.png")
     }
 
+    @Test
+    fun `the participants section lists people with their roles and says what a joint dive does`() {
+        render(state(draft = DiveEditDraft.of(dive(participants = people()))))
+
+        compose.onNodeWithTag("dive_edit_scroll").performScrollToNode(hasText(jointNote))
+        compose.onNodeWithText("Anna").assertExists()
+        compose.onNodeWithText("Ben").assertExists()
+        compose.onNodeWithText(jointNote).assertExists()
+        capture("dive_edit_participants.png")
+    }
+
+    @Test
+    fun `the roster says when nobody else is listed`() {
+        render(state(draft = DiveEditDraft.of(dive())))
+
+        compose.onNodeWithTag("dive_edit_scroll").performScrollToNode(hasText("Add a participant"))
+        compose.onNodeWithText("No one else listed yet.").assertExists()
+        capture("dive_edit_participants_empty.png")
+    }
+
+    @Test
+    fun `adding someone searches the divers the store knows and says the names are shared`() {
+        render(state(draft = DiveEditDraft.of(dive(participants = people()))))
+
+        openAddParticipant()
+
+        compose.onNodeWithText(sharedHint).assertExists()
+        compose.onNodeWithText("Cleo").assertExists()
+        compose.onNode(hasText("Instructor") and hasClickAction())
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.RadioButton))
+        capture("dive_edit_participant_add.png")
+    }
+
+    @Test
+    fun `the add sheet with no candidates says why and how and hides the search`() {
+        render(state(draft = DiveEditDraft.of(dive(participants = people())), divers = emptyList()))
+
+        openAddParticipant()
+
+        compose.onNodeWithText(
+            "No other divers to add. Divers arrive on this device with a sync; to add an external diver, use the web.",
+        ).assertExists()
+        compose.onNode(hasSetTextAction() and hasText("Find a diver")).assertDoesNotExist()
+        compose.onNodeWithTag("dive_edit_participant_search").assertDoesNotExist()
+        capture("dive_edit_participant_add_no_candidates.png")
+    }
+
+    @Test
+    fun `changing a role opens a named choice`() {
+        render(state(draft = DiveEditDraft.of(dive(participants = people()))))
+
+        openRoleSheet()
+
+        compose.onNodeWithText("Role for Anna").assertExists()
+        compose.onNodeWithText("Instructor").assertExists()
+        compose.onNode(hasText("Instructor") and hasClickAction())
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.RadioButton))
+        capture("dive_edit_participant_role.png")
+    }
+
+    @Test
+    @Config(qualifiers = "en-rUS-w411dp-h891dp-night-xxhdpi")
+    fun `the participants section follows the dark theme`() {
+        render(state(draft = DiveEditDraft.of(dive(participants = people()))), darkTheme = true)
+
+        compose.onNodeWithTag("dive_edit_scroll").performScrollToNode(hasText(jointNote))
+        capture("dive_edit_participants_dark.png")
+    }
+
+    @Test
+    @Config(qualifiers = "en-rUS-w411dp-h891dp-night-xxhdpi")
+    fun `the add sheet follows the dark theme`() {
+        render(state(draft = DiveEditDraft.of(dive(participants = people()))), darkTheme = true)
+
+        openAddParticipant()
+
+        compose.onNodeWithText(sharedHint).assertExists()
+        capture("dive_edit_participant_add_dark.png")
+    }
+
+    @Test
+    @Config(qualifiers = "en-rUS-w411dp-h891dp-night-xxhdpi")
+    fun `the role choice follows the dark theme`() {
+        render(state(draft = DiveEditDraft.of(dive(participants = people()))), darkTheme = true)
+
+        openRoleSheet()
+
+        compose.onNodeWithText("Role for Anna").assertExists()
+        capture("dive_edit_participant_role_dark.png")
+    }
+
+    @Test
+    @Config(qualifiers = "de-rDE-w320dp-h891dp-xxhdpi")
+    fun `the participants at two hundred percent in german`() {
+        render(
+            state(draft = DiveEditDraft.of(dive(participants = peopleWithInstructor()))),
+            fontScale = 2f,
+        )
+
+        compose.onNodeWithTag("dive_edit_scroll")
+            .performScrollToNode(hasContentDescription("Alexandra Winterhalter entfernen"))
+        compose.onNodeWithText("Alexandra Winterhalter").assertExists()
+        compose.onNodeWithText("Tauchlehrer").assertExists()
+        capture("dive_edit_de_narrow_2x_participants.png")
+    }
+
+    @Test
+    @Config(qualifiers = "de-rDE-w320dp-h891dp-xxhdpi", fontScale = 2f)
+    fun `the add sheet at two hundred percent in german`() {
+        render(state(draft = DiveEditDraft.of(dive(participants = people()))), fontScale = 2f)
+
+        openAddParticipant(label = "Teilnehmende hinzufügen")
+
+        compose.onNodeWithText("Taucher suchen").assertExists()
+        compose.onNodeWithTag("dive_edit_participant_search").assertExists()
+        compose.onNode(hasText("Tauchlehrer") and hasClickAction())
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.RadioButton))
+        capture("dive_edit_de_narrow_2x_participant_add.png")
+        // The sheet is one scroll, so the list stays reachable when the header fills a 200 % viewport.
+        compose.onNodeWithTag("dive_edit_participant_add_scroll").performScrollToNode(hasText("Cleo"))
+        compose.onNodeWithText("Cleo").assertExists()
+    }
+
+    @Test
+    @Config(qualifiers = "de-rDE-w320dp-h891dp-xxhdpi", fontScale = 2f)
+    fun `the role choice at two hundred percent in german`() {
+        render(state(draft = DiveEditDraft.of(dive(participants = people()))), fontScale = 2f)
+
+        openRoleSheet()
+
+        compose.onNodeWithText("Rolle für Anna").assertExists()
+        compose.onNodeWithText("Tauchlehrer").assertExists()
+        capture("dive_edit_de_narrow_2x_participant_role.png")
+    }
+
+    private fun people() = listOf(
+        DiveViewParticipantsItem(diverId = "anna", name = "Anna", role = "buddy"),
+        DiveViewParticipantsItem(diverId = "ben", name = "Ben", role = "guide"),
+    )
+
+    private fun peopleWithInstructor() = people() + DiveViewParticipantsItem(
+        diverId = "clara",
+        name = "Alexandra Winterhalter",
+        role = "instructor",
+    )
+
+    private fun openAddParticipant(label: String = "Add a participant") {
+        compose.onNodeWithTag("dive_edit_scroll").performScrollToNode(hasText(label))
+        compose.onNode(hasText(label) and hasClickAction()).performClick()
+    }
+
+    private fun openRoleSheet(role: String = "Buddy") {
+        compose.onNodeWithTag("dive_edit_scroll").performScrollToNode(hasText(role))
+        compose.onNode(hasText(role) and hasClickAction()).performClick()
+    }
+
+    private val jointNote =
+        "In a joint dive, someone you add here also appears on the other divers’ dives. Removing someone here " +
+            "leaves them on the others."
+
+    private val sharedHint =
+        "Every user of this Dive Hub sees the names of all divers and what their SSI code says: name, e-mail and " +
+            "leader number. Nothing else about them."
+
+    private fun diver(id: String, name: String) = Diver(
+        id = id,
+        name = name,
+        isOwn = false,
+        external = false,
+        apneaCounts = false,
+        divesBefore = 0,
+    )
+
     private fun render(
         state: DiveEditUiState,
         darkTheme: Boolean = false,
@@ -342,6 +522,7 @@ class DiveEditScreenshotTest {
     private fun state(
         draft: DiveEditDraft,
         online: Boolean = true,
+        divers: List<Diver> = listOf(diver("diver-2", "Bea"), diver("diver-3", "Cleo")),
         seriesOptions: List<dev.divehub.shared.dive.DiveEditSeriesOption> = emptyList(),
     ) = DiveEditUiState(
         loading = false,
@@ -351,11 +532,17 @@ class DiveEditScreenshotTest {
             DiveSite(id = "site-1", name = "Lighthouse Reef"),
             DiveSite(id = "site-2", name = "Blue Hole"),
         ),
+        divers = divers,
+        ownerDiverId = "diver",
         seriesOptions = seriesOptions,
         online = online,
     )
 
-    private fun dive(overrides: List<String> = emptyList(), withGear: Boolean = false) = DiveView(
+    private fun dive(
+        overrides: List<String> = emptyList(),
+        withGear: Boolean = false,
+        participants: List<DiveViewParticipantsItem> = emptyList(),
+    ) = DiveView(
         id = "d1",
         diverId = "diver",
         version = 3,
@@ -432,7 +619,7 @@ class DiveEditScreenshotTest {
         suit = null,
         sac = null,
         sacMissing = null,
-        participants = emptyList(),
+        participants = participants,
         verificationCodes = emptyList(),
     )
 

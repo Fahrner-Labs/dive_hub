@@ -69,17 +69,39 @@ class WriteQueue(
     }
 
     /** Apply the Participants edit to the store at once and queue it as `PUT /api/dives/{id}/participants` (T8c). */
-    fun editDiveParticipants(diveId: String, participants: JsonArray): PendingWrite {
-        val entry = enqueueDiveParticipants(diveId, participants)
+    fun editDiveParticipants(
+        diveId: String,
+        participants: JsonArray,
+        baseVersion: Long? = null,
+        baseJson: String? = null,
+    ): PendingWrite {
+        val entry = enqueueDiveParticipants(diveId, participants, baseVersion, baseJson)
         DiveLocalEdit.applyParticipants(store, diveId, participants)
         return entry
     }
 
-    /** Queue the whole Participants list as `PUT /api/dives/{id}/participants` (ADR 0082 joint dives, T8c). */
-    fun enqueueDiveParticipants(diveId: String, participants: JsonArray): PendingWrite {
-        val (version, baseJson) = baseOf(diveId)
+    /**
+     * Queue the whole Participants list as `PUT /api/dives/{id}/participants` (ADR 0082 joint dives, T8c).
+     *
+     * [baseVersion] and [baseJson] are the roster and version the form was opened with: an editor passes the draft's
+     * own base so a feed change since it opened (ADR 0084 D3) is merged, not overwritten. They default to the store's
+     * current row for callers that edit straight from the store.
+     */
+    fun enqueueDiveParticipants(
+        diveId: String,
+        participants: JsonArray,
+        baseVersion: Long? = null,
+        baseJson: String? = null,
+    ): PendingWrite {
+        val (storedVersion, storedBase) = baseOf(diveId)
         val patch = JsonObject(mapOf("participants" to roster(participants)))
-        return enqueuePatch(WriteEntities.DIVE_PARTICIPANTS, diveId, patch, version, baseJson)
+        return enqueuePatch(
+            WriteEntities.DIVE_PARTICIPANTS,
+            diveId,
+            patch,
+            baseVersion ?: storedVersion,
+            baseJson ?: storedBase,
+        )
     }
 
     /**

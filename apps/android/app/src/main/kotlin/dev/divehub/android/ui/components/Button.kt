@@ -122,6 +122,7 @@ fun QuietButton(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     expanded: Boolean? = null,
+    onClickLabel: String? = null,
 ) {
     val contentColor = MaterialTheme.colorScheme.onSurface
     val state = expanded?.let {
@@ -130,7 +131,7 @@ fun QuietButton(
     Box(
         modifier = modifier
             .defaultMinSize(minWidth = QuietActionTarget, minHeight = QuietActionTarget)
-            .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
+            .clickable(enabled = enabled, role = Role.Button, onClickLabel = onClickLabel, onClick = onClick)
             // The old TextButton's vertical padding, kept so a large-text label does not shrink the row.
             .padding(vertical = Spacing.s2)
             .semantics(mergeDescendants = true) {

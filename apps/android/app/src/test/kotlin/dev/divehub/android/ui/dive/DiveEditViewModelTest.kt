@@ -6,6 +6,7 @@ import dev.divehub.shared.logbook.StoreLogbook
 import dev.divehub.shared.store.Dive
 import dev.divehub.shared.store.DiveSite
 import dev.divehub.shared.store.DiveStore
+import dev.divehub.shared.store.Diver
 import dev.divehub.shared.write.WriteQueue
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -46,6 +47,7 @@ class DiveEditViewModelTest {
         try {
             store.upsertDive(dive())
             store.upsertDiveSite(DiveSite(id = "site-1", name = "Lighthouse Reef"))
+            store.upsertDiver(diver("diver-2", "Bea"))
             val viewModel = viewModel(store)
 
             viewModel.open("dive-1")
@@ -54,8 +56,93 @@ class DiveEditViewModelTest {
             assertFalse(viewModel.state.value.loading)
             assertEquals("Lighthouse Reef", viewModel.state.value.originalSiteName)
             assertEquals(listOf("Lighthouse Reef"), viewModel.state.value.sites.map { it.name })
+            assertEquals(listOf("Bea"), viewModel.state.value.divers.map { it.name })
+            assertEquals("diver-1", viewModel.state.value.ownerDiverId)
             assertEquals("A good dive", viewModel.state.value.draft?.notes)
             assertEquals(42, viewModel.state.value.draft?.number)
+        } finally {
+            driver.close()
+        }
+    }
+
+    @Test
+    fun `a Participants edit queues its own PUT and shows it at once`() = runTest(dispatcher) {
+        val driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
+        val store = DiveStore.create(driver)
+        try {
+            store.upsertDive(dive())
+            store.upsertDiver(diver("diver-2", "Bea"))
+            var reread = 0
+            val viewModel = viewModel(store, onStoreWrite = { reread += 1 })
+            viewModel.open("dive-1")
+            advanceUntilIdle()
+
+            viewModel.edit { it.addParticipant("diver-2", "Bea", "buddy") }
+            assertEquals(listOf("Bea"), viewModel.state.value.draft?.participants?.map { it.name })
+            viewModel.save()
+            advanceUntilIdle()
+
+            assertEquals(1, reread)
+            assertTrue(viewModel.state.value.saved)
+            val queued = store.pendingWrites().single()
+            assertEquals("dive_participants", queued.entityType)
+            assertTrue(queued.payloadJson.contains("diver-2"))
+            assertFalse(queued.payloadJson.contains("Bea"))
+            assertTrue(store.dive("dive-1")?.detailJson?.contains("Bea") == true)
+        } finally {
+            driver.close()
+        }
+    }
+
+    @Test
+    fun `a roster edit queues against the roster and version the form opened with`() = runTest(dispatcher) {
+        val driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
+        val store = DiveStore.create(driver)
+        try {
+            store.upsertDive(dive())
+            store.upsertDiver(diver("diver-2", "Bea"))
+            val viewModel = viewModel(store)
+            viewModel.open("dive-1")
+            advanceUntilIdle()
+
+            // A joint dive's union lands after the form opened (ADR 0082): the row moves to version 4 and holds Cleo.
+            store.upsertDive(dive(participants = listOf("diver-3" to "Cleo")).copy(version = 4))
+            viewModel.edit { it.addParticipant("diver-2", "Bea", "buddy") }
+            viewModel.save()
+            advanceUntilIdle()
+
+            val queued = store.pendingWrites().single { it.entityType == "dive_participants" }
+            // The base is the form's own roster and version, not the feed's: the merge can tell a feed removal or role
+            // change from the User's edit (ADR 0084 D3).
+            assertEquals(3L, queued.baseVersion)
+            assertFalse(queued.baseJson!!.contains("diver-3"))
+            // The person the feed added is still carried, so the PUT does not read as a removal.
+            assertTrue(queued.payloadJson.contains("diver-2"))
+            assertTrue(queued.payloadJson.contains("diver-3"))
+        } finally {
+            driver.close()
+        }
+    }
+
+    @Test
+    fun `one Save queues the scalars and the roster as two entries`() = runTest(dispatcher) {
+        val driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
+        val store = DiveStore.create(driver)
+        try {
+            store.upsertDive(dive())
+            store.upsertDiver(diver("diver-2", "Bea"))
+            val viewModel = viewModel(store)
+            viewModel.open("dive-1")
+            advanceUntilIdle()
+
+            viewModel.edit { it.setNotes("Wreck log").addParticipant("diver-2", "Bea", "guide") }
+            viewModel.save()
+            advanceUntilIdle()
+
+            assertEquals(
+                listOf("dive", "dive_participants"),
+                store.pendingWrites().map { it.entityType },
+            )
         } finally {
             driver.close()
         }
@@ -260,12 +347,22 @@ class DiveEditViewModelTest {
         ioDispatcher = dispatcher,
     )
 
+    private fun diver(id: String, name: String) = Diver(
+        id = id,
+        name = name,
+        isOwn = false,
+        external = false,
+        apneaCounts = false,
+        divesBefore = 0,
+    )
+
     private fun dive(
         overrides: List<String> = emptyList(),
         withRecording: Boolean = true,
         recordings: JsonArray = JsonArray(emptyList()),
         cylinders: JsonArray = JsonArray(emptyList()),
         lead: JsonArray = JsonArray(emptyList()),
+        participants: List<Pair<String, String>> = emptyList(),
     ): Dive {
         val detail: JsonObject = buildJsonObject {
                 put("id", "dive-1")
@@ -330,7 +427,18 @@ class DiveEditViewModelTest {
                 put("suit", JsonNull)
                 put("sac", JsonNull)
                 put("sacMissing", JsonNull)
-                put("participants", JsonArray(emptyList()))
+                put(
+                    "participants",
+                    JsonArray(
+                        participants.map { (diverId, name) ->
+                            buildJsonObject {
+                                put("diverId", diverId)
+                                put("name", name)
+                                put("role", "buddy")
+                            }
+                        },
+                    ),
+                )
                 put("verificationCodes", JsonArray(emptyList()))
             }
         return Dive(

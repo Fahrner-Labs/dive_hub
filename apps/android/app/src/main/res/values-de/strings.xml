@@ -270,6 +270,21 @@
     <string name="dive_edit_merge">Mit einem anderen Tauchgang zusammenführen</string>
     <string name="dive_edit_move">Zu einem anderen Taucher verschieben</string>
     <string name="dive_edit_append">Als Fortsetzung anhängen</string>
+    <string name="dive_edit_no_participants">Noch niemand sonst eingetragen.</string>
+    <string name="dive_edit_add_participant">Teilnehmende hinzufügen</string>
+    <string name="dive_edit_change_role">Rolle für %1$s ändern</string>
+    <string name="dive_edit_remove">Entfernen</string>
+    <string name="dive_edit_remove_person">%1$s entfernen</string>
+    <string name="dive_edit_participants_joint">In einem gemeinsamen Tauchgang erscheint, wen du hier hinzufügst, auch bei den anderen Tauchern. Wen du hier entfernst, bleibt bei den anderen.</string>
+    <string name="dive_edit_find_diver">Taucher suchen</string>
+    <string name="dive_edit_no_diver_match">Kein Taucher passt</string>
+    <string name="dive_edit_no_other_divers">Keine weiteren Taucher zum Hinzufügen. Taucher kommen mit einer Synchronisierung auf dieses Gerät; einen externen Taucher fügst du im Web hinzu.</string>
+    <string name="dive_edit_divers_shared">Alle Benutzer dieses Dive Hub sehen die Namen aller Taucher und was in ihrem SSI-Code steht: Name, E-Mail und Leader-Nummer. Sonst nichts über sie.</string>
+    <string name="dive_edit_as_role">Als</string>
+    <string name="dive_edit_diver_yours">Von dir verwaltet</string>
+    <string name="dive_edit_diver_external">Externer Taucher</string>
+    <string name="dive_edit_diver_other_user">Taucher eines anderen Benutzers</string>
+    <string name="dive_edit_role_title">Rolle für %1$s</string>
 
     <string name="sync_last">Polling — zuletzt synchronisiert: %1$s.</string>
     <string name="sync_date_pattern">d. MMM yyyy, HH:mm</string>
