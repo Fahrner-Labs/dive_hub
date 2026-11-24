@@ -145,6 +145,12 @@ enum class PendingWriteStatus(val wire: String) {
     Pending("pending"),
     Conflicted("conflicted"),
     Failed("failed"),
+
+    /**
+     * The thing this entry edits is gone (deleted, merged, or no longer readable), so replay dropped it (ADR 0084 D3
+     * step 4). The row stays until the User dismisses the notice: a dropped edit must survive process death.
+     */
+    Dropped("dropped"),
     ;
 
     companion object {

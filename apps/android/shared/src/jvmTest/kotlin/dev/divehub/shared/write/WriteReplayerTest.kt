@@ -101,6 +101,21 @@ class WriteReplayerTest {
     }
 
     @Test
+    fun `the waiting queue names the thing and the fields it carries`() = runTest {
+        seed()
+        queue.enqueueDivePatch(
+            "dive-1",
+            jsonOf("""{"notes":"Edited","set":{"durationSeconds":3600}}"""),
+        )
+
+        val entry = Harness(store) { Reply.Body("") }.replayer.queued().single()
+
+        assertEquals(42, entry.diveNumber)
+        assertEquals(false, entry.failed)
+        assertEquals(listOf("set.durationSeconds", "notes"), entry.fields)
+    }
+
+    @Test
     fun `a disjoint 412 change merges quietly and is re-sent with the fresh version`() = runTest {
         seed()
         queue.enqueueDivePatch("dive-1", jsonOf("""{"set":{"durationSeconds":3600}}"""))
@@ -176,6 +191,11 @@ class WriteReplayerTest {
         val notice = result.notices.single()
         assertEquals(WriteDropReason.NotFound, notice.reason)
         assertEquals("dive-9", notice.mergedInto)
+        assertEquals(notice, harness.replayer.notices().single())
+        assertEquals(PendingWriteStatus.Dropped, store.pendingWrites().single().status)
+
+        harness.replayer.dismissNotices()
+        assertTrue(harness.replayer.notices().isEmpty())
         assertTrue(store.pendingWrites().isEmpty())
     }
 
@@ -231,6 +251,23 @@ class WriteReplayerTest {
         val entry = store.pendingWrites().single()
         assertEquals(PendingWriteStatus.Failed, entry.status)
         assertEquals("dive_invalid", entry.lastError)
+    }
+
+    @Test
+    fun `retrying failed entries puts them back in line`() = runTest {
+        seed()
+        queue.enqueueDivePatch("dive-1", jsonOf("""{"notes":"Local"}"""))
+        Harness(store) { Reply.Body("""{"code":"dive_invalid"}""", HttpStatusCode.BadRequest) }.replayer.replay()
+
+        val harness = Harness(store) { Reply.Body(diveObject(version = 4, notes = "Local").toString()) }
+        harness.replayer.retryFailed()
+        assertEquals(WriteQueueSnapshot(pending = 1), harness.replayer.snapshot())
+
+        val result = harness.replayer.replay()
+
+        assertIs<WriteReplayResult.Drained>(result)
+        assertEquals(1, result.applied)
+        assertTrue(store.pendingWrites().isEmpty())
     }
 
     @Test

@@ -605,4 +605,81 @@
     <string name="settings_debug_share_empty">Es gibt noch keine Einträge zum Teilen.</string>
     <string name="settings_debug_share_title">Lokale Protokolle teilen</string>
     <string name="settings_debug_share_subject">DiveHub-Diagnose</string>
+    <plurals name="pending_changes_waiting">
+        <item quantity="one">%1$d Änderung wartet auf die Synchronisierung</item>
+        <item quantity="other">%1$d Änderungen warten auf die Synchronisierung</item>
+    </plurals>
+    <plurals name="pending_changes_need_decision">
+        <item quantity="one">%1$d Änderung braucht deine Entscheidung</item>
+        <item quantity="other">%1$d Änderungen brauchen deine Entscheidung</item>
+    </plurals>
+    <plurals name="pending_changes_not_sent">
+        <item quantity="one">%1$d Änderung konnte nicht gesendet werden</item>
+        <item quantity="other">%1$d Änderungen konnten nicht gesendet werden</item>
+    </plurals>
+    <string name="pending_changes_view">Ansehen</string>
+    <string name="pending_changes_review">Prüfen</string>
+    <string name="pending_changes_retry">Erneut versuchen</string>
+
+    <plurals name="pending_changes_block_sign_out">
+        <item quantity="one">%1$d Änderung ist nicht synchronisiert</item>
+        <item quantity="other">%1$d Änderungen sind nicht synchronisiert</item>
+    </plurals>
+    <plurals name="pending_sign_out_body">
+        <item quantity="one">Synchronisiere sie vor dem Abmelden oder verwirf sie. Eine verworfene Änderung ist verloren.</item>
+        <item quantity="other">Synchronisiere sie vor dem Abmelden oder verwirf sie. Verworfene Änderungen sind verloren.</item>
+    </plurals>
+    <plurals name="pending_change_instance_body">
+        <item quantity="one">Synchronisiere sie vor dem Wechsel der Instanz oder verwirf sie. Eine verworfene Änderung ist verloren.</item>
+        <item quantity="other">Synchronisiere sie vor dem Wechsel der Instanz oder verwirf sie. Verworfene Änderungen sind verloren.</item>
+    </plurals>
+    <string name="pending_discard_sign_out">Verwerfen und abmelden</string>
+    <string name="pending_discard_change_instance">Verwerfen und Instanz wechseln</string>
+    <string name="pending_still_waiting">Einige Änderungen warten noch. Sie brauchen vielleicht eine Entscheidung oder einen neuen Versuch.</string>
+    <plurals name="pending_sign_in_title">
+        <item quantity="one">%1$d Änderung gehört zu einem anderen Konto</item>
+        <item quantity="other">%1$d Änderungen gehören zu einem anderen Konto</item>
+    </plurals>
+    <string name="pending_sign_in_body">Wenn du dich als %1$s anmeldest, werden die auf diesem Gerät gespeicherten Änderungen des vorherigen Kontos verworfen.</string>
+    <string name="pending_discard_sign_in">Verwerfen und anmelden</string>
+
+    <string name="conflicts_title">Änderungen auf diesem Gerät</string>
+    <string name="conflicts_empty_title">Nichts zu synchronisieren oder entscheiden</string>
+    <string name="conflicts_empty_body">Auf diesem Gerät wartet keine Änderung auf die Synchronisierung oder eine Entscheidung.</string>
+    <string name="conflict_dive_title">Tauchgang %1$d</string>
+    <string name="conflict_dive_unnamed">Gespeicherter Tauchgang</string>
+    <string name="conflict_this_phone">Dieses Gerät</string>
+    <string name="conflict_server">Der Server</string>
+    <string name="conflict_not_set">Nicht gesetzt</string>
+    <string name="conflict_removed">Auf diesem Gerät entfernt</string>
+    <string name="conflict_reset">Auf diesem Gerät zurückgesetzt</string>
+    <string name="conflict_keep_selected">Auswahl behalten</string>
+    <plurals name="write_notices">
+        <item quantity="one">%1$d Änderung konnte nicht übernommen werden</item>
+        <item quantity="other">%1$d Änderungen konnten nicht übernommen werden</item>
+    </plurals>
+    <string name="queued_notices_title">Nicht übernommene Änderungen</string>
+    <string name="notice_deleted">Ein Tauchgang wurde auf dem Server gelöscht. Deine Änderung wurde nicht übernommen.</string>
+    <string name="notice_gone">Ein Tauchgang ist nicht mehr verfügbar. Deine Änderung wurde nicht übernommen.</string>
+    <string name="notice_forbidden">Du hast keinen Zugriff mehr auf einen Tauchgang. Deine Änderung wurde nicht übernommen.</string>
+    <string name="notice_merged">Ein Tauchgang wurde in einen anderen zusammengeführt. Deine Änderung wurde nicht übernommen.</string>
+    <string name="notice_merged_into">Dieser Tauchgang wurde in Tauchgang %1$d zusammengeführt. Deine Änderung wurde nicht übernommen.</string>
+    <string name="notice_open_dive">Tauchgang öffnen</string>
+    <string name="notice_dismiss">Ausblenden</string>
+    <string name="queued_changes_title">Warten auf Synchronisierung</string>
+    <string name="queued_change_not_sent">Konnte nicht gesendet werden</string>
+    <string name="conflict_use_server">Überall den Server verwenden</string>
+    <string name="conflict_resolve_failed">Deine Auswahl konnte nicht gespeichert werden. Versuch es erneut.</string>
+    <string name="conflict_field_notes">Notizen</string>
+    <string name="conflict_field_site">Tauchplatz</string>
+    <string name="conflict_field_start">Start</string>
+    <string name="conflict_field_suit">Anzug</string>
+    <string name="conflict_field_weighting">Tarierung</string>
+    <string name="conflict_field_cylinders">Flaschen</string>
+    <string name="conflict_field_lead">Blei</string>
+    <string name="conflict_field_participants">Teilnehmer</string>
+    <string name="conflict_field_duration">Dauer</string>
+    <string name="conflict_field_max_depth">Max. Tiefe</string>
+    <string name="conflict_field_avg_depth">Durchschnittstiefe</string>
+    <string name="conflict_field_water_temperature">Wassertemperatur</string>
 </resources>

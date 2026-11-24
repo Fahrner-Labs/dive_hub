@@ -28,6 +28,8 @@ object WriteEntities {
 class WriteQueue(
     private val store: DiveStore,
     private val clock: () -> String = { Clock.System.now().toString() },
+    /** The app's queue indicator reads this after a write lands; the store itself has no screen revision. */
+    private val onEnqueued: () -> Unit = {},
 ) {
     /**
      * Apply a Dive edit to the store at once ("write as if online") and queue it. The store keeps the base version; the
@@ -86,6 +88,7 @@ class WriteQueue(
                 conflictJson = null,
             )
             store.updatePendingWrite(updated)
+            onEnqueued()
             return updated
         }
         return store.addPendingWrite(
@@ -99,7 +102,7 @@ class WriteQueue(
                 baseVersion = baseVersion,
                 baseJson = baseJson,
             ),
-        )
+        ).also { onEnqueued() }
     }
 
     /**
@@ -115,7 +118,7 @@ class WriteQueue(
             payloadJson = payload.toString(),
             enqueuedAt = clock(),
         ),
-    )
+    ).also { onEnqueued() }
 
     private fun baseOf(diveId: String): Pair<Long, String?> {
         val dive = store.diveIncludingDeleted(diveId)

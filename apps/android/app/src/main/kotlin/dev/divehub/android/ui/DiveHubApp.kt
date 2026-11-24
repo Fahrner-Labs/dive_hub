@@ -27,6 +27,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -64,6 +65,7 @@ import dev.divehub.android.ui.dive.DiveDetailViewModel
 import dev.divehub.android.ui.logbook.LogbookRoute
 import dev.divehub.android.ui.logbook.LogbookViewModel
 import dev.divehub.android.ui.navigation.AppNavHost
+import dev.divehub.android.ui.navigation.ConflictsRoute
 import dev.divehub.android.ui.navigation.AppScreens
 import dev.divehub.android.ui.navigation.clearSavedTabStates
 import dev.divehub.android.ui.navigation.sessionDestination
@@ -76,6 +78,11 @@ import dev.divehub.android.ui.tools.LoadingsViewModel
 import dev.divehub.android.ui.tools.ToolPage
 import dev.divehub.android.ui.tools.ToolsRoute
 import dev.divehub.android.ui.tools.ToolsViewModel
+import dev.divehub.android.ui.writes.ConflictsRoute as ConflictsScreenRoute
+import dev.divehub.android.ui.writes.LocalWrites
+import dev.divehub.android.ui.writes.LocalWritesActions
+import dev.divehub.android.ui.writes.WritesActions
+import dev.divehub.android.ui.writes.WritesViewModel
 import dev.divehub.shared.ErrorCodes
 
 @Composable
@@ -88,11 +95,18 @@ fun DiveHubApp(
     gasPlan: GasPlanViewModel,
     lead: LeadEstimateViewModel,
     loadings: LoadingsViewModel,
+    writes: WritesViewModel,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val writesState by writes.state.collectAsStateWithLifecycle()
     val navController = rememberNavController()
-    val screens = remember(container, viewModel, logbook, dive, tools, gasPlan, lead, loadings) {
-        DiveHubScreens(container, viewModel, logbook, dive, tools, gasPlan, lead, loadings)
+    val screens = remember(container, viewModel, logbook, dive, tools, gasPlan, lead, loadings, writes) {
+        DiveHubScreens(container, viewModel, logbook, dive, tools, gasPlan, lead, loadings, writes)
+    }
+    val writeActions = remember(navController, writes) {
+        WritesActions(
+            onReview = { navController.navigate(ConflictsRoute) { launchSingleTop = true } },
+        )
     }
     // A sign-out (or another User) drops the saved screens with the session (client contract §1 Security). Once the
     // restore has resolved (not while loading), it also drops Navigation's saved tab stacks.
@@ -104,20 +118,40 @@ fun DiveHubApp(
             gasPlan.forget()
             lead.forget()
             loadings.forget()
+            writes.forget()
             if (!state.loading) navController.clearSavedTabStates()
         }
     }
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Box(Modifier.fillMaxSize()) {
-            AppNavHost(
-                navController = navController,
-                screens = screens,
-                destination = sessionDestination(state),
-                // The id and position go together: `diveId` moves to the requested Dive before its page and list
-                // position arrive, and the logbook focus needs the row that is actually on screen (FAH-421 review).
-                diveId = { dive.state.value.dive?.id },
-                divePosition = { dive.state.value.neighbours?.position },
-            )
+            CompositionLocalProvider(
+                LocalWrites provides writesState,
+                LocalWritesActions provides writeActions,
+            ) {
+                AppNavHost(
+                    navController = navController,
+                    screens = screens,
+                    destination = sessionDestination(state),
+                    // The id and position go together: `diveId` moves to the requested Dive before its page and list
+                    // position arrive, and the logbook focus needs the row that is actually on screen (FAH-421 review).
+                    diveId = { dive.state.value.dive?.id },
+                    divePosition = { dive.state.value.neighbours?.position },
+                )
+            }
+            state.pendingWarning?.let { warning ->
+                PendingWarningDialog(
+                    warning = warning,
+                    onSyncNow = viewModel::syncPendingWarning,
+                    onDiscard = {
+                        if (warning is PendingChangeWarning.SignIn) {
+                            viewModel.discardPendingAndSignIn()
+                        } else {
+                            viewModel.discardPendingAndLeave()
+                        }
+                    },
+                    onCancel = viewModel::cancelPendingWarning,
+                )
+            }
             when {
                 state.loading -> Gate { LoadingScreen() }
                 state.updateRequired -> Gate { UpdateRequiredScreen() }
@@ -136,6 +170,7 @@ private class DiveHubScreens(
     private val gasPlan: GasPlanViewModel,
     private val lead: LeadEstimateViewModel,
     private val loadings: LoadingsViewModel,
+    private val writes: WritesViewModel,
 ) : AppScreens {
     @Composable
     override fun instance() {
@@ -213,6 +248,11 @@ private class DiveHubScreens(
             factory = SettingsViewModel.factory(container),
         )
         SettingsDebugRoute(viewModel = settings, onBack = onBack)
+    }
+
+    @Composable
+    override fun conflicts(onBack: () -> Unit, onOpenDive: (String) -> Unit) {
+        ConflictsScreenRoute(viewModel = writes, onBack = onBack, onOpenDive = onOpenDive)
     }
 
     @Composable

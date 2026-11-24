@@ -82,6 +82,7 @@ import dev.divehub.android.ui.Formats
 import dev.divehub.android.ui.LargeTextFontScale
 import dev.divehub.android.ui.Spacing
 import dev.divehub.android.ui.SyncLine
+import dev.divehub.android.ui.writes.WriteQueueLine
 import dev.divehub.android.ui.components.ContentRevealMs
 import dev.divehub.android.ui.components.EmptyState
 import dev.divehub.android.ui.components.FactRow
@@ -600,6 +601,7 @@ private fun DiveBody(
         contentPadding = PaddingValues(bottom = Spacing.s5),
     ) {
         item { SyncLine(state.syncedAt, state.connected, state.offline, R.string.dive_offline_cached) }
+        item { WriteQueueLine() }
         item { Facts(dive, locale, imperial) }
         item { Cylinders(dive, locale, imperial) }
         item { Weighting(dive, locale, imperial) }

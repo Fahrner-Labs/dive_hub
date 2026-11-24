@@ -12,9 +12,11 @@ import dev.divehub.shared.ErrorCodes
 import dev.divehub.shared.InstanceProbeResult
 import dev.divehub.shared.InstanceUrl
 import dev.divehub.shared.NoAnswerException
+import dev.divehub.shared.PendingWritesException
 import dev.divehub.shared.SessionRepository
 import dev.divehub.shared.SessionState
 import dev.divehub.shared.SignOutOutcome
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -45,19 +47,29 @@ data class UiState(
     val reachability: Reachability = Reachability.Unknown,
     /** The server refuses this app's release (ADR 0076): a terminal screen, never the sign-in form. */
     val updateRequired: Boolean = false,
+    /** A sign-out, change of instance or sign-in that would discard queued writes waits for an explicit decision. */
+    val pendingWarning: PendingChangeWarning? = null,
 )
 
 class MainViewModel(
     private val session: SessionRepository,
     private val startSync: () -> Unit,
     private val stopSync: () -> Unit,
+    private val drainWrites: suspend () -> Unit = {},
     private val probeInstance: suspend (String) -> InstanceProbeResult = session::probeInstance,
 ) : ViewModel() {
-    constructor(container: AppContainer) : this(container.session, container::startSync, container::stopSync)
+    constructor(container: AppContainer) : this(
+        container.session,
+        container::startSync,
+        container::stopSync,
+        container::drainWrites,
+    )
 
     private val _state = MutableStateFlow(UiState())
     val state: StateFlow<UiState> = _state.asStateFlow()
     private var probe: Job? = null
+    /** A sign-in refused for another account's queued writes is retried with these after *Discard and sign in*. */
+    private var pendingSignIn: Pair<String, String>? = null
     /** Bumped by every check and by leaving the address, so a late answer never revives a superseded one. */
     private var probeGeneration = 0
 
@@ -73,9 +85,9 @@ class MainViewModel(
                 }
                 _state.update {
                     when (state) {
-                        is SessionState.SignedIn -> it.copy(loading = false, instanceUrl = state.instanceUrl, user = state.user, units = state.preferences.units, updateRequired = false)
-                        is SessionState.SignedOut -> it.copy(loading = false, instanceUrl = state.instanceUrl, user = null, units = null, updateRequired = false)
-                        is SessionState.UpdateRequired -> it.copy(loading = false, instanceUrl = state.instanceUrl, user = null, units = null, updateRequired = true)
+                        is SessionState.SignedIn -> it.copy(loading = false, instanceUrl = state.instanceUrl, user = state.user, units = state.preferences.units, updateRequired = false, pendingWarning = null)
+                        is SessionState.SignedOut -> it.copy(loading = false, instanceUrl = state.instanceUrl, user = null, units = null, updateRequired = false, pendingWarning = null)
+                        is SessionState.UpdateRequired -> it.copy(loading = false, instanceUrl = state.instanceUrl, user = null, units = null, updateRequired = true, pendingWarning = null)
                         SessionState.Loading -> it
                     }
                 }
@@ -139,13 +151,24 @@ class MainViewModel(
         cancelProbe()
         viewModelScope.launch {
             _state.update { it.copy(busy = true, error = null) }
-            val outcome = session.changeInstance()
-            _state.update {
-                if (outcome == SignOutOutcome.SignedOut) {
-                    it.copy(busy = false, instanceUrl = null, user = null, units = null, error = null, reachability = Reachability.Unknown)
-                } else {
-                    // Queued writes block the switch until the User decides (the warning UI is T7).
-                    it.copy(busy = false, error = null)
+            when (val outcome = session.changeInstance()) {
+                SignOutOutcome.SignedOut -> _state.update {
+                    it.copy(
+                        busy = false,
+                        instanceUrl = null,
+                        user = null,
+                        units = null,
+                        error = null,
+                        reachability = Reachability.Unknown,
+                        pendingWarning = null,
+                    )
+                }
+                is SignOutOutcome.PendingChanges -> _state.update {
+                    it.copy(
+                        busy = false,
+                        error = null,
+                        pendingWarning = PendingChangeWarning.SignOut(outcome.count, changeInstance = true),
+                    )
                 }
             }
         }
@@ -157,14 +180,27 @@ class MainViewModel(
             _state.update { it.copy(error = ErrorCodes.INVALID_INSTANCE_URL) }
             return
         }
+        signIn(url, email.trim(), password, discardPending = false)
+    }
+
+    private fun signIn(url: String, email: String, password: String, discardPending: Boolean) {
         viewModelScope.launch {
             _state.update { it.copy(busy = true, error = null) }
             try {
-                session.signIn(url, email.trim(), password)
-                _state.update { it.copy(busy = false, error = null) }
+                session.signIn(url, email, password, discardPending = discardPending)
+                pendingSignIn = null
+                _state.update { it.copy(busy = false, error = null, pendingWarning = null) }
+            } catch (error: PendingWritesException) {
+                // The previous User's queued writes belong to them; signing in as another is an explicit decision (D8).
+                pendingSignIn = email to password
+                _state.update {
+                    it.copy(busy = false, error = null, pendingWarning = PendingChangeWarning.SignIn(error.count, email))
+                }
             } catch (error: DiveHubException) {
+                pendingSignIn = null
                 _state.update { it.copy(busy = false, error = error.code) }
             } catch (_: NoAnswerException) {
+                pendingSignIn = null
                 _state.update { it.copy(busy = false, error = NO_ANSWER) }
             }
         }
@@ -173,9 +209,95 @@ class MainViewModel(
     fun signOut() {
         viewModelScope.launch {
             _state.update { it.copy(busy = true, error = null) }
-            session.signOut()
-            _state.update { it.copy(busy = false, error = null) }
+            when (val outcome = session.signOut()) {
+                SignOutOutcome.SignedOut -> _state.update { it.copy(busy = false, error = null, pendingWarning = null) }
+                is SignOutOutcome.PendingChanges -> _state.update {
+                    it.copy(
+                        busy = false,
+                        error = null,
+                        pendingWarning = PendingChangeWarning.SignOut(outcome.count, changeInstance = false),
+                    )
+                }
+            }
         }
+    }
+
+    /** *Sync now* on the sign-out warning: drain the queue and stay signed in; a sign-out is a fresh choice after. */
+    fun syncPendingWarning() {
+        val warning = _state.value.pendingWarning as? PendingChangeWarning.SignOut ?: return
+        if (warning.syncing) return
+        val syncing = warning.copy(syncing = true, stillWaiting = false)
+        _state.update { it.copy(pendingWarning = syncing) }
+        viewModelScope.launch {
+            try {
+                drainWrites()
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                // The count below is the truth either way.
+            }
+            // Cancelled, dismissed or replaced while the replay ran: its answer must not revive a closed warning.
+            if (_state.value.pendingWarning !== syncing) return@launch
+            // A 401 during the replay already ended the session; the warning is moot then.
+            if (_state.value.user == null) {
+                _state.update { it.copy(pendingWarning = null) }
+                return@launch
+            }
+            val remaining = try {
+                session.pendingWriteCount()
+            } catch (_: Exception) {
+                warning.count
+            }
+            if (remaining > 0) {
+                _state.update {
+                    it.copy(
+                        pendingWarning = syncing.copy(count = remaining, syncing = false, stillWaiting = true),
+                    )
+                }
+                return@launch
+            }
+            // D8: *Sync now* stays signed in and drains. A sign-out the User still wants is a fresh, explicit tap;
+            // the warning closes and the session (and the store) stay exactly as they were.
+            _state.update { it.copy(pendingWarning = null) }
+        }
+    }
+
+    /** *Discard and sign out* / *Discard and change instance*: the User accepted losing the queued writes (D8). */
+    fun discardPendingAndLeave() {
+        val warning = _state.value.pendingWarning as? PendingChangeWarning.SignOut ?: return
+        viewModelScope.launch {
+            _state.update { it.copy(busy = true) }
+            if (warning.changeInstance) session.changeInstanceDiscardingPending() else session.signOutDiscardingPending()
+            _state.update {
+                if (warning.changeInstance) {
+                    it.copy(
+                        busy = false,
+                        instanceUrl = null,
+                        user = null,
+                        units = null,
+                        error = null,
+                        reachability = Reachability.Unknown,
+                        pendingWarning = null,
+                    )
+                } else {
+                    it.copy(busy = false, error = null, pendingWarning = null)
+                }
+            }
+        }
+    }
+
+    /** *Discard and sign in*: the other account accepts losing the previous User's queued writes (D8). */
+    fun discardPendingAndSignIn() {
+        val warning = _state.value.pendingWarning as? PendingChangeWarning.SignIn ?: return
+        val credentials = pendingSignIn ?: return
+        val url = _state.value.instanceUrl ?: return
+        signIn(url, credentials.first, credentials.second, discardPending = true)
+    }
+
+    /** Close the warning without changing anything; the session and the queue stay exactly as they were. */
+    fun cancelPendingWarning() {
+        if (_state.value.pendingWarning is PendingChangeWarning.SignIn) pendingSignIn = null
+        _state.update { it.copy(pendingWarning = null) }
     }
 
     private suspend fun restore() {

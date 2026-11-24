@@ -30,3 +30,7 @@ internal data object SettingsRoute
 
 @Serializable
 internal data object SettingsDebugRoute
+
+/** The device-vs-hub decision screen (ADR 0084 D3); opened from the pending indicator, above its origin. */
+@Serializable
+internal data object ConflictsRoute

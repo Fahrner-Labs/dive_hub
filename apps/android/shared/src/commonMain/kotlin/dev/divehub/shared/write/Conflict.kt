@@ -39,6 +39,31 @@ data class WriteConflictView(
     /** The version the parked 412 answered with; the resolution re-queues against it. */
     val serverVersion: Long,
     val fields: List<ConflictFieldView>,
+    /** The stored Dive's server-computed number, when this device has one; the screen names the thing that waits. */
+    val diveNumber: Int? = null,
+)
+
+/**
+ * The queue's three states as the pending indicator shows them (ADR 0084 D4). [pending] waits for the connection,
+ * [conflicted] waits for the User's decision, and [failed] needs a retry or the User's attention — each is a state,
+ * never a toast.
+ */
+data class WriteQueueSnapshot(
+    val pending: Int = 0,
+    val conflicted: Int = 0,
+    val failed: Int = 0,
+)
+
+/**
+ * One waiting entry as the queue screen shows it (client contract, Offline writes): which thing it edits and the
+ * fields it carries, so "2 changes waiting to sync" has a way to see what waits. A parked conflict is not here; it
+ * is a [WriteConflictView] with a decision.
+ */
+data class QueuedWriteView(
+    val entryId: Long,
+    val fields: List<String>,
+    val failed: Boolean,
+    val diveNumber: Int? = null,
 )
 
 /** What [WriteReplayer.resolve] did with a User's decision. */

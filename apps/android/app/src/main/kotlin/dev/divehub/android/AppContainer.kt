@@ -25,6 +25,8 @@ import dev.divehub.shared.sync.SseLiveHints
 import dev.divehub.shared.sync.SyncEngine
 import dev.divehub.shared.sync.SyncRefresher
 import dev.divehub.shared.sync.SyncResult
+import dev.divehub.shared.write.ServerWriteCapabilityProbe
+import dev.divehub.shared.write.WriteCapability
 import dev.divehub.shared.write.WriteQueue
 import dev.divehub.shared.write.WriteReplayer
 import io.ktor.client.engine.okhttp.OkHttp
@@ -34,6 +36,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancelChildren
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -98,11 +104,27 @@ class AppContainer(context: Context) {
         },
     )
 
-    /** The offline write queue: screens enqueue here and the store shows the edit at once (ADR 0084 D4). */
-    val writeQueue: WriteQueue by lazy { WriteQueue(diveStore) }
+    /**
+     * The offline write queue: screens enqueue here and the store shows the edit at once (ADR 0084 D4). [queueRevision]
+     * lets the pending indicator re-read the queue after an edit, before any sync trigger runs.
+     */
+    private val _queueRevision = MutableStateFlow(0L)
+    val queueRevision: StateFlow<Long> = _queueRevision.asStateFlow()
+    val writeQueue: WriteQueue by lazy {
+        WriteQueue(diveStore, onEnqueued = { _queueRevision.value = _queueRevision.value + 1 })
+    }
 
     /** The replay/conflict side: drains the queue on sync triggers and answers the resolution surface (ADR 0084 D3). */
     val writeReplayer: WriteReplayer by lazy { WriteReplayer(session.client, diveStore) }
+
+    /**
+     * Whether this instance can take offline writes (ADR 0083 D7): probed once per session and again when a restored
+     * connection first answers, because a pre-feed server must hide the write UI rather than disable it. [Unknown]
+     * means no usable answer yet; it never claims write access.
+     */
+    private val _writeCapability = MutableStateFlow(WriteCapability.Unknown)
+    val writeCapability: StateFlow<WriteCapability> = _writeCapability.asStateFlow()
+    private val capabilityProbe = ServerWriteCapabilityProbe(session.client)
 
     /** The logbook's and dive page's read sides share the session's HTTP layer (instance URL and bearer token). */
     val logbook = LogbookRepository(session.client)
@@ -155,8 +177,17 @@ class AppContainer(context: Context) {
     fun startSync() {
         if (syncing) return
         syncing = true
+        _writeCapability.value = WriteCapability.Unknown
         refresher.start(syncScope)
         periodicSync.schedule()
+        // The server capability is its own probe: a pre-feed instance must hide write UI, and a lost session must not
+        // wait on it. A first connection that answers while the probe was offline asks again, once.
+        syncScope.launch { probeWriteCapability() }
+        syncScope.launch {
+            refresher.streamHealthy.collect { connected ->
+                if (connected && _writeCapability.value == WriteCapability.Unknown) probeWriteCapability()
+            }
+        }
         syncScope.launch {
             val result = sync.sync()
             if (result == SyncResult.SessionEnded) return@launch
@@ -167,9 +198,18 @@ class AppContainer(context: Context) {
         }
     }
 
+    private suspend fun probeWriteCapability() {
+        val url = session.knownInstance() ?: return
+        session.client.baseUrl = url
+        if (!session.hasSession()) return
+        val capability = capabilityProbe.probe()
+        if (capability != WriteCapability.Unknown && syncing) _writeCapability.value = capability
+    }
+
     fun stopSync() {
         if (!syncing) return
         syncing = false
+        _writeCapability.value = WriteCapability.Unknown
         refresher.stop()
         periodicSync.cancel()
         syncScope.coroutineContext.cancelChildren()
@@ -202,6 +242,18 @@ class AppContainer(context: Context) {
         val url = session.knownInstance() ?: return
         session.client.baseUrl = url
         if (!session.hasSession()) return
+        wipeLock.withLock {
+            if (!session.hasSession()) return@withLock
+            refresher.drainWritesNow()
+        }
+    }
+
+    /** *Try again* on the pending indicator: failed entries rejoin the queue, then one replay attempt runs. */
+    suspend fun retryWrites() {
+        val url = session.knownInstance() ?: return
+        session.client.baseUrl = url
+        if (!session.hasSession()) return
+        withContext(Dispatchers.IO) { writeReplayer.retryFailed() }
         wipeLock.withLock {
             if (!session.hasSession()) return@withLock
             refresher.drainWritesNow()
