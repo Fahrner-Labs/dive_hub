@@ -229,6 +229,7 @@ private fun ConflictEntry(
             text = stringResource(R.string.conflict_keep_selected),
             onClick = { onResolve(conflict.fields.associate { it.field to selection(it) }) },
             modifier = Modifier.fillMaxWidth(),
+            enabled = !busy,
         )
     }
 }

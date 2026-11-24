@@ -47,10 +47,16 @@ internal val LocalQuietActionAlignment = staticCompositionLocalOf<Alignment> { A
  * primary action per section; [modifier] carries the caller's layout.
  */
 @Composable
-fun InkButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun InkButton(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+) {
     Button(
         onClick = onClick,
         modifier = modifier,
+        enabled = enabled,
         shape = RoundedCornerShape(Radius.control),
         colors = ButtonDefaults.buttonColors(
             containerColor = DiveHubColors.ink,

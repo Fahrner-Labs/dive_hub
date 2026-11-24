@@ -11,6 +11,8 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.isDialog
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onRoot
 import com.github.takahirom.roborazzi.captureRoboImage
 import dev.divehub.android.ui.DiveHubTheme
@@ -24,6 +26,8 @@ import dev.divehub.shared.write.WriteNotice
 import dev.divehub.shared.write.WriteCapability
 import dev.divehub.shared.write.WriteConflictView
 import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -88,6 +92,33 @@ class WritesScreenshotTest {
 
         compose.onNodeWithText("Tauchgang 42").assertIsDisplayed()
         capture("conflicts_de_narrow_2x.png")
+    }
+
+    @Test
+    @Config(qualifiers = "en-rUS-w320dp-h891dp-xxhdpi", fontScale = 2f)
+    fun `a start conflict in English at 320 dp and 200 percent`() {
+        compose.setContent {
+            DiveHubTheme(darkTheme = false) {
+                ConflictsScreen(
+                    state = WritesUiState(
+                        capability = WriteCapability.Writeable,
+                        conflicted = 1,
+                        conflicts = listOf(startConflict()),
+                    ),
+                    units = "metric",
+                    onBack = {},
+                    onResolve = { _, _ -> },
+                    onRetry = {},
+                    onDismissNotices = {},
+                    onOpenDive = {},
+                )
+            }
+        }
+
+        // The merge's `set.startsAt` reads as "Start" and as the Dive page's wall-clock start, wrapped at 320 dp.
+        compose.onNodeWithText("Start").assertIsDisplayed()
+        compose.onAllNodesWithText("Tue 24 Nov 2026, 08:00 (UTC+2)").onFirst().assertIsDisplayed()
+        capture("conflicts_start_narrow_2x.png")
     }
 
     @Test
@@ -286,4 +317,26 @@ class WritesScreenshotTest {
             ),
         ),
     )
+
+    private fun startConflict() = WriteConflictView(
+        entryId = 11,
+        entityType = "dive",
+        entityId = "dive-2",
+        serverVersion = 3,
+        diveNumber = 45,
+        fields = listOf(
+            ConflictFieldView(
+                field = "set.startsAt",
+                base = startAt("2026-11-24T05:00:00Z", 3600),
+                server = startAt("2026-11-24T06:00:00Z", 7200),
+                local = startAt("2026-11-24T06:00:00Z", 7200),
+                localAction = "set",
+            ),
+        ),
+    )
+
+    private fun startAt(at: String, offsetSeconds: Int) = buildJsonObject {
+        put("at", JsonPrimitive(at))
+        put("utcOffsetSeconds", JsonPrimitive(offsetSeconds))
+    }
 }

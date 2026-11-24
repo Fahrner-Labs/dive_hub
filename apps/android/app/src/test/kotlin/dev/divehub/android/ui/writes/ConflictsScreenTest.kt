@@ -1,6 +1,7 @@
 package dev.divehub.android.ui.writes
 
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onAllNodesWithText
@@ -64,6 +65,15 @@ class ConflictsScreenTest {
     }
 
     @Test
+    fun `a start conflict is named Start whichever way the merge sets it`() {
+        val context = RuntimeEnvironment.getApplication()
+
+        assertEquals("Start", conflictFieldLabel(context, "set.startsAt"))
+        assertEquals("Start", conflictFieldLabel(context, "reset.startsAt"))
+        assertEquals("Start", conflictFieldLabel(context, "set.utcOffsetSeconds"))
+    }
+
+    @Test
     fun `an unknown field keeps the API's own value`() {
         val context = RuntimeEnvironment.getApplication()
 
@@ -118,6 +128,20 @@ class ConflictsScreenTest {
         val choices = resolved.single().second
         assertEquals(ConflictSide.Server, choices["notes"])
         assertEquals(ConflictSide.Server, choices["suit"])
+    }
+
+    @Test
+    fun `the primary action is disabled while a decision is being sent`() {
+        render(
+            WritesUiState(
+                capability = WriteCapability.Writeable,
+                conflicted = 1,
+                conflicts = listOf(conflict()),
+                busy = true,
+            ),
+        )
+
+        compose.onNodeWithText("Keep selected").assertIsNotEnabled()
     }
 
     @Test

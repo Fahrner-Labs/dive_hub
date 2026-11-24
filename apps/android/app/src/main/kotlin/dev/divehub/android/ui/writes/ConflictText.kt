@@ -29,7 +29,7 @@ fun conflictFieldLabel(context: Context, field: String): String {
         field == "participants" || field.startsWith("participants.") -> R.string.conflict_field_participants
         field == "notes" -> R.string.conflict_field_notes
         field == "siteId" -> R.string.conflict_field_site
-        field == "startsAt" || field == "utcOffsetSeconds" -> R.string.conflict_field_start
+        bare == "startsAt" || bare == "utcOffsetSeconds" -> R.string.conflict_field_start
         field == "suit" -> R.string.conflict_field_suit
         field == "weightingFeedback" -> R.string.conflict_field_weighting
         field == "cylinders" -> R.string.conflict_field_cylinders
