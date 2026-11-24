@@ -11,7 +11,6 @@ import dev.divehub.shared.write.ConflictResolution
 import dev.divehub.shared.write.ConflictSide
 import dev.divehub.shared.write.QueuedWriteView
 import dev.divehub.shared.write.WriteNotice
-import dev.divehub.shared.write.WriteCapability
 import dev.divehub.shared.write.WriteConflictView
 import dev.divehub.shared.write.WriteQueueSnapshot
 import kotlinx.coroutines.CancellationException
@@ -29,10 +28,10 @@ import kotlinx.coroutines.withContext
  * The offline queue as the Android surface shows it (ADR 0084 D4): how many writes wait, which entries need the
  * User's decision, and whether this instance can take writes at all. [visible] stays true while the capability is
  * unknown and saved writes exist — an offline start must not hide the User's own data — but an explicit pre-feed
- * answer (`ReadOnly`) hides the whole write surface, as D7 requires.
+ * answer (`writeable == false`) hides the whole write surface, as D7 requires.
  */
 data class WritesUiState(
-    val capability: WriteCapability = WriteCapability.Unknown,
+    val writeable: Boolean? = null,
     val pending: Int = 0,
     val conflicted: Int = 0,
     val failed: Int = 0,
@@ -46,8 +45,8 @@ data class WritesUiState(
     val actionFailed: Boolean = false,
 ) {
     val total: Int get() = pending + conflicted + failed
-    val visible: Boolean get() = (total > 0 || notices.isNotEmpty()) && capability != WriteCapability.ReadOnly
-    val canReview: Boolean get() = conflicted > 0 && capability != WriteCapability.ReadOnly
+    val visible: Boolean get() = (total > 0 || notices.isNotEmpty()) && writeable != false
+    val canReview: Boolean get() = conflicted > 0 && writeable != false
 }
 
 /**
@@ -55,7 +54,7 @@ data class WritesUiState(
  * the sync revision like the other screens, and resolves a conflict against a fresh server version.
  */
 class WritesViewModel(
-    capability: StateFlow<WriteCapability>,
+    writeable: StateFlow<Boolean?>,
     revision: StateFlow<Long>,
     queueRevision: StateFlow<Long>,
     private val readSnapshot: () -> WriteQueueSnapshot,
@@ -73,7 +72,7 @@ class WritesViewModel(
 
     init {
         viewModelScope.launch {
-            capability.collect { value -> _state.update { it.copy(capability = value) } }
+            writeable.collect { value -> _state.update { it.copy(writeable = value) } }
         }
         // A replay, a refresh that rebases the queue, or a decision writes the queue and bumps the revision.
         viewModelScope.launch { revision.followStoreWrites().collect { read() } }
@@ -166,7 +165,7 @@ class WritesViewModel(
         fun factory(container: AppContainer): ViewModelProvider.Factory = viewModelFactory {
             initializer {
                 WritesViewModel(
-                    capability = container.writeCapability,
+                    writeable = container.writeable,
                     revision = container.syncRevision,
                     queueRevision = container.queueRevision,
                     readSnapshot = container.writeReplayer::snapshot,

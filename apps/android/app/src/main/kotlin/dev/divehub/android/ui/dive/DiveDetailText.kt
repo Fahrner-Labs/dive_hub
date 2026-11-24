@@ -9,6 +9,8 @@ import dev.divehub.shared.dive.MarkedValue
 import dev.divehub.shared.dive.RecordedValue
 import dev.divehub.shared.dive.diveLocalTime
 import dev.divehub.shared.dive.utcOffsetText
+import dev.divehub.shared.tools.massIn
+import dev.divehub.shared.tools.temperatureIn
 import java.text.NumberFormat
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -16,8 +18,6 @@ import java.util.Locale
 
 /** Number, time and unit text of the dive page (ADR 0014). Values are stored in metres, seconds and °C. */
 internal object DiveDetailText {
-    private const val FAHRENHEIT_PER_CELSIUS = 9.0 / 5.0
-
     /** The local time at the dive, with where its offset lies, "(UTC+2)"; as logged in UTC when there is none. */
     fun start(context: Context, at: String, utcOffsetSeconds: Int?, locale: Locale): String {
         val local = diveLocalTime(at, utcOffsetSeconds) ?: return at
@@ -54,7 +54,7 @@ internal object DiveDetailText {
 
     /** "18 °C" or "64 °F", whole numbers as a dive page shows water temperature. */
     fun temperature(context: Context, celsius: Double, locale: Locale, imperial: Boolean): String {
-        val value = if (imperial) celsius * FAHRENHEIT_PER_CELSIUS + 32 else celsius
+        val value = temperatureIn(celsius, imperial)
         val text = String.format(locale, "%.0f", value)
         return context.getString(
             if (imperial) R.string.dive_temperature_fahrenheit else R.string.dive_temperature_celsius,
@@ -72,15 +72,23 @@ internal object DiveDetailText {
     ): String? {
         if (!marked.edited) return null
         val recorded = marked.recorded ?: return null
-        val text = when (recorded) {
-            is RecordedValue.Time -> start(context, recorded.at, recorded.utcOffsetSeconds, locale)
-            is RecordedValue.Number -> when (field) {
-                DiveValue.DURATION_SECONDS -> duration(context, recorded.value)
-                DiveValue.WATER_TEMPERATURE_C -> temperature(context, recorded.value, locale, imperial)
-                else -> depth(context, recorded.value, locale, imperial)
-            }
+        return context.getString(R.string.dive_edited_value, recordedText(context, field, recorded, locale, imperial))
+    }
+
+    /** A Recording's value in the page's units, for the edit form's "use the recording's value" hint. */
+    fun recordedText(
+        context: Context,
+        field: DiveValue,
+        recorded: RecordedValue,
+        locale: Locale,
+        imperial: Boolean,
+    ): String = when (recorded) {
+        is RecordedValue.Time -> start(context, recorded.at, recorded.utcOffsetSeconds, locale)
+        is RecordedValue.Number -> when (field) {
+            DiveValue.DURATION_SECONDS -> duration(context, recorded.value)
+            DiveValue.WATER_TEMPERATURE_C -> temperature(context, recorded.value, locale, imperial)
+            else -> depth(context, recorded.value, locale, imperial)
         }
-        return context.getString(R.string.dive_edited_value, text)
     }
 
     /** "Salt water" for a water type the API names; an unknown one stays as it came. */
@@ -143,7 +151,7 @@ internal object DiveDetailText {
 
     /** "4.0 kg", "8.8 lb": lead and a feedback amount are shown in the User's unit (ADR 0014). */
     fun mass(context: Context, kg: Double, locale: Locale, imperial: Boolean): String {
-        val text = Formats.decimal(locale, if (imperial) kg / KG_PER_LB else kg, 1)
+        val text = Formats.decimal(locale, massIn(kg, imperial), 1)
         return context.getString(if (imperial) R.string.dive_mass_pounds else R.string.dive_mass_kilograms, text)
     }
 
@@ -212,6 +220,4 @@ internal object DiveDetailText {
         if (value == whole(value)) value.toInt().toString() else String.format(Locale.ROOT, "%.1f", value)
 
     private fun abs(value: Double): Double = if (value < 0) -value else value
-
-    private const val KG_PER_LB = 0.45359237
 }

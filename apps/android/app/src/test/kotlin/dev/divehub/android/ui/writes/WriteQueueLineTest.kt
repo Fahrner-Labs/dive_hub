@@ -6,7 +6,6 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import dev.divehub.android.ui.DiveHubTheme
-import dev.divehub.shared.write.WriteCapability
 import dev.divehub.shared.write.WriteDropReason
 import dev.divehub.shared.write.WriteNotice
 import org.junit.Assert.assertEquals
@@ -27,7 +26,7 @@ class WriteQueueLineTest {
 
     @Test
     fun `waiting writes say how many and open the list of what waits`() {
-        render(WritesUiState(capability = WriteCapability.Writeable, pending = 2))
+        render(WritesUiState(writeable = true, pending = 2))
 
         compose.onNodeWithText("2 changes waiting to sync").assertIsDisplayed()
         compose.onNodeWithText("View").performClick()
@@ -37,7 +36,7 @@ class WriteQueueLineTest {
 
     @Test
     fun `a parked conflict needs the user and offers review`() {
-        render(WritesUiState(capability = WriteCapability.Writeable, conflicted = 1))
+        render(WritesUiState(writeable = true, conflicted = 1))
 
         compose.onNodeWithText("1 change needs your decision").assertIsDisplayed()
         compose.onNodeWithText("Review").performClick()
@@ -47,7 +46,7 @@ class WriteQueueLineTest {
 
     @Test
     fun `a failed replay is a state that opens the queue`() {
-        render(WritesUiState(capability = WriteCapability.Writeable, failed = 1))
+        render(WritesUiState(writeable = true, failed = 1))
 
         compose.onNodeWithText("1 change couldn’t be sent").assertIsDisplayed()
         compose.onNodeWithText("View").performClick()
@@ -57,7 +56,7 @@ class WriteQueueLineTest {
 
     @Test
     fun `a failure is not hidden by writes that still wait`() {
-        render(WritesUiState(capability = WriteCapability.Writeable, pending = 2, failed = 1))
+        render(WritesUiState(writeable = true, pending = 2, failed = 1))
 
         compose.onNodeWithText("1 change couldn’t be sent").assertIsDisplayed()
         compose.onNodeWithText("2 changes waiting to sync").assertDoesNotExist()
@@ -67,7 +66,7 @@ class WriteQueueLineTest {
     fun `a dropped change remains a visible state with a way to see it`() {
         render(
             WritesUiState(
-                capability = WriteCapability.Writeable,
+                writeable = true,
                 notices = listOf(
                     WriteNotice(
                         entityType = "dive",
@@ -87,21 +86,21 @@ class WriteQueueLineTest {
 
     @Test
     fun `a pre-feed instance hides the indicator even with saved writes`() {
-        render(WritesUiState(capability = WriteCapability.ReadOnly, pending = 2))
+        render(WritesUiState(writeable = false, pending = 2))
 
         compose.onNodeWithText("2 changes waiting to sync").assertDoesNotExist()
     }
 
     @Test
     fun `an unknown capability keeps the saved writes visible from an offline start`() {
-        render(WritesUiState(capability = WriteCapability.Unknown, pending = 1))
+        render(WritesUiState(writeable = null, pending = 1))
 
         compose.onNodeWithText("1 change waiting to sync").assertIsDisplayed()
     }
 
     @Test
     fun `an empty queue draws nothing`() {
-        render(WritesUiState(capability = WriteCapability.Writeable))
+        render(WritesUiState(writeable = true))
 
         compose.onNodeWithText("waiting to sync", substring = true).assertDoesNotExist()
         compose.onNodeWithText("needs your decision", substring = true).assertDoesNotExist()

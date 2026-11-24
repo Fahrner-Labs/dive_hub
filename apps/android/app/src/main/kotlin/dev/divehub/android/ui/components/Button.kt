@@ -1,7 +1,9 @@
 package dev.divehub.android.ui.components
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.padding
@@ -13,6 +15,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.staticCompositionLocalOf
@@ -23,6 +26,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import dev.divehub.android.R
 import dev.divehub.android.ui.DiveHubColors
@@ -47,12 +51,7 @@ internal val LocalQuietActionAlignment = staticCompositionLocalOf<Alignment> { A
  * primary action per section; [modifier] carries the caller's layout.
  */
 @Composable
-fun InkButton(
-    text: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    enabled: Boolean = true,
-) {
+fun InkButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
     Button(
         onClick = onClick,
         modifier = modifier,
@@ -61,6 +60,46 @@ fun InkButton(
         colors = ButtonDefaults.buttonColors(
             containerColor = DiveHubColors.ink,
             contentColor = DiveHubColors.onInk,
+        ),
+    ) {
+        Text(text)
+    }
+}
+
+/**
+ * The brief's secondary button: the sheet's tone with a control border and ink content. A field-like action that
+ * opens a picker (a date, a time) uses it instead of a Material pill, which reads as a chip.
+ */
+@Composable
+fun SecondaryButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
+    val content = MaterialTheme.colorScheme.onSurface
+    OutlinedButton(
+        onClick = onClick,
+        modifier = modifier.defaultMinSize(minHeight = QuietActionTarget),
+        enabled = enabled,
+        shape = RoundedCornerShape(Radius.control),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+        colors = ButtonDefaults.outlinedButtonColors(
+            contentColor = content,
+            disabledContentColor = content.copy(alpha = DisabledContentAlpha),
+        ),
+        contentPadding = PaddingValues(horizontal = Spacing.s4, vertical = Spacing.s3),
+    ) {
+        Text(text, style = DiveHubText.body, textAlign = TextAlign.Center)
+    }
+}
+
+/** The brief's danger button, for the action that confirms a destructive one: danger tone, control radius. */
+@Composable
+fun DangerButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
+    Button(
+        onClick = onClick,
+        modifier = modifier.defaultMinSize(minHeight = QuietActionTarget),
+        enabled = enabled,
+        shape = RoundedCornerShape(Radius.control),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = MaterialTheme.colorScheme.error,
+            contentColor = MaterialTheme.colorScheme.onError,
         ),
     ) {
         Text(text)

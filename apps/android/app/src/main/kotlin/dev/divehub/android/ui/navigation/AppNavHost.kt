@@ -56,7 +56,10 @@ internal interface AppScreens {
     )
 
     @Composable
-    fun dive(id: String, onBack: () -> Unit, onOpenDive: (String) -> Unit)
+    fun dive(id: String, onBack: () -> Unit, onOpenDive: (String) -> Unit, onEdit: (String) -> Unit)
+
+    @Composable
+    fun diveEdit(id: String, onBack: () -> Unit, onSaved: () -> Unit)
 
     @Composable
     fun tools(page: ToolPage, onPage: (ToolPage) -> Unit, onOpenDive: (String) -> Unit)
@@ -150,6 +153,17 @@ internal fun AppNavHost(
                                     }
                                 }
                             },
+                            onEdit = { id -> navController.navigate(DiveEditRoute(id)) { launchSingleTop = true } },
+                        )
+                    }
+                }
+                composable<DiveEditRoute> { entry ->
+                    MainShell(navController) {
+                        val route = entry.toRoute<DiveEditRoute>()
+                        currentScreens.value.diveEdit(
+                            id = route.id,
+                            onBack = { navController.popBackStack() },
+                            onSaved = { navController.popBackStack() },
                         )
                     }
                 }

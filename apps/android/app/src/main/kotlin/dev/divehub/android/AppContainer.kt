@@ -27,7 +27,6 @@ import dev.divehub.shared.sync.SyncRefresher
 import dev.divehub.shared.sync.SyncResult
 import dev.divehub.shared.write.ConflictResolution
 import dev.divehub.shared.write.ConflictSide
-import dev.divehub.shared.write.ServerWriteCapabilityProbe
 import dev.divehub.shared.write.WriteCapability
 import dev.divehub.shared.write.WriteQueue
 import dev.divehub.shared.write.WriteReplayer
@@ -39,9 +38,12 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -121,15 +123,6 @@ class AppContainer(context: Context) {
     /** The replay/conflict side: drains the queue on sync triggers and answers the resolution surface (ADR 0084 D3). */
     val writeReplayer: WriteReplayer by lazy { WriteReplayer(session.client, diveStore) }
 
-    /**
-     * Whether this instance can take offline writes (ADR 0083 D7): probed once per session and again when a restored
-     * connection first answers, because a pre-feed server must hide the write UI rather than disable it. [Unknown]
-     * means no usable answer yet; it never claims write access.
-     */
-    private val _writeCapability = MutableStateFlow(WriteCapability.Unknown)
-    val writeCapability: StateFlow<WriteCapability> = _writeCapability.asStateFlow()
-    private val capabilityProbe = ServerWriteCapabilityProbe(session.client)
-
     /** The logbook's and dive page's read sides share the session's HTTP layer (instance URL and bearer token). */
     val logbook = LogbookRepository(session.client)
 
@@ -141,6 +134,10 @@ class AppContainer(context: Context) {
 
     /** The D4 read side: the list, one Dive, its neighbours and its profiles come from the store, never a request. */
     val storeLogbook = StoreLogbook(diveStore)
+
+    /** D7's capability probe: only an instance that answers the feed gets the write UI at all. */
+    val writeCapability = WriteCapability(session.client)
+    val writeable = writeCapability.writeable
 
     /** What the settings screen reads: the stored instance address and the sync state the logbook also reads. */
     val settings: SettingsRepository by lazy { SettingsRepository(instances, diveStore) }
@@ -173,8 +170,22 @@ class AppContainer(context: Context) {
     val writeNotices = refresher.notices
     private val periodicSync = WorkManagerPeriodicSync(application)
     private val syncScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    // The container outlives every session, so a UI-only combination must not sit in `syncScope` (which a sign-out
+    // cancels): a later sign-in would otherwise keep a stale value.
+    private val uiScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val wipeLock = Mutex()
     private var syncing = false
+
+    /**
+     * Whether the live stream is answering: online-only actions (the destructive verbs) are offered while it is true.
+     * The offline flag wins, so a dropped poll shows them as unavailable even before the stream notices.
+     */
+    val online: StateFlow<Boolean> = combine(refresher.streamHealthy, refresher.offline) { connected, offline ->
+        connected && !offline
+    }.stateIn(uiScope, SharingStarted.Eagerly, false)
+
+    /** A local edit reached the store (the queue's optimistic write): open screens reread it without a sync. */
+    fun noteStoreWrite() = refresher.noteStoreWrite()
 
     /**
      * Start syncing for a signed-in User: the initial phases in the background, the live/poll refresh loop, and the
@@ -183,18 +194,15 @@ class AppContainer(context: Context) {
     fun startSync() {
         if (syncing) return
         syncing = true
-        _writeCapability.value = WriteCapability.Unknown
         refresher.start(syncScope)
         periodicSync.schedule()
-        // The server capability is its own probe: a pre-feed instance must hide write UI, and a lost session must not
-        // wait on it. A first connection that answers while the probe was offline asks again, once.
-        syncScope.launch { probeWriteCapability() }
         syncScope.launch {
-            refresher.streamHealthy.collect { connected ->
-                if (connected && _writeCapability.value == WriteCapability.Unknown) probeWriteCapability()
+            // D7: one capability probe per session, so a pre-feed server hides the write UI instead of failing edits.
+            val url = session.knownInstance()
+            if (url != null) {
+                session.client.baseUrl = url
+                if (session.hasSession()) writeCapability.probe()
             }
-        }
-        syncScope.launch {
             val result = sync.sync()
             if (result == SyncResult.SessionEnded) return@launch
             refresher.initialFinished(result)
@@ -202,20 +210,18 @@ class AppContainer(context: Context) {
             refresher.drainWritesNow()
             refresher.profilesOnce()
         }
-    }
-
-    private suspend fun probeWriteCapability() {
-        val url = session.knownInstance() ?: return
-        session.client.baseUrl = url
-        if (!session.hasSession()) return
-        val capability = capabilityProbe.probe()
-        if (capability != WriteCapability.Unknown && syncing) _writeCapability.value = capability
+        // A cold start with no answer must not hide writes for the whole session: ask again once the stream answers.
+        syncScope.launch {
+            online.collect { connected ->
+                if (connected && writeCapability.writeable.value == null) writeCapability.probe()
+            }
+        }
     }
 
     fun stopSync() {
         if (!syncing) return
         syncing = false
-        _writeCapability.value = WriteCapability.Unknown
+        writeCapability.reset()
         refresher.stop()
         periodicSync.cancel()
         syncScope.coroutineContext.cancelChildren()

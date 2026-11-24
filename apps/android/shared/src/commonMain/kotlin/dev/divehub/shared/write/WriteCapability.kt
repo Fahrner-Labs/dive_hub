@@ -1,46 +1,54 @@
 package dev.divehub.shared.write
 
 import dev.divehub.shared.ApiClient
-import dev.divehub.shared.DiveHubException
 import dev.divehub.shared.NoAnswerException
+import io.ktor.http.HttpStatusCode
 import io.ktor.http.isSuccess
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 /**
- * Whether this server can take the native client's offline writes (ADR 0083 D7, ADR 0084). [Writeable] means the
- * change feed answered, so the write path (ETag/If-Match/412) is there too; [ReadOnly] means the server answered
- * `404` for the feed — a pre-feed release — and every write surface is hidden, not disabled. [Unknown] means the
- * probe did not get a usable answer (offline, a server error, an ended session); it is never treated as a refusal.
- */
-enum class WriteCapability { Unknown, Writeable, ReadOnly }
-
-/**
- * Probes `GET /api/sync/changes` (ADR 0083 D7): a `2xx` proves both the feed and the write contract, a `404` proves a
- * pre-feed server. It deliberately reads no version and no body — the server's release number is not the contract.
+ * Whether this instance can take native writes (ADR 0083 D7, client contract "Offline writes"): the client probes the
+ * change feed once per session — a 404 means the server predates it, so the write UI is hidden (hidden, not disabled).
+ * The probe is the capability test, never a version number.
  *
- * A request with no answer or a server refusal leaves the capability [WriteCapability.Unknown], so an offline start
- * neither locks the client into read-only nor claims write access it has not proven. The probe never retries: the
- * next sync trigger owns when to ask again.
+ * `null` means "not known yet": no write UI is offered until an answer arrives, so a pre-feed server never shows an
+ * edit that could only fail. No answer (offline) leaves the state as it was; the probe is repeated when a connection
+ * returns, so a cold start on the boat does not hide writes for the whole session.
  */
-class ServerWriteCapabilityProbe(private val api: ApiClient) {
-    suspend fun probe(): WriteCapability {
-        val response = try {
-            api.get(FEED_PATH, retry = false)
+class WriteCapability(private val api: ApiClient) {
+    private val _writeable = MutableStateFlow<Boolean?>(null)
+
+    /** `true` when the instance answered the feed probe with a 2xx, `false` when it has no feed, `null` before that. */
+    val writeable: StateFlow<Boolean?> = _writeable.asStateFlow()
+
+    /** Probe once per session. A no-answer keeps the previous state; the next session asks again. */
+    suspend fun probe() {
+        val answer = try {
+            api.get(PROBE_PATH, retry = false)
         } catch (error: CancellationException) {
             throw error
         } catch (_: NoAnswerException) {
-            return WriteCapability.Unknown
-        } catch (_: DiveHubException) {
-            return WriteCapability.Unknown
+            return
         }
-        return when {
-            response.status.isSuccess() -> WriteCapability.Writeable
-            response.status.value == 404 -> WriteCapability.ReadOnly
-            else -> WriteCapability.Unknown
+        // Only the contract's two answers decide: a 2xx is writeable, a 404 is a server without the feed. A 5xx or a
+        // session refusal is not evidence about the server's age, so the state stays as it was (and is asked again).
+        _writeable.value = when {
+            answer.status.isSuccess() -> true
+            answer.status == HttpStatusCode.NotFound -> false
+            else -> return
         }
     }
 
-    private companion object {
-        const val FEED_PATH = "/api/sync/changes"
+    /** A signed-out session forgets the answer; the next sign-in probes its own instance. */
+    fun reset() {
+        _writeable.value = null
+    }
+
+    companion object {
+        /** A bootstrap page of the feed: cheap, and the contract's own capability question (D7). */
+        const val PROBE_PATH: String = "/api/sync/changes?limit=1"
     }
 }

@@ -62,6 +62,8 @@ import dev.divehub.android.BuildConfig
 import dev.divehub.android.R
 import dev.divehub.android.ui.dive.DiveDetailRoute
 import dev.divehub.android.ui.dive.DiveDetailViewModel
+import dev.divehub.android.ui.dive.DiveEditScreenRoute
+import dev.divehub.android.ui.dive.DiveEditViewModel
 import dev.divehub.android.ui.logbook.LogbookRoute
 import dev.divehub.android.ui.logbook.LogbookViewModel
 import dev.divehub.android.ui.navigation.AppNavHost
@@ -269,9 +271,10 @@ private class DiveHubScreens(
     }
 
     @Composable
-    override fun dive(id: String, onBack: () -> Unit, onOpenDive: (String) -> Unit) {
+    override fun dive(id: String, onBack: () -> Unit, onOpenDive: (String) -> Unit, onEdit: (String) -> Unit) {
         val state by viewModel.state.collectAsStateWithLifecycle()
         val diveState by dive.state.collectAsStateWithLifecycle()
+        val writeable by container.writeable.collectAsStateWithLifecycle()
         // After process death the id is back from the route but the page was never read in this process. Wait for the
         // session: `open` reaches the API for the Provider names, and the instance URL is only set once restore is done.
         LaunchedEffect(id, state.user?.id) {
@@ -296,6 +299,27 @@ private class DiveHubScreens(
                 dive.openNeighbour(next)
                 pendingDive = next
             },
+            // Phase B merges dark and an old server has no writes: the action only appears when both allow it.
+            showEdit = BuildConfig.EDIT_DIVE_SCALARS && writeable == true && shownDiveId == id,
+            onEdit = { onEdit(shownDiveId ?: id) },
+        )
+    }
+
+    @Composable
+    override fun diveEdit(id: String, onBack: () -> Unit, onSaved: () -> Unit) {
+        val state by viewModel.state.collectAsStateWithLifecycle()
+        val edit: DiveEditViewModel = viewModel(
+            key = "dive-edit-$id",
+            factory = DiveEditViewModel.factory(container),
+        )
+        LaunchedEffect(id, state.user?.id) {
+            if (state.user != null) edit.open(id)
+        }
+        DiveEditScreenRoute(
+            viewModel = edit,
+            units = state.units,
+            onBack = onBack,
+            onSaved = onSaved,
         )
     }
 

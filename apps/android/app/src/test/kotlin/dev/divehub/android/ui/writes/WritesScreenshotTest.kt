@@ -23,7 +23,6 @@ import dev.divehub.shared.write.ConflictFieldView
 import dev.divehub.shared.write.QueuedWriteView
 import dev.divehub.shared.write.WriteDropReason
 import dev.divehub.shared.write.WriteNotice
-import dev.divehub.shared.write.WriteCapability
 import dev.divehub.shared.write.WriteConflictView
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
@@ -101,7 +100,7 @@ class WritesScreenshotTest {
             DiveHubTheme(darkTheme = false) {
                 ConflictsScreen(
                     state = WritesUiState(
-                        capability = WriteCapability.Writeable,
+                        writeable = true,
                         conflicted = 1,
                         conflicts = listOf(startConflict()),
                     ),
@@ -127,7 +126,7 @@ class WritesScreenshotTest {
             DiveHubTheme(darkTheme = false) {
                 ConflictsScreen(
                     state = WritesUiState(
-                        capability = WriteCapability.Writeable,
+                        writeable = true,
                         pending = 1,
                         queued = listOf(
                             QueuedWriteView(
@@ -158,7 +157,7 @@ class WritesScreenshotTest {
             DiveHubTheme(darkTheme = false) {
                 ConflictsScreen(
                     state = WritesUiState(
-                        capability = WriteCapability.Writeable,
+                        writeable = true,
                         notices = listOf(
                             WriteNotice(
                                 entityType = "dive",
@@ -188,7 +187,7 @@ class WritesScreenshotTest {
         compose.setContent {
             DiveHubTheme(darkTheme = false) {
                 ConflictsScreen(
-                    state = WritesUiState(capability = WriteCapability.Writeable),
+                    state = WritesUiState(writeable = true),
                     units = "metric",
                     onBack = {},
                     onResolve = { _, _ -> },
@@ -205,7 +204,7 @@ class WritesScreenshotTest {
 
     @Test
     fun `waiting indicator in English and light`() {
-        renderLine(WritesUiState(capability = WriteCapability.Writeable, pending = 2))
+        renderLine(WritesUiState(writeable = true, pending = 2))
 
         compose.onNodeWithText("2 changes waiting to sync").assertIsDisplayed()
         capture("writes_waiting_en_light.png")
@@ -213,7 +212,7 @@ class WritesScreenshotTest {
 
     @Test
     fun `failed indicator in English and light`() {
-        renderLine(WritesUiState(capability = WriteCapability.Writeable, failed = 1))
+        renderLine(WritesUiState(writeable = true, failed = 1))
 
         compose.onNodeWithText("1 change couldn’t be sent").assertIsDisplayed()
         capture("writes_failed_en_light.png")
@@ -222,7 +221,7 @@ class WritesScreenshotTest {
     @Test
     @Config(qualifiers = "en-rUS-w411dp-h891dp-night-xxhdpi")
     fun `conflict indicator in English and dark`() {
-        renderLine(WritesUiState(capability = WriteCapability.Writeable, conflicted = 1), darkTheme = true)
+        renderLine(WritesUiState(writeable = true, conflicted = 1), darkTheme = true)
 
         compose.onNodeWithText("1 change needs your decision").assertIsDisplayed()
         capture("writes_conflict_en_dark.png")
@@ -250,7 +249,7 @@ class WritesScreenshotTest {
             DiveHubTheme(darkTheme = darkTheme) {
                 ConflictsScreen(
                     state = WritesUiState(
-                        capability = WriteCapability.Writeable,
+                        writeable = true,
                         conflicted = 1,
                         conflicts = listOf(conflict()),
                     ),

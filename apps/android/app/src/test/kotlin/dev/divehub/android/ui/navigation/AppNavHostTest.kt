@@ -161,6 +161,24 @@ class AppNavHostTest {
     }
 
     @Test
+    fun `the dive's edit action opens the editor and its back returns to the dive`() {
+        setContent()
+        compose.runOnIdle {
+            controller.navigate(MainRoute)
+            controller.navigate(DiveRoute("dive-1"))
+        }
+        compose.waitForIdle()
+
+        compose.runOnIdle { screens.diveEdit!!.invoke("dive-1") }
+
+        assertRoute<DiveEditRoute>()
+        compose.waitForIdle()
+        assertEquals("dive-1", screens.diveEditId)
+        compose.runOnIdle { screens.diveEditBack!!.invoke() }
+        assertRoute<DiveRoute>()
+    }
+
+    @Test
     fun `stepping to a neighbour focuses the current dive on the way back`() {
         setContent(diveId = "dive-2", divePosition = 26)
         compose.runOnIdle {
@@ -546,6 +564,10 @@ class AppNavHostTest {
         var logbookOpenDive: ((String) -> Unit)? = null
         var diveBack: (() -> Unit)? = null
         var diveOpenDive: ((String) -> Unit)? = null
+        var diveEdit: ((String) -> Unit)? = null
+        var diveEditId: String? = null
+        var diveEditBack: (() -> Unit)? = null
+        var diveEditSaved: (() -> Unit)? = null
         var toolsOnPage: ((ToolPage) -> Unit)? = null
         var toolsOpenDive: ((String) -> Unit)? = null
         var settingsShown = false
@@ -584,11 +606,20 @@ class AppNavHostTest {
         }
 
         @Composable
-        override fun dive(id: String, onBack: () -> Unit, onOpenDive: (String) -> Unit) {
+        override fun dive(id: String, onBack: () -> Unit, onOpenDive: (String) -> Unit, onEdit: (String) -> Unit) {
             diveId = id
             diveBack = onBack
             diveOpenDive = onOpenDive
+            diveEdit = onEdit
             Text("dive:$id")
+        }
+
+        @Composable
+        override fun diveEdit(id: String, onBack: () -> Unit, onSaved: () -> Unit) {
+            diveEditId = id
+            diveEditBack = onBack
+            diveEditSaved = onSaved
+            Text("dive edit:$id")
         }
 
         @Composable

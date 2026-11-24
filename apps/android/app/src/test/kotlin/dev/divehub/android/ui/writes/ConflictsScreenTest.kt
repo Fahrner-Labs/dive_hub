@@ -14,7 +14,6 @@ import dev.divehub.shared.write.ConflictSide
 import dev.divehub.shared.write.QueuedWriteView
 import dev.divehub.shared.write.WriteDropReason
 import dev.divehub.shared.write.WriteNotice
-import dev.divehub.shared.write.WriteCapability
 import dev.divehub.shared.write.WriteConflictView
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
@@ -134,7 +133,7 @@ class ConflictsScreenTest {
     fun `the primary action is disabled while a decision is being sent`() {
         render(
             WritesUiState(
-                capability = WriteCapability.Writeable,
+                writeable = true,
                 conflicted = 1,
                 conflicts = listOf(conflict()),
                 busy = true,
@@ -148,7 +147,7 @@ class ConflictsScreenTest {
     fun `a waiting queue lists the thing and the fields it carries`() {
         render(
             WritesUiState(
-                capability = WriteCapability.Writeable,
+                writeable = true,
                 pending = 1,
                 queued = listOf(
                     QueuedWriteView(
@@ -170,7 +169,7 @@ class ConflictsScreenTest {
     fun `a failed queue entry is named and offers a retry`() {
         render(
             WritesUiState(
-                capability = WriteCapability.Writeable,
+                writeable = true,
                 failed = 1,
                 queued = listOf(
                     QueuedWriteView(
@@ -194,7 +193,7 @@ class ConflictsScreenTest {
         var dismissed = 0
         render(
             state = WritesUiState(
-                capability = WriteCapability.Writeable,
+                writeable = true,
                 notices = listOf(
                     WriteNotice(
                         entityType = "dive",
@@ -219,7 +218,7 @@ class ConflictsScreenTest {
     fun `a refused scan names the refusal rather than a deleted dive`() {
         render(
             state = WritesUiState(
-                capability = WriteCapability.Writeable,
+                writeable = true,
                 notices = listOf(
                     WriteNotice(
                         entityType = "scan",
@@ -242,7 +241,7 @@ class ConflictsScreenTest {
         var opened: String? = null
         render(
             state = WritesUiState(
-                capability = WriteCapability.Writeable,
+                writeable = true,
                 notices = listOf(
                     WriteNotice(
                         entityType = "dive",
@@ -266,7 +265,7 @@ class ConflictsScreenTest {
 
     @Test
     fun `an empty queue explains that nothing needs a decision`() {
-        render(WritesUiState(capability = WriteCapability.Writeable))
+        render(WritesUiState(writeable = true))
 
         compose.onNodeWithText("Nothing to sync or decide").assertIsDisplayed()
         compose.onNodeWithText("No change on this phone is waiting to sync or for a decision.").assertIsDisplayed()
@@ -274,7 +273,7 @@ class ConflictsScreenTest {
 
     private fun render(
         state: WritesUiState = WritesUiState(
-            capability = WriteCapability.Writeable,
+            writeable = true,
             conflicted = 1,
             conflicts = listOf(conflict()),
         ),

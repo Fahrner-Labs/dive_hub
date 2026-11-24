@@ -2,7 +2,6 @@ package dev.divehub.android.ui.writes
 
 import dev.divehub.shared.write.ConflictResolution
 import dev.divehub.shared.write.ConflictSide
-import dev.divehub.shared.write.WriteCapability
 import dev.divehub.shared.write.WriteConflictView
 import dev.divehub.shared.write.QueuedWriteView
 import dev.divehub.shared.write.WriteDropReason
@@ -27,7 +26,7 @@ import org.junit.Test
 @OptIn(ExperimentalCoroutinesApi::class)
 class WritesViewModelTest {
     private val dispatcher = StandardTestDispatcher()
-    private val capability = MutableStateFlow(WriteCapability.Unknown)
+    private val writeable = MutableStateFlow<Boolean?>(null)
     private val revision = MutableStateFlow(0L)
     private val notices = MutableStateFlow(emptyList<WriteNotice>())
     private val queueRevision = MutableStateFlow(0L)
@@ -63,7 +62,7 @@ class WritesViewModelTest {
 
     @Test
     fun `a pre-feed server hides a non-empty queue rather than disabling it`() = runTest(dispatcher) {
-        capability.value = WriteCapability.ReadOnly
+        writeable.value = false
         snapshot = WriteQueueSnapshot(pending = 2, conflicted = 1)
         conflicts = listOf(conflict())
         queued = listOf(queuedEntry())
@@ -108,7 +107,7 @@ class WritesViewModelTest {
         snapshot = WriteQueueSnapshot(conflicted = 1)
         conflicts = listOf(conflict())
         val viewModel = WritesViewModel(
-            capability = capability,
+            writeable = writeable,
             revision = revision,
             queueRevision = queueRevision,
             readSnapshot = { snapshot },
@@ -171,7 +170,7 @@ class WritesViewModelTest {
     }
 
     private fun viewModel() = WritesViewModel(
-        capability = capability,
+        writeable = writeable,
         revision = revision,
         queueRevision = queueRevision,
         readSnapshot = { snapshot },

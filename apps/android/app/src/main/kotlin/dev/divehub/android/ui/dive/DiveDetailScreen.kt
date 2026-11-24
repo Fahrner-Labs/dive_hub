@@ -161,6 +161,8 @@ fun DiveDetailRoute(
     units: String?,
     onBack: () -> Unit,
     onOpenDive: (String) -> Unit,
+    showEdit: Boolean = false,
+    onEdit: () -> Unit = {},
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     DiveDetailScreen(
@@ -169,6 +171,8 @@ fun DiveDetailRoute(
         onBack = onBack,
         onRetry = viewModel::retry,
         onOpenDive = onOpenDive,
+        showEdit = showEdit,
+        onEdit = onEdit,
     )
 }
 
@@ -188,6 +192,8 @@ fun DiveDetailScreen(
     onBack: () -> Unit,
     onRetry: () -> Unit,
     onOpenDive: (String) -> Unit,
+    showEdit: Boolean = false,
+    onEdit: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val locale = context.resources.configuration.locales[0] ?: Locale.getDefault()
@@ -219,6 +225,8 @@ fun DiveDetailScreen(
                 units = units,
                 onRetry = onRetry,
                 onOpenDive = onOpenDive,
+                showEdit = showEdit,
+                onEdit = onEdit,
                 modifier = Modifier.fillMaxSize(),
             )
         }
@@ -237,6 +245,8 @@ private fun DivePager(
     units: String?,
     onRetry: () -> Unit,
     onOpenDive: (String) -> Unit,
+    showEdit: Boolean,
+    onEdit: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val pagerState = rememberPagerState(initialPage = CURRENT_DIVE_PAGE) { PAGER_PAGES }
@@ -319,7 +329,7 @@ private fun DivePager(
         modifier = modifier.testTag("dive_pager"),
     ) { page ->
         when (page) {
-            CURRENT_DIVE_PAGE -> DiveContent(state, units, onRetry, Modifier.fillMaxSize())
+            CURRENT_DIVE_PAGE -> DiveContent(state, units, onRetry, showEdit, onEdit, Modifier.fillMaxSize())
             0 -> NeighbourPage(
                 page = previousPage,
                 state = state,
@@ -402,6 +412,8 @@ private fun DiveContent(
     state: DiveDetailUiState,
     units: String?,
     onRetry: () -> Unit,
+    showEdit: Boolean,
+    onEdit: () -> Unit,
     modifier: Modifier,
 ) {
     val phase = when {
@@ -437,7 +449,7 @@ private fun DiveContent(
                 retry = stringResource(R.string.dive_retry),
                 onRetry = onRetry,
             )
-            DivePhase.Dive -> state.dive?.let { DiveBody(state, it, units, onRetry) }
+            DivePhase.Dive -> state.dive?.let { DiveBody(state, it, units, onRetry, showEdit = showEdit, onEdit = onEdit) }
         }
     }
 }
@@ -587,6 +599,8 @@ private fun DiveBody(
     dive: DiveView,
     units: String?,
     onRetry: () -> Unit,
+    showEdit: Boolean = false,
+    onEdit: () -> Unit = {},
     includeProfile: Boolean = true,
     scrollTag: String = "dive_scroll",
 ) {
@@ -603,6 +617,9 @@ private fun DiveBody(
         item { SyncLine(state.syncedAt, state.connected, state.offline, R.string.dive_offline_cached) }
         item { WriteQueueLine() }
         item { Facts(dive, locale, imperial) }
+        if (showEdit) {
+            item { EditDiveAction(onEdit) }
+        }
         item { Cylinders(dive, locale, imperial) }
         item { Weighting(dive, locale, imperial) }
         item { Notes(dive.notes) }
@@ -669,6 +686,19 @@ private fun DirectionIcon(direction: Direction) {
             }
         }
         drawPath(path, color, style = stroke)
+    }
+}
+
+/** The Dive page's quiet way into the editor, on the content column's trailing edge (FAH-366 critique). */
+@Composable
+private fun EditDiveAction(onEdit: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = Spacing.s4),
+        contentAlignment = Alignment.CenterEnd,
+    ) {
+        QuietButton(stringResource(R.string.dive_edit), onEdit)
     }
 }
 
@@ -911,7 +941,7 @@ private fun Notes(notes: String?) {
 }
 
 @Composable
-private fun timeZoneText(context: Context, origin: TimeZoneOrigin): String = when (origin) {
+internal fun timeZoneText(context: Context, origin: TimeZoneOrigin): String = when (origin) {
     TimeZoneOrigin.POSITION -> context.getString(R.string.dive_time_zone_position)
     TimeZoneOrigin.NEARBY -> context.getString(R.string.dive_time_zone_nearby)
     TimeZoneOrigin.UNKNOWN -> context.getString(R.string.dive_time_zone_unknown)
