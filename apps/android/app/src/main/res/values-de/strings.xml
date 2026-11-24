@@ -241,7 +241,7 @@
     <string name="dive_edit_change_role">Rolle für %1$s ändern</string>
     <string name="dive_edit_remove">Entfernen</string>
     <string name="dive_edit_remove_person">%1$s entfernen</string>
-    <string name="dive_edit_participants_joint">In einem gemeinsamen Tauchgang werden Hinzugefügte auch bei den anderen eingetragen; wer hier entfernt wird, bleibt dort.</string>
+    <string name="dive_edit_participants_joint">In einem gemeinsamen Tauchgang erscheint, wen du hier hinzufügst, auch bei den anderen Tauchern. Wen du hier entfernst, bleibt bei den anderen.</string>
     <string name="dive_edit_find_diver">Taucher suchen</string>
     <string name="dive_edit_no_diver_match">Kein Taucher passt</string>
     <string name="dive_edit_no_other_divers">Keine weiteren Taucher zum Hinzufügen. Taucher kommen mit einer Synchronisierung auf dieses Gerät; einen externen Taucher fügst du im Web hinzu.</string>

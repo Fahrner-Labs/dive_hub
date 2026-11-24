@@ -328,7 +328,8 @@ class DiveEditScreenshotTest {
     }
 
     private val jointNote =
-        "In a joint dive, adding someone adds them to the others’ dives; removing them here leaves them there."
+        "In a joint dive, someone you add here also appears on the other divers’ dives. Removing someone here " +
+            "leaves them on the others."
 
     private val sharedHint =
         "Every user of this Dive Hub sees the names of all divers and what their SSI code says: name, e-mail and " +

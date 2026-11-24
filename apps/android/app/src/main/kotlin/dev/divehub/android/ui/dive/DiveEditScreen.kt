@@ -652,6 +652,7 @@ private fun AddParticipantSheet(
         }
     }
     val largeText = LocalDensity.current.fontScale >= LargeTextFontScale
+    val asLabel = stringResource(R.string.dive_edit_as_role)
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
@@ -684,13 +685,13 @@ private fun AddParticipantSheet(
                 item {
                     Spacer(Modifier.height(Spacing.s3))
                     Text(
-                        stringResource(R.string.dive_edit_as_role),
+                        asLabel,
                         style = DiveHubText.label,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Spacer(Modifier.height(Spacing.s1))
                     FlowRow(
-                        Modifier.selectableGroup(),
+                        Modifier.selectableGroup().semantics { contentDescription = asLabel },
                         horizontalArrangement = Arrangement.spacedBy(Spacing.s2),
                         verticalArrangement = Arrangement.spacedBy(Spacing.s2),
                     ) {

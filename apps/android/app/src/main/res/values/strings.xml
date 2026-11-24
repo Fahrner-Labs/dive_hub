@@ -241,7 +241,7 @@
     <string name="dive_edit_change_role">Change the role for %1$s</string>
     <string name="dive_edit_remove">Remove</string>
     <string name="dive_edit_remove_person">Remove %1$s</string>
-    <string name="dive_edit_participants_joint">In a joint dive, adding someone adds them to the others’ dives; removing them here leaves them there.</string>
+    <string name="dive_edit_participants_joint">In a joint dive, someone you add here also appears on the other divers’ dives. Removing someone here leaves them on the others.</string>
     <string name="dive_edit_find_diver">Find a diver</string>
     <string name="dive_edit_no_diver_match">No divers match</string>
     <string name="dive_edit_no_other_divers">No other divers to add. Divers arrive on this device with a sync; to add an external diver, use the web.</string>
