@@ -8,11 +8,8 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.headersOf
 import kotlinx.coroutines.test.runTest
 import kotlinx.io.IOException
-import kotlinx.serialization.json.Json
 import kotlin.test.Test
 import kotlin.test.assertEquals
-
-private val JSON = Json { ignoreUnknownKeys = true; explicitNulls = false }
 
 private fun probeOf(status: HttpStatusCode? = null, fail: Throwable? = null): ServerWriteCapabilityProbe {
     val engine = MockEngine {

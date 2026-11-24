@@ -70,6 +70,7 @@ internal interface AppScreens {
     @Composable
     fun conflicts(onBack: () -> Unit, onOpenDive: (String) -> Unit)
 
+    @Composable
     fun scan(onBack: () -> Unit)
 }
 
