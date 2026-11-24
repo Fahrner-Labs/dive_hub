@@ -64,6 +64,13 @@
     "wrongCredentials": "E-Mail oder Passwort ist falsch.",
     "tooManyAttempts": "Zu viele Versuche. Versuch es in ein paar Minuten noch einmal.",
     "disabled": "Dieses Konto ist deaktiviert. Wende dich an die Verwaltung.",
+    "twoFactorIntro": "Gib den 6-stelligen Code aus deiner Authenticator-App ein.",
+    "twoFactorBackupIntro": "Gib einen deiner Backup-Codes ein.",
+    "twoFactorCode": "Authenticator-Code",
+    "twoFactorBackupCode": "Backup-Code",
+    "useBackupCode": "Backup-Code verwenden",
+    "twoFactorVerify": "Bestätigen",
+    "twoFactorBack": "Zurück zur Anmeldung",
     "about": "Dive Hub hält die Tauchgänge eines Vereins, einer Familie oder einer Tauchbasis an einem Ort zusammen."
   },
   "setup": {
@@ -130,7 +137,30 @@
     "signOutOthersTitle": "Überall sonst abmelden?",
     "signOutOthersBody": "Alle anderen Browser und Geräte, auf denen du angemeldet bist, müssen sich neu anmelden.",
     "signOutThisTitle": "Auf diesem Gerät abmelden?",
-    "signOutThisBody": "Zum erneuten Anmelden brauchst du dein Passwort."
+    "signOutThisBody": "Zum erneuten Anmelden brauchst du dein Passwort.",
+    "twoFactor": {
+      "title": "Zwei-Faktor-Authentifizierung",
+      "intro": "Ein zweiter Schritt beim Anmelden: ein Code aus einer Authenticator-App auf deinem Handy, zusätzlich zum Passwort.",
+      "setUp": "Zwei-Faktor-Authentifizierung einrichten",
+      "passwordIntro": "Bestätige dein aktuelles Passwort, um die Einrichtung zu starten.",
+      "continue": "Weiter",
+      "scan": "Scanne diesen Code mit einer Authenticator-App oder füge den Einrichtungslink dort ein.",
+      "qrLabel": "QR-Code für den Einrichtungslink der Authenticator-App",
+      "setupLink": "Einrichtungslink",
+      "code": "Authenticator-Code",
+      "codeHint": "Der 6-stellige Code, den die App anzeigt.",
+      "backupCode": "Backup-Code",
+      "verify": "Zwei-Faktor-Authentifizierung einschalten",
+      "on": "Die Zwei-Faktor-Authentifizierung ist eingeschaltet.",
+      "backupCodes": "Backup-Codes",
+      "backupCodesIntro": "Bewahre sie sicher auf. Jeder gilt einmal, wenn du die Authenticator-App verlierst; sie werden nur jetzt angezeigt.",
+      "copyCodes": "Backup-Codes kopieren",
+      "done": "Fertig",
+      "disableIntro": "Wenn du das ausschaltest, meldet dich dein Passwort allein an. Gib dein Passwort und einen aktuellen Code ein.",
+      "useBackupCode": "Backup-Code verwenden",
+      "disable": "Zwei-Faktor-Authentifizierung ausschalten",
+      "off": "Die Zwei-Faktor-Authentifizierung ist ausgeschaltet."
+    }
   },
   "settings": {
     "title": "Einstellungen",

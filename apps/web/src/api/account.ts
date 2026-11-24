@@ -10,6 +10,12 @@ export type Me = Ok<'/api/me'>;
 export type InvitationView = Ok<'/api/invitations'>[number];
 export type UserView = Ok<'/api/users'>[number];
 export type SessionView = Ok<'/api/me/sessions'>[number];
+/** What starting a TOTP enrolment answers: the authenticator URI and the backup codes, shown once (FAH-54). */
+export type TwoFactorSetup = Ok<'/api/auth/two-factor/enable', 'post'>;
+/** A password sign-in that still needs a second factor: the server set the challenge cookie, no session (ADR 0011). */
+export type TwoFactorChallenge = Extract<Ok<'/api/password-resets/complete', 'post'>, { twoFactorRedirect: true }>;
+export const isTwoFactorChallenge = (value: unknown): value is TwoFactorChallenge =>
+  typeof value === 'object' && value !== null && 'twoFactorRedirect' in value && value.twoFactorRedirect === true;
 export type AiAccessView = Ok<'/api/me/ai-access'>['accesses'][number];
 export type AiAccessLogEntry = Ok<'/api/me/ai-access-log'>['entries'][number];
 
@@ -32,6 +38,14 @@ export const setupRestoreArchivesQuery = () =>
   });
 export const usersQuery = () => queryOptions({ queryKey: keys.users, queryFn: async () => request(api.GET('/api/users')) });
 export const sessionsQuery = () => queryOptions({ queryKey: keys.sessions, queryFn: async () => request(api.GET('/api/me/sessions')) });
+/**
+ * Whether the account has a second factor on (FAH-54). Better Auth's session carries it; `/api/me` stays the UserView
+ * the admin routes share, without the auth plugin's columns.
+ */
+export const twoFactorEnabledQuery = () => queryOptions({
+  queryKey: keys.twoFactor,
+  queryFn: async () => (await api.GET('/api/auth/get-session')).data?.user.twoFactorEnabled ?? false,
+});
 export const invitationsQuery = () => queryOptions({ queryKey: keys.invitations, queryFn: async () => request(api.GET('/api/invitations')) });
 /** A link that is used up or expired stays an error: asking again won't change it. */
 export const invitationLinkQuery = (token: string) => queryOptions({

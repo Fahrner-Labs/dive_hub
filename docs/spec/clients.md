@@ -99,6 +99,14 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   *Web:* `AdminSettings.tsx` (`LinkToPassOn`), `ui/Overlay.tsx` (`CopyField`).
 - **Must not tell whether an e-mail address has an account.** A failed sign-in says "wrong e-mail or password".
   Only "too many attempts" (429) and "disabled" (`BANNED_USER`) get their own message. *Web:* `SignedOut.tsx` (`SignIn`).
+- **Must complete a two-factor challenge without asking for the password again** (ADR 0012's later slice). A password
+  sign-in, or completing a password reset, can answer `{ twoFactorRedirect: true, twoFactorMethods }` instead of a
+  session; the server has set a short-lived challenge cookie and no session. Show a code field and offer the account's
+  backup codes; `POST /api/auth/two-factor/verify-totp` or `/verify-backup-code` completes the sign-in. *Web:*
+  `SignedOut.tsx` (`SignIn`, `ResetPassword`, `TwoFactorPrompt`).
+- **Must let a User turn the second factor on and off** in the account. Enabling answers the authenticator URI and the
+  backup codes, which are shown once; the factor counts only after the first TOTP code is verified. Turning it off asks
+  for the password and a current code (authenticator or backup). *Web:* `AccountSettings.tsx` (`TwoFactor`).
 - **Must show the "too many attempts" refusal on the token forms.** Setup, invitation and reset link routes count
   attempts per client IP (30 per 15 minutes, [ADR 0061](../decisions/0061-attempt-limit-on-token-routes.md)) and
   answer 429 `too_many_attempts` with `Retry-After` (seconds). Say to try again later; don't retry by itself.
@@ -163,8 +171,10 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
     device (Android Keystore). The sign-in response carries it in the `set-auth-token` header; keep no cookie.
     A native sign-in is an ordinary session: it shows in the session list and ends
     with "sign out everywhere" or a password change.
-  - Only four Better Auth endpoints exist: sign-in, sign-out, get-session, change-password (ADR 0013). AI access
-    keys work only at `/mcp`, never for `/api`.
+  - Better Auth's sign-in, sign-out, get-session, change-password and its three 2FA endpoints exist over HTTP:
+    `two-factor/enable`, `two-factor/verify-totp` and `two-factor/verify-backup-code` (ADR 0013, ADR 0012's later
+    slice). Disabling 2FA is our own route, `POST /api/me/two-factor/disable`. AI access keys work only at `/mcp`,
+    never for `/api`.
 - **On 401 anywhere, the session has ended:** show sign-in. Retry only network failures and 5xx, once; a 4xx
   stays the same. *Web:* `main.tsx`, `api.ts` (`shouldRetry`, `isUnauthorized`).
 - **Must show errors by their `code`,** translated (`errors.<code>`), never the English `error` text, which is

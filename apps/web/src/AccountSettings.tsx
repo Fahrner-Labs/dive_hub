@@ -3,13 +3,13 @@ import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { formValues } from './lib/form.ts';
 import { NewPasswordField, useUserChanged } from './SignedOut.tsx';
-import { api, authClient, keys, meQuery, sessionsQuery, unwrap, type SessionView } from './api.ts';
+import { ApiError, api, authClient, keys, meQuery, request, sessionsQuery, twoFactorEnabledQuery, unwrap, type SessionView, type TwoFactorSetup } from './api.ts';
 import { LANGUAGES } from './i18n/languages.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
 import { announce } from './lib/announce.ts';
 import { refocusAfterRemoval } from './lib/focus.ts';
 import { ReportProblem } from './ReportProblem.tsx';
-import { Button, ConfirmButton, Form, Notice, Panel, PasswordField, RadioGroup, Table } from './ui/index.ts';
+import { Button, ConfirmButton, CopyField, Form, Notice, Panel, PasswordField, QrCode, RadioGroup, Switch, Table, TextField } from './ui/index.ts';
 
 const AUTO = 'auto';
 
@@ -58,11 +58,12 @@ export function DisplaySettings() {
   );
 }
 
-/** Settings' Sign-in and security section: the password, and where the User is signed in. */
+/** Settings' Sign-in and security section: the password, the second factor, and where the User is signed in. */
 export function SecuritySettings() {
   return (
     <>
       <ChangePassword />
+      <TwoFactor />
       <Sessions />
     </>
   );
@@ -118,6 +119,187 @@ function ChangePassword() {
         <div className="form-actions"><Button type="submit" variant="primary" isPending={change.isPending}>{t('account.submitChange')}</Button></div>
       </Form>
     </Panel>
+  );
+}
+
+type TwoFactorStep = 'idle' | 'password' | 'verify' | 'codes';
+
+const rateLimited = (error: unknown) => error instanceof ApiError && error.status === 429;
+
+/**
+ * The second factor (FAH-54): enrol an authenticator app, show its backup codes once, or turn it off with the
+ * password and a current code. The TOTP URI is drawn as a QR code and offered as text for apps and screen readers.
+ */
+function TwoFactor() {
+  const { t } = useTranslation();
+  const queryClient = useQueryClient();
+  const status = useQuery(twoFactorEnabledQuery());
+  const [step, setStep] = useState<TwoFactorStep>('idle');
+  const [setup, setSetup] = useState<TwoFactorSetup>();
+  const [useBackupCode, setUseBackupCode] = useState(false);
+  const done = () => { setStep('idle'); setSetup(undefined); };
+
+  const enable = useMutation({
+    mutationFn: (password: string) => request(api.POST('/api/auth/two-factor/enable', { body: { password, method: 'totp' } })),
+    onSuccess: (data) => { setSetup(data); setStep('verify'); },
+  });
+  const verify = useMutation({
+    mutationFn: (code: string) => request(api.POST('/api/auth/two-factor/verify-totp', { body: { code } })),
+    onSuccess: async () => {
+      setStep('codes');
+      await queryClient.invalidateQueries({ queryKey: keys.twoFactor });
+      announce(t('account.twoFactor.on'));
+    },
+  });
+  const disable = useMutation({
+    mutationFn: ({ password, code }: Record<string, string>) =>
+      request(api.POST('/api/me/two-factor/disable', { body: { password: password!, code: code! } })),
+    onSuccess: async () => {
+      setUseBackupCode(false);
+      await queryClient.invalidateQueries({ queryKey: keys.twoFactor });
+      announce(t('account.twoFactor.off'));
+    },
+  });
+
+  if (status.isPending) return null;
+  const view = step === 'codes' && setup?.backupCodes
+    ? <TwoFactorCodes codes={setup.backupCodes} onDone={done} />
+    : status.data
+      ? (
+        <TwoFactorEnabled
+          error={disable.error} isPending={disable.isPending} useBackupCode={useBackupCode}
+          onUseBackupCode={setUseBackupCode} onSubmit={(values) => disable.mutate(values)}
+        />
+      )
+      : step === 'password'
+        ? (
+          <TwoFactorPassword
+            error={enable.error} isPending={enable.isPending} onCancel={done}
+            onSubmit={(password) => enable.mutate(password)}
+          />
+        )
+        : step === 'verify' && setup?.totpURI
+          ? (
+            <TwoFactorVerify
+              uri={setup.totpURI} error={verify.error} isPending={verify.isPending} onCancel={done}
+              onSubmit={(code) => verify.mutate(code)}
+            />
+          )
+          : <TwoFactorIntro onStart={() => setStep('password')} />;
+
+  return <Panel title={t('account.twoFactor.title')}>{view}</Panel>;
+}
+
+function TwoFactorIntro({ onStart }: { onStart: () => void }) {
+  const { t } = useTranslation();
+  return (
+    <>
+      <p>{t('account.twoFactor.intro')}</p>
+      <div className="form-actions"><Button variant="primary" onPress={onStart}>{t('account.twoFactor.setUp')}</Button></div>
+    </>
+  );
+}
+
+/** The password that confirms starting the enrolment; Better Auth's refusal is INVALID_PASSWORD, which isn't ours. */
+function TwoFactorPassword({ error, isPending, onSubmit, onCancel }: {
+  error: unknown; isPending: boolean; onSubmit: (password: string) => void; onCancel: () => void;
+}) {
+  const { t } = useTranslation();
+  const message = !error ? null : rateLimited(error) ? t('errors.too_many_attempts') : t('account.wrongCurrent');
+  return (
+    <Form className="form narrow-form" onSubmit={(e) => onSubmit(formValues(e).password!)}>
+      <p className="muted">{t('account.twoFactor.passwordIntro')}</p>
+      <PasswordField label={t('account.currentPassword')} name="password" autoComplete="current-password" isRequired />
+      {message && <Notice tone="danger">{message}</Notice>}
+      <div className="form-actions">
+        <Button type="submit" variant="primary" isPending={isPending}>{t('account.twoFactor.continue')}</Button>
+        <Button onPress={onCancel}>{t('common.cancel')}</Button>
+      </div>
+    </Form>
+  );
+}
+
+/** The QR code and link, and the first authenticator code that switches the factor on. */
+function TwoFactorVerify({ uri, error, isPending, onSubmit, onCancel }: {
+  uri: string; error: unknown; isPending: boolean; onSubmit: (code: string) => void; onCancel: () => void;
+}) {
+  const { t } = useTranslation();
+  const message = !error ? null : rateLimited(error) ? t('errors.too_many_attempts') : t('errors.two_factor_code_invalid');
+  return (
+    <>
+      <p>{t('account.twoFactor.scan')}</p>
+      <div className="two-factor-setup">
+        <QrCode text={uri} label={t('account.twoFactor.qrLabel')} />
+        <CopyField value={uri} label={t('account.twoFactor.setupLink')} />
+      </div>
+      <Form className="form narrow-form" onSubmit={(e) => onSubmit(formValues(e).code!)}>
+        <TextField
+          label={t('account.twoFactor.code')} name="code" autoComplete="one-time-code" spellCheck="false"
+          autoCapitalize="none" isRequired description={t('account.twoFactor.codeHint')}
+        />
+        {message && <Notice tone="danger">{message}</Notice>}
+        <div className="form-actions">
+          <Button type="submit" variant="primary" isPending={isPending}>{t('account.twoFactor.verify')}</Button>
+          <Button onPress={onCancel}>{t('common.cancel')}</Button>
+        </div>
+      </Form>
+    </>
+  );
+}
+
+/** On already: turning it off asks the password and a current authenticator or backup code. */
+function TwoFactorEnabled({ error, isPending, useBackupCode, onUseBackupCode, onSubmit }: {
+  error: unknown; isPending: boolean; useBackupCode: boolean; onUseBackupCode: (selected: boolean) => void;
+  onSubmit: (values: Record<string, string>) => void;
+}) {
+  const { t } = useTranslation();
+  const errorText = useErrorText();
+  const message = !error ? null : rateLimited(error) ? t('errors.too_many_attempts') : errorText(error);
+  return (
+    <>
+      <p>{t('account.twoFactor.on')}</p>
+      <Form className="form narrow-form" onSubmit={(e) => onSubmit(formValues(e))}>
+        <p className="muted">{t('account.twoFactor.disableIntro')}</p>
+        <PasswordField label={t('account.currentPassword')} name="password" autoComplete="current-password" isRequired />
+        <Switch isSelected={useBackupCode} onChange={onUseBackupCode}>{t('account.twoFactor.useBackupCode')}</Switch>
+        <TextField
+          label={useBackupCode ? t('account.twoFactor.backupCode') : t('account.twoFactor.code')} name="code"
+          autoComplete="one-time-code" spellCheck="false" autoCapitalize="none" isRequired
+        />
+        {message && <Notice tone="danger">{message}</Notice>}
+        <div className="form-actions"><Button type="submit" variant="danger" isPending={isPending}>{t('account.twoFactor.disable')}</Button></div>
+      </Form>
+    </>
+  );
+}
+
+/** The backup codes, shown once after the first code is verified. */
+function TwoFactorCodes({ codes, onDone }: { codes: string[]; onDone: () => void }) {
+  const { t } = useTranslation();
+  return (
+    <>
+      <Notice tone="success">{t('account.twoFactor.on')}</Notice>
+      <p>{t('account.twoFactor.backupCodesIntro')}</p>
+      <h3 className="subheading">{t('account.twoFactor.backupCodes')}</h3>
+      <BackupCodes codes={codes} />
+      <div className="form-actions"><Button variant="primary" onPress={onDone}>{t('account.twoFactor.done')}</Button></div>
+    </>
+  );
+}
+
+function BackupCodes({ codes }: { codes: string[] }) {
+  const { t } = useTranslation();
+  return (
+    <>
+      <ul className="backup-codes" aria-label={t('account.twoFactor.backupCodes')}>
+        {codes.map((code) => <li key={code}>{code}</li>)}
+      </ul>
+      <div className="form-actions">
+        <Button icon="copy" onPress={async () => { await navigator.clipboard.writeText(codes.join('\n')); announce(t('common.copied')); }}>
+          {t('account.twoFactor.copyCodes')}
+        </Button>
+      </div>
+    </>
   );
 }
 
