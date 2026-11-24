@@ -1,6 +1,7 @@
 package dev.divehub.shared.store
 
 import app.cash.sqldelight.db.SqlDriver
+import dev.divehub.shared.PendingWriteQueue
 import dev.divehub.shared.UserScopedStore
 import dev.divehub.shared.store.db.Body_weight
 import dev.divehub.shared.store.db.Cylinder as CylinderRow
@@ -22,7 +23,7 @@ import dev.divehub.shared.store.db.Sync_state
  * a wipe is one transaction, so a crash never leaves half a page or half a wipe behind. It is synchronous by design;
  * the sync engine and the screens call it off the main thread.
  */
-class DiveStore internal constructor(private val database: DiveHubDatabase) : UserScopedStore {
+class DiveStore internal constructor(private val database: DiveHubDatabase) : UserScopedStore, PendingWriteQueue {
     private val queries = database.diveHubQueries
 
     /** The logbook's dive; a tombstone is not part of the logbook (the sync reads [diveIncludingDeleted]). */
@@ -278,6 +279,9 @@ class DiveStore internal constructor(private val database: DiveHubDatabase) : Us
 
     fun pendingWriteCount(status: PendingWriteStatus): Long =
         queries.countPendingWritesWithStatus(status.wire).executeAsOne()
+
+    /** The queue's size for the session lifecycle's sign-out guard (ADR 0084 D8). */
+    override suspend fun queuedWriteCount(): Long = pendingWriteCount()
 
     /** Insert an entry and return it with the store's enqueue order as its id. */
     fun addPendingWrite(write: PendingWrite): PendingWrite {
