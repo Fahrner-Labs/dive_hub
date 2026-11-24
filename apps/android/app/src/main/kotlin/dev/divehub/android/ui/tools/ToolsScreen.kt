@@ -424,9 +424,10 @@ internal fun NumberField(
     unit: String,
     modifier: Modifier,
     onChange: (String) -> Unit,
+    labelAboveAtLargeText: Boolean = false,
 ) {
     val text = if (unit.isBlank()) label else "$label ($unit)"
-    if (LocalDensity.current.fontScale >= LargeTextFontScale) {
+    if (labelAboveAtLargeText && LocalDensity.current.fontScale >= LargeTextFontScale) {
         Column(modifier) {
             Text(
                 text,

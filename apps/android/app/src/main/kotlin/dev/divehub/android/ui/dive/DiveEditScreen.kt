@@ -725,6 +725,7 @@ private fun NumberValueField(
             text = it
             onChange(it)
         },
+        labelAboveAtLargeText = true,
     )
 }
 
@@ -785,6 +786,7 @@ private fun SuitFields(
                     text = value
                     onEdit { it.setSuit(current.copy(thicknessMm = parseEditDouble(value))) }
                 },
+                labelAboveAtLargeText = true,
             )
         }
         if (current.worn) {
@@ -938,6 +940,7 @@ private fun WeightingFields(
                     )
                 }
             },
+            labelAboveAtLargeText = true,
         )
     }
 }
