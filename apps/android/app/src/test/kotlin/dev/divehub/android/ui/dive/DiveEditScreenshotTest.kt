@@ -4,6 +4,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -11,6 +12,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
+import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.unit.Density
 import com.github.takahirom.roborazzi.captureRoboImage
 import dev.divehub.android.ui.DiveHubTheme
@@ -30,10 +32,11 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
 /**
- * The edit screen's contract-visible states as pictures: a synced Dive being edited, the site picker, an edited value
- * with its "use the recording's value" way back, the destructive verbs' not-available note, dark at the top and at the
- * weighting and more actions, and German at 200 % on a narrow phone both at the top and scrolled to the foot.
- * Rendered from a fixed state, so a drawing change shows up as a changed image.
+ * The edit screen's contract-visible states as pictures: a synced Dive being edited, the site picker in its list, no-match
+ * and dark states, an edited value with its "use the recording's value" way back, the destructive verbs' not-available
+ * note, dark at the top and at the weighting and more actions, and German at 200 % on a narrow phone at the top, over
+ * the value fields, at the Notes field and at the true foot. Rendered from a fixed state, so a drawing change shows up
+ * as a changed image.
  */
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
@@ -72,13 +75,35 @@ class DiveEditScreenshotTest {
     }
 
     @Test
-    fun `the destructive verbs say they are not available yet`() {
-        render(state(draft = DiveEditDraft.of(dive()), online = false))
+    fun `the site picker's no-match state hides the no-site row`() {
+        render(state(draft = DiveEditDraft.of(dive())))
+
+        compose.onNodeWithText("Choose a dive site").performClick()
+        compose.onNode(hasSetTextAction() and hasText("Find a dive site")).performTextInput("xyz")
+
+        compose.onNodeWithText("No dive sites match").assertExists()
+        compose.onNodeWithText("No dive site").assertDoesNotExist()
+        capture("dive_edit_site_picker_no_match.png")
+    }
+
+    @Test
+    @Config(qualifiers = "en-rUS-w411dp-h891dp-night-xxhdpi")
+    fun `the site picker follows the dark theme`() {
+        render(state(draft = DiveEditDraft.of(dive())), darkTheme = true)
+
+        compose.onNodeWithText("Choose a dive site").performClick()
+        compose.onNode(hasText("Lighthouse Reef") and hasClickAction()).assertIsSelected()
+        capture("dive_edit_site_picker_dark.png")
+    }
+
+    @Test
+    fun `the destructive verbs say they are not available on this device`() {
+        render(state(draft = DiveEditDraft.of(dive())))
 
         compose.onNodeWithTag("dive_edit_scroll").performScrollToNode(hasText("More actions"))
         compose.onNodeWithText("Deleting, merging, moving and appending aren’t available on this device yet.")
             .assertExists()
-        capture("dive_edit_offline_actions.png")
+        capture("dive_edit_more_actions.png")
     }
 
     @Test
@@ -109,11 +134,32 @@ class DiveEditScreenshotTest {
 
     @Test
     @Config(qualifiers = "de-rDE-w320dp-h891dp-xxhdpi")
-    fun `the lower half at two hundred percent in german`() {
+    fun `the value fields at two hundred percent in german`() {
         render(state(draft = DiveEditDraft.of(dive())), fontScale = 2f)
 
-        compose.onNodeWithTag("dive_edit_scroll").performScrollToNode(hasText("Weitere Aktionen"))
-        capture("dive_edit_de_narrow_2x_scrolled.png")
+        compose.onNodeWithTag("dive_edit_scroll")
+            .performScrollToNode(hasText("Durchschnittliche Tiefe (m)"))
+        capture("dive_edit_de_narrow_2x_values.png")
+    }
+
+    @Test
+    @Config(qualifiers = "de-rDE-w320dp-h891dp-xxhdpi")
+    fun `the notes field at two hundred percent in german`() {
+        render(state(draft = DiveEditDraft.of(dive())), fontScale = 2f)
+
+        compose.onNodeWithTag("dive_edit_scroll")
+            .performScrollToNode(hasText("Was ist bei diesem Tauchgang passiert?"))
+        capture("dive_edit_de_narrow_2x_notes.png")
+    }
+
+    @Test
+    @Config(qualifiers = "de-rDE-w320dp-h891dp-xxhdpi")
+    fun `the foot at two hundred percent in german`() {
+        render(state(draft = DiveEditDraft.of(dive())), fontScale = 2f)
+
+        compose.onNodeWithTag("dive_edit_scroll")
+            .performScrollToNode(hasText("Als Fortsetzung anhängen"))
+        capture("dive_edit_de_narrow_2x_foot.png")
     }
 
     private fun render(state: DiveEditUiState, darkTheme: Boolean = false, fontScale: Float? = null) {

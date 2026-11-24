@@ -37,6 +37,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
@@ -50,8 +51,10 @@ import androidx.compose.ui.unit.dp
 import androidx.annotation.StringRes
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.divehub.android.R
+import dev.divehub.android.ui.DiveHubText
 import dev.divehub.android.ui.DiveHubTopBar
 import dev.divehub.android.ui.Formats
+import dev.divehub.android.ui.LargeTextFontScale
 import dev.divehub.android.ui.Spacing
 import dev.divehub.android.ui.dive.DiveDetailText
 import dev.divehub.android.ui.formatSyncTime
@@ -422,14 +425,33 @@ internal fun NumberField(
     modifier: Modifier,
     onChange: (String) -> Unit,
 ) {
-    OutlinedTextField(
-        value = value,
-        onValueChange = onChange,
-        modifier = modifier,
-        label = { Text(if (unit.isBlank()) label else "$label ($unit)") },
-        singleLine = true,
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-    )
+    val text = if (unit.isBlank()) label else "$label ($unit)"
+    if (LocalDensity.current.fontScale >= LargeTextFontScale) {
+        Column(modifier) {
+            Text(
+                text,
+                style = DiveHubText.label,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(Modifier.height(Spacing.s1))
+            OutlinedTextField(
+                value = value,
+                onValueChange = onChange,
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+            )
+        }
+    } else {
+        OutlinedTextField(
+            value = value,
+            onValueChange = onChange,
+            modifier = modifier,
+            label = { Text(text) },
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+        )
+    }
 }
 
 @Composable

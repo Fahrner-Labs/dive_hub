@@ -23,7 +23,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -71,7 +71,12 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.divehub.android.R
@@ -412,7 +417,7 @@ private fun EditForm(
                     sites.firstOrNull { it.id == id }?.name ?: originalSiteName
                 } ?: stringResource(R.string.dive_edit_no_site)
                 FactRow(label = stringResource(R.string.dive_edit_current_site), value = name)
-                QuietButton(stringResource(R.string.dive_edit_choose_site), onClick = { pickingSite = true })
+                SecondaryButton(stringResource(R.string.dive_edit_choose_site), onClick = { pickingSite = true })
             }
         }
         item {
@@ -420,11 +425,24 @@ private fun EditForm(
                 title = stringResource(R.string.dive_notes),
                 modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.s4),
             ) {
+                val largeText = LocalDensity.current.fontScale >= LargeTextFontScale
+                if (largeText) {
+                    Text(
+                        stringResource(R.string.dive_edit_notes_hint),
+                        style = DiveHubText.label,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Spacer(Modifier.height(Spacing.s1))
+                }
                 OutlinedTextField(
                     value = draft.notes,
                     onValueChange = { value -> onEdit { it.setNotes(value) } },
                     modifier = Modifier.fillMaxWidth(),
-                    label = { Text(stringResource(R.string.dive_edit_notes_hint)) },
+                    label = if (largeText) {
+                        null
+                    } else {
+                        { Text(stringResource(R.string.dive_edit_notes_hint)) }
+                    },
                     shape = RoundedCornerShape(Radius.control),
                     minLines = 4,
                 )
@@ -726,7 +744,7 @@ private fun SuitFields(
     )
     FlowRow(
         horizontalArrangement = Arrangement.spacedBy(Spacing.s2),
-        verticalArrangement = Arrangement.spacedBy(Spacing.s1),
+        verticalArrangement = Arrangement.spacedBy(Spacing.s2),
     ) {
         EditChip(
             label = stringResource(R.string.dive_edit_not_known),
@@ -776,7 +794,10 @@ private fun SuitFields(
                 style = DiveHubText.label,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.s2)) {
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(Spacing.s2),
+                verticalArrangement = Arrangement.spacedBy(Spacing.s2),
+            ) {
                 HoodChip(R.string.dive_edit_not_said, current.hood == null) {
                     onEdit { it.setSuit(current.copy(hood = null)) }
                 }
@@ -795,7 +816,10 @@ private fun SuitFields(
                 style = DiveHubText.label,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.s2)) {
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(Spacing.s2),
+                verticalArrangement = Arrangement.spacedBy(Spacing.s2),
+            ) {
                 UndergarmentChip(R.string.dive_edit_not_said, current.undergarment == null) {
                     onEdit { it.setSuit(current.copy(undergarment = null)) }
                 }
@@ -859,7 +883,10 @@ private fun WeightingFields(
         style = DiveHubText.label,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
-    FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.s2)) {
+    FlowRow(
+        horizontalArrangement = Arrangement.spacedBy(Spacing.s2),
+        verticalArrangement = Arrangement.spacedBy(Spacing.s2),
+    ) {
         EditChip(
             label = stringResource(R.string.dive_edit_not_said),
             selected = weighting == null,
@@ -994,17 +1021,23 @@ private fun SitePickerSheet(
             }
             Spacer(Modifier.height(Spacing.s2))
             LazyColumn(Modifier.fillMaxWidth().heightIn(max = SHEET_MAX_HEIGHT_DP.dp)) {
-                item {
-                    SiteRow(
-                        name = stringResource(R.string.dive_edit_no_site),
-                        selected = selected == null,
-                        onClick = { onPick(null) },
-                    )
+                if (query.isBlank()) {
+                    item {
+                        SiteRow(
+                            name = stringResource(R.string.dive_edit_no_site),
+                            query = "",
+                            selected = selected == null,
+                            showDivider = matching.isNotEmpty(),
+                            onClick = { onPick(null) },
+                        )
+                    }
                 }
-                items(matching, key = { it.id }) { site ->
+                itemsIndexed(matching, key = { _, site -> site.id }) { index, site ->
                     SiteRow(
                         name = site.name,
+                        query = query.trim(),
                         selected = selected == site.id,
+                        showDivider = index < matching.lastIndex,
                         onClick = { onPick(site.id) },
                     )
                 }
@@ -1015,7 +1048,13 @@ private fun SitePickerSheet(
 
 /** A site the User can pick: the whole 48 dp row is the target, the check is an icon and `selected` is on the row. */
 @Composable
-private fun SiteRow(name: String, selected: Boolean, onClick: () -> Unit) {
+private fun SiteRow(
+    name: String,
+    query: String,
+    selected: Boolean,
+    showDivider: Boolean,
+    onClick: () -> Unit,
+) {
     Column(Modifier.fillMaxWidth()) {
         Row(
             Modifier
@@ -1038,9 +1077,23 @@ private fun SiteRow(name: String, selected: Boolean, onClick: () -> Unit) {
                 }
             }
             Spacer(Modifier.width(Spacing.s2))
-            Text(name, style = DiveHubText.body)
+            Text(markedName(name, query), style = DiveHubText.body)
         }
-        HorizontalDivider(color = DiveHubColors.border)
+        if (showDivider) {
+            HorizontalDivider(color = DiveHubColors.border)
+        }
+    }
+}
+
+private fun markedName(name: String, query: String): AnnotatedString {
+    val start = name.indexOf(query, ignoreCase = true)
+    if (query.isEmpty() || start < 0) return AnnotatedString(name)
+    return buildAnnotatedString {
+        append(name.substring(0, start))
+        withStyle(SpanStyle(fontWeight = FontWeight.SemiBold)) {
+            append(name.substring(start, start + query.length))
+        }
+        append(name.substring(start + query.length))
     }
 }
 
