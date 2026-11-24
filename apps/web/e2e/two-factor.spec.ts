@@ -137,7 +137,7 @@ test('asks a password sign-in for the second factor and takes a backup code', { 
     await page.getByRole('button', { name: 'Verify' }).click();
     await expect(page.getByText('That two-factor code is wrong or has expired.')).toBeVisible();
 
-    await page.getByRole('switch', { name: 'Use a backup code' }).click();
+    await page.getByText('Use a backup code', { exact: true }).click();
     await expect(page.getByText('Enter one of your backup codes.')).toBeVisible();
     await page.getByLabel('Backup code').fill(backupCode);
     await page.getByRole('button', { name: 'Verify' }).click();
