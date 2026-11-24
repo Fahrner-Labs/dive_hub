@@ -87,53 +87,76 @@ const XMIN_BOUND = sql`case
 end`;
 
 export function createSyncService(db: Db) {
-  /** The safe high-water xid and the retention floor, read together. */
-  async function feedBounds(): Promise<{ xmin: bigint; floor: FeedPosition }> {
-    const [row] = (await db.execute(sql`
-      select (${XMIN_BOUND})::text as xmin,
-             coalesce((select xid::text from change_feed_floor where id), '0') as floor_xid,
-             coalesce((select seq::text from change_feed_floor where id), '0') as floor_seq
-    `)).rows as { xmin: string; floor_xid: string; floor_seq: string }[];
-    return { xmin: BigInt(row!.xmin), floor: floorOf(row!) };
-  }
-
   return {
     /**
-     * The events after `cursor`, in feed order, filtered by the xmin high-water mark. Without a cursor it only reads
-     * the bootstrap high-water position: a fresh or upgrading install full-syncs from there (D6), and an installed app
+     * The events after `cursor`, in feed order, filtered by the xmin high-water mark. The retention floor and the page
+     * are read in one statement, so they share a snapshot: a sweep that commits between a separate floor read and the
+     * page could otherwise let a stale cursor advance instead of answering 410. Without a cursor it only reads the
+     * bootstrap high-water position: a fresh or upgrading install full-syncs from there (D6), and an installed app
      * probes this endpoint once per session (404 on an old server means read-only).
      */
     async changes({ cursor, limit = CHANGES_DEFAULT_LIMIT }: { cursor?: string; limit?: number } = {}): Promise<ChangeFeedPage> {
-      const { xmin, floor } = await feedBounds();
-
       if (cursor === undefined) {
-        const [high] = (await db.execute(sql`
-          select xid::text as xid, seq from change_event
-          where xid < ${xmin.toString()}::xid8
-          order by xid desc, seq desc
-          limit 1
-        `)).rows as { xid: string; seq: string }[];
-        const position = high ? { xid: BigInt(high.xid), seq: BigInt(high.seq) } : floor;
+        // The seed row makes the answer exist even for an empty log (and an absent floor), so the high-water and the
+        // floor always come from this one statement's snapshot.
+        const [row] = (await db.execute(sql`
+          select coalesce(floor.xid::text, '0') as floor_xid,
+                 coalesce(floor.seq::text, '0') as floor_seq,
+                 high.xid::text as high_xid,
+                 high.seq::text as high_seq
+          from (values (1)) as seed(one)
+          left join change_feed_floor floor on floor.id
+          left join lateral (
+            select xid, seq from change_event
+            where xid < (${XMIN_BOUND})::text::xid8
+            order by xid desc, seq desc
+            limit 1
+          ) high on true
+        `)).rows as {
+          floor_xid: string; floor_seq: string; high_xid: string | null; high_seq: string | null;
+        }[];
+        const floor = floorOf(row!);
+        const position = row!.high_xid === null ? floor : { xid: BigInt(row!.high_xid), seq: BigInt(row!.high_seq!) };
         return { cursor: encodeCursor(before(position, floor) ? floor : position), events: [] };
       }
 
       const from = decodeCursor(cursor);
+      // The floor is joined into the page query rather than read first: both see the same snapshot, so a concurrent
+      // sweep either moves the floor before this answer (410) or after it (the page still has the events).
+      const rows = (await db.execute(sql`
+        select coalesce(floor.xid::text, '0') as floor_xid,
+               coalesce(floor.seq::text, '0') as floor_seq,
+               page.xid::text as xid,
+               page.seq as seq,
+               page.entity_type,
+               page.entity_id,
+               page.kind
+        from (values (1)) as seed(one)
+        left join change_feed_floor floor on floor.id
+        left join lateral (
+          select xid, seq, entity_type, entity_id, kind
+          from change_event
+          where xid < (${XMIN_BOUND})::text::xid8
+            and (xid, seq) > (${from.xid.toString()}::xid8, ${from.seq.toString()}::bigint)
+          order by xid, seq
+          limit ${limit}
+        ) page on true
+        order by page.xid, page.seq
+      `)).rows as {
+        floor_xid: string; floor_seq: string;
+        xid: string | null; seq: string | null;
+        entity_type: RevisionEntityType | null; entity_id: string | null; kind: ChangeKind | null;
+      }[];
+      const floor = floorOf(rows[0]!);
       if (before(from, floor)) throw new SyncError('sync_resync_required');
 
-      const rows = (await db.execute(sql`
-        select xid::text as xid, seq, entity_type, entity_id, kind
-        from change_event
-        where xid < ${xmin.toString()}::xid8
-          and (xid, seq) > (${from.xid.toString()}::xid8, ${from.seq.toString()}::bigint)
-        order by xid, seq
-        limit ${limit}
-      `)).rows as { xid: string; seq: string; entity_type: RevisionEntityType; entity_id: string; kind: ChangeKind }[];
-      const events = rows.map((row) => ({
-        seq: Number(row.seq), entityType: row.entity_type, entityId: row.entity_id, kind: row.kind,
+      const found = rows.filter((row) => row.xid !== null);
+      const events = found.map((row) => ({
+        seq: Number(row.seq), entityType: row.entity_type!, entityId: row.entity_id!, kind: row.kind!,
       }));
-      const last = rows.at(-1);
+      const last = found.at(-1);
       return {
-        cursor: encodeCursor(last ? { xid: BigInt(last.xid), seq: BigInt(last.seq) } : from),
+        cursor: encodeCursor(last ? { xid: BigInt(last.xid!), seq: BigInt(last.seq!) } : from),
         events,
       };
     },
