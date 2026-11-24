@@ -139,7 +139,7 @@ test('asks a password sign-in for the second factor and takes a backup code', { 
 
     await page.getByText('Use a backup code', { exact: true }).click();
     await expect(page.getByText('Enter one of your backup codes.')).toBeVisible();
-    await page.getByLabel('Backup code').fill(backupCode);
+    await page.getByRole('textbox', { name: 'Backup code' }).fill(backupCode);
     await page.getByRole('button', { name: 'Verify' }).click();
 
     // Signed in: the logbook replaces the sign-in page.
