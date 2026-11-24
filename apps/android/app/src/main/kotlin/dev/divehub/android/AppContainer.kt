@@ -104,7 +104,10 @@ class AppContainer(context: Context) {
     /** The sync engine and its refresh loop; the UI reads the store, never the API, from D4 on. */
     val sync = SyncEngine(session.client, diveStore)
 
-    /** The offline write queue and its replay (ADR 0084): the scanner's actions replay through these. */
+    /**
+     * The offline write queue and its replay (ADR 0084): the scanner's actions replay through these. T7 owns the
+     * session/sync triggers that drain the queue; until it lands the scanner triggers its own replay.
+     */
     val writeQueue by lazy { WriteQueue(diveStore) }
     val writeReplayer by lazy { WriteReplayer(session.client, diveStore) }
     private val refresher = SyncRefresher(
