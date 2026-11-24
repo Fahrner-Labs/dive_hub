@@ -844,7 +844,13 @@ private fun AddParticipantSheet(
                         AddSheetNote(stringResource(R.string.dive_edit_search_failed))
                     }
                 }
-                if (typed.isNotEmpty() && !searching && results.isEmpty()) {
+                // A failed search falls back to the cached matches, so it must not also claim that none matched.
+                if (failed && typed.isNotEmpty() && results.isEmpty()) {
+                    item {
+                        AddSheetNote(stringResource(R.string.dive_edit_add_new_web))
+                    }
+                }
+                if (typed.isNotEmpty() && !searching && !failed && results.isEmpty()) {
                     item {
                         AddSheetNote(stringResource(R.string.dive_edit_no_diver_match))
                     }

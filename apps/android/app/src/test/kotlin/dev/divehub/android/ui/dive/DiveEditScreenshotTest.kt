@@ -426,6 +426,58 @@ class DiveEditScreenshotTest {
     }
 
     @Test
+    fun `a live search with no match says so and points to the web for someone new`() {
+        render(
+            state(
+                draft = DiveEditDraft.of(dive(participants = people())),
+                participantSearch = DiverSearchState.Found("Zed", emptyList()),
+            ),
+        )
+
+        openAddParticipant()
+        compose.onNodeWithTag("dive_edit_participant_search").performTextInput("Zed")
+
+        compose.onNodeWithText("No divers match").assertExists()
+        compose.onNodeWithText("To add someone new, use the web.").assertExists()
+        capture("dive_edit_participant_add_no_match.png")
+    }
+
+    @Test
+    fun `a failed search says it failed instead of claiming no divers match`() {
+        render(
+            state(
+                draft = DiveEditDraft.of(dive(participants = people())),
+                participantSearch = DiverSearchState.Failed("Zed"),
+            ),
+        )
+
+        openAddParticipant()
+        compose.onNodeWithTag("dive_edit_participant_search").performTextInput("Zed")
+
+        compose.onNodeWithText(
+            "Couldn’t search every diver. Showing the divers on this device.",
+        ).assertExists()
+        compose.onNodeWithText("No divers match").assertDoesNotExist()
+        capture("dive_edit_participant_add_failed.png")
+    }
+
+    @Test
+    fun `a search in flight says it is searching every diver`() {
+        render(
+            state(
+                draft = DiveEditDraft.of(dive(participants = people())),
+                participantSearch = DiverSearchState.Searching("Zed"),
+            ),
+        )
+
+        openAddParticipant()
+        compose.onNodeWithTag("dive_edit_participant_search").performTextInput("Zed")
+
+        compose.onNodeWithText("Searching every diver…").assertExists()
+        capture("dive_edit_participant_add_searching.png")
+    }
+
+    @Test
     fun `changing a role opens a named choice`() {
         render(state(draft = DiveEditDraft.of(dive(participants = people()))))
 
