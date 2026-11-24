@@ -35,3 +35,11 @@ interface CachedMeStore {
     suspend fun save(meJson: String)
     suspend fun clear()
 }
+
+/**
+ * The offline write queue as the session lifecycle sees it (ADR 0084 D8): sign-out and a change of User must not
+ * discard queued writes silently, and a 401 must leave them for a same-User sign-in to resume.
+ */
+interface PendingWriteQueue {
+    suspend fun queuedWriteCount(): Long
+}

@@ -76,18 +76,32 @@ private class FakeCachedMe(initial: String? = null) : CachedMeStore {
     }
 }
 
+private class FakeQueue(var count: Long = 0) : PendingWriteQueue {
+    override suspend fun queuedWriteCount(): Long = count
+}
+
 private const val USER_JSON = """{"id":"u1","name":"Ada","email":"ada@example.com","emailVerified":true,"createdAt":"2026-01-01T00:00:00Z","updatedAt":"2026-01-01T00:00:00Z","banned":false,"twoFactorEnabled":false}"""
 private const val ME_JSON = """{"user":{"id":"u1","email":"ada@example.com","name":"Ada","role":"user","disabled":false,"createdAt":"2026-01-01T00:00:00Z"},"ownDiver":{"id":"d1","name":"Ada"},"preferences":{"language":null,"units":null}}"""
+private const val ME_OTHER_USER_JSON = """{"user":{"id":"u2","email":"bob@example.com","name":"Bob","role":"user","disabled":false,"createdAt":"2026-01-01T00:00:00Z"},"ownDiver":{"id":"d2","name":"Bob"},"preferences":{"language":null,"units":null}}"""
 
 private class Harness(
     val tokens: FakeTokens = FakeTokens(),
     val instances: FakeInstances = FakeInstances("https://dive.example"),
     val cache: FakeCache = FakeCache(),
     val cachedMe: FakeCachedMe = FakeCachedMe(),
+    val pendingWrites: FakeQueue = FakeQueue(),
     handler: suspend MockRequestHandleScope.(HttpRequestData) -> HttpResponseData,
 ) {
     private val engine = MockEngine(handler)
-    val session = SessionRepository(engine, tokens, instances, cache, cachedMe, versionName = "0.1.0-dev")
+    val session = SessionRepository(
+        engine,
+        tokens,
+        instances,
+        cache,
+        cachedMe,
+        versionName = "0.1.0-dev",
+        pendingWrites = pendingWrites,
+    )
 }
 
 private fun MockRequestHandleScope.json(body: String, status: HttpStatusCode = HttpStatusCode.OK): HttpResponseData =
@@ -491,5 +505,147 @@ fun `the generated user model keeps an unknown role and a refusal keeps an unkno
         """{"code":"a_code_from_a_newer_server","error":"English text for logs"}""",
     )
     assertEquals("a_code_from_a_newer_server", problem.code)
+}
+
+@Test
+fun `signing out with queued writes blocks and keeps the session`() = runTest {
+    val harness = Harness(tokens = FakeTokens("old-token"), pendingWrites = FakeQueue(2)) {
+        error("no request expected while the queue blocks sign-out")
+    }
+
+    val outcome = harness.session.signOut()
+
+    assertEquals(SignOutOutcome.PendingChanges(2), outcome)
+    assertEquals("old-token", harness.tokens.value)
+    assertEquals(0, harness.cache.forgets)
+    assertIs<SessionState.Loading>(harness.session.state.value)
+}
+
+@Test
+fun `discarding queued writes signs out and wipes`() = runTest {
+    val harness = Harness(
+        tokens = FakeTokens("old-token"),
+        cachedMe = FakeCachedMe(ME_JSON),
+        pendingWrites = FakeQueue(2),
+    ) { json("""{"success":true}""") }
+
+    val outcome = harness.session.signOutDiscardingPending()
+
+    assertEquals(SignOutOutcome.SignedOut, outcome)
+    assertNull(harness.tokens.value)
+    assertEquals(1, harness.cache.forgets)
+    assertEquals(1, harness.cachedMe.clears)
+    assertIs<SessionState.SignedOut>(harness.session.state.value)
+}
+
+@Test
+fun `changing the instance with queued writes blocks and keeps the address`() = runTest {
+    val harness = Harness(tokens = FakeTokens("old-token"), pendingWrites = FakeQueue(1)) {
+        error("no request expected while the queue blocks the change")
+    }
+
+    val outcome = harness.session.changeInstance()
+
+    assertEquals(SignOutOutcome.PendingChanges(1), outcome)
+    assertEquals("https://dive.example", harness.instances.value)
+    assertEquals("old-token", harness.tokens.value)
+    assertEquals(0, harness.cache.forgets)
+}
+
+@Test
+fun `the same user signing in after a 401 keeps the store and resumes the queue`() = runTest {
+    val harness = Harness(
+        tokens = FakeTokens(null),
+        cachedMe = FakeCachedMe(ME_JSON),
+        pendingWrites = FakeQueue(2),
+    ) { request ->
+        when (request.url.encodedPath) {
+            SIGN_IN_PATH -> respond("", HttpStatusCode.OK, headersOf(SET_AUTH_TOKEN, "new-token"))
+            "/api/me" -> json(ME_JSON)
+            else -> error("unexpected ${request.url}")
+        }
+    }
+
+    val user = harness.session.signIn("https://dive.example", "ada@example.com", "correct horse battery")
+
+    assertEquals("u1", user.id)
+    assertEquals("new-token", harness.tokens.value)
+    assertEquals(0, harness.cache.forgets)
+    assertEquals(0, harness.cachedMe.clears)
+    assertEquals(2L, harness.session.pendingWriteCount())
+    assertIs<SessionState.SignedIn>(harness.session.state.value)
+}
+
+@Test
+fun `signing in as another user with queued writes needs an explicit decision`() = runTest {
+    val harness = Harness(
+        tokens = FakeTokens(null),
+        cachedMe = FakeCachedMe(ME_JSON),
+        pendingWrites = FakeQueue(2),
+    ) { request ->
+        when (request.url.encodedPath) {
+            SIGN_IN_PATH -> respond("", HttpStatusCode.OK, headersOf(SET_AUTH_TOKEN, "other-token"))
+            "/api/me" -> json(ME_OTHER_USER_JSON)
+            else -> error("unexpected ${request.url}")
+        }
+    }
+
+    val error = assertFailsWith<PendingWritesException> {
+        harness.session.signIn("https://dive.example", "bob@example.com", "correct horse battery")
+    }
+
+    assertEquals(2, error.count)
+    assertNull(harness.tokens.value)
+    assertEquals(0, harness.cache.forgets)
+    assertEquals(ME_JSON, harness.cachedMe.value)
+    assertEquals(2L, harness.session.pendingWriteCount())
+}
+
+@Test
+fun `discarding the previous user's queued writes completes the switch`() = runTest {
+    val harness = Harness(
+        tokens = FakeTokens(null),
+        cachedMe = FakeCachedMe(ME_JSON),
+        pendingWrites = FakeQueue(2),
+    ) { request ->
+        when (request.url.encodedPath) {
+            SIGN_IN_PATH -> respond("", HttpStatusCode.OK, headersOf(SET_AUTH_TOKEN, "other-token"))
+            "/api/me" -> json(ME_OTHER_USER_JSON)
+            else -> error("unexpected ${request.url}")
+        }
+    }
+
+    val user = harness.session.signIn(
+        "https://dive.example",
+        "bob@example.com",
+        "correct horse battery",
+        discardPending = true,
+    )
+
+    assertEquals("u2", user.id)
+    assertEquals("other-token", harness.tokens.value)
+    assertEquals(1, harness.cache.forgets)
+    assertEquals(1, harness.cachedMe.clears)
+    assertIs<SessionState.SignedIn>(harness.session.state.value)
+}
+
+@Test
+fun `a 401 keeps the queued writes for a same-user resume`() = runTest {
+    val harness = Harness(
+        tokens = FakeTokens("expired"),
+        cachedMe = FakeCachedMe(ME_JSON),
+        pendingWrites = FakeQueue(3),
+    ) { request ->
+        when (request.url.encodedPath) {
+            "/api/me" -> json("""{"code":"sign_in_required","error":"Sign in required"}""", HttpStatusCode.Unauthorized)
+            else -> error("unexpected ${request.url}")
+        }
+    }
+
+    harness.session.restore()
+
+    assertEquals(3L, harness.session.pendingWriteCount())
+    assertEquals(0, harness.cache.forgets)
+    assertEquals(0, harness.cachedMe.clears)
 }
 }

@@ -15,6 +15,9 @@ object ErrorCodes {
     /** The server refuses this app's version (ADR 0076): the session is fine, the app is old. */
     const val CLIENT_TOO_OLD = "client_too_old"
 
+    /** Queued writes belong to the previous User; signing in as another one needs an explicit decision (ADR 0084 D8). */
+    const val PENDING_WRITES = "pending_writes"
+
     /** A request got no answer at all (offline, unreachable); not a server refusal. */
     const val NO_ANSWER = "no_answer"
 
