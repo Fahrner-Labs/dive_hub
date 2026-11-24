@@ -53,8 +53,12 @@ class ApiClient(
     suspend fun get(path: String, authenticated: Boolean = true, retry: Boolean = true): HttpResponse =
         send(HttpMethod.Get, path, null, authenticated, retry)
 
-    suspend fun post(path: String, body: String? = null, authenticated: Boolean = true): HttpResponse =
-        send(HttpMethod.Post, path, body, authenticated, retry = true)
+    suspend fun post(
+        path: String,
+        body: String? = null,
+        authenticated: Boolean = true,
+        retry: Boolean = true,
+    ): HttpResponse = send(HttpMethod.Post, path, body, authenticated, retry)
 
     /** A native write's write (ADR 0083 D2): [ifMatch] is sent as `If-Match: "<version>"`, the 412 contract's version. */
     suspend fun put(

@@ -184,7 +184,8 @@ class SettingsScreenTest {
         render()
 
         compose.onNodeWithText("Open-source licenses").performClick()
-        compose.onNodeWithText("Poppins (SIL Open Font License 1.1)").assertIsDisplayed()
+        compose.onNodeWithText("Poppins (SIL Open Font License 1.1)", substring = true).assertIsDisplayed()
+        compose.onNodeWithText("ZXing (Apache License 2.0)", substring = true).assertIsDisplayed()
         compose.onNodeWithText("SIL OPEN FONT LICENSE", substring = true).assertIsDisplayed()
         compose.onNodeWithText("Close").performClick()
     }

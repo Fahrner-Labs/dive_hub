@@ -98,7 +98,11 @@ class AppContainer(context: Context) {
         },
     )
 
-    /** The offline write queue: screens enqueue here and the store shows the edit at once (ADR 0084 D4). */
+    /**
+     * The offline write queue: screens enqueue here and the store shows the edit at once (ADR 0084 D4). The scanner's
+     * actions replay through it too; T7 owns the session/sync triggers that drain it, and until then the scanner
+     * triggers its own replay.
+     */
     val writeQueue: WriteQueue by lazy { WriteQueue(diveStore) }
 
     /** The replay/conflict side: drains the queue on sync triggers and answers the resolution surface (ADR 0084 D3). */

@@ -30,3 +30,6 @@ internal data object SettingsRoute
 
 @Serializable
 internal data object SettingsDebugRoute
+
+@Serializable
+internal data object ScanRoute

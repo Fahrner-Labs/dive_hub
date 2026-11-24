@@ -96,6 +96,9 @@ fun QuietButton(
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
                 text,
+                // The label yields width to the chevron: at 320 dp and 200 % an unweighted label filled the row and
+                // clipped the icon (FAH-474). `fill = false` keeps a short label short, so the target still hugs it.
+                modifier = if (expanded != null) Modifier.weight(1f, fill = false) else Modifier,
                 style = DiveHubText.label,
                 color = if (enabled) contentColor else contentColor.copy(alpha = DisabledContentAlpha),
             )

@@ -352,6 +352,13 @@ online.
   edits to one thing coalesce into one entry (the latest values, the original base version).
 - **The queue is visible and honest.** While entries wait, the client says so ("2 changes waiting to sync")
   with a way to see what waits; an entry that cannot go is a state on that thing, never a toast.
+- **A scanned code is a deferred action: verbatim, never merged.** With no signal the raw code text queues and
+  resolves when the server answers — the client never parses the format. The answer is shown (a Dive centre; a
+  person and what taking the code would change; or the refusal's problem code) and stays a state until the User
+  acts or dismisses it. Taking a person's code and creating a centre from its code are writes through the same
+  queue: the code's text goes back unchanged, and the centre carries the uuidv7 the scan kept, so a replayed
+  create is the same centre and never a second one. Nothing is taken or created before the User has seen it. The
+  text stays in that queued read until the User acts; a shown result never holds a copy of it (ADR 0043).
 - **Replay sends `If-Match: "<base version>"`** in enqueue order (FIFO per thing). A 2xx writes the answer
   into the store and drops the entry. A 412 answers with the current view (§1, Data safety), and the client
   merges field by field against the base: a field changed on only one side merges quietly and is sent again

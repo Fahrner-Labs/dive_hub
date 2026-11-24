@@ -1,9 +1,14 @@
 package dev.divehub.shared.write
 
+import dev.divehub.api.models.ApiDiveCentresPostRequest
+import dev.divehub.api.models.ApiDiveCentresPostRequestExternalIdsItem
+import dev.divehub.api.models.ApiDiversFromCodePostRequest
+import dev.divehub.api.models.ApiVerificationCodesReadPostRequest
 import dev.divehub.shared.store.DiveStore
 import dev.divehub.shared.store.PendingWrite
 import dev.divehub.shared.store.PendingWriteKind
 import dev.divehub.shared.store.PendingWriteStatus
+import dev.divehub.shared.store.ScanResult
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
@@ -15,6 +20,18 @@ import kotlin.time.Clock
 object WriteEntities {
     const val DIVE = "dive"
     const val DIVE_PARTICIPANTS = "dive_participants"
+}
+
+/** The deferred actions the scanner queues (T11): a raw read, taking a person's code, and a centre create. */
+object ScanEntities {
+    /** A scanned code's text, replayed verbatim to `POST /api/verification-codes/read`. */
+    const val SCAN = "scan"
+
+    /** Taking a buddy's or professional's code: `POST /api/divers/from-code`. */
+    const val TAKE_CODE = "take_code"
+
+    /** Creating a Dive centre from its code: `POST /api/dive-centres`, with the client uuid in the body. */
+    const val CENTRE = "centre"
 }
 
 /**
@@ -29,6 +46,9 @@ class WriteQueue(
     private val store: DiveStore,
     private val clock: () -> String = { Clock.System.now().toString() },
 ) {
+    /** The generated request models are the wire contract; nulls stay out of an action's body. */
+    private val json = Json { explicitNulls = false }
+
     /**
      * Apply a Dive edit to the store at once ("write as if online") and queue it. The store keeps the base version; the
      * replay's 2xx replaces the detail with the server's answer (ADR 0084 D3 step 2).
@@ -104,7 +124,7 @@ class WriteQueue(
 
     /**
      * Queue a deferred action (Phase C: a scanned code, a create). It replays verbatim in global enqueue order and
-     * never merges; T6a only stores it, the scanner flows arrive in T11.
+     * never merges.
      */
     fun enqueueAction(entityType: String, entityId: String, payload: JsonObject): PendingWrite = store.addPendingWrite(
         PendingWrite(
@@ -116,6 +136,84 @@ class WriteQueue(
             enqueuedAt = clock(),
         ),
     )
+
+    /**
+     * Queue a scanned code's raw text (T11). The client cannot read the server's format, so with no signal the text
+     * waits and resolves when the server answers; [centreId] is the uuidv7 a centre create from this code will carry,
+     * so a different centre made from the same code cannot be created twice.
+     */
+    fun enqueueScan(text: String, centreId: String = UuidV7.generate()): PendingWrite = enqueueAction(
+        entityType = ScanEntities.SCAN,
+        entityId = centreId,
+        payload = actionBody(ApiVerificationCodesReadPostRequest(text = text)),
+    )
+
+    /** Queue taking a person's code; [diverId] names the Diver the User chose, or [create] makes a new external one. */
+    fun enqueueTakeCode(text: String, diverId: String? = null, create: Boolean = false): PendingWrite = enqueueAction(
+        entityType = ScanEntities.TAKE_CODE,
+        entityId = diverId ?: "new",
+        payload = actionBody(
+            ApiDiversFromCodePostRequest(text = text, diverId = diverId, create = if (create) true else null),
+        ),
+    )
+
+    /** Queue creating a Dive centre from its code's answer, with the client uuidv7 as the replay idempotency key. */
+    fun enqueueCreateCentre(
+        id: String,
+        name: String,
+        number: String? = null,
+    ): PendingWrite = enqueueAction(
+        entityType = ScanEntities.CENTRE,
+        entityId = id,
+        payload = actionBody(
+            ApiDiveCentresPostRequest(
+                id = id,
+                name = name,
+                externalIds = number?.takeIf { it.isNotBlank() }?.let {
+                    listOf(ApiDiveCentresPostRequestExternalIdsItem(source = "ssi", externalId = it))
+                },
+            ),
+        ),
+    )
+
+    /** The raw text of a queued scan whose action the User is still deciding on, or null when it is gone. */
+    fun pendingScanText(actionId: Long): String? {
+        val entry = store.pendingWrite(actionId) ?: return null
+        val payload = runCatching { Json.parseToJsonElement(entry.payloadJson) as? JsonObject }.getOrNull() ?: return null
+        return (payload["text"] as? JsonPrimitive)?.takeIf { it.isString }?.content
+    }
+
+    /**
+     * Take a resolved read: queue the write it leads to from the read's own queued text, then drop that read action and
+     * its result together. The read is the User's data, so nothing is queued when it is already gone (acted on or
+     * dismissed elsewhere); this keeps the rule in the core instead of in each client.
+     */
+    fun takeResolvedScan(result: ScanResult, diverId: String?, create: Boolean): Boolean {
+        val action = result.actionId ?: return false
+        val text = pendingScanText(action) ?: return false
+        enqueueTakeCode(text, diverId = diverId, create = create)
+        store.transaction {
+            deletePendingWrite(action)
+            deleteScanResult(result.id)
+        }
+        return true
+    }
+
+    /** Create the Dive centre a resolved read found, from the read's own answer, and consume that read. */
+    fun createCentreFromScan(result: ScanResult, read: ReadCode): Boolean {
+        val id = result.entityId ?: return false
+        val name = read.name ?: return false
+        val action = result.actionId ?: return false
+        enqueueCreateCentre(id = id, name = name, number = read.centreNumber)
+        store.transaction {
+            deletePendingWrite(action)
+            deleteScanResult(result.id)
+        }
+        return true
+    }
+
+    private inline fun <reified T> actionBody(request: T): JsonObject =
+        Json.parseToJsonElement(json.encodeToString(request)) as JsonObject
 
     private fun baseOf(diveId: String): Pair<Long, String?> {
         val dive = store.diveIncludingDeleted(diveId)
