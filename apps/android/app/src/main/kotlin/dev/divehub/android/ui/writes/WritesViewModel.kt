@@ -61,8 +61,8 @@ class WritesViewModel(
     private val readSnapshot: () -> WriteQueueSnapshot,
     private val readConflicts: () -> List<WriteConflictView>,
     private val readQueued: () -> List<QueuedWriteView>,
-    private val readNotices: () -> List<WriteNotice>,
-    private val resolveConflict: (Long, Map<String, ConflictSide>) -> ConflictResolution,
+    notices: StateFlow<List<WriteNotice>>,
+    private val resolveConflict: suspend (Long, Map<String, ConflictSide>) -> ConflictResolution?,
     private val drain: suspend () -> Unit,
     private val retryQueue: suspend () -> Unit,
     private val clearNotices: () -> Unit,
@@ -79,6 +79,8 @@ class WritesViewModel(
         viewModelScope.launch { revision.followStoreWrites().collect { read() } }
         // An edit lands in the queue before any sync runs; the queue's own revision shows it at once.
         viewModelScope.launch { queueRevision.collect { read() } }
+        // A replay may have dropped a change; that notice belongs to the queue screen until the User reads it.
+        viewModelScope.launch { notices.collect { value -> _state.update { it.copy(notices = value) } } }
     }
 
     /** Re-read the queue; the conflict screen calls this on entry in case a sync landed while it was closed. */
@@ -93,10 +95,7 @@ class WritesViewModel(
 
     /** The User has read the dropped-change notices. */
     fun dismissNotices() {
-        viewModelScope.launch {
-            withContext(io) { clearNotices() }
-            read()
-        }
+        clearNotices()
     }
 
     /** Retry entries that failed with a server refusal: they rejoin the queue and one replay attempt runs. */
@@ -152,7 +151,6 @@ class WritesViewModel(
         val snapshot = withContext(io) { readSnapshot() }
         val conflicts = if (snapshot.conflicted > 0) withContext(io) { readConflicts() } else emptyList()
         val queued = if (snapshot.pending + snapshot.failed > 0) withContext(io) { readQueued() } else emptyList()
-        val notices = withContext(io) { readNotices() }
         _state.update {
             it.copy(
                 pending = snapshot.pending,
@@ -160,7 +158,6 @@ class WritesViewModel(
                 failed = snapshot.failed,
                 conflicts = conflicts,
                 queued = queued,
-                notices = notices,
             )
         }
     }
@@ -175,11 +172,11 @@ class WritesViewModel(
                     readSnapshot = container.writeReplayer::snapshot,
                     readConflicts = container.writeReplayer::conflicts,
                     readQueued = container.writeReplayer::queued,
-                    readNotices = container.writeReplayer::notices,
-                    resolveConflict = container.writeReplayer::resolve,
+                    notices = container.writeNotices,
+                    resolveConflict = container::resolveWriteConflict,
                     drain = container::drainWrites,
                     retryQueue = container::retryWrites,
-                    clearNotices = container.writeReplayer::dismissNotices,
+                    clearNotices = container::dismissWriteNotices,
                 )
             }
         }

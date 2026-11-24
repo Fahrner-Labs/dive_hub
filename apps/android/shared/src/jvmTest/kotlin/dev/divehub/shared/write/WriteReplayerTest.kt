@@ -191,11 +191,6 @@ class WriteReplayerTest {
         val notice = result.notices.single()
         assertEquals(WriteDropReason.NotFound, notice.reason)
         assertEquals("dive-9", notice.mergedInto)
-        assertEquals(notice, harness.replayer.notices().single())
-        assertEquals(PendingWriteStatus.Dropped, store.pendingWrites().single().status)
-
-        harness.replayer.dismissNotices()
-        assertTrue(harness.replayer.notices().isEmpty())
         assertTrue(store.pendingWrites().isEmpty())
     }
 

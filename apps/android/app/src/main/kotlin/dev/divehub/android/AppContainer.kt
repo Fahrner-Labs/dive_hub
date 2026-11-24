@@ -25,6 +25,8 @@ import dev.divehub.shared.sync.SseLiveHints
 import dev.divehub.shared.sync.SyncEngine
 import dev.divehub.shared.sync.SyncRefresher
 import dev.divehub.shared.sync.SyncResult
+import dev.divehub.shared.write.ConflictResolution
+import dev.divehub.shared.write.ConflictSide
 import dev.divehub.shared.write.ServerWriteCapabilityProbe
 import dev.divehub.shared.write.WriteCapability
 import dev.divehub.shared.write.WriteQueue
@@ -100,7 +102,7 @@ class AppContainer(context: Context) {
         versionName = BuildConfig.VERSION_NAME,
         pendingWrites = object : PendingWriteQueue {
             override suspend fun queuedWriteCount(): Long =
-                withContext(Dispatchers.IO) { diveStore.pendingWriteCount() }
+                withContext(Dispatchers.IO) { diveStore.queuedWriteCount() }
         },
     )
 
@@ -165,6 +167,8 @@ class AppContainer(context: Context) {
     val syncProgress = refresher.progress
     val syncOffline = refresher.offline
     val syncConnected = refresher.streamHealthy
+    /** Dropped-change notices from the last replay, until the User reads them (ADR 0084 D3 step 4). */
+    val writeNotices = refresher.notices
     private val periodicSync = WorkManagerPeriodicSync(application)
     private val syncScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val wipeLock = Mutex()
@@ -253,11 +257,30 @@ class AppContainer(context: Context) {
         val url = session.knownInstance() ?: return
         session.client.baseUrl = url
         if (!session.hasSession()) return
-        withContext(Dispatchers.IO) { writeReplayer.retryFailed() }
         wipeLock.withLock {
             if (!session.hasSession()) return@withLock
+            withContext(Dispatchers.IO) { writeReplayer.retryFailed() }
             refresher.drainWritesNow()
         }
+    }
+
+    /**
+     * The queue screen's conflict decision (ADR 0084 D3): [wipeLock] and the session check keep a sign-out wipe from
+     * interleaving with re-queueing the User's choices, like every other store write.
+     */
+    suspend fun resolveWriteConflict(entryId: Long, choices: Map<String, ConflictSide>): ConflictResolution? {
+        val url = session.knownInstance() ?: return null
+        session.client.baseUrl = url
+        if (!session.hasSession()) return null
+        return wipeLock.withLock {
+            if (!session.hasSession()) return@withLock null
+            withContext(Dispatchers.IO) { writeReplayer.resolve(entryId, choices) }
+        }
+    }
+
+    /** The User has read the dropped-change notices (ADR 0084 D3 step 4). */
+    fun dismissWriteNotices() {
+        refresher.dismissNotices()
     }
 
     /**

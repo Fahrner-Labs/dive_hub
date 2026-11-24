@@ -4,6 +4,8 @@ import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import dev.divehub.shared.ApiClient
 import dev.divehub.shared.store.DiveStore
 import dev.divehub.shared.write.WriteDrain
+import dev.divehub.shared.write.WriteDropReason
+import dev.divehub.shared.write.WriteNotice
 import dev.divehub.shared.write.WriteReplayResult
 import io.ktor.client.engine.mock.MockEngine
 import kotlinx.coroutines.test.runTest
@@ -53,6 +55,46 @@ class SyncDrainTest {
         refresher.drainWritesNow()
 
         assertEquals(0L, refresher.revision.value)
+    }
+
+    @Test
+    fun `a dropped change becomes a notice until the user dismisses it`() = runTest {
+        val notice = WriteNotice(
+            entityType = "dive",
+            entityId = "dive-1",
+            status = 404,
+            reason = WriteDropReason.NotFound,
+        )
+        val refresher = refresher(object : WriteDrain {
+            override suspend fun drain(): WriteReplayResult =
+                WriteReplayResult.Drained(applied = 0, conflicted = 0, dropped = 1, failed = 0, notices = listOf(notice))
+        })
+
+        refresher.drainWritesNow()
+
+        assertEquals(listOf(notice), refresher.notices.value)
+
+        refresher.dismissNotices()
+
+        assertEquals(emptyList(), refresher.notices.value)
+    }
+
+    @Test
+    fun `stopping the session drops the notices`() = runTest {
+        val refresher = refresher(object : WriteDrain {
+            override suspend fun drain(): WriteReplayResult = WriteReplayResult.Drained(
+                applied = 0,
+                conflicted = 0,
+                dropped = 1,
+                failed = 0,
+                notices = listOf(WriteNotice("dive", "dive-1", 404, WriteDropReason.NotFound)),
+            )
+        })
+        refresher.drainWritesNow()
+
+        refresher.stop()
+
+        assertEquals(emptyList(), refresher.notices.value)
     }
 
     @Test

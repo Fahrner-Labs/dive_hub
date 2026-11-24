@@ -172,29 +172,6 @@ class WriteReplayer(
     )
 
     /**
-     * The edits a replay had to drop because their thing is gone (ADR 0084 D3 step 4). They stay in the store, so a
-     * notice survives process death; [dismissNotices] removes them once read.
-     */
-    fun notices(): List<WriteNotice> =
-        store.pendingWrites(PendingWriteStatus.Dropped).mapNotNull { entry ->
-            val dropped = decodeDropped(entry.conflictJson) ?: return@mapNotNull null
-            WriteNotice(
-                entityType = entry.entityType,
-                entityId = entry.entityId,
-                status = dropped.status,
-                reason = WriteDropReason.entries.firstOrNull { it.name == dropped.reason }
-                    ?: WriteDropReason.NotFound,
-                mergedInto = dropped.mergedInto,
-                mergedIntoNumber = dropped.mergedInto?.let(::diveNumber),
-            )
-        }
-
-    /** The User has read the dropped-change notices; nothing is left to show. */
-    fun dismissNotices() {
-        store.pendingWrites(PendingWriteStatus.Dropped).forEach { store.deletePendingWrite(it.id) }
-    }
-
-    /**
      * Put failed entries back in line for one more try (the pending indicator's *Try again*): a failure is a state,
      * and the User must be able to act on it without waiting for a queue that no longer contains the entry.
      */
@@ -386,11 +363,6 @@ class WriteReplayer(
         return fields.toList()
     }
 
-    private fun decodeDropped(text: String?): DroppedNotice? {
-        if (text.isNullOrBlank()) return null
-        return runCatching { json.decodeFromString(DroppedNotice.serializer(), text) }.getOrNull()
-    }
-
     private fun decodeConflict(text: String?): WriteConflict? {
         if (text.isNullOrBlank()) return null
         return runCatching { json.decodeFromString(WriteConflict.serializer(), text) }.getOrNull()
@@ -462,16 +434,7 @@ class WriteReplayer(
                         else -> WriteDropReason.NotFound
                     }
                     val mergedInto = mergedInto(text)
-                    store.updatePendingWrite(
-                        entry.copy(
-                            status = PendingWriteStatus.Dropped,
-                            lastError = null,
-                            conflictJson = json.encodeToString(
-                                DroppedNotice.serializer(),
-                                DroppedNotice(status = status, reason = reason.name, mergedInto = mergedInto),
-                            ),
-                        ),
-                    )
+                    store.deletePendingWrite(entry.id)
                     return EntryOutcome.Dropped(
                         WriteNotice(
                             entityType = entry.entityType,
@@ -592,14 +555,6 @@ class WriteReplayer(
         const val MAX_MERGE_ROUNDS = 3
     }
 }
-
-/** A dropped entry's durable notice payload, kept in `conflictJson` until the User dismisses it. */
-@Serializable
-internal data class DroppedNotice(
-    val status: Int,
-    val reason: String,
-    val mergedInto: String? = null,
-)
 
 /** The parked conflict state the resolution surface reads (T6b): the fresh server view and each decided field. */
 @Serializable

@@ -275,14 +275,8 @@ class DiveStore internal constructor(private val database: DiveHubDatabase) : Us
     fun pendingWriteCount(status: PendingWriteStatus): Long =
         queries.countPendingWritesWithStatus(status.wire).executeAsOne()
 
-    /**
-     * The queue's size for the session lifecycle's sign-out guard (ADR 0084 D8). Dropped-entry notices are history,
-     * not writes still waiting, so they must not block a sign-out.
-     */
-    override suspend fun queuedWriteCount(): Long =
-        pendingWriteCount(PendingWriteStatus.Pending) +
-            pendingWriteCount(PendingWriteStatus.Conflicted) +
-            pendingWriteCount(PendingWriteStatus.Failed)
+    /** The queue's size for the session lifecycle's sign-out guard (ADR 0084 D8). */
+    override suspend fun queuedWriteCount(): Long = pendingWriteCount()
 
     /** Insert an entry and return it with the store's enqueue order as its id. */
     fun addPendingWrite(write: PendingWrite): PendingWrite {

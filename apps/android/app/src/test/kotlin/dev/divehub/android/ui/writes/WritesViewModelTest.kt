@@ -114,7 +114,7 @@ class WritesViewModelTest {
             readSnapshot = { snapshot },
             readConflicts = { conflicts },
             readQueued = { queued },
-            readNotices = { notices.value },
+            notices = notices,
             resolveConflict = { _, _ -> throw IllegalArgumentException("unreadable") },
             drain = { drains += 1 },
             retryQueue = { retries += 1 },
@@ -177,7 +177,7 @@ class WritesViewModelTest {
         readSnapshot = { snapshot },
         readConflicts = { conflicts },
         readQueued = { queued },
-        readNotices = { notices.value },
+        notices = notices,
         resolveConflict = { entryId, choices ->
             resolutions += entryId to choices
             ConflictResolution.Requeued(entryId)
