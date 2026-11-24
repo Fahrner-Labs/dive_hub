@@ -64,7 +64,7 @@ test('turns two-factor authentication on with an authenticator app, shows the ba
     const panel = page.locator('.panel').filter({ has: page.getByRole('heading', { name: 'Two-factor authentication' }) });
 
     await panel.getByRole('button', { name: 'Set up two-factor authentication' }).click();
-    await panel.getByLabel('Current password', { exact: true }).fill(PASSWORD);
+    await panel.getByRole('textbox', { name: 'Current password', exact: true }).fill(PASSWORD);
     await panel.getByRole('button', { name: 'Continue' }).click();
 
     // The URI is drawn as a QR code and offered as text: an authenticator app can scan it or take the link.
@@ -90,7 +90,7 @@ test('turns two-factor authentication on with an authenticator app, shows the ba
     await expect(panel.getByText('Two-factor authentication is on.')).toBeVisible();
 
     // Turning it off asks the password and a current code, not a second password.
-    await panel.getByLabel('Current password', { exact: true }).fill(PASSWORD);
+    await panel.getByRole('textbox', { name: 'Current password', exact: true }).fill(PASSWORD);
     await panel.getByLabel('Authenticator code').fill(totpCode(uri));
     await panel.getByRole('button', { name: 'Turn off two-factor authentication' }).click();
     await expect(panel.getByRole('button', { name: 'Set up two-factor authentication' })).toBeVisible();
@@ -125,12 +125,12 @@ test('asks a password sign-in for the second factor and takes a backup code', { 
     const page = await context.newPage();
     await page.goto('/#/');
     await page.getByLabel('E-mail').fill(email);
-    await page.getByLabel('Password', { exact: true }).fill(PASSWORD);
+    await page.getByRole('textbox', { name: 'Password', exact: true }).fill(PASSWORD);
     await page.getByRole('button', { name: 'Sign in', exact: true }).click();
 
     // No second password: the password sign-in answers with a challenge and the code field.
     await expect(page.getByText('Enter the 6-digit code from your authenticator app.')).toBeVisible();
-    await expect(page.getByLabel('Password', { exact: true })).toHaveCount(0);
+    await expect(page.getByRole('textbox', { name: 'Password', exact: true })).toHaveCount(0);
     await expectGoodPage(page, 'Sign in');
 
     await page.getByLabel('Authenticator code').fill(wrongCode(uri));
