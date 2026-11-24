@@ -169,7 +169,8 @@ class DiveEditScreenshotTest {
     fun `the participants section lists people with their roles and says what a joint dive does`() {
         render(state(draft = DiveEditDraft.of(dive(participants = people()))))
 
-        compose.onNodeWithTag("dive_edit_scroll").performScrollToNode(hasText("Participants"))
+        compose.onNodeWithTag("dive_edit_scroll")
+            .performScrollToNode(hasText("In a joint dive, adding someone also adds them to the other divers’ dives. Removing someone here leaves them on the others."))
         compose.onNodeWithText("Anna").assertExists()
         compose.onNodeWithText("Ben").assertExists()
         compose.onNodeWithText("In a joint dive, adding someone also adds them to the other divers’ dives. Removing someone here leaves them on the others.")
@@ -206,7 +207,9 @@ class DiveEditScreenshotTest {
     fun `the participants at two hundred percent in german`() {
         render(state(draft = DiveEditDraft.of(dive(participants = people()))), fontScale = 2f)
 
-        compose.onNodeWithTag("dive_edit_scroll").performScrollToNode(hasText("Teilnehmende"))
+        compose.onNodeWithTag("dive_edit_scroll").performScrollToNode(
+            hasText("In einem gemeinsamen Tauchgang werden Hinzugefügte auch bei den anderen Tauchern eingetragen. Wer hier entfernt wird, bleibt bei den anderen."),
+        )
         capture("dive_edit_de_narrow_2x_participants.png")
     }
 
