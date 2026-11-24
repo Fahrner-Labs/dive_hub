@@ -32,10 +32,46 @@ class ScanScreenTest {
         var scanned: String? = null
         render(ScanUiState(), onScan = { scanned = it })
 
+        compose.onNodeWithText("Paste a code instead").performClick()
         compose.onNodeWithText("Paste a code").performTextInput("  SSI;buddy;ada  ")
         compose.onNodeWithText("Read code").performClick()
 
         assertEquals("  SSI;buddy;ada  ", scanned)
+    }
+
+    @Test
+    fun `a candidate's code is not taken by one tap and the new Diver starts selected`() {
+        var taken: Triple<ScanResult, String?, Boolean>? = null
+        render(ScanUiState(results = listOf(buddyRead(existing = false, candidate = true))), onTake = { found, id, create -> taken = Triple(found, id, create) })
+
+        compose.onNodeWithText("Add Diver").performClick()
+
+        assertNull(taken!!.second)
+        assertTrue(taken!!.third)
+    }
+
+    @Test
+    fun `a created outcome can be dismissed so the screen does not dead-end`() {
+        var dismissed: ScanResult? = null
+        val created = ScanResult(4, "2026-11-23T10:00:00Z", ScanStatus.Created, kind = "diver", name = "Ada Lovelace")
+        render(ScanUiState(results = listOf(created)), onDismiss = { dismissed = it })
+
+        compose.onNodeWithText("Diver added: Ada Lovelace.").assertIsDisplayed()
+        compose.onNodeWithText("Dismiss").performClick()
+
+        assertEquals(created, dismissed)
+    }
+
+    @Test
+    fun `an existing outcome can be dismissed too`() {
+        var dismissed: ScanResult? = null
+        val existing = ScanResult(5, "2026-11-23T10:00:00Z", ScanStatus.Existing, kind = "centre", name = "Reef Diving")
+        render(ScanUiState(results = listOf(existing)), onDismiss = { dismissed = it })
+
+        compose.onNodeWithText("Already here: Reef Diving.").assertIsDisplayed()
+        compose.onNodeWithText("Dismiss").performClick()
+
+        assertEquals(existing, dismissed)
     }
 
     @Test
@@ -93,7 +129,7 @@ class ScanScreenTest {
         detailJson = """{"kind":"centre","centreNumber":"12345","name":"Reef Diving, Sharm","existing":null}""",
     )
 
-    private fun buddyRead(existing: Boolean = true) = ScanResult(
+    private fun buddyRead(existing: Boolean = true, candidate: Boolean = false) = ScanResult(
         id = 2,
         at = "2026-11-23T10:00:00Z",
         status = ScanStatus.Read,
@@ -102,7 +138,8 @@ class ScanScreenTest {
         detailJson = if (existing) {
             """{"kind":"buddy","accountId":"ssi-1","firstName":"Ada","lastName":"Lovelace","email":"ada@example.com","existing":{"id":"diver-1","name":"Ada Lovelace","canEdit":true,"changes":[{"field":"email","from":"old@example.com","to":"ada@example.com"}]},"candidates":[]}"""
         } else {
-            """{"kind":"buddy","accountId":"ssi-1","firstName":"Ada","lastName":"Lovelace","email":"ada@example.com","existing":null,"candidates":[]}"""
+            val candidates = if (candidate) """[{"id":"diver-9","name":"Ada Lovelace"}]""" else "[]"
+            """{"kind":"buddy","accountId":"ssi-1","firstName":"Ada","lastName":"Lovelace","email":"ada@example.com","existing":null,"candidates":$candidates}"""
         },
     )
 
@@ -111,6 +148,7 @@ class ScanScreenTest {
         onScan: (String) -> Unit = {},
         onTake: (ScanResult, String?, Boolean) -> Unit = { _, _, _ -> },
         onCreateCentre: (ScanResult, ReadCode) -> Unit = { _, _ -> },
+        onDismiss: (ScanResult) -> Unit = {},
     ) {
         compose.setContent {
             DiveHubTheme(darkTheme = false) {
@@ -123,7 +161,7 @@ class ScanScreenTest {
                     onTake = onTake,
                     onCreateCentre = onCreateCentre,
                     onSync = {},
-                    onDismiss = {},
+                    onDismiss = onDismiss,
                     onClearError = {},
                 )
             }

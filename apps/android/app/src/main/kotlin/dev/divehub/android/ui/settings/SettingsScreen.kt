@@ -371,5 +371,12 @@ private fun Action(
             .then(if (testTag != null) Modifier.testTag(testTag) else Modifier),
         headlineContent = { Text(stringResource(title)) },
         supportingContent = { supporting?.let { Text(stringResource(it)) } },
+        trailingContent = {
+            Icon(
+                Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        },
     )
 }

@@ -4,6 +4,8 @@ import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import dev.divehub.shared.ApiClient
 import dev.divehub.shared.ErrorCodes
 import dev.divehub.shared.store.DiveStore
+import dev.divehub.shared.store.PendingWrite
+import dev.divehub.shared.store.PendingWriteKind
 import dev.divehub.shared.store.ScanResult
 import dev.divehub.shared.store.ScanStatus
 import dev.divehub.shared.write.WriteQueue
@@ -76,6 +78,28 @@ class ScanViewModelTest {
 
         assertEquals(1, viewModel.state.value.pending)
         assertEquals(1, viewModel.state.value.results.size)
+    }
+
+    @Test
+    fun `a write waiting elsewhere is not counted as a scan waiting here`() = runTest(dispatcher) {
+        val store = DiveStore.create(driver)
+        WriteQueue(store, clock = { "2026-11-23T10:00:00Z" }).enqueueScan("SSI;buddy;ada")
+        store.addPendingWrite(
+            PendingWrite(
+                id = 0,
+                kind = PendingWriteKind.Patch,
+                entityType = "dive",
+                entityId = "dive-1",
+                payloadJson = """{"notes":"deeper"}""",
+                enqueuedAt = "2026-11-23T10:00:00Z",
+            ),
+        )
+        val viewModel = viewModel(store, offline = true)
+
+        viewModel.start()
+        advanceUntilIdle()
+
+        assertEquals(1, viewModel.state.value.pending)
     }
 
     @Test

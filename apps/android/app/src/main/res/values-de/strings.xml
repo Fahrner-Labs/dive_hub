@@ -616,10 +616,10 @@
     <string name="scan_intro">Scanne den Code eines Tauchzentrums oder eines Buddys, um ihn hier hinzuzufügen. Ohne Verbindung wartet der Code auf diesem Gerät und wird gelesen, sobald der Server antwortet.</string>
     <string name="scan_section_read">Scannen oder einfügen</string>
     <string name="scan_camera">Foto aufnehmen</string>
+    <string name="scan_paste_show">Stattdessen Code einfügen</string>
     <string name="scan_image">Bild auswählen</string>
     <string name="scan_paste_label">Code einfügen</string>
     <string name="scan_read">Code lesen</string>
-    <string name="scan_waiting_title">Wartet auf Synchronisierung</string>
     <string name="scan_syncing">Wird gelesen…</string>
     <string name="scan_sync_now">Jetzt synchronisieren</string>
     <plurals name="scan_waiting">

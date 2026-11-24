@@ -11,6 +11,7 @@ import dev.divehub.shared.NoAnswerException
 import dev.divehub.shared.store.DiveStore
 import dev.divehub.shared.store.PendingWriteStatus
 import dev.divehub.shared.store.ScanResult
+import dev.divehub.shared.write.ScanEntities
 import dev.divehub.shared.write.WriteQueue
 import dev.divehub.shared.write.WriteReplayResult
 import dev.divehub.shared.write.WriteReplayer
@@ -151,10 +152,20 @@ class ScanViewModel(
     private fun reload() {
         _state.update {
             it.copy(
-                pending = store.pendingWriteCount(PendingWriteStatus.Pending).toInt(),
+                pending = scanPendingCount(),
                 results = store.scanResults(),
             )
         }
+    }
+
+    /**
+     * Only the scanner's own actions count here: an edit waiting elsewhere is not a scan, and the line sits inside
+     * `Scans`, where it must not claim work this screen does not show.
+     */
+    private fun scanPendingCount(): Int = store.pendingWrites(PendingWriteStatus.Pending).count { write ->
+        write.entityType == ScanEntities.SCAN ||
+            write.entityType == ScanEntities.TAKE_CODE ||
+            write.entityType == ScanEntities.CENTRE
     }
 
     companion object {

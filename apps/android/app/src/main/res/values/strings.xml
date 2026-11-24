@@ -616,10 +616,10 @@
     <string name="scan_intro">Scan a Dive centre\'s or a buddy\'s code to add it here. Without a connection the code waits on this phone and is read when the server answers.</string>
     <string name="scan_section_read">Scan or paste</string>
     <string name="scan_camera">Take a picture</string>
+    <string name="scan_paste_show">Paste a code instead</string>
     <string name="scan_image">Choose a picture</string>
     <string name="scan_paste_label">Paste a code</string>
     <string name="scan_read">Read code</string>
-    <string name="scan_waiting_title">Waiting to sync</string>
     <string name="scan_syncing">Reading…</string>
     <string name="scan_sync_now">Sync now</string>
     <plurals name="scan_waiting">

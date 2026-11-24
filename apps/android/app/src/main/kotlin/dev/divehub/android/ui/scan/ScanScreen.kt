@@ -14,16 +14,23 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -38,14 +45,20 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.divehub.android.R
 import dev.divehub.android.ui.DiveHubTopBar
+import dev.divehub.android.ui.DiveHubText
 import dev.divehub.android.ui.Spacing
 import dev.divehub.android.ui.components.InkButton
 import dev.divehub.android.ui.components.QuietButton
+import dev.divehub.android.ui.components.Radius
 import dev.divehub.android.ui.components.Section
 import dev.divehub.shared.ErrorCodes
 import dev.divehub.shared.store.ScanResult
@@ -54,6 +67,12 @@ import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+
+/** The waiting line's spinner; a fixed dimension, not a spacing step. */
+private val ScanSpinnerSize = 20.dp
+
+/** The change list's bullet column, so a wrapped line hangs under the change, not under the bullet. */
+private val ScanBulletWidth = 12.dp
 
 /**
  * The scanner (T11): a code in front of the camera, a picture of one, or its text pasted. A code is never parsed here:
@@ -128,96 +147,136 @@ fun ScanScreen(
     modifier: Modifier = Modifier,
 ) {
     var pasted by rememberSaveable { mutableStateOf("") }
+    var pasteOpen by rememberSaveable { mutableStateOf(false) }
+    fun readPasted() {
+        if (pasted.isNotBlank()) {
+            onScan(pasted)
+            pasted = ""
+            pasteOpen = false
+        }
+    }
     Scaffold(
         modifier = modifier,
-        topBar = { DiveHubTopBar(title = stringResource(R.string.scan_title), onBack = onBack) },
-    ) { padding ->
-        Column(
-            Modifier
-                .padding(padding)
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = Spacing.s4)
-                .padding(bottom = Spacing.s5)
-                .testTag("scan_scroll"),
-        ) {
-            Text(
-                stringResource(R.string.scan_intro),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+        containerColor = MaterialTheme.colorScheme.background,
+        topBar = {
+            DiveHubTopBar(
+                title = stringResource(R.string.scan_title),
+                onBack = onBack,
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background,
+                    titleContentColor = MaterialTheme.colorScheme.onBackground,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onBackground,
+                    actionIconContentColor = MaterialTheme.colorScheme.onBackground,
+                ),
             )
-            state.error?.let { code ->
-                Spacer(Modifier.height(Spacing.s3))
+        },
+    ) { padding ->
+        Surface(
+            modifier = Modifier
+                .padding(padding)
+                .fillMaxSize(),
+            color = MaterialTheme.colorScheme.surface,
+        ) {
+            Column(
+                Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = Spacing.s4)
+                    .padding(top = Spacing.s4, bottom = Spacing.s5)
+                    .testTag("scan_scroll"),
+            ) {
                 Text(
-                    scanErrorText(code),
+                    stringResource(R.string.scan_intro),
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.error,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                QuietButton(stringResource(R.string.scan_error_dismiss), onClick = onClearError)
-            }
-
-            Spacer(Modifier.height(Spacing.s4))
-            Section(title = stringResource(R.string.scan_section_read), showSeparator = false) {
-                InkButton(stringResource(R.string.scan_camera), onClick = onCamera, modifier = Modifier.fillMaxWidth())
-                Spacer(Modifier.height(Spacing.s2))
-                QuietButton(stringResource(R.string.scan_image), onClick = onImage)
-                Spacer(Modifier.height(Spacing.s4))
-                OutlinedTextField(
-                    value = pasted,
-                    onValueChange = { pasted = it },
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text(stringResource(R.string.scan_paste_label)) },
-                    singleLine = false,
-                    maxLines = 4,
-                )
-                Spacer(Modifier.height(Spacing.s2))
-                InkButton(
-                    text = stringResource(R.string.scan_read),
-                    onClick = { if (pasted.isNotBlank()) { onScan(pasted); pasted = "" } },
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
-
-            if (state.pending > 0 || state.busy) {
-                Section(
-                    title = stringResource(R.string.scan_waiting_title),
-                    attention = true,
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            if (state.pending > 0) {
-                                pluralStringResource(R.plurals.scan_waiting, state.pending, state.pending)
-                            } else {
-                                stringResource(R.string.scan_syncing)
-                            },
-                            style = MaterialTheme.typography.bodyMedium,
-                        )
-                        if (state.busy) {
-                            CircularProgressIndicator(
-                                Modifier
-                                    .padding(start = Spacing.s3)
-                                    .size(20.dp),
-                            )
-                        }
-                    }
-                    if (!state.busy) {
-                        Spacer(Modifier.height(Spacing.s1))
-                        QuietButton(stringResource(R.string.scan_sync_now), onClick = onSync)
-                    }
-                }
-            }
-
-            Section(title = stringResource(R.string.scan_section_results)) {
-                if (state.results.isEmpty()) {
+                state.error?.let { code ->
+                    Spacer(Modifier.height(Spacing.s3))
                     Text(
-                        stringResource(R.string.scan_empty),
+                        scanErrorText(code),
+                        modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = MaterialTheme.colorScheme.error,
                     )
+                    QuietButton(stringResource(R.string.scan_error_dismiss), onClick = onClearError)
                 }
-                state.results.forEachIndexed { index, result ->
-                    if (index > 0) HorizontalDivider(Modifier.padding(vertical = Spacing.s3))
-                    ScanResultBlock(result, onTake = onTake, onCreateCentre = onCreateCentre, onDismiss = onDismiss)
+
+                Spacer(Modifier.height(Spacing.s4))
+                Section(title = stringResource(R.string.scan_section_read), showSeparator = false) {
+                    // The camera is the one primary; a picture and pasted text are fallbacks below it.
+                    InkButton(stringResource(R.string.scan_camera), onClick = onCamera, modifier = Modifier.fillMaxWidth())
+                    Spacer(Modifier.height(Spacing.s2))
+                    QuietButton(stringResource(R.string.scan_image), onClick = onImage)
+                    Spacer(Modifier.height(Spacing.s2))
+                    QuietButton(
+                        text = stringResource(R.string.scan_paste_show),
+                        onClick = { pasteOpen = !pasteOpen },
+                        expanded = pasteOpen,
+                    )
+                    if (pasteOpen) {
+                        Spacer(Modifier.height(Spacing.s1))
+                        OutlinedTextField(
+                            value = pasted,
+                            onValueChange = { pasted = it },
+                            modifier = Modifier.fillMaxWidth(),
+                            label = { Text(stringResource(R.string.scan_paste_label)) },
+                            singleLine = false,
+                            maxLines = 4,
+                            shape = RoundedCornerShape(Radius.control),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                focusedLabelColor = MaterialTheme.colorScheme.primary,
+                            ),
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                            keyboardActions = KeyboardActions(onDone = { readPasted() }),
+                        )
+                        Spacer(Modifier.height(Spacing.s1))
+                        QuietButton(stringResource(R.string.scan_read), onClick = { readPasted() })
+                    }
+                }
+
+                Section(title = stringResource(R.string.scan_section_results)) {
+                    if (state.pending > 0 || state.busy) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .semantics { liveRegion = LiveRegionMode.Polite },
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                if (state.pending > 0) {
+                                    pluralStringResource(R.plurals.scan_waiting, state.pending, state.pending)
+                                } else {
+                                    stringResource(R.string.scan_syncing)
+                                },
+                                style = DiveHubText.meta,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            if (state.busy) {
+                                CircularProgressIndicator(
+                                    Modifier
+                                        .padding(start = Spacing.s3)
+                                        .size(ScanSpinnerSize),
+                                )
+                            }
+                            if (state.pending > 0 && !state.busy) {
+                                Spacer(Modifier.width(Spacing.s2))
+                                QuietButton(stringResource(R.string.scan_sync_now), onClick = onSync)
+                            }
+                        }
+                        Spacer(Modifier.height(Spacing.s3))
+                    }
+                    if (state.results.isEmpty() && state.pending == 0 && !state.busy) {
+                        Text(
+                            stringResource(R.string.scan_empty),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    state.results.forEachIndexed { index, result ->
+                        if (index > 0) HorizontalDivider(Modifier.padding(vertical = Spacing.s3))
+                        ScanResultBlock(result, onTake = onTake, onCreateCentre = onCreateCentre, onDismiss = onDismiss)
+                    }
                 }
             }
         }
@@ -239,18 +298,24 @@ private fun ScanResultBlock(
             OutcomeText(stringResource(R.string.scan_error_generic))
             Dismiss(result, onDismiss)
         }
-        ScanStatus.Created -> OutcomeText(
-            stringResource(
-                if (result.kind == "centre") R.string.scan_result_created_centre else R.string.scan_result_created_diver,
-                result.name ?: "",
-            ),
-        )
-        ScanStatus.Existing -> OutcomeText(
-            stringResource(
-                if (result.kind == "centre") R.string.scan_result_existing_centre else R.string.scan_result_existing_diver,
-                result.name ?: "",
-            ),
-        )
+        ScanStatus.Created -> {
+            OutcomeText(
+                stringResource(
+                    if (result.kind == "centre") R.string.scan_result_created_centre else R.string.scan_result_created_diver,
+                    result.name ?: "",
+                ),
+            )
+            Dismiss(result, onDismiss)
+        }
+        ScanStatus.Existing -> {
+            OutcomeText(
+                stringResource(
+                    if (result.kind == "centre") R.string.scan_result_existing_centre else R.string.scan_result_existing_diver,
+                    result.name ?: "",
+                ),
+            )
+            Dismiss(result, onDismiss)
+        }
         ScanStatus.Failed -> {
             OutcomeText(stringResource(R.string.scan_result_failed, scanErrorText(result.errorCode)))
             Dismiss(result, onDismiss)
@@ -304,7 +369,19 @@ private fun ReadResult(
         } else {
             Text(stringResource(R.string.scan_changes), style = MaterialTheme.typography.bodyMedium)
             existing.changes.forEach { change ->
-                Text("• ${changeText(change)}", style = MaterialTheme.typography.bodyMedium)
+                Row(Modifier.fillMaxWidth()) {
+                    Text(
+                        "•",
+                        modifier = Modifier.width(ScanBulletWidth),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Text(
+                        changeText(change),
+                        modifier = Modifier.weight(1f),
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                }
             }
             if (existing.canEdit) {
                 Spacer(Modifier.height(Spacing.s2))
@@ -325,7 +402,9 @@ private fun ReadResult(
     }
 
     Text(stringResource(R.string.scan_who), style = MaterialTheme.typography.bodyMedium)
-    var choice by remember(result.id) { mutableStateOf(read.candidates.firstOrNull()?.id) }
+    // No candidate is preselected: a code that belongs to someone here must not be taken with one tap by accident.
+    // The new-Diver option starts selected, so the fallback is the explicit choice about this person.
+    var choice by remember(result.id) { mutableStateOf<String?>(null) }
     read.candidates.forEach { candidate ->
         ChooseRow(
             label = stringResource(R.string.scan_give_to, candidate.name),
