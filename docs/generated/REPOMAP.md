@@ -4,7 +4,7 @@
 > `pnpm check` fails when this map is stale. Symbols are ranked by how widely the code references them;
 > each module shows its most-referenced ones (exported symbols rank higher). Search here before walking the tree.
 
-Files: 425 · symbols: 3919 · shown: 253
+Files: 425 · symbols: 3933 · shown: 253
 
 ### server/(root)
 apps/server/src/vocabulary.ts:13 type SiteWaterType
@@ -298,7 +298,7 @@ apps/web/src/ImportPanel.tsx:39 const ImportContext
 apps/web/src/ReviewRows.tsx:6 iface Fact
 apps/web/src/SignedOut.tsx:20 fn useUserChanged
 apps/web/src/ProfilePlot.tsx:14 fn withAlpha
-… 525 more symbols in this module
+… 535 more symbols in this module
 
 ### web/api
 apps/web/src/api/request.ts:3 const api
@@ -312,8 +312,8 @@ apps/web/src/api/providers.ts:7 type ProviderView
 apps/web/src/api/dives.ts:16 type RecordingSummary
 apps/web/src/api/sites.ts:8 type Position
 apps/web/src/api/providers.ts:8 type ConnectionView
-apps/web/src/api/account.ts:17 const meQuery
-… 187 more symbols in this module
+apps/web/src/api/account.ts:23 const meQuery
+… 191 more symbols in this module
 
 ### web/i18n
 apps/web/src/i18n/languages.ts:6 fn pickLanguage
@@ -349,5 +349,5 @@ apps/web/src/ui/Layout.tsx:85 fn Notice
 apps/web/src/ui/Button.tsx:20 fn Button
 apps/web/src/ui/Layout.tsx:99 const Muted
 apps/web/src/ui/Overlay.tsx:13 fn Dialog
-apps/web/src/ui/Layout.tsx:10 fn Panel
+apps/web/src/ui/TextField.tsx:37 fn TextField
 … 57 more symbols in this module
