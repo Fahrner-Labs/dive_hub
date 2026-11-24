@@ -7,6 +7,8 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import dev.divehub.android.AppContainer
 import dev.divehub.shared.dive.DiveEditDraft
+import dev.divehub.shared.dive.DiveEditSeriesOption
+import dev.divehub.shared.dive.pressureSeriesOptions
 import dev.divehub.shared.logbook.StoreLogbook
 import dev.divehub.shared.store.DiveSite
 import dev.divehub.shared.write.WriteQueue
@@ -28,6 +30,8 @@ data class DiveEditUiState(
     val draft: DiveEditDraft? = null,
     val originalSiteName: String? = null,
     val sites: List<DiveSite> = emptyList(),
+    /** The tank pod series of the Dive's Recordings a Cylinder may name as "measured by" (ADR 0045). */
+    val seriesOptions: List<DiveEditSeriesOption> = emptyList(),
     val online: Boolean = false,
     val saving: Boolean = false,
     val saved: Boolean = false,
@@ -62,18 +66,20 @@ class DiveEditViewModel(
             val read = withContext(ioDispatcher) {
                 val stored = store.dive(id)
                 val sites = store.sites()
-                stored?.let { it.dive to sites }
+                stored?.let { Triple(it.dive, sites, pressureSeriesOptions(it.dive.recordings)) }
             }
             _state.update { current ->
                 if (read == null) {
                     current.copy(loading = false, missing = true)
                 } else {
+                    val (dive, sites, seriesOptions) = read
                     current.copy(
                         loading = false,
                         missing = false,
-                        draft = DiveEditDraft.of(read.first),
-                        originalSiteName = read.first.site?.name,
-                        sites = read.second,
+                        draft = DiveEditDraft.of(dive),
+                        originalSiteName = dive.site?.name,
+                        sites = sites,
+                        seriesOptions = seriesOptions,
                     )
                 }
             }

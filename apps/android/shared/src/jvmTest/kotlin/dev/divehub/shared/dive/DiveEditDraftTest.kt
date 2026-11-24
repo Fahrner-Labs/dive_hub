@@ -223,4 +223,158 @@ class DiveEditDraftTest {
         assertFalse(patch.containsKey("number"))
         assertFalse(patch.containsKey("values"))
     }
+
+    private fun gearDive() = dive(
+        diveObject(
+            cylinders = JsonArray(
+                listOf(
+                    buildJsonObject {
+                        put("volumeL", 12.0)
+                        put("workingPressureBar", 232.0)
+                        put("material", "steel")
+                        put("gas", buildJsonObject { put("o2", 21.0); put("he", 0.0) })
+                        put("startPressureBar", 220.0)
+                        put("endPressureBar", 70.0)
+                        put("equipmentItemId", "item-1")
+                        put(
+                            "series",
+                            buildJsonObject {
+                                put("recordingId", "recording-1")
+                                put("channel", "tankPressure")
+                            },
+                        )
+                        put("fromPod", true)
+                    },
+                    buildJsonObject {
+                        put("volumeL", 11.0)
+                        put("workingPressureBar", 200.0)
+                        put("material", "aluminium")
+                        put("gas", buildJsonObject { put("o2", 32.0); put("he", 0.0) })
+                        put("startPressureBar", 200.0)
+                        put("endPressureBar", 90.0)
+                        put("fromPod", false)
+                    },
+                ),
+            ),
+            lead = JsonArray(
+                listOf(
+                    buildJsonObject { put("amountKg", 4.0); put("placement", "belt") },
+                    buildJsonObject { put("amountKg", 1.0); put("placement", "trim") },
+                ),
+            ),
+        ),
+    )
+
+    @Test
+    fun `a fresh draft starts with one empty lead row and sends no gear`() {
+        val draft = DiveEditDraft.of(dive())
+
+        assertEquals(1, draft.lead.size)
+        assertNull(draft.lead.single().amountKg)
+        assertFalse(draft.cylindersChanged)
+        assertFalse(draft.leadChanged)
+        assertFalse(draft.dirty)
+        assertNull(draft.patch())
+    }
+
+    @Test
+    fun `the gear is read as the Dive has it`() {
+        val draft = DiveEditDraft.of(gearDive())
+
+        assertEquals(2, draft.cylinders.size)
+        assertEquals(12.0, draft.cylinders[0].volumeL)
+        assertEquals("steel", draft.cylinders[0].material)
+        assertEquals(21.0, draft.cylinders[0].o2)
+        assertEquals(DiveEditSeries("recording-1", "tankPressure"), draft.cylinders[0].series)
+        assertTrue(draft.cylinders[0].fromPod)
+        assertEquals(listOf(4.0, 1.0), draft.lead.map { it.amountKg })
+        assertFalse(draft.dirty)
+    }
+
+    @Test
+    fun `editing one cylinder sends the whole list with each tie and item`() {
+        val draft = DiveEditDraft.of(gearDive())
+        val edited = draft.cylinders[0].copy(endPressureBar = 60.0)
+        val patch = draft.setCylinders(listOf(edited, draft.cylinders[1])).patch()!!
+
+        val cylinders = patch["cylinders"] as JsonArray
+        assertEquals(2, cylinders.size)
+        val sent = cylinders[0] as JsonObject
+        assertEquals(JsonPrimitive(60.0), sent["endPressureBar"])
+        assertEquals(JsonPrimitive("item-1"), sent["equipmentItemId"])
+        assertEquals(
+            JsonPrimitive("recording-1"),
+            (sent["series"] as JsonObject)["recordingId"],
+        )
+        // A server-only mark never goes back.
+        assertFalse(sent.containsKey("fromPod"))
+        val untouched = cylinders[1] as JsonObject
+        assertEquals(JsonPrimitive(90.0), untouched["endPressureBar"])
+    }
+
+    @Test
+    fun `a blank added cylinder is not saved until it has a value`() {
+        val draft = DiveEditDraft.of(gearDive())
+        val added = draft.setCylinders(draft.cylinders + DiveEditCylinder())
+        assertNull(added.patch())
+        assertFalse(added.dirty)
+
+        val filled = added.setCylinders(added.cylinders.dropLast(1) + DiveEditCylinder(volumeL = 15.0))
+        val sent = (filled.patch()!!["cylinders"] as JsonArray)
+        assertEquals(3, sent.size)
+        assertEquals(JsonPrimitive(15.0), (sent[2] as JsonObject)["volumeL"])
+    }
+
+    @Test
+    fun `removing every cylinder sends an empty list`() {
+        val patch = DiveEditDraft.of(gearDive()).setCylinders(emptyList()).patch()!!
+
+        assertEquals(0, (patch["cylinders"] as JsonArray).size)
+    }
+
+    @Test
+    fun `a cylinder with an end pressure above the start does not fit`() {
+        val draft = DiveEditDraft.of(gearDive())
+        val changed = draft.setCylinders(
+            listOf(draft.cylinders[0].copy(startPressureBar = 100.0, endPressureBar = 120.0), draft.cylinders[1]),
+        )
+
+        assertFalse(changed.cylindersFit)
+        assertEquals(CylinderProblem.END_ABOVE_START, changed.cylinders[0].problem())
+    }
+
+    @Test
+    fun `a cylinder gas over one hundred percent does not fit`() {
+        val draft = DiveEditDraft.of(gearDive())
+        val changed = draft.setCylinders(
+            listOf(draft.cylinders[0].copy(o2 = 60.0, he = 50.0), draft.cylinders[1]),
+        )
+
+        assertFalse(changed.cylindersFit)
+        assertEquals(CylinderProblem.GAS_OVER_100, changed.cylinders[0].problem())
+    }
+
+    @Test
+    fun `the lead is sent as the whole list and an amountless row is left out`() {
+        val draft = DiveEditDraft.of(gearDive())
+        val edited = draft.setLead(
+            listOf(draft.lead[0].copy(amountKg = 5.0), DiveEditLead(), draft.lead[1]),
+        )
+
+        val sent = edited.patch()!!["lead"] as JsonArray
+        assertEquals(2, sent.size)
+        val first = sent[0] as JsonObject
+        assertEquals(JsonPrimitive(5.0), first["amountKg"])
+        assertEquals(JsonPrimitive("belt"), first["placement"])
+        assertFalse((sent[1] as JsonObject).containsKey("key"))
+    }
+
+    @Test
+    fun `removing the lead sends an empty list, not an empty entry`() {
+        val draft = DiveEditDraft.of(gearDive())
+        val patch = draft.setLead(listOf(DiveEditLead())).patch()!!
+
+        assertEquals(0, (patch["lead"] as JsonArray).size)
+        assertTrue(draft.setLead(listOf(DiveEditLead())).leadChanged)
+    }
 }

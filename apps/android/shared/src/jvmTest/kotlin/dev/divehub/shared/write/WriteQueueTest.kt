@@ -6,6 +6,7 @@ import dev.divehub.shared.store.PendingWriteStatus
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.put
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -201,4 +202,63 @@ class WriteQueueTest {
         assertFalse(queued.toString().contains("name"))
     }
 
+
+    @Test
+    fun `a cylinder edit applies at once and keeps the pod mark of a tied cylinder`() {
+        store.putDive(
+            diveObject(
+                cylinders = JsonArray(
+                    listOf(
+                        kotlinx.serialization.json.buildJsonObject {
+                            put("volumeL", 12.0)
+                            put("workingPressureBar", 232.0)
+                            put("material", "steel")
+                            put("gas", kotlinx.serialization.json.buildJsonObject {
+                                put("o2", 21.0)
+                                put("he", 0.0)
+                            })
+                            put("startPressureBar", 220.0)
+                            put("endPressureBar", 70.0)
+                            put("series", kotlinx.serialization.json.buildJsonObject {
+                                put("recordingId", "recording-1")
+                                put("channel", "tankPressure")
+                            })
+                            put("fromPod", true)
+                        },
+                    ),
+                ),
+            ),
+        )
+
+        queue.editDive(
+            "dive-1",
+            jsonOf(
+                """{"cylinders":[{"volumeL":12.0,"workingPressureBar":232.0,"material":"steel","gas":{"o2":21.0,"he":0.0},"startPressureBar":220.0,"endPressureBar":60.0,"equipmentItemId":null,"series":{"recordingId":"recording-1","channel":"tankPressure"}}]}""",
+            ),
+        )
+
+        val detail = jsonOf(store.dive("dive-1")!!.detailJson!!)
+        val cylinder = (detail["cylinders"] as JsonArray).single() as JsonObject
+        assertEquals(60.0, (cylinder["endPressureBar"] as JsonPrimitive).content.toDouble())
+        assertEquals("true", cylinder["fromPod"].toString())
+    }
+
+    @Test
+    fun `a lead edit applies at once and recomputes the total`() {
+        seedDive()
+
+        queue.editDive(
+            "dive-1",
+            jsonOf("""{"lead":[{"amountKg":4.0,"placement":"belt"},{"amountKg":1.5,"placement":"trim"}]}"""),
+        )
+
+        val dive = store.dive("dive-1")!!
+        assertEquals(5.5, dive.leadTotalKg)
+        val detail = jsonOf(dive.detailJson!!)
+        assertEquals(2, (detail["lead"] as JsonArray).size)
+
+        queue.editDive("dive-1", jsonOf("""{"lead":[]}"""))
+
+        assertNull(store.dive("dive-1")!!.leadTotalKg)
+    }
 }

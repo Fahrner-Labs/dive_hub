@@ -156,6 +156,98 @@ class DiveEditViewModelTest {
         }
     }
 
+    @Test
+    fun `the tank pod series are read from the Recording's channels`() = runTest(dispatcher) {
+        val driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
+        val store = DiveStore.create(driver)
+        try {
+            store.upsertDive(
+                dive(
+                    recordings = JsonArray(
+                        listOf(
+                            buildJsonObject {
+                                put("id", "recording-1")
+                                put("isPrimary", true)
+                                put(
+                                    "device",
+                                    buildJsonObject {
+                                        put("manufacturer", "garmin")
+                                        put("product", "Descent Mk3")
+                                        put("serialNumber", "123")
+                                    },
+                                )
+                                put("startsAt", "2026-11-01T09:00:00Z")
+                                put("durationSeconds", 3000.0)
+                                put("maxDepthM", 24.0)
+                                put("parser", "fit")
+                                put("partOf", JsonNull)
+                                put("summary", buildJsonObject {})
+                                put("channels", JsonArray(listOf(JsonPrimitive("depth"), JsonPrimitive("tankPressure"), JsonPrimitive("tankPressure:2"))))
+                            },
+                        ),
+                    ),
+                ),
+            )
+            val viewModel = viewModel(store)
+            viewModel.open("dive-1")
+            advanceUntilIdle()
+
+            val options = viewModel.state.value.seriesOptions
+            assertEquals(listOf("tankPressure", "tankPressure:2"), options.map { it.series.channel })
+            assertEquals("Garmin Descent Mk3", options.first().recordingName)
+            assertEquals(0, options.first().podIndex)
+            assertEquals(2, options.first().podCount)
+        } finally {
+            driver.close()
+        }
+    }
+
+    @Test
+    fun `a gear edit queues the whole cylinder and lead lists`() = runTest(dispatcher) {
+        val driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
+        val store = DiveStore.create(driver)
+        try {
+            store.upsertDive(
+                dive(
+                    cylinders = JsonArray(
+                        listOf(
+                            buildJsonObject {
+                                put("volumeL", 12.0)
+                                put("workingPressureBar", 232.0)
+                                put("material", "steel")
+                                put("gas", buildJsonObject { put("o2", 21.0); put("he", 0.0) })
+                                put("startPressureBar", 220.0)
+                                put("endPressureBar", 70.0)
+                                put("series", JsonNull)
+                                put("fromPod", false)
+                            },
+                        ),
+                    ),
+                ),
+            )
+            val viewModel = viewModel(store)
+            viewModel.open("dive-1")
+            advanceUntilIdle()
+
+            viewModel.edit { draft ->
+                draft.setCylinders(draft.cylinders.map { it.copy(endPressureBar = 60.0) })
+            }
+            viewModel.edit { draft ->
+                draft.setLead(listOf(dev.divehub.shared.dive.DiveEditLead(amountKg = 4.0, placement = "belt")))
+            }
+            viewModel.save()
+            advanceUntilIdle()
+
+            val queued = store.pendingWrites().single().payloadJson
+            assertTrue(queued.contains("\"cylinders\""))
+            assertTrue(queued.contains("\"lead\""))
+            assertTrue(queued.contains("60.0"))
+            assertTrue(queued.contains("belt"))
+        } finally {
+            driver.close()
+        }
+    }
+
     private fun viewModel(
         store: DiveStore,
         onStoreWrite: () -> Unit = {},
@@ -168,7 +260,13 @@ class DiveEditViewModelTest {
         ioDispatcher = dispatcher,
     )
 
-    private fun dive(overrides: List<String> = emptyList(), withRecording: Boolean = true): Dive {
+    private fun dive(
+        overrides: List<String> = emptyList(),
+        withRecording: Boolean = true,
+        recordings: JsonArray = JsonArray(emptyList()),
+        cylinders: JsonArray = JsonArray(emptyList()),
+        lead: JsonArray = JsonArray(emptyList()),
+    ): Dive {
         val detail: JsonObject = buildJsonObject {
                 put("id", "dive-1")
                 put("diverId", "diver-1")
@@ -224,9 +322,9 @@ class DiveEditViewModelTest {
                 put("waterType", "salt")
                 put("waterMismatch", JsonNull)
                 put("position", JsonNull)
-                put("recordings", JsonArray(emptyList()))
-                put("cylinders", JsonArray(emptyList()))
-                put("lead", JsonArray(emptyList()))
+                put("recordings", recordings)
+                put("cylinders", cylinders)
+                put("lead", lead)
                 put("leadTotalKg", JsonNull)
                 put("weightingFeedback", JsonNull)
                 put("suit", JsonNull)

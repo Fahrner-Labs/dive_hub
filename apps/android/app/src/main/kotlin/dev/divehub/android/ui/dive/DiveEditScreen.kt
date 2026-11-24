@@ -213,6 +213,7 @@ fun DiveEditScreen(
                 else -> EditForm(
                     draft = draft,
                     sites = state.sites,
+                    seriesOptions = state.seriesOptions,
                     originalSiteName = state.originalSiteName,
                     imperial = imperial,
                     locale = locale,
@@ -292,13 +293,13 @@ private fun SaveBar(
                 // enabled primary action is the bottom-most target.
                 QuietButton(stringResource(R.string.dive_edit_cancel), onCancel)
                 Spacer(Modifier.height(Spacing.s2))
-                InkButton(saveText, onSave, Modifier.fillMaxWidth(), enabled = draft.dirty && !state.saving)
+                InkButton(saveText, onSave, Modifier.fillMaxWidth(), enabled = draft.dirty && draft.cylindersFit && !state.saving)
             } else {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     QuietButton(stringResource(R.string.dive_edit_cancel), onCancel)
                     Spacer(Modifier.width(Spacing.s4))
                     Spacer(Modifier.weight(1f))
-                    InkButton(saveText, onSave, enabled = draft.dirty && !state.saving)
+                    InkButton(saveText, onSave, enabled = draft.dirty && draft.cylindersFit && !state.saving)
                 }
             }
         }
@@ -309,6 +310,7 @@ private fun SaveBar(
 private fun EditForm(
     draft: DiveEditDraft,
     sites: List<dev.divehub.shared.store.DiveSite>,
+    seriesOptions: List<dev.divehub.shared.dive.DiveEditSeriesOption>,
     originalSiteName: String?,
     imperial: Boolean,
     locale: Locale,
@@ -450,10 +452,31 @@ private fun EditForm(
         }
         item {
             Section(
+                title = stringResource(R.string.dive_cylinders),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.s4),
+            ) {
+                CylindersFields(
+                    cylinders = draft.cylinders,
+                    seriesOptions = seriesOptions,
+                    imperial = imperial,
+                    locale = locale,
+                    onEdit = onEdit,
+                )
+            }
+        }
+        item {
+            Section(
                 title = stringResource(R.string.dive_weighting),
                 modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.s4),
             ) {
                 SuitFields(draft, locale, resetToken, onEdit)
+                Spacer(Modifier.height(Spacing.s4))
+                LeadFields(
+                    lead = draft.lead,
+                    imperial = imperial,
+                    locale = locale,
+                    onEdit = onEdit,
+                )
                 Spacer(Modifier.height(Spacing.s4))
                 WeightingFields(draft, imperial, locale, resetToken, onEdit)
             }
@@ -851,7 +874,7 @@ private fun UndergarmentChip(label: Int, selected: Boolean, onClick: () -> Unit)
 
 /** The form's chip: pressed with a check mark and `selected`, never colour alone (accent-soft nearly vanishes in dark). */
 @Composable
-private fun EditChip(label: String, selected: Boolean, onClick: () -> Unit) {
+internal fun EditChip(label: String, selected: Boolean, onClick: () -> Unit) {
     FilterChip(
         selected = selected,
         onClick = onClick,
@@ -1130,14 +1153,14 @@ private fun timeText(local: LocalDateTime, context: android.content.Context): St
 }
 
 /** A number the way an edit field shows it: no trailing zero, at most one decimal, the UI language's separator. */
-private fun editNumber(value: Double, locale: Locale): String =
+internal fun editNumber(value: Double, locale: Locale): String =
     if (value == value.toLong().toDouble()) {
         Formats.number(locale, value.toInt())
     } else {
         Formats.decimal(locale, value, 1)
     }
 
-private fun parseEditDouble(text: String): Double? =
+internal fun parseEditDouble(text: String): Double? =
     text.trim().replace(',', '.').toDoubleOrNull()
 
 private fun parseEditInt(text: String): Int =
