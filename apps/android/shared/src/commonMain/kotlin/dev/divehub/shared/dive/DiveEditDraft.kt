@@ -163,6 +163,25 @@ data class DiveEditDraft(
     }
 
     /**
+     * The roster the form was opened with, as the merge's base (ADR 0084 D3): the queued whole-list PUT is compared
+     * against this, not against the store's roster at save time, so a feed change that arrived while the form was open
+     * (a joint dive's union, or a removal from another device) is merged element-wise instead of silently reverted.
+     */
+    fun participantsBaseJson(): JsonObject = buildJsonObject {
+        put(
+            "participants",
+            JsonArray(
+                originalParticipants.map { person ->
+                    buildJsonObject {
+                        put("diverId", person.diverId)
+                        put("role", person.role)
+                    }
+                },
+            ),
+        )
+    }
+
+    /**
      * Give [field] back to the Recording (ADR 0015): the draft takes the recorded value again so the page shows what
      * will be saved, and the patch asks the server to drop the Override.
      */

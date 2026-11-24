@@ -23,7 +23,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-/** One Dive's scalar edit: the draft, the sites a picker may choose from, and whether a connection is answering. */
+/** One Dive's edit: the draft (scalars and roster), the sites and Divers a picker may choose from, and whether a connection is answering. */
 data class DiveEditUiState(
     val loading: Boolean = true,
     val missing: Boolean = false,
@@ -41,8 +41,9 @@ data class DiveEditUiState(
 
 /**
  * The Dive editor's state: it opens the Dive from the store (never a request, so it works offline), applies the form's
- * changes to an immutable [DiveEditDraft], and saves by enqueuing one `patch` through the Phase A queue. Nothing is
- * sent directly (client contract, Offline writes); the drain is the conflict plumbing's job (T6b/T7).
+ * changes to an immutable [DiveEditDraft], and saves by enqueuing its `patch` and, when the roster changed, a
+ * `dive_participants` entry through the Phase A queue. Nothing is sent directly (client contract, Offline writes); the
+ * drain is the conflict plumbing's job (T6b/T7).
  */
 class DiveEditViewModel(
     private val store: StoreLogbook,
@@ -120,11 +121,20 @@ class DiveEditViewModel(
                     if (patch != null) queue.editDive(draft.diveId, patch)
                     if (draft.participantsChanged) {
                         // A joint dive's union may have reached the store since the form opened (ADR 0082): keep those
-                        // people, or the whole-list PUT would read as the User removing them.
+                        // people, or the whole-list PUT would read as the User removing them. The queue takes the
+                        // roster and version the form itself opened with, so a removal or role change from the feed is
+                        // merged element-wise instead of being silently reverted (ADR 0084 D3).
                         val fromFeed = store.dive(draft.diveId)?.dive?.participants.orEmpty().map {
                             DiveEditParticipant(diverId = it.diverId, name = it.name, role = it.role)
                         }
-                        draft.participantsJson(fromFeed)?.let { queue.editDiveParticipants(draft.diveId, it) }
+                        draft.participantsJson(fromFeed)?.let {
+                            queue.editDiveParticipants(
+                                draft.diveId,
+                                it,
+                                baseVersion = draft.version.toLong(),
+                                baseJson = draft.participantsBaseJson().toString(),
+                            )
+                        }
                     }
                 }
                 onStoreWrite()

@@ -908,13 +908,7 @@ private fun RoleRow(label: String, selected: Boolean, onClick: () -> Unit) {
 private val PARTICIPANT_ROLES = listOf("buddy", "guide", "instructor")
 
 @Composable
-private fun roleLabel(role: String): String = stringResource(
-    when (role) {
-        "guide" -> R.string.participant_role_guide
-        "instructor" -> R.string.participant_role_instructor
-        else -> R.string.participant_role_buddy
-    },
-)
+private fun roleLabel(role: String): String = Formats.role(LocalContext.current, role)
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
