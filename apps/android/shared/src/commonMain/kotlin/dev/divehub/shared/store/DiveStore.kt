@@ -333,6 +333,9 @@ class DiveStore internal constructor(private val database: DiveHubDatabase) : Us
         )
         val id = queries.selectLastInsertRowId().executeAsOne()
         queries.trimScanResults(SCAN_RESULT_KEEP)
+        // A read's text lives only in its queued action (ADR 0043). Trimming its result would otherwise leave that
+        // action awaiting a decision no screen can show any more, so it goes with the row.
+        queries.deleteOrphanedAwaitingActions()
         return result.copy(id = id)
     }
 

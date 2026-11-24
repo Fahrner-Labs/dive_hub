@@ -8,6 +8,7 @@ import dev.divehub.shared.store.DiveStore
 import dev.divehub.shared.store.PendingWrite
 import dev.divehub.shared.store.PendingWriteKind
 import dev.divehub.shared.store.PendingWriteStatus
+import dev.divehub.shared.store.ScanResult
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
@@ -161,7 +162,6 @@ class WriteQueue(
         id: String,
         name: String,
         number: String? = null,
-        siteIds: List<String> = emptyList(),
     ): PendingWrite = enqueueAction(
         entityType = ScanEntities.CENTRE,
         entityId = id,
@@ -172,7 +172,6 @@ class WriteQueue(
                 externalIds = number?.takeIf { it.isNotBlank() }?.let {
                     listOf(ApiDiveCentresPostRequestExternalIdsItem(source = "ssi", externalId = it))
                 },
-                siteIds = siteIds.ifEmpty { null },
             ),
         ),
     )
@@ -182,6 +181,35 @@ class WriteQueue(
         val entry = store.pendingWrite(actionId) ?: return null
         val payload = runCatching { Json.parseToJsonElement(entry.payloadJson) as? JsonObject }.getOrNull() ?: return null
         return (payload["text"] as? JsonPrimitive)?.takeIf { it.isString }?.content
+    }
+
+    /**
+     * Take a resolved read: queue the write it leads to from the read's own queued text, then drop that read action and
+     * its result together. The read is the User's data, so nothing is queued when it is already gone (acted on or
+     * dismissed elsewhere); this keeps the rule in the core instead of in each client.
+     */
+    fun takeResolvedScan(result: ScanResult, diverId: String?, create: Boolean): Boolean {
+        val action = result.actionId ?: return false
+        val text = pendingScanText(action) ?: return false
+        enqueueTakeCode(text, diverId = diverId, create = create)
+        store.transaction {
+            deletePendingWrite(action)
+            deleteScanResult(result.id)
+        }
+        return true
+    }
+
+    /** Create the Dive centre a resolved read found, from the read's own answer, and consume that read. */
+    fun createCentreFromScan(result: ScanResult, read: ReadCode): Boolean {
+        val id = result.entityId ?: return false
+        val name = read.name ?: return false
+        val action = result.actionId ?: return false
+        enqueueCreateCentre(id = id, name = name, number = read.centreNumber)
+        store.transaction {
+            deletePendingWrite(action)
+            deleteScanResult(result.id)
+        }
+        return true
     }
 
     private inline fun <reified T> actionBody(request: T): JsonObject =

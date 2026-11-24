@@ -89,6 +89,37 @@ class DiveStoreTest {
     }
 
     @Test
+    fun `a trimmed read takes the awaiting action that held its text with it`() {
+        val store = newStore()
+        repeat((DiveStore.SCAN_RESULT_KEEP + 3).toInt()) { index ->
+            val action = store.addPendingWrite(
+                PendingWrite(
+                    id = 0,
+                    kind = PendingWriteKind.Action,
+                    entityType = "scan",
+                    entityId = "centre-$index",
+                    payloadJson = """{"text":"SSI;$index"}""",
+                    enqueuedAt = "2026-11-23T10:00:0$index.000Z",
+                    status = PendingWriteStatus.Awaiting,
+                ),
+            )
+            store.addScanResult(
+                ScanResult(
+                    id = 0,
+                    at = "2026-11-23T10:00:0$index.000Z",
+                    status = ScanStatus.Read,
+                    kind = "centre",
+                    entityId = "centre-$index",
+                    actionId = action.id,
+                ),
+            )
+        }
+
+        // The screen keeps the newest results; the old reads' text goes with the rows, never left awaiting forever.
+        assertEquals(DiveStore.SCAN_RESULT_KEEP.toInt(), store.pendingWrites(PendingWriteStatus.Awaiting).size)
+    }
+
+    @Test
     fun `a wipe drops resolved scans with the rest of the User's data`() {
         val store = newStore()
         store.addScanResult(ScanResult(0, "2026-11-23T10:00:00Z", ScanStatus.Failed, errorCode = "code_not_recognised"))

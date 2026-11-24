@@ -8,6 +8,7 @@ import dev.divehub.shared.store.PendingWrite
 import dev.divehub.shared.store.PendingWriteKind
 import dev.divehub.shared.store.ScanResult
 import dev.divehub.shared.store.ScanStatus
+import dev.divehub.shared.write.ReadCodes
 import dev.divehub.shared.write.WriteQueue
 import dev.divehub.shared.write.WriteReplayer
 import io.ktor.client.engine.mock.MockEngine
@@ -61,7 +62,7 @@ class ScanViewModelTest {
 
         val queued = store.pendingWrites().single()
         assertEquals("scan", queued.entityType)
-        assertEquals("""{"text":"SSI;buddy;ada"}""", queued.payloadJson)
+        assertEquals("""{"text":"  SSI;buddy;ada  "}""", queued.payloadJson)
     }
 
     @Test

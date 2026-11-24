@@ -154,6 +154,9 @@ class WriteReplayer(
             }
             status == 401 -> EntryOutcome.SessionEnded
             status in 500..599 -> EntryOutcome.RetryLater(DiveHubException(ErrorCodes.SERVER_ERROR, status))
+            // Rate limiting and request timeouts are not refusals: the scan is still the User's data.
+            status == 408 -> EntryOutcome.RetryLater(DiveHubException(ErrorCodes.NO_ANSWER, status))
+            status == 429 -> EntryOutcome.RetryLater(DiveHubException(ErrorCodes.TOO_MANY_ATTEMPTS, status))
             else -> {
                 recordFailure(entry, status, text)
                 EntryOutcome.Dropped(

@@ -1,8 +1,9 @@
-package dev.divehub.android.ui.scan
+package dev.divehub.shared.write
 
 import dev.divehub.api.models.ApiVerificationCodesReadPost200Response
 import dev.divehub.api.models.ApiVerificationCodesReadPost200ResponseCandidatesItem
 import dev.divehub.shared.store.ScanResult
+import dev.divehub.shared.store.ScanStatus
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
@@ -44,7 +45,7 @@ object ReadCodes {
 
     /** The read answer a resolved scan kept, or null when the stored answer is not one (an old row, a bad write). */
     fun parse(result: ScanResult): ReadCode? {
-        if (result.status != dev.divehub.shared.store.ScanStatus.Read) return null
+        if (result.status != ScanStatus.Read) return null
         val text = result.detailJson ?: return null
         val wire = runCatching { json.decodeFromString<ApiVerificationCodesReadPost200Response>(text) }.getOrNull()
             ?: return null

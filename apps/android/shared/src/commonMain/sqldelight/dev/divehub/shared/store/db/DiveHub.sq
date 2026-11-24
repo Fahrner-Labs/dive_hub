@@ -422,6 +422,11 @@ VALUES (:at, :status, :kind, :name, :entityId, :detailJson, :errorCode, :actionI
 trimScanResults:
 DELETE FROM scan_result WHERE id NOT IN (SELECT id FROM scan_result ORDER BY id DESC LIMIT :keep);
 
+deleteOrphanedAwaitingActions:
+DELETE FROM pending_write
+WHERE status = 'awaiting'
+  AND id NOT IN (SELECT actionId FROM scan_result WHERE actionId IS NOT NULL);
+
 deleteScanResult:
 DELETE FROM scan_result WHERE id = :id;
 

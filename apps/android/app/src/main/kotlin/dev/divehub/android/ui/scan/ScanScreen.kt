@@ -65,6 +65,9 @@ import dev.divehub.android.ui.components.Section
 import dev.divehub.shared.ErrorCodes
 import dev.divehub.shared.store.ScanResult
 import dev.divehub.shared.store.ScanStatus
+import dev.divehub.shared.write.ReadChange
+import dev.divehub.shared.write.ReadCode
+import dev.divehub.shared.write.ReadCodes
 import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch

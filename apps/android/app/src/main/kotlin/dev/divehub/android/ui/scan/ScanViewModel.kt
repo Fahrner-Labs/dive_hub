@@ -12,6 +12,7 @@ import dev.divehub.shared.store.DiveStore
 import dev.divehub.shared.store.PendingWriteStatus
 import dev.divehub.shared.store.ScanResult
 import dev.divehub.shared.write.ScanEntities
+import dev.divehub.shared.write.ReadCode
 import dev.divehub.shared.write.WriteQueue
 import dev.divehub.shared.write.WriteReplayResult
 import dev.divehub.shared.write.WriteReplayer
@@ -63,10 +64,10 @@ class ScanViewModel(
 
     /** Queue a raw code and try to resolve it now; with no answer it waits in the queue. */
     fun scan(text: String) {
-        val code = text.trim()
-        if (code.isEmpty()) return
+        if (text.isBlank()) return
         viewModelScope.launch(ioDispatcher) {
-            queue.enqueueScan(code)
+            // Verbatim: the server reads the code's format, so trimming would change what the User scanned.
+            queue.enqueueScan(text)
             replayNow()
         }
     }
@@ -76,30 +77,15 @@ class ScanViewModel(
      * queued read the result points back at; taking it consumes that read.
      */
     fun take(result: ScanResult, diverId: String?, create: Boolean) {
-        val action = result.actionId ?: return
-        val text = queue.pendingScanText(action) ?: return
         viewModelScope.launch(ioDispatcher) {
-            queue.enqueueTakeCode(text, diverId = diverId, create = create)
-            store.transaction {
-                deletePendingWrite(action)
-                deleteScanResult(result.id)
-            }
-            replayNow()
+            if (queue.takeResolvedScan(result, diverId = diverId, create = create)) replayNow()
         }
     }
 
     /** Create the Dive centre a read found, with the client uuid the scan kept as its replay key. */
     fun createCentre(result: ScanResult, read: ReadCode) {
-        val id = result.entityId ?: return
-        val name = read.name ?: return
-        val action = result.actionId ?: return
         viewModelScope.launch(ioDispatcher) {
-            queue.enqueueCreateCentre(id = id, name = name, number = read.centreNumber)
-            store.transaction {
-                deletePendingWrite(action)
-                deleteScanResult(result.id)
-            }
-            replayNow()
+            if (queue.createCentreFromScan(result, read)) replayNow()
         }
     }
 

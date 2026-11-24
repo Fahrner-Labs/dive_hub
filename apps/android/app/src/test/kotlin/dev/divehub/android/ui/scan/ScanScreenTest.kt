@@ -8,6 +8,7 @@ import androidx.compose.ui.test.performTextInput
 import dev.divehub.android.ui.DiveHubTheme
 import dev.divehub.shared.store.ScanResult
 import dev.divehub.shared.store.ScanStatus
+import dev.divehub.shared.write.ReadCode
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue

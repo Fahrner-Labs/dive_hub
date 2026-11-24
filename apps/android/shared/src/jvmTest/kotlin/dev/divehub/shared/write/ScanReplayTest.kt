@@ -251,6 +251,20 @@ class ScanReplayTest {
     }
 
     @Test
+    fun `a rate-limited read keeps the scan queued instead of dropping it`() = runTest {
+        queue.enqueueScan("hello")
+        val harness = ScanHarness(store) {
+            ScanReply.Body("""{"code":"too_many_attempts"}""", HttpStatusCode.TooManyRequests)
+        }
+
+        val result = harness.replayer.replay()
+
+        assertIs<WriteReplayResult.Stopped>(result)
+        assertEquals(1, store.pendingWrites().size)
+        assertTrue(store.scanResults().isEmpty())
+    }
+
+    @Test
     fun `no answer keeps the scan queued for the next trigger`() = runTest {
         queue.enqueueScan("hello")
         val harness = ScanHarness(store) { ScanReply.Offline }
