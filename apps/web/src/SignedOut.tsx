@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Trans, useTranslation } from 'react-i18next';
-import { api, authClient, invitationLinkQuery, passwordResetQuery, unwrap } from './api.ts';
+import { ApiError, api, authClient, invitationLinkQuery, isTwoFactorChallenge, passwordResetQuery, request, unwrap } from './api.ts';
 import { resetDeletion } from './lib/deletion.ts';
 import { useErrorText } from './lib/display.ts';
 import { formValues } from './lib/form.ts';
 import { usePageTitle } from './lib/page.ts';
 import { SetupRestore } from './SetupRestore.tsx';
-import { Button, Form, Muted, Notice, Panel, PasswordField, RadioGroup, TextField } from './ui/index.ts';
+import { Button, Form, Muted, Notice, Panel, PasswordField, RadioGroup, Switch, TextField } from './ui/index.ts';
 
 const MIN_PASSWORD_LENGTH = 15;
 const MAX_PASSWORD_LENGTH = 128;
@@ -42,28 +42,76 @@ export function SignIn() {
   const { t } = useTranslation();
   usePageTitle(t('signIn.title'));
   const signedIn = useUserChanged();
+  const [challenge, setChallenge] = useState(false);
   const signIn = useMutation({
     mutationFn: async ({ email, password }: Record<string, string>) => {
-      const { error } = await authClient.signIn.email({ email: email!, password: password! });
-      if (!error) return;
-      if (error.status === 429) throw new Error(t('signIn.tooManyAttempts'));
-      if (error.code === 'BANNED_USER') throw new Error(t('signIn.disabled'));
-      throw new Error(t('signIn.wrongCredentials'));
+      const { data, error } = await authClient.signIn.email({ email: email!, password: password! });
+      if (error) {
+        if (error.status === 429) throw new Error(t('signIn.tooManyAttempts'));
+        if (error.code === 'BANNED_USER') throw new Error(t('signIn.disabled'));
+        throw new Error(t('signIn.wrongCredentials'));
+      }
+      // A 2FA account gets a challenge (and the challenge cookie) instead of a session: no user yet.
+      return data as { twoFactorRedirect?: boolean } | null;
     },
-    onSuccess: signedIn,
+    onSuccess: async (data) => {
+      if (data?.twoFactorRedirect) setChallenge(true);
+      else await signedIn();
+    },
   });
 
   return (
     <Panel title={t('signIn.title')} narrow level={1}>
-      <p className="muted">{t('signIn.about')}</p>
-      <Form className="form" onSubmit={(e) => signIn.mutate(formValues(e))}>
-        <TextField label={t('form.email')} name="email" type="email" autoComplete="username" spellCheck="false" isRequired />
-        <PasswordField label={t('form.password')} name="password" autoComplete="current-password" isRequired />
-        {signIn.error && <Notice tone="danger">{signIn.error.message}</Notice>}
-        <div className="form-actions"><Button type="submit" variant="primary" isPending={signIn.isPending}>{t('signIn.submit')}</Button></div>
-      </Form>
-      <Muted>{t('signIn.noAccount')}</Muted>
+      {challenge ? (
+        <TwoFactorPrompt onVerified={signedIn} onCancel={() => setChallenge(false)} />
+      ) : (
+        <>
+          <p className="muted">{t('signIn.about')}</p>
+          <Form className="form" onSubmit={(e) => signIn.mutate(formValues(e))}>
+            <TextField label={t('form.email')} name="email" type="email" autoComplete="username" spellCheck="false" isRequired />
+            <PasswordField label={t('form.password')} name="password" autoComplete="current-password" isRequired />
+            {signIn.error && <Notice tone="danger">{signIn.error.message}</Notice>}
+            <div className="form-actions"><Button type="submit" variant="primary" isPending={signIn.isPending}>{t('signIn.submit')}</Button></div>
+          </Form>
+          <Muted>{t('signIn.noAccount')}</Muted>
+        </>
+      )}
     </Panel>
+  );
+}
+
+/**
+ * The second step of a password sign-in (FAH-54): the code from the account's authenticator app, or one of its backup
+ * codes. The server set a short-lived challenge cookie at sign-in; verifying it sets the session cookie.
+ */
+function TwoFactorPrompt({ onVerified, onCancel }: { onVerified: () => Promise<void> | void; onCancel?: () => void }) {
+  const { t } = useTranslation();
+  const [useBackupCode, setUseBackupCode] = useState(false);
+  const verify = useMutation({
+    mutationFn: async (code: string) => (useBackupCode
+      ? request(api.POST('/api/auth/two-factor/verify-backup-code', { body: { code } }))
+      : request(api.POST('/api/auth/two-factor/verify-totp', { body: { code } }))),
+    onSuccess: onVerified,
+  });
+  const error = verify.error instanceof ApiError && verify.error.status === 429
+    ? t('signIn.tooManyAttempts') : verify.error ? t('errors.two_factor_code_invalid') : null;
+
+  return (
+    <>
+      <p className="muted">{useBackupCode ? t('signIn.twoFactorBackupIntro') : t('signIn.twoFactorIntro')}</p>
+      <Form className="form" onSubmit={(e) => verify.mutate(formValues(e).code!)}>
+        <Switch isSelected={useBackupCode} onChange={setUseBackupCode}>{t('signIn.useBackupCode')}</Switch>
+        <TextField
+          label={useBackupCode ? t('signIn.twoFactorBackupCode') : t('signIn.twoFactorCode')} name="code"
+          autoComplete="one-time-code" spellCheck="false" autoCapitalize="none" isRequired
+        />
+        {error && <Notice tone="danger">{error}</Notice>}
+        <div className="form-actions">
+          <Button type="submit" variant="primary" isPending={verify.isPending}>{t('signIn.twoFactorVerify')}</Button>
+          {onCancel && <Button onPress={onCancel}>{t('signIn.twoFactorBack')}</Button>}
+        </div>
+      </Form>
+    </>
   );
 }
 
@@ -151,11 +199,13 @@ export function ResetPassword({ token }: { token: string }) {
   usePageTitle(t('reset.title'));
   const errorText = useErrorText();
   const signedIn = useUserChanged();
+  const [challenge, setChallenge] = useState(false);
   const link = useQuery(passwordResetQuery(token));
   const reset = useMutation({
     mutationFn: async ({ password }: Record<string, string>) =>
       unwrap(await api.POST('/api/password-resets/complete', { body: { token, password: password! } })),
-    onSuccess: signedIn,
+    // A User with 2FA gets the challenge instead of a session; the new password is already saved.
+    onSuccess: async (data) => (isTwoFactorChallenge(data) ? setChallenge(true) : signedIn()),
   });
 
   if (link.isPending) return <Muted>{t('reset.checking')}</Muted>;
@@ -169,13 +219,17 @@ export function ResetPassword({ token }: { token: string }) {
   }
   return (
     <Panel title={t('reset.title')} narrow level={1}>
-      <p><Trans i18nKey="reset.intro" values={{ email: link.data.email }} components={{ strong: <strong /> }} /></p>
-      <Form className="form" onSubmit={(e) => reset.mutate(formValues(e))}>
-        <input type="email" name="email" value={link.data.email} autoComplete="username" readOnly hidden />
-        <NewPasswordField label={t('reset.newPassword')} />
-        {reset.error && <Notice tone="danger">{errorText(reset.error)}</Notice>}
-        <div className="form-actions"><Button type="submit" variant="primary" isPending={reset.isPending}>{t('reset.submit')}</Button></div>
-      </Form>
+      {challenge ? <TwoFactorPrompt onVerified={signedIn} /> : (
+        <>
+          <p><Trans i18nKey="reset.intro" values={{ email: link.data.email }} components={{ strong: <strong /> }} /></p>
+          <Form className="form" onSubmit={(e) => reset.mutate(formValues(e))}>
+            <input type="email" name="email" value={link.data.email} autoComplete="username" readOnly hidden />
+            <NewPasswordField label={t('reset.newPassword')} />
+            {reset.error && <Notice tone="danger">{errorText(reset.error)}</Notice>}
+            <div className="form-actions"><Button type="submit" variant="primary" isPending={reset.isPending}>{t('reset.submit')}</Button></div>
+          </Form>
+        </>
+      )}
     </Panel>
   );
 }

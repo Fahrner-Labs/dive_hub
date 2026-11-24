@@ -40,6 +40,21 @@ The state of a User who can't sign in. Their data stays, and an admin can enable
 _Avoid_: Banned, suspended, deactivated
 _German_: deaktiviert
 
+**Two-factor authentication**:
+A second step at sign-in beside the password: a code from an authenticator app on the User's phone, or a backup code. A User turns it on and off in their account ([ADR 0012](decisions/0012-invitations-and-admin-bootstrap.md)).
+_Avoid_: 2FA, MFA, token (a token is a link's secret)
+_German_: Zwei-Faktor-Authentifizierung
+
+**Authenticator app**:
+The app on the User's phone that shows the six-digit code for two-factor authentication, set up by scanning a QR code or pasting the set-up link. Dive Hub keeps only the encrypted shared secret.
+_Avoid_: TOTP app, token app
+_German_: Authenticator-App
+
+**Backup code**:
+A single-use code, shown once when two-factor authentication is turned on, that signs a User in when they can't reach their authenticator app.
+_Avoid_: Recovery code, emergency code
+_German_: Backup-Code
+
 **Diver**:
 A person who dives and whose dives, certifications and equipment can be recorded.
 A Diver may be managed by a User (their own Diver, or someone they log for, such as a child) or exist without one.

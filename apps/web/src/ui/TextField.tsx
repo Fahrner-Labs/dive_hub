@@ -10,6 +10,8 @@ export interface TextFieldProps extends Omit<AriaTextFieldProps, 'className' | '
   label: ReactNode;
   description?: ReactNode;
   placeholder?: string;
+  /** Some browsers capitalise the first letter typed; a one-time or backup code must keep its case. */
+  autoCapitalize?: string;
 }
 
 /** The error under a field, in our translations, not in the browser's language. */
@@ -32,12 +34,12 @@ function FieldLabel({ label, isRequired }: { label: ReactNode; isRequired: boole
  * A labelled input with its description and error, validated natively on submit. The messages come
  * from our translations, not from the browser's language.
  */
-export function TextField({ label, description, placeholder, ...props }: TextFieldProps) {
+export function TextField({ label, description, placeholder, autoCapitalize, ...props }: TextFieldProps) {
   const message = useMessage(props);
   return (
     <AriaTextField {...props} className="field">
       <FieldLabel label={label} isRequired={props.isRequired} />
-      <Input className="input" {...(placeholder !== undefined && { placeholder })} />
+      <Input className="input" {...(autoCapitalize !== undefined && { autoCapitalize })} {...(placeholder !== undefined && { placeholder })} />
       {/* A description that may appear while typing is passed as '' at first: React Aria links the
           description element when the field mounts. */}
       {description !== undefined && <Text slot="description" className="field-description">{description}</Text>}
@@ -58,7 +60,7 @@ export interface PasswordFieldProps extends Omit<TextFieldProps, 'type' | 'label
  * same element with its name and autocomplete, so password managers keep filling it; only its type switches.
  * The button keeps its name and says whether the password shows with aria-pressed. Sending the form hides it again.
  */
-export function PasswordField({ label, buttonItem, description, placeholder, ...props }: PasswordFieldProps) {
+export function PasswordField({ label, buttonItem, description, placeholder, autoCapitalize = 'none', ...props }: PasswordFieldProps) {
   const { t } = useTranslation();
   const [shown, setShown] = useState(false);
   const input = useRef<HTMLInputElement>(null);
@@ -79,7 +81,7 @@ export function PasswordField({ label, buttonItem, description, placeholder, ...
       <FieldLabel label={label} isRequired={props.isRequired} />
       <div className="input-with-button">
         {/* Shown as text, the browser must not spellcheck, capitalise or correct it (some spellcheckers send text away). */}
-        <Input ref={input} className="input" spellCheck="false" autoCapitalize="none" autoCorrect="off" {...(placeholder !== undefined && { placeholder })} />
+        <Input ref={input} className="input" spellCheck="false" autoCapitalize={autoCapitalize} autoCorrect="off" {...(placeholder !== undefined && { placeholder })} />
         <ToggleButton
           className="input-button" isSelected={shown} onChange={setShown} isDisabled={props.isDisabled ?? false}
           aria-label={t('common.forItem', { action: t('form.show'), item: buttonItem ?? label })}

@@ -64,6 +64,13 @@
     "wrongCredentials": "Wrong e-mail or password.",
     "tooManyAttempts": "Too many attempts. Try again in a few minutes.",
     "disabled": "This account is disabled. Ask an admin.",
+    "twoFactorIntro": "Enter the 6-digit code from your authenticator app.",
+    "twoFactorBackupIntro": "Enter one of your backup codes.",
+    "twoFactorCode": "Authenticator code",
+    "twoFactorBackupCode": "Backup code",
+    "useBackupCode": "Use a backup code",
+    "twoFactorVerify": "Verify",
+    "twoFactorBack": "Back to sign-in",
     "about": "Dive Hub keeps the dive logs of a club, a family or a dive center in one place."
   },
   "setup": {
@@ -130,7 +137,30 @@
     "signOutOthersTitle": "Sign out everywhere else?",
     "signOutOthersBody": "Every other browser and device where you’re signed in has to sign in again.",
     "signOutThisTitle": "Sign out on this device?",
-    "signOutThisBody": "You’ll need your password to sign in again."
+    "signOutThisBody": "You’ll need your password to sign in again.",
+    "twoFactor": {
+      "title": "Two-factor authentication",
+      "intro": "A second step at sign-in: a code from an authenticator app on your phone, beside your password.",
+      "setUp": "Set up two-factor authentication",
+      "passwordIntro": "Confirm your current password to start setting up the second factor.",
+      "continue": "Continue",
+      "scan": "Scan this code with an authenticator app, or copy the set-up link into it.",
+      "qrLabel": "QR code for the authenticator set-up link",
+      "setupLink": "Set-up link",
+      "code": "Authenticator code",
+      "codeHint": "The 6-digit code the app shows.",
+      "backupCode": "Backup code",
+      "verify": "Turn on two-factor authentication",
+      "on": "Two-factor authentication is on.",
+      "backupCodes": "Backup codes",
+      "backupCodesIntro": "Store these somewhere safe. Each works once if you lose the authenticator app; they are shown only now.",
+      "copyCodes": "Copy backup codes",
+      "done": "Done",
+      "disableIntro": "Turning this off means your password alone signs you in. Enter your password and a current code.",
+      "useBackupCode": "Use a backup code",
+      "disable": "Turn off two-factor authentication",
+      "off": "Two-factor authentication is off."
+    }
   },
   "settings": {
     "title": "Settings",

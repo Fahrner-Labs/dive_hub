@@ -188,7 +188,6 @@ Implemented:
 Migration `0001_auth` deletes slice-1 development data (`user_id = 'dev'`).
 
 Deliberate simplifications, to revisit:
-- **No 2FA** (later slice, ADR 0012).
 - **Recording keys** stay globally unique. If two Users each import a Recording without a Device
   that starts in the same second, the second Import is reported as failed.
 
@@ -200,8 +199,9 @@ Implemented:
 - Admins change roles, disable/enable Users, sign Users out everywhere, and delete Users with
   everything only they own, including stored files no one else shares.
 - There is always one enabled admin (row locks against simultaneous demotion).
-- Only `sign-in/email`, `sign-out`, `get-session` and `change-password` of Better Auth are reachable
-  over HTTP; they are described in our OpenAPI document.
+- Only `sign-in/email`, `sign-out`, `get-session`, `change-password` and the 2FA endpoints
+  (`two-factor/enable`, `two-factor/verify-totp`, `two-factor/verify-backup-code`) of Better Auth are
+  reachable over HTTP; they are described in our OpenAPI document. Disabling 2FA is our own route.
 - Web client: account page (password, sessions), reset page, admin actions per User.
 
 Deliberate simplifications, to revisit:

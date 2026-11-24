@@ -9,6 +9,8 @@ export const keys = {
   invitationLink: (token: string) => ['invitation', token] as const,
   passwordReset: (token: string) => ['password-reset', token] as const,
   sessions: ['me', 'sessions'] as const,
+  /** Whether the account has a second factor on (FAH-54); under ['me'], so signing out drops it. */
+  twoFactor: ['me', 'two-factor'] as const,
   imports: ['imports'] as const,
   dives: ['dives'] as const,
   dive: (id: string) => ['dives', id] as const,
