@@ -8,6 +8,8 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import dev.divehub.android.AppContainer
 import dev.divehub.shared.dive.DiveEditDraft
 import dev.divehub.shared.dive.DiveEditParticipant
+import dev.divehub.shared.dive.DiveEditSeriesOption
+import dev.divehub.shared.dive.pressureSeriesOptions
 import dev.divehub.shared.logbook.StoreLogbook
 import dev.divehub.shared.store.DiveSite
 import dev.divehub.shared.store.Diver
@@ -33,6 +35,8 @@ data class DiveEditUiState(
     /** Every Diver the store knows, for the Participants sheet; the Dive's own Diver is filtered out there. */
     val divers: List<Diver> = emptyList(),
     val ownerDiverId: String? = null,
+    /** The tank pod series of the Dive's Recordings a Cylinder may name as "measured by" (ADR 0045). */
+    val seriesOptions: List<DiveEditSeriesOption> = emptyList(),
     val online: Boolean = false,
     val saving: Boolean = false,
     val saved: Boolean = false,
@@ -66,12 +70,15 @@ class DiveEditViewModel(
         if (_state.value.draft?.diveId == id && !_state.value.loading) return
         viewModelScope.launch {
             val read = withContext(ioDispatcher) {
-                store.dive(id)?.let { stored ->
+                val stored = store.dive(id)
+                val sites = store.sites()
+                stored?.let {
                     EditSource(
-                        dive = stored.dive,
-                        sites = store.sites(),
+                        dive = it.dive,
+                        sites = sites,
+                        seriesOptions = pressureSeriesOptions(it.dive.recordings),
                         divers = store.divers(),
-                        ownerDiverId = stored.dive.diverId,
+                        ownerDiverId = it.dive.diverId,
                     )
                 }
             }
@@ -85,6 +92,7 @@ class DiveEditViewModel(
                         draft = DiveEditDraft.of(read.dive),
                         originalSiteName = read.dive.site?.name,
                         sites = read.sites,
+                        seriesOptions = read.seriesOptions,
                         divers = read.divers,
                         ownerDiverId = read.ownerDiverId,
                     )
@@ -165,6 +173,7 @@ class DiveEditViewModel(
 private data class EditSource(
     val dive: dev.divehub.api.models.DiveView,
     val sites: List<DiveSite>,
+    val seriesOptions: List<DiveEditSeriesOption>,
     val divers: List<Diver>,
     val ownerDiverId: String,
 )
