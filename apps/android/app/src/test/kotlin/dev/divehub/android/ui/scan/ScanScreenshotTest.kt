@@ -8,7 +8,6 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
-import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.unit.Density
 import com.github.takahirom.roborazzi.captureRoboImage
 import dev.divehub.android.ui.DiveHubTheme
@@ -80,8 +79,10 @@ class ScanScreenshotTest {
         capture("scan_centre_en_light.png")
     }
 
+    // A tall viewport, so the whole result is on screen without performScrollTo(): that scroll left a Robolectric
+    // overscroll artefact in the previous golden (FAH-474).
     @Test
-    @Config(qualifiers = "de-rDE-w320dp-h891dp-night-xxhdpi")
+    @Config(qualifiers = "de-rDE-w320dp-h1600dp-night-xxhdpi")
     fun `a buddy's code shows the changes at 320 dp and 200 percent in German and dark`() {
         render(
             ScanUiState(
@@ -100,9 +101,21 @@ class ScanScreenshotTest {
             fontScale = 2f,
         )
 
-        compose.onNodeWithText("Ada Lovelace aktualisieren").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText("E-Mail: old@example.com → ada@example.com", substring = true).assertIsDisplayed()
+        compose.onNodeWithText("Ada Lovelace aktualisieren").assertIsDisplayed()
+        compose.onNodeWithText("E-Mail").assertIsDisplayed()
+        compose.onNodeWithText("old@example.com", substring = true).assertIsDisplayed()
+        compose.onNodeWithText("ada@example.com", substring = true).assertIsDisplayed()
         capture("scan_buddy_de_dark.png")
+    }
+
+    @Test
+    @Config(qualifiers = "de-rDE-w320dp-h1600dp-night-xxhdpi")
+    fun `waiting wraps its count and stacks the sync action at 320 dp and 200 percent in German and dark`() {
+        render(ScanUiState(pending = 2), darkTheme = true, fontScale = 2f)
+
+        compose.onNodeWithText("2 Änderungen warten auf Synchronisierung").assertIsDisplayed()
+        compose.onNodeWithText("Jetzt synchronisieren").assertIsDisplayed()
+        capture("scan_waiting_de_dark.png")
     }
 
     @Test
@@ -126,6 +139,7 @@ class ScanScreenshotTest {
     fun `an ambiguous person starts on the new Diver rather than a candidate`() {
         render(ScanUiState(results = listOf(candidateRead())))
 
+        compose.onNodeWithText("Pick the Diver it belongs to, or add a new Diver.", substring = true).assertExists()
         compose.onNodeWithText("Add Ada Lovelace as a new Diver").assertExists()
         capture("scan_candidates_en_light.png")
     }
@@ -135,6 +149,7 @@ class ScanScreenshotTest {
     fun `an ambiguous person in German starts on the new Diver too`() {
         render(ScanUiState(results = listOf(candidateRead())))
 
+        compose.onNodeWithText("Wähle den passenden Taucher oder lege einen neuen an.", substring = true).assertExists()
         compose.onNodeWithText("Ada Lovelace als neuen Taucher anlegen").assertExists()
         capture("scan_candidates_de_light.png")
     }

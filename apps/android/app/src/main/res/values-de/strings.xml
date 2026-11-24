@@ -639,10 +639,12 @@
     <string name="scan_nothing_to_change">Für %1$s gibt es nichts zu ändern.</string>
     <string name="scan_changes">Das Übernehmen des Codes würde ändern:</string>
     <string name="scan_change_line">%1$s: %2$s → %3$s</string>
+    <string name="scan_change_arrow">↓</string>
     <string name="scan_not_set">nicht gesetzt</string>
     <string name="scan_update_diver">%1$s aktualisieren</string>
     <string name="scan_not_yours">%1$s gehört nicht zu deinen Tauchern.</string>
     <string name="scan_who">Wer ist das? Das Konto des Codes gehört noch keinem Taucher hier.</string>
+    <string name="scan_who_candidates">Wer ist das? Das Konto des Codes ist noch keinem Taucher hier zugeordnet. Wähle den passenden Taucher oder lege einen neuen an.</string>
     <string name="scan_give_to">Code %1$s geben</string>
     <string name="scan_new_diver">%1$s als neuen Taucher anlegen</string>
     <string name="scan_add_diver">Taucher hinzufügen</string>

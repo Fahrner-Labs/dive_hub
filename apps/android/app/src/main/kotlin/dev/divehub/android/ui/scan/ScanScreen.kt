@@ -42,6 +42,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -55,6 +56,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.divehub.android.R
 import dev.divehub.android.ui.DiveHubTopBar
 import dev.divehub.android.ui.DiveHubText
+import dev.divehub.android.ui.LargeTextFontScale
 import dev.divehub.android.ui.Spacing
 import dev.divehub.android.ui.components.InkButton
 import dev.divehub.android.ui.components.QuietButton
@@ -237,30 +239,32 @@ fun ScanScreen(
 
                 Section(title = stringResource(R.string.scan_section_results)) {
                     if (state.pending > 0 || state.busy) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .semantics { liveRegion = LiveRegionMode.Polite },
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Text(
-                                if (state.pending > 0) {
-                                    pluralStringResource(R.plurals.scan_waiting, state.pending, state.pending)
-                                } else {
-                                    stringResource(R.string.scan_syncing)
-                                },
-                                style = DiveHubText.meta,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                            if (state.busy) {
-                                CircularProgressIndicator(
-                                    Modifier
-                                        .padding(start = Spacing.s3)
-                                        .size(ScanSpinnerSize),
+                        Column(Modifier.fillMaxWidth()) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    text = if (state.pending > 0) {
+                                        pluralStringResource(R.plurals.scan_waiting, state.pending, state.pending)
+                                    } else {
+                                        stringResource(R.string.scan_syncing)
+                                    },
+                                    // The line wraps at large text; the action stacks beneath it rather than being
+                                    // clipped by a Row that the label has filled. The live region belongs on the
+                                    // text, so a screen reader has something to announce (FAH-474).
+                                    modifier = Modifier
+                                        .weight(1f, fill = false)
+                                        .semantics { liveRegion = LiveRegionMode.Polite },
+                                    style = DiveHubText.meta,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
+                                if (state.busy) {
+                                    CircularProgressIndicator(
+                                        Modifier
+                                            .padding(start = Spacing.s3)
+                                            .size(ScanSpinnerSize),
+                                    )
+                                }
                             }
                             if (state.pending > 0 && !state.busy) {
-                                Spacer(Modifier.width(Spacing.s2))
                                 QuietButton(stringResource(R.string.scan_sync_now), onClick = onSync)
                             }
                         }
@@ -368,21 +372,7 @@ private fun ReadResult(
             Text(stringResource(R.string.scan_nothing_to_change, existing.name), style = MaterialTheme.typography.bodyMedium)
         } else {
             Text(stringResource(R.string.scan_changes), style = MaterialTheme.typography.bodyMedium)
-            existing.changes.forEach { change ->
-                Row(Modifier.fillMaxWidth()) {
-                    Text(
-                        "•",
-                        modifier = Modifier.width(ScanBulletWidth),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    Text(
-                        changeText(change),
-                        modifier = Modifier.weight(1f),
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
-                }
-            }
+            existing.changes.forEach { change -> ChangeLine(change) }
             if (existing.canEdit) {
                 Spacer(Modifier.height(Spacing.s2))
                 InkButton(
@@ -401,7 +391,10 @@ private fun ReadResult(
         return
     }
 
-    Text(stringResource(R.string.scan_who), style = MaterialTheme.typography.bodyMedium)
+    Text(
+        stringResource(if (read.candidates.isEmpty()) R.string.scan_who else R.string.scan_who_candidates),
+        style = MaterialTheme.typography.bodyMedium,
+    )
     // No candidate is preselected: a code that belongs to someone here must not be taken with one tap by accident.
     // The new-Diver option starts selected, so the fallback is the explicit choice about this person.
     var choice by remember(result.id) { mutableStateOf<String?>(null) }
@@ -449,16 +442,62 @@ private fun Dismiss(result: ScanResult, onDismiss: (ScanResult) -> Unit) {
     QuietButton(stringResource(R.string.scan_dismiss), onClick = { onDismiss(result) })
 }
 
+/**
+ * One change: the compact `field: from → to` line at normal text, and one fact per line at 150 % and above. There a
+ * 15-character address already fills almost the whole 320 dp column at 200 %, so the arrow gets its own line: keeping
+ * it beside either address split that address mid-word (FAH-474). The values take the full width for the same reason.
+ */
 @Composable
-private fun changeText(change: ReadChange): String {
-    val field = when (change.field) {
-        "firstName" -> stringResource(R.string.scan_field_first_name)
-        "lastName" -> stringResource(R.string.scan_field_last_name)
-        "email" -> stringResource(R.string.scan_field_email)
-        "leaderNumber" -> stringResource(R.string.scan_field_leader_number)
-        else -> change.field
+private fun ChangeLine(change: ReadChange) {
+    val from = change.from ?: stringResource(R.string.scan_not_set)
+    if (LocalDensity.current.fontScale < LargeTextFontScale) {
+        Row(Modifier.fillMaxWidth()) {
+            ChangeBullet()
+            Text(
+                stringResource(R.string.scan_change_line, changeField(change.field), from, change.to),
+                modifier = Modifier.weight(1f),
+                style = MaterialTheme.typography.bodyMedium,
+            )
+        }
+        return
     }
-    return stringResource(R.string.scan_change_line, field, change.from ?: stringResource(R.string.scan_not_set), change.to)
+    Column(Modifier.fillMaxWidth()) {
+        Row {
+            ChangeBullet()
+            Text(
+                changeField(change.field),
+                modifier = Modifier.padding(start = Spacing.s1),
+                style = DiveHubText.meta,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        Text(from, style = MaterialTheme.typography.bodyMedium)
+        Text(
+            stringResource(R.string.scan_change_arrow),
+            style = DiveHubText.meta,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Text(change.to, style = MaterialTheme.typography.bodyMedium)
+    }
+}
+
+@Composable
+private fun ChangeBullet() {
+    Text(
+        "•",
+        modifier = Modifier.width(ScanBulletWidth),
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+}
+
+@Composable
+private fun changeField(field: String): String = when (field) {
+    "firstName" -> stringResource(R.string.scan_field_first_name)
+    "lastName" -> stringResource(R.string.scan_field_last_name)
+    "email" -> stringResource(R.string.scan_field_email)
+    "leaderNumber" -> stringResource(R.string.scan_field_leader_number)
+    else -> field
 }
 
 @Composable

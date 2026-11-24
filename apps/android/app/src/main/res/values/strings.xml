@@ -639,10 +639,12 @@
     <string name="scan_nothing_to_change">Nothing to change for %1$s.</string>
     <string name="scan_changes">Taking this code would change:</string>
     <string name="scan_change_line">%1$s: %2$s → %3$s</string>
+    <string name="scan_change_arrow">↓</string>
     <string name="scan_not_set">not set</string>
     <string name="scan_update_diver">Update %1$s</string>
     <string name="scan_not_yours">%1$s is not yours to change.</string>
     <string name="scan_who">Who is it? The code\'s account belongs to no Diver here yet.</string>
+    <string name="scan_who_candidates">Who is it? The code\'s account is not linked to a Diver here yet. Pick the Diver it belongs to, or add a new Diver.</string>
     <string name="scan_give_to">Give the code to %1$s</string>
     <string name="scan_new_diver">Add %1$s as a new Diver</string>
     <string name="scan_add_diver">Add Diver</string>

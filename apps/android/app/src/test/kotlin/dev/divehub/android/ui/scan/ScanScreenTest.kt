@@ -44,6 +44,7 @@ class ScanScreenTest {
         var taken: Triple<ScanResult, String?, Boolean>? = null
         render(ScanUiState(results = listOf(buddyRead(existing = false, candidate = true))), onTake = { found, id, create -> taken = Triple(found, id, create) })
 
+        compose.onNodeWithText("Pick the Diver it belongs to, or add a new Diver.", substring = true).assertIsDisplayed()
         compose.onNodeWithText("Add Diver").performClick()
 
         assertNull(taken!!.second)
@@ -91,7 +92,7 @@ class ScanScreenTest {
         val result = buddyRead()
         render(ScanUiState(results = listOf(result)), onTake = { found, id, create -> taken = Triple(found, id, create) })
 
-        compose.onNodeWithText("E-mail: old@example.com → ada@example.com", substring = true).assertIsDisplayed()
+        compose.onNodeWithText("E-mail: old@example.com → ada@example.com").assertIsDisplayed()
         compose.onNodeWithText("Update Ada Lovelace").performClick()
 
         assertEquals(result, taken!!.first)
@@ -105,6 +106,7 @@ class ScanScreenTest {
         val result = buddyRead(existing = false)
         render(ScanUiState(results = listOf(result)), onTake = { found, id, create -> taken = Triple(found, id, create) })
 
+        compose.onNodeWithText("The code's account belongs to no Diver here yet.", substring = true).assertIsDisplayed()
         compose.onNodeWithText("Add Ada Lovelace as a new Diver").assertIsDisplayed()
         compose.onNodeWithText("Add Diver").performClick()
 
