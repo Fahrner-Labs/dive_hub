@@ -2,8 +2,13 @@ package dev.divehub.android.ui.dive
 
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -35,11 +40,12 @@ import org.robolectric.annotation.GraphicsMode
 
 /**
  * The edit screen's contract-visible states as pictures: a synced Dive being edited, the site picker in its list, no-match
- * and dark states, an edited value with its "use the recording's value" way back, the Participants roster with the joint
- * dive's union note, the add sheet and the role choice, the destructive verbs' not-available note, dark at the top and at
- * the weighting and more actions, and German at 200 % on a narrow phone at the top, over the value fields, at the Notes
- * field, at the Participants and at the true foot. Rendered from a fixed state, so a drawing change shows up as a changed
- * image.
+ * and dark states, an edited value with its "use the recording's value" way back, the Participants roster (filled and
+ * empty) with the joint dive's union note, the add sheet with candidates, none and dark, the role choice before and
+ * after a change, the destructive verbs' not-available note, dark at the top and at the weighting and more actions, and
+ * German at 200 % on a narrow phone at the top, over the value fields, at the Notes field, the Participants with an
+ * instructor and a long name, the add and role sheets and the true foot. Rendered from a fixed state, so a drawing
+ * change shows up as a changed image.
  */
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
@@ -169,54 +175,164 @@ class DiveEditScreenshotTest {
     fun `the participants section lists people with their roles and says what a joint dive does`() {
         render(state(draft = DiveEditDraft.of(dive(participants = people()))))
 
-        compose.onNodeWithTag("dive_edit_scroll")
-            .performScrollToNode(hasText("In a joint dive, adding someone also adds them to the other divers’ dives. Removing someone here leaves them on the others."))
+        compose.onNodeWithTag("dive_edit_scroll").performScrollToNode(hasText(jointNote))
         compose.onNodeWithText("Anna").assertExists()
         compose.onNodeWithText("Ben").assertExists()
-        compose.onNodeWithText("In a joint dive, adding someone also adds them to the other divers’ dives. Removing someone here leaves them on the others.")
-            .assertExists()
+        compose.onNodeWithText(jointNote).assertExists()
         capture("dive_edit_participants.png")
+    }
+
+    @Test
+    fun `the roster says when nobody else is listed`() {
+        render(state(draft = DiveEditDraft.of(dive())))
+
+        compose.onNodeWithTag("dive_edit_scroll").performScrollToNode(hasText("Add a participant"))
+        compose.onNodeWithText("No one else listed yet.").assertExists()
+        capture("dive_edit_participants_empty.png")
     }
 
     @Test
     fun `adding someone searches the divers the store knows and says the names are shared`() {
         render(state(draft = DiveEditDraft.of(dive(participants = people()))))
 
-        compose.onNodeWithTag("dive_edit_scroll").performScrollToNode(hasText("Add a participant"))
-        compose.onNodeWithText("Add a participant").performClick()
+        openAddParticipant()
 
-        compose.onNodeWithText("Every user of this Dive Hub sees the names of all divers.").assertExists()
+        compose.onNodeWithText(sharedHint).assertExists()
         compose.onNodeWithText("Cleo").assertExists()
+        compose.onNode(hasText("Instructor") and hasClickAction())
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.RadioButton))
         capture("dive_edit_participant_add.png")
+    }
+
+    @Test
+    fun `the add sheet with no candidates says why and how and hides the search`() {
+        render(state(draft = DiveEditDraft.of(dive(participants = people())), divers = emptyList()))
+
+        openAddParticipant()
+
+        compose.onNodeWithText(
+            "No other divers to add. Divers arrive on this device with a sync; to add an external diver, use the web.",
+        ).assertExists()
+        compose.onNode(hasSetTextAction() and hasText("Find a diver")).assertDoesNotExist()
+        compose.onNodeWithTag("dive_edit_participant_search").assertDoesNotExist()
+        capture("dive_edit_participant_add_no_candidates.png")
     }
 
     @Test
     fun `changing a role opens a named choice`() {
         render(state(draft = DiveEditDraft.of(dive(participants = people()))))
 
-        compose.onNodeWithTag("dive_edit_scroll").performScrollToNode(hasText("Buddy"))
-        compose.onNode(hasText("Buddy") and hasClickAction()).performClick()
+        openRoleSheet()
 
         compose.onNodeWithText("Role for Anna").assertExists()
         compose.onNodeWithText("Instructor").assertExists()
+        compose.onNode(hasText("Instructor") and hasClickAction())
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.RadioButton))
         capture("dive_edit_participant_role.png")
+    }
+
+    @Test
+    @Config(qualifiers = "en-rUS-w411dp-h891dp-night-xxhdpi")
+    fun `the participants section follows the dark theme`() {
+        render(state(draft = DiveEditDraft.of(dive(participants = people()))), darkTheme = true)
+
+        compose.onNodeWithTag("dive_edit_scroll").performScrollToNode(hasText(jointNote))
+        capture("dive_edit_participants_dark.png")
+    }
+
+    @Test
+    @Config(qualifiers = "en-rUS-w411dp-h891dp-night-xxhdpi")
+    fun `the add sheet follows the dark theme`() {
+        render(state(draft = DiveEditDraft.of(dive(participants = people()))), darkTheme = true)
+
+        openAddParticipant()
+
+        compose.onNodeWithText(sharedHint).assertExists()
+        capture("dive_edit_participant_add_dark.png")
+    }
+
+    @Test
+    @Config(qualifiers = "en-rUS-w411dp-h891dp-night-xxhdpi")
+    fun `the role choice follows the dark theme`() {
+        render(state(draft = DiveEditDraft.of(dive(participants = people()))), darkTheme = true)
+
+        openRoleSheet()
+
+        compose.onNodeWithText("Role for Anna").assertExists()
+        capture("dive_edit_participant_role_dark.png")
     }
 
     @Test
     @Config(qualifiers = "de-rDE-w320dp-h891dp-xxhdpi")
     fun `the participants at two hundred percent in german`() {
+        render(
+            state(draft = DiveEditDraft.of(dive(participants = peopleWithInstructor()))),
+            fontScale = 2f,
+        )
+
+        compose.onNodeWithTag("dive_edit_scroll")
+            .performScrollToNode(hasContentDescription("Alexandra Winterhalter entfernen"))
+        compose.onNodeWithText("Alexandra Winterhalter").assertExists()
+        compose.onNodeWithText("Tauchlehrer").assertExists()
+        capture("dive_edit_de_narrow_2x_participants.png")
+    }
+
+    @Test
+    @Config(qualifiers = "de-rDE-w320dp-h891dp-xxhdpi")
+    fun `the add sheet at two hundred percent in german`() {
         render(state(draft = DiveEditDraft.of(dive(participants = people()))), fontScale = 2f)
 
-        compose.onNodeWithTag("dive_edit_scroll").performScrollToNode(
-            hasText("In einem gemeinsamen Tauchgang werden Hinzugefügte auch bei den anderen Tauchern eingetragen. Wer hier entfernt wird, bleibt bei den anderen."),
-        )
-        capture("dive_edit_de_narrow_2x_participants.png")
+        openAddParticipant(label = "Teilnehmende hinzufügen")
+
+        compose.onNodeWithText("Taucher suchen").assertExists()
+        compose.onNodeWithTag("dive_edit_participant_search").assertExists()
+        compose.onNode(hasText("Tauchlehrer") and hasClickAction())
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.RadioButton))
+        capture("dive_edit_de_narrow_2x_participant_add.png")
+        // The sheet is one scroll, so the list stays reachable when the header fills a 200 % viewport.
+        compose.onNodeWithTag("dive_edit_participant_add_scroll").performScrollToNode(hasText("Cleo"))
+        compose.onNodeWithText("Cleo").assertExists()
+    }
+
+    @Test
+    @Config(qualifiers = "de-rDE-w320dp-h891dp-xxhdpi")
+    fun `the role choice at two hundred percent in german`() {
+        render(state(draft = DiveEditDraft.of(dive(participants = people()))), fontScale = 2f)
+
+        openRoleSheet()
+
+        compose.onNodeWithText("Rolle für Anna").assertExists()
+        compose.onNodeWithText("Tauchlehrer").assertExists()
+        capture("dive_edit_de_narrow_2x_participant_role.png")
     }
 
     private fun people() = listOf(
         DiveViewParticipantsItem(diverId = "anna", name = "Anna", role = "buddy"),
         DiveViewParticipantsItem(diverId = "ben", name = "Ben", role = "guide"),
     )
+
+    private fun peopleWithInstructor() = people() + DiveViewParticipantsItem(
+        diverId = "clara",
+        name = "Alexandra Winterhalter",
+        role = "instructor",
+    )
+
+    private fun openAddParticipant(label: String = "Add a participant") {
+        compose.onNodeWithTag("dive_edit_scroll").performScrollToNode(hasText(label))
+        compose.onNode(hasText(label) and hasClickAction()).performClick()
+    }
+
+    private fun openRoleSheet(role: String = "Buddy") {
+        compose.onNodeWithTag("dive_edit_scroll").performScrollToNode(hasText(role))
+        compose.onNode(hasText(role) and hasClickAction()).performClick()
+    }
+
+    private val jointNote =
+        "In a joint dive, adding someone adds them to the others’ dives; removing them here leaves them there."
+
+    private val sharedHint =
+        "Every user of this Dive Hub sees the names of all divers and what their SSI code says: name, e-mail and " +
+            "leader number. Nothing else about them."
 
     private fun render(state: DiveEditUiState, darkTheme: Boolean = false, fontScale: Float? = null) {
         compose.setContent {
