@@ -108,7 +108,9 @@ class AppContainer(context: Context) {
 
     /**
      * The offline write queue: screens enqueue here and the store shows the edit at once (ADR 0084 D4). [queueRevision]
-     * lets the pending indicator re-read the queue after an edit, before any sync trigger runs.
+     * lets the pending indicator re-read the queue after an edit, before any sync trigger runs. The scanner's actions
+     * replay through it too; T7 owns the session/sync triggers that drain it, and until then the scanner triggers its
+     * own replay.
      */
     private val _queueRevision = MutableStateFlow(0L)
     val queueRevision: StateFlow<Long> = _queueRevision.asStateFlow()

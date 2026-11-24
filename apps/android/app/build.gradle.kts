@@ -28,6 +28,9 @@ android {
         targetSdk = 37
         versionCode = envInt("ANDROID_VERSION_CODE", 1)
         versionName = providers.environmentVariable("ANDROID_VERSION_NAME").orNull ?: "0.1.0-dev"
+        // Phase C merges dark (ADR 0084): the scanner is visible in debug builds, hidden in release until the
+        // conflict surface ships.
+        buildConfigField("boolean", "SCANNER_ENABLED", "false")
     }
 
     signingConfigs {
@@ -50,6 +53,7 @@ android {
     buildTypes {
         getByName("debug") {
             signingConfig = signingConfigs.getByName("debug")
+            buildConfigField("boolean", "SCANNER_ENABLED", "true")
         }
         getByName("release") {
             if (missingReleaseSigningEnv.isEmpty()) {
@@ -112,6 +116,7 @@ dependencies {
     implementation(libs.ktor.client.okhttp)
     implementation(libs.sqldelight.android.driver)
     implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.zxing.core)
 
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)

@@ -1,0 +1,13 @@
+-- v6 keeps what a replayed scan resolved to, for the scanner screen (T11). The raw scanned text stays in its queued
+-- action (the User's data, and what a take needs); this table never holds it.
+CREATE TABLE scan_result(
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    at TEXT NOT NULL,
+    status TEXT NOT NULL,
+    kind TEXT,
+    name TEXT,
+    entityId TEXT,
+    detailJson TEXT,
+    errorCode TEXT,
+    actionId INTEGER
+);

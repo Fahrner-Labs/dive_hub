@@ -47,6 +47,13 @@ export const OPERATIONS = [
   // Client diagnostics (FAH-325): the status the app reads and the upload it sends, so contract drift here is gated too.
   { name: 'ApiClientDiagnosticsStatusGet200Response', path: '/api/client-diagnostics/status', method: 'get', kind: 'response', status: '200' },
   { name: 'ApiClientDiagnosticsPostRequest', path: '/api/client-diagnostics', method: 'post', kind: 'request' },
+  // The scanner (T11): read a code, take a person's code, and create a centre from a centre's code with a client id.
+  { name: 'ApiVerificationCodesReadPostRequest', path: '/api/verification-codes/read', method: 'post', kind: 'request' },
+  { name: 'ApiVerificationCodesReadPost200Response', path: '/api/verification-codes/read', method: 'post', kind: 'response', status: '200' },
+  { name: 'ApiDiversFromCodePostRequest', path: '/api/divers/from-code', method: 'post', kind: 'request' },
+  { name: 'DiverDetailsView', path: '/api/divers/from-code', method: 'post', kind: 'response', status: '200' },
+  { name: 'ApiDiveCentresPostRequest', path: '/api/dive-centres', method: 'post', kind: 'request' },
+  { name: 'CentreView', path: '/api/dive-centres', method: 'post', kind: 'response', status: '200' },
 ];
 
 /** Named component schemas the app uses outside an operation body. Refusals decode through the tolerant ApiErrorBody. */

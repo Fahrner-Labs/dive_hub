@@ -140,9 +140,13 @@ enum class PendingWriteKind(val wire: String) {
     }
 }
 
-/** Where an entry stands: waiting, parked for the User's decision, or failed with a reason the UI can show. */
+/**
+ * Where an entry stands: waiting, read and waiting for the User's decision (a scan), parked as a conflict, or failed
+ * with a reason the UI can show. [Awaiting] is never replayed until the User acts; the queue still holds its payload.
+ */
 enum class PendingWriteStatus(val wire: String) {
     Pending("pending"),
+    Awaiting("awaiting"),
     Conflicted("conflicted"),
     Failed("failed"),
     ;
@@ -151,6 +155,45 @@ enum class PendingWriteStatus(val wire: String) {
         fun fromWire(value: String): PendingWriteStatus = entries.firstOrNull { it.wire == value } ?: Pending
     }
 }
+
+/** What a replayed scan resolved to (T11): the code was read, or became a Diver or a centre, or was refused. */
+enum class ScanStatus(val wire: String) {
+    /** The server read the code but nothing was written: the screen shows what it is and asks what to do. */
+    Read("read"),
+
+    /** The write made a new Diver or Dive centre. */
+    Created("created"),
+
+    /** The write found the person or centre already here and brought it up to date. */
+    Existing("existing"),
+
+    /** The server refused the scan; [ScanResult.errorCode] names why. */
+    Failed("failed"),
+    ;
+
+    companion object {
+        fun fromWire(value: String): ScanStatus = entries.firstOrNull { it.wire == value } ?: Failed
+    }
+}
+
+/**
+ * One resolved scan on the scanner screen (T11). [detailJson] is the API's own answer for a [ScanStatus.Read] (a
+ * centre's fields, or a person's and what taking the code would change); [entityId] is the Diver or centre it names,
+ * or for a centre not here yet the client uuid its create will carry. [actionId] is the queued read the result came
+ * from: taking a person's code needs that action's text, which stays in the queue, never in this table. Acting or
+ * dismissing deletes the action and the row.
+ */
+data class ScanResult(
+    val id: Long,
+    val at: String,
+    val status: ScanStatus,
+    val kind: String? = null,
+    val name: String? = null,
+    val entityId: String? = null,
+    val detailJson: String? = null,
+    val errorCode: String? = null,
+    val actionId: Long? = null,
+)
 
 /**
  * One queued write (ADR 0084 D4). A patch carries the field→value body a replay sends, the `baseVersion` it started

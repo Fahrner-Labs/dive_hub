@@ -69,6 +69,8 @@ import dev.divehub.android.ui.navigation.ConflictsRoute
 import dev.divehub.android.ui.navigation.AppScreens
 import dev.divehub.android.ui.navigation.clearSavedTabStates
 import dev.divehub.android.ui.navigation.sessionDestination
+import dev.divehub.android.ui.scan.ScanRoute as ScanCodeRoute
+import dev.divehub.android.ui.scan.ScanViewModel
 import dev.divehub.android.ui.settings.SettingsDebugRoute
 import dev.divehub.android.ui.settings.SettingsRoute
 import dev.divehub.android.ui.settings.SettingsViewModel
@@ -96,12 +98,13 @@ fun DiveHubApp(
     lead: LeadEstimateViewModel,
     loadings: LoadingsViewModel,
     writes: WritesViewModel,
+    scan: ScanViewModel,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val writesState by writes.state.collectAsStateWithLifecycle()
     val navController = rememberNavController()
-    val screens = remember(container, viewModel, logbook, dive, tools, gasPlan, lead, loadings, writes) {
-        DiveHubScreens(container, viewModel, logbook, dive, tools, gasPlan, lead, loadings, writes)
+    val screens = remember(container, viewModel, logbook, dive, tools, gasPlan, lead, loadings, writes, scan) {
+        DiveHubScreens(container, viewModel, logbook, dive, tools, gasPlan, lead, loadings, writes, scan)
     }
     val writeActions = remember(navController, writes) {
         WritesActions(
@@ -119,6 +122,7 @@ fun DiveHubApp(
             lead.forget()
             loadings.forget()
             writes.forget()
+            scan.forget()
             if (!state.loading) navController.clearSavedTabStates()
         }
     }
@@ -171,6 +175,7 @@ private class DiveHubScreens(
     private val lead: LeadEstimateViewModel,
     private val loadings: LoadingsViewModel,
     private val writes: WritesViewModel,
+    private val scan: ScanViewModel,
 ) : AppScreens {
     @Composable
     override fun instance() {
@@ -227,7 +232,7 @@ private class DiveHubScreens(
     }
 
     @Composable
-    override fun settings(onOpenDebug: () -> Unit) {
+    override fun settings(onOpenDebug: () -> Unit, onOpenScan: () -> Unit) {
         val state by viewModel.state.collectAsStateWithLifecycle()
         val settings: SettingsViewModel = viewModel(factory = SettingsViewModel.factory(container))
         SettingsRoute(
@@ -238,7 +243,14 @@ private class DiveHubScreens(
             onChangeInstance = viewModel::signOutAndChangeInstance,
             onSignOut = viewModel::signOut,
             onOpenDebug = onOpenDebug,
+            showScan = BuildConfig.SCANNER_ENABLED,
+            onOpenScan = onOpenScan,
         )
+    }
+
+    @Composable
+    override fun scan(onBack: () -> Unit) {
+        ScanCodeRoute(viewModel = scan, onBack = onBack)
     }
 
     @Composable

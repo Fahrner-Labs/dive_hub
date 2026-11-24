@@ -62,13 +62,15 @@ internal interface AppScreens {
     fun tools(page: ToolPage, onPage: (ToolPage) -> Unit, onOpenDive: (String) -> Unit)
 
     @Composable
-    fun settings(onOpenDebug: () -> Unit)
+    fun settings(onOpenDebug: () -> Unit, onOpenScan: () -> Unit)
 
     @Composable
     fun settingsDebug(owner: ViewModelStoreOwner, onBack: () -> Unit)
 
     @Composable
     fun conflicts(onBack: () -> Unit, onOpenDive: (String) -> Unit)
+
+    fun scan(onBack: () -> Unit)
 }
 
 /**
@@ -174,7 +176,15 @@ internal fun AppNavHost(
                             onOpenDebug = {
                                 navController.navigate(SettingsDebugRoute) { launchSingleTop = true }
                             },
+                            onOpenScan = {
+                                navController.navigate(ScanRoute) { launchSingleTop = true }
+                            },
                         )
+                    }
+                }
+                composable<ScanRoute> {
+                    MainShell(navController) {
+                        currentScreens.value.scan(onBack = { navController.popBackStack() })
                     }
                 }
                 composable<SettingsDebugRoute> {
