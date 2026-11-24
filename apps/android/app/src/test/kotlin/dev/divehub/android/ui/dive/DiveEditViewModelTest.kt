@@ -1,7 +1,10 @@
 package dev.divehub.android.ui.dive
 
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
+import dev.divehub.api.models.FoundDiver
+import dev.divehub.shared.DiveHubException
 import dev.divehub.shared.dive.DiveValue
+import dev.divehub.shared.divers.DiverSearch
 import dev.divehub.shared.logbook.StoreLogbook
 import dev.divehub.shared.store.Dive
 import dev.divehub.shared.store.DiveSite
@@ -223,6 +226,135 @@ class DiveEditViewModelTest {
     }
 
     @Test
+    fun `typing while online searches every diver after the pause`() = runTest(dispatcher) {
+        val driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
+        val store = DiveStore.create(driver)
+        try {
+            store.upsertDive(dive())
+            val search = FakeSearch(
+                listOf(
+                    FoundDiver("diver-2", "Bea", managed = true, external = false),
+                    FoundDiver("diver-3", "Cleo", managed = false, external = false),
+                    FoundDiver("diver-4", "Dee", managed = false, external = true),
+                ),
+            )
+            val viewModel = viewModel(store, search = search)
+            viewModel.open("dive-1")
+            advanceUntilIdle()
+
+            viewModel.searchParticipants("  Be  ")
+            assertEquals(DiverSearchState.Searching("Be"), viewModel.state.value.participantSearch)
+            advanceUntilIdle()
+
+            assertEquals(listOf("Be"), search.queries)
+            assertEquals(
+                DiverSearchState.Found(
+                    "Be",
+                    listOf(
+                        DiverChoice("diver-2", "Bea", managed = true, external = false),
+                        DiverChoice("diver-3", "Cleo", managed = false, external = false),
+                        DiverChoice("diver-4", "Dee", managed = false, external = true),
+                    ),
+                ),
+                viewModel.state.value.participantSearch,
+            )
+        } finally {
+            driver.close()
+        }
+    }
+
+    @Test
+    fun `a later keystroke replaces the search it interrupted`() = runTest(dispatcher) {
+        val driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
+        val store = DiveStore.create(driver)
+        try {
+            store.upsertDive(dive())
+            val search = FakeSearch()
+            val viewModel = viewModel(store, search = search)
+            viewModel.open("dive-1")
+            advanceUntilIdle()
+
+            viewModel.searchParticipants("B")
+            viewModel.searchParticipants("Be")
+            advanceUntilIdle()
+
+            assertEquals(listOf("Be"), search.queries)
+        } finally {
+            driver.close()
+        }
+    }
+
+    @Test
+    fun `offline searches nobody and keeps the cached divers`() = runTest(dispatcher) {
+        val driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
+        val store = DiveStore.create(driver)
+        try {
+            store.upsertDive(dive())
+            val search = FakeSearch()
+            val viewModel = viewModel(store, online = MutableStateFlow(false), search = search)
+            viewModel.open("dive-1")
+            advanceUntilIdle()
+
+            viewModel.searchParticipants("Bea")
+            advanceUntilIdle()
+
+            assertTrue(search.queries.isEmpty())
+            assertEquals(DiverSearchState.Idle, viewModel.state.value.participantSearch)
+        } finally {
+            driver.close()
+        }
+    }
+
+    @Test
+    fun `a refused search says so so the cached divers can stand in`() = runTest(dispatcher) {
+        val driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
+        val store = DiveStore.create(driver)
+        try {
+            store.upsertDive(dive())
+            val search = FakeSearch(failure = DiveHubException("server_error", 500, null))
+            val viewModel = viewModel(store, search = search)
+            viewModel.open("dive-1")
+            advanceUntilIdle()
+
+            viewModel.searchParticipants("Bea")
+            advanceUntilIdle()
+
+            assertEquals(DiverSearchState.Failed("Bea"), viewModel.state.value.participantSearch)
+        } finally {
+            driver.close()
+        }
+    }
+
+    @Test
+    fun `clearing the field or going offline forgets the live list`() = runTest(dispatcher) {
+        val driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
+        val store = DiveStore.create(driver)
+        try {
+            store.upsertDive(dive())
+            val online = MutableStateFlow(true)
+            val search = FakeSearch(listOf(FoundDiver("diver-2", "Bea", managed = true, external = false)))
+            val viewModel = viewModel(store, online = online, search = search)
+            viewModel.open("dive-1")
+            advanceUntilIdle()
+
+            viewModel.searchParticipants("Bea")
+            advanceUntilIdle()
+            assertTrue(viewModel.state.value.participantSearch is DiverSearchState.Found)
+
+            viewModel.resetParticipantSearch()
+            assertEquals(DiverSearchState.Idle, viewModel.state.value.participantSearch)
+
+            viewModel.searchParticipants("Bea")
+            advanceUntilIdle()
+            online.value = false
+            advanceUntilIdle()
+            assertEquals(DiverSearchState.Idle, viewModel.state.value.participantSearch)
+        } finally {
+            driver.close()
+        }
+    }
+
+    @Test
     fun `the online state follows the sync`() = runTest(dispatcher) {
         val driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
         val store = DiveStore.create(driver)
@@ -339,13 +471,28 @@ class DiveEditViewModelTest {
         store: DiveStore,
         onStoreWrite: () -> Unit = {},
         online: MutableStateFlow<Boolean> = MutableStateFlow(true),
+        search: DiverSearch = FakeSearch(),
     ) = DiveEditViewModel(
         store = StoreLogbook(store),
         queue = WriteQueue(store),
         online = online,
         onStoreWrite = onStoreWrite,
+        diverSearch = search,
         ioDispatcher = dispatcher,
     )
+
+    private class FakeSearch(
+        private val results: List<FoundDiver> = emptyList(),
+        private val failure: Throwable? = null,
+    ) : DiverSearch {
+        val queries = mutableListOf<String>()
+
+        override suspend fun search(query: String): List<FoundDiver> {
+            queries += query
+            failure?.let { throw it }
+            return results
+        }
+    }
 
     private fun diver(id: String, name: String) = Diver(
         id = id,

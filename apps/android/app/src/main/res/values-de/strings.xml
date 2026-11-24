@@ -278,7 +278,12 @@
     <string name="dive_edit_participants_joint">In einem gemeinsamen Tauchgang erscheint, wen du hier hinzufügst, auch bei den anderen Tauchern. Wen du hier entfernst, bleibt bei den anderen.</string>
     <string name="dive_edit_find_diver">Taucher suchen</string>
     <string name="dive_edit_no_diver_match">Kein Taucher passt</string>
-    <string name="dive_edit_no_other_divers">Keine weiteren Taucher zum Hinzufügen. Taucher kommen mit einer Synchronisierung auf dieses Gerät; einen externen Taucher fügst du im Web hinzu.</string>
+    <string name="dive_edit_no_other_divers">Keine weiteren Taucher auf diesem Gerät. Stelle eine Verbindung her, um alle Taucher zu durchsuchen; um jemanden Neues hinzuzufügen, nutze das Web.</string>
+    <string name="dive_edit_search_hint">Gib einen Namen ein, um alle Taucher zu durchsuchen. Um jemanden Neues hinzuzufügen, nutze das Web.</string>
+    <string name="dive_edit_search_offline">Offline: nur die Taucher auf diesem Gerät. Stelle eine Verbindung her, um alle Taucher zu durchsuchen.</string>
+    <string name="dive_edit_searching">Alle Taucher werden gesucht…</string>
+    <string name="dive_edit_search_failed">Die Suche über alle Taucher ist fehlgeschlagen. Angezeigt werden die Taucher auf diesem Gerät.</string>
+    <string name="dive_edit_add_new_web">Um jemanden Neues hinzuzufügen, nutze das Web.</string>
     <string name="dive_edit_divers_shared">Alle Benutzer dieses Dive Hub sehen die Namen aller Taucher und was in ihrem SSI-Code steht: Name, E-Mail und Leader-Nummer. Sonst nichts über sie.</string>
     <string name="dive_edit_as_role">Als</string>
     <string name="dive_edit_diver_yours">Von dir verwaltet</string>

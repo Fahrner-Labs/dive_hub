@@ -278,7 +278,12 @@
     <string name="dive_edit_participants_joint">In a joint dive, someone you add here also appears on the other divers’ dives. Removing someone here leaves them on the others.</string>
     <string name="dive_edit_find_diver">Find a diver</string>
     <string name="dive_edit_no_diver_match">No divers match</string>
-    <string name="dive_edit_no_other_divers">No other divers to add. Divers arrive on this device with a sync; to add an external diver, use the web.</string>
+    <string name="dive_edit_no_other_divers">No other divers on this device. Connect to search every diver; to add someone new, use the web.</string>
+    <string name="dive_edit_search_hint">Type a name to search every diver. To add someone new, use the web.</string>
+    <string name="dive_edit_search_offline">Offline: only the divers on this device. Connect to search every diver.</string>
+    <string name="dive_edit_searching">Searching every diver…</string>
+    <string name="dive_edit_search_failed">Couldn’t search every diver. Showing the divers on this device.</string>
+    <string name="dive_edit_add_new_web">To add someone new, use the web.</string>
     <string name="dive_edit_divers_shared">Every user of this Dive Hub sees the names of all divers and what their SSI code says: name, e-mail and leader number. Nothing else about them.</string>
     <string name="dive_edit_as_role">As</string>
     <string name="dive_edit_diver_yours">You manage this diver</string>

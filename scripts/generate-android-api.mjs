@@ -24,6 +24,8 @@ export const OPERATIONS = [
   { name: 'ApiDivesGet200Response', path: '/api/dives', method: 'get', kind: 'response', status: '200' },
   // The offline sync's phase 1 (slice D2): the Divers the User keeps, their body weights, and the paged Dive sites.
   { name: 'DiverView', path: '/api/divers', method: 'get', kind: 'response', status: '200' },
+  // The Participants add sheet (FAH-488): the live search over every Diver of the instance, by name.
+  { name: 'FoundDiver', path: '/api/divers/search', method: 'get', kind: 'response', status: '200' },
   { name: 'ApiDiverBodyWeightsGet200ResponseItem', path: '/api/divers/{id}/body-weights', method: 'get', kind: 'response', status: '200' },
   { name: 'ApiDiveSitesGet200Response', path: '/api/dive-sites', method: 'get', kind: 'response', status: '200' },
   // The refresh slice (D3): deleted Dives, paged by nextCursor, become tombstones in the store.
