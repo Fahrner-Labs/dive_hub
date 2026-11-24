@@ -391,7 +391,8 @@ online.
   online-only wording ("no answer at all", above), never queued.
 - **An old server means read-only, probed not parsed.** Once per session the client probes
   `GET /sync/changes`: a 404 hides the write UI for that session (hidden, not disabled); any 2xx means
-  writeable. There is no version parsing.
+  writeable. If the first attempt gets no answer, it asks again when a connection first answers, so a
+  pre-feed server reached later is still found. There is no version parsing.
 - **The feed keeps the base versions fresh.** Live hints drain the change feed
   ([Offline reads](#offline-reads-native-client)), so a queued edit replays against what the server actually
   holds.
@@ -1682,12 +1683,13 @@ Rules that only the web client kept. Both moved to the server on 2026-10-04, so 
 ## For the mobile client
 - Authentication: bearer tokens, decided in [ADR 0074](../decisions/0074-bearer-tokens-for-native-clients.md).
   Still open: how a phone finds a self-hosted instance beyond typing its URL at first start.
-- Offline use: reads from the on-device read store ([Offline reads](#offline-reads-native-client)), kept
-  current by the change feed ([ADR 0083](../decisions/0083-change-feed-and-incremental-sync.md)); writes
+- Offline use: **writeable**. Reads come from the on-device read store ([Offline reads](#offline-reads-native-client)),
+  kept current by the change feed ([ADR 0083](../decisions/0083-change-feed-and-incremental-sync.md)); writes go
   through the offline write queue with user-decided Conflicts
   ([Offline writes](#offline-writes-native-client),
-  [ADR 0084](../decisions/0084-offline-writes-in-the-native-core.md)). The contract is decided; it ships in
-  the phased rollout of FAH-457, and this ledger line flips to "writeable" when it lands.
+  [ADR 0084](../decisions/0084-offline-writes-in-the-native-core.md)). The first writeable app release
+  (`android-v0.2.0`) needs server `v0.4.0` or newer ([release runbook](../releases.md)); against an older server it
+  probes the feed once per session and stays read-only, same APK ([Offline writes](#offline-writes-native-client)).
 - Uploading from the phone: still open. The share sheet, files from a watch app, large account exports (resumable
   uploads, [architecture](architecture.md#open-questions)).
 - Push notifications for finished Imports: still open.

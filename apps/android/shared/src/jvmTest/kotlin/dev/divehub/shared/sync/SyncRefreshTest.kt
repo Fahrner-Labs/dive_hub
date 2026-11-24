@@ -6,6 +6,10 @@ import dev.divehub.shared.DiveHubException
 import dev.divehub.shared.NoAnswerException
 import dev.divehub.shared.store.Dive
 import dev.divehub.shared.store.DiveStore
+import dev.divehub.shared.store.PendingWriteStatus
+import dev.divehub.shared.write.WriteQueue
+import dev.divehub.shared.write.WriteReplayResult
+import dev.divehub.shared.write.WriteReplayer
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
 import io.ktor.http.HttpHeaders
@@ -21,6 +25,8 @@ import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.CancellationException
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -1086,6 +1092,59 @@ class SyncRefreshTest {
         // Nothing was wiped: a local row the pages do not carry stays (a schema-v5 write queue lives beside it).
         assertNotNull(store.dive("local-only"))
         assertNotNull(store.dive("dive-1"))
+    }
+
+    @Test
+    fun `the exit gate - a 410 resync keeps a queued edit and rebases it against the fresh state`() = runTest {
+        var refusedOnce = false
+        val harness = seeded { path ->
+            if (!refusedOnce && path.startsWith("/api/sync/changes?cursor=c0")) {
+                refusedOnce = true
+                RefreshReply.Status(HttpStatusCode.Gone)
+            } else {
+                refreshRoutes(path)
+            }
+        }
+        RefreshData.feedAvailable = true
+        store.saveSyncState(store.syncState().copy(feedCursor = "c0"))
+        harness.paths.clear()
+        WriteQueue(store, clock = { RefreshNow }).enqueueDivePatch(
+            "dive-1",
+            RefreshJson.parseToJsonElement("""{"notes":"From the boat"}""") as JsonObject,
+        )
+
+        assertEquals(SyncResult.Complete, harness.engine.refresh())
+
+        // The resync rebuilt the store but did not discard the User's queued write or its base version.
+        val waiting = store.pendingWrites(PendingWriteStatus.Pending).single()
+        assertEquals(3L, waiting.baseVersion)
+        assertNotNull(store.dive("dive-1"))
+
+        // Replay answers the stale base version with 412 and the fresh view: the edit is rebased, not lost.
+        val api = ApiClient(
+            engine = MockEngine {
+                respond(
+                    """{"code":"dive_changed","dive":${refreshDetailJson(version = 7, notes = "Server edit")}}""",
+                    HttpStatusCode.PreconditionFailed,
+                    headersOf(HttpHeaders.ContentType, "application/json"),
+                )
+            },
+            versionName = "0.1.0-dev",
+            token = { "token" },
+            onUnauthorized = {},
+            json = RefreshJson,
+        ).apply { baseUrl = "https://dive.example" }
+        val replayer = WriteReplayer(api, store, clock = { RefreshNow })
+        val result = replayer.replay()
+
+        assertIs<WriteReplayResult.Drained>(result)
+        assertEquals(1, result.conflicted)
+        val conflict = replayer.conflicts().single()
+        assertEquals(7L, conflict.serverVersion)
+        assertEquals("A good dive", (conflict.fields.single().base as JsonPrimitive).content)
+        assertEquals("Server edit", (conflict.fields.single().server as JsonPrimitive).content)
+        assertEquals("From the boat", (conflict.fields.single().local as JsonPrimitive).content)
+        assertEquals(PendingWriteStatus.Conflicted, store.pendingWrites().single().status)
     }
 
     @Test

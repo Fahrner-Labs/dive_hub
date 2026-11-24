@@ -58,6 +58,18 @@ verifies its v2+ signature with `apksigner`, and attaches `DiveHub-<versionName>
 is a non-latest prerelease; a stable tag is latest. The version name and code come from the tag
 (`scripts/android-version-code.mjs`).
 
+### Minimum server version
+
+The first Android release that can write is `android-v0.2.0`. It needs a server that serves the change feed,
+`v0.4.0` or newer ([ADR 0083](decisions/0083-change-feed-and-incremental-sync.md) D7); an older server makes the app
+read-only for that session. Put this line in the release notes' **Upgrade** section:
+
+> Requires Dive Hub server **v0.4.0 or newer**. Against an older server the app stays read-only (the edit surfaces
+> are hidden); the same APK becomes writeable as soon as the instance is upgraded.
+
+An older app against the new server keeps working: the API grows additively
+([ADR 0076](decisions/0076-api-versioning-policy.md)).
+
 ## Watching and repairing
 
 ```sh

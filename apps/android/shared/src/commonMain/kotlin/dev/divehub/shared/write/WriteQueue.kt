@@ -45,6 +45,8 @@ object ScanEntities {
 class WriteQueue(
     private val store: DiveStore,
     private val clock: () -> String = { Clock.System.now().toString() },
+    /** The app's queue indicator reads this after a write lands; the store itself has no screen revision. */
+    private val onEnqueued: () -> Unit = {},
 ) {
     /** The generated request models are the wire contract; nulls stay out of an action's body. */
     private val json = Json { explicitNulls = false }
@@ -106,6 +108,7 @@ class WriteQueue(
                 conflictJson = null,
             )
             store.updatePendingWrite(updated)
+            onEnqueued()
             return updated
         }
         return store.addPendingWrite(
@@ -119,7 +122,7 @@ class WriteQueue(
                 baseVersion = baseVersion,
                 baseJson = baseJson,
             ),
-        )
+        ).also { onEnqueued() }
     }
 
     /**
@@ -135,7 +138,7 @@ class WriteQueue(
             payloadJson = payload.toString(),
             enqueuedAt = clock(),
         ),
-    )
+    ).also { onEnqueued() }
 
     /**
      * Queue a scanned code's raw text (T11). The client cannot read the server's format, so with no signal the text
