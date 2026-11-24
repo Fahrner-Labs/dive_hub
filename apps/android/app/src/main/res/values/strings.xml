@@ -159,6 +159,7 @@
     <string name="dive_feedback_too_light">Too light by %1$s</string>
     <string name="dive_feedback_too_light_unknown">Too light</string>
     <string name="dive_notes">Notes</string>
+    <string name="dive_edit_notes_hint">What happened on this dive?</string>
 
     <string name="dive_participants">Participants</string>
     <string name="dive_participant">%1$s (%2$s)</string>
@@ -183,7 +184,7 @@
     <string name="dive_edit">Edit</string>
     <string name="dive_edit_title">Edit dive</string>
     <string name="dive_edit_values">Values</string>
-    <string name="dive_edit_number_note">Set by Dive Hub; it can’t be changed here.</string>
+    <string name="dive_edit_number_note">Set by Dive Hub, not editable here.</string>
     <string name="dive_edit_unit_minutes">min</string>
     <string name="dive_edit_unit_metres">m</string>
     <string name="dive_edit_unit_feet">ft</string>
@@ -193,7 +194,7 @@
     <string name="dive_edit_unit_pounds">lb</string>
     <string name="dive_edit_unit_mm">mm</string>
     <string name="dive_edit_edited">edited</string>
-    <string name="dive_edit_use_recording">Use the recording’s value (%1$s)</string>
+    <string name="dive_edit_use_recording">Use the recording’s value</string>
     <string name="dive_edit_utc_offset">UTC offset</string>
     <string name="dive_edit_offset_decrease">Decrease the UTC offset by 15 minutes</string>
     <string name="dive_edit_offset_increase">Increase the UTC offset by 15 minutes</string>
@@ -216,6 +217,8 @@
     <string name="dive_edit_no_site">No dive site</string>
     <string name="dive_edit_choose_site">Choose a dive site</string>
     <string name="dive_edit_find_site">Find a dive site</string>
+    <string name="dive_edit_no_match">No dive sites match</string>
+    <string name="dive_edit_clear_search">Clear the search</string>
     <string name="dive_edit_not_known">Not known</string>
     <string name="dive_edit_not_said">Not said</string>
     <string name="dive_edit_thickness">Thickness</string>

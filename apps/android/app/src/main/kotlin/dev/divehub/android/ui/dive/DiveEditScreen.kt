@@ -2,7 +2,10 @@ package dev.divehub.android.ui.dive
 
 import android.text.format.DateFormat
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -13,25 +16,38 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDefaults
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TimePicker
+import androidx.compose.material3.TimePickerDefaults
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.rememberTimePickerState
@@ -44,24 +60,35 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.divehub.android.R
+import dev.divehub.android.ui.DiveHubColors
 import dev.divehub.android.ui.DiveHubText
 import dev.divehub.android.ui.DiveHubTopBar
 import dev.divehub.android.ui.Formats
 import dev.divehub.android.ui.LargeTextFontScale
 import dev.divehub.android.ui.Spacing
+import dev.divehub.android.ui.components.DangerButton
 import dev.divehub.android.ui.components.EmptyState
 import dev.divehub.android.ui.components.FactRow
 import dev.divehub.android.ui.components.InkButton
+import dev.divehub.android.ui.components.QuietActionTarget
 import dev.divehub.android.ui.components.QuietButton
+import dev.divehub.android.ui.components.Radius
+import dev.divehub.android.ui.components.SecondaryButton
 import dev.divehub.android.ui.components.Section
 import dev.divehub.android.ui.tools.NumberField
 import dev.divehub.shared.dive.DiveEditDraft
@@ -140,11 +167,20 @@ fun DiveEditScreen(
     BackHandler(onBack = requestBack)
 
     Scaffold(
+        modifier = Modifier.imePadding(),
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             DiveHubTopBar(
                 title = stringResource(R.string.dive_edit_title),
                 onBack = requestBack,
+                stackedTitle = true,
+                titleModifier = Modifier.semantics { heading() },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background,
+                    titleContentColor = MaterialTheme.colorScheme.onBackground,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onBackground,
+                    actionIconContentColor = MaterialTheme.colorScheme.onBackground,
+                ),
             )
         },
         bottomBar = {
@@ -173,7 +209,6 @@ fun DiveEditScreen(
                     draft = draft,
                     sites = state.sites,
                     originalSiteName = state.originalSiteName,
-                    online = state.online,
                     imperial = imperial,
                     locale = locale,
                     resetToken = resetToken,
@@ -190,13 +225,18 @@ fun DiveEditScreen(
     if (confirmLeave) {
         AlertDialog(
             onDismissRequest = { confirmLeave = false },
+            shape = RoundedCornerShape(Radius.sheet),
+            containerColor = MaterialTheme.colorScheme.surface,
             title = { Text(stringResource(R.string.dive_edit_leave_title)) },
             text = { Text(stringResource(R.string.dive_edit_leave_body)) },
             confirmButton = {
-                TextButton(onClick = {
-                    confirmLeave = false
-                    onBack()
-                }) { Text(stringResource(R.string.dive_edit_discard)) }
+                DangerButton(
+                    stringResource(R.string.dive_edit_discard),
+                    onClick = {
+                        confirmLeave = false
+                        onBack()
+                    },
+                )
             },
             dismissButton = {
                 TextButton(onClick = { confirmLeave = false }) {
@@ -235,16 +275,19 @@ private fun SaveBar(
             if (state.failed) {
                 Text(
                     stringResource(R.string.dive_edit_failed),
-                    style = DiveHubText.meta,
+                    modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+                    style = DiveHubText.body,
                     color = MaterialTheme.colorScheme.error,
                 )
                 Spacer(Modifier.height(Spacing.s1))
             }
             val saveText = stringResource(if (state.saving) R.string.dive_edit_saving else R.string.dive_edit_save)
             if (LocalDensity.current.fontScale >= LargeTextFontScale) {
-                // At large text the two actions share no line: a squeezed primary button breaks inside its word.
-                InkButton(saveText, onSave, Modifier.fillMaxWidth(), enabled = draft.dirty && !state.saving)
+                // At large text the two actions share no line: a squeezed primary button breaks inside its word. The
+                // enabled primary action is the bottom-most target.
                 QuietButton(stringResource(R.string.dive_edit_cancel), onCancel)
+                Spacer(Modifier.height(Spacing.s2))
+                InkButton(saveText, onSave, Modifier.fillMaxWidth(), enabled = draft.dirty && !state.saving)
             } else {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     QuietButton(stringResource(R.string.dive_edit_cancel), onCancel)
@@ -262,7 +305,6 @@ private fun EditForm(
     draft: DiveEditDraft,
     sites: List<dev.divehub.shared.store.DiveSite>,
     originalSiteName: String?,
-    online: Boolean,
     imperial: Boolean,
     locale: Locale,
     resetToken: Int,
@@ -295,6 +337,7 @@ private fun EditForm(
                     onChange = { value -> onEdit { it.setStart(value) } },
                     onReset = { onReset(DiveValue.STARTS_AT) },
                 )
+                Spacer(Modifier.height(Spacing.s4))
                 NumberValueField(
                     label = stringResource(R.string.dive_duration),
                     unit = stringResource(R.string.dive_edit_unit_minutes),
@@ -303,6 +346,7 @@ private fun EditForm(
                     onChange = { text -> onEdit { it.setDurationMinutes(parseEditInt(text)) } },
                 )
                 EditedHint(draft, DiveValue.DURATION_SECONDS, locale, imperial, onReset)
+                Spacer(Modifier.height(Spacing.s4))
                 NumberValueField(
                     label = stringResource(R.string.dive_max_depth),
                     unit = if (imperial) {
@@ -319,6 +363,7 @@ private fun EditForm(
                     },
                 )
                 EditedHint(draft, DiveValue.MAX_DEPTH_M, locale, imperial, onReset)
+                Spacer(Modifier.height(Spacing.s4))
                 NumberValueField(
                     label = stringResource(R.string.dive_avg_depth),
                     unit = if (imperial) {
@@ -335,6 +380,7 @@ private fun EditForm(
                     },
                 )
                 EditedHint(draft, DiveValue.AVG_DEPTH_M, locale, imperial, onReset)
+                Spacer(Modifier.height(Spacing.s4))
                 NumberValueField(
                     label = stringResource(R.string.dive_water_temperature),
                     unit = if (imperial) {
@@ -378,7 +424,8 @@ private fun EditForm(
                     value = draft.notes,
                     onValueChange = { value -> onEdit { it.setNotes(value) } },
                     modifier = Modifier.fillMaxWidth(),
-                    label = { Text(stringResource(R.string.dive_notes)) },
+                    label = { Text(stringResource(R.string.dive_edit_notes_hint)) },
+                    shape = RoundedCornerShape(Radius.control),
                     minLines = 4,
                 )
             }
@@ -398,7 +445,7 @@ private fun EditForm(
                 title = stringResource(R.string.dive_edit_more),
                 modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.s4),
             ) {
-                DestructiveActions(online)
+                DestructiveActions()
             }
         }
     }
@@ -438,42 +485,65 @@ private fun StartField(
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
     Spacer(Modifier.height(Spacing.s1))
-    Row(horizontalArrangement = Arrangement.spacedBy(Spacing.s2)) {
-        OutlinedButton(
-            onClick = { showDate = true },
-            modifier = Modifier.weight(1f),
-            contentPadding = PaddingValues(horizontal = Spacing.s3, vertical = Spacing.s2),
-        ) {
-            Text(dateText(local, context))
+    val date = dateText(local, context)
+    val time = timeText(local, context)
+    if (LocalDensity.current.fontScale >= LargeTextFontScale) {
+        // Text takes the full width at large text: a two-column pair wraps inside a date.
+        Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Spacing.s2)) {
+            SecondaryButton(date, { showDate = true }, Modifier.fillMaxWidth())
+            SecondaryButton(time, { showTime = true }, Modifier.fillMaxWidth())
         }
-        OutlinedButton(
-            onClick = { showTime = true },
-            modifier = Modifier.weight(1f),
-            contentPadding = PaddingValues(horizontal = Spacing.s3, vertical = Spacing.s2),
-        ) {
-            Text(timeText(local, context))
+    } else {
+        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.s2)) {
+            SecondaryButton(date, { showDate = true }, Modifier.weight(1f))
+            SecondaryButton(time, { showTime = true }, Modifier.weight(1f))
         }
     }
-    Spacer(Modifier.height(Spacing.s2))
+    Spacer(Modifier.height(Spacing.s3))
     Text(
         stringResource(R.string.dive_edit_utc_offset),
         style = DiveHubText.label,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
+    Spacer(Modifier.height(Spacing.s1))
+    Row(
+        Modifier
+            .clip(RoundedCornerShape(Radius.control))
+            .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(Radius.control)),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
         val decrease = stringResource(R.string.dive_edit_offset_decrease)
         val increase = stringResource(R.string.dive_edit_offset_increase)
-        TextButton(
+        val ink = MaterialTheme.colorScheme.onSurface
+        val disabled = ink.copy(alpha = 0.38f)
+        IconButton(
             onClick = { onChange(start.copy(utcOffsetSeconds = start.utcOffsetSeconds - OFFSET_STEP)) },
             enabled = start.utcOffsetSeconds > MIN_OFFSET_SECONDS,
             modifier = Modifier.semantics { contentDescription = decrease },
-        ) { Text("−") }
-        Text(utcOffsetText(start.utcOffsetSeconds).orEmpty(), style = DiveHubText.body)
-        TextButton(
+        ) {
+            Text(
+                "−",
+                style = DiveHubText.body,
+                color = if (start.utcOffsetSeconds > MIN_OFFSET_SECONDS) ink else disabled,
+            )
+        }
+        Text(
+            utcOffsetText(start.utcOffsetSeconds).orEmpty(),
+            modifier = Modifier.widthIn(min = 64.dp),
+            style = DiveHubText.body,
+            textAlign = TextAlign.Center,
+        )
+        IconButton(
             onClick = { onChange(start.copy(utcOffsetSeconds = start.utcOffsetSeconds + OFFSET_STEP)) },
             enabled = start.utcOffsetSeconds < MAX_OFFSET_SECONDS,
             modifier = Modifier.semantics { contentDescription = increase },
-        ) { Text("+") }
+        ) {
+            Text(
+                "+",
+                style = DiveHubText.body,
+                color = if (start.utcOffsetSeconds < MAX_OFFSET_SECONDS) ink else disabled,
+            )
+        }
     }
     timeZoneNote(timeZoneSource, edited)?.let { origin ->
         Text(
@@ -497,6 +567,8 @@ private fun StartField(
         )
         DatePickerDialog(
             onDismissRequest = { showDate = false },
+            shape = RoundedCornerShape(Radius.sheet),
+            colors = DatePickerDefaults.colors(containerColor = MaterialTheme.colorScheme.surface),
             confirmButton = {
                 TextButton(onClick = {
                     picker.selectedDateMillis?.let { millis ->
@@ -523,7 +595,10 @@ private fun StartField(
                 }
             },
         ) {
-            DatePicker(state = picker)
+            DatePicker(
+                state = picker,
+                colors = DatePickerDefaults.colors(containerColor = MaterialTheme.colorScheme.surface),
+            )
         }
     }
     if (showTime) {
@@ -534,8 +609,15 @@ private fun StartField(
         )
         AlertDialog(
             onDismissRequest = { showTime = false },
+            shape = RoundedCornerShape(Radius.sheet),
+            containerColor = MaterialTheme.colorScheme.surface,
             title = { Text(stringResource(R.string.dive_edit_time)) },
-            text = { TimePicker(state = picker) },
+            text = {
+                TimePicker(
+                    state = picker,
+                    colors = TimePickerDefaults.colors(containerColor = MaterialTheme.colorScheme.surface),
+                )
+            },
             confirmButton = {
                 TextButton(onClick = {
                     onChange(
@@ -591,6 +673,7 @@ private fun EditedHint(
     if (!edited) return
     val context = LocalContext.current
     val recordedText = recorded?.let { DiveDetailText.recordedText(context, field, it, locale, imperial) }
+    Spacer(Modifier.height(Spacing.s1))
     Text(
         recordedText?.let { context.getString(R.string.dive_edited_value, it) }
             ?: stringResource(R.string.dive_edit_edited),
@@ -598,8 +681,9 @@ private fun EditedHint(
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
     if (recordedText != null) {
+        Spacer(Modifier.height(Spacing.s2))
         QuietButton(
-            stringResource(R.string.dive_edit_use_recording, recordedText),
+            stringResource(R.string.dive_edit_use_recording),
             onReset,
         )
     }
@@ -644,13 +728,14 @@ private fun SuitFields(
         horizontalArrangement = Arrangement.spacedBy(Spacing.s2),
         verticalArrangement = Arrangement.spacedBy(Spacing.s1),
     ) {
-        FilterChip(
+        EditChip(
+            label = stringResource(R.string.dive_edit_not_known),
             selected = suit == null,
             onClick = { onEdit { it.setSuit(null) } },
-            label = { Text(stringResource(R.string.dive_edit_not_known)) },
         )
         SuitType.entries.forEach { type ->
-            FilterChip(
+            EditChip(
+                label = stringResource(type.label),
                 selected = suit?.type == type.wire,
                 onClick = {
                     onEdit {
@@ -664,7 +749,6 @@ private fun SuitFields(
                         )
                     }
                 },
-                label = { Text(stringResource(type.label)) },
             )
         }
     }
@@ -731,12 +815,33 @@ private fun SuitFields(
 
 @Composable
 private fun HoodChip(label: Int, selected: Boolean, onClick: () -> Unit) {
-    FilterChip(selected = selected, onClick = onClick, label = { Text(stringResource(label)) })
+    EditChip(label = stringResource(label), selected = selected, onClick = onClick)
 }
 
 @Composable
 private fun UndergarmentChip(label: Int, selected: Boolean, onClick: () -> Unit) {
-    FilterChip(selected = selected, onClick = onClick, label = { Text(stringResource(label)) })
+    EditChip(label = stringResource(label), selected = selected, onClick = onClick)
+}
+
+/** The form's chip: pressed with a check mark and `selected`, never colour alone (accent-soft nearly vanishes in dark). */
+@Composable
+private fun EditChip(label: String, selected: Boolean, onClick: () -> Unit) {
+    FilterChip(
+        selected = selected,
+        onClick = onClick,
+        label = { Text(label) },
+        leadingIcon = if (selected) {
+            {
+                Icon(
+                    Icons.Filled.Check,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurface,
+                )
+            }
+        } else {
+            null
+        },
+    )
 }
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -755,29 +860,29 @@ private fun WeightingFields(
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
     FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.s2)) {
-        FilterChip(
+        EditChip(
+            label = stringResource(R.string.dive_edit_not_said),
             selected = weighting == null,
             onClick = { onEdit { it.setWeighting(null) } },
-            label = { Text(stringResource(R.string.dive_edit_not_said)) },
         )
-        FilterChip(
+        EditChip(
+            label = stringResource(R.string.dive_edit_felt_right),
             selected = weighting?.felt == "right",
             onClick = { onEdit { it.setWeighting(DiveEditWeighting(felt = "right")) } },
-            label = { Text(stringResource(R.string.dive_edit_felt_right)) },
         )
-        FilterChip(
+        EditChip(
+            label = stringResource(R.string.dive_edit_felt_too_heavy),
             selected = weighting?.felt == "too_heavy",
             onClick = {
                 onEdit { it.setWeighting(DiveEditWeighting(felt = "too_heavy", amountKg = weighting?.amountKg)) }
             },
-            label = { Text(stringResource(R.string.dive_edit_felt_too_heavy)) },
         )
-        FilterChip(
+        EditChip(
+            label = stringResource(R.string.dive_edit_felt_too_light),
             selected = weighting?.felt == "too_light",
             onClick = {
                 onEdit { it.setWeighting(DiveEditWeighting(felt = "too_light", amountKg = weighting?.amountKg)) }
             },
-            label = { Text(stringResource(R.string.dive_edit_felt_too_light)) },
         )
     }
     val felt = weighting?.felt
@@ -811,9 +916,11 @@ private fun WeightingFields(
 }
 
 @Composable
-private fun DestructiveActions(online: Boolean) {
+private fun DestructiveActions() {
+    // The verbs are not implemented yet, so they stay dead in both states: blaming the connection would send the User
+    // to fix something that would not help. The contract's online-only wording comes with the implementation.
     Text(
-        stringResource(if (online) R.string.dive_edit_more_online else R.string.error_no_answer),
+        stringResource(R.string.dive_edit_more_online),
         style = DiveHubText.meta,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
@@ -843,17 +950,48 @@ private fun SitePickerSheet(
             sites.filter { it.name.contains(query.trim(), ignoreCase = true) }
         }
     }
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
-        Column(Modifier.fillMaxWidth().padding(horizontal = Spacing.s4)) {
-            Text(stringResource(R.string.dive_edit_site_title), style = DiveHubText.section)
-            Spacer(Modifier.height(Spacing.s2))
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        shape = RoundedCornerShape(topStart = Radius.sheet, topEnd = Radius.sheet),
+        containerColor = MaterialTheme.colorScheme.surface,
+    ) {
+        Column(Modifier.fillMaxWidth().padding(Spacing.s5)) {
+            Text(
+                stringResource(R.string.dive_edit_site_title),
+                modifier = Modifier.semantics { heading() },
+                style = DiveHubText.section,
+            )
+            Spacer(Modifier.height(Spacing.s3))
             OutlinedTextField(
                 value = query,
                 onValueChange = { query = it },
                 modifier = Modifier.fillMaxWidth(),
                 label = { Text(stringResource(R.string.dive_edit_find_site)) },
+                shape = RoundedCornerShape(Radius.control),
                 singleLine = true,
+                trailingIcon = if (query.isNotBlank()) {
+                    {
+                        IconButton(onClick = { query = "" }) {
+                            Icon(
+                                Icons.Filled.Close,
+                                contentDescription = stringResource(R.string.dive_edit_clear_search),
+                            )
+                        }
+                    }
+                } else {
+                    null
+                },
             )
+            if (query.isNotBlank() && matching.isEmpty()) {
+                Spacer(Modifier.height(Spacing.s2))
+                Text(
+                    stringResource(R.string.dive_edit_no_match),
+                    modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+                    style = DiveHubText.meta,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
             Spacer(Modifier.height(Spacing.s2))
             LazyColumn(Modifier.fillMaxWidth().heightIn(max = SHEET_MAX_HEIGHT_DP.dp)) {
                 item {
@@ -875,13 +1013,35 @@ private fun SitePickerSheet(
     }
 }
 
+/** A site the User can pick: the whole 48 dp row is the target, the check is an icon and `selected` is on the row. */
 @Composable
 private fun SiteRow(name: String, selected: Boolean, onClick: () -> Unit) {
-    QuietButton(
-        text = if (selected) "✓ $name" else name,
-        onClick = onClick,
-        modifier = Modifier.fillMaxWidth(),
-    )
+    Column(Modifier.fillMaxWidth()) {
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(Radius.control))
+                .background(if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface)
+                .selectable(selected = selected, role = Role.Button, onClick = onClick)
+                .semantics(mergeDescendants = true) {}
+                .padding(horizontal = Spacing.s2, vertical = Spacing.s3)
+                .heightIn(min = QuietActionTarget),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(Modifier.size(24.dp), contentAlignment = Alignment.Center) {
+                if (selected) {
+                    Icon(
+                        Icons.Filled.Check,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurface,
+                    )
+                }
+            }
+            Spacer(Modifier.width(Spacing.s2))
+            Text(name, style = DiveHubText.body)
+        }
+        HorizontalDivider(color = DiveHubColors.border)
+    }
 }
 
 private enum class SuitType(

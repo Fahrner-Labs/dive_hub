@@ -159,6 +159,7 @@
     <string name="dive_feedback_too_light">Zu leicht um %1$s</string>
     <string name="dive_feedback_too_light_unknown">Zu leicht</string>
     <string name="dive_notes">Notizen</string>
+    <string name="dive_edit_notes_hint">Was ist bei diesem Tauchgang passiert?</string>
 
     <string name="dive_participants">Teilnehmende</string>
     <string name="dive_participant">%1$s (%2$s)</string>
@@ -183,7 +184,7 @@
     <string name="dive_edit">Bearbeiten</string>
     <string name="dive_edit_title">Tauchgang bearbeiten</string>
     <string name="dive_edit_values">Werte</string>
-    <string name="dive_edit_number_note">Wird von Dive Hub vergeben und lässt sich hier nicht ändern.</string>
+    <string name="dive_edit_number_note">Wird von Dive Hub vergeben, nicht hier änderbar.</string>
     <string name="dive_edit_unit_minutes">Min.</string>
     <string name="dive_edit_unit_metres">m</string>
     <string name="dive_edit_unit_feet">ft</string>
@@ -193,7 +194,7 @@
     <string name="dive_edit_unit_pounds">lb</string>
     <string name="dive_edit_unit_mm">mm</string>
     <string name="dive_edit_edited">bearbeitet</string>
-    <string name="dive_edit_use_recording">Wert der Aufzeichnung verwenden (%1$s)</string>
+    <string name="dive_edit_use_recording">Wert der Aufzeichnung verwenden</string>
     <string name="dive_edit_utc_offset">UTC-Versatz</string>
     <string name="dive_edit_offset_decrease">UTC-Versatz um 15 Minuten verringern</string>
     <string name="dive_edit_offset_increase">UTC-Versatz um 15 Minuten erhöhen</string>
@@ -216,6 +217,8 @@
     <string name="dive_edit_no_site">Kein Tauchplatz</string>
     <string name="dive_edit_choose_site">Tauchplatz wählen</string>
     <string name="dive_edit_find_site">Tauchplatz suchen</string>
+    <string name="dive_edit_no_match">Kein Tauchplatz passt</string>
+    <string name="dive_edit_clear_search">Suche löschen</string>
     <string name="dive_edit_not_known">Nicht bekannt</string>
     <string name="dive_edit_not_said">Nicht angegeben</string>
     <string name="dive_edit_thickness">Dicke</string>

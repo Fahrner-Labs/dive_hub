@@ -2,6 +2,8 @@ package dev.divehub.android.ui.dive
 
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -28,9 +30,10 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
 /**
- * The edit screen's contract-visible states as pictures: a synced Dive being edited, an edited value with its
- * "use the recording's value" way back, the offline wording on the destructive verbs, dark, and German at 200 % on a
- * narrow phone. Rendered from a fixed state, so a drawing change shows up as a changed image.
+ * The edit screen's contract-visible states as pictures: a synced Dive being edited, the site picker, an edited value
+ * with its "use the recording's value" way back, the destructive verbs' not-available note, dark at the top and at the
+ * weighting and more actions, and German at 200 % on a narrow phone both at the top and scrolled to the foot.
+ * Rendered from a fixed state, so a drawing change shows up as a changed image.
  */
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
@@ -53,7 +56,7 @@ class DiveEditScreenshotTest {
         render(state(draft = DiveEditDraft.of(dive(overrides = listOf("maxDepthM")))))
 
         compose.onNodeWithText("edited · recording: 20.0 m").assertExists()
-        compose.onNodeWithText("Use the recording’s value (20.0 m)").assertExists()
+        compose.onNodeWithText("Use the recording’s value").assertExists()
         capture("dive_edit_edited.png")
     }
 
@@ -64,16 +67,17 @@ class DiveEditScreenshotTest {
         compose.onNodeWithText("Choose a dive site").performClick()
 
         compose.onNodeWithText("Blue Hole").assertExists()
-        compose.onNodeWithText("✓ Lighthouse Reef").assertExists()
+        compose.onNode(hasText("Lighthouse Reef") and hasClickAction()).assertIsSelected()
         capture("dive_edit_site_picker.png")
     }
 
     @Test
-    fun `offline the destructive verbs say why they cannot go`() {
+    fun `the destructive verbs say they are not available yet`() {
         render(state(draft = DiveEditDraft.of(dive()), online = false))
 
         compose.onNodeWithTag("dive_edit_scroll").performScrollToNode(hasText("More actions"))
-        compose.onNodeWithText("No answer from the instance. Check the address and your connection.").assertExists()
+        compose.onNodeWithText("Deleting, merging, moving and appending aren’t available on this device yet.")
+            .assertExists()
         capture("dive_edit_offline_actions.png")
     }
 
@@ -86,12 +90,30 @@ class DiveEditScreenshotTest {
     }
 
     @Test
+    @Config(qualifiers = "en-rUS-w411dp-h891dp-night-xxhdpi")
+    fun `the weighting and the more actions follow the dark theme`() {
+        render(state(draft = DiveEditDraft.of(dive(overrides = listOf("maxDepthM")))), darkTheme = true)
+
+        compose.onNodeWithTag("dive_edit_scroll").performScrollToNode(hasText("More actions"))
+        capture("dive_edit_dark_actions.png")
+    }
+
+    @Test
     @Config(qualifiers = "de-rDE-w320dp-h891dp-xxhdpi")
     fun `the editor at two hundred percent in german`() {
         render(state(draft = DiveEditDraft.of(dive())), fontScale = 2f)
 
         compose.onNodeWithText("Tauchgang bearbeiten").assertExists()
         capture("dive_edit_de_narrow_2x.png")
+    }
+
+    @Test
+    @Config(qualifiers = "de-rDE-w320dp-h891dp-xxhdpi")
+    fun `the lower half at two hundred percent in german`() {
+        render(state(draft = DiveEditDraft.of(dive())), fontScale = 2f)
+
+        compose.onNodeWithTag("dive_edit_scroll").performScrollToNode(hasText("Weitere Aktionen"))
+        capture("dive_edit_de_narrow_2x_scrolled.png")
     }
 
     private fun render(state: DiveEditUiState, darkTheme: Boolean = false, fontScale: Float? = null) {
