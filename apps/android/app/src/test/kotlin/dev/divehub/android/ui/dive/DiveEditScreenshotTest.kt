@@ -278,7 +278,7 @@ class DiveEditScreenshotTest {
     }
 
     @Test
-    @Config(qualifiers = "de-rDE-w320dp-h891dp-xxhdpi")
+    @Config(qualifiers = "de-rDE-w320dp-h891dp-xxhdpi", fontScale = 2f)
     fun `the add sheet at two hundred percent in german`() {
         render(state(draft = DiveEditDraft.of(dive(participants = people()))), fontScale = 2f)
 
@@ -295,7 +295,7 @@ class DiveEditScreenshotTest {
     }
 
     @Test
-    @Config(qualifiers = "de-rDE-w320dp-h891dp-xxhdpi")
+    @Config(qualifiers = "de-rDE-w320dp-h891dp-xxhdpi", fontScale = 2f)
     fun `the role choice at two hundred percent in german`() {
         render(state(draft = DiveEditDraft.of(dive(participants = people()))), fontScale = 2f)
 
