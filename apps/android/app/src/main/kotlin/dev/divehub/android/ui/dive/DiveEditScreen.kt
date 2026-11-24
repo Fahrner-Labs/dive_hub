@@ -287,6 +287,15 @@ private fun SaveBar(
                 )
                 Spacer(Modifier.height(Spacing.s1))
             }
+            if (draft.dirty && !draft.cylindersFit) {
+                Text(
+                    stringResource(R.string.dive_edit_cylinders_fix_save),
+                    modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+                    style = DiveHubText.body,
+                    color = MaterialTheme.colorScheme.error,
+                )
+                Spacer(Modifier.height(Spacing.s1))
+            }
             val saveText = stringResource(if (state.saving) R.string.dive_edit_saving else R.string.dive_edit_save)
             if (LocalDensity.current.fontScale >= LargeTextFontScale) {
                 // At large text the two actions share no line: a squeezed primary button breaks inside its word. The

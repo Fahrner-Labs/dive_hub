@@ -341,6 +341,8 @@ class DiveEditDraftTest {
 
         assertFalse(changed.cylindersFit)
         assertEquals(CylinderProblem.END_ABOVE_START, changed.cylinders[0].problem())
+        assertEquals(CylinderProblem.END_ABOVE_START, changed.cylinders[0].pressureProblem)
+        assertNull(changed.cylinders[0].gasProblem)
     }
 
     @Test
@@ -352,6 +354,8 @@ class DiveEditDraftTest {
 
         assertFalse(changed.cylindersFit)
         assertEquals(CylinderProblem.GAS_OVER_100, changed.cylinders[0].problem())
+        assertEquals(CylinderProblem.GAS_OVER_100, changed.cylinders[0].gasProblem)
+        assertNull(changed.cylinders[0].pressureProblem)
     }
 
     @Test

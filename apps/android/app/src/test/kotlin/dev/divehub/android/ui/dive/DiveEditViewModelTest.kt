@@ -194,7 +194,7 @@ class DiveEditViewModelTest {
 
             val options = viewModel.state.value.seriesOptions
             assertEquals(listOf("tankPressure", "tankPressure:2"), options.map { it.series.channel })
-            assertEquals("Garmin Descent Mk3", options.first().recordingName)
+            assertEquals("Garmin Descent Mk3 (123)", options.first().recordingName)
             assertEquals(0, options.first().podIndex)
             assertEquals(2, options.first().podCount)
         } finally {

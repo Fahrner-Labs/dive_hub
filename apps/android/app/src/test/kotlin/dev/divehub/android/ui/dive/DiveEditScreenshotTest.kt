@@ -2,6 +2,7 @@ package dev.divehub.android.ui.dive
 
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasSetTextAction
@@ -218,7 +219,107 @@ class DiveEditScreenshotTest {
         capture("dive_edit_de_narrow_2x_cylinders.png")
     }
 
-    private fun render(state: DiveEditUiState, darkTheme: Boolean = false, fontScale: Float? = null) {
+    @Test
+    @Config(qualifiers = "de-rDE-w320dp-h891dp-xxhdpi")
+    fun `the lead at two hundred percent in german`() {
+        val dive = dive(withGear = true)
+        render(
+            state(draft = DiveEditDraft.of(dive), seriesOptions = pressureSeriesOptions(dive.recordings)),
+            fontScale = 2f,
+        )
+
+        compose.onNodeWithTag("dive_edit_scroll").performScrollToNode(hasText("Blei 1 entfernen"))
+        capture("dive_edit_de_narrow_2x_lead.png")
+    }
+
+    @Test
+    @Config(qualifiers = "en-rUS-w320dp-h891dp-xxhdpi")
+    fun `the cylinders at three hundred and twenty dp`() {
+        val dive = dive(withGear = true)
+        render(state(draft = DiveEditDraft.of(dive), seriesOptions = pressureSeriesOptions(dive.recordings)))
+
+        compose.onNodeWithTag("dive_edit_scroll").performScrollToNode(hasText("Cylinders"))
+        capture("dive_edit_cylinders_320.png")
+    }
+
+    @Test
+    @Config(qualifiers = "en-rUS-w360dp-h891dp-xxhdpi")
+    fun `the cylinders at three hundred and sixty dp`() {
+        val dive = dive(withGear = true)
+        render(state(draft = DiveEditDraft.of(dive), seriesOptions = pressureSeriesOptions(dive.recordings)))
+
+        compose.onNodeWithTag("dive_edit_scroll").performScrollToNode(hasText("Cylinders"))
+        capture("dive_edit_cylinders_360.png")
+    }
+
+    @Test
+    fun `an invalid cylinder is explained under its pressure fields and holds the save`() {
+        val dive = dive(withGear = true)
+        val opened = DiveEditDraft.of(dive)
+        val draft = opened.setCylinders(
+            opened.cylinders.mapIndexed { index, cylinder ->
+                if (index == 0) cylinder.copy(startPressureBar = 70.0, endPressureBar = 220.0) else cylinder
+            },
+        )
+        render(state(draft = draft, seriesOptions = pressureSeriesOptions(dive.recordings)))
+
+        compose.onNodeWithTag("dive_edit_scroll")
+            .performScrollToNode(hasText("The end pressure is above the start pressure."))
+        compose.onNodeWithText("The end pressure is above the start pressure.").assertExists()
+        compose.onNodeWithText("Fix the cylinder errors before saving.").assertExists()
+        compose.onNodeWithText("Save").assertIsNotEnabled()
+        capture("dive_edit_cylinders_invalid.png")
+    }
+
+    @Test
+    fun `an empty cylinders section offers the add action`() {
+        val dive = dive(withGear = true)
+        val draft = DiveEditDraft.of(dive).setCylinders(emptyList())
+        render(state(draft = draft, seriesOptions = pressureSeriesOptions(dive.recordings)))
+
+        compose.onNodeWithTag("dive_edit_scroll").performScrollToNode(hasText("No cylinders yet."))
+        compose.onNodeWithText("No cylinders yet.").assertExists()
+        capture("dive_edit_cylinders_empty.png")
+    }
+
+    @Test
+    fun `the second cylinder and add action are reachable`() {
+        val dive = dive(withGear = true)
+        render(state(draft = DiveEditDraft.of(dive), seriesOptions = pressureSeriesOptions(dive.recordings)))
+
+        compose.onNodeWithTag("dive_edit_scroll").performScrollToNode(hasText("Add a cylinder"))
+        compose.onNodeWithText("Cylinder 2").assertExists()
+        capture("dive_edit_cylinders_add.png")
+    }
+
+    @Test
+    fun `a cylinder can be removed from its heading`() {
+        val dive = dive(withGear = true)
+        render(state(draft = DiveEditDraft.of(dive), seriesOptions = pressureSeriesOptions(dive.recordings)))
+
+        compose.onNodeWithTag("dive_edit_scroll").performScrollToNode(hasText("Remove cylinder 2"))
+        compose.onNodeWithText("Remove cylinder 2").assertExists()
+        capture("dive_edit_cylinders_remove.png")
+    }
+
+    @Test
+    fun `the cylinders show imperial pressures`() {
+        val dive = dive(withGear = true)
+        render(
+            state(draft = DiveEditDraft.of(dive), seriesOptions = pressureSeriesOptions(dive.recordings)),
+            units = "imperial",
+        )
+
+        compose.onNodeWithTag("dive_edit_scroll").performScrollToNode(hasText("Cylinders"))
+        capture("dive_edit_cylinders_imperial.png")
+    }
+
+    private fun render(
+        state: DiveEditUiState,
+        darkTheme: Boolean = false,
+        fontScale: Float? = null,
+        units: String = "metric",
+    ) {
         compose.setContent {
             DiveHubTheme(darkTheme = darkTheme) {
                 val density = LocalDensity.current
@@ -227,7 +328,7 @@ class DiveEditScreenshotTest {
                 ) {
                     DiveEditScreen(
                         state = state,
-                        units = "metric",
+                        units = units,
                         onBack = {},
                         onEdit = {},
                         onSave = {},

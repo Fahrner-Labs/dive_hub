@@ -2,6 +2,7 @@ package dev.divehub.android.ui.dive
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -9,6 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -16,6 +18,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
@@ -23,6 +26,8 @@ import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
 import dev.divehub.android.R
 import dev.divehub.android.ui.DiveHubText
 import dev.divehub.android.ui.Formats
@@ -88,6 +93,13 @@ internal fun CylindersFields(
             stringResource(R.string.dive_edit_add_cylinder),
             onClick = { onEdit { it.setCylinders(it.cylinders + DiveEditCylinder()) } },
         )
+    } else {
+        Spacer(Modifier.height(Spacing.s2))
+        Text(
+            stringResource(R.string.dive_edit_cylinders_max, MAX_CYLINDERS),
+            style = DiveHubText.meta,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 
@@ -107,12 +119,12 @@ private fun CylinderFields(
     } else {
         stringResource(R.string.tools_unit_pressure_metric)
     }
-    Text(
-        stringResource(R.string.dive_cylinder_n, index + 1),
-        modifier = Modifier.semantics { heading() },
-        style = DiveHubText.bodyStrong,
+    GearEntryHeading(
+        title = stringResource(R.string.dive_cylinder_n, index + 1),
+        removeLabel = stringResource(R.string.dive_edit_remove_cylinder, index + 1),
+        onRemove = onRemove,
     )
-    if (cylinder.fromPod) {
+    if (cylinder.fromPod && cylinder.series != null) {
         Text(
             stringResource(R.string.dive_cylinder_from_pod),
             style = DiveHubText.meta,
@@ -175,6 +187,7 @@ private fun CylinderFields(
             )
         },
     )
+    cylinder.pressureProblem?.let { CylinderProblemText(it) }
     Spacer(Modifier.height(Spacing.s2))
     FieldPair(
         first = {
@@ -200,6 +213,7 @@ private fun CylinderFields(
             )
         },
     )
+    cylinder.gasProblem?.let { CylinderProblemText(it) }
     Spacer(Modifier.height(Spacing.s3))
     Text(
         stringResource(R.string.dive_edit_cylinder_material),
@@ -237,31 +251,25 @@ private fun CylinderFields(
             EditChip(
                 label = stringResource(R.string.dive_edit_cylinder_no_series),
                 selected = cylinder.series == null,
-                onClick = { onChange(cylinder.copy(series = null)) },
+                onClick = { onChange(cylinder.copy(series = null, fromPod = false)) },
             )
             seriesOptions.forEach { option ->
                 EditChip(
                     label = seriesLabel(option),
                     selected = cylinder.series == option.series,
-                    onClick = { onChange(cylinder.copy(series = option.series)) },
+                    onClick = {
+                        onChange(
+                            cylinder.copy(
+                                series = option.series,
+                                // The pod note only holds while the Cylinder is still tied to the series it came from.
+                                fromPod = cylinder.fromPod && option.series == cylinder.series,
+                            ),
+                        )
+                    },
                 )
             }
         }
     }
-    cylinder.problem()?.let { problem ->
-        Spacer(Modifier.height(Spacing.s2))
-        Text(
-            stringResource(problemText(problem)),
-            modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
-            style = DiveHubText.body,
-            color = MaterialTheme.colorScheme.error,
-        )
-    }
-    Spacer(Modifier.height(Spacing.s2))
-    QuietButton(
-        stringResource(R.string.dive_edit_remove_cylinder, index + 1),
-        onClick = onRemove,
-    )
 }
 
 /** The Dive's Lead entries in its edit form: the whole list, with an entry left empty saving nothing (T8b). */
@@ -289,14 +297,29 @@ internal fun LeadFields(
     )
     Spacer(Modifier.height(Spacing.s2))
     lead.forEachIndexed { index, entry ->
+        GearEntryHeading(
+            title = stringResource(R.string.dive_edit_lead_n, index + 1),
+            removeLabel = if (lead.size > 1) {
+                stringResource(R.string.dive_edit_remove_lead, index + 1)
+            } else {
+                null
+            },
+            onRemove = if (lead.size > 1) {
+                {
+                    onEdit { draft ->
+                        val next = draft.lead.toMutableList().also { it.removeAt(index) }
+                        draft.setLead(next.ifEmpty { listOf(DiveEditLead()) })
+                    }
+                }
+            } else {
+                null
+            },
+        )
+        Spacer(Modifier.height(Spacing.s2))
         GearNumberField(
             rowKey = entry.key,
             field = "amount",
-            label = if (lead.size > 1) {
-                stringResource(R.string.dive_edit_lead_n, index + 1)
-            } else {
-                stringResource(R.string.dive_lead)
-            },
+            label = stringResource(R.string.dive_edit_lead_amount),
             unit = massUnit,
             value = entry.amountKg,
             locale = locale,
@@ -317,30 +340,21 @@ internal fun LeadFields(
                 }
             },
         )
-        if (lead.size > 1) {
-            Spacer(Modifier.height(Spacing.s1))
-            QuietButton(
-                stringResource(R.string.dive_edit_remove_lead, index + 1),
-                onClick = {
-                    onEdit { draft ->
-                        val next = draft.lead.toMutableList().also { it.removeAt(index) }
-                        draft.setLead(next.ifEmpty { listOf(DiveEditLead()) })
-                    }
-                },
-            )
-        }
         if (index < lead.lastIndex) Spacer(Modifier.height(Spacing.s4))
     }
     val total = lead.mapNotNull { it.amountKg }.takeIf { it.isNotEmpty() }?.sum()
-    if (lead.size > 1 && total != null) {
-        Spacer(Modifier.height(Spacing.s1))
+    // A partial total would quietly leave an entry out: only the complete list is worth summing on screen.
+    if (lead.size > 1 && total != null && lead.all { it.amountKg != null }) {
+        Spacer(Modifier.height(Spacing.s2))
         Text(
             stringResource(
                 R.string.dive_edit_lead_total,
                 "${Formats.decimal(locale, massIn(total, imperial), 1)} $massUnit",
             ),
-            style = DiveHubText.meta,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.fillMaxWidth(),
+            style = DiveHubText.body,
+            color = MaterialTheme.colorScheme.onSurface,
+            textAlign = TextAlign.End,
         )
     }
     if (lead.size < MAX_LEAD) {
@@ -348,6 +362,13 @@ internal fun LeadFields(
         SecondaryButton(
             stringResource(R.string.dive_edit_add_lead),
             onClick = { onEdit { it.setLead(it.lead + DiveEditLead()) } },
+        )
+    } else {
+        Spacer(Modifier.height(Spacing.s2))
+        Text(
+            stringResource(R.string.dive_edit_lead_max, MAX_LEAD),
+            style = DiveHubText.meta,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
 }
@@ -379,20 +400,75 @@ private fun PlacementChips(placement: String?, onChange: (String?) -> Unit) {
     }
 }
 
-/** Two fields on one line, or one above the other when the text no longer fits beside itself. */
+/** A field's minimum width: below it the floating labels wrap over the outline at 320 and 360 dp. */
+private val MinPairFieldWidth = 168.dp
+
+/** Two fields on one line, or one above the other when the text no longer fits beside itself (font scale or width). */
 @Composable
 private fun FieldPair(first: @Composable () -> Unit, second: @Composable () -> Unit) {
-    if (LocalDensity.current.fontScale >= LargeTextFontScale) {
-        Column(verticalArrangement = Arrangement.spacedBy(Spacing.s2)) {
-            first()
-            second()
-        }
-    } else {
-        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.s3)) {
-            Box(Modifier.weight(1f)) { first() }
-            Box(Modifier.weight(1f)) { second() }
+    val largeText = LocalDensity.current.fontScale >= LargeTextFontScale
+    BoxWithConstraints {
+        if (!largeText && maxWidth >= MinPairFieldWidth * 2 + Spacing.s3) {
+            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.s3)) {
+                Box(Modifier.weight(1f)) { first() }
+                Box(Modifier.weight(1f)) { second() }
+            }
+        } else {
+            Column(verticalArrangement = Arrangement.spacedBy(Spacing.s2)) {
+                first()
+                second()
+            }
         }
     }
+}
+
+/**
+ * An entry's heading with its quiet Remove trailing it, so the action names its entry and keeps the s2 target gap.
+ * At large text the label and action do not share a line: the action moves to its own end-aligned row.
+ */
+@Composable
+private fun GearEntryHeading(title: String, removeLabel: String?, onRemove: (() -> Unit)?) {
+    val largeText = LocalDensity.current.fontScale >= LargeTextFontScale
+    if (removeLabel == null || onRemove == null) {
+        Text(
+            title,
+            modifier = Modifier.semantics { heading() },
+            style = DiveHubText.bodyStrong,
+        )
+    } else if (largeText) {
+        Column(Modifier.fillMaxWidth()) {
+            Text(
+                title,
+                modifier = Modifier.semantics { heading() },
+                style = DiveHubText.bodyStrong,
+            )
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                QuietButton(removeLabel, onRemove)
+            }
+        }
+    } else {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                title,
+                modifier = Modifier.weight(1f).semantics { heading() },
+                style = DiveHubText.bodyStrong,
+            )
+            Spacer(Modifier.width(Spacing.s3))
+            QuietButton(removeLabel, onRemove)
+        }
+    }
+}
+
+/** The server's reason for refusing this pair, directly under the fields it names. */
+@Composable
+private fun CylinderProblemText(problem: CylinderProblem) {
+    Spacer(Modifier.height(Spacing.s1))
+    Text(
+        stringResource(problemText(problem)),
+        modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+        style = DiveHubText.body,
+        color = MaterialTheme.colorScheme.error,
+    )
 }
 
 @Composable
@@ -431,12 +507,12 @@ private fun materialLabel(material: String): Int = when (material) {
 }
 
 private fun placementLabel(placement: String): Int = when (placement) {
-    "belt" -> R.string.dive_placement_belt
-    "integrated" -> R.string.dive_placement_integrated
-    "trim" -> R.string.dive_placement_trim
-    "ankle" -> R.string.dive_placement_ankle
-    "backplate" -> R.string.dive_placement_backplate
-    else -> R.string.dive_placement_other
+    "belt" -> R.string.dive_edit_placement_belt
+    "integrated" -> R.string.dive_edit_placement_integrated
+    "trim" -> R.string.dive_edit_placement_trim
+    "ankle" -> R.string.dive_edit_placement_ankle
+    "backplate" -> R.string.dive_edit_placement_backplate
+    else -> R.string.dive_edit_placement_other
 }
 
 private fun problemText(problem: CylinderProblem): Int = when (problem) {

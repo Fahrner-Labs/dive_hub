@@ -42,14 +42,20 @@ data class DiveEditCylinder(
     /** The values the API takes; the form's own fields are left out. */
     fun wire(): DiveEditCylinder = copy(fromPod = false, existing = false, key = "")
 
-    /** Whether the server would refuse it as typed (docs/spec/clients.md, `cylinder_invalid`). */
-    fun problem(): CylinderProblem? {
-        if (startPressureBar != null && endPressureBar != null && endPressureBar > startPressureBar) {
-            return CylinderProblem.END_ABOVE_START
+    /** The pressure pair's own problem, shown under that pair (docs/spec/clients.md, `cylinder_invalid`). */
+    val pressureProblem: CylinderProblem?
+        get() = if (startPressureBar != null && endPressureBar != null && endPressureBar > startPressureBar) {
+            CylinderProblem.END_ABOVE_START
+        } else {
+            null
         }
-        if (o2 != null && o2 + (he ?: 0.0) > 100.0) return CylinderProblem.GAS_OVER_100
-        return null
-    }
+
+    /** The gas pair's own problem, shown under that pair (docs/spec/clients.md, `cylinder_invalid`). */
+    val gasProblem: CylinderProblem?
+        get() = if (o2 != null && o2 + (he ?: 0.0) > 100.0) CylinderProblem.GAS_OVER_100 else null
+
+    /** Whether the server would refuse it as typed (docs/spec/clients.md, `cylinder_invalid`). */
+    fun problem(): CylinderProblem? = pressureProblem ?: gasProblem
 
     fun toJson(): JsonObject = buildJsonObject {
         put("volumeL", volumeL?.let(::JsonPrimitive) ?: JsonNull)
@@ -117,7 +123,10 @@ fun pressureSeriesOptions(recordings: List<DiveViewRecordingsItem>): List<DiveEd
         channels.mapIndexed { podIndex, channel ->
             DiveEditSeriesOption(
                 series = DiveEditSeries(recording.id, channel),
-                recordingName = recording.device?.let { deviceName(it.manufacturer, it.product) },
+                // The serial tells apart two Recordings of the same model (as the detail page does).
+                recordingName = recording.device?.let {
+                    "${deviceName(it.manufacturer, it.product)} (${it.serialNumber})"
+                },
                 recordingIndex = recordingIndex,
                 podIndex = podIndex,
                 podCount = channels.size,
