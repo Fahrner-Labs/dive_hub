@@ -39,6 +39,7 @@ import dev.divehub.android.R
 import dev.divehub.android.ui.DiveHubColors
 import dev.divehub.android.ui.DiveHubText
 import dev.divehub.android.ui.DiveHubTopBar
+import dev.divehub.android.ui.Formats
 import dev.divehub.android.ui.Spacing
 import dev.divehub.android.ui.components.EmptyState
 import dev.divehub.android.ui.components.InkButton
@@ -50,14 +51,21 @@ import dev.divehub.shared.write.QueuedWriteView
 import dev.divehub.shared.write.WriteDropReason
 import dev.divehub.shared.write.WriteNotice
 import dev.divehub.shared.write.WriteConflictView
+import java.util.Locale
 
 /** The queue screen's route: reread the queue on entry, then draw exactly what the shared core holds. */
 @Composable
-fun ConflictsRoute(viewModel: WritesViewModel, onBack: () -> Unit, onOpenDive: (String) -> Unit) {
+fun ConflictsRoute(
+    viewModel: WritesViewModel,
+    units: String?,
+    onBack: () -> Unit,
+    onOpenDive: (String) -> Unit,
+) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     LaunchedEffect(Unit) { viewModel.refresh() }
     ConflictsScreen(
         state = state,
+        units = units,
         onBack = onBack,
         onResolve = viewModel::resolve,
         onRetry = viewModel::retryFailed,
@@ -78,6 +86,7 @@ fun ConflictsRoute(viewModel: WritesViewModel, onBack: () -> Unit, onOpenDive: (
 @Composable
 fun ConflictsScreen(
     state: WritesUiState,
+    units: String?,
     onBack: () -> Unit,
     onResolve: (Long, Map<String, ConflictSide>) -> Unit,
     onRetry: () -> Unit,
@@ -108,7 +117,7 @@ fun ConflictsScreen(
                     action = { QuietButton(stringResource(R.string.back), onClick = onBack) },
                 )
             } else {
-                ChangesList(state, onResolve, onRetry, onDismissNotices, onOpenDive)
+                ChangesList(state, units, onResolve, onRetry, onDismissNotices, onOpenDive)
             }
         }
     }
@@ -117,6 +126,7 @@ fun ConflictsScreen(
 @Composable
 private fun ChangesList(
     state: WritesUiState,
+    units: String?,
     onResolve: (Long, Map<String, ConflictSide>) -> Unit,
     onRetry: () -> Unit,
     onDismissNotices: () -> Unit,
@@ -159,6 +169,7 @@ private fun ChangesList(
         itemsIndexed(state.conflicts, key = { _, conflict -> "conflict-${conflict.entryId}" }) { index, conflict ->
             ConflictEntry(
                 conflict = conflict,
+                units = units,
                 showSeparator = index > 0 || state.actionFailed,
                 busy = state.busy,
                 selection = {
@@ -187,6 +198,7 @@ private fun ChangesList(
 @Composable
 private fun ConflictEntry(
     conflict: WriteConflictView,
+    units: String?,
     showSeparator: Boolean,
     busy: Boolean,
     selection: (ConflictFieldView) -> ConflictSide,
@@ -206,6 +218,7 @@ private fun ConflictEntry(
         conflict.fields.forEach { field ->
             FieldDecision(
                 field = field,
+                units = units,
                 selected = selection(field),
                 enabled = !busy,
                 onSelect = { side -> onSelect(field.field, side) },
@@ -227,11 +240,14 @@ private fun ConflictEntry(
 @Composable
 private fun FieldDecision(
     field: ConflictFieldView,
+    units: String?,
     selected: ConflictSide,
     enabled: Boolean,
     onSelect: (ConflictSide) -> Unit,
 ) {
     val context = LocalContext.current
+    val locale = context.resources.configuration.locales[0] ?: Locale.getDefault()
+    val imperial = Formats.imperial(units, locale)
     Column(Modifier.fillMaxWidth().padding(top = Spacing.s2)) {
         Text(
             conflictFieldLabel(field.field),
@@ -240,7 +256,7 @@ private fun FieldDecision(
         )
         ConflictChoice(
             name = stringResource(R.string.conflict_this_phone),
-            value = conflictValueText(context, field.local, field.localAction),
+            value = conflictValueText(context, field.field, field.local, locale, imperial, field.localAction),
             selected = selected == ConflictSide.ThisPhone,
             enabled = enabled,
             tag = "conflict_${field.field}_this_phone",
@@ -248,7 +264,7 @@ private fun FieldDecision(
         )
         ConflictChoice(
             name = stringResource(R.string.conflict_server),
-            value = conflictValueText(context, field.server),
+            value = conflictValueText(context, field.field, field.server, locale, imperial),
             selected = selected == ConflictSide.Server,
             enabled = enabled,
             tag = "conflict_${field.field}_server",

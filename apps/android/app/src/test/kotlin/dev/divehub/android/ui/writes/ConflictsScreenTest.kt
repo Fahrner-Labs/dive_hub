@@ -16,12 +16,16 @@ import dev.divehub.shared.write.WriteNotice
 import dev.divehub.shared.write.WriteCapability
 import dev.divehub.shared.write.WriteConflictView
 import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
+import java.util.Locale
 
 /** The device-vs-hub decision screen (ADR 0084 D3): both values, this phone preselected, nothing decided silently. */
 @RunWith(RobolectricTestRunner::class)
@@ -32,6 +36,42 @@ class ConflictsScreenTest {
 
     private val resolved = mutableListOf<Pair<Long, Map<String, ConflictSide>>>()
     private var retries = 0
+
+    @Test
+    fun `conflict values read in the logbook's units`() {
+        val context = RuntimeEnvironment.getApplication()
+
+        assertEquals("45 min", conflictValueText(context, "set.durationSeconds", JsonPrimitive(2700), Locale.US, false))
+        assertEquals("1 h 5 min", conflictValueText(context, "set.durationSeconds", JsonPrimitive(3900), Locale.US, false))
+        assertEquals("24.8 m", conflictValueText(context, "set.maxDepthM", JsonPrimitive(24.8), Locale.US, false))
+        assertEquals("81.4 ft", conflictValueText(context, "set.maxDepthM", JsonPrimitive(24.8), Locale.US, true))
+        assertEquals("18 °C", conflictValueText(context, "set.waterTemperatureC", JsonPrimitive(18), Locale.US, false))
+        assertEquals("Buddy", conflictValueText(context, "participants.diver-1", JsonPrimitive("buddy"), Locale.US, false))
+    }
+
+    @Test
+    fun `a start conflict reads as the dive page reads it`() {
+        val context = RuntimeEnvironment.getApplication()
+        val start = buildJsonObject {
+            put("at", JsonPrimitive("2026-11-24T06:00:00Z"))
+            put("utcOffsetSeconds", JsonPrimitive(7200))
+        }
+
+        assertEquals(
+            "Tue 24 Nov 2026, 08:00 (UTC+2)",
+            conflictValueText(context, "set.startsAt", start, Locale.US, false),
+        )
+    }
+
+    @Test
+    fun `an unknown field keeps the API's own value`() {
+        val context = RuntimeEnvironment.getApplication()
+
+        assertEquals(
+            "some value",
+            conflictValueText(context, "newField", JsonPrimitive("some value"), Locale.US, false),
+        )
+    }
 
     @Test
     fun `the screen names the dive and shows both sides of a field`() {
@@ -199,6 +239,7 @@ class ConflictsScreenTest {
             DiveHubTheme(darkTheme = false) {
                 ConflictsScreen(
                     state = state,
+                    units = "metric",
                     onBack = {},
                     onResolve = { entryId, choices -> resolved += entryId to choices },
                     onRetry = { retries += 1 },

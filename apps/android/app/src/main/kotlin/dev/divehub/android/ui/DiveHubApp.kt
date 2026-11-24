@@ -252,7 +252,8 @@ private class DiveHubScreens(
 
     @Composable
     override fun conflicts(onBack: () -> Unit, onOpenDive: (String) -> Unit) {
-        ConflictsScreenRoute(viewModel = writes, onBack = onBack, onOpenDive = onOpenDive)
+        val state by viewModel.state.collectAsStateWithLifecycle()
+        ConflictsScreenRoute(viewModel = writes, units = state.units, onBack = onBack, onOpenDive = onOpenDive)
     }
 
     @Composable

@@ -47,6 +47,10 @@ class WritesScreenshotTest {
         renderConflicts(darkTheme = false)
 
         compose.onNodeWithText("Dive 42").assertIsDisplayed()
+        // The logbook's words, not the API's numbers: a duration, a depth with its unit and a temperature (FAH-480).
+        compose.onNodeWithText("45 min").assertIsDisplayed()
+        compose.onNodeWithText("24.8 m").assertIsDisplayed()
+        compose.onNodeWithText("18 °C").assertIsDisplayed()
         capture("conflicts_en_light.png")
     }
 
@@ -78,6 +82,15 @@ class WritesScreenshotTest {
     }
 
     @Test
+    @Config(qualifiers = "de-rDE-w320dp-h891dp-xxhdpi", fontScale = 2f)
+    fun `conflicts in German at 320 dp and 200 percent`() {
+        renderConflicts(darkTheme = false)
+
+        compose.onNodeWithText("Tauchgang 42").assertIsDisplayed()
+        capture("conflicts_de_narrow_2x.png")
+    }
+
+    @Test
     fun `waiting queue in English and light`() {
         compose.setContent {
             DiveHubTheme(darkTheme = false) {
@@ -94,6 +107,7 @@ class WritesScreenshotTest {
                             ),
                         ),
                     ),
+                    units = "metric",
                     onBack = {},
                     onResolve = { _, _ -> },
                     onRetry = {},
@@ -124,6 +138,7 @@ class WritesScreenshotTest {
                             ),
                         ),
                     ),
+                    units = "metric",
                     onBack = {},
                     onResolve = { _, _ -> },
                     onRetry = {},
@@ -143,6 +158,7 @@ class WritesScreenshotTest {
             DiveHubTheme(darkTheme = false) {
                 ConflictsScreen(
                     state = WritesUiState(capability = WriteCapability.Writeable),
+                    units = "metric",
                     onBack = {},
                     onResolve = { _, _ -> },
                     onRetry = {},
@@ -165,9 +181,17 @@ class WritesScreenshotTest {
     }
 
     @Test
+    fun `failed indicator in English and light`() {
+        renderLine(WritesUiState(capability = WriteCapability.Writeable, failed = 1))
+
+        compose.onNodeWithText("1 change couldn’t be sent").assertIsDisplayed()
+        capture("writes_failed_en_light.png")
+    }
+
+    @Test
     @Config(qualifiers = "en-rUS-w411dp-h891dp-night-xxhdpi")
     fun `conflict indicator in English and dark`() {
-        renderLine(WritesUiState(capability = WriteCapability.Writeable, conflicted = 1))
+        renderLine(WritesUiState(capability = WriteCapability.Writeable, conflicted = 1), darkTheme = true)
 
         compose.onNodeWithText("1 change needs your decision").assertIsDisplayed()
         capture("writes_conflict_en_dark.png")
@@ -199,6 +223,7 @@ class WritesScreenshotTest {
                         conflicted = 1,
                         conflicts = listOf(conflict()),
                     ),
+                    units = "metric",
                     onBack = {},
                     onResolve = { _, _ -> },
                     onRetry = {},
@@ -209,9 +234,9 @@ class WritesScreenshotTest {
         }
     }
 
-    private fun renderLine(state: WritesUiState) {
+    private fun renderLine(state: WritesUiState, darkTheme: Boolean = false) {
         compose.setContent {
-            DiveHubTheme(darkTheme = false) {
+            DiveHubTheme(darkTheme = darkTheme) {
                 Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.surface) {
                     Box(Modifier.padding(top = Spacing.s4)) {
                         CompositionLocalProvider(LocalWrites provides state) { WriteQueueLine() }
@@ -233,10 +258,11 @@ class WritesScreenshotTest {
         diveNumber = 42,
         fields = listOf(
             ConflictFieldView(
-                field = "notes",
-                base = JsonPrimitive("A good dive"),
-                server = JsonPrimitive("A great dive"),
-                local = JsonPrimitive("A very good dive"),
+                field = "set.durationSeconds",
+                base = JsonPrimitive(2640),
+                server = JsonPrimitive(2820),
+                local = JsonPrimitive(2700),
+                localAction = "set",
             ),
             ConflictFieldView(
                 field = "set.maxDepthM",
@@ -244,6 +270,19 @@ class WritesScreenshotTest {
                 server = JsonPrimitive(24.6),
                 local = JsonPrimitive(24.8),
                 localAction = "set",
+            ),
+            ConflictFieldView(
+                field = "set.waterTemperatureC",
+                base = JsonPrimitive(17),
+                server = JsonPrimitive(19),
+                local = JsonPrimitive(18),
+                localAction = "set",
+            ),
+            ConflictFieldView(
+                field = "notes",
+                base = JsonPrimitive("A good dive"),
+                server = JsonPrimitive("A great dive"),
+                local = JsonPrimitive("A very good dive"),
             ),
         ),
     )

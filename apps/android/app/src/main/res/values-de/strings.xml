@@ -668,7 +668,7 @@
     <string name="notice_dismiss">Ausblenden</string>
     <string name="queued_changes_title">Warten auf Synchronisierung</string>
     <string name="queued_change_not_sent">Konnte nicht gesendet werden</string>
-    <string name="conflict_use_server">Überall den Server verwenden</string>
+    <string name="conflict_use_server">Überall die Serverwerte übernehmen</string>
     <string name="conflict_resolve_failed">Deine Auswahl konnte nicht gespeichert werden. Versuch es erneut.</string>
     <string name="conflict_field_notes">Notizen</string>
     <string name="conflict_field_site">Tauchplatz</string>
