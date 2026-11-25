@@ -144,6 +144,9 @@ fun ScanRoute(viewModel: ScanViewModel, onBack: () -> Unit) {
             camera.launch(uri)
         } catch (_: ActivityNotFoundException) {
             viewModel.noCamera()
+        } catch (_: SecurityException) {
+            // Declaring CAMERA makes the system-camera intent need it; a revoked permission lands here.
+            viewModel.cameraBlocked()
         } catch (_: IllegalArgumentException) {
             viewModel.noCamera()
         }
@@ -284,16 +287,6 @@ fun ScanScreen(
                             )
                             Spacer(Modifier.height(Spacing.s2))
                             QuietButton(stringResource(R.string.scan_image), onClick = onImage)
-                        }
-                        ScanReadChoice.PicturePrimary -> {
-                            InkButton(
-                                stringResource(R.string.scan_image),
-                                onClick = onImage,
-                                modifier = Modifier.fillMaxWidth(),
-                            )
-                            Spacer(Modifier.height(Spacing.s2))
-                            // The system camera app still works when this app's own permission is blocked.
-                            QuietButton(stringResource(R.string.scan_camera), onClick = onCamera)
                         }
                         ScanReadChoice.PictureOnly -> {
                             InkButton(
@@ -608,12 +601,14 @@ private fun changeField(field: String): String = when (field) {
 }
 
 /** Which read action leads for a given failure; only what can work stays loud. */
-internal enum class ScanReadChoice { CameraPrimary, CameraPrimaryNoPhoto, PicturePrimary, PictureOnly }
+internal enum class ScanReadChoice { CameraPrimary, CameraPrimaryNoPhoto, PictureOnly }
 
 internal fun scanReadChoice(error: String?): ScanReadChoice = when (error) {
-    ScanErrors.CAMERA_MISSING -> ScanReadChoice.PictureOnly
-    ScanErrors.CAMERA_BLOCKED -> ScanReadChoice.PicturePrimary
-    ScanErrors.NO_CAMERA -> ScanReadChoice.CameraPrimaryNoPhoto
+    // Declaring CAMERA makes the system-camera intent fail while the permission is denied, so neither the live
+    // scanner nor "Take a picture" can work here; the picture is the only way on.
+    ScanErrors.CAMERA_MISSING, ScanErrors.CAMERA_BLOCKED -> ScanReadChoice.PictureOnly
+    // The soft denial can ask again, and the live scanner needs no camera app, so both keep it first.
+    ScanErrors.CAMERA_DENIED, ScanErrors.NO_CAMERA -> ScanReadChoice.CameraPrimaryNoPhoto
     else -> ScanReadChoice.CameraPrimary
 }
 

@@ -90,11 +90,20 @@ class ScanScreenTest {
     }
 
     @Test
-    fun `a blocked permission leads with the picture but keeps the system camera fallback`() {
+    fun `a blocked permission leads with the picture and drops both camera paths`() {
         render(ScanUiState(error = ScanErrors.CAMERA_BLOCKED))
 
         compose.onNodeWithText("Scan with the camera").assertDoesNotExist()
-        compose.onNodeWithText("Take a picture").assertIsDisplayed()
+        compose.onNodeWithText("Take a picture").assertDoesNotExist()
+        compose.onNodeWithText("Choose a picture").assertIsDisplayed()
+    }
+
+    @Test
+    fun `a soft denial keeps the live retry and drops the photo path it cannot use`() {
+        render(ScanUiState(error = ScanErrors.CAMERA_DENIED))
+
+        compose.onNodeWithText("Scan with the camera").assertIsDisplayed()
+        compose.onNodeWithText("Take a picture").assertDoesNotExist()
         compose.onNodeWithText("Choose a picture").assertIsDisplayed()
     }
 
