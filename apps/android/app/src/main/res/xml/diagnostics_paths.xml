@@ -2,6 +2,4 @@
 <paths>
     <!-- The exported diagnostics NDJSON handed to the share sheet (FAH-318), overwritten on every share. -->
     <cache-path name="diagnostics" path="diagnostics/" />
-    <!-- A picture taken for the scanner, read by this app and never shared (T11). -->
-    <cache-path name="scan" path="scan/" />
 </paths>

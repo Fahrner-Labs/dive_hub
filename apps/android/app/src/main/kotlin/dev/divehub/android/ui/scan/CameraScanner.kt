@@ -7,6 +7,7 @@ import androidx.camera.core.CameraUnavailableException
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.InitializationException
 import androidx.camera.core.Preview
+import androidx.camera.core.TorchState as CameraTorchState
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.background
@@ -56,6 +57,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.Observer
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import dev.divehub.android.R
 import dev.divehub.android.ui.CameraChrome
@@ -135,6 +138,8 @@ fun CameraScanner(
         val gate = QrFrameGate()
         var provider: ProcessCameraProvider? = null
         var analysis: ImageAnalysis? = null
+        var torchLiveData: LiveData<Int>? = null
+        var torchObserver: Observer<Int>? = null
         var disposed = false
 
         providerFuture.addListener({
@@ -171,9 +176,16 @@ fun CameraScanner(
                 } else {
                     CameraSelector.DEFAULT_FRONT_CAMERA
                 }
-                val camera = cameraProvider.bindToLifecycle(lifecycleOwner, selector, preview, imageAnalysis)
-                cameraControl = camera.cameraControl
-                torch = torchState(camera.cameraInfo.hasFlashUnit())
+                val boundCamera = cameraProvider.bindToLifecycle(lifecycleOwner, selector, preview, imageAnalysis)
+                cameraControl = boundCamera.cameraControl
+                torch = torchState(boundCamera.cameraInfo.hasFlashUnit())
+                // CameraX turns the torch off with the camera and can refuse a request: follow its state instead of
+                // trusting the last tap, so the icon never says "on" when the torch is off.
+                val liveData = boundCamera.cameraInfo.torchState
+                val observer = Observer<Int> { state -> torch = torch.copy(on = state == CameraTorchState.ON) }
+                torchLiveData = liveData
+                torchObserver = observer
+                liveData.observe(lifecycleOwner, observer)
             } catch (error: Exception) {
                 runCatching { analysis?.clearAnalyzer() }
                 runCatching { provider?.unbindAll() }
@@ -184,6 +196,11 @@ fun CameraScanner(
 
         onDispose {
             disposed = true
+            val liveData = torchLiveData
+            val observer = torchObserver
+            if (liveData != null && observer != null) {
+                runCatching { liveData.removeObserver(observer) }
+            }
             runCatching { analysis?.clearAnalyzer() }
             runCatching { provider?.unbindAll() }
             analysisExecutor.shutdownNow()
@@ -194,7 +211,11 @@ fun CameraScanner(
         val control = cameraControl ?: return
         val next = torch.toggled()
         torch = next
-        control.enableTorch(next.on)
+        val request = control.enableTorch(next.on)
+        request.addListener(
+            { runCatching { request.get() }.onFailure { torch = torch.copy(on = !next.on) } },
+            mainExecutor,
+        )
     }
 
     CameraScannerFrame(
