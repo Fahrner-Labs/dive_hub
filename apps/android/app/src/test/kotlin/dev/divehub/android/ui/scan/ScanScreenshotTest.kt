@@ -172,6 +172,23 @@ class ScanScreenshotTest {
     }
 
     @Test
+    fun `the live camera shows the torch on in the same light context as off`() {
+        renderLive(torch = TorchState(available = true, on = true))
+
+        compose.onNodeWithContentDescription("Torch").assertExists()
+        capture("scan_live_torch_on_en_light.png")
+    }
+
+    @Test
+    fun `the live camera hides the torch on a camera without a flash`() {
+        renderLive(torch = torchState(hasFlashUnit = false))
+
+        compose.onNodeWithContentDescription("Torch").assertDoesNotExist()
+        compose.onNodeWithContentDescription("Close the camera").assertExists()
+        capture("scan_live_no_torch_en_light.png")
+    }
+
+    @Test
     @Config(qualifiers = "de-rDE-w320dp-h891dp-night-xxhdpi")
     fun `the live camera hint and close action hold at 320 dp and 200 percent in German and dark`() {
         renderLive(

@@ -34,7 +34,7 @@ import dev.divehub.android.ui.Formats
 import dev.divehub.android.ui.LargeTextFontScale
 import dev.divehub.android.ui.Spacing
 import dev.divehub.android.ui.components.QuietButton
-import dev.divehub.android.ui.components.SecondaryButton
+import dev.divehub.android.ui.components.FieldButton
 import dev.divehub.android.ui.tools.NumberField
 import dev.divehub.shared.dive.CylinderProblem
 import dev.divehub.shared.dive.DiveEditCylinder
@@ -93,7 +93,7 @@ internal fun CylindersFields(
     }
     if (cylinders.size < MAX_CYLINDERS) {
         Spacer(Modifier.height(Spacing.s4))
-        SecondaryButton(
+        FieldButton(
             stringResource(R.string.dive_edit_add_cylinder),
             onClick = { onEdit { it.setCylinders(it.cylinders + DiveEditCylinder()) } },
         )
@@ -365,7 +365,7 @@ internal fun LeadFields(
     }
     if (lead.size < MAX_LEAD) {
         Spacer(Modifier.height(Spacing.s2))
-        SecondaryButton(
+        FieldButton(
             stringResource(R.string.dive_edit_add_lead),
             onClick = { onEdit { it.setLead(it.lead + DiveEditLead()) } },
         )

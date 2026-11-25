@@ -83,11 +83,46 @@ fun InkButton(
 }
 
 /**
- * The brief's secondary button: the sheet's tone with a control border and ink content. A field-like action that
- * opens a picker (a date, a time) uses it instead of a Material pill, which reads as a chip.
+ * The brief's secondary button: the sheet's tone with a control border and ink content, on the button role. It takes
+ * the same `label` type and 40 dp visual height as the ink primary (with Material's 48 dp target), so a secondary
+ * action sitting under the primary never becomes the taller, larger-typed control; a field-like action that opens a
+ * picker uses [FieldButton] instead.
  */
 @Composable
 fun SecondaryButton(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    icon: Painter? = null,
+) {
+    val content = MaterialTheme.colorScheme.onSurface
+    OutlinedButton(
+        onClick = onClick,
+        modifier = modifier,
+        enabled = enabled,
+        shape = RoundedCornerShape(Radius.control),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+        colors = ButtonDefaults.outlinedButtonColors(
+            contentColor = content,
+            disabledContentColor = content.copy(alpha = DisabledContentAlpha),
+        ),
+    ) {
+        if (icon != null) {
+            Icon(icon, contentDescription = null, modifier = Modifier.size(ButtonIcon))
+            Spacer(Modifier.width(Spacing.s1))
+        }
+        Text(text, style = DiveHubText.label, textAlign = TextAlign.Center)
+    }
+}
+
+/**
+ * The field-like secondary action: the sheet's tone with a control border, `body` type and a 48 dp visible height.
+ * It is for an action that opens a picker (a date, a time) or adds a line to a form, where it should read as part of
+ * the form rather than as a button under the primary.
+ */
+@Composable
+fun FieldButton(
     text: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
