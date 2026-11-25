@@ -108,6 +108,51 @@ Application settings (optional unless stated):
 `DIVEHUB_DATA_DIR` exist for the image and the tests; the example compose file sets what the
 containers need. The full table is in the [architecture spec](spec/architecture.md#authentication).
 
+### Push notifications for the Android app (optional)
+
+The Android app works without push: it keeps the foreground live stream and polls on the
+interval chosen in its settings. Push only makes a backgrounded phone notice a new or changed
+Dive sooner. Messages are **hints only** ([ADR 0085](decisions/0085-push-notifications-for-native-clients.md)):
+a push names a Dive, and the app fetches it through your API before showing anything, so no dive
+content ever travels through Google.
+
+The official app binary is the same for every instance and bundles no Firebase project. To have
+push, bring your own free Firebase project and set its two halves on the server:
+
+1. Create a project at <https://console.firebase.google.com/> (the free Spark plan is enough) and
+   add an **Android** app with the package name `dev.divehub.android`, the official app's
+   application ID. If you build the app yourself, use your build's application ID instead.
+2. Download the generated `google-services.json`. You only copy values out of it; never commit it
+   and never put it in the app or the repository.
+3. From that file take the four public client values:
+
+   | Client value | From `google-services.json` |
+   |---|---|
+   | `projectId` | `project_info.project_id` |
+   | `applicationId` | `client[0].client_info.mobilesdk_app_id` — the Google App ID, `1:...:android:...`, **not** the package name |
+   | `apiKey` | `client[0].api_key[0].current_key` |
+   | `gcmSenderId` | `project_info.project_number` |
+
+4. In the Firebase console open **Project settings → Service accounts → Generate new private
+   key**. The downloaded JSON is the send credential; it is a secret for the whole project.
+5. Set both variables in `.env`, either as one-line JSON or as paths to JSON files the container
+   can read. The two must belong to the same project:
+
+   ```sh
+   DIVEHUB_FCM_SERVICE_ACCOUNT={"type":"service_account","project_id":"…","client_email":"…","private_key":"…"}
+   DIVEHUB_FCM_CLIENT_CONFIG={"projectId":"…","applicationId":"1:1234567890:android:…","apiKey":"…","gcmSenderId":"…"}
+   ```
+
+6. Restart the stack. `curl https://dives.example.com/api/push/config` now answers an `android`
+   object; signed-in Android clients pick it up and register their token. An empty `{}` still
+   means push is off and clients keep polling.
+
+Set **both or neither**: with only one of them the app refuses to start and names the missing
+variable, so a half-configured instance never advertises a push it cannot send. Keep the
+service-account JSON out of the repository, images and instance backups; the client values are
+public by design (they ship inside every Firebase app). Unsetting both turns push off again, and
+clients fall back to polling on their next start.
+
 ## TLS reverse proxy
 
 The app listens on `127.0.0.1:3000`. A minimal Caddy setup on the same host:

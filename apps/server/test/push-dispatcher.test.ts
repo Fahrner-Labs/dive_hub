@@ -143,10 +143,27 @@ describe.skipIf(!(await databaseReachable()))('the push dispatcher', () => {
     const [device] = await t.db.insert(pushDevice)
       .values({ userId: user.id, sessionId: signedIn!.id, platform: 'android', pushToken })
       .returning();
-    return { user, device: device! };
+    return { user, sessionId: signedIn!.id, device: device! };
   }
 
+  const dropSendPushJobs = () => t.db.execute(sql`delete from graphile_worker._private_jobs
+    where task_id in (select id from graphile_worker._private_tasks where identifier = ${SEND_PUSH_TASK})`);
+
+  it('queues one job per distinct User in the audience, ignoring repeats and empty ids', async () => {
+    await dropSendPushJobs();
+    const push = createPushDispatcher({ db: t.db, fcm: FCM() });
+    const once = randomUUID();
+    const twice = randomUUID();
+
+    await t.db.transaction(async (tx) => {
+      await push.enqueue(tx, { kind: 'dive', id: 'dive-audience', audience: [once, once, '', twice] });
+    });
+
+    expect((await sendPushJobs()).n).toBe(2);
+  });
+
   it('queues nothing and sends nothing when FCM is not configured', async () => {
+    await dropSendPushJobs();
     const push = createPushDispatcher({ db: t.db, fcm: undefined });
     expect(push.enabled).toBe(false);
     await t.db.transaction(async (tx) => {
@@ -167,6 +184,27 @@ describe.skipIf(!(await databaseReachable()))('the push dispatcher', () => {
     await push.send({ userId: user.id, kind: 'dive', id: 'dive-gone' });
 
     expect(await t.db.select().from(pushDevice).where(eq(pushDevice.id, device.id))).toHaveLength(0);
+  });
+
+  it('sends to every Android device of the User and skips a platform without a provider', async () => {
+    const { user, sessionId, device } = await deviceFor('fanout@example.com', 'token-fanout-1');
+    const [second] = await t.db.insert(pushDevice)
+      .values({ userId: user.id, sessionId, platform: 'android', pushToken: 'token-fanout-2' })
+      .returning();
+    await t.db.insert(pushDevice)
+      .values({ userId: user.id, sessionId, platform: 'ios', pushToken: 'token-fanout-ios' });
+    const { calls, fetch } = scriptedFetch([tokenAnswer, sentAnswer, sentAnswer]);
+    const push = createPushDispatcher({ db: t.db, fcm: FCM(), fetch });
+
+    await push.send({ userId: user.id, kind: 'dive', id: 'dive-fanout' });
+
+    const sent = calls.filter((call) => call.url.endsWith(':send'));
+    expect(sent).toHaveLength(2);
+    expect(sent.map((call) => (JSON.parse(call.body) as { message: { token: string } }).message.token).sort())
+      .toEqual([device.pushToken, second!.pushToken].sort());
+    const rows = await t.db.select({ platform: pushDevice.platform }).from(pushDevice).where(eq(pushDevice.userId, user.id));
+    expect(rows).toHaveLength(3);
+    expect(rows.filter((row) => row.platform === 'ios')).toHaveLength(1);
   });
 
   it('keeps the registration and fails the job on an ordinary FCM error, so graphile retries', async () => {
