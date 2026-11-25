@@ -591,6 +591,52 @@ class DiveDetailScreenshotTest {
     }
 
     @Test
+    fun `the edit action is a pencil in the top app bar`() {
+        var edits = 0
+        render(state(dive = dive()), showEdit = true, onEdit = { edits++ })
+        val edit = compose.onNodeWithContentDescription("Edit")
+        edit.assertIsDisplayed()
+        // The app bar sits above the scrolling page: the action keeps the same place whatever the content does.
+        val pagerTop = compose.onNodeWithTag("dive_pager").getBoundsInRoot().top.value
+        assertTrue(edit.getBoundsInRoot().bottom.value <= pagerTop)
+        edit.performClick()
+        assertEquals(1, edits)
+        capture("dive_edit_action.png")
+    }
+
+    @Test
+    @Config(qualifiers = "en-rUS-w411dp-h891dp-night-xxhdpi")
+    fun `the edit action follows the dark theme`() {
+        render(state(dive = dive()), showEdit = true, darkTheme = true)
+        compose.onNodeWithContentDescription("Edit").assertIsDisplayed()
+        capture("dive_edit_action_dark.png")
+    }
+
+    @Test
+    @Config(qualifiers = "de-rDE-w411dp-h891dp-xxhdpi")
+    fun `the edit action speaks german`() {
+        render(state(dive = dive()), showEdit = true)
+        compose.onNodeWithContentDescription("Bearbeiten").assertIsDisplayed()
+        capture("dive_edit_action_de.png")
+    }
+
+    @Test
+    @Config(qualifiers = "de-rDE-w411dp-h891dp-night-xxhdpi")
+    fun `the german edit action follows the dark theme`() {
+        render(state(dive = dive()), showEdit = true, darkTheme = true)
+        compose.onNodeWithContentDescription("Bearbeiten").assertIsDisplayed()
+        capture("dive_edit_action_de_dark.png")
+    }
+
+    @Test
+    fun `a read-only server draws the app bar without the edit action`() {
+        render(state(dive = dive()))
+        compose.onNodeWithContentDescription("Edit").assertDoesNotExist()
+        compose.onNodeWithContentDescription("Back").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Next dive").assertIsDisplayed()
+    }
+
+    @Test
     fun `the profile table is the text alternative and includes tank pressure`() {
         render(state(dive = dive()))
         compose.onNodeWithTag("dive_scroll").performScrollToNode(hasText("Profile as a table"))
@@ -1006,6 +1052,8 @@ class DiveDetailScreenshotTest {
         units: String = "metric",
         onBack: () -> Unit = {},
         onOpenDive: (String) -> Unit = {},
+        showEdit: Boolean = false,
+        onEdit: () -> Unit = {},
         darkTheme: Boolean = false,
         fontScale: Float? = null,
     ) {
@@ -1021,6 +1069,8 @@ class DiveDetailScreenshotTest {
                         onBack = onBack,
                         onRetry = {},
                         onOpenDive = onOpenDive,
+                        showEdit = showEdit,
+                        onEdit = onEdit,
                     )
                 }
             }
