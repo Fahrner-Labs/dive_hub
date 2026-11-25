@@ -9,6 +9,7 @@ import dev.divehub.shared.diagnostics.ReportProblemResult
 import dev.divehub.shared.settings.SettingsRepository
 import dev.divehub.shared.store.DiveStore
 import dev.divehub.shared.store.SyncState
+import dev.divehub.shared.write.WriteQueueSnapshot
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -93,6 +94,25 @@ class SettingsViewModelTest {
         assertEquals(true, debug.enabled)
         assertEquals(2, debug.count)
         assertEquals(listOf("e1", "e0"), debug.preview.map(DiagnosticEntry::code))
+    }
+
+    @Test
+    fun `the debug queue counts read the snapshot and follow the queue revision`() = runTest(dispatcher) {
+        var snapshot = WriteQueueSnapshot(pending = 1)
+        val queueRevision = MutableStateFlow(0L)
+        val viewModel = viewModel(queueRevision = queueRevision, readSnapshot = { snapshot })
+        advanceUntilIdle()
+
+        assertEquals(SettingsQueueState(pending = 1), viewModel.state.value.queue)
+
+        snapshot = WriteQueueSnapshot(pending = 2, failed = 1, conflicted = 3)
+        queueRevision.value = 1
+        advanceUntilIdle()
+
+        assertEquals(
+            SettingsQueueState(pending = 2, failed = 1, conflicted = 3),
+            viewModel.state.value.queue,
+        )
     }
 
     @Test
@@ -228,6 +248,8 @@ class SettingsViewModelTest {
         offline: MutableStateFlow<Boolean> = MutableStateFlow(false),
         refreshSync: suspend () -> Unit = {},
         diagnostics: DiagnosticsAccess = FakeDiagnostics(),
+        queueRevision: MutableStateFlow<Long> = MutableStateFlow(0L),
+        readSnapshot: () -> WriteQueueSnapshot = { WriteQueueSnapshot() },
     ) = SettingsViewModel(
         settings = SettingsRepository(FakeInstances(), store),
         revision = revision,
@@ -235,6 +257,8 @@ class SettingsViewModelTest {
         offlineState = offline,
         refreshSync = refreshSync,
         diagnostics = diagnostics,
+        queueRevision = queueRevision,
+        readSnapshot = readSnapshot,
         io = dispatcher,
     )
 }

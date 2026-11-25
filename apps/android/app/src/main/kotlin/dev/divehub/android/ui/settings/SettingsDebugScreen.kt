@@ -7,7 +7,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -38,15 +41,21 @@ import kotlinx.coroutines.withContext
  * local logs*. It re-reads the diagnostics capability on each entry, as the settings route used to.
  */
 @Composable
-fun SettingsDebugRoute(viewModel: SettingsViewModel, onBack: () -> Unit) {
+fun SettingsDebugRoute(
+    viewModel: SettingsViewModel,
+    onBack: () -> Unit,
+    onOpenQueue: () -> Unit,
+) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     LaunchedEffect(Unit) { viewModel.refreshDiagnostics() }
     SettingsDebugScreen(
         diagnostics = state.diagnostics,
+        queue = state.queue,
         onBack = onBack,
         onReportProblem = viewModel::reportProblem,
+        onOpenQueue = onOpenQueue,
         onShareLogs = {
             viewModel.shareLogs { ndjson ->
                 // The export can hold 200 entries: write the file off the main thread, then only the chooser runs here.
@@ -67,8 +76,10 @@ fun SettingsDebugRoute(viewModel: SettingsViewModel, onBack: () -> Unit) {
 @Composable
 fun SettingsDebugScreen(
     diagnostics: SettingsDiagnosticsState,
+    queue: SettingsQueueState,
     onBack: () -> Unit,
     onReportProblem: () -> Unit,
+    onOpenQueue: () -> Unit,
     onShareLogs: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -123,6 +134,31 @@ fun SettingsDebugScreen(
                     overflow = TextOverflow.Ellipsis,
                 )
             }
+
+            ListItem(
+                modifier = Modifier
+                    .clickable(onClick = onOpenQueue)
+                    .testTag("settings_sync_queue_row"),
+                headlineContent = { Text(stringResource(R.string.settings_debug_sync_queue)) },
+                supportingContent = {
+                    Text(
+                        stringResource(
+                            R.string.settings_debug_queue_counts,
+                            queue.pending,
+                            queue.failed,
+                            queue.conflicted,
+                        ),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                },
+                trailingContent = {
+                    Icon(
+                        Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                },
+            )
 
             ListItem(
                 modifier = Modifier.clickable(enabled = canReport, onClick = onReportProblem),

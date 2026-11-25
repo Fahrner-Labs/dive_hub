@@ -11,6 +11,7 @@ import dev.divehub.shared.diagnostics.DiagnosticEntry
 import dev.divehub.shared.diagnostics.DiagnosticLevel
 import dev.divehub.shared.settings.SettingsRepository
 import dev.divehub.shared.store.DiveStore
+import dev.divehub.shared.write.WriteQueueSnapshot
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -62,6 +63,8 @@ class SettingsRouteTest {
             offlineState = MutableStateFlow(false),
             refreshSync = {},
             diagnostics = diagnostics,
+            queueRevision = MutableStateFlow(0L),
+            readSnapshot = { WriteQueueSnapshot() },
             io = Dispatchers.Unconfined,
         )
         var entered by mutableStateOf(true)
@@ -69,7 +72,7 @@ class SettingsRouteTest {
         compose.setContent {
             DiveHubTheme(darkTheme = false) {
                 if (entered) {
-                    SettingsDebugRoute(viewModel = viewModel, onBack = {})
+                    SettingsDebugRoute(viewModel = viewModel, onBack = {}, onOpenQueue = {})
                 } else {
                     Text("elsewhere")
                 }

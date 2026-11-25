@@ -145,6 +145,7 @@ class SettingsScreenshotTest {
         renderDebug(darkTheme = false, enabled = true)
 
         compose.onNodeWithText("This Dive Hub accepts diagnostics.").assertIsDisplayed()
+        compose.onNodeWithText("Sync queue").assertIsDisplayed()
         capture("settings_debug_on_en_light.png")
     }
 
@@ -154,6 +155,7 @@ class SettingsScreenshotTest {
         renderDebug(darkTheme = false, enabled = false)
 
         compose.onNodeWithText("Die Client-Diagnose ist auf diesem Dive Hub ausgeschaltet.").assertIsDisplayed()
+        compose.onNodeWithText("Synchronisierungswarteschlange").assertIsDisplayed()
         capture("settings_debug_off_de_light.png")
     }
 
@@ -163,6 +165,7 @@ class SettingsScreenshotTest {
         renderDebug(darkTheme = true, enabled = true)
 
         compose.onNodeWithText("This Dive Hub accepts diagnostics.").assertIsDisplayed()
+        compose.onNodeWithText("Sync queue").assertIsDisplayed()
         capture("settings_debug_on_en_dark.png")
     }
 
@@ -172,6 +175,7 @@ class SettingsScreenshotTest {
         renderDebug(darkTheme = true, enabled = false)
 
         compose.onNodeWithText("Die Client-Diagnose ist auf diesem Dive Hub ausgeschaltet.").assertIsDisplayed()
+        compose.onNodeWithText("Synchronisierungswarteschlange").assertIsDisplayed()
         capture("settings_debug_off_de_dark.png")
     }
 
@@ -252,9 +256,11 @@ class SettingsScreenshotTest {
             DiveHubTheme(darkTheme = darkTheme) {
                 SettingsDebugScreen(
                     diagnostics = diagnostics,
+                    queue = SettingsQueueState(pending = 2, failed = 1, conflicted = 1),
                     onBack = {},
                     onReportProblem = {},
                     onShareLogs = {},
+                    onOpenQueue = {},
                 )
             }
         }

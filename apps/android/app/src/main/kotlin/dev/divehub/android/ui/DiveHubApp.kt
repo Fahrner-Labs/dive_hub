@@ -258,12 +258,12 @@ private class DiveHubScreens(
     }
 
     @Composable
-    override fun settingsDebug(owner: ViewModelStoreOwner, onBack: () -> Unit) {
+    override fun settingsDebug(owner: ViewModelStoreOwner, onBack: () -> Unit, onOpenQueue: () -> Unit) {
         val settings: SettingsViewModel = viewModel(
             viewModelStoreOwner = owner,
             factory = SettingsViewModel.factory(container),
         )
-        SettingsDebugRoute(viewModel = settings, onBack = onBack)
+        SettingsDebugRoute(viewModel = settings, onBack = onBack, onOpenQueue = onOpenQueue)
     }
 
     @Composable

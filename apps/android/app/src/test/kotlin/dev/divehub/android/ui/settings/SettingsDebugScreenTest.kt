@@ -31,6 +31,7 @@ class SettingsDebugScreenTest {
     private var reports = 0
     private var shares = 0
     private var backs = 0
+    private var queueOpens = 0
 
     @Test
     fun `the screen shows the diagnostics status`() {
@@ -67,6 +68,28 @@ class SettingsDebugScreenTest {
         compose.onNodeWithText("Share local logs").performScrollTo().performClick()
 
         assertEquals(1, shares)
+    }
+
+    @Test
+    fun `the sync queue row shows the live counts and opens the queue`() {
+        render(queue = SettingsQueueState(pending = 2, failed = 1, conflicted = 3))
+
+        compose.onNodeWithText("Sync queue").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Waiting: 2 · Failed: 1 · To decide: 3").assertIsDisplayed()
+        compose.onNodeWithText("Sync queue").performClick()
+
+        assertEquals(1, queueOpens)
+    }
+
+    @Test
+    fun `the sync queue row stays reachable when the queue is empty`() {
+        render()
+
+        compose.onNodeWithText("Sync queue").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Waiting: 0 · Failed: 0 · To decide: 0").assertIsDisplayed()
+        compose.onNodeWithText("Sync queue").performClick()
+
+        assertEquals(1, queueOpens)
     }
 
     @Test
@@ -151,14 +174,19 @@ class SettingsDebugScreenTest {
             .assertIsDisplayed()
     }
 
-    private fun render(diagnostics: SettingsDiagnosticsState = SettingsDiagnosticsState()) {
+    private fun render(
+        diagnostics: SettingsDiagnosticsState = SettingsDiagnosticsState(),
+        queue: SettingsQueueState = SettingsQueueState(),
+    ) {
         compose.setContent {
             DiveHubTheme(darkTheme = false) {
                 SettingsDebugScreen(
                     diagnostics = diagnostics,
+                    queue = queue,
                     onBack = { backs += 1 },
                     onReportProblem = { reports += 1 },
                     onShareLogs = { shares += 1 },
+                    onOpenQueue = { queueOpens += 1 },
                 )
             }
         }
