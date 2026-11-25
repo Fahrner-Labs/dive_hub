@@ -18,6 +18,9 @@ object ErrorCodes {
     /** Queued writes belong to the previous User; signing in as another one needs an explicit decision (ADR 0084 D8). */
     const val PENDING_WRITES = "pending_writes"
 
+    /** Another centre already has the scanned number; the 409 names it, so a duplicate create adopts that centre. */
+    const val CENTRE_EXTERNAL_ID_TAKEN = "centre_external_id_taken"
+
     /** A request got no answer at all (offline, unreachable); not a server refusal. */
     const val NO_ANSWER = "no_answer"
 

@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import dev.divehub.android.AppContainer
+import dev.divehub.android.ui.followStoreWrites
 import dev.divehub.shared.ErrorCodes
 import dev.divehub.shared.NoAnswerException
 import dev.divehub.shared.store.DiveStore
@@ -23,6 +24,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -63,12 +65,21 @@ class ScanViewModel(
     private val store: DiveStore,
     private val queue: WriteQueue,
     private val replayer: WriteReplayer,
+    private val revision: StateFlow<Long>,
+    private val syncOffline: StateFlow<Boolean>,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) : ViewModel() {
     private val _state = MutableStateFlow(ScanUiState())
     val state: StateFlow<ScanUiState> = _state.asStateFlow()
 
     private var started: Job? = null
+
+    init {
+        // A sync or hint writes the store and bumps the revision; the drain after a reconnect is what reads the scan.
+        viewModelScope.launch(ioDispatcher) {
+            revision.followStoreWrites().collect { followSync() }
+        }
+    }
 
     /** Re-read the queue and the resolved scans; the screen calls it once it is shown. */
     fun start() {
@@ -167,6 +178,19 @@ class ScanViewModel(
     }
 
     /**
+     * Read what a sync landed. The "stored offline" notice (the code [ScanScreen] words that way) is only stale once
+     * the last sync got an answer and the queue no longer holds a scan: a reconnect before the drain, or a poll that
+     * got no answer, keeps it.
+     */
+    private fun followSync() {
+        reload()
+        val current = _state.value
+        if (!current.busy && current.pending == 0 && !syncOffline.value && current.error in OFFLINE_NOTICE_ERRORS) {
+            _state.update { it.copy(error = null) }
+        }
+    }
+
+    /**
      * Only the scanner's own actions count here: an edit waiting elsewhere is not a scan, and the line sits inside
      * `Scans`, where it must not claim work this screen does not show.
      */
@@ -177,9 +201,18 @@ class ScanViewModel(
     }
 
     companion object {
+        /** The codes [ScanScreen] words as "no connection…"; both describe a scan still waiting for the server. */
+        private val OFFLINE_NOTICE_ERRORS = setOf(ErrorCodes.NO_ANSWER, ErrorCodes.SERVER_ERROR)
+
         fun factory(container: AppContainer): ViewModelProvider.Factory = viewModelFactory {
             initializer {
-                ScanViewModel(store = container.diveStore, queue = container.writeQueue, replayer = container.writeReplayer)
+                ScanViewModel(
+                    store = container.diveStore,
+                    queue = container.writeQueue,
+                    replayer = container.writeReplayer,
+                    revision = container.syncRevision,
+                    syncOffline = container.syncOffline,
+                )
             }
         }
     }

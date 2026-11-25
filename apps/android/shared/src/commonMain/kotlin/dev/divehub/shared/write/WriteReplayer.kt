@@ -159,6 +159,11 @@ class WriteReplayer(
             // Rate limiting and request timeouts are not refusals: the scan is still the User's data.
             status == 408 -> EntryOutcome.RetryLater(DiveHubException(ErrorCodes.NO_ANSWER, status))
             status == 429 -> EntryOutcome.RetryLater(DiveHubException(ErrorCodes.TOO_MANY_ATTEMPTS, status))
+            // The centre exists, made by another device from the same code: a success, not a refusal (clients.md).
+            status == 409 && entry.entityType == ScanEntities.CENTRE && takenCentre(text) -> {
+                recordAdoption(entry, text)
+                EntryOutcome.Applied
+            }
             else -> {
                 recordFailure(entry, status, text)
                 EntryOutcome.Dropped(
@@ -245,6 +250,34 @@ class WriteReplayer(
         throw error
     } catch (_: Exception) {
         null
+    }
+
+    /**
+     * A duplicate centre is a success: the centre the other device made is the one this scan meant, so the result is
+     * [ScanStatus.Existing] naming the holder from the 409's `centre` body. The pending write goes; no refusal notice.
+     * Android has no centre screen yet, so this says so without a link (clients.md, centre_external_id_taken).
+     */
+    private fun recordAdoption(entry: PendingWrite, text: String?) {
+        val holder = parseObject(text)?.get("centre") as? JsonObject
+        val result = ScanResult(
+            id = 0,
+            at = clock(),
+            status = ScanStatus.Existing,
+            kind = "centre",
+            name = stringOf(holder?.get("name")),
+            entityId = stringOf(holder?.get("id")),
+            detailJson = text,
+        )
+        store.transaction {
+            addScanResult(result)
+            deletePendingWrite(entry.id)
+        }
+    }
+
+    /** Whether a 409's problem body says another centre has this number and names it. */
+    private fun takenCentre(text: String?): Boolean {
+        val body = parseObject(text) ?: return false
+        return stringOf(body["code"]) == ErrorCodes.CENTRE_EXTERNAL_ID_TAKEN && body["centre"] is JsonObject
     }
 
     /** A refusal is a state on the scan, never a silent loss: keep the answer and its problem code. */
