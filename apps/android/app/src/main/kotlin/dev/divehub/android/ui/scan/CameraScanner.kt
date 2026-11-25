@@ -16,10 +16,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -39,7 +38,6 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
@@ -54,28 +52,17 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import dev.divehub.android.R
+import dev.divehub.android.ui.CameraChrome
 import dev.divehub.android.ui.DiveHubText
 import dev.divehub.android.ui.Spacing
 import dev.divehub.android.ui.components.Radius
+import dev.divehub.android.ui.findActivity
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.Executors
 import kotlinx.coroutines.launch
 
 /** Why the live scanner could not open. The screen turns each into its own sentence (client contract, scanning). */
 enum class CameraFailure { Missing, Blocked, Busy }
-
-/**
- * The camera chrome is scheme-independent on purpose: it sits over the preview, not over the app's surface. Naming
- * the tones here keeps the white guide and its dark under-stroke together, and away from ad-hoc literals.
- */
-private object CameraChrome {
-    val Scene = Color.Black
-    val Ink = Color.White
-    val HintScrim = Color.Black.copy(alpha = 0.55f)
-    val CloseScrim = Color.Black.copy(alpha = 0.5f)
-    val Guide = Color.White
-    val GuideUnder = Color.Black.copy(alpha = 0.65f)
-}
 
 /** A contained target beside the close glyph; the guide's white stroke and the dark under-stroke that keeps it visible. */
 private val CloseTarget = 48.dp
@@ -236,8 +223,7 @@ internal fun CameraScannerFrame(
         Column(
             Modifier
                 .fillMaxSize()
-                .statusBarsPadding()
-                .navigationBarsPadding(),
+                .safeDrawingPadding(),
         ) {
             Row(
                 Modifier

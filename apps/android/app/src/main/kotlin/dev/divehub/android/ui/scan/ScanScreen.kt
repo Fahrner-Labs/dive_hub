@@ -1,10 +1,7 @@
 package dev.divehub.android.ui.scan
 
 import android.Manifest
-import android.app.Activity
 import android.content.ActivityNotFoundException
-import android.content.Context
-import android.content.ContextWrapper
 import android.content.pm.PackageManager
 import android.net.Uri
 import androidx.activity.compose.BackHandler
@@ -69,6 +66,7 @@ import dev.divehub.android.ui.components.InkButton
 import dev.divehub.android.ui.components.QuietButton
 import dev.divehub.android.ui.components.Radius
 import dev.divehub.android.ui.components.Section
+import dev.divehub.android.ui.findActivity
 import dev.divehub.shared.ErrorCodes
 import dev.divehub.shared.store.ScanResult
 import dev.divehub.shared.store.ScanStatus
@@ -117,13 +115,13 @@ fun ScanRoute(viewModel: ScanViewModel, onBack: () -> Unit) {
         if (uri != null) readPicture(uri)
     }
     val permission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-        when {
-            granted -> live = true
-            // Android still asks again after a soft denial; only a permanent one needs the system settings.
-            context.findActivity()?.let {
-                ActivityCompat.shouldShowRequestPermissionRationale(it, Manifest.permission.CAMERA)
-            } == true -> viewModel.cameraDenied()
-            else -> viewModel.cameraBlocked()
+        val canAskAgain = context.findActivity()?.let {
+            ActivityCompat.shouldShowRequestPermissionRationale(it, Manifest.permission.CAMERA)
+        } == true
+        when (cameraPermission(granted, canAskAgain)) {
+            CameraPermission.Granted -> live = true
+            CameraPermission.Denied -> viewModel.cameraDenied()
+            CameraPermission.Blocked -> viewModel.cameraBlocked()
         }
     }
 
@@ -142,13 +140,12 @@ fun ScanRoute(viewModel: ScanViewModel, onBack: () -> Unit) {
             val uri = FileProvider.getUriForFile(context, "${context.packageName}.diagnostics", file)
             photoUri = uri
             camera.launch(uri)
-        } catch (_: ActivityNotFoundException) {
-            viewModel.noCamera()
-        } catch (_: SecurityException) {
-            // Declaring CAMERA makes the system-camera intent need it; a revoked permission lands here.
-            viewModel.cameraBlocked()
-        } catch (_: IllegalArgumentException) {
-            viewModel.noCamera()
+        } catch (error: Exception) {
+            when (photoLaunchFailure(error)) {
+                PhotoLaunchFailure.NoCameraApp -> viewModel.noCamera()
+                PhotoLaunchFailure.PermissionDenied -> viewModel.cameraDenied()
+                null -> throw error
+            }
         }
     }
 
@@ -612,10 +609,24 @@ internal fun scanReadChoice(error: String?): ScanReadChoice = when (error) {
     else -> ScanReadChoice.CameraPrimary
 }
 
-/** The Activity behind Compose's context, for the permission question and the camera's system bars. */
-internal tailrec fun Context.findActivity(): Activity? = when (this) {
-    is Activity -> this
-    is ContextWrapper -> baseContext.findActivity()
+/** How a camera permission request ended; only an answer Android will not ask again is a block. */
+internal enum class CameraPermission { Granted, Denied, Blocked }
+
+internal fun cameraPermission(granted: Boolean, canAskAgain: Boolean): CameraPermission = when {
+    granted -> CameraPermission.Granted
+    // Android still asks again after a soft denial; only a permanent one needs the system settings.
+    canAskAgain -> CameraPermission.Denied
+    else -> CameraPermission.Blocked
+}
+
+/** Why a "Take a picture" launch failed: no camera app, or a permission Android may still ask for. */
+internal enum class PhotoLaunchFailure { NoCameraApp, PermissionDenied }
+
+/** A failed `ACTION_IMAGE_CAPTURE`: a missing camera app, or our declared CAMERA permission; never "blocked". */
+internal fun photoLaunchFailure(error: Throwable): PhotoLaunchFailure? = when (error) {
+    is ActivityNotFoundException, is IllegalArgumentException -> PhotoLaunchFailure.NoCameraApp
+    // Declaring CAMERA makes the system-camera intent need it; a denial here may still be askable.
+    is SecurityException -> PhotoLaunchFailure.PermissionDenied
     else -> null
 }
 

@@ -1443,7 +1443,8 @@ dives, all off until the User turns them on. *Web:* `ProviderAutomation.tsx` (se
 - **Should offer scanning a code**, by camera and from an image file, wherever a code's text can be pasted. Send the
   text that was read to `POST /api/verification-codes/read`, unchanged, and take only what it answers; don't put the
   scanned text into a field. Ask for the camera only when the User starts scanning, release it as soon as a code is
-  read or the scanner closes, and say which failure it is (blocked, no camera, camera busy). Where the platform gives
+  read or the scanner closes, and say which failure it is (permission denied, told apart as still askable or blocked
+  until changed in settings; no camera; camera busy). Where the platform gives
   no camera (a web page over plain HTTP), say so and offer the image. A picture without a code is said as that, not
   as an error of the code. *Web:* `CodeScanner.tsx`, `lib/qr-reader.ts`.
 - **The number** is set on its own (`PUT /api/dive-centres/{id}/external-ids/ssi`, `null` removes it; the whole text of

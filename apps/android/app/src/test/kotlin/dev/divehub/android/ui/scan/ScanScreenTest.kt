@@ -1,5 +1,6 @@
 package dev.divehub.android.ui.scan
 
+import android.content.ActivityNotFoundException
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
@@ -105,6 +106,21 @@ class ScanScreenTest {
         compose.onNodeWithText("Scan with the camera").assertIsDisplayed()
         compose.onNodeWithText("Take a picture").assertDoesNotExist()
         compose.onNodeWithText("Choose a picture").assertIsDisplayed()
+    }
+
+    @Test
+    fun `only an answer Android will not ask again is a blocked permission`() {
+        assertEquals(CameraPermission.Granted, cameraPermission(granted = true, canAskAgain = false))
+        assertEquals(CameraPermission.Denied, cameraPermission(granted = false, canAskAgain = true))
+        assertEquals(CameraPermission.Blocked, cameraPermission(granted = false, canAskAgain = false))
+    }
+
+    @Test
+    fun `a photo intent that needs our permission is the askable denial, never blocked`() {
+        assertEquals(PhotoLaunchFailure.PermissionDenied, photoLaunchFailure(SecurityException("not granted")))
+        assertEquals(PhotoLaunchFailure.NoCameraApp, photoLaunchFailure(ActivityNotFoundException()))
+        assertEquals(PhotoLaunchFailure.NoCameraApp, photoLaunchFailure(IllegalArgumentException()))
+        assertNull(photoLaunchFailure(RuntimeException("a bug")))
     }
 
     @Test
