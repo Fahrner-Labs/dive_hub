@@ -717,6 +717,8 @@
     <string name="settings_debug_share_empty">There are no entries to share yet.</string>
     <string name="settings_debug_share_title">Share local logs</string>
     <string name="settings_debug_share_subject">DiveHub diagnostics</string>
+    <string name="settings_debug_sync_queue">Sync queue</string>
+    <string name="settings_debug_queue_counts">Waiting:&#160;%1$d&#160;· Failed:&#160;%2$d&#160;· To&#160;decide:&#160;%3$d</string>
     <plurals name="pending_changes_waiting">
         <item quantity="one">%1$d change waiting to sync</item>
         <item quantity="other">%1$d changes waiting to sync</item>

@@ -332,6 +332,21 @@ class AppNavHostTest {
     }
 
     @Test
+    fun `the debug queue opens the change queue and back returns to debug`() {
+        compose.setContent { start(destination = null) }
+        compose.runOnIdle { controller.navigate(MainRoute) }
+        compose.onNodeWithText("Settings").performClick()
+        compose.runOnIdle { screens.settingsOpenDebug!!.invoke() }
+        assertRoute<SettingsDebugRoute>()
+
+        compose.runOnIdle { screens.settingsDebugOpenQueue!!.invoke() }
+        assertRoute<ConflictsRoute>()
+
+        compose.runOnIdle { screens.conflictsBack!!.invoke() }
+        assertRoute<SettingsDebugRoute>()
+    }
+
+    @Test
     fun `the scan entry pushes the scanner and back returns to settings`() {
         compose.setContent { start(destination = null) }
         compose.runOnIdle { controller.navigate(MainRoute) }
@@ -575,6 +590,7 @@ class AppNavHostTest {
         var settingsOpenScan: (() -> Unit)? = null
         var settingsDebugShown = false
         var settingsDebugBack: (() -> Unit)? = null
+        var settingsDebugOpenQueue: (() -> Unit)? = null
         var conflictsShown = false
         var conflictsBack: (() -> Unit)? = null
         var conflictsOpenDive: ((String) -> Unit)? = null
@@ -650,9 +666,10 @@ class AppNavHostTest {
         }
 
         @Composable
-        override fun settingsDebug(owner: ViewModelStoreOwner, onBack: () -> Unit) {
+        override fun settingsDebug(owner: ViewModelStoreOwner, onBack: () -> Unit, onOpenQueue: () -> Unit) {
             settingsDebugShown = true
             settingsDebugBack = onBack
+            settingsDebugOpenQueue = onOpenQueue
             Text("settings debug")
         }
 

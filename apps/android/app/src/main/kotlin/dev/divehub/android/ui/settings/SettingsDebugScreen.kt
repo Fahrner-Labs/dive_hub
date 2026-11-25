@@ -7,7 +7,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -34,19 +37,26 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /**
- * The Debug subscreen (FAH-343, folded out of the settings list): diagnostics status, *Report a problem* and *Share
- * local logs*. It re-reads the diagnostics capability on each entry, as the settings route used to.
+ * The Debug subscreen (FAH-343, folded out of the settings list): diagnostics status, *Report a problem*, *Share
+ * local logs* and the permanent *Sync queue* row (FAH-500). It re-reads the diagnostics capability on each entry,
+ * as the settings route used to.
  */
 @Composable
-fun SettingsDebugRoute(viewModel: SettingsViewModel, onBack: () -> Unit) {
+fun SettingsDebugRoute(
+    viewModel: SettingsViewModel,
+    onBack: () -> Unit,
+    onOpenQueue: () -> Unit,
+) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     LaunchedEffect(Unit) { viewModel.refreshDiagnostics() }
     SettingsDebugScreen(
         diagnostics = state.diagnostics,
+        queue = state.queue,
         onBack = onBack,
         onReportProblem = viewModel::reportProblem,
+        onOpenQueue = onOpenQueue,
         onShareLogs = {
             viewModel.shareLogs { ndjson ->
                 // The export can hold 200 entries: write the file off the main thread, then only the chooser runs here.
@@ -61,14 +71,17 @@ fun SettingsDebugRoute(viewModel: SettingsViewModel, onBack: () -> Unit) {
 
 /**
  * The diagnostics detail screen (FAH-318, ADR 0080 D1): a read-only status line, *Report a problem* for an instance that
- * allows uploads, and *Share local logs*, which stays available whatever the instance setting says. It only draws
- * [diagnostics]; the capture layer and the upload live in `:shared` (FAH-321).
+ * allows uploads, *Share local logs*, which stays available whatever the instance setting says, and the *Sync queue*
+ * row with live queue counts (FAH-500). It only draws [diagnostics] and [queue]; the capture layer and the upload
+ * live in `:shared` (FAH-321).
  */
 @Composable
 fun SettingsDebugScreen(
     diagnostics: SettingsDiagnosticsState,
+    queue: SettingsQueueState,
     onBack: () -> Unit,
     onReportProblem: () -> Unit,
+    onOpenQueue: () -> Unit,
     onShareLogs: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -123,6 +136,31 @@ fun SettingsDebugScreen(
                     overflow = TextOverflow.Ellipsis,
                 )
             }
+
+            ListItem(
+                modifier = Modifier
+                    .clickable(onClick = onOpenQueue)
+                    .testTag("settings_sync_queue_row"),
+                headlineContent = { Text(stringResource(R.string.settings_debug_sync_queue)) },
+                supportingContent = {
+                    Text(
+                        stringResource(
+                            R.string.settings_debug_queue_counts,
+                            queue.pending,
+                            queue.failed,
+                            queue.conflicted,
+                        ),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                },
+                trailingContent = {
+                    Icon(
+                        Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                },
+            )
 
             ListItem(
                 modifier = Modifier.clickable(enabled = canReport, onClick = onReportProblem),

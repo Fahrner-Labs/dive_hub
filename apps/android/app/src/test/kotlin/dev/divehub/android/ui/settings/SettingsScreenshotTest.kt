@@ -145,6 +145,7 @@ class SettingsScreenshotTest {
         renderDebug(darkTheme = false, enabled = true)
 
         compose.onNodeWithText("This Dive Hub accepts diagnostics.").assertIsDisplayed()
+        compose.onNodeWithText("Sync queue").assertIsDisplayed()
         capture("settings_debug_on_en_light.png")
     }
 
@@ -154,6 +155,7 @@ class SettingsScreenshotTest {
         renderDebug(darkTheme = false, enabled = false)
 
         compose.onNodeWithText("Die Client-Diagnose ist auf diesem Dive Hub ausgeschaltet.").assertIsDisplayed()
+        compose.onNodeWithText("Synchronisierungswarteschlange").assertIsDisplayed()
         capture("settings_debug_off_de_light.png")
     }
 
@@ -163,6 +165,7 @@ class SettingsScreenshotTest {
         renderDebug(darkTheme = true, enabled = true)
 
         compose.onNodeWithText("This Dive Hub accepts diagnostics.").assertIsDisplayed()
+        compose.onNodeWithText("Sync queue").assertIsDisplayed()
         capture("settings_debug_on_en_dark.png")
     }
 
@@ -172,7 +175,26 @@ class SettingsScreenshotTest {
         renderDebug(darkTheme = true, enabled = false)
 
         compose.onNodeWithText("Die Client-Diagnose ist auf diesem Dive Hub ausgeschaltet.").assertIsDisplayed()
+        compose.onNodeWithText("Synchronisierungswarteschlange").assertIsDisplayed()
         capture("settings_debug_off_de_dark.png")
+    }
+
+    @Test
+    @Config(qualifiers = "en-rUS-w320dp-h891dp-xxhdpi", fontScale = 2f)
+    fun `the debug queue counts break between groups in English at 320 dp and 200 percent`() {
+        renderDebug(darkTheme = false, enabled = true)
+
+        compose.onNodeWithText("Sync queue").performScrollTo().assertIsDisplayed()
+        capture("settings_debug_queue_narrow_en_2x.png")
+    }
+
+    @Test
+    @Config(qualifiers = "de-rDE-w320dp-h891dp-xxhdpi", fontScale = 2f)
+    fun `the debug queue counts break between groups in German at 320 dp and 200 percent`() {
+        renderDebug(darkTheme = false, enabled = true)
+
+        compose.onNodeWithText("Synchronisierungswarteschlange").performScrollTo().assertIsDisplayed()
+        capture("settings_debug_queue_narrow_de_2x.png")
     }
 
     @Test
@@ -252,9 +274,11 @@ class SettingsScreenshotTest {
             DiveHubTheme(darkTheme = darkTheme) {
                 SettingsDebugScreen(
                     diagnostics = diagnostics,
+                    queue = SettingsQueueState(pending = 2, failed = 1, conflicted = 1),
                     onBack = {},
                     onReportProblem = {},
                     onShareLogs = {},
+                    onOpenQueue = {},
                 )
             }
         }

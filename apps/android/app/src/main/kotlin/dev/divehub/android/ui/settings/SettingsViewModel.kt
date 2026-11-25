@@ -6,11 +6,13 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import dev.divehub.android.AppContainer
+import dev.divehub.android.ui.followStoreWrites
 import dev.divehub.shared.ErrorCodes
 import dev.divehub.shared.diagnostics.DiagnosticEntry
 import dev.divehub.shared.diagnostics.DiagnosticsAccess
 import dev.divehub.shared.diagnostics.ReportProblemResult
 import dev.divehub.shared.settings.SettingsRepository
+import dev.divehub.shared.write.WriteQueueSnapshot
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -33,6 +35,15 @@ data class SettingsUiState(
     val offline: Boolean = false,
     val syncing: Boolean = false,
     val diagnostics: SettingsDiagnosticsState = SettingsDiagnosticsState(),
+    /** The Debug subscreen's permanent sync-queue row: what the write queue holds right now (FAH-500). */
+    val queue: SettingsQueueState = SettingsQueueState(),
+)
+
+/** The three counts the queue screen separates, read from the shared core's [WriteQueueSnapshot]. */
+data class SettingsQueueState(
+    val pending: Int = 0,
+    val failed: Int = 0,
+    val conflicted: Int = 0,
 )
 
 /**
@@ -61,6 +72,8 @@ class SettingsViewModel(
     private val offlineState: StateFlow<Boolean>,
     private val refreshSync: suspend () -> Unit,
     private val diagnostics: DiagnosticsAccess,
+    private val queueRevision: StateFlow<Long>,
+    private val readSnapshot: () -> WriteQueueSnapshot,
     private val io: CoroutineDispatcher = Dispatchers.IO,
 ) : ViewModel() {
     private val _state = MutableStateFlow(SettingsUiState())
@@ -85,6 +98,10 @@ class SettingsViewModel(
         viewModelScope.launch {
             offlineState.collect { offline -> _state.update { it.copy(offline = offline) } }
         }
+        // An edit lands in the queue before any sync runs; the queue's own revision keeps the Debug row live (FAH-500).
+        viewModelScope.launch { queueRevision.collect { readQueue() } }
+        // A replay that drains, parks or drops entries bumps the sync revision, not the queue revision (FAH-500).
+        viewModelScope.launch { revision.followStoreWrites().collect { readQueue() } }
     }
 
     /** One refresh through the same guarded path as the WorkManager worker; the revision then updates the line. */
@@ -176,6 +193,19 @@ class SettingsViewModel(
         }
     }
 
+    private suspend fun readQueue() {
+        val snapshot = withContext(io) { readSnapshot() }
+        _state.update {
+            it.copy(
+                queue = SettingsQueueState(
+                    pending = snapshot.pending,
+                    failed = snapshot.failed,
+                    conflicted = snapshot.conflicted,
+                ),
+            )
+        }
+    }
+
     companion object {
         /** The newest entries the Debug subscreen previews; the export and the upload still carry the whole buffer. */
         const val PREVIEW_LIMIT: Int = 3
@@ -189,6 +219,8 @@ class SettingsViewModel(
                     offlineState = container.syncOffline,
                     refreshSync = container::refreshNow,
                     diagnostics = container.diagnostics,
+                    queueRevision = container.queueRevision,
+                    readSnapshot = container.writeReplayer::snapshot,
                 )
             }
         }

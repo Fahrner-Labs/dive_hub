@@ -68,7 +68,7 @@ internal interface AppScreens {
     fun settings(onOpenDebug: () -> Unit, onOpenScan: () -> Unit)
 
     @Composable
-    fun settingsDebug(owner: ViewModelStoreOwner, onBack: () -> Unit)
+    fun settingsDebug(owner: ViewModelStoreOwner, onBack: () -> Unit, onOpenQueue: () -> Unit)
 
     @Composable
     fun conflicts(onBack: () -> Unit, onOpenDive: (String) -> Unit)
@@ -207,7 +207,11 @@ internal fun AppNavHost(
                     // which owns the state both screens read (FAH-343).
                     val owner = remember { navController.getBackStackEntry<SettingsRoute>() }
                     MainShell(navController) {
-                        currentScreens.value.settingsDebug(owner = owner, onBack = { navController.popBackStack() })
+                        currentScreens.value.settingsDebug(
+                            owner = owner,
+                            onBack = { navController.popBackStack() },
+                            onOpenQueue = { navController.navigate(ConflictsRoute) { launchSingleTop = true } },
+                        )
                     }
                 }
                 // The queue screen sits above whatever showed the pending line (logbook or a Dive); the bar keeps the
