@@ -27,6 +27,8 @@ internal class DiveNotifications(private val context: Context) {
     fun createChannels() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
         val manager = context.getSystemService(NotificationManager::class.java) ?: return
+        // Importance is fixed at creation; a behaviour change means a new id, so never re-create an existing channel.
+        if (manager.getNotificationChannel(CHANNEL_DIVES) != null) return
         val channel = NotificationChannel(
             CHANNEL_DIVES,
             context.getString(R.string.notification_channel_dives_name),
