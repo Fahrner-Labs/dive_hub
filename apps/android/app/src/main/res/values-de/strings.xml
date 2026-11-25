@@ -857,7 +857,7 @@
     <string name="scan_error_not_person">das ist der Code eines Tauchzentrums, nicht einer Person.</string>
     <string name="scan_error_offline">keine Verbindung. Der Code bleibt auf diesem Gerät und wird gelesen, sobald der Server antwortet.</string>
     <string name="scan_error_no_code">kein QR-Code in diesem Bild.</string>
-    <string name="scan_error_no_camera">dieses Gerät hat keine Kamera-App. Wähle stattdessen ein Bild aus.</string>
+    <string name="scan_error_no_camera">dieses Gerät hat keine Kamera-App. Scanne mit der Kamera oder wähle ein Bild aus.</string>
     <string name="scan_error_camera_missing">dieses Gerät hat keine Kamera. Wähle stattdessen ein Bild aus.</string>
     <string name="scan_error_camera_denied">der Kamerazugriff wurde nicht erlaubt. Versuche es erneut oder wähle ein Bild aus.</string>
     <string name="scan_error_camera_blocked">der Kamerazugriff ist gesperrt. Erlaube ihn in den Android-Einstellungen oder wähle ein Bild aus.</string>

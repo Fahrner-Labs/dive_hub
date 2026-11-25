@@ -64,8 +64,38 @@ class ScanScreenTest {
     fun `a blocked camera is said as its own failure and points at the picture fallback`() {
         render(ScanUiState(error = ScanErrors.CAMERA_BLOCKED))
 
-        compose.onNodeWithText("camera access is blocked", substring = true).assertIsDisplayed()
+        compose.onNodeWithText("Camera access is blocked", substring = true).assertIsDisplayed()
         compose.onNodeWithText("choose a picture", substring = true).assertIsDisplayed()
+    }
+
+    @Test
+    fun `a device with no camera leads with the picture and drops both camera paths`() {
+        var picture = false
+        render(ScanUiState(error = ScanErrors.CAMERA_MISSING), onImage = { picture = true })
+
+        compose.onNodeWithText("Scan with the camera").assertDoesNotExist()
+        compose.onNodeWithText("Take a picture").assertDoesNotExist()
+        compose.onNodeWithText("Choose a picture").performClick()
+
+        assertTrue(picture)
+    }
+
+    @Test
+    fun `a missing camera app keeps the live scanner and drops only the photo fallback`() {
+        render(ScanUiState(error = ScanErrors.NO_CAMERA))
+
+        compose.onNodeWithText("Scan with the camera").assertIsDisplayed()
+        compose.onNodeWithText("Take a picture").assertDoesNotExist()
+        compose.onNodeWithText("Choose a picture").assertIsDisplayed()
+    }
+
+    @Test
+    fun `a blocked permission leads with the picture but keeps the system camera fallback`() {
+        render(ScanUiState(error = ScanErrors.CAMERA_BLOCKED))
+
+        compose.onNodeWithText("Scan with the camera").assertDoesNotExist()
+        compose.onNodeWithText("Take a picture").assertIsDisplayed()
+        compose.onNodeWithText("Choose a picture").assertIsDisplayed()
     }
 
     @Test
@@ -178,6 +208,7 @@ class ScanScreenTest {
         state: ScanUiState,
         onLiveScan: () -> Unit = {},
         onCamera: () -> Unit = {},
+        onImage: () -> Unit = {},
         onScan: (String) -> Unit = {},
         onTake: (ScanResult, String?, Boolean) -> Unit = { _, _, _ -> },
         onCreateCentre: (ScanResult, ReadCode) -> Unit = { _, _ -> },
@@ -190,7 +221,7 @@ class ScanScreenTest {
                     onBack = {},
                     onLiveScan = onLiveScan,
                     onCamera = onCamera,
-                    onImage = {},
+                    onImage = onImage,
                     onScan = onScan,
                     onTake = onTake,
                     onCreateCentre = onCreateCentre,

@@ -244,7 +244,9 @@ fun ScanScreen(
                     // The failure replaces the intro: it is the message now, and the primary and its fallbacks must
                     // stay in view with it at 200 % (FAH-496 critique).
                     Text(
-                        scanErrorText(state.error),
+                        // The error stands alone here (it replaced the intro), so it reads as a sentence; the same
+                        // resources stay lowercase where a result renders them after "Not added:".
+                        scanErrorText(state.error).replaceFirstChar { it.titlecase() },
                         modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.error,
@@ -260,12 +262,47 @@ fun ScanScreen(
 
                 Spacer(Modifier.height(Spacing.s4))
                 Section(title = stringResource(R.string.scan_section_read), showSeparator = false) {
-                    // The live camera is the one primary; a picture, the system camera and pasted text are fallbacks.
-                    InkButton(stringResource(R.string.scan_live), onClick = onLiveScan, modifier = Modifier.fillMaxWidth())
-                    Spacer(Modifier.height(Spacing.s2))
-                    QuietButton(stringResource(R.string.scan_camera), onClick = onCamera)
-                    Spacer(Modifier.height(Spacing.s2))
-                    QuietButton(stringResource(R.string.scan_image), onClick = onImage)
+                    // The failure decides which way on can work: a missing or blocked camera must not stay the loud
+                    // primary, and a missing camera app leaves the live scanner (which needs no camera app) first.
+                    when (scanReadChoice(state.error)) {
+                        ScanReadChoice.CameraPrimary -> {
+                            InkButton(
+                                stringResource(R.string.scan_live),
+                                onClick = onLiveScan,
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                            Spacer(Modifier.height(Spacing.s2))
+                            QuietButton(stringResource(R.string.scan_camera), onClick = onCamera)
+                            Spacer(Modifier.height(Spacing.s2))
+                            QuietButton(stringResource(R.string.scan_image), onClick = onImage)
+                        }
+                        ScanReadChoice.CameraPrimaryNoPhoto -> {
+                            InkButton(
+                                stringResource(R.string.scan_live),
+                                onClick = onLiveScan,
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                            Spacer(Modifier.height(Spacing.s2))
+                            QuietButton(stringResource(R.string.scan_image), onClick = onImage)
+                        }
+                        ScanReadChoice.PicturePrimary -> {
+                            InkButton(
+                                stringResource(R.string.scan_image),
+                                onClick = onImage,
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                            Spacer(Modifier.height(Spacing.s2))
+                            // The system camera app still works when this app's own permission is blocked.
+                            QuietButton(stringResource(R.string.scan_camera), onClick = onCamera)
+                        }
+                        ScanReadChoice.PictureOnly -> {
+                            InkButton(
+                                stringResource(R.string.scan_image),
+                                onClick = onImage,
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                        }
+                    }
                     Spacer(Modifier.height(Spacing.s2))
                     QuietButton(
                         text = stringResource(R.string.scan_paste_show),
@@ -568,6 +605,16 @@ private fun changeField(field: String): String = when (field) {
     "email" -> stringResource(R.string.scan_field_email)
     "leaderNumber" -> stringResource(R.string.scan_field_leader_number)
     else -> field
+}
+
+/** Which read action leads for a given failure; only what can work stays loud. */
+internal enum class ScanReadChoice { CameraPrimary, CameraPrimaryNoPhoto, PicturePrimary, PictureOnly }
+
+internal fun scanReadChoice(error: String?): ScanReadChoice = when (error) {
+    ScanErrors.CAMERA_MISSING -> ScanReadChoice.PictureOnly
+    ScanErrors.CAMERA_BLOCKED -> ScanReadChoice.PicturePrimary
+    ScanErrors.NO_CAMERA -> ScanReadChoice.CameraPrimaryNoPhoto
+    else -> ScanReadChoice.CameraPrimary
 }
 
 /** The Activity behind Compose's context, for the permission question and the camera's system bars. */

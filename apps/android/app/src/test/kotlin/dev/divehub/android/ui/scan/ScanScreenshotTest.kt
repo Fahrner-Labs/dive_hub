@@ -185,8 +185,9 @@ class ScanScreenshotTest {
     fun `a camera failure points at the picture fallback at 320 dp and 200 percent in German and dark`() {
         render(ScanUiState(error = ScanErrors.CAMERA_MISSING), darkTheme = true, fontScale = 2f)
 
-        compose.onNodeWithText("dieses Gerät hat keine Kamera", substring = true).assertIsDisplayed()
-        compose.onNodeWithText("Mit der Kamera scannen").assertIsDisplayed()
+        compose.onNodeWithText("Dieses Gerät hat keine Kamera", substring = true).assertIsDisplayed()
+        compose.onNodeWithText("Mit der Kamera scannen").assertDoesNotExist()
+        compose.onNodeWithText("Foto aufnehmen").assertDoesNotExist()
         compose.onNodeWithText("Bild auswählen").assertIsDisplayed()
         capture("scan_camera_failure_de_dark.png")
     }
