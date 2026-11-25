@@ -859,7 +859,7 @@
     <string name="scan_error_no_code">no QR code in that picture.</string>
     <string name="scan_error_no_camera">this device has no camera app.</string>
     <string name="scan_error_camera_missing">this device has no camera.</string>
-    <string name="scan_error_camera_blocked">camera access is blocked. Allow it in Android settings, or choose a picture.</string>
+    <string name="scan_error_camera_blocked">camera access was not allowed. Allow it in Android settings, or choose a picture.</string>
     <string name="scan_error_camera_busy">the camera is busy in another app. Close it and try again, or choose a picture.</string>
     <string name="scan_error_generic">something went wrong. Try again later.</string>
 </resources>

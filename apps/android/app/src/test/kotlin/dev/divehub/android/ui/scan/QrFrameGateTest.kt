@@ -31,7 +31,6 @@ class QrFrameGateTest {
         assertNull(gate.firstText(null))
         assertNull(gate.firstText("  "))
         assertEquals("  SSI;buddy;ada  ", gate.firstText("  SSI;buddy;ada  "))
-        assertTrue(gate.isFinished)
         assertNull(gate.firstText("SSI;buddy;ada"))
         now = 10_000
         assertFalse(gate.due())

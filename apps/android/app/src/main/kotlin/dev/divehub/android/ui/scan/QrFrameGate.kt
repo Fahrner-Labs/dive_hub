@@ -14,9 +14,6 @@ class QrFrameGate(
     private var lastAnalyzedAt: Long? = null
     private var finished = false
 
-    /** True once the first code has been reported; the scanner must stop reading. */
-    val isFinished: Boolean get() = finished
-
     /** True when this frame may be decoded: nothing is finished and the last due frame was at least one interval ago. */
     fun due(): Boolean {
         if (finished) return false

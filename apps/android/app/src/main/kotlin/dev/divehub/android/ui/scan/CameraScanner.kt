@@ -128,14 +128,7 @@ fun CameraScanner(
             } catch (error: Exception) {
                 runCatching { analysis?.clearAnalyzer() }
                 runCatching { provider?.unbindAll() }
-                val failure = when (val cause = (error as? ExecutionException)?.cause ?: error) {
-                    is CameraInfoUnavailableException,
-                    is CameraUnavailableException,
-                    is InitializationException,
-                    is IllegalArgumentException,
-                    -> if (cause is CameraUnavailableException) CameraFailure.Busy else CameraFailure.Missing
-                    else -> CameraFailure.Busy
-                }
+                val failure = cameraFailure(error)
                 scope.launch { onFailure(failure) }
             }
         }, mainExecutor)
@@ -158,6 +151,20 @@ fun CameraScanner(
             )
         },
     )
+}
+
+/**
+ * Which sentence a CameraX failure earns. A permission revoked while the preview is open is [CameraFailure.Blocked],
+ * not "busy"; a camera that cannot be opened or resolved is missing; anything else is held elsewhere.
+ */
+internal fun cameraFailure(error: Throwable): CameraFailure = when (val cause = (error as? ExecutionException)?.cause ?: error) {
+    is SecurityException -> CameraFailure.Blocked
+    is CameraInfoUnavailableException,
+    is InitializationException,
+    is IllegalArgumentException,
+    -> CameraFailure.Missing
+    is CameraUnavailableException -> CameraFailure.Busy
+    else -> CameraFailure.Busy
 }
 
 /**

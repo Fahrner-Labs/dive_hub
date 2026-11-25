@@ -44,7 +44,7 @@ object ScanErrors {
     /** The live scanner has no camera at all, or CameraX could not open one. */
     const val CAMERA_MISSING = "camera_missing"
 
-    /** The User denied the camera permission; Android will not ask again from here. */
+    /** The User did not allow the camera permission. */
     const val CAMERA_BLOCKED = "camera_blocked"
 
     /** Another app holds the camera. */
