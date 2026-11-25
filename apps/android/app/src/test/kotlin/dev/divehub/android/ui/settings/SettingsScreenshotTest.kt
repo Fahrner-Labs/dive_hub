@@ -181,6 +181,24 @@ class SettingsScreenshotTest {
 
     @Test
     @Config(qualifiers = "en-rUS-w320dp-h891dp-xxhdpi", fontScale = 2f)
+    fun `the debug queue counts break between groups in English at 320 dp and 200 percent`() {
+        renderDebug(darkTheme = false, enabled = true)
+
+        compose.onNodeWithText("Sync queue").performScrollTo().assertIsDisplayed()
+        capture("settings_debug_queue_narrow_en_2x.png")
+    }
+
+    @Test
+    @Config(qualifiers = "de-rDE-w320dp-h891dp-xxhdpi", fontScale = 2f)
+    fun `the debug queue counts break between groups in German at 320 dp and 200 percent`() {
+        renderDebug(darkTheme = false, enabled = true)
+
+        compose.onNodeWithText("Synchronisierungswarteschlange").performScrollTo().assertIsDisplayed()
+        capture("settings_debug_queue_narrow_de_2x.png")
+    }
+
+    @Test
+    @Config(qualifiers = "en-rUS-w320dp-h891dp-xxhdpi", fontScale = 2f)
     fun `the last settings row keeps the section rhythm above the bottom bar`() {
         render(darkTheme = false)
         compose.onNodeWithText("Debug").performScrollTo()

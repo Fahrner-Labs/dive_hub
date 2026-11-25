@@ -718,7 +718,7 @@
     <string name="settings_debug_share_title">Lokale Protokolle teilen</string>
     <string name="settings_debug_share_subject">DiveHub-Diagnose</string>
     <string name="settings_debug_sync_queue">Synchronisierungswarteschlange</string>
-    <string name="settings_debug_queue_counts">Wartend: %1$d · Fehlgeschlagen: %2$d · Zu entscheiden: %3$d</string>
+    <string name="settings_debug_queue_counts">Wartend:&#160;%1$d&#160;· Fehler:&#160;%2$d&#160;· Zu&#160;prüfen:&#160;%3$d</string>
     <plurals name="pending_changes_waiting">
         <item quantity="one">%1$d Änderung wartet auf die Synchronisierung</item>
         <item quantity="other">%1$d Änderungen warten auf die Synchronisierung</item>

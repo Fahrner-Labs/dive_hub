@@ -75,7 +75,7 @@ class SettingsDebugScreenTest {
         render(queue = SettingsQueueState(pending = 2, failed = 1, conflicted = 3))
 
         compose.onNodeWithText("Sync queue").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText("Waiting: 2 · Failed: 1 · To decide: 3").assertIsDisplayed()
+        compose.onNodeWithText("Waiting:\u00A02\u00A0· Failed:\u00A01\u00A0· To\u00A0decide:\u00A03").assertIsDisplayed()
         compose.onNodeWithText("Sync queue").performClick()
 
         assertEquals(1, queueOpens)
@@ -86,7 +86,7 @@ class SettingsDebugScreenTest {
         render()
 
         compose.onNodeWithText("Sync queue").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText("Waiting: 0 · Failed: 0 · To decide: 0").assertIsDisplayed()
+        compose.onNodeWithText("Waiting:\u00A00\u00A0· Failed:\u00A00\u00A0· To\u00A0decide:\u00A00").assertIsDisplayed()
         compose.onNodeWithText("Sync queue").performClick()
 
         assertEquals(1, queueOpens)
