@@ -42,7 +42,7 @@ class ScanScreenshotTest {
         render(ScanUiState())
 
         compose.onNodeWithText("Scan a code").assertExists()
-        compose.onNodeWithText("Take a picture").assertExists()
+        compose.onNodeWithText("Choose a picture").assertExists()
         compose.onNodeWithText("Paste a code instead").assertExists()
         compose.onNodeWithText("No scans yet.").assertExists()
         capture("scan_empty_en_light.png")
@@ -167,16 +167,23 @@ class ScanScreenshotTest {
 
         compose.onNodeWithText("Point the camera at a code.").assertExists()
         compose.onNodeWithContentDescription("Close the camera").assertExists()
+        compose.onNodeWithContentDescription("Torch").assertExists()
         capture("scan_live_en_light.png")
     }
 
     @Test
     @Config(qualifiers = "de-rDE-w320dp-h891dp-night-xxhdpi")
     fun `the live camera hint and close action hold at 320 dp and 200 percent in German and dark`() {
-        renderLive(darkTheme = true, fontScale = 2f, scene = Color(0xFF25303A))
+        renderLive(
+            darkTheme = true,
+            fontScale = 2f,
+            scene = Color(0xFF25303A),
+            torch = TorchState(available = true, on = true),
+        )
 
         compose.onNodeWithText("Richte die Kamera auf einen Code.").assertIsDisplayed()
         compose.onNodeWithContentDescription("Kamera schließen").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Taschenlampe").assertIsDisplayed()
         capture("scan_live_de_dark.png")
     }
 
@@ -187,7 +194,6 @@ class ScanScreenshotTest {
 
         compose.onNodeWithText("Dieses Gerät hat keine Kamera", substring = true).assertIsDisplayed()
         compose.onNodeWithText("Mit der Kamera scannen").assertDoesNotExist()
-        compose.onNodeWithText("Foto aufnehmen").assertDoesNotExist()
         compose.onNodeWithText("Bild auswählen").assertIsDisplayed()
         capture("scan_camera_failure_de_dark.png")
     }
@@ -241,7 +247,6 @@ class ScanScreenshotTest {
                         state = state,
                         onBack = {},
                         onLiveScan = {},
-                        onCamera = {},
                         onImage = {},
                         onScan = {},
                         onTake = { _, _, _ -> },
@@ -260,6 +265,7 @@ class ScanScreenshotTest {
         darkTheme: Boolean = false,
         fontScale: Float? = null,
         scene: Color = Color(0xFFF4F7F9),
+        torch: TorchState = torchState(hasFlashUnit = true),
     ) {
         compose.setContent {
             DiveHubTheme(darkTheme = darkTheme) {
@@ -269,6 +275,7 @@ class ScanScreenshotTest {
                 ) {
                     CameraScannerFrame(
                         onClose = {},
+                        torch = torch,
                         preview = {
                             Box(
                                 Modifier

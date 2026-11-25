@@ -5,9 +5,11 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -22,6 +24,7 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
@@ -35,6 +38,9 @@ import dev.divehub.android.ui.Spacing
 
 /** The quiet action's disclosure chevron; not a spacing step. */
 private val QuietActionIcon = 18.dp
+
+/** The design system's 24 dp icon beside a button's visible label. */
+private val ButtonIcon = 24.dp
 
 /** The brief's 48 × 48 dp target: a quiet action may look smaller, but its target never does. */
 internal val QuietActionTarget = 48.dp
@@ -51,7 +57,13 @@ internal val LocalQuietActionAlignment = staticCompositionLocalOf<Alignment> { A
  * primary action per section; [modifier] carries the caller's layout.
  */
 @Composable
-fun InkButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
+fun InkButton(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    icon: Painter? = null,
+) {
     Button(
         onClick = onClick,
         modifier = modifier,
@@ -62,6 +74,10 @@ fun InkButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, 
             contentColor = DiveHubColors.onInk,
         ),
     ) {
+        if (icon != null) {
+            Icon(icon, contentDescription = null, modifier = Modifier.size(ButtonIcon))
+            Spacer(Modifier.width(Spacing.s1))
+        }
         Text(text)
     }
 }
@@ -71,7 +87,13 @@ fun InkButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, 
  * opens a picker (a date, a time) uses it instead of a Material pill, which reads as a chip.
  */
 @Composable
-fun SecondaryButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
+fun SecondaryButton(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    icon: Painter? = null,
+) {
     val content = MaterialTheme.colorScheme.onSurface
     OutlinedButton(
         onClick = onClick,
@@ -85,6 +107,10 @@ fun SecondaryButton(text: String, onClick: () -> Unit, modifier: Modifier = Modi
         ),
         contentPadding = PaddingValues(horizontal = Spacing.s4, vertical = Spacing.s3),
     ) {
+        if (icon != null) {
+            Icon(icon, contentDescription = null, modifier = Modifier.size(ButtonIcon))
+            Spacer(Modifier.width(Spacing.s1))
+        }
         Text(text, style = DiveHubText.body, textAlign = TextAlign.Center)
     }
 }

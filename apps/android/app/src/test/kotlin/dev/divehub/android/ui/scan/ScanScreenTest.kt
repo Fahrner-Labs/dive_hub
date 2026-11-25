@@ -1,6 +1,5 @@
 package dev.divehub.android.ui.scan
 
-import android.content.ActivityNotFoundException
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
@@ -42,23 +41,21 @@ class ScanScreenTest {
     }
 
     @Test
-    fun `the live camera is the primary way to read a code`() {
+    fun `the live camera is the primary way to read a code and the picture sits beside it`() {
         var live = false
         render(ScanUiState(), onLiveScan = { live = true })
 
         compose.onNodeWithText("Scan with the camera").performClick()
+        compose.onNodeWithText("Choose a picture").assertIsDisplayed()
 
         assertTrue(live)
     }
 
     @Test
-    fun `taking a picture with the system camera stays a fallback`() {
-        var photo = false
-        render(ScanUiState(), onCamera = { photo = true })
+    fun `the system camera is not offered any more`() {
+        render(ScanUiState())
 
-        compose.onNodeWithText("Take a picture").performClick()
-
-        assertTrue(photo)
+        compose.onNodeWithText("Take a picture").assertDoesNotExist()
     }
 
     @Test
@@ -70,41 +67,29 @@ class ScanScreenTest {
     }
 
     @Test
-    fun `a device with no camera leads with the picture and drops both camera paths`() {
+    fun `a device with no camera leads with the picture and drops the live scanner`() {
         var picture = false
         render(ScanUiState(error = ScanErrors.CAMERA_MISSING), onImage = { picture = true })
 
         compose.onNodeWithText("Scan with the camera").assertDoesNotExist()
-        compose.onNodeWithText("Take a picture").assertDoesNotExist()
         compose.onNodeWithText("Choose a picture").performClick()
 
         assertTrue(picture)
     }
 
     @Test
-    fun `a missing camera app keeps the live scanner and drops only the photo fallback`() {
-        render(ScanUiState(error = ScanErrors.NO_CAMERA))
-
-        compose.onNodeWithText("Scan with the camera").assertIsDisplayed()
-        compose.onNodeWithText("Take a picture").assertDoesNotExist()
-        compose.onNodeWithText("Choose a picture").assertIsDisplayed()
-    }
-
-    @Test
-    fun `a blocked permission leads with the picture and drops both camera paths`() {
+    fun `a blocked permission leads with the picture and drops the live scanner`() {
         render(ScanUiState(error = ScanErrors.CAMERA_BLOCKED))
 
         compose.onNodeWithText("Scan with the camera").assertDoesNotExist()
-        compose.onNodeWithText("Take a picture").assertDoesNotExist()
         compose.onNodeWithText("Choose a picture").assertIsDisplayed()
     }
 
     @Test
-    fun `a soft denial keeps the live retry and drops the photo path it cannot use`() {
+    fun `a soft denial keeps the live retry and offers the picture`() {
         render(ScanUiState(error = ScanErrors.CAMERA_DENIED))
 
         compose.onNodeWithText("Scan with the camera").assertIsDisplayed()
-        compose.onNodeWithText("Take a picture").assertDoesNotExist()
         compose.onNodeWithText("Choose a picture").assertIsDisplayed()
     }
 
@@ -113,14 +98,6 @@ class ScanScreenTest {
         assertEquals(CameraPermission.Granted, cameraPermission(granted = true, canAskAgain = false))
         assertEquals(CameraPermission.Denied, cameraPermission(granted = false, canAskAgain = true))
         assertEquals(CameraPermission.Blocked, cameraPermission(granted = false, canAskAgain = false))
-    }
-
-    @Test
-    fun `a photo intent that needs our permission is the askable denial, never blocked`() {
-        assertEquals(PhotoLaunchFailure.PermissionDenied, photoLaunchFailure(SecurityException("not granted")))
-        assertEquals(PhotoLaunchFailure.NoCameraApp, photoLaunchFailure(ActivityNotFoundException()))
-        assertEquals(PhotoLaunchFailure.NoCameraApp, photoLaunchFailure(IllegalArgumentException()))
-        assertNull(photoLaunchFailure(RuntimeException("a bug")))
     }
 
     @Test
@@ -232,7 +209,6 @@ class ScanScreenTest {
     private fun render(
         state: ScanUiState,
         onLiveScan: () -> Unit = {},
-        onCamera: () -> Unit = {},
         onImage: () -> Unit = {},
         onScan: (String) -> Unit = {},
         onTake: (ScanResult, String?, Boolean) -> Unit = { _, _, _ -> },
@@ -245,7 +221,6 @@ class ScanScreenTest {
                     state = state,
                     onBack = {},
                     onLiveScan = onLiveScan,
-                    onCamera = onCamera,
                     onImage = onImage,
                     onScan = onScan,
                     onTake = onTake,

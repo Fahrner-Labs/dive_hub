@@ -1,7 +1,6 @@
 package dev.divehub.android.ui.scan
 
 import android.Manifest
-import android.content.ActivityNotFoundException
 import android.content.pm.PackageManager
 import android.net.Uri
 import androidx.activity.compose.BackHandler
@@ -46,6 +45,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
@@ -55,7 +55,6 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import androidx.core.content.FileProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.divehub.android.R
 import dev.divehub.android.ui.DiveHubTopBar
@@ -65,6 +64,7 @@ import dev.divehub.android.ui.Spacing
 import dev.divehub.android.ui.components.InkButton
 import dev.divehub.android.ui.components.QuietButton
 import dev.divehub.android.ui.components.Radius
+import dev.divehub.android.ui.components.SecondaryButton
 import dev.divehub.android.ui.components.Section
 import dev.divehub.android.ui.findActivity
 import dev.divehub.shared.ErrorCodes
@@ -73,7 +73,6 @@ import dev.divehub.shared.store.ScanStatus
 import dev.divehub.shared.write.ReadChange
 import dev.divehub.shared.write.ReadCode
 import dev.divehub.shared.write.ReadCodes
-import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -94,7 +93,6 @@ fun ScanRoute(viewModel: ScanViewModel, onBack: () -> Unit) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    var photoUri by remember { mutableStateOf<Uri?>(null) }
     var live by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { viewModel.start() }
 
@@ -107,10 +105,6 @@ fun ScanRoute(viewModel: ScanViewModel, onBack: () -> Unit) {
         }
     }
 
-    val camera = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { taken ->
-        val uri = photoUri
-        if (taken && uri != null) readPicture(uri)
-    }
     val pictures = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
         if (uri != null) readPicture(uri)
     }
@@ -130,22 +124,6 @@ fun ScanRoute(viewModel: ScanViewModel, onBack: () -> Unit) {
             live = true
         } else {
             permission.launch(Manifest.permission.CAMERA)
-        }
-    }
-
-    fun takePhoto() {
-        try {
-            val directory = File(context.cacheDir, "scan").apply { mkdirs() }
-            val file = File(directory, "code.jpg")
-            val uri = FileProvider.getUriForFile(context, "${context.packageName}.diagnostics", file)
-            photoUri = uri
-            camera.launch(uri)
-        } catch (error: Exception) {
-            when (photoLaunchFailure(error)) {
-                PhotoLaunchFailure.NoCameraApp -> viewModel.noCamera()
-                PhotoLaunchFailure.PermissionDenied -> viewModel.cameraDenied()
-                null -> throw error
-            }
         }
     }
 
@@ -175,7 +153,6 @@ fun ScanRoute(viewModel: ScanViewModel, onBack: () -> Unit) {
         state = state,
         onBack = onBack,
         onLiveScan = ::openLiveScanner,
-        onCamera = ::takePhoto,
         onImage = { pictures.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
         onScan = viewModel::scan,
         onTake = viewModel::take,
@@ -191,7 +168,6 @@ fun ScanScreen(
     state: ScanUiState,
     onBack: () -> Unit,
     onLiveScan: () -> Unit,
-    onCamera: () -> Unit,
     onImage: () -> Unit,
     onScan: (String) -> Unit,
     onTake: (ScanResult, String?, Boolean) -> Unit,
@@ -263,33 +239,29 @@ fun ScanScreen(
                 Spacer(Modifier.height(Spacing.s4))
                 Section(title = stringResource(R.string.scan_section_read), showSeparator = false) {
                     // The failure decides which way on can work: a missing or blocked camera must not stay the loud
-                    // primary, and a missing camera app leaves the live scanner (which needs no camera app) first.
+                    // primary, so the picture leads there. The picture stays the quiet second action otherwise.
                     when (scanReadChoice(state.error)) {
                         ScanReadChoice.CameraPrimary -> {
                             InkButton(
                                 stringResource(R.string.scan_live),
                                 onClick = onLiveScan,
                                 modifier = Modifier.fillMaxWidth(),
+                                icon = painterResource(R.drawable.ic_camera),
                             )
                             Spacer(Modifier.height(Spacing.s2))
-                            QuietButton(stringResource(R.string.scan_camera), onClick = onCamera)
-                            Spacer(Modifier.height(Spacing.s2))
-                            QuietButton(stringResource(R.string.scan_image), onClick = onImage)
-                        }
-                        ScanReadChoice.CameraPrimaryNoPhoto -> {
-                            InkButton(
-                                stringResource(R.string.scan_live),
-                                onClick = onLiveScan,
+                            SecondaryButton(
+                                stringResource(R.string.scan_image),
+                                onClick = onImage,
                                 modifier = Modifier.fillMaxWidth(),
+                                icon = painterResource(R.drawable.ic_image),
                             )
-                            Spacer(Modifier.height(Spacing.s2))
-                            QuietButton(stringResource(R.string.scan_image), onClick = onImage)
                         }
                         ScanReadChoice.PictureOnly -> {
                             InkButton(
                                 stringResource(R.string.scan_image),
                                 onClick = onImage,
                                 modifier = Modifier.fillMaxWidth(),
+                                icon = painterResource(R.drawable.ic_image),
                             )
                         }
                     }
@@ -598,14 +570,12 @@ private fun changeField(field: String): String = when (field) {
 }
 
 /** Which read action leads for a given failure; only what can work stays loud. */
-internal enum class ScanReadChoice { CameraPrimary, CameraPrimaryNoPhoto, PictureOnly }
+internal enum class ScanReadChoice { CameraPrimary, PictureOnly }
 
 internal fun scanReadChoice(error: String?): ScanReadChoice = when (error) {
-    // Declaring CAMERA makes the system-camera intent fail while the permission is denied, so neither the live
-    // scanner nor "Take a picture" can work here; the picture is the only way on.
+    // The live scanner cannot work with no camera or a blocked permission; the picture is the only way on.
     ScanErrors.CAMERA_MISSING, ScanErrors.CAMERA_BLOCKED -> ScanReadChoice.PictureOnly
-    // The soft denial can ask again, and the live scanner needs no camera app, so both keep it first.
-    ScanErrors.CAMERA_DENIED, ScanErrors.NO_CAMERA -> ScanReadChoice.CameraPrimaryNoPhoto
+    // The soft denial can ask again, so the live retry stays first beside the picture.
     else -> ScanReadChoice.CameraPrimary
 }
 
@@ -619,17 +589,6 @@ internal fun cameraPermission(granted: Boolean, canAskAgain: Boolean): CameraPer
     else -> CameraPermission.Blocked
 }
 
-/** Why a "Take a picture" launch failed: no camera app, or a permission Android may still ask for. */
-internal enum class PhotoLaunchFailure { NoCameraApp, PermissionDenied }
-
-/** A failed `ACTION_IMAGE_CAPTURE`: a missing camera app, or our declared CAMERA permission; never "blocked". */
-internal fun photoLaunchFailure(error: Throwable): PhotoLaunchFailure? = when (error) {
-    is ActivityNotFoundException, is IllegalArgumentException -> PhotoLaunchFailure.NoCameraApp
-    // Declaring CAMERA makes the system-camera intent need it; a denial here may still be askable.
-    is SecurityException -> PhotoLaunchFailure.PermissionDenied
-    else -> null
-}
-
 @Composable
 private fun scanErrorText(code: String?): String = when (code) {
     "code_not_recognised" -> stringResource(R.string.scan_error_not_recognised)
@@ -640,7 +599,6 @@ private fun scanErrorText(code: String?): String = when (code) {
     "code_not_a_person" -> stringResource(R.string.scan_error_not_person)
     ErrorCodes.NO_ANSWER, ErrorCodes.SERVER_ERROR -> stringResource(R.string.scan_error_offline)
     ScanErrors.NO_CODE_IN_PICTURE -> stringResource(R.string.scan_error_no_code)
-    ScanErrors.NO_CAMERA -> stringResource(R.string.scan_error_no_camera)
     ScanErrors.CAMERA_MISSING -> stringResource(R.string.scan_error_camera_missing)
     ScanErrors.CAMERA_DENIED -> stringResource(R.string.scan_error_camera_denied)
     ScanErrors.CAMERA_BLOCKED -> stringResource(R.string.scan_error_camera_blocked)

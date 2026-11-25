@@ -40,9 +40,6 @@ data class ScanUiState(
 object ScanErrors {
     const val NO_CODE_IN_PICTURE = "no_code_in_picture"
 
-    /** The photo fallback found no camera app to take a picture with. */
-    const val NO_CAMERA = "no_camera"
-
     /** The live scanner has no camera at all, or CameraX could not open one. */
     const val CAMERA_MISSING = "camera_missing"
 
@@ -130,8 +127,6 @@ class ScanViewModel(
     }
 
     fun pictureWithoutCode() = _state.update { it.copy(error = ScanErrors.NO_CODE_IN_PICTURE) }
-
-    fun noCamera() = _state.update { it.copy(error = ScanErrors.NO_CAMERA) }
 
     fun noCameraAvailable() = _state.update { it.copy(error = ScanErrors.CAMERA_MISSING) }
 
