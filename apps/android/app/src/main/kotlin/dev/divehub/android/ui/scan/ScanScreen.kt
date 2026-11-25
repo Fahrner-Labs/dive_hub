@@ -1,8 +1,10 @@
 package dev.divehub.android.ui.scan
 
 import android.Manifest
+import android.app.Activity
 import android.content.ActivityNotFoundException
 import android.content.Context
+import android.content.ContextWrapper
 import android.content.pm.PackageManager
 import android.net.Uri
 import androidx.activity.compose.BackHandler
@@ -55,6 +57,7 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
+import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -115,7 +118,14 @@ fun ScanRoute(viewModel: ScanViewModel, onBack: () -> Unit) {
         if (uri != null) readPicture(uri)
     }
     val permission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-        if (granted) live = true else viewModel.cameraBlocked()
+        when {
+            granted -> live = true
+            // Android still asks again after a soft denial; only a permanent one needs the system settings.
+            context.findActivity()?.let {
+                ActivityCompat.shouldShowRequestPermissionRationale(it, Manifest.permission.CAMERA)
+            } == true -> viewModel.cameraDenied()
+            else -> viewModel.cameraBlocked()
+        }
     }
 
     fun openLiveScanner() {
@@ -545,6 +555,13 @@ private fun changeField(field: String): String = when (field) {
     else -> field
 }
 
+/** The Activity behind Compose's context, for the permission-rationale question. */
+private tailrec fun Context.findActivity(): Activity? = when (this) {
+    is Activity -> this
+    is ContextWrapper -> baseContext.findActivity()
+    else -> null
+}
+
 @Composable
 private fun scanErrorText(code: String?): String = when (code) {
     "code_not_recognised" -> stringResource(R.string.scan_error_not_recognised)
@@ -557,6 +574,7 @@ private fun scanErrorText(code: String?): String = when (code) {
     ScanErrors.NO_CODE_IN_PICTURE -> stringResource(R.string.scan_error_no_code)
     ScanErrors.NO_CAMERA -> stringResource(R.string.scan_error_no_camera)
     ScanErrors.CAMERA_MISSING -> stringResource(R.string.scan_error_camera_missing)
+    ScanErrors.CAMERA_DENIED -> stringResource(R.string.scan_error_camera_denied)
     ScanErrors.CAMERA_BLOCKED -> stringResource(R.string.scan_error_camera_blocked)
     ScanErrors.CAMERA_BUSY -> stringResource(R.string.scan_error_camera_busy)
     else -> stringResource(R.string.scan_error_generic)

@@ -44,7 +44,10 @@ object ScanErrors {
     /** The live scanner has no camera at all, or CameraX could not open one. */
     const val CAMERA_MISSING = "camera_missing"
 
-    /** The User did not allow the camera permission. */
+    /** The User declined the camera permission but Android may still ask again. */
+    const val CAMERA_DENIED = "camera_denied"
+
+    /** Android will not ask again from the app; the permission needs the system settings. */
     const val CAMERA_BLOCKED = "camera_blocked"
 
     /** Another app holds the camera. */
@@ -120,6 +123,8 @@ class ScanViewModel(
     fun noCamera() = _state.update { it.copy(error = ScanErrors.NO_CAMERA) }
 
     fun noCameraAvailable() = _state.update { it.copy(error = ScanErrors.CAMERA_MISSING) }
+
+    fun cameraDenied() = _state.update { it.copy(error = ScanErrors.CAMERA_DENIED) }
 
     fun cameraBlocked() = _state.update { it.copy(error = ScanErrors.CAMERA_BLOCKED) }
 

@@ -859,7 +859,8 @@
     <string name="scan_error_no_code">kein QR-Code in diesem Bild.</string>
     <string name="scan_error_no_camera">dieses Gerät hat keine Kamera-App.</string>
     <string name="scan_error_camera_missing">dieses Gerät hat keine Kamera.</string>
-    <string name="scan_error_camera_blocked">der Kamerazugriff wurde nicht erlaubt. Erlaube ihn in den Android-Einstellungen oder wähle ein Bild aus.</string>
+    <string name="scan_error_camera_denied">der Kamerazugriff wurde nicht erlaubt. Versuche es erneut oder wähle ein Bild aus.</string>
+    <string name="scan_error_camera_blocked">der Kamerazugriff ist gesperrt. Erlaube ihn in den Android-Einstellungen oder wähle ein Bild aus.</string>
     <string name="scan_error_camera_busy">die Kamera wird gerade von einer anderen App benutzt. Schließe sie und versuche es erneut, oder wähle ein Bild aus.</string>
     <string name="scan_error_generic">etwas ist schiefgelaufen. Versuche es später erneut.</string>
 </resources>

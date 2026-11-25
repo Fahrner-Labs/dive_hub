@@ -185,6 +185,9 @@ class ScanViewModelTest {
         val store = DiveStore.create(driver)
         val viewModel = viewModel(store, offline = true)
 
+        viewModel.cameraDenied()
+        assertEquals(ScanErrors.CAMERA_DENIED, viewModel.state.value.error)
+
         viewModel.cameraBlocked()
         assertEquals(ScanErrors.CAMERA_BLOCKED, viewModel.state.value.error)
 

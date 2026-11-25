@@ -64,7 +64,7 @@ class ScanScreenTest {
     fun `a blocked camera is said as its own failure and points at the picture fallback`() {
         render(ScanUiState(error = ScanErrors.CAMERA_BLOCKED))
 
-        compose.onNodeWithText("camera access was not allowed", substring = true).assertIsDisplayed()
+        compose.onNodeWithText("camera access is blocked", substring = true).assertIsDisplayed()
         compose.onNodeWithText("choose a picture", substring = true).assertIsDisplayed()
     }
 
