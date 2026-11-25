@@ -4,15 +4,15 @@
 > `pnpm check` fails when this map is stale. Symbols are ranked by how widely the code references them;
 > each module shows its most-referenced ones (exported symbols rank higher). Search here before walking the tree.
 
-Files: 425 · symbols: 3919 · shown: 253
+Files: 427 · symbols: 3942 · shown: 258
 
 ### server/(root)
 apps/server/src/vocabulary.ts:13 type SiteWaterType
 apps/server/src/errors.ts:2 const errorMessage
 apps/server/src/vocabulary.ts:12 const SITE_WATER_TYPES
 apps/server/src/vocabulary.ts:51 type ImportSource
-apps/server/src/compose.ts:85 fn createServices
-… 46 more symbols in this module
+apps/server/src/compose.ts:89 fn createServices
+… 54 more symbols in this module
 
 ### server/assessment
 apps/server/src/assessment/rules.ts:50 const RULES
@@ -61,15 +61,15 @@ apps/server/src/certifications/routes.ts:19 const Text
 ### server/db
 apps/server/src/db/client.ts:5 type Db
 apps/server/src/db/client.ts:8 type Queryable
-apps/server/src/db/schema.ts:673 const dive
+apps/server/src/db/schema.ts:698 const dive
 apps/server/src/db/client.ts:6 type Tx
-apps/server/src/db/schema.ts:466 const diveSite
-apps/server/src/db/schema.ts:831 const recording
+apps/server/src/db/schema.ts:491 const diveSite
+apps/server/src/db/schema.ts:856 const recording
 apps/server/src/db/schema.ts:87 const diverManagement
 apps/server/src/db/auth-schema.ts:20 const user
 apps/server/src/db/import-types.ts:12 iface ImportedValues
 apps/server/src/db/import-types.ts:6 type ImportArea
-… 163 more symbols in this module
+… 165 more symbols in this module
 
 ### server/divers
 apps/server/src/divers/management.ts:8 fn managedDiverIds
@@ -114,8 +114,8 @@ apps/server/src/equipment/due.ts:36 iface ScheduleDue
 apps/server/src/http/schemas.ts:10 const Nullable
 apps/server/src/http/schemas.ts:5 const DateTime
 apps/server/src/http/schemas.ts:4 const IdParams
-apps/server/src/http/problems.ts:199 const Problem
-apps/server/src/http/problems.ts:202 const problem
+apps/server/src/http/problems.ts:200 const Problem
+apps/server/src/http/problems.ts:203 const problem
 … 33 more symbols in this module
 
 ### server/imports
@@ -159,6 +159,14 @@ apps/server/src/mcp/read-service.ts:25 const count
 apps/server/src/mcp/profile.ts:5 iface Series
 apps/server/src/mcp/access-service.ts:36 iface VerifiedAccess
 … 155 more symbols in this module
+
+### server/notifications
+apps/server/src/notifications/notification-service.ts:32 fn createNotificationService
+apps/server/src/notifications/notification-service.ts:13 iface PushDeviceView
+apps/server/src/notifications/notification-service.ts:21 iface PushConfigView
+apps/server/src/notifications/routes.ts:12 iface NotificationRouteDeps
+apps/server/src/notifications/routes.ts:50 const notificationRoutes
+… 8 more symbols in this module
 
 ### server/planning
 apps/server/src/planning/planning-error.ts:3 class PlanningError
