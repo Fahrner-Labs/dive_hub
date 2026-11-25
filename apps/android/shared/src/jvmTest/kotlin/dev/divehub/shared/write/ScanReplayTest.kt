@@ -223,7 +223,7 @@ class ScanReplayTest {
         queue.enqueueCreateCentre(id = CENTRE_ID, name = "Reef Diving", number = "12345")
         val harness = ScanHarness(store) {
             ScanReply.Body(
-                """{"code":"centre_external_id_taken","centre":${centreView("centre-9")}}""",
+                """{"code":"centre_external_id_taken","centre":{"id":"centre-9","name":"Reef Diving, Sharm"}}""",
                 HttpStatusCode.Conflict,
             )
         }
@@ -237,6 +237,25 @@ class ScanReplayTest {
         assertEquals("Reef Diving, Sharm", scan.name)
         assertNull(scan.errorCode)
         assertNotNull(scan.detailJson)
+    }
+
+    @Test
+    fun `a 409 centre_external_id_taken without the holder is still a refusal`() = runTest {
+        queue.enqueueCreateCentre(id = CENTRE_ID, name = "Reef Diving", number = "12345")
+        val harness = ScanHarness(store) {
+            ScanReply.Body("""{"code":"centre_external_id_taken"}""", HttpStatusCode.Conflict)
+        }
+
+        val result = harness.replayer.replay()
+
+        assertIs<WriteReplayResult.Drained>(result)
+        assertEquals(0, result.applied)
+        assertEquals(1, result.dropped)
+        assertEquals(WriteDropReason.Refused, result.notices.single().reason)
+        assertTrue(store.pendingWrites().isEmpty())
+        val scan = store.scanResults().single()
+        assertEquals(ScanStatus.Failed, scan.status)
+        assertEquals("centre_external_id_taken", scan.errorCode)
     }
 
     @Test

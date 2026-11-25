@@ -264,7 +264,7 @@ class WriteReplayer(
             at = clock(),
             status = ScanStatus.Existing,
             kind = "centre",
-            name = stringOf(holder?.get("name")) ?: stringOf(holder?.get("displayName")),
+            name = stringOf(holder?.get("name")),
             entityId = stringOf(holder?.get("id")),
             detailJson = text,
         )
