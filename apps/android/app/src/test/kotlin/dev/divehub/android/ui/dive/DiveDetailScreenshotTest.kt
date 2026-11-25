@@ -629,6 +629,14 @@ class DiveDetailScreenshotTest {
     }
 
     @Test
+    @Config(qualifiers = "en-rUS-w320dp-h891dp-xxhdpi")
+    fun `the edit action at 320 dp and 200 percent`() {
+        render(state(dive = dive()), showEdit = true, fontScale = 2f)
+        compose.onNodeWithContentDescription("Edit").assertIsDisplayed()
+        capture("dive_edit_action_narrow_2x.png")
+    }
+
+    @Test
     fun `a read-only server draws the app bar without the edit action`() {
         render(state(dive = dive()))
         compose.onNodeWithContentDescription("Edit").assertDoesNotExist()
