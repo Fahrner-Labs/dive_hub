@@ -637,6 +637,29 @@ class DiveDetailScreenshotTest {
     }
 
     @Test
+    fun `adding the edit action does not move the title`() {
+        val shown = mutableStateOf(false)
+        compose.setContent {
+            DiveHubTheme(darkTheme = false) {
+                DiveDetailScreen(
+                    state = state(dive = dive()),
+                    units = "metric",
+                    onBack = {},
+                    onRetry = {},
+                    onOpenDive = {},
+                    showEdit = shown.value,
+                )
+            }
+        }
+        val without = compose.onNodeWithText("Dive 42").getBoundsInRoot()
+        compose.runOnIdle { shown.value = true }
+        compose.waitForIdle()
+        val with = compose.onNodeWithText("Dive 42").getBoundsInRoot()
+        assertEquals(without.left, with.left)
+        assertEquals(without.right, with.right)
+    }
+
+    @Test
     fun `the profile table is the text alternative and includes tank pressure`() {
         render(state(dive = dive()))
         compose.onNodeWithTag("dive_scroll").performScrollToNode(hasText("Profile as a table"))

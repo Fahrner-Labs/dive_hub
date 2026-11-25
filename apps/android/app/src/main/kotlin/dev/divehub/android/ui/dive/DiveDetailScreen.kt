@@ -30,6 +30,8 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -63,7 +65,6 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
@@ -146,8 +147,7 @@ private const val PAGER_PAGES = 3
 
 /** The brief's named fixed dimensions, which are not spacing steps. */
 private val IconSize = 24.dp
-private val TopBarActionWidth = 48.dp
-private val TopBarActionsReserve = TopBarActionWidth + TopBarActionWidth
+private val TopBarActionsReserve = 96.dp
 private val IconStroke = 2.dp
 private val ChartHeight = 160.dp
 private val ChartStroke = 2.dp
@@ -508,10 +508,10 @@ private fun DiveTopBar(
             navigationIconContentColor = MaterialTheme.colorScheme.onBackground,
             actionIconContentColor = MaterialTheme.colorScheme.onBackground,
         ),
+        // The data still arriving: reserve the two chevrons' width so the title does not jump when they appear.
         actions = {
             if (loading) {
-                // The data arriving: reserve every trailing action's width, so the title does not jump when they appear.
-                Spacer(Modifier.width(TopBarActionsReserve + if (showEdit) TopBarActionWidth else 0.dp))
+                Spacer(Modifier.width(TopBarActionsReserve))
             } else {
                 neighbours()
                 if (showEdit) EditAction(onEdit)
@@ -697,10 +697,7 @@ private fun DirectionIcon(direction: Direction) {
 @Composable
 private fun EditAction(onEdit: () -> Unit) {
     IconButton(onClick = onEdit) {
-        Icon(
-            painter = painterResource(R.drawable.ic_edit),
-            contentDescription = stringResource(R.string.dive_edit),
-        )
+        Icon(Icons.Filled.Edit, contentDescription = stringResource(R.string.dive_edit))
     }
 }
 
