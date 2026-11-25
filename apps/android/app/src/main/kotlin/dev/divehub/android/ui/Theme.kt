@@ -108,3 +108,16 @@ object DiveHubColors {
     val ascent3: Color
         @Composable get() = if (isDarkScheme()) Color(0xFFFFB9A3) else Color(0xFF8A2F0A)
 }
+
+/**
+ * The camera chrome's tones are scheme-independent on purpose: they sit over the preview, not over the app's surface.
+ * Naming them here keeps the white guide and its dark under-stroke together, and out of the screens.
+ */
+internal object CameraChrome {
+    val Scene = Color.Black
+    val Ink = Color.White
+    val HintScrim = Color.Black.copy(alpha = 0.55f)
+    val CloseScrim = Color.Black.copy(alpha = 0.5f)
+    val Guide = Color.White
+    val GuideUnder = Color.Black.copy(alpha = 0.65f)
+}

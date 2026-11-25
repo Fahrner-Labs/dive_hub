@@ -1,11 +1,17 @@
 package dev.divehub.android.ui.scan
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.unit.Density
@@ -155,6 +161,38 @@ class ScanScreenshotTest {
     }
 
     @Test
+    fun `the live camera frames the code and offers a way out over a bright scene`() {
+        // A bright scene is the hard case: the guide's white stroke needs its dark under-stroke to stay visible.
+        renderLive(scene = Color(0xFFF4F7F9))
+
+        compose.onNodeWithText("Point the camera at a code.").assertExists()
+        compose.onNodeWithContentDescription("Close the camera").assertExists()
+        capture("scan_live_en_light.png")
+    }
+
+    @Test
+    @Config(qualifiers = "de-rDE-w320dp-h891dp-night-xxhdpi")
+    fun `the live camera hint and close action hold at 320 dp and 200 percent in German and dark`() {
+        renderLive(darkTheme = true, fontScale = 2f, scene = Color(0xFF25303A))
+
+        compose.onNodeWithText("Richte die Kamera auf einen Code.").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Kamera schließen").assertIsDisplayed()
+        capture("scan_live_de_dark.png")
+    }
+
+    @Test
+    @Config(qualifiers = "de-rDE-w320dp-h891dp-night-xxhdpi")
+    fun `a camera failure points at the picture fallback at 320 dp and 200 percent in German and dark`() {
+        render(ScanUiState(error = ScanErrors.CAMERA_MISSING), darkTheme = true, fontScale = 2f)
+
+        compose.onNodeWithText("Dieses Gerät hat keine Kamera", substring = true).assertIsDisplayed()
+        compose.onNodeWithText("Mit der Kamera scannen").assertDoesNotExist()
+        compose.onNodeWithText("Foto aufnehmen").assertDoesNotExist()
+        compose.onNodeWithText("Bild auswählen").assertIsDisplayed()
+        capture("scan_camera_failure_de_dark.png")
+    }
+
+    @Test
     fun `a created and an existing outcome both offer Dismiss`() {
         render(
             ScanUiState(
@@ -202,6 +240,7 @@ class ScanScreenshotTest {
                     ScanScreen(
                         state = state,
                         onBack = {},
+                        onLiveScan = {},
                         onCamera = {},
                         onImage = {},
                         onScan = {},
@@ -210,6 +249,33 @@ class ScanScreenshotTest {
                         onSync = {},
                         onDismiss = {},
                         onClearError = {},
+                    )
+                }
+            }
+        }
+    }
+
+    /** The live scanner without a camera: the golden reviews its framing and controls, not a real camera's image. */
+    private fun renderLive(
+        darkTheme: Boolean = false,
+        fontScale: Float? = null,
+        scene: Color = Color(0xFFF4F7F9),
+    ) {
+        compose.setContent {
+            DiveHubTheme(darkTheme = darkTheme) {
+                val density = LocalDensity.current
+                CompositionLocalProvider(
+                    LocalDensity provides Density(density.density, fontScale ?: density.fontScale),
+                ) {
+                    CameraScannerFrame(
+                        onClose = {},
+                        preview = {
+                            Box(
+                                Modifier
+                                    .fillMaxSize()
+                                    .background(scene),
+                            )
+                        },
                     )
                 }
             }

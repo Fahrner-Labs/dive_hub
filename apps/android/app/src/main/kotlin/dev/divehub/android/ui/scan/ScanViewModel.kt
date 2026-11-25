@@ -39,7 +39,21 @@ data class ScanUiState(
 /** An error the screen itself reports, beside the server's problem codes. */
 object ScanErrors {
     const val NO_CODE_IN_PICTURE = "no_code_in_picture"
+
+    /** The photo fallback found no camera app to take a picture with. */
     const val NO_CAMERA = "no_camera"
+
+    /** The live scanner has no camera at all, or CameraX could not open one. */
+    const val CAMERA_MISSING = "camera_missing"
+
+    /** The User declined the camera permission but Android may still ask again. */
+    const val CAMERA_DENIED = "camera_denied"
+
+    /** Android will not ask again from the app; the permission needs the system settings. */
+    const val CAMERA_BLOCKED = "camera_blocked"
+
+    /** Another app holds the camera. */
+    const val CAMERA_BUSY = "camera_busy"
 }
 
 /**
@@ -118,6 +132,14 @@ class ScanViewModel(
     fun pictureWithoutCode() = _state.update { it.copy(error = ScanErrors.NO_CODE_IN_PICTURE) }
 
     fun noCamera() = _state.update { it.copy(error = ScanErrors.NO_CAMERA) }
+
+    fun noCameraAvailable() = _state.update { it.copy(error = ScanErrors.CAMERA_MISSING) }
+
+    fun cameraDenied() = _state.update { it.copy(error = ScanErrors.CAMERA_DENIED) }
+
+    fun cameraBlocked() = _state.update { it.copy(error = ScanErrors.CAMERA_BLOCKED) }
+
+    fun cameraBusy() = _state.update { it.copy(error = ScanErrors.CAMERA_BUSY) }
 
     fun clearError() = _state.update { it.copy(error = null) }
 

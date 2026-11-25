@@ -1,8 +1,10 @@
 package dev.divehub.android.ui.scan
 
+import android.Manifest
 import android.content.ActivityNotFoundException
-import android.content.Context
+import android.content.pm.PackageManager
 import android.net.Uri
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -51,6 +53,8 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.divehub.android.R
@@ -62,6 +66,7 @@ import dev.divehub.android.ui.components.InkButton
 import dev.divehub.android.ui.components.QuietButton
 import dev.divehub.android.ui.components.Radius
 import dev.divehub.android.ui.components.Section
+import dev.divehub.android.ui.findActivity
 import dev.divehub.shared.ErrorCodes
 import dev.divehub.shared.store.ScanResult
 import dev.divehub.shared.store.ScanStatus
@@ -90,6 +95,7 @@ fun ScanRoute(viewModel: ScanViewModel, onBack: () -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var photoUri by remember { mutableStateOf<Uri?>(null) }
+    var live by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { viewModel.start() }
 
     fun readPicture(uri: Uri) {
@@ -108,6 +114,24 @@ fun ScanRoute(viewModel: ScanViewModel, onBack: () -> Unit) {
     val pictures = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
         if (uri != null) readPicture(uri)
     }
+    val permission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        val canAskAgain = context.findActivity()?.let {
+            ActivityCompat.shouldShowRequestPermissionRationale(it, Manifest.permission.CAMERA)
+        } == true
+        when (cameraPermission(granted, canAskAgain)) {
+            CameraPermission.Granted -> live = true
+            CameraPermission.Denied -> viewModel.cameraDenied()
+            CameraPermission.Blocked -> viewModel.cameraBlocked()
+        }
+    }
+
+    fun openLiveScanner() {
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+            live = true
+        } else {
+            permission.launch(Manifest.permission.CAMERA)
+        }
+    }
 
     fun takePhoto() {
         try {
@@ -116,16 +140,41 @@ fun ScanRoute(viewModel: ScanViewModel, onBack: () -> Unit) {
             val uri = FileProvider.getUriForFile(context, "${context.packageName}.diagnostics", file)
             photoUri = uri
             camera.launch(uri)
-        } catch (_: ActivityNotFoundException) {
-            viewModel.noCamera()
-        } catch (_: IllegalArgumentException) {
-            viewModel.noCamera()
+        } catch (error: Exception) {
+            when (photoLaunchFailure(error)) {
+                PhotoLaunchFailure.NoCameraApp -> viewModel.noCamera()
+                PhotoLaunchFailure.PermissionDenied -> viewModel.cameraDenied()
+                null -> throw error
+            }
         }
+    }
+
+    if (live) {
+        // The camera owns the screen until it closes: the scanner is not composed behind it, so TalkBack has one
+        // screen. Back leaves the preview, not the scanner.
+        BackHandler { live = false }
+        CameraScanner(
+            onCode = { text ->
+                live = false
+                viewModel.scan(text)
+            },
+            onFailure = { failure ->
+                live = false
+                when (failure) {
+                    CameraFailure.Blocked -> viewModel.cameraBlocked()
+                    CameraFailure.Busy -> viewModel.cameraBusy()
+                    CameraFailure.Missing -> viewModel.noCameraAvailable()
+                }
+            },
+            onClose = { live = false },
+        )
+        return
     }
 
     ScanScreen(
         state = state,
         onBack = onBack,
+        onLiveScan = ::openLiveScanner,
         onCamera = ::takePhoto,
         onImage = { pictures.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
         onScan = viewModel::scan,
@@ -141,6 +190,7 @@ fun ScanRoute(viewModel: ScanViewModel, onBack: () -> Unit) {
 fun ScanScreen(
     state: ScanUiState,
     onBack: () -> Unit,
+    onLiveScan: () -> Unit,
     onCamera: () -> Unit,
     onImage: () -> Unit,
     onScan: (String) -> Unit,
@@ -190,28 +240,59 @@ fun ScanScreen(
                     .padding(top = Spacing.s4, bottom = Spacing.s5)
                     .testTag("scan_scroll"),
             ) {
-                Text(
-                    stringResource(R.string.scan_intro),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                state.error?.let { code ->
-                    Spacer(Modifier.height(Spacing.s3))
+                if (state.error != null) {
+                    // The failure replaces the intro: it is the message now, and the primary and its fallbacks must
+                    // stay in view with it at 200 % (FAH-496 critique).
                     Text(
-                        scanErrorText(code),
+                        // The error stands alone here (it replaced the intro), so it reads as a sentence; the same
+                        // resources stay lowercase where a result renders them after "Not added:".
+                        scanErrorText(state.error).replaceFirstChar { it.titlecase() },
                         modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.error,
                     )
                     QuietButton(stringResource(R.string.scan_error_dismiss), onClick = onClearError)
+                } else {
+                    Text(
+                        stringResource(R.string.scan_intro),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
 
                 Spacer(Modifier.height(Spacing.s4))
                 Section(title = stringResource(R.string.scan_section_read), showSeparator = false) {
-                    // The camera is the one primary; a picture and pasted text are fallbacks below it.
-                    InkButton(stringResource(R.string.scan_camera), onClick = onCamera, modifier = Modifier.fillMaxWidth())
-                    Spacer(Modifier.height(Spacing.s2))
-                    QuietButton(stringResource(R.string.scan_image), onClick = onImage)
+                    // The failure decides which way on can work: a missing or blocked camera must not stay the loud
+                    // primary, and a missing camera app leaves the live scanner (which needs no camera app) first.
+                    when (scanReadChoice(state.error)) {
+                        ScanReadChoice.CameraPrimary -> {
+                            InkButton(
+                                stringResource(R.string.scan_live),
+                                onClick = onLiveScan,
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                            Spacer(Modifier.height(Spacing.s2))
+                            QuietButton(stringResource(R.string.scan_camera), onClick = onCamera)
+                            Spacer(Modifier.height(Spacing.s2))
+                            QuietButton(stringResource(R.string.scan_image), onClick = onImage)
+                        }
+                        ScanReadChoice.CameraPrimaryNoPhoto -> {
+                            InkButton(
+                                stringResource(R.string.scan_live),
+                                onClick = onLiveScan,
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                            Spacer(Modifier.height(Spacing.s2))
+                            QuietButton(stringResource(R.string.scan_image), onClick = onImage)
+                        }
+                        ScanReadChoice.PictureOnly -> {
+                            InkButton(
+                                stringResource(R.string.scan_image),
+                                onClick = onImage,
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                        }
+                    }
                     Spacer(Modifier.height(Spacing.s2))
                     QuietButton(
                         text = stringResource(R.string.scan_paste_show),
@@ -344,7 +425,11 @@ private fun ReadResult(
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        Text(read.name.orEmpty(), style = MaterialTheme.typography.titleMedium)
+        Text(
+            read.name.orEmpty(),
+            modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+            style = MaterialTheme.typography.titleMedium,
+        )
         read.centreNumber?.let { number ->
             Text(
                 stringResource(R.string.scan_centre_number, number),
@@ -368,7 +453,11 @@ private fun ReadResult(
         style = MaterialTheme.typography.labelLarge,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
-    Text(read.personName.ifEmpty { read.name.orEmpty() }, style = MaterialTheme.typography.titleMedium)
+    Text(
+        read.personName.ifEmpty { read.name.orEmpty() },
+        modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+        style = MaterialTheme.typography.titleMedium,
+    )
     val existing = read.existing
     if (existing != null) {
         if (existing.changes.isEmpty()) {
@@ -437,7 +526,12 @@ private fun ChooseRow(label: String, selected: Boolean, onSelect: () -> Unit) {
 
 @Composable
 private fun OutcomeText(text: String) {
-    Text(text, style = MaterialTheme.typography.bodyMedium)
+    // A scan may close the camera with Scans below the fold; the outcome announces itself once (FAH-496 critique).
+    Text(
+        text,
+        modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+        style = MaterialTheme.typography.bodyMedium,
+    )
 }
 
 @Composable
@@ -503,6 +597,39 @@ private fun changeField(field: String): String = when (field) {
     else -> field
 }
 
+/** Which read action leads for a given failure; only what can work stays loud. */
+internal enum class ScanReadChoice { CameraPrimary, CameraPrimaryNoPhoto, PictureOnly }
+
+internal fun scanReadChoice(error: String?): ScanReadChoice = when (error) {
+    // Declaring CAMERA makes the system-camera intent fail while the permission is denied, so neither the live
+    // scanner nor "Take a picture" can work here; the picture is the only way on.
+    ScanErrors.CAMERA_MISSING, ScanErrors.CAMERA_BLOCKED -> ScanReadChoice.PictureOnly
+    // The soft denial can ask again, and the live scanner needs no camera app, so both keep it first.
+    ScanErrors.CAMERA_DENIED, ScanErrors.NO_CAMERA -> ScanReadChoice.CameraPrimaryNoPhoto
+    else -> ScanReadChoice.CameraPrimary
+}
+
+/** How a camera permission request ended; only an answer Android will not ask again is a block. */
+internal enum class CameraPermission { Granted, Denied, Blocked }
+
+internal fun cameraPermission(granted: Boolean, canAskAgain: Boolean): CameraPermission = when {
+    granted -> CameraPermission.Granted
+    // Android still asks again after a soft denial; only a permanent one needs the system settings.
+    canAskAgain -> CameraPermission.Denied
+    else -> CameraPermission.Blocked
+}
+
+/** Why a "Take a picture" launch failed: no camera app, or a permission Android may still ask for. */
+internal enum class PhotoLaunchFailure { NoCameraApp, PermissionDenied }
+
+/** A failed `ACTION_IMAGE_CAPTURE`: a missing camera app, or our declared CAMERA permission; never "blocked". */
+internal fun photoLaunchFailure(error: Throwable): PhotoLaunchFailure? = when (error) {
+    is ActivityNotFoundException, is IllegalArgumentException -> PhotoLaunchFailure.NoCameraApp
+    // Declaring CAMERA makes the system-camera intent need it; a denial here may still be askable.
+    is SecurityException -> PhotoLaunchFailure.PermissionDenied
+    else -> null
+}
+
 @Composable
 private fun scanErrorText(code: String?): String = when (code) {
     "code_not_recognised" -> stringResource(R.string.scan_error_not_recognised)
@@ -514,5 +641,9 @@ private fun scanErrorText(code: String?): String = when (code) {
     ErrorCodes.NO_ANSWER, ErrorCodes.SERVER_ERROR -> stringResource(R.string.scan_error_offline)
     ScanErrors.NO_CODE_IN_PICTURE -> stringResource(R.string.scan_error_no_code)
     ScanErrors.NO_CAMERA -> stringResource(R.string.scan_error_no_camera)
+    ScanErrors.CAMERA_MISSING -> stringResource(R.string.scan_error_camera_missing)
+    ScanErrors.CAMERA_DENIED -> stringResource(R.string.scan_error_camera_denied)
+    ScanErrors.CAMERA_BLOCKED -> stringResource(R.string.scan_error_camera_blocked)
+    ScanErrors.CAMERA_BUSY -> stringResource(R.string.scan_error_camera_busy)
     else -> stringResource(R.string.scan_error_generic)
 }

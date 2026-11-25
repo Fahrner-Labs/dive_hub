@@ -3,6 +3,19 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.CAMERA" />
+
+    <!-- The scanner can fall back to the photo picker and pasted text, so a device without a camera still installs.
+         CAMERA implies a required back camera and autofocus; both are declared optional to lift that filtering. -->
+    <uses-feature
+        android:name="android.hardware.camera.any"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.camera.autofocus"
+        android:required="false" />
 
     <application
         android:name=".DiveHubApplication"

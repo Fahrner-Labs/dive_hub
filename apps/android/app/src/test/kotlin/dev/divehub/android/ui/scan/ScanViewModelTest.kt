@@ -185,6 +185,24 @@ class ScanViewModelTest {
     }
 
     @Test
+    fun `a blocked camera and a busy camera are told apart`() = runTest(dispatcher) {
+        val store = DiveStore.create(driver)
+        val viewModel = viewModel(store, offline = true)
+
+        viewModel.cameraDenied()
+        assertEquals(ScanErrors.CAMERA_DENIED, viewModel.state.value.error)
+
+        viewModel.cameraBlocked()
+        assertEquals(ScanErrors.CAMERA_BLOCKED, viewModel.state.value.error)
+
+        viewModel.cameraBusy()
+        assertEquals(ScanErrors.CAMERA_BUSY, viewModel.state.value.error)
+
+        viewModel.noCameraAvailable()
+        assertEquals(ScanErrors.CAMERA_MISSING, viewModel.state.value.error)
+    }
+
+    @Test
     fun `a reconnect drops the offline notice once the queued scan is read`() = runTest(dispatcher) {
         val store = DiveStore.create(driver)
         val revision = MutableStateFlow(0L)
