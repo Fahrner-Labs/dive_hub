@@ -86,6 +86,14 @@ describe('loadConfig FCM push config', () => {
       .toThrow('DIVEHUB_FCM_SERVICE_ACCOUNT');
   });
 
+  it('refuses a service account and client config from different projects', () => {
+    expect(() => loadConfig({
+      ...base,
+      DIVEHUB_FCM_SERVICE_ACCOUNT: JSON.stringify({ ...serviceAccount, project_id: 'another-project' }),
+      DIVEHUB_FCM_CLIENT_CONFIG: JSON.stringify(clientConfig),
+    })).toThrow(/different Firebase projects/);
+  });
+
   it('names the variable when a value is not usable', () => {
     expect(() => loadConfig({
       ...base, DIVEHUB_FCM_SERVICE_ACCOUNT: 'not json', DIVEHUB_FCM_CLIENT_CONFIG: JSON.stringify(clientConfig),

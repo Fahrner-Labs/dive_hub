@@ -2,6 +2,7 @@ package dev.divehub.android.notifications
 
 import android.content.Context
 import android.content.pm.PackageInfo
+import com.google.android.gms.tasks.Tasks
 import com.google.firebase.FirebaseApp
 import dev.divehub.api.models.ApiPushConfigGet200ResponseAndroid
 import org.junit.After
@@ -95,6 +96,12 @@ class FirebaseRuntimeTest {
         runtime.reset()
 
         assertTrue(FirebaseApp.getApps(context).isEmpty())
+    }
+
+    @Test
+    fun `a failed token task is null instead of throwing out of the listener`() {
+        assertNull(Tasks.forException<String>(IllegalStateException("FCM unavailable")).resultOrNull())
+        assertEquals("token-1", Tasks.forResult("token-1").resultOrNull())
     }
 
     private fun installPlayServices() {

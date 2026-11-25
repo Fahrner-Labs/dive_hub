@@ -115,12 +115,13 @@ Diver, never by other Users (ADR 0028); deleted with the Diver. No height, sex o
 Users can manage one Diver (two parents; a dive center handing a guest's log over to
 the guest). External Divers are managed by no one (ADR 0028): shared like Dive sites.
 
-**Push device (ADR 0085, first slice)** — one native client install registered for background hints: `(User,
+**Push device (ADR 0085)** — one native client install registered for background hints: `(User,
 session, platform, push token, created at, last seen at)`, table `push_device`. Not a **Device** (the dive computer,
 below). The token is unique across the instance; the row is session-scoped and deleted by cascade when its session
 ends (sign-out, sign-out everywhere, a password change), so a signed-out device cannot be woken. `platform` is
 `android | ios | web` from day one; Android is the first provider. Hints only: a push carries `{ v, kind, id }`, never
-content. The dispatcher and the FCM sender arrive in the next slice.
+content. The dispatcher queues one hint per manager of a changed Dive; the Android client fetches it before showing
+anything, and iOS/web wait for their providers.
 
 **Certification** (built, ADR 0050) — Diver, agency and level as free text (suggestions from the Diver's other cards;
 the Agency catalog stays planned), number, issue and expiry date, dives at issue, instructor and dive centre as text

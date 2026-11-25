@@ -90,7 +90,8 @@ const requiredString = (name: string, value: Record<string, unknown>, field: str
 
 /**
  * Read FCM configuration (ADR 0085): both variables or neither. A service account without the client config (or the
- * reverse) is an operator mistake, not "push off", so it stops the app with the missing variable's name.
+ * reverse) is an operator mistake, not "push off", so it stops the app with the missing variable's name. Both must
+ * name the same Firebase project, or the server would advertise one project and send with another's credential.
  */
 function readFcmConfig(get: (name: string) => string | undefined): FcmConfig | undefined {
   const accountValue = get('DIVEHUB_FCM_SERVICE_ACCOUNT');
@@ -101,15 +102,20 @@ function readFcmConfig(get: (name: string) => string | undefined): FcmConfig | u
 
   const account = readJsonObject('DIVEHUB_FCM_SERVICE_ACCOUNT', accountValue);
   const client = readJsonObject('DIVEHUB_FCM_CLIENT_CONFIG', clientValue);
+  const serviceProjectId = requiredString('DIVEHUB_FCM_SERVICE_ACCOUNT', account, 'project_id');
+  const clientProjectId = requiredString('DIVEHUB_FCM_CLIENT_CONFIG', client, 'projectId');
+  if (serviceProjectId !== clientProjectId) {
+    throw new Error(`DIVEHUB_FCM_SERVICE_ACCOUNT and DIVEHUB_FCM_CLIENT_CONFIG belong to different Firebase projects (${serviceProjectId} and ${clientProjectId}); set both from the same project`);
+  }
   return {
     serviceAccount: {
-      projectId: requiredString('DIVEHUB_FCM_SERVICE_ACCOUNT', account, 'project_id'),
+      projectId: serviceProjectId,
       clientEmail: requiredString('DIVEHUB_FCM_SERVICE_ACCOUNT', account, 'client_email'),
       privateKey: requiredString('DIVEHUB_FCM_SERVICE_ACCOUNT', account, 'private_key'),
       raw: account,
     },
     android: {
-      projectId: requiredString('DIVEHUB_FCM_CLIENT_CONFIG', client, 'projectId'),
+      projectId: clientProjectId,
       applicationId: requiredString('DIVEHUB_FCM_CLIENT_CONFIG', client, 'applicationId'),
       apiKey: requiredString('DIVEHUB_FCM_CLIENT_CONFIG', client, 'apiKey'),
       gcmSenderId: requiredString('DIVEHUB_FCM_CLIENT_CONFIG', client, 'gcmSenderId'),

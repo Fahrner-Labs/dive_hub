@@ -2,6 +2,7 @@ package dev.divehub.android.notifications
 
 import android.content.Context
 import android.content.pm.PackageManager
+import com.google.android.gms.tasks.Task
 import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
 import com.google.firebase.messaging.FirebaseMessaging
@@ -49,7 +50,7 @@ internal class FirebaseRuntime(
         return suspendCancellableCoroutine { continuation ->
             FirebaseMessaging.getInstance().token
                 .addOnCompleteListener { task ->
-                    if (continuation.isActive) continuation.resume(task.result?.takeIf { task.isSuccessful })
+                    if (continuation.isActive) continuation.resume(task.resultOrNull())
                 }
         }
     }
@@ -74,5 +75,8 @@ internal fun hasPlayServices(context: Context): Boolean = try {
 } catch (_: PackageManager.NameNotFoundException) {
     false
 }
+
+/** A Task's value, or null when it failed: reading `result` on a failed Task throws. */
+internal fun <T> Task<T>.resultOrNull(): T? = if (isSuccessful) result else null
 
 private const val PLAY_SERVICES_PACKAGE = "com.google.android.gms"

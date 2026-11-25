@@ -8,9 +8,9 @@ date: 2026-11-25
 # ADR 0085: Push notifications for native clients
 
 ## Status
-Proposed – 2026-11-25. Design locked on [FAH-517](/FAH/issues/FAH-517) (plan document revision 7); this slice builds
-the ADR, the push-device table and the endpoints. The dispatcher, the FCM sender and the Android client follow in the
-next slices of the same feature branch.
+Proposed – 2026-11-25. Design locked on [FAH-517](/FAH/issues/FAH-517) (plan document revision 7); the feature branch
+implements the push-device table and endpoints, the dispatcher and FCM sender, and the Android client. The ADR stays
+proposed until the owner accepts it during the pull request's review ([FAH-521](/FAH/issues/FAH-521)).
 
 ## Context
 The foreground SSE stream ([ADR 0066](0066-live-updates-via-sse-hints.md)) keeps an open page current, and polling is
