@@ -18,7 +18,10 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.http.headersOf
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -29,6 +32,7 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -180,14 +184,132 @@ class ScanViewModelTest {
         assertTrue(store.pendingWrites().isEmpty())
     }
 
+    @Test
+    fun `a reconnect drops the offline notice once the queued scan is read`() = runTest(dispatcher) {
+        val store = DiveStore.create(driver)
+        val revision = MutableStateFlow(0L)
+        val syncOffline = MutableStateFlow(true)
+        val viewModel = viewModel(store, offline = true, revision = revision, syncOffline = syncOffline)
+
+        viewModel.start()
+        viewModel.scan("SSI;buddy;ada")
+        awaitState { viewModel.state.value.error == ErrorCodes.NO_ANSWER }
+        assertEquals(1, viewModel.state.value.pending)
+
+        // The last sync got an answer, but the drain has not yet read the scan: the notice still tells the truth.
+        syncOffline.value = false
+        revision.value = 1
+        advanceTimeBy(300)
+        advanceUntilIdle()
+        assertEquals(ErrorCodes.NO_ANSWER, viewModel.state.value.error)
+
+        // The drain applied the queued read; the fresh outcome and the empty queue reach the screen together.
+        store.transaction {
+            deletePendingWrite(pendingWrites().single().id)
+            addScanResult(ScanResult(0, "2026-11-23T10:00:00Z", ScanStatus.Read, kind = "buddy"))
+        }
+        revision.value = 2
+        advanceTimeBy(300)
+        advanceUntilIdle()
+
+        assertNull(viewModel.state.value.error)
+        assertEquals(0, viewModel.state.value.pending)
+        assertEquals(1, viewModel.state.value.results.size)
+    }
+
+    @Test
+    fun `a sync revision bump rereads stale results`() = runTest(dispatcher) {
+        val store = DiveStore.create(driver)
+        val revision = MutableStateFlow(0L)
+        val viewModel = viewModel(store, offline = false, revision = revision)
+
+        viewModel.start()
+        advanceUntilIdle()
+        assertTrue(viewModel.state.value.results.isEmpty())
+
+        store.addScanResult(ScanResult(0, "2026-11-23T10:00:00Z", ScanStatus.Read, kind = "buddy"))
+        revision.value = 1
+        advanceTimeBy(300)
+        advanceUntilIdle()
+
+        assertEquals(1, viewModel.state.value.results.size)
+    }
+
+    @Test
+    fun `a revision bump while the last sync got no answer keeps the offline notice`() = runTest(dispatcher) {
+        val store = DiveStore.create(driver)
+        val revision = MutableStateFlow(0L)
+        val viewModel = viewModel(
+            store,
+            offline = true,
+            revision = revision,
+            syncOffline = MutableStateFlow(true),
+        )
+
+        viewModel.start()
+        viewModel.scan("SSI;buddy;ada")
+        awaitState { viewModel.state.value.error == ErrorCodes.NO_ANSWER }
+
+        // The queue no longer waits, but the last sync still got no answer: the notice keeps telling the truth.
+        store.transaction { deletePendingWrite(pendingWrites().single().id) }
+        revision.value = 1
+        advanceTimeBy(300)
+        advanceUntilIdle()
+
+        assertEquals(ErrorCodes.NO_ANSWER, viewModel.state.value.error)
+        assertEquals(0, viewModel.state.value.pending)
+    }
+
+    @Test
+    fun `a server error notice also clears once the queued scan drains`() = runTest(dispatcher) {
+        val store = DiveStore.create(driver)
+        val revision = MutableStateFlow(0L)
+        val viewModel = viewModel(store, offline = false, serverError = true, revision = revision)
+
+        viewModel.start()
+        viewModel.scan("SSI;buddy;ada")
+        awaitState { viewModel.state.value.error == ErrorCodes.SERVER_ERROR }
+        assertEquals(1, viewModel.state.value.pending)
+
+        // The same notice's other code: the screen words a 5xx as "no connection" too, so a later drain retires it.
+        store.transaction {
+            deletePendingWrite(pendingWrites().single().id)
+            addScanResult(ScanResult(0, "2026-11-23T10:00:00Z", ScanStatus.Read, kind = "buddy"))
+        }
+        revision.value = 1
+        advanceTimeBy(300)
+        advanceUntilIdle()
+
+        assertNull(viewModel.state.value.error)
+        assertEquals(0, viewModel.state.value.pending)
+    }
+
     private companion object {
         const val CENTRE_ID = "01930000-0000-7000-8000-000000000001"
     }
 
-    private fun viewModel(store: DiveStore, offline: Boolean): ScanViewModel {
+    /** The API runs off the test dispatcher; poll real time while pumping the test scheduler. */
+    private fun TestScope.awaitState(predicate: () -> Boolean) {
+        repeat(200) {
+            advanceUntilIdle()
+            if (predicate()) return
+            Thread.sleep(10)
+        }
+        advanceUntilIdle()
+        assertTrue(predicate())
+    }
+
+    private fun viewModel(
+        store: DiveStore,
+        offline: Boolean,
+        serverError: Boolean = false,
+        revision: MutableStateFlow<Long> = MutableStateFlow(0L),
+        syncOffline: MutableStateFlow<Boolean> = MutableStateFlow(false),
+    ): ScanViewModel {
         val engine = MockEngine {
             if (offline) throw IOException("offline")
-            respond("{}", HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, "application/json"))
+            val status = if (serverError) HttpStatusCode.InternalServerError else HttpStatusCode.OK
+            respond("{}", status, headersOf(HttpHeaders.ContentType, "application/json"))
         }
         val api = ApiClient(
             engine = engine,
@@ -200,6 +322,8 @@ class ScanViewModelTest {
             store = store,
             queue = WriteQueue(store, clock = { "2026-11-23T10:00:00Z" }),
             replayer = WriteReplayer(api, store, clock = { "2026-11-23T10:00:00Z" }),
+            revision = revision,
+            syncOffline = syncOffline,
             ioDispatcher = dispatcher,
         )
     }
