@@ -30,8 +30,11 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
@@ -144,7 +147,8 @@ private const val PAGER_PAGES = 3
 
 /** The brief's named fixed dimensions, which are not spacing steps. */
 private val IconSize = 24.dp
-private val TopBarActionsReserve = 96.dp
+private val TopBarActionSize = 48.dp
+private val TopBarActionsReserve = TopBarActionSize * 2
 private val IconStroke = 2.dp
 private val ChartHeight = 160.dp
 private val ChartStroke = 2.dp
@@ -213,6 +217,8 @@ fun DiveDetailScreen(
                 next = next,
                 loading = loading,
                 onOpenDive = onOpenDive,
+                showEdit = showEdit,
+                onEdit = onEdit,
             )
         },
     ) { padding ->
@@ -225,8 +231,6 @@ fun DiveDetailScreen(
                 units = units,
                 onRetry = onRetry,
                 onOpenDive = onOpenDive,
-                showEdit = showEdit,
-                onEdit = onEdit,
                 modifier = Modifier.fillMaxSize(),
             )
         }
@@ -245,8 +249,6 @@ private fun DivePager(
     units: String?,
     onRetry: () -> Unit,
     onOpenDive: (String) -> Unit,
-    showEdit: Boolean,
-    onEdit: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val pagerState = rememberPagerState(initialPage = CURRENT_DIVE_PAGE) { PAGER_PAGES }
@@ -329,7 +331,7 @@ private fun DivePager(
         modifier = modifier.testTag("dive_pager"),
     ) { page ->
         when (page) {
-            CURRENT_DIVE_PAGE -> DiveContent(state, units, onRetry, showEdit, onEdit, Modifier.fillMaxSize())
+            CURRENT_DIVE_PAGE -> DiveContent(state, units, onRetry, Modifier.fillMaxSize())
             0 -> NeighbourPage(
                 page = previousPage,
                 state = state,
@@ -412,8 +414,6 @@ private fun DiveContent(
     state: DiveDetailUiState,
     units: String?,
     onRetry: () -> Unit,
-    showEdit: Boolean,
-    onEdit: () -> Unit,
     modifier: Modifier,
 ) {
     val phase = when {
@@ -449,7 +449,7 @@ private fun DiveContent(
                 retry = stringResource(R.string.dive_retry),
                 onRetry = onRetry,
             )
-            DivePhase.Dive -> state.dive?.let { DiveBody(state, it, units, onRetry, showEdit = showEdit, onEdit = onEdit) }
+            DivePhase.Dive -> state.dive?.let { DiveBody(state, it, units, onRetry) }
         }
     }
 }
@@ -460,8 +460,10 @@ private fun title(context: Context, dive: DiveView, locale: Locale): String = di
 
 /**
  * The Dive page's top bar: the title centred between the back arrow and the neighbour chevrons (ADR 0018, 2026-11-20
- * amendment). At 150 % and above the title stacks under the icons, because "Tauchgang 42" at 200 % no longer fits
- * between them; the page title grows instead of breaking inside a word.
+ * amendment), with the editor's pencil as the trailing action (FAH-501). The pencil's slot is reserved whether the
+ * server takes writes or not, so the title is stable across writability; it is separated from the chevrons by the
+ * design system's `s2` because it is a different kind of action. At 150 % and above the title stacks under the icons,
+ * because "Tauchgang 42" at 200 % no longer fits between them; the page title grows instead of breaking inside a word.
  */
 @Composable
 private fun DiveTopBar(
@@ -472,6 +474,8 @@ private fun DiveTopBar(
     next: String?,
     loading: Boolean,
     onOpenDive: (String) -> Unit,
+    showEdit: Boolean,
+    onEdit: () -> Unit,
 ) {
     val titleModifier = Modifier.semantics { heading() }
     val neighbours: @Composable () -> Unit = {
@@ -506,8 +510,17 @@ private fun DiveTopBar(
             navigationIconContentColor = MaterialTheme.colorScheme.onBackground,
             actionIconContentColor = MaterialTheme.colorScheme.onBackground,
         ),
-        // The data still arriving: reserve the two chevrons' width so the title does not jump when they appear.
-        actions = { if (loading) Spacer(Modifier.width(TopBarActionsReserve)) else neighbours() },
+        // The chevrons, then the design system's gap, then the editor's slot. The slot is kept at every writability
+        // and while loading, so the title never moves when the pencil appears (FAH-506 critique).
+        actions = {
+            if (loading) {
+                Spacer(Modifier.width(TopBarActionsReserve + Spacing.s2 + TopBarActionSize))
+            } else {
+                neighbours()
+                if (inList) Spacer(Modifier.width(Spacing.s2))
+                if (showEdit) EditAction(onEdit) else Spacer(Modifier.width(TopBarActionSize))
+            }
+        },
     )
 }
 
@@ -599,8 +612,6 @@ private fun DiveBody(
     dive: DiveView,
     units: String?,
     onRetry: () -> Unit,
-    showEdit: Boolean = false,
-    onEdit: () -> Unit = {},
     includeProfile: Boolean = true,
     scrollTag: String = "dive_scroll",
 ) {
@@ -617,9 +628,6 @@ private fun DiveBody(
         item { SyncLine(state.syncedAt, state.connected, state.offline, R.string.dive_offline_cached) }
         item { WriteQueueLine() }
         item { Facts(dive, locale, imperial) }
-        if (showEdit) {
-            item { EditDiveAction(onEdit) }
-        }
         item { Cylinders(dive, locale, imperial) }
         item { Weighting(dive, locale, imperial) }
         item { Notes(dive.notes) }
@@ -689,16 +697,11 @@ private fun DirectionIcon(direction: Direction) {
     }
 }
 
-/** The Dive page's quiet way into the editor, on the content column's trailing edge (FAH-366 critique). */
+/** The editor's way in: the dive page's main action, a pencil at the top bar's trailing edge (FAH-501). */
 @Composable
-private fun EditDiveAction(onEdit: () -> Unit) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = Spacing.s4),
-        contentAlignment = Alignment.CenterEnd,
-    ) {
-        QuietButton(stringResource(R.string.dive_edit), onEdit)
+private fun EditAction(onEdit: () -> Unit) {
+    IconButton(onClick = onEdit) {
+        Icon(Icons.Filled.Edit, contentDescription = stringResource(R.string.dive_edit))
     }
 }
 

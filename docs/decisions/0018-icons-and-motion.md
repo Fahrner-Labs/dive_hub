@@ -88,7 +88,8 @@ the gesture's end-stop feedback, not a page-change transition.
 At 150 % font scale and above, the Android dive page gives text the full width instead of keeping a two-column
 geometry: the top app bar's title moves to its own row under the navigation icons, left-aligned to the gutter, and a
 `FactRow` puts its value under its label, start-aligned. Both keep their normal type styles; the text grows and never
-breaks inside a word. Below 150 % the Dive title stays centred between the icons and facts keep their label/value
+breaks inside a word. Below 150 % the Dive title stays stable between the icons — normally centred, but a title longer
+than the band it has clamps toward the leading side (2026-11-25 amendment) — and facts keep their label/value
 columns. This is a layout rule only: the motion and icon decisions above still stand.
 
 ## Amendment (2026-11-22): icon-only sign-out in the Android settings account row
@@ -98,3 +99,17 @@ set), named "Sign out", tinted like the instance row's edit icon. The row itself
 opens the unchanged confirm dialog that says signing out removes the session and the local data. Sign-out is rare and
 destructive, so the dialog stays; the label the icon replaces was redundant with its accessible name and that
 confirmation. This exception is the Android settings account row only, and the web client keeps its icons beside text.
+
+## Amendment (2026-11-25): the Android dive page's edit pencil in its top app bar
+The native Android client's dive page puts the way into the editor on its top app bar as a trailing pencil icon
+([FAH-501](/FAH/issues/FAH-501), from the 2026-11-25 RC feedback): named "Edit", shown only when the server takes
+writes, with a 48 dp target. It reverses the FAH-366 critique's quiet inline placement: writing is a primary action on
+a writable client, and in the field the inline button disappeared into the scrolling facts and moved with them. The bar
+still holds the title and navigation; this is the one main action it carries, because the page's subject is a single
+Dive rather than a section. The web client keeps its icons beside text.
+
+The goldens' critique ([FAH-506](/FAH/issues/FAH-506)) then pinned two details: the pencil's slot is reserved at every
+writability and while loading, so the title never moves when the server turns out writable, and the pencil keeps `s2`
+(8 dp) from the neighbour chevrons because a tap on the boundary must page or edit, never the wrong one. A long
+German title ("Tauchgang 42") is clamped toward the leading side of the title band instead of the screen's centre;
+the invariant is a stable title, not a centred one.

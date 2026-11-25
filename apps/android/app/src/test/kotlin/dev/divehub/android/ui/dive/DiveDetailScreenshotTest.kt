@@ -591,6 +591,114 @@ class DiveDetailScreenshotTest {
     }
 
     @Test
+    fun `the edit action is a pencil in the top app bar`() {
+        var edits = 0
+        render(state(dive = dive()), showEdit = true, onEdit = { edits++ })
+        val edit = compose.onNodeWithContentDescription("Edit")
+        edit.assertIsDisplayed()
+        // The app bar sits above the scrolling page: the action keeps the same place whatever the content does.
+        val pagerTop = compose.onNodeWithTag("dive_pager").getBoundsInRoot().top.value
+        assertTrue(edit.getBoundsInRoot().bottom.value <= pagerTop)
+        // A different kind of action: the design system's s2 keeps a tap on the boundary from paging instead (FAH-506).
+        val next = compose.onNodeWithContentDescription("Next dive").getBoundsInRoot()
+        assertTrue(edit.getBoundsInRoot().left - next.right >= Spacing.s2)
+        edit.performClick()
+        assertEquals(1, edits)
+        capture("dive_edit_action.png")
+    }
+
+    @Test
+    @Config(qualifiers = "en-rUS-w411dp-h891dp-night-xxhdpi")
+    fun `the edit action follows the dark theme`() {
+        render(state(dive = dive()), showEdit = true, darkTheme = true)
+        compose.onNodeWithContentDescription("Edit").assertIsDisplayed()
+        capture("dive_edit_action_dark.png")
+    }
+
+    @Test
+    @Config(qualifiers = "de-rDE-w411dp-h891dp-xxhdpi")
+    fun `the edit action speaks german`() {
+        render(state(dive = dive()), showEdit = true)
+        compose.onNodeWithContentDescription("Bearbeiten").assertIsDisplayed()
+        capture("dive_edit_action_de.png")
+    }
+
+    @Test
+    @Config(qualifiers = "de-rDE-w411dp-h891dp-night-xxhdpi")
+    fun `the german edit action follows the dark theme`() {
+        render(state(dive = dive()), showEdit = true, darkTheme = true)
+        compose.onNodeWithContentDescription("Bearbeiten").assertIsDisplayed()
+        capture("dive_edit_action_de_dark.png")
+    }
+
+    @Test
+    @Config(qualifiers = "en-rUS-w320dp-h891dp-xxhdpi")
+    fun `the edit action at 320 dp and 200 percent`() {
+        render(state(dive = dive()), showEdit = true, fontScale = 2f)
+        val edit = compose.onNodeWithContentDescription("Edit")
+        edit.assertIsDisplayed()
+        val next = compose.onNodeWithContentDescription("Next dive").getBoundsInRoot()
+        assertTrue(edit.getBoundsInRoot().left - next.right >= Spacing.s2)
+        capture("dive_edit_action_narrow_2x.png")
+    }
+
+    @Test
+    fun `a read-only server draws the app bar without the edit action`() {
+        render(state(dive = dive()))
+        compose.onNodeWithContentDescription("Edit").assertDoesNotExist()
+        compose.onNodeWithContentDescription("Back").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Next dive").assertIsDisplayed()
+    }
+
+    @Test
+    fun `adding the edit action does not move the title`() {
+        val shown = mutableStateOf(false)
+        compose.setContent {
+            DiveHubTheme(darkTheme = false) {
+                DiveDetailScreen(
+                    state = state(dive = dive()),
+                    units = "metric",
+                    onBack = {},
+                    onRetry = {},
+                    onOpenDive = {},
+                    showEdit = shown.value,
+                )
+            }
+        }
+        val without = compose.onNodeWithText("Dive 42").getBoundsInRoot()
+        compose.runOnIdle { shown.value = true }
+        compose.waitForIdle()
+        val with = compose.onNodeWithText("Dive 42").getBoundsInRoot()
+        assertEquals(without.left, with.left)
+        assertEquals(without.right, with.right)
+    }
+
+    @Test
+    @Config(qualifiers = "de-rDE-w411dp-h891dp-xxhdpi")
+    fun `a long german title stays put when the edit action appears`() {
+        val shown = mutableStateOf(false)
+        compose.setContent {
+            DiveHubTheme(darkTheme = false) {
+                DiveDetailScreen(
+                    state = state(dive = dive()),
+                    units = "metric",
+                    onBack = {},
+                    onRetry = {},
+                    onOpenDive = {},
+                    showEdit = shown.value,
+                )
+            }
+        }
+        // The German title is the one long enough to reach the bar's actions, so it proves the reserved slot.
+        val without = compose.onNodeWithText("Tauchgang 42").getBoundsInRoot()
+        compose.runOnIdle { shown.value = true }
+        compose.waitForIdle()
+        val with = compose.onNodeWithText("Tauchgang 42").getBoundsInRoot()
+        assertEquals(without.left, with.left)
+        assertEquals(without.right, with.right)
+    }
+
+    @Test
     fun `the profile table is the text alternative and includes tank pressure`() {
         render(state(dive = dive()))
         compose.onNodeWithTag("dive_scroll").performScrollToNode(hasText("Profile as a table"))
@@ -931,6 +1039,16 @@ class DiveDetailScreenshotTest {
     }
 
     @Test
+    @Config(qualifiers = "en-rUS-w320dp-h891dp-xxhdpi")
+    fun `the dive page at 320 dp`() {
+        // Read-only at the design system's narrowest width: the pencil's reserved slot leaves the tightest title band,
+        // so this is where the stable-not-centred clamp is visible (FAH-508 critique).
+        render(state(dive = dive()))
+        compose.onNodeWithText("Dive 42").assertIsDisplayed()
+        capture("dive_320.png")
+    }
+
+    @Test
     @Config(qualifiers = "en-rUS-w360dp-h891dp-xxhdpi")
     fun `the dive page at 360 dp`() {
         render(state(dive = dive()))
@@ -1006,6 +1124,8 @@ class DiveDetailScreenshotTest {
         units: String = "metric",
         onBack: () -> Unit = {},
         onOpenDive: (String) -> Unit = {},
+        showEdit: Boolean = false,
+        onEdit: () -> Unit = {},
         darkTheme: Boolean = false,
         fontScale: Float? = null,
     ) {
@@ -1021,6 +1141,8 @@ class DiveDetailScreenshotTest {
                         onBack = onBack,
                         onRetry = {},
                         onOpenDive = onOpenDive,
+                        showEdit = showEdit,
+                        onEdit = onEdit,
                     )
                 }
             }
