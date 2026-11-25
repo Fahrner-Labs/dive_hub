@@ -37,8 +37,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /**
- * The Debug subscreen (FAH-343, folded out of the settings list): diagnostics status, *Report a problem* and *Share
- * local logs*. It re-reads the diagnostics capability on each entry, as the settings route used to.
+ * The Debug subscreen (FAH-343, folded out of the settings list): diagnostics status, *Report a problem*, *Share
+ * local logs* and the permanent *Sync queue* row (FAH-500). It re-reads the diagnostics capability on each entry,
+ * as the settings route used to.
  */
 @Composable
 fun SettingsDebugRoute(
@@ -70,8 +71,9 @@ fun SettingsDebugRoute(
 
 /**
  * The diagnostics detail screen (FAH-318, ADR 0080 D1): a read-only status line, *Report a problem* for an instance that
- * allows uploads, and *Share local logs*, which stays available whatever the instance setting says. It only draws
- * [diagnostics]; the capture layer and the upload live in `:shared` (FAH-321).
+ * allows uploads, *Share local logs*, which stays available whatever the instance setting says, and the *Sync queue*
+ * row with live queue counts (FAH-500). It only draws [diagnostics] and [queue]; the capture layer and the upload
+ * live in `:shared` (FAH-321).
  */
 @Composable
 fun SettingsDebugScreen(

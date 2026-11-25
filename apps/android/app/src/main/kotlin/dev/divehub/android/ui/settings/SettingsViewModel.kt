@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import dev.divehub.android.AppContainer
+import dev.divehub.android.ui.followStoreWrites
 import dev.divehub.shared.ErrorCodes
 import dev.divehub.shared.diagnostics.DiagnosticEntry
 import dev.divehub.shared.diagnostics.DiagnosticsAccess
@@ -99,6 +100,8 @@ class SettingsViewModel(
         }
         // An edit lands in the queue before any sync runs; the queue's own revision keeps the Debug row live (FAH-500).
         viewModelScope.launch { queueRevision.collect { readQueue() } }
+        // A replay that drains, parks or drops entries bumps the sync revision, not the queue revision (FAH-500).
+        viewModelScope.launch { revision.followStoreWrites().collect { readQueue() } }
     }
 
     /** One refresh through the same guarded path as the WorkManager worker; the revision then updates the line. */

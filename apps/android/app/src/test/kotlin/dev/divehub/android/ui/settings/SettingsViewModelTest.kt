@@ -97,10 +97,15 @@ class SettingsViewModelTest {
     }
 
     @Test
-    fun `the debug queue counts read the snapshot and follow the queue revision`() = runTest(dispatcher) {
+    fun `the debug queue counts read the snapshot and follow the queue and store revisions`() = runTest(dispatcher) {
         var snapshot = WriteQueueSnapshot(pending = 1)
         val queueRevision = MutableStateFlow(0L)
-        val viewModel = viewModel(queueRevision = queueRevision, readSnapshot = { snapshot })
+        val revision = MutableStateFlow(0L)
+        val viewModel = viewModel(
+            revision = revision,
+            queueRevision = queueRevision,
+            readSnapshot = { snapshot },
+        )
         advanceUntilIdle()
 
         assertEquals(SettingsQueueState(pending = 1), viewModel.state.value.queue)
@@ -113,6 +118,13 @@ class SettingsViewModelTest {
             SettingsQueueState(pending = 2, failed = 1, conflicted = 3),
             viewModel.state.value.queue,
         )
+
+        // A replay that sends the waiting entries bumps the sync revision, not the queue revision.
+        snapshot = WriteQueueSnapshot(failed = 1, conflicted = 3)
+        revision.value = 1
+        advanceUntilIdle()
+
+        assertEquals(SettingsQueueState(failed = 1, conflicted = 3), viewModel.state.value.queue)
     }
 
     @Test
