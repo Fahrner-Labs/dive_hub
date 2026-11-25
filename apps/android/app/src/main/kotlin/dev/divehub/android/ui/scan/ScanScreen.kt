@@ -352,41 +352,34 @@ private fun ScanResultBlock(
     onDismiss: (ScanResult) -> Unit,
 ) {
     val read = ReadCodes.parse(result)
-    // A scan may close the camera with Scans below the fold; the new result announces itself once (FAH-496 critique).
-    Column(
-        Modifier
-            .fillMaxWidth()
-            .semantics { liveRegion = LiveRegionMode.Polite },
-    ) {
-        when (result.status) {
-            ScanStatus.Read -> if (read != null) {
-                ReadResult(result, read, onTake = onTake, onCreateCentre = onCreateCentre, onDismiss = onDismiss)
-            } else {
-                OutcomeText(stringResource(R.string.scan_error_generic))
-                Dismiss(result, onDismiss)
-            }
-            ScanStatus.Created -> {
-                OutcomeText(
-                    stringResource(
-                        if (result.kind == "centre") R.string.scan_result_created_centre else R.string.scan_result_created_diver,
-                        result.name ?: "",
-                    ),
-                )
-                Dismiss(result, onDismiss)
-            }
-            ScanStatus.Existing -> {
-                OutcomeText(
-                    stringResource(
-                        if (result.kind == "centre") R.string.scan_result_existing_centre else R.string.scan_result_existing_diver,
-                        result.name ?: "",
-                    ),
-                )
-                Dismiss(result, onDismiss)
-            }
-            ScanStatus.Failed -> {
-                OutcomeText(stringResource(R.string.scan_result_failed, scanErrorText(result.errorCode)))
-                Dismiss(result, onDismiss)
-            }
+    when (result.status) {
+        ScanStatus.Read -> if (read != null) {
+            ReadResult(result, read, onTake = onTake, onCreateCentre = onCreateCentre, onDismiss = onDismiss)
+        } else {
+            OutcomeText(stringResource(R.string.scan_error_generic))
+            Dismiss(result, onDismiss)
+        }
+        ScanStatus.Created -> {
+            OutcomeText(
+                stringResource(
+                    if (result.kind == "centre") R.string.scan_result_created_centre else R.string.scan_result_created_diver,
+                    result.name ?: "",
+                ),
+            )
+            Dismiss(result, onDismiss)
+        }
+        ScanStatus.Existing -> {
+            OutcomeText(
+                stringResource(
+                    if (result.kind == "centre") R.string.scan_result_existing_centre else R.string.scan_result_existing_diver,
+                    result.name ?: "",
+                ),
+            )
+            Dismiss(result, onDismiss)
+        }
+        ScanStatus.Failed -> {
+            OutcomeText(stringResource(R.string.scan_result_failed, scanErrorText(result.errorCode)))
+            Dismiss(result, onDismiss)
         }
     }
 }
@@ -405,7 +398,11 @@ private fun ReadResult(
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        Text(read.name.orEmpty(), style = MaterialTheme.typography.titleMedium)
+        Text(
+            read.name.orEmpty(),
+            modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+            style = MaterialTheme.typography.titleMedium,
+        )
         read.centreNumber?.let { number ->
             Text(
                 stringResource(R.string.scan_centre_number, number),
@@ -429,7 +426,11 @@ private fun ReadResult(
         style = MaterialTheme.typography.labelLarge,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
-    Text(read.personName.ifEmpty { read.name.orEmpty() }, style = MaterialTheme.typography.titleMedium)
+    Text(
+        read.personName.ifEmpty { read.name.orEmpty() },
+        modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+        style = MaterialTheme.typography.titleMedium,
+    )
     val existing = read.existing
     if (existing != null) {
         if (existing.changes.isEmpty()) {
@@ -498,7 +499,12 @@ private fun ChooseRow(label: String, selected: Boolean, onSelect: () -> Unit) {
 
 @Composable
 private fun OutcomeText(text: String) {
-    Text(text, style = MaterialTheme.typography.bodyMedium)
+    // A scan may close the camera with Scans below the fold; the outcome announces itself once (FAH-496 critique).
+    Text(
+        text,
+        modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+        style = MaterialTheme.typography.bodyMedium,
+    )
 }
 
 @Composable

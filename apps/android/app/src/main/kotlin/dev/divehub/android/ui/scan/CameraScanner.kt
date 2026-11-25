@@ -113,10 +113,17 @@ fun CameraScanner(
     val activity = context.findActivity()
     DisposableEffect(activity, view) {
         val controller = activity?.window?.let { WindowInsetsControllerCompat(it, view) }
-        val previous = controller?.isAppearanceLightStatusBars
-        if (controller != null) controller.isAppearanceLightStatusBars = false
+        val lightStatusBars = controller?.isAppearanceLightStatusBars
+        val lightNavigationBars = controller?.isAppearanceLightNavigationBars
+        if (controller != null) {
+            controller.isAppearanceLightStatusBars = false
+            controller.isAppearanceLightNavigationBars = false
+        }
         onDispose {
-            if (controller != null && previous != null) controller.isAppearanceLightStatusBars = previous
+            if (controller != null) {
+                if (lightStatusBars != null) controller.isAppearanceLightStatusBars = lightStatusBars
+                if (lightNavigationBars != null) controller.isAppearanceLightNavigationBars = lightNavigationBars
+            }
         }
     }
 
