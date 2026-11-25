@@ -1,19 +1,21 @@
 package dev.divehub.android.ui.scan
 
+import androidx.camera.core.CameraControl
 import androidx.camera.core.CameraInfoUnavailableException
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraUnavailableException
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.InitializationException
 import androidx.camera.core.Preview
+import androidx.camera.core.TorchState as CameraTorchState
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -30,8 +32,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
@@ -41,15 +46,19 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.Observer
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import dev.divehub.android.R
 import dev.divehub.android.ui.CameraChrome
@@ -63,6 +72,13 @@ import kotlinx.coroutines.launch
 
 /** Why the live scanner could not open. The screen turns each into its own sentence (client contract, scanning). */
 enum class CameraFailure { Missing, Blocked, Busy }
+
+/** The live preview's torch: only a camera with a flash offers it, and a camera without one never lights it. */
+internal data class TorchState(val available: Boolean, val on: Boolean) {
+    fun toggled(): TorchState = if (available) copy(on = !on) else this
+}
+
+internal fun torchState(hasFlashUnit: Boolean): TorchState = TorchState(available = hasFlashUnit, on = false)
 
 /** A contained target beside the close glyph; the guide's white stroke and the dark under-stroke that keeps it visible. */
 private val CloseTarget = 48.dp
@@ -94,6 +110,8 @@ fun CameraScanner(
             scaleType = PreviewView.ScaleType.FILL_CENTER
         }
     }
+    var torch by remember { mutableStateOf(torchState(hasFlashUnit = false)) }
+    var cameraControl by remember { mutableStateOf<CameraControl?>(null) }
 
     // The preview is dark and full-bleed; keep the system bars readable over it, then restore the theme's choice.
     val view = LocalView.current
@@ -120,6 +138,8 @@ fun CameraScanner(
         val gate = QrFrameGate()
         var provider: ProcessCameraProvider? = null
         var analysis: ImageAnalysis? = null
+        var torchLiveData: LiveData<Int>? = null
+        var torchObserver: Observer<Int>? = null
         var disposed = false
 
         providerFuture.addListener({
@@ -156,7 +176,16 @@ fun CameraScanner(
                 } else {
                     CameraSelector.DEFAULT_FRONT_CAMERA
                 }
-                cameraProvider.bindToLifecycle(lifecycleOwner, selector, preview, imageAnalysis)
+                val boundCamera = cameraProvider.bindToLifecycle(lifecycleOwner, selector, preview, imageAnalysis)
+                cameraControl = boundCamera.cameraControl
+                torch = torchState(boundCamera.cameraInfo.hasFlashUnit())
+                // CameraX turns the torch off with the camera and can refuse a request: follow its state instead of
+                // trusting the last tap, so the icon never says "on" when the torch is off.
+                val liveData = boundCamera.cameraInfo.torchState
+                val observer = Observer<Int> { state -> torch = torch.copy(on = state == CameraTorchState.ON) }
+                torchLiveData = liveData
+                torchObserver = observer
+                liveData.observe(lifecycleOwner, observer)
             } catch (error: Exception) {
                 runCatching { analysis?.clearAnalyzer() }
                 runCatching { provider?.unbindAll() }
@@ -167,15 +196,33 @@ fun CameraScanner(
 
         onDispose {
             disposed = true
+            val liveData = torchLiveData
+            val observer = torchObserver
+            if (liveData != null && observer != null) {
+                runCatching { liveData.removeObserver(observer) }
+            }
             runCatching { analysis?.clearAnalyzer() }
             runCatching { provider?.unbindAll() }
             analysisExecutor.shutdownNow()
         }
     }
 
+    fun toggleTorch() {
+        val control = cameraControl ?: return
+        val next = torch.toggled()
+        torch = next
+        val request = control.enableTorch(next.on)
+        request.addListener(
+            { runCatching { request.get() }.onFailure { torch = torch.copy(on = !next.on) } },
+            mainExecutor,
+        )
+    }
+
     CameraScannerFrame(
         onClose = onClose,
         modifier = modifier,
+        torch = torch,
+        onToggleTorch = ::toggleTorch,
         preview = {
             AndroidView(
                 factory = { previewView },
@@ -208,6 +255,8 @@ internal fun cameraFailure(error: Throwable): CameraFailure = when (val cause = 
 internal fun CameraScannerFrame(
     onClose: () -> Unit,
     modifier: Modifier = Modifier,
+    torch: TorchState = TorchState(available = false, on = false),
+    onToggleTorch: () -> Unit = {},
     preview: @Composable () -> Unit,
 ) {
     val closeFocus = remember { FocusRequester() }
@@ -229,8 +278,26 @@ internal fun CameraScannerFrame(
                 Modifier
                     .fillMaxWidth()
                     .padding(horizontal = Spacing.s4, vertical = Spacing.s2),
-                horizontalArrangement = Arrangement.End,
             ) {
+                if (torch.available) {
+                    val torchStateText = stringResource(
+                        if (torch.on) R.string.scan_live_torch_on else R.string.scan_live_torch_off,
+                    )
+                    IconButton(
+                        onClick = onToggleTorch,
+                        modifier = Modifier
+                            .size(CloseTarget)
+                            .background(CameraChrome.CloseScrim, CircleShape)
+                            .semantics { stateDescription = torchStateText },
+                    ) {
+                        Icon(
+                            painter = painterResource(if (torch.on) R.drawable.ic_torch_on else R.drawable.ic_torch_off),
+                            contentDescription = stringResource(R.string.scan_live_torch),
+                            tint = CameraChrome.Ink,
+                        )
+                    }
+                }
+                Spacer(Modifier.weight(1f))
                 IconButton(
                     onClick = onClose,
                     modifier = Modifier

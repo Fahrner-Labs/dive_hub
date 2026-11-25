@@ -97,7 +97,7 @@ import dev.divehub.android.ui.components.InkButton
 import dev.divehub.android.ui.components.QuietActionTarget
 import dev.divehub.android.ui.components.QuietButton
 import dev.divehub.android.ui.components.Radius
-import dev.divehub.android.ui.components.SecondaryButton
+import dev.divehub.android.ui.components.FieldButton
 import dev.divehub.android.ui.components.Section
 import dev.divehub.android.ui.tools.NumberField
 import dev.divehub.shared.dive.DiveEditDraft
@@ -454,7 +454,7 @@ private fun EditForm(
                     sites.firstOrNull { it.id == id }?.name ?: originalSiteName
                 } ?: stringResource(R.string.dive_edit_no_site)
                 FactRow(label = stringResource(R.string.dive_edit_current_site), value = name)
-                SecondaryButton(stringResource(R.string.dive_edit_choose_site), onClick = { pickingSite = true })
+                FieldButton(stringResource(R.string.dive_edit_choose_site), onClick = { pickingSite = true })
             }
         }
         item {
@@ -610,7 +610,7 @@ private fun ParticipantsFields(
         }
     }
     Spacer(Modifier.height(Spacing.s2))
-    SecondaryButton(stringResource(R.string.dive_edit_add_participant), onAdd)
+    FieldButton(stringResource(R.string.dive_edit_add_participant), onAdd)
     Spacer(Modifier.height(Spacing.s3))
     // ADR 0082: the union runs on the server and arrives through the feed; a removal stays on this Dive.
     Text(
@@ -1056,13 +1056,13 @@ private fun StartField(
     if (LocalDensity.current.fontScale >= LargeTextFontScale) {
         // Text takes the full width at large text: a two-column pair wraps inside a date.
         Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Spacing.s2)) {
-            SecondaryButton(date, { showDate = true }, Modifier.fillMaxWidth())
-            SecondaryButton(time, { showTime = true }, Modifier.fillMaxWidth())
+            FieldButton(date, { showDate = true }, Modifier.fillMaxWidth())
+            FieldButton(time, { showTime = true }, Modifier.fillMaxWidth())
         }
     } else {
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.s2)) {
-            SecondaryButton(date, { showDate = true }, Modifier.weight(1f))
-            SecondaryButton(time, { showTime = true }, Modifier.weight(1f))
+            FieldButton(date, { showDate = true }, Modifier.weight(1f))
+            FieldButton(time, { showTime = true }, Modifier.weight(1f))
         }
     }
     Spacer(Modifier.height(Spacing.s3))

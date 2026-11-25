@@ -113,3 +113,13 @@ writability and while loading, so the title never moves when the server turns ou
 (8 dp) from the neighbour chevrons because a tap on the boundary must page or edit, never the wrong one. A long
 German title ("Tauchgang 42") is clamped toward the leading side of the title band instead of the screen's centre;
 the invariant is a stable title, not a centred one.
+
+## Amendment (2026-11-25): icon-only controls in the Android live scanner
+The native Android scanner's live preview carries two icon-only controls over the full-bleed camera image
+([FAH-496](/FAH/issues/FAH-496), [FAH-512](/FAH/issues/FAH-512), from the RC3 feedback): "Close the camera" at the
+top-right, and a torch toggle at the top-left shown only when the camera reports a flash. A visible label would sit
+over the guide and the hint the preview exists to show, so these are the platform's camera-overlay convention; each
+keeps a full accessible name and a 48 dp target. The torch's icon says off or on and its state is also the control's
+`stateDescription`, and the app follows CameraX's torch state rather than only the last tap, so backgrounding or a
+refused request never leaves the icon claiming a light that is off. This exception is the Android live scanner only,
+and the web client keeps its icons beside text.

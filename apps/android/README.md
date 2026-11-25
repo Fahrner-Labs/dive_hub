@@ -109,12 +109,13 @@ kept as the replay idempotency key.
 - **Live camera:** `Scan with the camera` asks for the `CAMERA` permission when the User starts, then opens a CameraX
   `Preview` with `ImageAnalysis` in a full-screen composable. Frames are throttled and decoded on the device by ZXing
   core (`com.google.zxing:core`, Apache 2.0); the first code stops analysis, releases the camera at once and sends its
-  text unchanged to the server path above. A refused permission, a device without a camera and a camera held by
-  another app each have their own sentence. The `android.hardware.camera.any` feature is optional, because the
-  fallbacks still work without a camera.
-- **Camera and picture fallbacks:** `Take a picture` uses the system camera app and `Choose a picture` the system photo
-  picker; both are decoded on the device by ZXing core, and the decoded text then takes the server path above. A
-  picture without a code says so; it is not a code error.
+  text unchanged to the server path above. A torch action overlays the preview when the camera has a flash, and its
+  icon says whether it is on. A refused permission, a device without a camera and a camera held by another app each
+  have their own sentence. The `android.hardware.camera.any` feature is optional, because the picture fallback still
+  works without a camera.
+- **Picture fallback:** `Choose a picture` opens the system photo picker and decodes the chosen image on the device
+  with ZXing core; the decoded text then takes the server path above. A picture without a code says so; it is not a
+  code error.
 - **Store v6** adds `scan_result`, the scanner's short list of resolved scans (schema `5.sqm`). A read's answer is
   stored there; the raw text stays in the queued action it points at (`actionId`) until the User takes or dismisses
   it, and is never copied into the result (ADR 0043: a buddy code holds an e-mail). A refusal keeps its problem code
