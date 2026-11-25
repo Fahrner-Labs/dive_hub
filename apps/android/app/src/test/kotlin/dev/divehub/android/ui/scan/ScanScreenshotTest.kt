@@ -161,8 +161,9 @@ class ScanScreenshotTest {
     }
 
     @Test
-    fun `the live camera frames the code and offers a way out`() {
-        renderLive()
+    fun `the live camera frames the code and offers a way out over a bright scene`() {
+        // A bright scene is the hard case: the guide's white stroke needs its dark under-stroke to stay visible.
+        renderLive(scene = Color(0xFFF4F7F9))
 
         compose.onNodeWithText("Point the camera at a code.").assertExists()
         compose.onNodeWithContentDescription("Close the camera").assertExists()
@@ -170,13 +171,24 @@ class ScanScreenshotTest {
     }
 
     @Test
-    @Config(qualifiers = "de-rDE-w320dp-h1600dp-night-xxhdpi")
+    @Config(qualifiers = "de-rDE-w320dp-h891dp-night-xxhdpi")
     fun `the live camera hint and close action hold at 320 dp and 200 percent in German and dark`() {
-        renderLive(darkTheme = true, fontScale = 2f)
+        renderLive(darkTheme = true, fontScale = 2f, scene = Color(0xFF25303A))
 
         compose.onNodeWithText("Richte die Kamera auf einen Code.").assertIsDisplayed()
         compose.onNodeWithContentDescription("Kamera schließen").assertIsDisplayed()
         capture("scan_live_de_dark.png")
+    }
+
+    @Test
+    @Config(qualifiers = "de-rDE-w320dp-h891dp-night-xxhdpi")
+    fun `a camera failure points at the picture fallback at 320 dp and 200 percent in German and dark`() {
+        render(ScanUiState(error = ScanErrors.CAMERA_MISSING), darkTheme = true, fontScale = 2f)
+
+        compose.onNodeWithText("dieses Gerät hat keine Kamera", substring = true).assertIsDisplayed()
+        compose.onNodeWithText("Mit der Kamera scannen").assertIsDisplayed()
+        compose.onNodeWithText("Bild auswählen").assertIsDisplayed()
+        capture("scan_camera_failure_de_dark.png")
     }
 
     @Test
@@ -243,7 +255,11 @@ class ScanScreenshotTest {
     }
 
     /** The live scanner without a camera: the golden reviews its framing and controls, not a real camera's image. */
-    private fun renderLive(darkTheme: Boolean = false, fontScale: Float? = null) {
+    private fun renderLive(
+        darkTheme: Boolean = false,
+        fontScale: Float? = null,
+        scene: Color = Color(0xFFF4F7F9),
+    ) {
         compose.setContent {
             DiveHubTheme(darkTheme = darkTheme) {
                 val density = LocalDensity.current
@@ -256,7 +272,7 @@ class ScanScreenshotTest {
                             Box(
                                 Modifier
                                     .fillMaxSize()
-                                    .background(Color(0xFF25303A)),
+                                    .background(scene),
                             )
                         },
                     )

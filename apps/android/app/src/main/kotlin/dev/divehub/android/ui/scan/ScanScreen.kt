@@ -11,7 +11,6 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -150,40 +149,41 @@ fun ScanRoute(viewModel: ScanViewModel, onBack: () -> Unit) {
         }
     }
 
-    Box(Modifier.fillMaxSize()) {
-        ScanScreen(
-            state = state,
-            onBack = onBack,
-            onLiveScan = ::openLiveScanner,
-            onCamera = ::takePhoto,
-            onImage = { pictures.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
-            onScan = viewModel::scan,
-            onTake = viewModel::take,
-            onCreateCentre = viewModel::createCentre,
-            onSync = viewModel::syncNow,
-            onDismiss = viewModel::dismiss,
-            onClearError = viewModel::clearError,
+    if (live) {
+        // The camera owns the screen until it closes: the scanner is not composed behind it, so TalkBack has one
+        // screen. Back leaves the preview, not the scanner.
+        BackHandler { live = false }
+        CameraScanner(
+            onCode = { text ->
+                live = false
+                viewModel.scan(text)
+            },
+            onFailure = { failure ->
+                live = false
+                when (failure) {
+                    CameraFailure.Blocked -> viewModel.cameraBlocked()
+                    CameraFailure.Busy -> viewModel.cameraBusy()
+                    CameraFailure.Missing -> viewModel.noCameraAvailable()
+                }
+            },
+            onClose = { live = false },
         )
-        if (live) {
-            // The camera owns the screen until it closes; Back leaves the preview, not the scanner.
-            BackHandler { live = false }
-            CameraScanner(
-                onCode = { text ->
-                    live = false
-                    viewModel.scan(text)
-                },
-                onFailure = { failure ->
-                    live = false
-                    when (failure) {
-                        CameraFailure.Blocked -> viewModel.cameraBlocked()
-                        CameraFailure.Busy -> viewModel.cameraBusy()
-                        CameraFailure.Missing -> viewModel.noCameraAvailable()
-                    }
-                },
-                onClose = { live = false },
-            )
-        }
+        return
     }
+
+    ScanScreen(
+        state = state,
+        onBack = onBack,
+        onLiveScan = ::openLiveScanner,
+        onCamera = ::takePhoto,
+        onImage = { pictures.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
+        onScan = viewModel::scan,
+        onTake = viewModel::take,
+        onCreateCentre = viewModel::createCentre,
+        onSync = viewModel::syncNow,
+        onDismiss = viewModel::dismiss,
+        onClearError = viewModel::clearError,
+    )
 }
 
 @Composable
@@ -240,20 +240,22 @@ fun ScanScreen(
                     .padding(top = Spacing.s4, bottom = Spacing.s5)
                     .testTag("scan_scroll"),
             ) {
-                Text(
-                    stringResource(R.string.scan_intro),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                state.error?.let { code ->
-                    Spacer(Modifier.height(Spacing.s3))
+                if (state.error != null) {
+                    // The failure replaces the intro: it is the message now, and the primary and its fallbacks must
+                    // stay in view with it at 200 % (FAH-496 critique).
                     Text(
-                        scanErrorText(code),
+                        scanErrorText(state.error),
                         modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.error,
                     )
                     QuietButton(stringResource(R.string.scan_error_dismiss), onClick = onClearError)
+                } else {
+                    Text(
+                        stringResource(R.string.scan_intro),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
 
                 Spacer(Modifier.height(Spacing.s4))
@@ -350,34 +352,41 @@ private fun ScanResultBlock(
     onDismiss: (ScanResult) -> Unit,
 ) {
     val read = ReadCodes.parse(result)
-    when (result.status) {
-        ScanStatus.Read -> if (read != null) {
-            ReadResult(result, read, onTake = onTake, onCreateCentre = onCreateCentre, onDismiss = onDismiss)
-        } else {
-            OutcomeText(stringResource(R.string.scan_error_generic))
-            Dismiss(result, onDismiss)
-        }
-        ScanStatus.Created -> {
-            OutcomeText(
-                stringResource(
-                    if (result.kind == "centre") R.string.scan_result_created_centre else R.string.scan_result_created_diver,
-                    result.name ?: "",
-                ),
-            )
-            Dismiss(result, onDismiss)
-        }
-        ScanStatus.Existing -> {
-            OutcomeText(
-                stringResource(
-                    if (result.kind == "centre") R.string.scan_result_existing_centre else R.string.scan_result_existing_diver,
-                    result.name ?: "",
-                ),
-            )
-            Dismiss(result, onDismiss)
-        }
-        ScanStatus.Failed -> {
-            OutcomeText(stringResource(R.string.scan_result_failed, scanErrorText(result.errorCode)))
-            Dismiss(result, onDismiss)
+    // A scan may close the camera with Scans below the fold; the new result announces itself once (FAH-496 critique).
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .semantics { liveRegion = LiveRegionMode.Polite },
+    ) {
+        when (result.status) {
+            ScanStatus.Read -> if (read != null) {
+                ReadResult(result, read, onTake = onTake, onCreateCentre = onCreateCentre, onDismiss = onDismiss)
+            } else {
+                OutcomeText(stringResource(R.string.scan_error_generic))
+                Dismiss(result, onDismiss)
+            }
+            ScanStatus.Created -> {
+                OutcomeText(
+                    stringResource(
+                        if (result.kind == "centre") R.string.scan_result_created_centre else R.string.scan_result_created_diver,
+                        result.name ?: "",
+                    ),
+                )
+                Dismiss(result, onDismiss)
+            }
+            ScanStatus.Existing -> {
+                OutcomeText(
+                    stringResource(
+                        if (result.kind == "centre") R.string.scan_result_existing_centre else R.string.scan_result_existing_diver,
+                        result.name ?: "",
+                    ),
+                )
+                Dismiss(result, onDismiss)
+            }
+            ScanStatus.Failed -> {
+                OutcomeText(stringResource(R.string.scan_result_failed, scanErrorText(result.errorCode)))
+                Dismiss(result, onDismiss)
+            }
         }
     }
 }
@@ -555,8 +564,8 @@ private fun changeField(field: String): String = when (field) {
     else -> field
 }
 
-/** The Activity behind Compose's context, for the permission-rationale question. */
-private tailrec fun Context.findActivity(): Activity? = when (this) {
+/** The Activity behind Compose's context, for the permission question and the camera's system bars. */
+internal tailrec fun Context.findActivity(): Activity? = when (this) {
     is Activity -> this
     is ContextWrapper -> baseContext.findActivity()
     else -> null

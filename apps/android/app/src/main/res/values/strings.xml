@@ -857,8 +857,8 @@
     <string name="scan_error_not_person">this is a Dive centre\'s code, not a person\'s.</string>
     <string name="scan_error_offline">no connection. The code stays on this phone and is read when the server answers.</string>
     <string name="scan_error_no_code">no QR code in that picture.</string>
-    <string name="scan_error_no_camera">this device has no camera app.</string>
-    <string name="scan_error_camera_missing">this device has no camera.</string>
+    <string name="scan_error_no_camera">this device has no camera app. Choose a picture instead.</string>
+    <string name="scan_error_camera_missing">this device has no camera. Choose a picture instead.</string>
     <string name="scan_error_camera_denied">camera access was not allowed. Try again, or choose a picture.</string>
     <string name="scan_error_camera_blocked">camera access is blocked. Allow it in Android settings, or choose a picture.</string>
     <string name="scan_error_camera_busy">the camera is busy in another app. Close it and try again, or choose a picture.</string>

@@ -9,34 +9,40 @@ import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.liveRegion
@@ -45,8 +51,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import dev.divehub.android.R
+import dev.divehub.android.ui.DiveHubText
 import dev.divehub.android.ui.Spacing
 import dev.divehub.android.ui.components.Radius
 import java.util.concurrent.ExecutionException
@@ -56,8 +64,26 @@ import kotlinx.coroutines.launch
 /** Why the live scanner could not open. The screen turns each into its own sentence (client contract, scanning). */
 enum class CameraFailure { Missing, Blocked, Busy }
 
-/** The focus frame's cap, so the guide stays a square on a tablet instead of swallowing the preview. */
-private val ScannerFrameMaxWidth = 360.dp
+/**
+ * The camera chrome is scheme-independent on purpose: it sits over the preview, not over the app's surface. Naming
+ * the tones here keeps the white guide and its dark under-stroke together, and away from ad-hoc literals.
+ */
+private object CameraChrome {
+    val Scene = Color.Black
+    val Ink = Color.White
+    val HintScrim = Color.Black.copy(alpha = 0.55f)
+    val CloseScrim = Color.Black.copy(alpha = 0.5f)
+    val Guide = Color.White
+    val GuideUnder = Color.Black.copy(alpha = 0.65f)
+}
+
+/** A contained target beside the close glyph; the guide's white stroke and the dark under-stroke that keeps it visible. */
+private val CloseTarget = 48.dp
+private val GuideStroke = 3.dp
+private val GuideUnderStroke = 7.dp
+
+/** The guide's cap, so it stays a square rather than swallowing a tablet's preview. */
+private val GuideMaxSide = 360.dp
 
 /**
  * The live scanner: CameraX's preview with frames analysed on the device and the first code's text handed on
@@ -79,6 +105,18 @@ fun CameraScanner(
         PreviewView(context).apply {
             implementationMode = PreviewView.ImplementationMode.COMPATIBLE
             scaleType = PreviewView.ScaleType.FILL_CENTER
+        }
+    }
+
+    // The preview is dark and full-bleed; keep the system bars readable over it, then restore the theme's choice.
+    val view = LocalView.current
+    val activity = context.findActivity()
+    DisposableEffect(activity, view) {
+        val controller = activity?.window?.let { WindowInsetsControllerCompat(it, view) }
+        val previous = controller?.isAppearanceLightStatusBars
+        if (controller != null) controller.isAppearanceLightStatusBars = false
+        onDispose {
+            if (controller != null && previous != null) controller.isAppearanceLightStatusBars = previous
         }
     }
 
@@ -169,7 +207,8 @@ internal fun cameraFailure(error: Throwable): CameraFailure = when (val cause = 
 
 /**
  * The live scanner's frame and controls. [preview] is the camera surface on a device and a stand-in in the screenshot
- * tests, so the goldens review the guide frame, the hint and the way out without a real camera image.
+ * tests, so the goldens review the guide frame, the hint and the way out without a real camera image. The guide is
+ * composed between the close row and the hint, so a short screen pushes them apart rather than letting them collide.
  */
 @Composable
 internal fun CameraScannerFrame(
@@ -177,56 +216,90 @@ internal fun CameraScannerFrame(
     modifier: Modifier = Modifier,
     preview: @Composable () -> Unit,
 ) {
+    val closeFocus = remember { FocusRequester() }
+    LaunchedEffect(Unit) { closeFocus.requestFocus() }
+
     Box(
         modifier
             .fillMaxSize()
-            .background(Color.Black),
+            .background(CameraChrome.Scene),
     ) {
         preview()
 
-        // The guide stays a square so a code fills it at any phone width; the border is the only chrome over the frame.
-        Box(
+        Column(
             Modifier
-                .align(Alignment.Center)
-                .widthIn(max = ScannerFrameMaxWidth)
-                .fillMaxWidth(0.8f)
-                .aspectRatio(1f)
-                .border(3.dp, Color.White.copy(alpha = 0.8f), RoundedCornerShape(Radius.control)),
-        )
-
-        IconButton(
-            onClick = onClose,
-            modifier = Modifier
-                .align(Alignment.TopEnd)
+                .fillMaxSize()
                 .statusBarsPadding()
-                .padding(Spacing.s2)
-                .size(48.dp)
-                .background(Color.Black.copy(alpha = 0.5f), CircleShape),
+                .navigationBarsPadding(),
         ) {
-            Icon(
-                imageVector = Icons.Filled.Close,
-                contentDescription = stringResource(R.string.scan_live_close),
-                tint = Color.White,
-            )
-        }
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = Spacing.s4, vertical = Spacing.s2),
+                horizontalArrangement = Arrangement.End,
+            ) {
+                IconButton(
+                    onClick = onClose,
+                    modifier = Modifier
+                        .focusRequester(closeFocus)
+                        .size(CloseTarget)
+                        .background(CameraChrome.CloseScrim, CircleShape),
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Close,
+                        contentDescription = stringResource(R.string.scan_live_close),
+                        tint = CameraChrome.Ink,
+                    )
+                }
+            }
 
-        Surface(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .navigationBarsPadding()
-                .padding(horizontal = Spacing.s4, vertical = Spacing.s5),
-            color = Color.Black.copy(alpha = 0.55f),
-            contentColor = Color.White,
-            shape = RoundedCornerShape(Radius.control),
-        ) {
-            Text(
-                text = stringResource(R.string.scan_live_hint),
+            // The guide takes the space the close row and the hint leave, so it never sits under the hint.
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .padding(horizontal = Spacing.s4),
+                contentAlignment = Alignment.Center,
+            ) {
+                BoxWithConstraints {
+                    val side = minOf(maxWidth * 0.8f, maxHeight * 0.8f, GuideMaxSide)
+                    Box(
+                        Modifier
+                            .size(side)
+                            .drawBehind {
+                                val corner = CornerRadius(Radius.control.toPx())
+                                drawRoundRect(
+                                    color = CameraChrome.GuideUnder,
+                                    cornerRadius = corner,
+                                    style = Stroke(GuideUnderStroke.toPx()),
+                                )
+                                drawRoundRect(
+                                    color = CameraChrome.Guide,
+                                    cornerRadius = corner,
+                                    style = Stroke(GuideStroke.toPx()),
+                                )
+                            },
+                    )
+                }
+            }
+
+            Surface(
                 modifier = Modifier
-                    .padding(horizontal = Spacing.s4, vertical = Spacing.s3)
-                    .semantics { liveRegion = LiveRegionMode.Polite },
-                style = MaterialTheme.typography.bodyLarge,
-                textAlign = TextAlign.Center,
-            )
+                    .align(Alignment.CenterHorizontally)
+                    .padding(horizontal = Spacing.s4, vertical = Spacing.s5),
+                color = CameraChrome.HintScrim,
+                contentColor = CameraChrome.Ink,
+                shape = RoundedCornerShape(Radius.control),
+            ) {
+                Text(
+                    text = stringResource(R.string.scan_live_hint),
+                    modifier = Modifier
+                        .padding(horizontal = Spacing.s4, vertical = Spacing.s3)
+                        .semantics { liveRegion = LiveRegionMode.Polite },
+                    style = DiveHubText.body,
+                    textAlign = TextAlign.Center,
+                )
+            }
         }
     }
 }
