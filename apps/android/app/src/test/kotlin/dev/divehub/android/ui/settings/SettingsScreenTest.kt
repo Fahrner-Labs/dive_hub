@@ -1,10 +1,16 @@
 package dev.divehub.android.ui.settings
 
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.getBoundsInRoot
+import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasProgressBarRangeInfo
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onLast
@@ -150,25 +156,26 @@ class SettingsScreenTest {
     }
 
     @Test
-    fun `the polling interval dialog saves the chosen cadence`() {
+    fun `tapping a polling cadence applies it and closes the dialog`() {
         render()
 
         compose.onNodeWithText("Polling interval").assertIsDisplayed()
         compose.onNodeWithText("Every 15 min").performClick()
 
-        compose.onNodeWithText("30 minutes").performClick()
-        compose.onNodeWithText("Save").performClick()
+        compose.onNode(hasText("30 min") and hasClickAction())
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.RadioButton))
+        compose.onNodeWithText("30 min").performClick()
 
         assertEquals(listOf(30), pollingIntervals)
+        compose.onNodeWithText("30 min").assertDoesNotExist()
     }
 
     @Test
-    fun `cancelling the polling interval dialog changes nothing`() {
+    fun `closing the polling interval dialog changes nothing`() {
         render()
 
         compose.onNodeWithText("Every 15 min").performClick()
-        compose.onNodeWithText("60 minutes").performClick()
-        compose.onNodeWithText("Cancel").performClick()
+        compose.onNodeWithText("Close").performClick()
 
         assertTrue(pollingIntervals.isEmpty())
     }

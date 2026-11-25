@@ -111,7 +111,7 @@ class SettingsScreenshotTest {
     fun `settings polling in German and light`() {
         render(darkTheme = false, connected = false)
 
-        compose.onNodeWithText("Polling · 18. Nov. 2026, 13:00").assertIsDisplayed()
+        compose.onNodeWithText("Abfrage · 18. Nov. 2026, 13:00").assertIsDisplayed()
         capture("settings_polling_de_light.png")
     }
 
@@ -138,8 +138,28 @@ class SettingsScreenshotTest {
         render(darkTheme = false)
 
         compose.onNodeWithText("Every 15 min").performClick()
-        compose.onNodeWithText("60 minutes").assertIsDisplayed()
+        compose.onNodeWithText("60 min").assertIsDisplayed()
         capture("settings_polling_interval_en_light.png")
+    }
+
+    @Test
+    @Config(qualifiers = "de-rDE-w411dp-h891dp-xxhdpi")
+    fun `the polling interval dialog in German and light`() {
+        render(darkTheme = false)
+
+        compose.onNodeWithText("Alle 15 Min.").performClick()
+        compose.onNodeWithText("60 Min.").assertIsDisplayed()
+        capture("settings_polling_interval_de_light.png")
+    }
+
+    @Test
+    @Config(qualifiers = "en-rUS-w320dp-h891dp-xxhdpi", fontScale = 2f)
+    fun `the polling interval dialog at 320 dp and 200 percent`() {
+        render(darkTheme = false)
+
+        compose.onNodeWithText("Every 15 min").performScrollTo().performClick()
+        compose.onNodeWithText("60 min").assertIsDisplayed()
+        capture("settings_polling_interval_narrow_2x.png")
     }
 
     @Test

@@ -880,7 +880,6 @@
     <string name="settings_polling_interval">Polling interval</string>
     <string name="settings_polling_interval_value">Every %1$d min</string>
     <string name="settings_polling_interval_title">Polling interval</string>
-    <string name="settings_polling_interval_body">How often the app checks for new dives in the background. Android allows at least 15 minutes.</string>
-    <string name="settings_polling_interval_option">%1$d minutes</string>
-    <string name="settings_save">Save</string>
+    <string name="settings_polling_interval_body">How often the app syncs in the background. Shorter intervals use more battery. Android\'s shortest interval is 15 minutes. Notifications are separate and arrive immediately on push-enabled instances.</string>
+    <string name="settings_polling_interval_option">%1$d min</string>
 </resources>

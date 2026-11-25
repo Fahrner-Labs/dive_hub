@@ -15,7 +15,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
@@ -47,6 +50,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
@@ -55,6 +59,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.divehub.android.R
 import dev.divehub.android.ui.DiveHubTopBar
 import dev.divehub.android.ui.Spacing
+import dev.divehub.android.ui.components.Radius
 import dev.divehub.android.ui.formatSyncTime
 import dev.divehub.android.ui.successColor
 import java.util.Locale
@@ -251,6 +256,8 @@ fun SettingsScreen(
     if (confirmingChangeInstance) {
         AlertDialog(
             onDismissRequest = { confirmingChangeInstance = false },
+            shape = RoundedCornerShape(Radius.sheet),
+            containerColor = MaterialTheme.colorScheme.surface,
             title = { Text(stringResource(R.string.settings_change_instance_title)) },
             text = { Text(stringResource(R.string.settings_change_instance_body)) },
             confirmButton = {
@@ -272,6 +279,8 @@ fun SettingsScreen(
     if (confirmingSignOut) {
         AlertDialog(
             onDismissRequest = { confirmingSignOut = false },
+            shape = RoundedCornerShape(Radius.sheet),
+            containerColor = MaterialTheme.colorScheme.surface,
             title = { Text(stringResource(R.string.settings_sign_out_title)) },
             text = { Text(stringResource(R.string.settings_sign_out_body)) },
             confirmButton = {
@@ -293,6 +302,8 @@ fun SettingsScreen(
     if (showingLicenses) {
         AlertDialog(
             onDismissRequest = { showingLicenses = false },
+            shape = RoundedCornerShape(Radius.sheet),
+            containerColor = MaterialTheme.colorScheme.surface,
             title = { Text(stringResource(R.string.settings_licenses_title)) },
             text = {
                 Box(
@@ -312,39 +323,50 @@ fun SettingsScreen(
     }
 
     if (choosingPollingInterval) {
-        var selected by remember(state.pollingIntervalMinutes) { mutableStateOf(state.pollingIntervalMinutes) }
         AlertDialog(
             onDismissRequest = { choosingPollingInterval = false },
+            shape = RoundedCornerShape(Radius.sheet),
+            containerColor = MaterialTheme.colorScheme.surface,
             title = { Text(stringResource(R.string.settings_polling_interval_title)) },
             text = {
-                Column {
+                Column(Modifier.verticalScroll(rememberScrollState())) {
                     Text(stringResource(R.string.settings_polling_interval_body))
-                    Spacer(Modifier.height(8.dp))
-                    POLLING_INTERVALS.forEach { minutes ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { selected = minutes }
-                                .testTag("settings_polling_option_$minutes"),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            RadioButton(selected = selected == minutes, onClick = { selected = minutes })
-                            Text(stringResource(R.string.settings_polling_interval_option, minutes))
+                    Spacer(Modifier.height(Spacing.s2))
+                    Column(Modifier.selectableGroup()) {
+                        POLLING_INTERVALS.forEach { minutes ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .heightIn(min = 48.dp)
+                                    .selectable(
+                                        selected = state.pollingIntervalMinutes == minutes,
+                                        role = Role.RadioButton,
+                                        onClick = {
+                                            choosingPollingInterval = false
+                                            onSetPollingInterval(minutes)
+                                        },
+                                    )
+                                    .semantics(mergeDescendants = true) {}
+                                    .testTag("settings_polling_option_$minutes"),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                RadioButton(
+                                    selected = state.pollingIntervalMinutes == minutes,
+                                    onClick = null,
+                                )
+                                Spacer(Modifier.width(Spacing.s2))
+                                Text(
+                                    stringResource(R.string.settings_polling_interval_option, minutes),
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                )
+                            }
                         }
                     }
                 }
             },
             confirmButton = {
-                TextButton(
-                    onClick = {
-                        choosingPollingInterval = false
-                        onSetPollingInterval(selected)
-                    },
-                ) { Text(stringResource(R.string.settings_save)) }
-            },
-            dismissButton = {
                 TextButton(onClick = { choosingPollingInterval = false }) {
-                    Text(stringResource(R.string.settings_cancel))
+                    Text(stringResource(R.string.settings_close))
                 }
             },
         )
