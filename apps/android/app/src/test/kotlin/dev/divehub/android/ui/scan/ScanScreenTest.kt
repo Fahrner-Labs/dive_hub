@@ -41,6 +41,34 @@ class ScanScreenTest {
     }
 
     @Test
+    fun `the live camera is the primary way to read a code`() {
+        var live = false
+        render(ScanUiState(), onLiveScan = { live = true })
+
+        compose.onNodeWithText("Scan with the camera").performClick()
+
+        assertTrue(live)
+    }
+
+    @Test
+    fun `taking a picture with the system camera stays a fallback`() {
+        var photo = false
+        render(ScanUiState(), onCamera = { photo = true })
+
+        compose.onNodeWithText("Take a picture").performClick()
+
+        assertTrue(photo)
+    }
+
+    @Test
+    fun `a blocked camera is said as its own failure and points at the picture fallback`() {
+        render(ScanUiState(error = ScanErrors.CAMERA_BLOCKED))
+
+        compose.onNodeWithText("camera access is blocked", substring = true).assertIsDisplayed()
+        compose.onNodeWithText("choose a picture", substring = true).assertIsDisplayed()
+    }
+
+    @Test
     fun `a candidate's code is not taken by one tap and the new Diver starts selected`() {
         var taken: Triple<ScanResult, String?, Boolean>? = null
         render(ScanUiState(results = listOf(buddyRead(existing = false, candidate = true))), onTake = { found, id, create -> taken = Triple(found, id, create) })
@@ -148,6 +176,8 @@ class ScanScreenTest {
 
     private fun render(
         state: ScanUiState,
+        onLiveScan: () -> Unit = {},
+        onCamera: () -> Unit = {},
         onScan: (String) -> Unit = {},
         onTake: (ScanResult, String?, Boolean) -> Unit = { _, _, _ -> },
         onCreateCentre: (ScanResult, ReadCode) -> Unit = { _, _ -> },
@@ -158,7 +188,8 @@ class ScanScreenTest {
                 ScanScreen(
                     state = state,
                     onBack = {},
-                    onCamera = {},
+                    onLiveScan = onLiveScan,
+                    onCamera = onCamera,
                     onImage = {},
                     onScan = onScan,
                     onTake = onTake,

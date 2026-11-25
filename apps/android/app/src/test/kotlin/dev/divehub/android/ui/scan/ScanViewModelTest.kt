@@ -180,6 +180,21 @@ class ScanViewModelTest {
         assertTrue(store.pendingWrites().isEmpty())
     }
 
+    @Test
+    fun `a blocked camera and a busy camera are told apart`() = runTest(dispatcher) {
+        val store = DiveStore.create(driver)
+        val viewModel = viewModel(store, offline = true)
+
+        viewModel.cameraBlocked()
+        assertEquals(ScanErrors.CAMERA_BLOCKED, viewModel.state.value.error)
+
+        viewModel.cameraBusy()
+        assertEquals(ScanErrors.CAMERA_BUSY, viewModel.state.value.error)
+
+        viewModel.noCameraAvailable()
+        assertEquals(ScanErrors.CAMERA_MISSING, viewModel.state.value.error)
+    }
+
     private companion object {
         const val CENTRE_ID = "01930000-0000-7000-8000-000000000001"
     }

@@ -1,11 +1,17 @@
 package dev.divehub.android.ui.scan
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.unit.Density
@@ -155,6 +161,25 @@ class ScanScreenshotTest {
     }
 
     @Test
+    fun `the live camera frames the code and offers a way out`() {
+        renderLive()
+
+        compose.onNodeWithText("Point the camera at a code.").assertExists()
+        compose.onNodeWithContentDescription("Close the camera").assertExists()
+        capture("scan_live_en_light.png")
+    }
+
+    @Test
+    @Config(qualifiers = "de-rDE-w320dp-h1600dp-night-xxhdpi")
+    fun `the live camera hint and close action hold at 320 dp and 200 percent in German and dark`() {
+        renderLive(darkTheme = true, fontScale = 2f)
+
+        compose.onNodeWithText("Richte die Kamera auf einen Code.").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Kamera schließen").assertIsDisplayed()
+        capture("scan_live_de_dark.png")
+    }
+
+    @Test
     fun `a created and an existing outcome both offer Dismiss`() {
         render(
             ScanUiState(
@@ -202,6 +227,7 @@ class ScanScreenshotTest {
                     ScanScreen(
                         state = state,
                         onBack = {},
+                        onLiveScan = {},
                         onCamera = {},
                         onImage = {},
                         onScan = {},
@@ -210,6 +236,29 @@ class ScanScreenshotTest {
                         onSync = {},
                         onDismiss = {},
                         onClearError = {},
+                    )
+                }
+            }
+        }
+    }
+
+    /** The live scanner without a camera: the golden reviews its framing and controls, not a real camera's image. */
+    private fun renderLive(darkTheme: Boolean = false, fontScale: Float? = null) {
+        compose.setContent {
+            DiveHubTheme(darkTheme = darkTheme) {
+                val density = LocalDensity.current
+                CompositionLocalProvider(
+                    LocalDensity provides Density(density.density, fontScale ?: density.fontScale),
+                ) {
+                    CameraScannerFrame(
+                        onClose = {},
+                        preview = {
+                            Box(
+                                Modifier
+                                    .fillMaxSize()
+                                    .background(Color(0xFF25303A)),
+                            )
+                        },
                     )
                 }
             }

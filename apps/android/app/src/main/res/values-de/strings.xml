@@ -803,6 +803,9 @@
     <string name="scan_title">Code scannen</string>
     <string name="scan_intro">Scanne den Code eines Tauchzentrums oder eines Buddys, um ihn hier hinzuzufügen. Ohne Verbindung wartet der Code auf diesem Gerät und wird gelesen, sobald der Server antwortet.</string>
     <string name="scan_section_read">Scannen oder einfügen</string>
+    <string name="scan_live">Mit der Kamera scannen</string>
+    <string name="scan_live_hint">Richte die Kamera auf einen Code.</string>
+    <string name="scan_live_close">Kamera schließen</string>
     <string name="scan_camera">Foto aufnehmen</string>
     <string name="scan_paste_show">Stattdessen Code einfügen</string>
     <string name="scan_image">Bild auswählen</string>
@@ -855,5 +858,8 @@
     <string name="scan_error_offline">keine Verbindung. Der Code bleibt auf diesem Gerät und wird gelesen, sobald der Server antwortet.</string>
     <string name="scan_error_no_code">kein QR-Code in diesem Bild.</string>
     <string name="scan_error_no_camera">dieses Gerät hat keine Kamera-App.</string>
+    <string name="scan_error_camera_missing">dieses Gerät hat keine Kamera.</string>
+    <string name="scan_error_camera_blocked">der Kamerazugriff ist gesperrt. Erlaube ihn in den Android-Einstellungen oder wähle ein Bild aus.</string>
+    <string name="scan_error_camera_busy">die Kamera wird gerade von einer anderen App benutzt. Schließe sie und versuche es erneut, oder wähle ein Bild aus.</string>
     <string name="scan_error_generic">etwas ist schiefgelaufen. Versuche es später erneut.</string>
 </resources>

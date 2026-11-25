@@ -1,11 +1,15 @@
 package dev.divehub.android.ui.scan
 
+import android.Manifest
 import android.content.ActivityNotFoundException
 import android.content.Context
+import android.content.pm.PackageManager
 import android.net.Uri
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -51,6 +55,7 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.divehub.android.R
@@ -90,6 +95,7 @@ fun ScanRoute(viewModel: ScanViewModel, onBack: () -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var photoUri by remember { mutableStateOf<Uri?>(null) }
+    var live by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { viewModel.start() }
 
     fun readPicture(uri: Uri) {
@@ -108,6 +114,17 @@ fun ScanRoute(viewModel: ScanViewModel, onBack: () -> Unit) {
     val pictures = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
         if (uri != null) readPicture(uri)
     }
+    val permission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) live = true else viewModel.cameraBlocked()
+    }
+
+    fun openLiveScanner() {
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+            live = true
+        } else {
+            permission.launch(Manifest.permission.CAMERA)
+        }
+    }
 
     fun takePhoto() {
         try {
@@ -123,24 +140,47 @@ fun ScanRoute(viewModel: ScanViewModel, onBack: () -> Unit) {
         }
     }
 
-    ScanScreen(
-        state = state,
-        onBack = onBack,
-        onCamera = ::takePhoto,
-        onImage = { pictures.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
-        onScan = viewModel::scan,
-        onTake = viewModel::take,
-        onCreateCentre = viewModel::createCentre,
-        onSync = viewModel::syncNow,
-        onDismiss = viewModel::dismiss,
-        onClearError = viewModel::clearError,
-    )
+    Box(Modifier.fillMaxSize()) {
+        ScanScreen(
+            state = state,
+            onBack = onBack,
+            onLiveScan = ::openLiveScanner,
+            onCamera = ::takePhoto,
+            onImage = { pictures.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
+            onScan = viewModel::scan,
+            onTake = viewModel::take,
+            onCreateCentre = viewModel::createCentre,
+            onSync = viewModel::syncNow,
+            onDismiss = viewModel::dismiss,
+            onClearError = viewModel::clearError,
+        )
+        if (live) {
+            // The camera owns the screen until it closes; Back leaves the preview, not the scanner.
+            BackHandler { live = false }
+            CameraScanner(
+                onCode = { text ->
+                    live = false
+                    viewModel.scan(text)
+                },
+                onFailure = { failure ->
+                    live = false
+                    when (failure) {
+                        CameraFailure.Blocked -> viewModel.cameraBlocked()
+                        CameraFailure.Busy -> viewModel.cameraBusy()
+                        CameraFailure.Missing -> viewModel.noCameraAvailable()
+                    }
+                },
+                onClose = { live = false },
+            )
+        }
+    }
 }
 
 @Composable
 fun ScanScreen(
     state: ScanUiState,
     onBack: () -> Unit,
+    onLiveScan: () -> Unit,
     onCamera: () -> Unit,
     onImage: () -> Unit,
     onScan: (String) -> Unit,
@@ -208,8 +248,10 @@ fun ScanScreen(
 
                 Spacer(Modifier.height(Spacing.s4))
                 Section(title = stringResource(R.string.scan_section_read), showSeparator = false) {
-                    // The camera is the one primary; a picture and pasted text are fallbacks below it.
-                    InkButton(stringResource(R.string.scan_camera), onClick = onCamera, modifier = Modifier.fillMaxWidth())
+                    // The live camera is the one primary; a picture, the system camera and pasted text are fallbacks.
+                    InkButton(stringResource(R.string.scan_live), onClick = onLiveScan, modifier = Modifier.fillMaxWidth())
+                    Spacer(Modifier.height(Spacing.s2))
+                    QuietButton(stringResource(R.string.scan_camera), onClick = onCamera)
                     Spacer(Modifier.height(Spacing.s2))
                     QuietButton(stringResource(R.string.scan_image), onClick = onImage)
                     Spacer(Modifier.height(Spacing.s2))
@@ -514,5 +556,8 @@ private fun scanErrorText(code: String?): String = when (code) {
     ErrorCodes.NO_ANSWER, ErrorCodes.SERVER_ERROR -> stringResource(R.string.scan_error_offline)
     ScanErrors.NO_CODE_IN_PICTURE -> stringResource(R.string.scan_error_no_code)
     ScanErrors.NO_CAMERA -> stringResource(R.string.scan_error_no_camera)
+    ScanErrors.CAMERA_MISSING -> stringResource(R.string.scan_error_camera_missing)
+    ScanErrors.CAMERA_BLOCKED -> stringResource(R.string.scan_error_camera_blocked)
+    ScanErrors.CAMERA_BUSY -> stringResource(R.string.scan_error_camera_busy)
     else -> stringResource(R.string.scan_error_generic)
 }
