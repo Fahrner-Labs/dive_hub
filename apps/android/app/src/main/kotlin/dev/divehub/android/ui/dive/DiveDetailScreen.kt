@@ -147,7 +147,8 @@ private const val PAGER_PAGES = 3
 
 /** The brief's named fixed dimensions, which are not spacing steps. */
 private val IconSize = 24.dp
-private val TopBarActionsReserve = 96.dp
+private val TopBarActionSize = 48.dp
+private val TopBarActionsReserve = TopBarActionSize * 2
 private val IconStroke = 2.dp
 private val ChartHeight = 160.dp
 private val ChartStroke = 2.dp
@@ -459,9 +460,10 @@ private fun title(context: Context, dive: DiveView, locale: Locale): String = di
 
 /**
  * The Dive page's top bar: the title centred between the back arrow and the neighbour chevrons (ADR 0018, 2026-11-20
- * amendment), with the editor's pencil as the trailing action when the server takes writes (FAH-501). At 150 % and
- * above the title stacks under the icons, because "Tauchgang 42" at 200 % no longer fits between them; the page title
- * grows instead of breaking inside a word.
+ * amendment), with the editor's pencil as the trailing action (FAH-501). The pencil's slot is reserved whether the
+ * server takes writes or not, so the title is stable across writability; it is separated from the chevrons by the
+ * design system's `s2` because it is a different kind of action. At 150 % and above the title stacks under the icons,
+ * because "Tauchgang 42" at 200 % no longer fits between them; the page title grows instead of breaking inside a word.
  */
 @Composable
 private fun DiveTopBar(
@@ -508,13 +510,15 @@ private fun DiveTopBar(
             navigationIconContentColor = MaterialTheme.colorScheme.onBackground,
             actionIconContentColor = MaterialTheme.colorScheme.onBackground,
         ),
-        // The data still arriving: reserve the two chevrons' width so the title does not jump when they appear.
+        // The chevrons, then the design system's gap, then the editor's slot. The slot is kept at every writability
+        // and while loading, so the title never moves when the pencil appears (FAH-506 critique).
         actions = {
             if (loading) {
-                Spacer(Modifier.width(TopBarActionsReserve))
+                Spacer(Modifier.width(TopBarActionsReserve + Spacing.s2 + TopBarActionSize))
             } else {
                 neighbours()
-                if (showEdit) EditAction(onEdit)
+                if (inList) Spacer(Modifier.width(Spacing.s2))
+                if (showEdit) EditAction(onEdit) else Spacer(Modifier.width(TopBarActionSize))
             }
         },
     )

@@ -106,3 +106,9 @@ writes, with a 48 dp target. It reverses the FAH-366 critique's quiet inline pla
 a writable client, and in the field the inline button disappeared into the scrolling facts and moved with them. The bar
 still holds the title and navigation; this is the one main action it carries, because the page's subject is a single
 Dive rather than a section. The web client keeps its icons beside text.
+
+The goldens' critique ([FAH-506](/FAH/issues/FAH-506)) then pinned two details: the pencil's slot is reserved at every
+writability and while loading, so the title never moves when the server turns out writable, and the pencil keeps `s2`
+(8 dp) from the neighbour chevrons because a tap on the boundary must page or edit, never the wrong one. A long
+German title ("Tauchgang 42") is clamped toward the leading side of the title band instead of the screen's centre;
+the invariant is a stable title, not a centred one.

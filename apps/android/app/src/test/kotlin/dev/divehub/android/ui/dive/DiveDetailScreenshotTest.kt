@@ -599,6 +599,9 @@ class DiveDetailScreenshotTest {
         // The app bar sits above the scrolling page: the action keeps the same place whatever the content does.
         val pagerTop = compose.onNodeWithTag("dive_pager").getBoundsInRoot().top.value
         assertTrue(edit.getBoundsInRoot().bottom.value <= pagerTop)
+        // A different kind of action: the design system's s2 keeps a tap on the boundary from paging instead (FAH-506).
+        val next = compose.onNodeWithContentDescription("Next dive").getBoundsInRoot()
+        assertTrue(edit.getBoundsInRoot().left - next.right >= Spacing.s2)
         edit.performClick()
         assertEquals(1, edits)
         capture("dive_edit_action.png")
@@ -632,7 +635,10 @@ class DiveDetailScreenshotTest {
     @Config(qualifiers = "en-rUS-w320dp-h891dp-xxhdpi")
     fun `the edit action at 320 dp and 200 percent`() {
         render(state(dive = dive()), showEdit = true, fontScale = 2f)
-        compose.onNodeWithContentDescription("Edit").assertIsDisplayed()
+        val edit = compose.onNodeWithContentDescription("Edit")
+        edit.assertIsDisplayed()
+        val next = compose.onNodeWithContentDescription("Next dive").getBoundsInRoot()
+        assertTrue(edit.getBoundsInRoot().left - next.right >= Spacing.s2)
         capture("dive_edit_action_narrow_2x.png")
     }
 
@@ -663,6 +669,31 @@ class DiveDetailScreenshotTest {
         compose.runOnIdle { shown.value = true }
         compose.waitForIdle()
         val with = compose.onNodeWithText("Dive 42").getBoundsInRoot()
+        assertEquals(without.left, with.left)
+        assertEquals(without.right, with.right)
+    }
+
+    @Test
+    @Config(qualifiers = "de-rDE-w411dp-h891dp-xxhdpi")
+    fun `a long german title stays put when the edit action appears`() {
+        val shown = mutableStateOf(false)
+        compose.setContent {
+            DiveHubTheme(darkTheme = false) {
+                DiveDetailScreen(
+                    state = state(dive = dive()),
+                    units = "metric",
+                    onBack = {},
+                    onRetry = {},
+                    onOpenDive = {},
+                    showEdit = shown.value,
+                )
+            }
+        }
+        // The German title is the one long enough to reach the bar's actions, so it proves the reserved slot.
+        val without = compose.onNodeWithText("Tauchgang 42").getBoundsInRoot()
+        compose.runOnIdle { shown.value = true }
+        compose.waitForIdle()
+        val with = compose.onNodeWithText("Tauchgang 42").getBoundsInRoot()
         assertEquals(without.left, with.left)
         assertEquals(without.right, with.right)
     }

@@ -111,7 +111,13 @@ fun DiveHubTopBar(
                 }
                 Spacer(Modifier.weight(1f))
                 CompositionLocalProvider(LocalContentColor provides colors.actionIconContentColor) {
-                    Row(verticalAlignment = Alignment.CenterVertically, content = actions)
+                    // The normal bar's icon row insets from the edge; match it so the stacked bar is not edge-to-edge
+                    // against the guttered title below (FAH-506 critique).
+                    Row(
+                        modifier = Modifier.padding(end = Spacing.s1),
+                        verticalAlignment = Alignment.CenterVertically,
+                        content = actions,
+                    )
                 }
             }
             // An error or offline empty state has no title to reserve: the bar ends with its icon row instead of
