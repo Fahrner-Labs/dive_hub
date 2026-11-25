@@ -7,6 +7,7 @@ import type { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import { sql } from 'drizzle-orm';
 import { authHandler } from './auth/fastify.js';
 import { liveRoutes } from './live/routes.js';
+import { notificationRoutes } from './notifications/routes.js';
 import type { Services } from './compose.js';
 import { withAuthEndpoints } from './auth/openapi.js';
 import { problem, ProblemSchema, useProblemErrors } from './http/problems.js';
@@ -151,6 +152,8 @@ export async function buildApp(deps: AppDeps, app: Server = createServer()) {
   await app.register(candidateRoutes, { prefix: '/api', auth, candidates: deps.candidates, assessments });
   await app.register(assessmentRoutes, { prefix: '/api', auth, assessments });
   await app.register(diverRoutes, { prefix: '/api', auth, divers, certifications });
+  // After the Dive-computer device routes, so the OpenAPI paths keep their order (same paths, other methods).
+  await app.register(notificationRoutes, { prefix: '/api', auth: deps.auth, notifications: deps.notifications });
   await app.register(equipmentRoutes, { prefix: '/api', auth, equipment: deps.equipment });
   await app.register(certificationRoutes, { prefix: '/api', auth, certifications });
   await app.register(planningRoutes, { prefix: '/api', auth, planning: deps.planning });

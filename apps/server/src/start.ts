@@ -59,6 +59,8 @@ export async function start(config: Config) {
     log: app.log,
     // The live layer listens on its own connection to the same database (ADR 0066).
     live: { connectionString: config.databaseUrl },
+    // Push is optional per instance (ADR 0085): no FCM credential means /api/push/config reports not configured.
+    fcm: config.fcm,
   });
   const startWorkerIfConfigured = async () => {
     if (!config.inProcessWorker || worker) return;

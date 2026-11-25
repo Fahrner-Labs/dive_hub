@@ -95,6 +95,8 @@ const AREAS = [
   [/^apps\/server\/src\/social\//, ['@dives', '@divers', '@live']],
   // Live hints (ADR 0066): the stream, its fan-out and the browser channel behind every page.
   [/^apps\/server\/src\/live\/|^apps\/web\/src\/lib\/live(-arrivals)?\.ts$/, ['@dives', '@account', '@live']],
+  // Push registrations (ADR 0085): session-scoped device rows and the public Firebase config native clients read.
+  [/^apps\/server\/src\/notifications\//, ['@account']],
   // Divers reach further than their page: a Dive shows its Participants and their codes, the account page imports buddies.
   [/^apps\/server\/src\/divers\//, ['@divers', '@dives', '@account']],
   [/^apps\/server\/src\/(users|auth)\//, ['@account', '@admin']],

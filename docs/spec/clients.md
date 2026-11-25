@@ -1,6 +1,6 @@
 ---
 title: Client contract
-summary: What every client of the Dive Hub API must do (web client, native mobile app, scripts) - obligations first, then each area's duties and conventions; with reasons, ADRs and where the web client does it; importing dives from a Provider (settings, preview, decisions, outcome), times without a time zone, Dives without a Recording; the dive assessment (findings as facts with sources, the fixed note, no score); AI accesses (what to say before one is made, the key once, the log), the MCP endpoint (what it promises LLM clients) and admin backups (a manual run, its download, the schedule); offline reads and writes on the native client (the store, the change feed, the write queue, Conflicts); plus server gaps found while writing it.
+summary: What every client of the Dive Hub API must do (web client, native mobile app, scripts) - obligations first, then each area's duties and conventions; with reasons, ADRs and where the web client does it; importing dives from a Provider (settings, preview, decisions, outcome), times without a time zone, Dives without a Recording; the dive assessment (findings as facts with sources, the fixed note, no score); AI accesses (what to say before one is made, the key once, the log), the MCP endpoint (what it promises LLM clients) and admin backups (a manual run, its download, the schedule); offline reads and writes on the native client (the store, the change feed, the write queue, Conflicts); native push registration (runtime Firebase config, hints only, polling fallback); plus server gaps found while writing it.
 status: living
 date: 2026-10-06
 ---
@@ -209,6 +209,23 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   configured LISTEN connection does not serve the route (404); while its LISTEN connection is not up it answers
   503 `live_unavailable`. A failed open is unhealthy, so keep polling. Close the stream when signed
   out. The server sends `:hb` every 15 s; treat a stream that dies as a reconnect and refetch again.
+- **Push notifications for native clients (`GET /api/push/config`, [ADR 0085](../decisions/0085-push-notifications-for-native-clients.md)).**
+  Push is optional per instance and carries **hints only**, never content: a high-priority data message
+  `{ v: 1, kind, id }` with the same kinds as the SSE stream. Fetch the config without authentication after the
+  instance URL is entered and on a signed-in start. `200 { android: { projectId, applicationId, apiKey,
+  gcmSenderId } }` means initialize Firebase at runtime with those values (never bundle `google-services.json`), get
+  the FCM token and register it. `200 {}` means this instance has push off: do not initialize Firebase; keep polling
+  (a configurable interval; 15 minutes is Android WorkManager's floor) plus foreground SSE. A 404 is an older server
+  that lacks the endpoint: the same polling fallback. Those client values are public by design; never ask the
+  operator for the service-account key and never store it.
+  - Register with `POST /api/devices` (`{ platform: 'android' | 'ios' | 'web', pushToken }`, bearer or cookie
+    authenticated). The answer `{ id, platform, createdAt, lastSeenAt }` is the row to remove. Re-register when the
+    token refreshes and after every sign-in, because the row is session-scoped; registering the same token again
+    moves it to the current User and session. Call `DELETE /api/devices/{id}` on sign-out. Ending the session on the
+    server also deletes the row (foreign-key cascade), so a signed-out device gets no more pushes. Skip registration
+    when the user denies notifications or the device has no Play services: polling covers it.
+  - Show a notification only after fetching the hinted entity through the authenticated API and confirming it is new
+    or relevant; never render a push payload as content. The server never sends names, sites or counts.
 - **Background work is polled** until it is `done` or `failed`:
   - Imports (`GET /api/imports`), every second while one runs;
   - Site imports (`GET /api/admin/site-imports`), every two seconds.

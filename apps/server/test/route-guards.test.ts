@@ -18,7 +18,8 @@ vi.mock('fastify', async (importOriginal) => {
   return { ...real, default: create };
 });
 
-/** The routes anyone may call: health, the API description, sign-in, first-admin setup, invitations, password resets. */
+/** The routes anyone may call: health, the API description, the public push config, sign-in, first-admin setup,
+ * invitations, password resets. */
 const PUBLIC = new Set([
   'GET /api/health/live', 'GET /api/health/ready', 'GET /api/openapi.json',
   'GET /api/auth/*', 'POST /api/auth/*',
@@ -26,6 +27,7 @@ const PUBLIC = new Set([
   'GET /api/setup/restore/archives', 'POST /api/setup/restore',
   'POST /api/invitations/lookup', 'POST /api/invitations/accept',
   'POST /api/password-resets/lookup', 'POST /api/password-resets/complete',
+  'GET /api/push/config',
 ]);
 /** Not under /api and not behind a session: the MCP endpoint authenticates by an AI access's key (ADR 0035). */
 const OWN_AUTH = new Set(['GET /mcp', 'POST /mcp', 'DELETE /mcp']);

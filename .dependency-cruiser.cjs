@@ -20,6 +20,8 @@ const MODULE_IMPORTS = {
   imports: ['divers', 'dives', 'equipment', 'live', 'revisions', 'sites'],
   lead: ['divers', 'dives', 'planning:type'],
   mcp: ['assessment', 'divers', 'dives', 'equipment', 'planning', 'sites'],
+  // Push registrations (ADR 0085) own their table and read no domain data; the dispatcher (next slice) will read hints.
+  notifications: [],
   // The loadings endpoint reuses DAN's no-fly rule (series-rules.ts) rather than copying it (ADR 0071).
   planning: ['assessment', 'divers', 'dives'],
   providers: ['certifications', 'divers', 'dives', 'imports', 'live', 'revisions', 'sites'],

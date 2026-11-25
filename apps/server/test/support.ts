@@ -9,6 +9,7 @@ import type { LightMyRequestResponse } from 'fastify';
 import { createAuth, type Auth } from '../src/auth/auth.js';
 import { buildApp } from '../src/app.js';
 import { createServices } from '../src/compose.js';
+import type { FcmConfig } from '../src/config.js';
 import { createDb, type Db } from '../src/db/client.js';
 import { migrateDatabase } from '../src/db/migrate.js';
 import { listenToChanges } from '../src/revisions/revisions.js';
@@ -126,10 +127,12 @@ export async function createTestApp(t: TestDatabase, options: {
   maxUploadBytes?: number;
   /** What the setup restore route does after its success answer (production: the process exits). */
   onRestored?: () => void;
+  /** FCM push config (ADR 0085); tests that want push configured pass one, otherwise it is off. */
+  fcm?: FcmConfig;
 } = {}) {
   const {
     webDir, siteSources, fakeSsi = createFakeSsi(), encryptionKey = TEST_ENCRYPTION_KEY, extraProviders = [], clock = resettableClock(), ssi = (a) => a,
-    maxUploadBytes = 1 << 26, onRestored, ...authOptions
+    maxUploadBytes = 1 << 26, onRestored, fcm, ...authOptions
   } = options;
   // SSI keeps its last logbook read for two minutes (ADR 0027); a test that changes the fake SSI behind Dive Hub's back
   // moves this clock on, as if the change happened a while later. Pauses between actions are skipped and recorded.
@@ -147,6 +150,7 @@ export async function createTestApp(t: TestDatabase, options: {
     ],
     clock,
     live: { connectionString: t.pool.options.connectionString! },
+    ...(fcm && { fcm }),
   });
   const app = await buildApp({
     ...services, baseUrl: BASE_URL, maxUploadBytes, webDir, ...(onRestored && { onRestored }),
