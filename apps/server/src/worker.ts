@@ -15,6 +15,7 @@ import type { AiAccessService } from './mcp/access-service.js';
 import type { AssessmentService } from './assessment/assessment-service.js';
 import type { ClientDiagnosticsService } from './support/client-diagnostics-service.js';
 import type { SyncService } from './sync/changes-service.js';
+import { SEND_PUSH_TASK, type PushDispatcher } from './notifications/push-dispatcher.js';
 
 // These two values stay kebab-case, unlike the snake_case of the others: queued jobs and the crontab's record carry them.
 
@@ -113,11 +114,12 @@ export interface WorkerDeps {
   purges: PurgeService;
   clientDiagnostics: ClientDiagnosticsService;
   sync: SyncService;
+  push: PushDispatcher;
   log: FastifyBaseLogger;
 }
 
 export async function startWorker(pool: pg.Pool, deps: WorkerDeps): Promise<Runner> {
-  const { backups, imports, siteImports, aiAccesses, assessments, pushRuns, waitingPushes, scheduledFetch, certifications, purges, clientDiagnostics, sync, log } = deps;
+  const { backups, imports, siteImports, aiAccesses, assessments, pushRuns, waitingPushes, scheduledFetch, certifications, purges, clientDiagnostics, sync, push, log } = deps;
   // A backup still "running" now was cut off when the worker last stopped; its passphrase is gone with the process.
   await backups.reconcileOrphans();
   // An import still "running" now was cut off when the worker last stopped.
@@ -193,6 +195,10 @@ export async function startWorker(pool: pg.Pool, deps: WorkerDeps): Promise<Runn
       [PURGE_CHANGE_EVENTS_TASK]: async () => {
         const purged = await sync.purge();
         if (purged > 0) log.info({ purged }, 'purged old change feed entries');
+      },
+      // One Dive hint to every device of one User (ADR 0085). Graphile retries with backoff; polling is the safety net.
+      [SEND_PUSH_TASK]: async (payload) => {
+        await push.send(payload);
       },
       [ASSESS_DIVES_TASK]: async () => {
         const divers = await assessments.refreshAll();
