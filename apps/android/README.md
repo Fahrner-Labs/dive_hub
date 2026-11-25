@@ -113,8 +113,8 @@ kept as the replay idempotency key.
   stored there; the raw text stays in the queued action it points at (`actionId`) until the User takes or dismisses
   it, and is never copied into the result (ADR 0043: a buddy code holds an e-mail). A refusal keeps its problem code
   and drops the text. The resolved read's action is `awaiting`, not replayed until the User acts.
-- **Feature flag:** `BuildConfig.SCANNER_ENABLED` is off in release and on in debug, so Phase C merges dark; the
-  Settings → Logbook entry is hidden when it is off. The goldens are `scan_*` and `settings_scan_en_light`.
+- **Feature flag:** `BuildConfig.SCANNER_ENABLED` is on in every build; `-Pdivehub.scannerEnabled=false` hides the
+  Settings → Logbook entry. The goldens are `scan_*` and `settings_scan_en_light`.
 
 ## API models
 

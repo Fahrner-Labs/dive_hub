@@ -13,9 +13,11 @@ val releaseSigningEnv = listOf(
 )
 val missingReleaseSigningEnv = releaseSigningEnv.filter { providers.environmentVariable(it).orNull.isNullOrBlank() }
 
-// Phase B/C UI merges dark (FAH-457): the Dive edit screen stays hidden unless a build asks for the slice, e.g.
-// `./gradlew assembleDebug -Pdivehub.editDiveScalars=true`. The default is what ships.
-val editDiveScalars = providers.gradleProperty("divehub.editDiveScalars").orNull?.toBoolean() ?: false
+// The Dive edit screen ships on (FAH-457/FAH-493); `./gradlew assembleDebug -Pdivehub.editDiveScalars=false` opts out.
+val editDiveScalars = providers.gradleProperty("divehub.editDiveScalars").orNull?.toBoolean() ?: true
+
+// The scanner ships on (FAH-493); `./gradlew assembleDebug -Pdivehub.scannerEnabled=false` opts out.
+val scannerEnabled = providers.gradleProperty("divehub.scannerEnabled").orNull?.toBoolean() ?: true
 
 fun envInt(name: String, fallback: Int): Int {
     val raw = providers.environmentVariable(name).orNull ?: return fallback
@@ -32,9 +34,7 @@ android {
         targetSdk = 37
         versionCode = envInt("ANDROID_VERSION_CODE", 1)
         versionName = providers.environmentVariable("ANDROID_VERSION_NAME").orNull ?: "0.1.0-dev"
-        // Phase C merges dark (ADR 0084): the scanner is visible in debug builds, hidden in release until the
-        // conflict surface ships.
-        buildConfigField("boolean", "SCANNER_ENABLED", "false")
+        buildConfigField("boolean", "SCANNER_ENABLED", scannerEnabled.toString())
         buildConfigField("boolean", "EDIT_DIVE_SCALARS", editDiveScalars.toString())
     }
 
@@ -58,7 +58,6 @@ android {
     buildTypes {
         getByName("debug") {
             signingConfig = signingConfigs.getByName("debug")
-            buildConfigField("boolean", "SCANNER_ENABLED", "true")
         }
         getByName("release") {
             if (missingReleaseSigningEnv.isEmpty()) {

@@ -236,6 +236,7 @@ private class DiveHubScreens(
     @Composable
     override fun settings(onOpenDebug: () -> Unit, onOpenScan: () -> Unit) {
         val state by viewModel.state.collectAsStateWithLifecycle()
+        val writeable by container.writeable.collectAsStateWithLifecycle()
         val settings: SettingsViewModel = viewModel(factory = SettingsViewModel.factory(container))
         SettingsRoute(
             viewModel = settings,
@@ -245,7 +246,8 @@ private class DiveHubScreens(
             onChangeInstance = viewModel::signOutAndChangeInstance,
             onSignOut = viewModel::signOut,
             onOpenDebug = onOpenDebug,
-            showScan = BuildConfig.SCANNER_ENABLED,
+            // An old server has no writes: the scanner can queue them, so its entry appears only when both allow it.
+            showScan = BuildConfig.SCANNER_ENABLED && writeable == true,
             onOpenScan = onOpenScan,
         )
     }
@@ -299,7 +301,7 @@ private class DiveHubScreens(
                 dive.openNeighbour(next)
                 pendingDive = next
             },
-            // Phase B merges dark and an old server has no writes: the action only appears when both allow it.
+            // An old server has no writes: the action appears only when both allow it.
             showEdit = BuildConfig.EDIT_DIVE_SCALARS && writeable == true && shownDiveId == id,
             onEdit = { onEdit(shownDiveId ?: id) },
         )
