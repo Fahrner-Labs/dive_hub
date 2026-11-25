@@ -1039,6 +1039,16 @@ class DiveDetailScreenshotTest {
     }
 
     @Test
+    @Config(qualifiers = "en-rUS-w320dp-h891dp-xxhdpi")
+    fun `the dive page at 320 dp`() {
+        // Read-only at the design system's narrowest width: the pencil's reserved slot leaves the tightest title band,
+        // so this is where the stable-not-centred clamp is visible (FAH-508 critique).
+        render(state(dive = dive()))
+        compose.onNodeWithText("Dive 42").assertIsDisplayed()
+        capture("dive_320.png")
+    }
+
+    @Test
     @Config(qualifiers = "en-rUS-w360dp-h891dp-xxhdpi")
     fun `the dive page at 360 dp`() {
         render(state(dive = dive()))

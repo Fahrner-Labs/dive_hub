@@ -102,7 +102,8 @@ Rules:
   fit.
 - **At 150 % and above, text takes the full width instead of keeping a two-column geometry.** A top app bar title
   stacks under its icons, left-aligned to the gutter; a `FactRow` puts its value under its label, start-aligned.
-  Below 150 % the Dive title stays centred and facts keep their label/value columns.
+  Below 150 % the Dive title stays stable — normally centred, but a title longer than the band it has clamps toward
+  the leading side (2026-11-25 amendment) — and facts keep their label/value columns.
   The run of text grows instead of breaking inside a word ([ADR 0018](../decisions/0018-icons-and-motion.md),
   2026-11-21 amendment).
 

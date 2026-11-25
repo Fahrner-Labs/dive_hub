@@ -88,7 +88,8 @@ the gesture's end-stop feedback, not a page-change transition.
 At 150 % font scale and above, the Android dive page gives text the full width instead of keeping a two-column
 geometry: the top app bar's title moves to its own row under the navigation icons, left-aligned to the gutter, and a
 `FactRow` puts its value under its label, start-aligned. Both keep their normal type styles; the text grows and never
-breaks inside a word. Below 150 % the Dive title stays centred between the icons and facts keep their label/value
+breaks inside a word. Below 150 % the Dive title stays stable between the icons — normally centred, but a title longer
+than the band it has clamps toward the leading side (2026-11-25 amendment) — and facts keep their label/value
 columns. This is a layout rule only: the motion and icon decisions above still stand.
 
 ## Amendment (2026-11-22): icon-only sign-out in the Android settings account row
