@@ -39,6 +39,7 @@ class SettingsScreenTest {
     private var syncs = 0
     private var signOuts = 0
     private var debugs = 0
+    private val pollingIntervals = mutableListOf<Int>()
     private var previousZone: TimeZone = TimeZone.getDefault()
 
     @Before
@@ -59,8 +60,8 @@ class SettingsScreenTest {
         compose.onNodeWithText("https://dive.example").assertIsDisplayed()
         compose.onNodeWithText("Connected").assertIsDisplayed()
         compose.onNodeWithText("elena@example.com").assertIsDisplayed()
-        compose.onNodeWithText("0.1.0 (1001)").assertIsDisplayed()
-        compose.onNodeWithText("Polling", substring = true).assertDoesNotExist()
+        compose.onNodeWithText("0.1.0 (1001)").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Polling ·", substring = true).assertDoesNotExist()
     }
 
     @Test
@@ -149,6 +150,30 @@ class SettingsScreenTest {
     }
 
     @Test
+    fun `the polling interval dialog saves the chosen cadence`() {
+        render()
+
+        compose.onNodeWithText("Polling interval").assertIsDisplayed()
+        compose.onNodeWithText("Every 15 min").performClick()
+
+        compose.onNodeWithText("30 minutes").performClick()
+        compose.onNodeWithText("Save").performClick()
+
+        assertEquals(listOf(30), pollingIntervals)
+    }
+
+    @Test
+    fun `cancelling the polling interval dialog changes nothing`() {
+        render()
+
+        compose.onNodeWithText("Every 15 min").performClick()
+        compose.onNodeWithText("60 minutes").performClick()
+        compose.onNodeWithText("Cancel").performClick()
+
+        assertTrue(pollingIntervals.isEmpty())
+    }
+
+    @Test
     fun `sign out is an icon on the account row and asks first`() {
         render()
 
@@ -213,6 +238,7 @@ class SettingsScreenTest {
                     onSyncNow = { syncs += 1 },
                     onSignOut = { signOuts += 1 },
                     onOpenDebug = { debugs += 1 },
+                    onSetPollingInterval = { pollingIntervals += it },
                 )
             }
         }

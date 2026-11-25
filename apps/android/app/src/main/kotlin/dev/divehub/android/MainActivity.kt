@@ -1,5 +1,6 @@
 package dev.divehub.android
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -8,6 +9,7 @@ import androidx.activity.viewModels
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.divehub.android.ui.DiveHubApp
+import dev.divehub.android.notifications.EXTRA_PUSH_DIVE_ID
 import dev.divehub.android.ui.DiveHubTheme
 import dev.divehub.android.ui.MainViewModel
 import dev.divehub.android.ui.dive.DiveDetailViewModel
@@ -32,6 +34,9 @@ class MainActivity : ComponentActivity() {
         // Hold the system splash until session restore (GET /api/me) resolves; a warm start is already released.
         splashScreen.setKeepOnScreenCondition { viewModel.state.value.loading }
         enableEdgeToEdge()
+        // A cold start from a notification carries the Dive; a burst after the app comes up starts fresh.
+        if (savedInstanceState == null) handlePushIntent(intent)
+        container.notifications.clearBurst()
         setContent {
             DiveHubTheme {
                 val logbook: LogbookViewModel = viewModel(factory = LogbookViewModel.factory(container))
@@ -45,5 +50,15 @@ class MainActivity : ComponentActivity() {
                 DiveHubApp(container, viewModel, logbook, dive, tools, gasPlan, lead, loadings, writes, scan)
             }
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handlePushIntent(intent)
+    }
+
+    private fun handlePushIntent(intent: Intent?) {
+        intent?.getStringExtra(EXTRA_PUSH_DIVE_ID)?.let(container::openDiveFromNotification)
     }
 }

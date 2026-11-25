@@ -7,6 +7,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipe
@@ -128,8 +129,17 @@ class SettingsScreenshotTest {
     fun `settings polling at 320 dp and 200 percent keeps the dot on the first line`() {
         render(darkTheme = false, connected = false)
 
-        compose.onNodeWithText("Polling", substring = true).assertIsDisplayed()
+        compose.onNodeWithText("Polling ·", substring = true).assertIsDisplayed()
         capture("settings_polling_narrow_2x.png")
+    }
+
+    @Test
+    fun `the polling interval dialog offers the supported cadences`() {
+        render(darkTheme = false)
+
+        compose.onNodeWithText("Every 15 min").performClick()
+        compose.onNodeWithText("60 minutes").assertIsDisplayed()
+        capture("settings_polling_interval_en_light.png")
     }
 
     @Test
@@ -251,6 +261,7 @@ class SettingsScreenshotTest {
                     onOpenDebug = {},
                     showScan = showScan,
                     onOpenScan = {},
+                    onSetPollingInterval = {},
                 )
             }
         }

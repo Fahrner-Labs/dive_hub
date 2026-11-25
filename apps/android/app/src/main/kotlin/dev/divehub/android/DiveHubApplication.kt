@@ -18,6 +18,10 @@ class DiveHubApplication : Application(), Configuration.Provider {
     override fun onCreate() {
         super.onCreate()
         container = AppContainer(this)
+        // The dives channel exists before any hint can arrive; importance is fixed for the channel's lifetime.
+        container.notifications.createChannels()
+        // FCM may have started the process with no UI: the stored public config is enough to initialize Firebase.
+        container.push.initialize()
         installCrashHandler()
     }
 

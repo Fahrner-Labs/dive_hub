@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -28,6 +29,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -73,6 +75,7 @@ fun SettingsRoute(
     onOpenDebug: () -> Unit,
     showScan: Boolean = false,
     onOpenScan: () -> Unit = {},
+    onSetPollingInterval: (Int) -> Unit = {},
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     SettingsScreen(
@@ -86,6 +89,7 @@ fun SettingsRoute(
         onOpenDebug = onOpenDebug,
         showScan = showScan,
         onOpenScan = onOpenScan,
+        onSetPollingInterval = onSetPollingInterval,
     )
 }
 
@@ -107,11 +111,13 @@ fun SettingsScreen(
     onOpenDebug: () -> Unit,
     showScan: Boolean = false,
     onOpenScan: () -> Unit = {},
+    onSetPollingInterval: (Int) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     var confirmingChangeInstance by rememberSaveable { mutableStateOf(false) }
     var confirmingSignOut by rememberSaveable { mutableStateOf(false) }
     var showingLicenses by rememberSaveable { mutableStateOf(false) }
+    var choosingPollingInterval by rememberSaveable { mutableStateOf(false) }
     val context = LocalContext.current
     val license = remember {
         // Every bundled library that asks to be named, with its own heading; the font first, as before (FAH-359).
@@ -165,6 +171,22 @@ fun SettingsScreen(
                 },
                 trailingContent = {
                     if (state.syncing) CircularProgressIndicator(Modifier.size(20.dp))
+                },
+            )
+            ListItem(
+                modifier = Modifier
+                    .clickable { choosingPollingInterval = true }
+                    .testTag("settings_polling_interval_row"),
+                headlineContent = { Text(stringResource(R.string.settings_polling_interval)) },
+                supportingContent = {
+                    Text(stringResource(R.string.settings_polling_interval_value, state.pollingIntervalMinutes))
+                },
+                trailingContent = {
+                    Icon(
+                        Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 },
             )
 
@@ -288,7 +310,49 @@ fun SettingsScreen(
             },
         )
     }
+
+    if (choosingPollingInterval) {
+        var selected by remember(state.pollingIntervalMinutes) { mutableStateOf(state.pollingIntervalMinutes) }
+        AlertDialog(
+            onDismissRequest = { choosingPollingInterval = false },
+            title = { Text(stringResource(R.string.settings_polling_interval_title)) },
+            text = {
+                Column {
+                    Text(stringResource(R.string.settings_polling_interval_body))
+                    Spacer(Modifier.height(8.dp))
+                    POLLING_INTERVALS.forEach { minutes ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { selected = minutes }
+                                .testTag("settings_polling_option_$minutes"),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            RadioButton(selected = selected == minutes, onClick = { selected = minutes })
+                            Text(stringResource(R.string.settings_polling_interval_option, minutes))
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        choosingPollingInterval = false
+                        onSetPollingInterval(selected)
+                    },
+                ) { Text(stringResource(R.string.settings_save)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { choosingPollingInterval = false }) {
+                    Text(stringResource(R.string.settings_cancel))
+                }
+            },
+        )
+    }
 }
+
+/** The cadences offered in the dialog; 15 is WorkManager's floor, 60 the low-battery option on FCM-less instances. */
+private val POLLING_INTERVALS = listOf(15, 30, 60)
 
 /**
  * The instance row's permanent connection state (FAH-342, FAH-420): a green dot and "Connected" while the live

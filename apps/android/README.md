@@ -229,8 +229,8 @@ body in memory (`SaveBody`), so a live stream would not surface its first line u
 `SseLiveHintsEngineTest` guards it against a real socket. A `dive` hint refetches list page 1 and that Dive's
 detail, then marks its profiles pending; a `site` hint refetches that site. On every (re)connect the list sync runs
 again, because hints are not replayed. When the stream is down the foreground poll re-runs phase 1 every minute, and
-WorkManager runs the same refresh every 15 minutes; the scheduler is the `PeriodicSyncScheduler` interface in
-`shared/`, implemented in `app/` so `shared/` stays Android-free. Deleted Dives come from `GET /api/dives/deleted`,
+WorkManager runs the same refresh on the User's chosen cadence (15 minutes by default and its floor); the scheduler is
+the `PeriodicSyncScheduler` interface in `shared/`, implemented in `app/` so `shared/` stays Android-free. Deleted Dives come from `GET /api/dives/deleted`,
 paged by `nextCursor`, and become local tombstones (`deletedAt`); nothing is hard-deleted, and a Dive the server
 restores clears its tombstone on the next list or detail read. `sync_state` keeps
 `lastFullSyncAt` and `lastHintAt` for the staleness label and the settings sync line.
@@ -244,6 +244,25 @@ While the first sync runs, `SyncRefresher.progress` follows the phases, and the 
 how many Dives phase 1 has found and how many details phase 2 has stored ("Syncing your dives… 42 of 130"). The bar is
 indeterminate until the first detail lands. Progress never holds back already-synced content: a cached list renders as
 soon as the store has one, and the tools keep working from the store while a sync continues.
+
+## Push notifications (FAH-520)
+
+Push is optional per instance and hints only ([ADR 0085](../../docs/decisions/0085-push-notifications-for-native-clients.md)).
+After the instance URL is known the app fetches the public `GET /api/push/config`; a non-empty `android` object is
+turned into a runtime `FirebaseOptions` (no `google-services.json`, no Gradle plugin) and the FCM token is registered
+with `POST /api/devices` once the signed-in User allows notifications. `200 {}` or a 404 means polling and the
+foreground SSE stream stay the only freshness path. FCM's public messaging accessor is default-app only, so that
+runtime app is the default `FirebaseApp`; the stored instance URL keys it and a change deletes and rebuilds it
+([reference](../../docs/references/firebase-cloud-messaging.md)).
+
+`DiveHubMessagingService` receives `{ v: 1, kind, id }` data messages and hands them to `PushWorker`. The worker
+fetches the hinted Dive through the authenticated API and posts a notification only when the store really gained a new
+or changed Dive; a stale or forged hint costs a request, never a notification. `onNewToken` re-registers the row.
+`Application.onCreate` creates the `dives` channel (importance default, fixed at creation); Android 13+ asks for
+`POST_NOTIFICATIONS` after the first successful sync, never at first launch. Several new dives inside 30 seconds
+coalesce into one "N new dives synced" summary. A tap carries the Dive id to `MainActivity`, which routes a signed-in
+shell to that Dive; a summary tap opens the logbook. Sign-out deletes the row while the old token still works and
+removes the notices.
 
 ## The logbook list (slice C1)
 

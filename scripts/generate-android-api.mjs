@@ -56,6 +56,10 @@ export const OPERATIONS = [
   { name: 'DiverDetailsView', path: '/api/divers/from-code', method: 'post', kind: 'response', status: '200' },
   { name: 'ApiDiveCentresPostRequest', path: '/api/dive-centres', method: 'post', kind: 'request' },
   { name: 'CentreView', path: '/api/dive-centres', method: 'post', kind: 'response', status: '200' },
+  // Push (ADR 0085): the public Firebase client config and the session-scoped device registration.
+  { name: 'ApiPushConfigGet200Response', path: '/api/push/config', method: 'get', kind: 'response', status: '200' },
+  { name: 'ApiDevicesPostRequest', path: '/api/devices', method: 'post', kind: 'request' },
+  { name: 'ApiDevicesPost200Response', path: '/api/devices', method: 'post', kind: 'response', status: '200' },
 ];
 
 /** Named component schemas the app uses outside an operation body. Refusals decode through the tolerant ApiErrorBody. */

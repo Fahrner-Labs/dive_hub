@@ -51,6 +51,11 @@ class SessionRepository(
     private val cachedMe: CachedMeStore,
     versionName: String,
     private val pendingWrites: PendingWriteQueue? = null,
+    /**
+     * A best-effort cleanup before the token is cleared (push registration, ADR 0085). It runs while the old session
+     * still authenticates, and a failure never blocks the sign-out: the server cascade removes the row anyway.
+     */
+    private val onSessionEnding: suspend () -> Unit = {},
 ) {
     private val json = Json {
         ignoreUnknownKeys = true
@@ -180,6 +185,9 @@ class SessionRepository(
         val previousUserId = cachedMe.load()?.let(::cachedUserId)
         val queuedAtStart = pendingWriteCount()
 
+        // A same-User re-sign-in or a switch both end the old session's push row first, while its token still works
+        // (ADR 0085). No token means nothing to unregister.
+        if (tokens.load() != null) notifySessionEnding()
         signingIn = true
         try {
             // The previous User's token goes first, so a background sync waiting on the wipe cannot refresh with it.
@@ -274,6 +282,7 @@ class SessionRepository(
     }
 
     private suspend fun endSession(keepAddress: Boolean) {
+        notifySessionEnding()
         try {
             val url = instances.load()
             if (url != null && tokens.load() != null) {
@@ -289,6 +298,17 @@ class SessionRepository(
         } finally {
             if (!keepAddress) instances.clear()
             forgetUser()
+        }
+    }
+
+    /** Clean up what belongs to the ending session; a best-effort callback must never block getting out. */
+    private suspend fun notifySessionEnding() {
+        try {
+            onSessionEnding()
+        } catch (error: CancellationException) {
+            throw error
+        } catch (_: Exception) {
+            // The session still ends locally; the server's foreign-key cascade removes the push row.
         }
     }
 

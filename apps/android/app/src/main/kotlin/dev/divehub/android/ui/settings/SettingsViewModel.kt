@@ -37,6 +37,8 @@ data class SettingsUiState(
     val diagnostics: SettingsDiagnosticsState = SettingsDiagnosticsState(),
     /** The Debug subscreen's permanent sync-queue row: what the write queue holds right now (FAH-500). */
     val queue: SettingsQueueState = SettingsQueueState(),
+    /** How often the background worker polls for changes; 15 is Android WorkManager's floor (ADR 0085). */
+    val pollingIntervalMinutes: Int = SettingsRepository.DEFAULT_POLLING_INTERVAL_MINUTES,
 )
 
 /** The three counts the queue screen separates, read from the shared core's [WriteQueueSnapshot]. */
@@ -74,6 +76,7 @@ class SettingsViewModel(
     private val diagnostics: DiagnosticsAccess,
     private val queueRevision: StateFlow<Long>,
     private val readSnapshot: () -> WriteQueueSnapshot,
+    private val applyPollingInterval: suspend (Int) -> Unit = {},
     private val io: CoroutineDispatcher = Dispatchers.IO,
 ) : ViewModel() {
     private val _state = MutableStateFlow(SettingsUiState())
@@ -85,6 +88,7 @@ class SettingsViewModel(
                 it.copy(
                     instanceUrl = withContext(io) { settings.instanceUrl() },
                     syncedAt = withContext(io) { settings.syncState().lastFullSyncAt },
+                    pollingIntervalMinutes = withContext(io) { settings.pollingIntervalMinutes() },
                 )
             }
         }
@@ -102,6 +106,14 @@ class SettingsViewModel(
         viewModelScope.launch { queueRevision.collect { readQueue() } }
         // A replay that drains, parks or drops entries bumps the sync revision, not the queue revision (FAH-500).
         viewModelScope.launch { revision.followStoreWrites().collect { readQueue() } }
+    }
+
+    /** Store the chosen cadence and apply it to the existing periodic work at once (ADR 0085). */
+    fun setPollingInterval(minutes: Int) {
+        viewModelScope.launch {
+            applyPollingInterval(minutes)
+            _state.update { it.copy(pollingIntervalMinutes = minutes) }
+        }
     }
 
     /** One refresh through the same guarded path as the WorkManager worker; the revision then updates the line. */
@@ -221,6 +233,7 @@ class SettingsViewModel(
                     diagnostics = container.diagnostics,
                     queueRevision = container.queueRevision,
                     readSnapshot = container.writeReplayer::snapshot,
+                    applyPollingInterval = container::setPollingInterval,
                 )
             }
         }

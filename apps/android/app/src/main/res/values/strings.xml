@@ -866,4 +866,21 @@
     <string name="scan_error_camera_blocked">camera access is blocked. Allow it in Android settings, or choose a picture.</string>
     <string name="scan_error_camera_busy">the camera is busy in another app. Close it and try again, or choose a picture.</string>
     <string name="scan_error_generic">something went wrong. Try again later.</string>
+
+    <string name="notification_channel_dives_name">New dives</string>
+    <string name="notification_channel_dives_description">Tells you when a new dive has synced to this device.</string>
+    <string name="notification_new_dive_title">New dive synced</string>
+    <string name="notification_new_dive_body">Tap to open the dive.</string>
+    <plurals name="notification_new_dives">
+        <item quantity="one">%1$d new dive synced</item>
+        <item quantity="other">%1$d new dives synced</item>
+    </plurals>
+    <string name="notification_new_dives_body">Tap to open your logbook.</string>
+
+    <string name="settings_polling_interval">Polling interval</string>
+    <string name="settings_polling_interval_value">Every %1$d min</string>
+    <string name="settings_polling_interval_title">Polling interval</string>
+    <string name="settings_polling_interval_body">How often the app checks for new dives in the background. Android allows at least 15 minutes.</string>
+    <string name="settings_polling_interval_option">%1$d minutes</string>
+    <string name="settings_save">Save</string>
 </resources>

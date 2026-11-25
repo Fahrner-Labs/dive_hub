@@ -2,6 +2,7 @@ package dev.divehub.shared.settings
 
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import dev.divehub.shared.InstanceUrlStore
+import dev.divehub.shared.PollingIntervalStore
 import dev.divehub.shared.store.DiveStore
 import dev.divehub.shared.store.SyncState
 import kotlinx.coroutines.test.runTest
@@ -32,6 +33,25 @@ class SettingsRepositoryTest {
     }
 
     @Test
+    fun `the polling interval defaults to the WorkManager floor`() = runTest {
+        val repository = SettingsRepository(FakeInstances("https://dive.example"), DiveStore.create(driver))
+
+        assertEquals(15, repository.pollingIntervalMinutes())
+    }
+
+    @Test
+    fun `the polling interval is stored and clamped to the floor`() = runTest {
+        val polling = FakePolling()
+        val repository = SettingsRepository(FakeInstances("https://dive.example"), DiveStore.create(driver), polling)
+
+        repository.setPollingIntervalMinutes(30)
+        assertEquals(30, repository.pollingIntervalMinutes())
+
+        repository.setPollingIntervalMinutes(1)
+        assertEquals(15, polling.value)
+    }
+
+    @Test
     fun `the sync state is the store's last full sync`() {
         val store = DiveStore.create(driver)
         store.saveSyncState(SyncState(lastFullSyncAt = "2026-11-18T12:00:00Z", schemaVersion = DiveStore.schemaVersion))
@@ -52,5 +72,13 @@ private class FakeInstances(initial: String? = null) : InstanceUrlStore {
 
     override suspend fun clear() {
         value = null
+    }
+}
+
+private class FakePolling(var value: Int? = null) : PollingIntervalStore {
+    override suspend fun load(): Int = value ?: 15
+
+    override suspend fun save(minutes: Int) {
+        value = minutes
     }
 }

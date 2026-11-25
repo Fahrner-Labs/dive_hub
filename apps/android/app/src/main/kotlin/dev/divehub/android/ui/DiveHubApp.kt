@@ -1,5 +1,9 @@
 package dev.divehub.android.ui
 
+import android.Manifest
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.RowScope
@@ -68,6 +72,7 @@ import dev.divehub.android.ui.logbook.LogbookRoute
 import dev.divehub.android.ui.logbook.LogbookViewModel
 import dev.divehub.android.ui.navigation.AppNavHost
 import dev.divehub.android.ui.navigation.ConflictsRoute
+import dev.divehub.android.ui.navigation.DiveRoute
 import dev.divehub.android.ui.navigation.AppScreens
 import dev.divehub.android.ui.navigation.clearSavedTabStates
 import dev.divehub.android.ui.navigation.sessionDestination
@@ -105,6 +110,26 @@ fun DiveHubApp(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val writesState by writes.state.collectAsStateWithLifecycle()
     val navController = rememberNavController()
+
+    // Push is optional (ADR 0085): fetch the instance's public config once its URL is known, ask for the Android 13
+    // notification permission after the first sync, and route a notification tap to its Dive once signed in.
+    LaunchedEffect(state.instanceUrl) { state.instanceUrl?.let(container::onInstanceKnown) }
+    val permissionRequest by container.notificationPermissionRequest.collectAsStateWithLifecycle()
+    val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        container.onNotificationPermissionResult(granted)
+    }
+    LaunchedEffect(permissionRequest) {
+        if (permissionRequest && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
+    }
+    val pendingDive by container.pendingDive.collectAsStateWithLifecycle()
+    LaunchedEffect(pendingDive, state.user?.id) {
+        val id = pendingDive ?: return@LaunchedEffect
+        if (state.user == null) return@LaunchedEffect
+        navController.navigate(DiveRoute(id)) { launchSingleTop = true }
+        container.consumePendingDive(id)
+    }
     val screens = remember(container, viewModel, logbook, dive, tools, gasPlan, lead, loadings, writes, scan) {
         DiveHubScreens(container, viewModel, logbook, dive, tools, gasPlan, lead, loadings, writes, scan)
     }
@@ -249,6 +274,7 @@ private class DiveHubScreens(
             // An old server has no writes: the scanner can queue them, so its entry appears only when both allow it.
             showScan = BuildConfig.SCANNER_ENABLED && writeable == true,
             onOpenScan = onOpenScan,
+            onSetPollingInterval = settings::setPollingInterval,
         )
     }
 
