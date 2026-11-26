@@ -49,7 +49,6 @@ android {
         versionName = providers.environmentVariable("ANDROID_VERSION_NAME").orNull ?: "0.1.0-dev"
         buildConfigField("boolean", "SCANNER_ENABLED", scannerEnabled.toString())
         buildConfigField("boolean", "EDIT_DIVE_SCALARS", editDiveScalars.toString())
-        buildConfigField("String", "DEFAULT_INSTANCE_URL", buildConfigString(defaultInstanceUrlFor("default")))
     }
 
     signingConfigs {
@@ -70,15 +69,17 @@ android {
     }
 
     buildTypes {
+        // Every build type gets its own default, so a future one is overridable without another declaration.
+        all {
+            buildConfigField("String", "DEFAULT_INSTANCE_URL", buildConfigString(defaultInstanceUrlFor(name)))
+        }
         getByName("debug") {
             signingConfig = signingConfigs.getByName("debug")
-            buildConfigField("String", "DEFAULT_INSTANCE_URL", buildConfigString(defaultInstanceUrlFor("debug")))
         }
         getByName("release") {
             if (missingReleaseSigningEnv.isEmpty()) {
                 signingConfig = signingConfigs.getByName("release")
             }
-            buildConfigField("String", "DEFAULT_INSTANCE_URL", buildConfigString(defaultInstanceUrlFor("release")))
         }
     }
 

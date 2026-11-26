@@ -9,6 +9,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import com.github.takahirom.roborazzi.captureRoboImage
+import dev.divehub.android.BuildConfig
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -32,7 +33,7 @@ class OnboardingScreenshotTest {
     fun `the instance form is prefilled in English and light`() {
         render(darkTheme = false)
 
-        compose.onNodeWithText(DEFAULT_INSTANCE).assertIsDisplayed()
+        compose.onNodeWithText(BuildConfig.DEFAULT_INSTANCE_URL).assertIsDisplayed()
         compose.onNodeWithText("Connect to Dive Hub, or enter the address of your own instance.").assertIsDisplayed()
         capture("onboarding_instance_en_light.png")
     }
@@ -42,7 +43,7 @@ class OnboardingScreenshotTest {
     fun `the instance form is prefilled in English and dark`() {
         render(darkTheme = true)
 
-        compose.onNodeWithText(DEFAULT_INSTANCE).assertIsDisplayed()
+        compose.onNodeWithText(BuildConfig.DEFAULT_INSTANCE_URL).assertIsDisplayed()
         capture("onboarding_instance_en_dark.png")
     }
 
@@ -51,7 +52,7 @@ class OnboardingScreenshotTest {
     fun `the instance form is prefilled in German`() {
         render(darkTheme = false)
 
-        compose.onNodeWithText(DEFAULT_INSTANCE).assertIsDisplayed()
+        compose.onNodeWithText(BuildConfig.DEFAULT_INSTANCE_URL).assertIsDisplayed()
         compose.onNodeWithText("Verbinde dich mit Dive Hub oder gib die Adresse deiner eigenen Instanz ein.").assertIsDisplayed()
         capture("onboarding_instance_de_light.png")
     }
@@ -64,7 +65,6 @@ class OnboardingScreenshotTest {
                         checking = false,
                         error = null,
                         onContinue = {},
-                        defaultAddress = DEFAULT_INSTANCE,
                     )
                 }
             }
@@ -75,5 +75,3 @@ class OnboardingScreenshotTest {
         compose.onRoot().captureRoboImage("src/test/screenshots/$name")
     }
 }
-
-private const val DEFAULT_INSTANCE = "https://cloud.divehub.example"

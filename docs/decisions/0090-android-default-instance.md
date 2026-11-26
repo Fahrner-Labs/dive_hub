@@ -1,6 +1,6 @@
 ---
 title: "ADR 0090: Android default instance"
-summary: The Android app prefills the first-start instance address from a build-config default (Dive Hub Cloud in the official build); the field stays editable, so custom instances remain one tap away and other distributions can ship their own default. Amends ADR 0074's "no fixed host".
+summary: The Android app prefills the instance address from a build-config default (Dive Hub Cloud in the official build); the field stays editable, so custom instances remain one tap away and other distributions can ship their own default. Amends ADR 0074's "no fixed host".
 status: proposed
 date: 2026-11-26
 ---
@@ -23,10 +23,11 @@ self-hosted Dive Hub has no fixed host. That is right for self-hosters and for a
 instance, but it puts the hosted product behind a typing task: a new User of Dive Hub Cloud has to know and enter an
 address before they can sign in.
 
-The hosted track is the same artifact, configured rather than forked ([ADR 0087](0087-hosted-instance-configuration.md),
-dual-track invariant). The Android app needs the same property: one codebase whose default address is packaging
-configuration, not a second product. [ADR 0077](0077-android-app-distribution.md) distributes the official APK, but
-the source may also be built by a self-hoster or an F-Droid-style distributor, who need their own sensible default.
+The hosted track is the same artifact, configured rather than forked (the hosted-instance configuration decision,
+ADR 0087, landing with FAH-527; dual-track invariant). The Android app needs the same property: one codebase whose
+default address is packaging configuration, not a second product. [ADR 0077](0077-android-app-distribution.md)
+distributes the official APK, but the source may also be built by a self-hoster or an F-Droid-style distributor, who
+need their own sensible default.
 
 Forces:
 
@@ -35,7 +36,7 @@ Forces:
 - The Android build already carries compile-time switches through `buildConfigField` (`SCANNER_ENABLED`,
   `EDIT_DIVE_SCALARS`), so a default address fits the existing mechanism.
 - A stored instance and a session must keep working exactly as before; the default is only the starting text of the
-  first-start form.
+  form shown when no instance is stored.
 
 ## Decision
 - **`DEFAULT_INSTANCE_URL` is a build configuration field.** `apps/android/app/build.gradle.kts` puts it in
@@ -43,17 +44,19 @@ Forces:
   `divehub.defaultInstanceUrl` Gradle property, or for one build type with `divehub.defaultInstanceUrl.<buildType>`,
   so self-hosters and F-Droid-style builds can ship their own default without a code fork. A blank override means no
   prefill.
-- **The first-start instance form is prefilled with `BuildConfig.DEFAULT_INSTANCE_URL`.** *Continue* submits the
-  prefilled value unchanged; the field remains editable, so a custom instance is one edit away. The form still
-  probes the address with the existing health check before asking for credentials (ADR 0074), and nothing is stored
-  until the User signs in.
-- **A stored instance always wins.** Once a User has connected, `InstanceUrlStore` is the source of truth; the
-  default only fills an empty first-start field. "Change instance" behaves as today.
+- **The instance form is prefilled with `BuildConfig.DEFAULT_INSTANCE_URL` whenever no instance is stored.**
+  *Continue* submits the prefilled value unchanged; the field remains editable, so a custom instance is one edit
+  away. The form still probes the address with the existing health check before asking for credentials (ADR 0074),
+  and nothing is stored until the User signs in.
+- **A stored instance always wins.** Once a User has connected, `InstanceUrlStore` is the source of truth and the
+  default is not shown. "Change instance" still ends the session and wipes the local data as today, then shows the
+  form with the default prefilled.
 - Nothing else changes: no fixed host is baked into the session, sync, push or deep-link paths, and the server-side
-  hosted configuration (ADR 0087) is untouched.
+  hosted configuration (ADR 0087, landing with FAH-527) is untouched.
 
 ## Consequences
-- The official app is one tap from sign-in on first start, while a self-hoster still types their address once.
+- The official app is one tap from sign-in on first start (and when changing instance), while a self-hoster still
+  types their address once.
 - The default is packaging, not behaviour: the same source can build the cloud app, a self-hosted app and an
   F-Droid-style app from one branch.
 - A wrong or stale default is a non-resolving address that the health probe rejects with the existing
