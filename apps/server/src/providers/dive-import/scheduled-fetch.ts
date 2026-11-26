@@ -5,6 +5,7 @@
 // Provider's stopped Waiting pushes at the next tick.
 import { and, eq, inArray, isNotNull, isNull, lte, or, sql } from 'drizzle-orm';
 import type { Db } from '../../db/client.js';
+import type { EntitlementService } from '../../entitlement/entitlement.js';
 import { connection, importJob, type ConnectionRow } from '../../db/schema.js';
 import type { DiveImportService } from './dive-import.js';
 import { realClock, type Clock } from '../lease-service.js';
@@ -18,8 +19,8 @@ export const OPENING_AFTER_MINUTES = 60;
 
 const MINUTE_MS = 60_000;
 
-export function createScheduledFetch(deps: { db: Db; registry: ProviderRegistry; diveImports: DiveImportService; clock?: Clock; log: ProviderLog }) {
-  const { db, registry, diveImports } = deps;
+export function createScheduledFetch(deps: { db: Db; registry: ProviderRegistry; diveImports: DiveImportService; entitlements: EntitlementService; clock?: Clock; log: ProviderLog }) {
+  const { db, registry, diveImports, entitlements } = deps;
   const { log } = deps;
   const clock = deps.clock ?? realClock;
 
@@ -52,8 +53,8 @@ export function createScheduledFetch(deps: { db: Db; registry: ProviderRegistry;
     return !(await blocked(conn, running));
   }
 
-  const queue = (connectionId: string) => db.execute(sql`select graphile_worker.add_job(${SCHEDULED_FETCH_TASK},
-    json_build_object('connectionId', ${connectionId}::text), job_key => ${'fetch:' + connectionId}, max_attempts => 1)`);
+  const queue = (connectionId: string, userInitiated = false) => db.execute(sql`select graphile_worker.add_job(${SCHEDULED_FETCH_TASK},
+    json_build_object('connectionId', ${connectionId}::text, 'userInitiated', ${userInitiated}::boolean), job_key => ${'fetch:' + connectionId}, max_attempts => 1)`);
 
   return {
     /**
@@ -61,9 +62,12 @@ export function createScheduledFetch(deps: { db: Db; registry: ProviderRegistry;
      * younger than the Provider's minimum. Every attempt claims the interval before it reads (a Provider that is down is
      * not read every minute). Its Import becomes the summary (`lastFetchImportId`) when it finishes (`finished`).
      */
-    async fetch(connectionId: string): Promise<void> {
+    async fetch(connectionId: string, options: { userInitiated?: boolean } = {}): Promise<void> {
       const [conn] = await db.select().from(connection).where(eq(connection.id, connectionId));
       if (!conn) return;
+      // The worker backstop (plan §4.4): a scheduled fetch skips a Connection whose User lost the plan, because the
+      // flag outlives a subscription. A fetch the User started by opening Dive Hub stays free, so it runs regardless.
+      if (!options.userInitiated && !(await entitlements.entitled(conn.userId))) return;
       const minimum = minimumOf(conn.provider);
       const at = clock.now();
       if (minimum === null || (await blocked(conn))) return;
@@ -100,7 +104,11 @@ export function createScheduledFetch(deps: { db: Db; registry: ProviderRegistry;
       const at = clock.now();
       const running = new Set((await db.selectDistinct({ id: importJob.connectionId }).from(importJob)
         .where(and(isNotNull(importJob.connectionId), inArray(importJob.status, ['pending', 'processing'])))).map((r) => r.id!));
-      for (const conn of await db.select().from(connection).where(isNotNull(connection.fetchEveryMinutes))) {
+      const conns = await db.select().from(connection).where(isNotNull(connection.fetchEveryMinutes));
+      // One query for the whole tick: skip the Connections whose User lost the plan (the worker backstop, plan §4.4).
+      const allowed = await entitlements.entitledSet(conns.map((c) => c.userId));
+      for (const conn of conns) {
+        if (!allowed.has(conn.userId)) continue;
         if (await due(conn, conn.fetchEveryMinutes!, at, running)) await queue(conn.id);
       }
     },
@@ -115,7 +123,8 @@ export function createScheduledFetch(deps: { db: Db; registry: ProviderRegistry;
       const conns = await db.select().from(connection).where(and(eq(connection.userId, userId), isNotNull(connection.fetchEveryMinutes)));
       for (const conn of conns) {
         if (!(await due(conn, OPENING_AFTER_MINUTES, at))) continue;
-        await queue(conn.id);
+        // User-initiated, so the worker runs it even for a User without the plan (the plan keeps this free).
+        await queue(conn.id, true);
         queued += 1;
       }
       return queued;

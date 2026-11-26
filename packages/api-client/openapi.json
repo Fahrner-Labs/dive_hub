@@ -502,6 +502,7 @@
               "provider_account_held",
               "diver_not_external",
               "provider_import_off",
+              "entitlement_required",
               "finding_not_found",
               "ai_access_not_found",
               "ai_access_off",
@@ -632,6 +633,27 @@
           "runId": {
             "type": "string",
             "description": "With push_run_active: the run that is going (ADR 0047)"
+          },
+          "offer": {
+            "type": "object",
+            "required": [
+              "plan",
+              "features"
+            ],
+            "properties": {
+              "plan": {
+                "type": "string",
+                "description": "The plan that unlocks the action (pro)"
+              },
+              "features": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "What it unlocks: automation (scheduled fetches and Waiting pushes) and push_runs"
+              }
+            },
+            "description": "With entitlement_required: the paid plan the client offers, and what it unlocks (hosted-DiveHub plan §4)"
           }
         },
         "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types"
@@ -3919,6 +3941,7 @@
                   "provider_account_held",
                   "diver_not_external",
                   "provider_import_off",
+                  "entitlement_required",
                   "finding_not_found",
                   "ai_access_not_found",
                   "ai_access_off",
@@ -4210,6 +4233,7 @@
                   "provider_account_held",
                   "diver_not_external",
                   "provider_import_off",
+                  "entitlement_required",
                   "finding_not_found",
                   "ai_access_not_found",
                   "ai_access_off",
@@ -4443,6 +4467,7 @@
                   "provider_account_held",
                   "diver_not_external",
                   "provider_import_off",
+                  "entitlement_required",
                   "finding_not_found",
                   "ai_access_not_found",
                   "ai_access_off",
@@ -5283,6 +5308,7 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "entitlement_required",
                         "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
@@ -26309,6 +26335,16 @@
               }
             }
           },
+          "402": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
           "404": {
             "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
             "content": {
@@ -26433,6 +26469,16 @@
             }
           },
           "400": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "402": {
             "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
             "content": {
               "application/json": {
@@ -26673,6 +26719,16 @@
               }
             }
           },
+          "402": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
           "404": {
             "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
             "content": {
@@ -26722,6 +26778,16 @@
             }
           },
           "400": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "402": {
             "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
             "content": {
               "application/json": {
@@ -26790,6 +26856,16 @@
               }
             }
           },
+          "402": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
           "404": {
             "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
             "content": {
@@ -26839,6 +26915,16 @@
             }
           },
           "400": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "402": {
             "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
             "content": {
               "application/json": {
@@ -27586,6 +27672,16 @@
               }
             }
           },
+          "402": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
           "404": {
             "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
             "content": {
@@ -27690,6 +27786,16 @@
             }
           },
           "400": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "402": {
             "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
             "content": {
               "application/json": {
@@ -27915,6 +28021,16 @@
             }
           },
           "400": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "402": {
             "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
             "content": {
               "application/json": {
@@ -28168,6 +28284,16 @@
               }
             }
           },
+          "402": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
           "404": {
             "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
             "content": {
@@ -28272,6 +28398,16 @@
             }
           },
           "400": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "402": {
             "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
             "content": {
               "application/json": {
@@ -28448,6 +28584,16 @@
             }
           },
           "400": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "402": {
             "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
             "content": {
               "application/json": {
@@ -28654,6 +28800,16 @@
               }
             }
           },
+          "402": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
           "404": {
             "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
             "content": {
@@ -28778,6 +28934,16 @@
             }
           },
           "400": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "402": {
             "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
             "content": {
               "application/json": {
@@ -28940,6 +29106,16 @@
             }
           },
           "400": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "402": {
             "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
             "content": {
               "application/json": {
@@ -29678,6 +29854,16 @@
               }
             }
           },
+          "402": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
           "404": {
             "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
             "content": {
@@ -29852,6 +30038,16 @@
             }
           },
           "400": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "402": {
             "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
             "content": {
               "application/json": {
@@ -30257,6 +30453,16 @@
               }
             }
           },
+          "402": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
           "404": {
             "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
             "content": {
@@ -30500,6 +30706,16 @@
               }
             }
           },
+          "402": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
           "404": {
             "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
             "content": {
@@ -30595,6 +30811,16 @@
             }
           },
           "400": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "402": {
             "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
             "content": {
               "application/json": {
@@ -30731,6 +30957,16 @@
             }
           },
           "400": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "402": {
             "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
             "content": {
               "application/json": {
@@ -31406,6 +31642,16 @@
               }
             }
           },
+          "402": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
           "404": {
             "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
             "content": {
@@ -31483,6 +31729,16 @@
             }
           },
           "400": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "402": {
             "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
             "content": {
               "application/json": {
@@ -31667,6 +31923,16 @@
               }
             }
           },
+          "402": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
           "404": {
             "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
             "content": {
@@ -31805,6 +32071,16 @@
               }
             }
           },
+          "402": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
           "404": {
             "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
             "content": {
@@ -31885,6 +32161,16 @@
             }
           },
           "400": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "402": {
             "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
             "content": {
               "application/json": {

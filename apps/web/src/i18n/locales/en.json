@@ -709,6 +709,7 @@
     "fetch_interval_too_short": "{{name}} can’t be fetched from that often. Choose a longer interval.",
     "waiting_push_not_found": "This dive isn’t waiting to go to the service any more, so there is nothing to retry.",
     "provider_import_off": "Importing dives from {{name}} is off. Choose what the import may do first.",
+    "entitlement_required": "This needs the Pro plan. Automation and push runs are part of it.",
     "provider_site_data_not_confirmed": "Confirm the explanation about {{name}}’s missing licence first.",
     "provider_site_unknown": "{{name}} has no site with this ID.",
     "provider_buddy_not_found": "That entry is no longer in your {{name}} list. Reload the list.",

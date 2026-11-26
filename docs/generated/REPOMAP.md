@@ -4,7 +4,7 @@
 > `pnpm check` fails when this map is stale. Symbols are ranked by how widely the code references them;
 > each module shows its most-referenced ones (exported symbols rank higher). Search here before walking the tree.
 
-Files: 439 · symbols: 4024 · shown: 253
+Files: 441 · symbols: 4032 · shown: 250
 
 ### server/(root)
 apps/server/src/vocabulary.ts:13 type SiteWaterType
@@ -12,7 +12,7 @@ apps/server/src/vocabulary.ts:51 type ImportSource
 apps/server/src/errors.ts:2 const errorMessage
 apps/server/src/vocabulary.ts:12 const SITE_WATER_TYPES
 apps/server/src/config.ts:27 iface FcmConfig
-… 58 more symbols in this module
+… 60 more symbols in this module
 
 ### server/assessment
 apps/server/src/assessment/rules.ts:50 const RULES
@@ -60,14 +60,14 @@ apps/server/src/certifications/routes.ts:19 const Text
 ### server/db
 apps/server/src/db/client.ts:5 type Db
 apps/server/src/db/client.ts:8 type Queryable
-apps/server/src/db/schema.ts:725 const dive
+apps/server/src/db/schema.ts:748 const dive
 apps/server/src/db/client.ts:6 type Tx
-apps/server/src/db/schema.ts:491 const diveSite
-apps/server/src/db/schema.ts:883 const recording
+apps/server/src/db/schema.ts:514 const diveSite
+apps/server/src/db/schema.ts:906 const recording
 apps/server/src/db/auth-schema.ts:20 const user
 apps/server/src/db/import-types.ts:12 iface ImportedValues
 apps/server/src/db/import-types.ts:6 type ImportArea
-… 170 more symbols in this module
+… 171 more symbols in this module
 
 ### server/divers
 apps/server/src/divers/management.ts:8 fn managedDiverIds
@@ -97,6 +97,11 @@ apps/server/src/dives/provider-port.ts:47 iface DiveWaitingPushes
 apps/server/src/dives/recording-units.ts:9 const isUnit
 … 315 more symbols in this module
 
+### server/entitlement
+apps/server/src/entitlement/entitlement.ts:50 type EntitlementService
+apps/server/src/entitlement/entitlement.ts:18 fn createEntitlementService
+apps/server/src/entitlement/entitlement.ts:12 fn isEntitled
+
 ### server/equipment
 apps/server/src/equipment/usage.ts:37 fn usageMap
 apps/server/src/equipment/equipment-error.ts:2 class EquipmentError
@@ -109,8 +114,8 @@ apps/server/src/equipment/due.ts:86 const round
 apps/server/src/http/schemas.ts:10 const Nullable
 apps/server/src/http/schemas.ts:5 const DateTime
 apps/server/src/http/schemas.ts:4 const IdParams
-apps/server/src/http/problems.ts:203 const Problem
-apps/server/src/http/problems.ts:206 const problem
+apps/server/src/http/problems.ts:208 const Problem
+apps/server/src/http/problems.ts:211 const problem
 … 33 more symbols in this module
 
 ### server/imports
@@ -193,15 +198,13 @@ apps/server/src/providers/lease-service.ts:17 const realClock
 apps/server/src/providers/provider.ts:244 iface ActionContext
 apps/server/src/providers/connection-view.ts:66 const ConnectionView
 apps/server/src/providers/provider.ts:361 iface ImportedDive
-apps/server/src/providers/connection-service.ts:337 type ConnectionService
+apps/server/src/providers/connection-service.ts:348 type ConnectionService
 apps/server/src/providers/connection-routes.ts:51 const ProviderView
 apps/server/src/providers/registry.ts:93 const named
 apps/server/src/providers/current-remote.ts:5 type PushRow
 apps/server/src/providers/dive-import/three-way.ts:11 type SyncedField
 apps/server/src/providers/push/outgoing-dive.ts:64 fn loadOutgoingDive
-apps/server/src/providers/provider.ts:205 iface OutgoingDive
-apps/server/src/providers/provider.ts:83 type DiveField
-… 497 more symbols in this module
+… 501 more symbols in this module
 
 ### server/revisions
 apps/server/src/revisions/revisions.ts:94 fn writeRevision
@@ -303,9 +306,7 @@ apps/web/src/ProviderConflicts.tsx:14 fn useConflictValueText
 apps/web/src/WaitingPush.tsx:117 fn WaitingPushState
 apps/web/src/ImportPanel.tsx:39 const ImportContext
 apps/web/src/ReviewRows.tsx:6 iface Fact
-apps/web/src/SignedOut.tsx:20 fn useUserChanged
-apps/web/src/ProfilePlot.tsx:14 fn withAlpha
-… 530 more symbols in this module
+… 532 more symbols in this module
 
 ### web/api
 apps/web/src/api/request.ts:3 const api
@@ -346,9 +347,7 @@ apps/web/src/lib/providers.ts:9 type SyncedField
 apps/web/src/lib/tools.ts:49 iface ToolsParams
 apps/web/src/lib/form.ts:4 const formValues
 apps/web/src/lib/devices.ts:18 const deviceName
-apps/web/src/lib/review.ts:17 fn reviewHref
-apps/web/src/lib/providers.ts:55 fn useProviderOf
-… 408 more symbols in this module
+… 410 more symbols in this module
 
 ### web/ui
 apps/web/src/ui/Layout.tsx:85 fn Notice

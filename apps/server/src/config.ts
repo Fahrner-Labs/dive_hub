@@ -75,6 +75,13 @@ export interface Config {
   fcm: FcmConfig | undefined;
   /** Transactional mail (hosted plan §6.1); undefined means invitations and resets stay copy links (ADR 0012). */
   email: EmailConfig | undefined;
+  /** Billing (hosted-DiveHub plan §4); undefined means every feature is free and no entitlement gate runs (ADR 0087). */
+  billing: BillingConfig | undefined;
+}
+
+/** Billing (hosted-DiveHub plan §4, ADR 0087): unset means every feature is free and no entitlement gate runs. */
+export interface BillingConfig {
+  provider: 'paddle';
 }
 
 /** A JSON object given inline or as the path to a file, with the variable's name in every error (ADR 0085). */
@@ -177,6 +184,17 @@ function readSiteSources(get: (name: string) => string | undefined): ImportSourc
   return IMPORT_SOURCES.filter((source) => names.includes(source));
 }
 
+/**
+ * The billing provider (DIVEHUB_BILLING_PROVIDER, ADR 0087). Unset is the self-hosted default: every feature is free.
+ * Paddle is the only provider so far; an unknown name stops the boot rather than silently leaving the paywall off or on.
+ */
+function readBillingConfig(get: (name: string) => string | undefined): BillingConfig | undefined {
+  const provider = get('DIVEHUB_BILLING_PROVIDER');
+  if (!provider) return undefined;
+  if (provider !== 'paddle') throw new Error(`DIVEHUB_BILLING_PROVIDER must be paddle, not ${provider}`);
+  return { provider };
+}
+
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   // An empty variable counts as unset (Compose's `VAR=` gives one).
   const get = (name: string): string | undefined => env[name]?.trim() || undefined;
@@ -217,5 +235,6 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     garminUrl: get('DIVEHUB_GARMIN_URL'),
     fcm: readFcmConfig(get),
     email: readEmailConfig(get),
+    billing: readBillingConfig(get),
   };
 }

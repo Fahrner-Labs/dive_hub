@@ -177,7 +177,9 @@ export async function startWorker(pool: pg.Pool, deps: WorkerDeps): Promise<Runn
       // One Connection's scheduled fetch: an unattended Import, which PROCESS_IMPORT_TASK then runs.
       [SCHEDULED_FETCH_TASK]: async (payload) => {
         const connectionId = idOf(payload, 'connectionId');
-        await scheduledFetch.fetch(connectionId);
+        // A fetch the User started by opening Dive Hub (`fetchDue`) stays free; a scheduled one skips a lost plan.
+        const userInitiated = (payload as { userInitiated?: unknown }).userInitiated === true;
+        await scheduledFetch.fetch(connectionId, { userInitiated });
       },
       // One card's picture (ADR 0050); three attempts, the last one ends as `failed`.
       [CERTIFICATION_IMAGE_TASK]: async (payload, helpers) => {

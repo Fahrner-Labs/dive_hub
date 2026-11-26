@@ -123,6 +123,12 @@ ends (sign-out, sign-out everywhere, a password change), so a signed-out device 
 content. The dispatcher queues one hint per manager of a changed Dive; the Android client fetches it before showing
 anything, and iOS/web wait for their providers.
 
+**Entitlement (hosted billing, ADR 0087)** — one row per User in `user_entitlement` (`user_id` is the primary key and
+cascades with the User); no row means the free plan. `plan` is `free | pro`; `status` is `none | active | past_due |
+canceled`; `current_period_end` and the Paddle customer/subscription IDs are written by the billing webhook, and
+`updated_at` records its last write. The paid features need `pro` and active or past due (the grace window), or canceled
+until `current_period_end`; entitlements stay per User — Phase-2 hub billing gets its own table.
+
 **Certification** (built, ADR 0050) — Diver, agency and level as free text (suggestions from the Diver's other cards;
 the Agency catalog stays planned), number, issue and expiry date, dives at issue, instructor and dive centre as text
 snapshots, verification state (`self_declared`, `card_seen` by hand; `verified_with_agency` only an import sets), notes,

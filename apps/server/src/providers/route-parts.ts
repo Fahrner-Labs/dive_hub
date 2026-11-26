@@ -22,6 +22,7 @@ export const PROVIDER_STATUS: Record<ProviderRefusal, number> = {
   provider_number_taken: 409, provider_numbers_off: 409, provider_number_nothing_to_set: 409,
   site_not_found: 404, external_id_taken: 409, provider_site_unknown: 422, provider_buddy_not_found: 404,
   provider_unavailable: 502, provider_refused: 502, provider_not_stored: 502, provider_import_off: 409, provider_account_held: 409,
+  entitlement_required: 402,
 };
 /** A refusal about a Provider; with provider_requirements_unmet, what is unmet. Registered with app.addSchema, like Problem. */
 export const ProviderProblemSchema = Type.Intersect([Problem, Type.Object({
@@ -45,7 +46,7 @@ export const GoneSummary = Type.Object({
 }, { description: 'Dives gone at the Provider (ADR 0051), found by this fresh, complete read; stored, nothing else changes' });
 
 /** The refusals a Provider route answers with. */
-export const errors = { 400: Problem, 404: Problem, 409: ProviderProblem, 422: Problem, 502: Problem };
+export const errors = { 400: Problem, 402: Problem, 404: Problem, 409: ProviderProblem, 422: Problem, 502: Problem };
 
 /** Answers a refusal about a Provider: its status, its code and the Provider named, with `extra` (such as the copies). */
 export function replyProviderError(error: ProviderServiceError, reply: FastifyReply, extra: object = {}) {
