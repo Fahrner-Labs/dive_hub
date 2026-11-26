@@ -34,7 +34,7 @@ class OnboardingScreenshotTest {
         render(darkTheme = false)
 
         compose.onNodeWithText(BuildConfig.DEFAULT_INSTANCE_URL).assertIsDisplayed()
-        compose.onNodeWithText("Connect to Dive Hub, or enter the address of your own instance.").assertIsDisplayed()
+        compose.onNodeWithText("Connect to Dive Hub Cloud, or enter the address of your own instance.").assertIsDisplayed()
         capture("onboarding_instance_en_light.png")
     }
 
@@ -53,7 +53,7 @@ class OnboardingScreenshotTest {
         render(darkTheme = false)
 
         compose.onNodeWithText(BuildConfig.DEFAULT_INSTANCE_URL).assertIsDisplayed()
-        compose.onNodeWithText("Verbinde dich mit Dive Hub oder gib die Adresse deiner eigenen Instanz ein.").assertIsDisplayed()
+        compose.onNodeWithText("Verbinde dich mit Dive Hub Cloud oder gib die Adresse deiner eigenen Instanz ein.").assertIsDisplayed()
         capture("onboarding_instance_de_light.png")
     }
 
