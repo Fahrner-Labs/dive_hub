@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { parseEncryptionKey } from './secrets/secret-box.js';
+import { IMPORT_SOURCES, type ImportSource } from './vocabulary.js';
 
 /**
  * The public Firebase client config a native client initializes Firebase with (ADR 0085). None of these values is a
@@ -28,6 +29,16 @@ export interface FcmConfig {
   android: FcmClientConfig;
 }
 
+/**
+ * Transactional mail (hosted plan §6.1): Resend today, with the sender behind the mail module's `MailProvider` seam, so a
+ * Postmark implementation would be another provider rather than another config shape. Unset keeps ADR 0012's copy links.
+ */
+export interface EmailConfig {
+  provider: 'resend';
+  apiKey: string;
+  from: string;
+}
+
 export interface Config {
   databaseUrl: string;
   dataDir: string;
@@ -46,6 +57,8 @@ export interface Config {
   authSecret: string | undefined;
   /** Reverse proxies (IPs or CIDR ranges) whose X-Forwarded-For is trusted for the client IP. */
   trustedProxies: string[];
+  /** Site import (ADR 0021): which Sources this instance constructs and offers (DIVEHUB_SITE_SOURCES, ADR 0087). */
+  siteSources: ImportSource[];
   /** Site import (ADR 0021): the operator's contact for the User-Agent, and other service endpoints (e.g. a paid Overpass). */
   contact: string | undefined;
   overpassUrl: string | undefined;
@@ -60,6 +73,15 @@ export interface Config {
   garminUrl: string | undefined;
   /** FCM push for native clients (ADR 0085); undefined means push is off and clients keep polling. */
   fcm: FcmConfig | undefined;
+  /** Transactional mail (hosted plan §6.1); undefined means invitations and resets stay copy links (ADR 0012). */
+  email: EmailConfig | undefined;
+  /** Billing (hosted-DiveHub plan §4); undefined means every feature is free and no entitlement gate runs (ADR 0087). */
+  billing: BillingConfig | undefined;
+}
+
+/** Billing (hosted-DiveHub plan §4, ADR 0087): unset means every feature is free and no entitlement gate runs. */
+export interface BillingConfig {
+  provider: 'paddle';
 }
 
 /** A JSON object given inline or as the path to a file, with the variable's name in every error (ADR 0085). */
@@ -123,6 +145,56 @@ function readFcmConfig(get: (name: string) => string | undefined): FcmConfig | u
   };
 }
 
+/**
+ * Read transactional mail configuration (hosted plan §6.1): all three variables or none. A half-configured instance is an
+ * operator mistake, not "copy links only", so it stops the app and names the missing variables. `resend` is the only
+ * provider; Postmark would be a new implementation behind the same mail interface.
+ */
+function readEmailConfig(get: (name: string) => string | undefined): EmailConfig | undefined {
+  const provider = get('DIVEHUB_EMAIL_PROVIDER');
+  const apiKey = get('DIVEHUB_EMAIL_API_KEY');
+  const from = get('DIVEHUB_EMAIL_FROM');
+  if (!provider && !apiKey && !from) return undefined;
+  const missing = [
+    !provider && 'DIVEHUB_EMAIL_PROVIDER', !apiKey && 'DIVEHUB_EMAIL_API_KEY', !from && 'DIVEHUB_EMAIL_FROM',
+  ].filter(Boolean);
+  if (missing.length > 0) {
+    throw new Error(`Set ${missing.join(' and ')} too, or leave every DIVEHUB_EMAIL_* unset to keep copy links`);
+  }
+  if (provider !== 'resend') {
+    throw new Error(`DIVEHUB_EMAIL_PROVIDER is "${provider}"; the only provider is "resend" (Postmark would be a new implementation behind the mail interface)`);
+  }
+  return { provider: 'resend', apiKey: apiKey!, from: from! };
+}
+
+/**
+ * The Site sources this instance constructs and offers (DIVEHUB_SITE_SOURCES, ADR 0087). Unset means every Source,
+ * the self-hosted behaviour; a comma-separated list narrows it. A name the vocabulary does not know stops the boot,
+ * as does a list that names none, so a typo cannot silently switch a Source off (or leave the admin UI empty).
+ */
+function readSiteSources(get: (name: string) => string | undefined): ImportSource[] {
+  const value = get('DIVEHUB_SITE_SOURCES');
+  if (!value) return [...IMPORT_SOURCES];
+  const names = value.split(',').map((name) => name.trim()).filter(Boolean);
+  const unknown = names.filter((name) => !(IMPORT_SOURCES as readonly string[]).includes(name));
+  if (unknown.length > 0) {
+    throw new Error(`DIVEHUB_SITE_SOURCES names unknown source(s): ${unknown.join(', ')}; valid sources are ${IMPORT_SOURCES.join(', ')}`);
+  }
+  if (names.length === 0) throw new Error(`DIVEHUB_SITE_SOURCES must name at least one source: ${IMPORT_SOURCES.join(', ')}`);
+  return IMPORT_SOURCES.filter((source) => names.includes(source));
+}
+
+/**
+ * The billing provider (DIVEHUB_BILLING_PROVIDER, ADR 0087). Unset is the self-hosted default: every feature is free.
+ * Paddle is the only provider so far; an unknown name stops the boot rather than silently leaving the paywall off or on.
+ */
+function readBillingConfig(get: (name: string) => string | undefined): BillingConfig | undefined {
+  const provider = get('DIVEHUB_BILLING_PROVIDER');
+  if (!provider) return undefined;
+  if (provider !== 'paddle') throw new Error(`DIVEHUB_BILLING_PROVIDER must be paddle, not ${provider}`);
+  return { provider };
+}
+
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   // An empty variable counts as unset (Compose's `VAR=` gives one).
   const get = (name: string): string | undefined => env[name]?.trim() || undefined;
@@ -153,6 +225,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     baseUrl: new URL(baseUrl).origin,
     authSecret: get('DIVEHUB_AUTH_SECRET'),
     trustedProxies: (get('DIVEHUB_TRUSTED_PROXIES') ?? '').split(',').map((s) => s.trim()).filter(Boolean),
+    siteSources: readSiteSources(get),
     contact: get('DIVEHUB_CONTACT'),
     overpassUrl: get('DIVEHUB_OVERPASS_URL'),
     wikidataSparqlUrl: get('DIVEHUB_WIKIDATA_SPARQL_URL'),
@@ -161,5 +234,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     ssiUrl: get('DIVEHUB_SSI_URL'),
     garminUrl: get('DIVEHUB_GARMIN_URL'),
     fcm: readFcmConfig(get),
+    email: readEmailConfig(get),
+    billing: readBillingConfig(get),
   };
 }

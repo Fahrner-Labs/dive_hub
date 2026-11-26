@@ -9,7 +9,7 @@ import { limitAttempts, type AttemptLimit } from '../http/attempt-limit.js';
 import { problem } from '../http/problems.js';
 import type { PasswordResetService } from './password-reset-service.js';
 import type { SessionService } from './session-service.js';
-import { Password, Problem, Token, TwoFactorChallengeView, UserView, toUserView } from './views.js';
+import { Email, Password, Problem, Token, TwoFactorChallengeView, UserView, toUserView } from './views.js';
 import { DateTime, IdParams, Nullable } from '../http/schemas.js';
 
 export interface AccountRouteDeps {
@@ -33,6 +33,35 @@ const SessionView = Type.Object({
 export const accountRoutes: FastifyPluginAsyncTypebox<AccountRouteDeps> = async (app, { auth, passwordResets, sessions, tokenAttempts }) => {
   // --- Public: using a password reset link ---------------------------------------------------------
   const limited = limitAttempts(tokenAttempts);
+
+  app.get('/email/config', {
+    schema: {
+      summary: 'Whether this instance can send e-mail (invitations and self-serve password resets)',
+      response: { 200: Type.Object({ configured: Type.Boolean() }) },
+    },
+  }, async () => ({ configured: passwordResets.selfServe }));
+
+  app.post('/password-resets/request', {
+    onRequest: limited,
+    schema: {
+      summary: 'Request a password reset link by e-mail (only when e-mail is configured)',
+      description: 'Answers the same whether or not the address has an account, so it never reveals one. 404 when this instance sends no e-mail (use an admin\'s reset link instead).',
+      body: Type.Object({ email: Email }),
+      response: { 204: Type.Null(), 404: Problem, 429: Problem },
+    },
+  }, async (request, reply) => {
+    if (!passwordResets.selfServe) return reply.code(404).send(problem('not_found'));
+    // Answer before the send finishes: a known address must not take a network round-trip longer than an unknown one
+    // (that timing would reveal the account). The send's failure still reaches the operator log.
+    void passwordResets.request(request.body.email).then((sent) => {
+      if (sent && !sent.delivery.sent) {
+        request.log.error({ email: sent.email, error: sent.delivery.error }, 'password reset e-mail could not be sent');
+      }
+    }).catch((error: unknown) => {
+      request.log.error({ err: error }, 'password reset request failed after the answer');
+    });
+    return reply.code(204).send(null);
+  });
 
   app.post('/password-resets/lookup', {
     onRequest: limited,

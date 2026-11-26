@@ -688,6 +688,40 @@
         },
         {
           "dynamic": false,
+          "module": "./sites/import/site-purge-routes.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/sites/import/site-purge-routes.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./sites/import/site-purge-view.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/sites/import/site-purge-view.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./sites/routes.js",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -1142,6 +1176,7 @@
         "apps/server/src/providers/dive-provider-routes.ts",
         "apps/server/src/providers/push/push-run-routes.ts",
         "apps/server/src/sites/import/site-import-routes.ts",
+        "apps/server/src/sites/import/site-purge-routes.ts",
         "apps/server/src/sites/routes.ts",
         "apps/server/src/social/offer-routes.ts",
         "apps/server/src/social/routes.ts",
@@ -1199,6 +1234,7 @@
         "apps/server/src/dives/merging-service.ts",
         "apps/server/src/dives/continuation/joined-recording.ts",
         "apps/server/src/dives/purge-service.ts",
+        "apps/server/src/entitlement/entitlement.ts",
         "apps/server/src/equipment/equipment-service.ts",
         "apps/server/src/equipment/usage.ts",
         "apps/server/src/imports/import-service.ts",
@@ -1213,9 +1249,9 @@
         "apps/server/src/planning/loadings-service.ts",
         "apps/server/src/providers/buddies/buddy-service.ts",
         "apps/server/src/providers/connection-service.ts",
+        "apps/server/src/dives/time-zone.ts",
         "apps/server/src/providers/lease-service.ts",
         "apps/server/src/providers/waiting-push/waiting-push-queue.ts",
-        "apps/server/src/dives/time-zone.ts",
         "apps/server/src/providers/list-entries.ts",
         "apps/server/src/providers/conflicts/conflict-service.ts",
         "apps/server/src/providers/dive-import/dive-changes.ts",
@@ -1232,6 +1268,8 @@
         "apps/server/src/providers/site-pick.ts",
         "apps/server/src/providers/waiting-push/waiting-push-service.ts",
         "apps/server/src/sites/import/site-import-service.ts",
+        "apps/server/src/sites/import/site-jobs.ts",
+        "apps/server/src/sites/import/site-purge-service.ts",
         "apps/server/src/social/offer-service.ts",
         "apps/server/src/social/suggestion-changes.ts",
         "apps/server/src/social/suggestion-service.ts",
@@ -1546,6 +1584,8 @@
         "apps/server/src/providers/push/push-run-routes.ts",
         "apps/server/src/sites/import/site-import-routes.ts",
         "apps/server/src/sites/import/site-import-view.ts",
+        "apps/server/src/sites/import/site-purge-routes.ts",
+        "apps/server/src/sites/import/site-purge-view.ts",
         "apps/server/src/sites/routes.ts",
         "apps/server/src/sites/site-view.ts",
         "apps/server/src/social/offer-routes.ts",
@@ -1805,6 +1845,7 @@
         "apps/server/src/planning/routes.ts",
         "apps/server/src/providers/routes.ts",
         "apps/server/src/sites/import/site-import-routes.ts",
+        "apps/server/src/sites/import/site-purge-routes.ts",
         "apps/server/src/sites/routes.ts",
         "apps/server/src/social/offer-routes.ts",
         "apps/server/src/social/routes.ts",
@@ -2053,6 +2094,7 @@
         "apps/server/src/dives/merging-service.ts",
         "apps/server/src/dives/continuation/joined-recording.ts",
         "apps/server/src/dives/purge-service.ts",
+        "apps/server/src/entitlement/entitlement.ts",
         "apps/server/src/equipment/equipment-service.ts",
         "apps/server/src/equipment/usage.ts",
         "apps/server/src/imports/import-service.ts",
@@ -2071,9 +2113,9 @@
         "apps/server/src/providers/layer.ts",
         "apps/server/src/providers/buddies/buddy-service.ts",
         "apps/server/src/providers/connection-service.ts",
+        "apps/server/src/dives/time-zone.ts",
         "apps/server/src/providers/lease-service.ts",
         "apps/server/src/providers/waiting-push/waiting-push-queue.ts",
-        "apps/server/src/dives/time-zone.ts",
         "apps/server/src/providers/list-entries.ts",
         "apps/server/src/providers/conflicts/conflict-service.ts",
         "apps/server/src/providers/dive-import/dive-changes.ts",
@@ -2090,6 +2132,7 @@
         "apps/server/src/providers/site-pick.ts",
         "apps/server/src/providers/waiting-push/waiting-push-service.ts",
         "apps/server/src/sites/import/site-import-service.ts",
+        "apps/server/src/sites/import/site-purge-service.ts",
         "apps/server/src/social/offer-service.ts",
         "apps/server/src/social/suggestion-changes.ts",
         "apps/server/src/social/suggestion-service.ts",
@@ -2277,6 +2320,7 @@
         "apps/server/src/dives/continuation/join-parts.ts",
         "apps/server/src/dives/dive-summary-view.ts",
         "apps/server/src/dives/purge-service.ts",
+        "apps/server/src/entitlement/entitlement.ts",
         "apps/server/src/equipment/equipment-service.ts",
         "apps/server/src/imports/import-service.ts",
         "apps/server/src/imports/formats/fit/fit-adapter.ts",
@@ -2295,11 +2339,11 @@
         "apps/server/src/planning/loadings-service.ts",
         "apps/server/src/providers/buddies/buddy-service.ts",
         "apps/server/src/providers/connection-service.ts",
+        "apps/server/src/providers/provider.ts",
+        "apps/server/src/dives/time-zone.ts",
         "apps/server/src/providers/lease-service.ts",
         "apps/server/src/providers/waiting-push/waiting-push-queue.ts",
         "apps/server/src/providers/current-remote.ts",
-        "apps/server/src/providers/provider.ts",
-        "apps/server/src/dives/time-zone.ts",
         "apps/server/src/providers/list-entries.ts",
         "apps/server/src/providers/conflicts/conflict-service.ts",
         "apps/server/src/providers/dive-import/dive-changes.ts",
@@ -2317,6 +2361,7 @@
         "apps/server/src/providers/site-pick.ts",
         "apps/server/src/providers/waiting-push/waiting-push-service.ts",
         "apps/server/src/sites/import/site-import-service.ts",
+        "apps/server/src/sites/import/site-purge-service.ts",
         "apps/server/src/social/offer-service.ts",
         "apps/server/src/social/suggestion-changes.ts",
         "apps/server/src/social/suggestion-service.ts",
@@ -2348,6 +2393,7 @@
         "apps/server/src/providers/connection-routes.ts",
         "apps/server/src/providers/dive-import/dive-import-routes.ts",
         "apps/server/src/sites/import/site-import-view.ts",
+        "apps/server/src/sites/import/site-purge-view.ts",
         "apps/server/src/social/offer-view.ts",
         "apps/server/src/social/suggestion-view.ts",
         "apps/server/src/users/views.ts",
@@ -2391,6 +2437,7 @@
         "apps/server/src/sites/site-ids.ts",
         "apps/server/src/sites/import/import-plan.ts",
         "apps/server/src/divers/diver-service.ts",
+        "apps/server/src/config.ts",
         "apps/server/src/equipment/equipment-service.ts",
         "apps/server/src/imports/import-service.ts",
         "apps/server/src/imports/parsed-recording.ts",
@@ -2498,6 +2545,8 @@
         "apps/server/src/db/schema.ts",
         "apps/server/src/sites/import/site-source.ts",
         "apps/server/src/sites/import/import-plan.ts",
+        "apps/server/src/sites/import/site-purge-service.ts",
+        "apps/server/src/sites/import/site-purge-plan.ts",
         "apps/server/src/sites/import/site-import-view.ts"
       ],
       "orphan": false,
@@ -2726,6 +2775,7 @@
         "apps/server/src/providers/dive-provider-routes.ts",
         "apps/server/src/providers/push/push-run-routes.ts",
         "apps/server/src/sites/import/site-import-routes.ts",
+        "apps/server/src/sites/import/site-purge-routes.ts",
         "apps/server/src/sites/routes.ts",
         "apps/server/src/social/offer-routes.ts",
         "apps/server/src/social/routes.ts",
@@ -2841,6 +2891,7 @@
         "apps/server/src/providers/push/push-run-service.ts",
         "apps/server/src/providers/push/push-run-plan.ts",
         "apps/server/src/sites/import/site-import-service.ts",
+        "apps/server/src/sites/import/site-purge-service.ts",
         "apps/server/src/users/user-admin-service.ts",
         "apps/server/src/divers/routes.ts",
         "apps/server/src/divers/diver-answers.ts",
@@ -2865,6 +2916,8 @@
         "apps/server/src/providers/push/push-run-routes.ts",
         "apps/server/src/sites/import/site-import-routes.ts",
         "apps/server/src/sites/import/site-import-view.ts",
+        "apps/server/src/sites/import/site-purge-routes.ts",
+        "apps/server/src/sites/import/site-purge-view.ts",
         "apps/server/src/sites/routes.ts",
         "apps/server/src/social/offer-routes.ts",
         "apps/server/src/social/routes.ts",
@@ -2990,6 +3043,8 @@
         "apps/server/src/providers/push/push-run-routes.ts",
         "apps/server/src/sites/import/site-import-routes.ts",
         "apps/server/src/sites/import/site-import-view.ts",
+        "apps/server/src/sites/import/site-purge-routes.ts",
+        "apps/server/src/sites/import/site-purge-view.ts",
         "apps/server/src/sites/routes.ts",
         "apps/server/src/sites/site-view.ts",
         "apps/server/src/social/offer-routes.ts",
@@ -4777,6 +4832,7 @@
         "apps/server/src/imports/formats/uddf/uddf.ts",
         "apps/server/src/providers/dive-import/dive-import.ts",
         "apps/server/src/sites/import/site-import-service.ts",
+        "apps/server/src/sites/import/site-purge-service.ts",
         "apps/server/src/backups/restore-cli.ts",
         "apps/server/src/providers/ssi/ssi-sites.ts",
         "apps/server/src/sites/import/polite-http.ts"
@@ -5531,10 +5587,13 @@
         "apps/server/src/providers/push/site-for-send.ts",
         "apps/server/src/providers/site-pick.ts",
         "apps/server/src/sites/import/site-import-service.ts",
+        "apps/server/src/sites/import/site-purge-service.ts",
+        "apps/server/src/sites/import/site-purge-plan.ts",
         "apps/server/src/mcp/tools-sites.ts",
         "apps/server/src/providers/connection-routes.ts",
         "apps/server/src/sites/import/site-import-routes.ts",
         "apps/server/src/sites/import/site-import-view.ts",
+        "apps/server/src/sites/import/site-purge-routes.ts",
         "apps/server/src/sites/routes.ts",
         "apps/server/src/sites/site-view.ts",
         "apps/server/src/providers/ssi/ssi-sites.ts",
@@ -5553,7 +5612,8 @@
         "apps/server/src/sites/site-ids.ts",
         "apps/server/src/providers/push/site-for-send.ts",
         "apps/server/src/providers/site-pick.ts",
-        "apps/server/src/sites/import/site-import-service.ts"
+        "apps/server/src/sites/import/site-import-service.ts",
+        "apps/server/src/sites/import/site-purge-service.ts"
       ],
       "orphan": false,
       "valid": true
@@ -7036,6 +7096,7 @@
         "apps/server/src/providers/push/push-run-service.ts",
         "apps/server/src/providers/waiting-push/waiting-push-service.ts",
         "apps/server/src/sites/import/site-import-service.ts",
+        "apps/server/src/sites/import/site-purge-service.ts",
         "apps/server/src/social/offer-service.ts",
         "apps/server/src/social/suggestion-service.ts"
       ],
@@ -7350,6 +7411,23 @@
         },
         {
           "dynamic": false,
+          "module": "./entitlement/entitlement.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/entitlement/entitlement.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./equipment/equipment-service.js",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -7443,6 +7521,40 @@
             "import"
           ],
           "resolved": "apps/server/src/live/service.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./mail/links.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/mail/links.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./mail/resend.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/mail/resend.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -7668,6 +7780,23 @@
             "import"
           ],
           "resolved": "apps/server/src/sites/import/site-import-service.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./sites/import/site-purge-service.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/sites/import/site-purge-service.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -8073,6 +8202,23 @@
         },
         {
           "dynamic": false,
+          "module": "./vocabulary.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/vocabulary.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "fs",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -8110,6 +8256,7 @@
       ],
       "dependents": [
         "apps/server/src/compose.ts",
+        "apps/server/src/mail/resend.ts",
         "apps/server/src/notifications/notification-service.ts",
         "apps/server/src/notifications/push-dispatcher.ts",
         "apps/server/src/notifications/fcm-provider.ts",
@@ -10877,6 +11024,75 @@
       "valid": true
     },
     {
+      "source": "apps/server/src/entitlement/entitlement.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../db/client.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/db/client.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../db/schema.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/db/schema.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "drizzle-orm",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "npm",
+            "import"
+          ],
+          "resolved": "apps/server/node_modules/drizzle-orm/index.cjs",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": true,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/server/src/compose.ts",
+        "apps/server/src/providers/layer.ts",
+        "apps/server/src/providers/connection-service.ts",
+        "apps/server/src/providers/entitlement-gate.ts",
+        "apps/server/src/providers/dive-import/scheduled-fetch.ts",
+        "apps/server/src/providers/waiting-push/waiting-push-service.ts",
+        "apps/server/src/providers/routes.ts",
+        "apps/server/src/providers/push/push-run-routes.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "apps/server/src/equipment/equipment-service.ts",
       "dependencies": [
         {
@@ -12840,6 +13056,140 @@
       "valid": true
     },
     {
+      "source": "apps/server/src/mail/links.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./mail.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/mail/mail.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./messages.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/mail/messages.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/server/src/compose.ts",
+        "apps/server/src/users/invitation-service.ts",
+        "apps/server/src/users/password-reset-service.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/server/src/mail/mail.ts",
+      "dependencies": [],
+      "dependents": [
+        "apps/server/src/mail/links.ts",
+        "apps/server/src/mail/messages.ts",
+        "apps/server/src/mail/resend.ts",
+        "apps/server/src/users/invitation-service.ts",
+        "apps/server/src/users/password-reset-service.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/server/src/mail/messages.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./mail.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/mail/mail.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/server/src/mail/links.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/server/src/mail/resend.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../config.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/config.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./mail.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/mail/mail.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/server/src/compose.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "apps/server/src/mcp/access-service.ts",
       "dependencies": [
         {
@@ -14582,6 +14932,24 @@
         },
         {
           "dynamic": false,
+          "module": "../entitlement/entitlement.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/entitlement/entitlement.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "../revisions/revisions.js",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -15208,6 +15576,24 @@
         },
         {
           "dynamic": false,
+          "module": "../entitlement/entitlement.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/entitlement/entitlement.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "../live/emit.js",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -15251,6 +15637,23 @@
             "import"
           ],
           "resolved": "apps/server/src/secrets/secret-box.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./entitlement-gate.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/providers/entitlement-gate.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -15360,11 +15763,11 @@
       "valid": true
     },
     {
-      "source": "apps/server/src/providers/lease-service.ts",
+      "source": "apps/server/src/providers/entitlement-gate.ts",
       "dependencies": [
         {
           "dynamic": false,
-          "module": "../db/client.js",
+          "module": "../entitlement/entitlement.js",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
@@ -15372,7 +15775,7 @@
             "type-only",
             "import"
           ],
-          "resolved": "apps/server/src/db/client.ts",
+          "resolved": "apps/server/src/entitlement/entitlement.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -15382,208 +15785,70 @@
         },
         {
           "dynamic": false,
-          "module": "../db/schema.js",
+          "module": "./registry.js",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "import"
           ],
-          "resolved": "apps/server/src/db/schema.ts",
+          "resolved": "apps/server/src/providers/registry.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
           "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./waiting-push/waiting-push-queue.js",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "import"
-          ],
-          "resolved": "apps/server/src/providers/waiting-push/waiting-push-queue.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "crypto",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "core",
-            "import"
-          ],
-          "protocol": "node:",
-          "resolved": "crypto",
-          "coreModule": true,
-          "followable": false,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "drizzle-orm",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "npm",
-            "import"
-          ],
-          "resolved": "apps/server/node_modules/drizzle-orm/index.cjs",
-          "coreModule": false,
-          "followable": false,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": true,
           "circular": false,
           "valid": true
         }
       ],
       "dependents": [
-        "apps/server/src/compose.ts",
+        "apps/server/src/providers/connection-service.ts",
+        "apps/server/src/providers/push/push-run-routes.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/server/src/providers/registry.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./provider.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/providers/provider.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/server/src/app.ts",
         "apps/server/src/providers/layer.ts",
         "apps/server/src/providers/buddies/buddy-service.ts",
         "apps/server/src/providers/connection-service.ts",
+        "apps/server/src/providers/entitlement-gate.ts",
+        "apps/server/src/providers/conflicts/conflict-service.ts",
+        "apps/server/src/providers/push/dive-fingerprint.ts",
+        "apps/server/src/providers/push/outgoing-dive.ts",
         "apps/server/src/providers/dive-import/dive-import.ts",
         "apps/server/src/providers/dive-import/gone-dives.ts",
         "apps/server/src/providers/dive-import/scheduled-fetch.ts",
-        "apps/server/src/providers/push/push-service.ts",
-        "apps/server/src/providers/push/buddies-for-send.ts",
-        "apps/server/src/providers/push/site-for-send.ts",
-        "apps/server/src/providers/waiting-push/waiting-push-service.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "apps/server/src/providers/waiting-push/waiting-push-queue.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../../db/client.js",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "import"
-          ],
-          "resolved": "apps/server/src/db/client.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../../db/schema.js",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "apps/server/src/db/schema.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../current-remote.js",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "apps/server/src/providers/current-remote.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "drizzle-orm",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "npm",
-            "import"
-          ],
-          "resolved": "apps/server/node_modules/drizzle-orm/index.cjs",
-          "coreModule": false,
-          "followable": false,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": true,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "apps/server/src/compose.ts",
-        "apps/server/src/providers/layer.ts",
-        "apps/server/src/providers/buddies/buddy-service.ts",
-        "apps/server/src/providers/lease-service.ts",
-        "apps/server/src/providers/dive-import/dive-import.ts",
-        "apps/server/src/providers/dive-import/scheduled-fetch.ts",
         "apps/server/src/providers/push/push-run-service.ts",
         "apps/server/src/providers/push/push-service.ts",
-        "apps/server/src/providers/push/buddies-for-send.ts",
-        "apps/server/src/providers/push/site-for-send.ts",
+        "apps/server/src/providers/site-pick.ts",
         "apps/server/src/providers/waiting-push/waiting-push-service.ts",
-        "apps/server/src/worker.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "apps/server/src/providers/current-remote.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../db/schema.js",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "import"
-          ],
-          "resolved": "apps/server/src/db/schema.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "apps/server/src/providers/waiting-push/waiting-push-queue.ts",
-        "apps/server/src/providers/push/dive-fingerprint.ts",
-        "apps/server/src/providers/remote-state.ts",
-        "apps/server/src/providers/waiting-push/waiting-push-service.ts"
+        "apps/server/src/providers/route-parts.ts",
+        "apps/server/src/providers/routes.ts",
+        "apps/server/src/providers/conflicts/decision-routes.ts",
+        "apps/server/src/providers/connection-routes.ts"
       ],
       "orphan": false,
       "valid": true
@@ -15846,18 +16111,217 @@
       "valid": true
     },
     {
-      "source": "apps/server/src/providers/registry.ts",
+      "source": "apps/server/src/providers/lease-service.ts",
       "dependencies": [
         {
           "dynamic": false,
-          "module": "./provider.js",
+          "module": "../db/client.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/db/client.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../db/schema.js",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "import"
           ],
-          "resolved": "apps/server/src/providers/provider.ts",
+          "resolved": "apps/server/src/db/schema.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./waiting-push/waiting-push-queue.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/providers/waiting-push/waiting-push-queue.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "crypto",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "core",
+            "import"
+          ],
+          "protocol": "node:",
+          "resolved": "crypto",
+          "coreModule": true,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "drizzle-orm",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "npm",
+            "import"
+          ],
+          "resolved": "apps/server/node_modules/drizzle-orm/index.cjs",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": true,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/server/src/compose.ts",
+        "apps/server/src/providers/layer.ts",
+        "apps/server/src/providers/buddies/buddy-service.ts",
+        "apps/server/src/providers/connection-service.ts",
+        "apps/server/src/providers/dive-import/dive-import.ts",
+        "apps/server/src/providers/dive-import/gone-dives.ts",
+        "apps/server/src/providers/dive-import/scheduled-fetch.ts",
+        "apps/server/src/providers/push/push-service.ts",
+        "apps/server/src/providers/push/buddies-for-send.ts",
+        "apps/server/src/providers/push/site-for-send.ts",
+        "apps/server/src/providers/waiting-push/waiting-push-service.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/server/src/providers/waiting-push/waiting-push-queue.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../../db/client.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/db/client.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../../db/schema.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/db/schema.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../current-remote.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/providers/current-remote.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "drizzle-orm",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "npm",
+            "import"
+          ],
+          "resolved": "apps/server/node_modules/drizzle-orm/index.cjs",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": true,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/server/src/compose.ts",
+        "apps/server/src/providers/layer.ts",
+        "apps/server/src/providers/buddies/buddy-service.ts",
+        "apps/server/src/providers/lease-service.ts",
+        "apps/server/src/providers/dive-import/dive-import.ts",
+        "apps/server/src/providers/dive-import/scheduled-fetch.ts",
+        "apps/server/src/providers/push/push-run-service.ts",
+        "apps/server/src/providers/push/push-service.ts",
+        "apps/server/src/providers/push/buddies-for-send.ts",
+        "apps/server/src/providers/push/site-for-send.ts",
+        "apps/server/src/providers/waiting-push/waiting-push-service.ts",
+        "apps/server/src/worker.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/server/src/providers/current-remote.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../db/schema.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/db/schema.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -15867,24 +16331,10 @@
         }
       ],
       "dependents": [
-        "apps/server/src/app.ts",
-        "apps/server/src/providers/layer.ts",
-        "apps/server/src/providers/buddies/buddy-service.ts",
-        "apps/server/src/providers/connection-service.ts",
-        "apps/server/src/providers/conflicts/conflict-service.ts",
+        "apps/server/src/providers/waiting-push/waiting-push-queue.ts",
         "apps/server/src/providers/push/dive-fingerprint.ts",
-        "apps/server/src/providers/push/outgoing-dive.ts",
-        "apps/server/src/providers/dive-import/dive-import.ts",
-        "apps/server/src/providers/dive-import/gone-dives.ts",
-        "apps/server/src/providers/dive-import/scheduled-fetch.ts",
-        "apps/server/src/providers/push/push-run-service.ts",
-        "apps/server/src/providers/push/push-service.ts",
-        "apps/server/src/providers/site-pick.ts",
-        "apps/server/src/providers/waiting-push/waiting-push-service.ts",
-        "apps/server/src/providers/route-parts.ts",
-        "apps/server/src/providers/routes.ts",
-        "apps/server/src/providers/conflicts/decision-routes.ts",
-        "apps/server/src/providers/connection-routes.ts"
+        "apps/server/src/providers/remote-state.ts",
+        "apps/server/src/providers/waiting-push/waiting-push-service.ts"
       ],
       "orphan": false,
       "valid": true
@@ -18103,6 +18553,24 @@
         },
         {
           "dynamic": false,
+          "module": "../../entitlement/entitlement.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/entitlement/entitlement.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "../lease-service.js",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -19466,6 +19934,24 @@
         },
         {
           "dynamic": false,
+          "module": "../../entitlement/entitlement.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/entitlement/entitlement.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "../../live/emit.js",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -19798,6 +20284,23 @@
         },
         {
           "dynamic": false,
+          "module": "./site-jobs.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/sites/import/site-jobs.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./site-source.js",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -19835,6 +20338,283 @@
         "apps/server/src/compose.ts",
         "apps/server/src/worker.ts",
         "apps/server/src/sites/import/site-import-routes.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/server/src/sites/import/site-jobs.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "drizzle-orm",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "npm",
+            "import"
+          ],
+          "resolved": "apps/server/node_modules/drizzle-orm/index.cjs",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": true,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/server/src/sites/import/site-import-service.ts",
+        "apps/server/src/sites/import/site-purge-service.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/server/src/sites/import/site-purge-service.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../../db/client.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/db/client.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../../db/import-types.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/db/import-types.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../../db/schema.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/db/schema.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../../errors.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/errors.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../../http/problems.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/http/problems.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../../live/emit.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/live/emit.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../site-error.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/sites/site-error.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../sources.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/sites/sources.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./site-jobs.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/sites/import/site-jobs.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./site-purge-plan.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/sites/import/site-purge-plan.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "drizzle-orm",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "npm",
+            "import"
+          ],
+          "resolved": "apps/server/node_modules/drizzle-orm/index.cjs",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": true,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/server/src/compose.ts",
+        "apps/server/src/worker.ts",
+        "apps/server/src/sites/import/site-purge-routes.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/server/src/sites/import/site-purge-plan.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../../db/import-types.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/db/import-types.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../sources.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/sites/sources.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/server/src/sites/import/site-purge-service.ts"
       ],
       "orphan": false,
       "valid": true
@@ -20727,6 +21507,41 @@
         },
         {
           "dynamic": false,
+          "module": "../mail/links.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/mail/links.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../mail/mail.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/mail/mail.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./tokens.js",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -20848,6 +21663,41 @@
             "import"
           ],
           "resolved": "apps/server/src/db/schema.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../mail/links.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/mail/links.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../mail/mail.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/mail/mail.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -21476,6 +22326,23 @@
             "import"
           ],
           "resolved": "apps/server/src/sites/import/site-import-service.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./sites/import/site-purge-service.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/sites/import/site-purge-service.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -27242,6 +28109,24 @@
         },
         {
           "dynamic": false,
+          "module": "../entitlement/entitlement.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/entitlement/entitlement.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "../http/problems.js",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -28756,6 +29641,24 @@
         },
         {
           "dynamic": false,
+          "module": "../../entitlement/entitlement.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/entitlement/entitlement.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "../../http/problems.js",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -28781,6 +29684,23 @@
             "import"
           ],
           "resolved": "apps/server/src/http/schemas.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../entitlement-gate.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/providers/entitlement-gate.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -29151,7 +30071,285 @@
       ],
       "dependents": [
         "apps/server/src/app.ts",
-        "apps/server/src/sites/import/site-import-routes.ts"
+        "apps/server/src/sites/import/site-import-routes.ts",
+        "apps/server/src/sites/import/site-purge-view.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/server/src/sites/import/site-purge-routes.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../../auth/auth.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/auth/auth.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../../auth/fastify.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/auth/fastify.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../../http/problems.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/http/problems.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../../http/schemas.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/http/schemas.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../sources.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/sites/sources.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./site-purge-service.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/sites/import/site-purge-service.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./site-purge-view.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/sites/import/site-purge-view.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@fastify/type-provider-typebox",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "npm",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/node_modules/@fastify/type-provider-typebox/dist/cjs/index.js",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": true,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "typebox",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "unknown"
+          ],
+          "resolved": "typebox",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": true,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/server/src/app.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/server/src/sites/import/site-purge-view.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../../db/schema.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/db/schema.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../../db/schema.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/db/schema.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../../http/problems.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/http/problems.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../../http/schemas.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/http/schemas.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./site-import-view.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/sites/import/site-import-view.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "typebox",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "unknown"
+          ],
+          "resolved": "typebox",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": true,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/server/src/app.ts",
+        "apps/server/src/sites/import/site-purge-routes.ts"
       ],
       "orphan": false,
       "valid": true
@@ -52676,8 +53874,8 @@
     "baselineSize": 0,
     "baselineStale": 0,
     "advisedExitCode": 0,
-    "totalCruised": 495,
-    "totalDependenciesCruised": 2631,
+    "totalCruised": 506,
+    "totalDependenciesCruised": 2691,
     "optionsUsed": {
       "baseDir": "/home/runner/work/dive_hub/dive_hub",
       "combinedDependencies": false,
@@ -52739,7 +53937,7 @@
             "path": "^apps/server/src/revisions/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|backups|centres|certifications|divers|dives|equipment|imports|lead|mcp|notifications|planning|providers|sites|social|support|sync|live|users|version)/"
+            "path": "^apps/server/src/(assessment|backups|centres|certifications|divers|dives|entitlement|equipment|imports|lead|mcp|notifications|planning|providers|sites|social|support|sync|live|users|version)/"
           },
           "scope": "module"
         },
@@ -52751,7 +53949,7 @@
             "path": "^apps/server/src/assessment/"
           },
           "to": {
-            "path": "^apps/server/src/(revisions|backups|centres|certifications|dives|equipment|lead|mcp|notifications|planning|providers|sites|social|support|sync|live|users|version)/"
+            "path": "^apps/server/src/(revisions|backups|centres|certifications|dives|entitlement|equipment|lead|mcp|notifications|planning|providers|sites|social|support|sync|live|users|version)/"
           },
           "scope": "module"
         },
@@ -52763,7 +53961,7 @@
             "path": "^apps/server/src/backups/"
           },
           "to": {
-            "path": "^apps/server/src/(revisions|assessment|centres|certifications|divers|dives|equipment|imports|lead|mcp|notifications|planning|providers|sites|social|support|sync|live|users|version)/"
+            "path": "^apps/server/src/(revisions|assessment|centres|certifications|divers|dives|entitlement|equipment|imports|lead|mcp|notifications|planning|providers|sites|social|support|sync|live|users|version)/"
           },
           "scope": "module"
         },
@@ -52775,7 +53973,7 @@
             "path": "^apps/server/src/centres/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|backups|certifications|dives|equipment|imports|lead|mcp|notifications|planning|providers|social|support|sync|live|users|version)/"
+            "path": "^apps/server/src/(assessment|backups|certifications|dives|entitlement|equipment|imports|lead|mcp|notifications|planning|providers|social|support|sync|live|users|version)/"
           },
           "scope": "module"
         },
@@ -52787,7 +53985,7 @@
             "path": "^apps/server/src/certifications/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|backups|centres|equipment|imports|lead|mcp|notifications|planning|providers|sites|social|support|sync|users|version)/"
+            "path": "^apps/server/src/(assessment|backups|centres|entitlement|equipment|imports|lead|mcp|notifications|planning|providers|sites|social|support|sync|users|version)/"
           },
           "scope": "module"
         },
@@ -52799,7 +53997,7 @@
             "path": "^apps/server/src/divers/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|backups|centres|certifications|dives|equipment|imports|lead|mcp|notifications|planning|providers|sites|social|support|sync|live|users|version)/"
+            "path": "^apps/server/src/(assessment|backups|centres|certifications|dives|entitlement|equipment|imports|lead|mcp|notifications|planning|providers|sites|social|support|sync|live|users|version)/"
           },
           "scope": "module"
         },
@@ -52811,7 +54009,19 @@
             "path": "^apps/server/src/dives/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|backups|certifications|equipment|imports|lead|mcp|notifications|planning|providers|social|support|sync|live|users|version)/"
+            "path": "^apps/server/src/(assessment|backups|certifications|entitlement|equipment|imports|lead|mcp|notifications|planning|providers|social|support|sync|live|users|version)/"
+          },
+          "scope": "module"
+        },
+        {
+          "name": "module-imports-entitlement",
+          "severity": "error",
+          "comment": "entitlement/ may import only these domain modules:  (MODULE_IMPORTS in .dependency-cruiser.cjs, ADR 0053).",
+          "from": {
+            "path": "^apps/server/src/entitlement/"
+          },
+          "to": {
+            "path": "^apps/server/src/(revisions|assessment|backups|centres|certifications|divers|dives|equipment|imports|lead|mcp|notifications|planning|providers|sites|social|support|sync|live|users|version)/"
           },
           "scope": "module"
         },
@@ -52823,7 +54033,7 @@
             "path": "^apps/server/src/equipment/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|backups|centres|certifications|dives|imports|lead|mcp|notifications|planning|providers|sites|social|support|sync|live|users|version)/"
+            "path": "^apps/server/src/(assessment|backups|centres|certifications|dives|entitlement|imports|lead|mcp|notifications|planning|providers|sites|social|support|sync|live|users|version)/"
           },
           "scope": "module"
         },
@@ -52835,7 +54045,7 @@
             "path": "^apps/server/src/imports/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|backups|centres|certifications|lead|mcp|notifications|planning|providers|social|support|sync|users|version)/"
+            "path": "^apps/server/src/(assessment|backups|centres|certifications|entitlement|lead|mcp|notifications|planning|providers|social|support|sync|users|version)/"
           },
           "scope": "module"
         },
@@ -52847,7 +54057,7 @@
             "path": "^apps/server/src/lead/"
           },
           "to": {
-            "path": "^apps/server/src/(revisions|assessment|backups|centres|certifications|equipment|imports|mcp|notifications|providers|sites|social|support|sync|live|users|version)/"
+            "path": "^apps/server/src/(revisions|assessment|backups|centres|certifications|entitlement|equipment|imports|mcp|notifications|providers|sites|social|support|sync|live|users|version)/"
           },
           "scope": "module"
         },
@@ -52874,7 +54084,7 @@
             "path": "^apps/server/src/mcp/"
           },
           "to": {
-            "path": "^apps/server/src/(revisions|backups|centres|certifications|imports|lead|notifications|providers|social|support|sync|live|users|version)/"
+            "path": "^apps/server/src/(revisions|backups|centres|certifications|entitlement|imports|lead|notifications|providers|social|support|sync|live|users|version)/"
           },
           "scope": "module"
         },
@@ -52886,7 +54096,7 @@
             "path": "^apps/server/src/notifications/"
           },
           "to": {
-            "path": "^apps/server/src/(revisions|assessment|backups|centres|certifications|divers|dives|equipment|imports|lead|mcp|planning|providers|sites|social|support|sync|live|users|version)/"
+            "path": "^apps/server/src/(revisions|assessment|backups|centres|certifications|divers|dives|entitlement|equipment|imports|lead|mcp|planning|providers|sites|social|support|sync|live|users|version)/"
           },
           "scope": "module"
         },
@@ -52898,14 +54108,14 @@
             "path": "^apps/server/src/planning/"
           },
           "to": {
-            "path": "^apps/server/src/(revisions|backups|centres|certifications|equipment|imports|lead|mcp|notifications|providers|sites|social|support|sync|live|users|version)/"
+            "path": "^apps/server/src/(revisions|backups|centres|certifications|entitlement|equipment|imports|lead|mcp|notifications|providers|sites|social|support|sync|live|users|version)/"
           },
           "scope": "module"
         },
         {
           "name": "module-imports-providers",
           "severity": "error",
-          "comment": "providers/ may import only these domain modules: certifications, divers, dives, imports, live, revisions, sites (MODULE_IMPORTS in .dependency-cruiser.cjs, ADR 0053).",
+          "comment": "providers/ may import only these domain modules: certifications, divers, dives, entitlement, imports, live, revisions, sites (MODULE_IMPORTS in .dependency-cruiser.cjs, ADR 0053).",
           "from": {
             "path": "^apps/server/src/providers/"
           },
@@ -52922,7 +54132,7 @@
             "path": "^apps/server/src/sites/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|backups|centres|certifications|divers|dives|equipment|imports|lead|mcp|notifications|planning|providers|social|support|sync|users|version)/"
+            "path": "^apps/server/src/(assessment|backups|centres|certifications|divers|dives|entitlement|equipment|imports|lead|mcp|notifications|planning|providers|social|support|sync|users|version)/"
           },
           "scope": "module"
         },
@@ -52934,7 +54144,7 @@
             "path": "^apps/server/src/social/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|backups|centres|certifications|equipment|imports|lead|mcp|notifications|planning|providers|sites|support|sync|users|version)/"
+            "path": "^apps/server/src/(assessment|backups|centres|certifications|entitlement|equipment|imports|lead|mcp|notifications|planning|providers|sites|support|sync|users|version)/"
           },
           "scope": "module"
         },
@@ -52946,7 +54156,7 @@
             "path": "^apps/server/src/support/"
           },
           "to": {
-            "path": "^apps/server/src/(revisions|assessment|backups|centres|certifications|divers|dives|equipment|imports|lead|mcp|notifications|planning|providers|sites|social|sync|live|users|version)/"
+            "path": "^apps/server/src/(revisions|assessment|backups|centres|certifications|divers|dives|entitlement|equipment|imports|lead|mcp|notifications|planning|providers|sites|social|sync|live|users|version)/"
           },
           "scope": "module"
         },
@@ -52958,7 +54168,7 @@
             "path": "^apps/server/src/sync/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|backups|centres|certifications|divers|dives|equipment|imports|lead|mcp|notifications|planning|providers|sites|social|support|live|users|version)/"
+            "path": "^apps/server/src/(assessment|backups|centres|certifications|divers|dives|entitlement|equipment|imports|lead|mcp|notifications|planning|providers|sites|social|support|live|users|version)/"
           },
           "scope": "module"
         },
@@ -52970,7 +54180,7 @@
             "path": "^apps/server/src/live/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|backups|centres|certifications|divers|dives|equipment|imports|lead|mcp|notifications|planning|providers|sites|social|support|sync|users|version)/"
+            "path": "^apps/server/src/(assessment|backups|centres|certifications|divers|dives|entitlement|equipment|imports|lead|mcp|notifications|planning|providers|sites|social|support|sync|users|version)/"
           },
           "scope": "module"
         },
@@ -52997,7 +54207,7 @@
             "path": "^apps/server/src/users/"
           },
           "to": {
-            "path": "^apps/server/src/(revisions|assessment|backups|centres|certifications|dives|equipment|imports|lead|mcp|notifications|planning|providers|sites|social|support|sync|live|version)/"
+            "path": "^apps/server/src/(revisions|assessment|backups|centres|certifications|dives|entitlement|equipment|imports|lead|mcp|notifications|planning|providers|sites|social|support|sync|live|version)/"
           },
           "scope": "module"
         },
@@ -53009,7 +54219,7 @@
             "path": "^apps/server/src/version/"
           },
           "to": {
-            "path": "^apps/server/src/(revisions|assessment|backups|centres|certifications|divers|dives|equipment|imports|lead|mcp|notifications|planning|providers|sites|social|support|sync|live|users)/"
+            "path": "^apps/server/src/(revisions|assessment|backups|centres|certifications|divers|dives|entitlement|equipment|imports|lead|mcp|notifications|planning|providers|sites|social|support|sync|live|users)/"
           },
           "scope": "module"
         },
@@ -53130,7 +54340,7 @@
       "version": "18.7.0",
       "nodeVersionSupported": "^22||^24||>=26",
       "nodeVersionFound": "v24.22.3",
-      "osVersionFound": "x64 linux@7.0.0-1016-aws",
+      "osVersionFound": "x64 linux@7.0.0-1020-azure",
       "transpilersFound": [
         {
           "name": "javascript",

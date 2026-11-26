@@ -465,6 +465,106 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/email/config": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Whether this instance can send e-mail (invitations and self-serve password resets) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            configured: boolean;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/password-resets/request": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Request a password reset link by e-mail (only when e-mail is configured)
+         * @description Answers the same whether or not the address has an account, so it never reveals one. 404 when this instance sends no e-mail (use an admin's reset link instead).
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** Format: email */
+                        email: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/password-resets/lookup": {
         parameters: {
             query?: never;
@@ -858,6 +958,9 @@ export interface paths {
                             url: string;
                             /** Format: date-time */
                             expiresAt: string;
+                        } & {
+                            /** @description Whether the link was e-mailed; absent when this instance sends no e-mail. The link works either way. */
+                            emailSent?: boolean;
                         };
                     };
                 };
@@ -10542,6 +10645,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/admin/site-sources": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The site sources this instance offers (admins)
+         * @description Driven by DIVEHUB_SITE_SOURCES (ADR 0087), not by the client: the admin UI offers exactly these. A source left out is refused by POST /api/admin/site-imports (400 site_source_disabled).
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": ("osm" | "wikidata" | "ssi")[];
+                    };
+                };
+                /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/admin/site-imports": {
         parameters: {
             query?: never;
@@ -10697,6 +10848,183 @@ export interface paths {
                     };
                     content: {
                         "application/json": components["schemas"]["SiteImportView"];
+                    };
+                };
+                /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/site-imports/purge": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Remove every External ID of one Source and the sites it leaves empty (admins)
+         * @description Runs in the background; follow it with GET. Deletes the Source's External IDs, then import-created sites with no remaining data-providing ID and no Dive; sites a Dive still names are reported, not deleted. One Site import or purge at a time (409).
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /**
+                         * @description The Source whose External IDs and now-empty sites go
+                         * @enum {unknown}
+                         */
+                        source: "osm" | "wikidata" | "ssi";
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                202: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SitePurgeView"];
+                    };
+                };
+                /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/site-imports/purges": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The latest Source purges, newest first (admins) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SitePurgeView"][];
+                    };
+                };
+                /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/site-imports/purges/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One Source purge with its progress and result (admins) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SitePurgeView"];
                     };
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
@@ -10912,6 +11240,15 @@ export interface paths {
                     };
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
+                402: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
                 404: {
                     headers: {
                         [name: string]: unknown;
@@ -11014,6 +11351,15 @@ export interface paths {
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
                 400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
+                402: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -11147,6 +11493,15 @@ export interface paths {
                     };
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
+                402: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
                 404: {
                     headers: {
                         [name: string]: unknown;
@@ -11206,6 +11561,15 @@ export interface paths {
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
                 400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
+                402: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -11282,6 +11646,15 @@ export interface paths {
                     };
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
+                402: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
                 404: {
                     headers: {
                         [name: string]: unknown;
@@ -11339,6 +11712,15 @@ export interface paths {
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
                 400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
+                402: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -11610,6 +11992,15 @@ export interface paths {
                     };
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
+                402: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
                 404: {
                     headers: {
                         [name: string]: unknown;
@@ -11699,6 +12090,15 @@ export interface paths {
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
                 400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
+                402: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -11847,6 +12247,15 @@ export interface paths {
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
                 400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
+                402: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -12048,6 +12457,15 @@ export interface paths {
                     };
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
+                402: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
                 404: {
                     headers: {
                         [name: string]: unknown;
@@ -12138,6 +12556,15 @@ export interface paths {
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
                 400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
+                402: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -12250,6 +12677,15 @@ export interface paths {
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
                 400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
+                402: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -12378,6 +12814,15 @@ export interface paths {
                     };
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
+                402: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
                 404: {
                     headers: {
                         [name: string]: unknown;
@@ -12467,6 +12912,15 @@ export interface paths {
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
                 400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
+                402: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -12569,6 +13023,15 @@ export interface paths {
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
                 400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
+                402: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -12805,6 +13268,15 @@ export interface paths {
                     };
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
+                402: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
                 404: {
                     headers: {
                         [name: string]: unknown;
@@ -12898,6 +13370,15 @@ export interface paths {
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
                 400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
+                402: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -13141,6 +13622,15 @@ export interface paths {
                     };
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
+                402: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
                 404: {
                     headers: {
                         [name: string]: unknown;
@@ -13263,6 +13753,15 @@ export interface paths {
                     };
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
+                402: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
                 404: {
                     headers: {
                         [name: string]: unknown;
@@ -13352,6 +13851,15 @@ export interface paths {
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
                 400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
+                402: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -13451,6 +13959,15 @@ export interface paths {
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
                 400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
+                402: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -13839,6 +14356,15 @@ export interface paths {
                     };
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
+                402: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
                 404: {
                     headers: {
                         [name: string]: unknown;
@@ -13901,6 +14427,15 @@ export interface paths {
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
                 400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
+                402: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -13997,6 +14532,15 @@ export interface paths {
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
                 400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
+                402: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -14103,6 +14647,15 @@ export interface paths {
                     };
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
+                402: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
                 404: {
                     headers: {
                         [name: string]: unknown;
@@ -14184,6 +14737,15 @@ export interface paths {
                 };
                 /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
                 400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
+                402: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -14757,7 +15319,7 @@ export interface components {
              * @description Stable, machine-readable reason; clients translate it
              * @enum {unknown}
              */
-            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "two_factor_password_invalid" | "two_factor_code_invalid" | "two_factor_not_enabled" | "too_many_attempts" | "too_many_live_streams" | "live_unavailable" | "client_too_old" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "suggestion_not_found" | "suggestion_not_pending" | "suggestion_dive_not_found" | "suggestion_dive_not_overlapping" | "suggestion_link_conflict" | "joint_offer_not_valid" | "merge_not_possible" | "check_not_found" | "continuation_not_possible" | "recording_is_part" | "device_not_found" | "push_device_not_found" | "equipment_not_found" | "equipment_changed" | "equipment_in_use" | "equipment_use_mismatch" | "schedule_not_found" | "schedule_interval_required" | "record_not_found" | "equipment_item_not_cylinder" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "backup_not_found" | "backup_in_progress" | "backup_running" | "backup_not_ready" | "backup_file_missing" | "backup_passphrase_missing" | "backup_settings_invalid" | "backup_recipient_missing" | "backup_recipient_invalid" | "setup_restore_source_missing" | "setup_restore_archive_missing" | "setup_restore_key_missing" | "setup_restore_decrypt_failed" | "setup_restore_key_required" | "setup_restore_key_unexpected" | "setup_restore_key_differs" | "setup_restore_schema_newer" | "setup_restore_failed" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "fetch_interval_too_short" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "waiting_push_not_found" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "client_diagnostics_disabled" | "client_diagnostics_limited" | "sync_resync_required" | "provider_site_unknown" | "provider_buddy_not_found" | "provider_site_data_not_confirmed";
+            code: "sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "two_factor_password_invalid" | "two_factor_code_invalid" | "two_factor_not_enabled" | "too_many_attempts" | "too_many_live_streams" | "live_unavailable" | "client_too_old" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "suggestion_not_found" | "suggestion_not_pending" | "suggestion_dive_not_found" | "suggestion_dive_not_overlapping" | "suggestion_link_conflict" | "joint_offer_not_valid" | "merge_not_possible" | "check_not_found" | "continuation_not_possible" | "recording_is_part" | "device_not_found" | "push_device_not_found" | "equipment_not_found" | "equipment_changed" | "equipment_in_use" | "equipment_use_mismatch" | "schedule_not_found" | "schedule_interval_required" | "record_not_found" | "equipment_item_not_cylinder" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_source_disabled" | "site_import_running" | "site_import_not_found" | "site_purge_running" | "site_purge_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "backup_not_found" | "backup_in_progress" | "backup_running" | "backup_not_ready" | "backup_file_missing" | "backup_passphrase_missing" | "backup_settings_invalid" | "backup_recipient_missing" | "backup_recipient_invalid" | "setup_restore_source_missing" | "setup_restore_archive_missing" | "setup_restore_key_missing" | "setup_restore_decrypt_failed" | "setup_restore_key_required" | "setup_restore_key_unexpected" | "setup_restore_key_differs" | "setup_restore_schema_newer" | "setup_restore_failed" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "fetch_interval_too_short" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "waiting_push_not_found" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "entitlement_required" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "client_diagnostics_disabled" | "client_diagnostics_limited" | "sync_resync_required" | "provider_site_unknown" | "provider_buddy_not_found" | "provider_site_data_not_confirmed";
             /** @description English description, for logs and scripts */
             error: string;
             /** @description The Provider a provider_* code is about (ADR 0027) */
@@ -14787,6 +15349,13 @@ export interface components {
             diveId?: null | string;
             /** @description With push_run_active: the run that is going (ADR 0047) */
             runId?: string;
+            /** @description With entitlement_required: the paid plan the client offers, and what it unlocks (hosted-DiveHub plan §4) */
+            offer?: {
+                /** @description The plan that unlocks the action (pro) */
+                plan: string;
+                /** @description What it unlocks: automation (scheduled fetches and Waiting pushes) and push_runs */
+                features: string[];
+            };
         };
         /** @description A refusal about a Provider: a Problem, with what is unmet */
         ProviderProblem: components["schemas"]["Problem"] & {
@@ -15457,7 +16026,38 @@ export interface components {
                 source: "osm" | "wikidata" | "ssi";
             })[];
             /** @description Why it failed (a problem code) */
-            failureCode: null | ("sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "two_factor_password_invalid" | "two_factor_code_invalid" | "two_factor_not_enabled" | "too_many_attempts" | "too_many_live_streams" | "live_unavailable" | "client_too_old" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "suggestion_not_found" | "suggestion_not_pending" | "suggestion_dive_not_found" | "suggestion_dive_not_overlapping" | "suggestion_link_conflict" | "joint_offer_not_valid" | "merge_not_possible" | "check_not_found" | "continuation_not_possible" | "recording_is_part" | "device_not_found" | "push_device_not_found" | "equipment_not_found" | "equipment_changed" | "equipment_in_use" | "equipment_use_mismatch" | "schedule_not_found" | "schedule_interval_required" | "record_not_found" | "equipment_item_not_cylinder" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "backup_not_found" | "backup_in_progress" | "backup_running" | "backup_not_ready" | "backup_file_missing" | "backup_passphrase_missing" | "backup_settings_invalid" | "backup_recipient_missing" | "backup_recipient_invalid" | "setup_restore_source_missing" | "setup_restore_archive_missing" | "setup_restore_key_missing" | "setup_restore_decrypt_failed" | "setup_restore_key_required" | "setup_restore_key_unexpected" | "setup_restore_key_differs" | "setup_restore_schema_newer" | "setup_restore_failed" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "fetch_interval_too_short" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "waiting_push_not_found" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "client_diagnostics_disabled" | "client_diagnostics_limited" | "sync_resync_required" | "provider_site_unknown" | "provider_buddy_not_found" | "provider_site_data_not_confirmed");
+            failureCode: null | ("sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "two_factor_password_invalid" | "two_factor_code_invalid" | "two_factor_not_enabled" | "too_many_attempts" | "too_many_live_streams" | "live_unavailable" | "client_too_old" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "suggestion_not_found" | "suggestion_not_pending" | "suggestion_dive_not_found" | "suggestion_dive_not_overlapping" | "suggestion_link_conflict" | "joint_offer_not_valid" | "merge_not_possible" | "check_not_found" | "continuation_not_possible" | "recording_is_part" | "device_not_found" | "push_device_not_found" | "equipment_not_found" | "equipment_changed" | "equipment_in_use" | "equipment_use_mismatch" | "schedule_not_found" | "schedule_interval_required" | "record_not_found" | "equipment_item_not_cylinder" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_source_disabled" | "site_import_running" | "site_import_not_found" | "site_purge_running" | "site_purge_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "backup_not_found" | "backup_in_progress" | "backup_running" | "backup_not_ready" | "backup_file_missing" | "backup_passphrase_missing" | "backup_settings_invalid" | "backup_recipient_missing" | "backup_recipient_invalid" | "setup_restore_source_missing" | "setup_restore_archive_missing" | "setup_restore_key_missing" | "setup_restore_decrypt_failed" | "setup_restore_key_required" | "setup_restore_key_unexpected" | "setup_restore_key_differs" | "setup_restore_schema_newer" | "setup_restore_failed" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "fetch_interval_too_short" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "waiting_push_not_found" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "entitlement_required" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "client_diagnostics_disabled" | "client_diagnostics_limited" | "sync_resync_required" | "provider_site_unknown" | "provider_buddy_not_found" | "provider_site_data_not_confirmed");
+            /** Format: date-time */
+            createdAt: string;
+            finishedAt: null | string;
+        };
+        SitePurgeView: {
+            id: string;
+            /** @enum {unknown} */
+            status: "queued" | "running" | "done" | "failed";
+            /** @enum {unknown} */
+            source: "osm" | "wikidata" | "ssi";
+            progress: {
+                /** @enum {unknown} */
+                step: "waiting" | "ids" | "sites";
+                done: number;
+                total: number;
+            };
+            result: null | {
+                /** @description External IDs of the Source that were removed */
+                sourceIdsDeleted: number;
+                /** @description Import-created sites no data-providing ID and no Dive held */
+                sitesDeleted: number;
+                /** @description Sites a Dive still names: left in place for the admin to resolve, then run the purge again */
+                referencedSites: {
+                    id: string;
+                    name: string;
+                    /** @description Dives that still name the site */
+                    dives: number;
+                }[];
+            };
+            /** @description Why it failed (a problem code) */
+            failureCode: null | ("sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "two_factor_password_invalid" | "two_factor_code_invalid" | "two_factor_not_enabled" | "too_many_attempts" | "too_many_live_streams" | "live_unavailable" | "client_too_old" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "suggestion_not_found" | "suggestion_not_pending" | "suggestion_dive_not_found" | "suggestion_dive_not_overlapping" | "suggestion_link_conflict" | "joint_offer_not_valid" | "merge_not_possible" | "check_not_found" | "continuation_not_possible" | "recording_is_part" | "device_not_found" | "push_device_not_found" | "equipment_not_found" | "equipment_changed" | "equipment_in_use" | "equipment_use_mismatch" | "schedule_not_found" | "schedule_interval_required" | "record_not_found" | "equipment_item_not_cylinder" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_source_disabled" | "site_import_running" | "site_import_not_found" | "site_purge_running" | "site_purge_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "backup_not_found" | "backup_in_progress" | "backup_running" | "backup_not_ready" | "backup_file_missing" | "backup_passphrase_missing" | "backup_settings_invalid" | "backup_recipient_missing" | "backup_recipient_invalid" | "setup_restore_source_missing" | "setup_restore_archive_missing" | "setup_restore_key_missing" | "setup_restore_decrypt_failed" | "setup_restore_key_required" | "setup_restore_key_unexpected" | "setup_restore_key_differs" | "setup_restore_schema_newer" | "setup_restore_failed" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "fetch_interval_too_short" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "waiting_push_not_found" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "entitlement_required" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "client_diagnostics_disabled" | "client_diagnostics_limited" | "sync_resync_required" | "provider_site_unknown" | "provider_buddy_not_found" | "provider_site_data_not_confirmed");
             /** Format: date-time */
             createdAt: string;
             finishedAt: null | string;
@@ -15469,7 +16069,7 @@ export interface components {
             diverId: string;
             /** @enum {unknown} */
             status: "queued" | "running" | "done" | "cancelled" | "stopped";
-            stopCode: null | ("sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "two_factor_password_invalid" | "two_factor_code_invalid" | "two_factor_not_enabled" | "too_many_attempts" | "too_many_live_streams" | "live_unavailable" | "client_too_old" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "suggestion_not_found" | "suggestion_not_pending" | "suggestion_dive_not_found" | "suggestion_dive_not_overlapping" | "suggestion_link_conflict" | "joint_offer_not_valid" | "merge_not_possible" | "check_not_found" | "continuation_not_possible" | "recording_is_part" | "device_not_found" | "push_device_not_found" | "equipment_not_found" | "equipment_changed" | "equipment_in_use" | "equipment_use_mismatch" | "schedule_not_found" | "schedule_interval_required" | "record_not_found" | "equipment_item_not_cylinder" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "backup_not_found" | "backup_in_progress" | "backup_running" | "backup_not_ready" | "backup_file_missing" | "backup_passphrase_missing" | "backup_settings_invalid" | "backup_recipient_missing" | "backup_recipient_invalid" | "setup_restore_source_missing" | "setup_restore_archive_missing" | "setup_restore_key_missing" | "setup_restore_decrypt_failed" | "setup_restore_key_required" | "setup_restore_key_unexpected" | "setup_restore_key_differs" | "setup_restore_schema_newer" | "setup_restore_failed" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "fetch_interval_too_short" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "waiting_push_not_found" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "client_diagnostics_disabled" | "client_diagnostics_limited" | "sync_resync_required" | "provider_site_unknown" | "provider_buddy_not_found" | "provider_site_data_not_confirmed");
+            stopCode: null | ("sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "two_factor_password_invalid" | "two_factor_code_invalid" | "two_factor_not_enabled" | "too_many_attempts" | "too_many_live_streams" | "live_unavailable" | "client_too_old" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "suggestion_not_found" | "suggestion_not_pending" | "suggestion_dive_not_found" | "suggestion_dive_not_overlapping" | "suggestion_link_conflict" | "joint_offer_not_valid" | "merge_not_possible" | "check_not_found" | "continuation_not_possible" | "recording_is_part" | "device_not_found" | "push_device_not_found" | "equipment_not_found" | "equipment_changed" | "equipment_in_use" | "equipment_use_mismatch" | "schedule_not_found" | "schedule_interval_required" | "record_not_found" | "equipment_item_not_cylinder" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_source_disabled" | "site_import_running" | "site_import_not_found" | "site_purge_running" | "site_purge_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "backup_not_found" | "backup_in_progress" | "backup_running" | "backup_not_ready" | "backup_file_missing" | "backup_passphrase_missing" | "backup_settings_invalid" | "backup_recipient_missing" | "backup_recipient_invalid" | "setup_restore_source_missing" | "setup_restore_archive_missing" | "setup_restore_key_missing" | "setup_restore_decrypt_failed" | "setup_restore_key_required" | "setup_restore_key_unexpected" | "setup_restore_key_differs" | "setup_restore_schema_newer" | "setup_restore_failed" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "fetch_interval_too_short" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "waiting_push_not_found" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "entitlement_required" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "client_diagnostics_disabled" | "client_diagnostics_limited" | "sync_resync_required" | "provider_site_unknown" | "provider_buddy_not_found" | "provider_site_data_not_confirmed");
             updates: boolean;
             updatesRemovingVerification: boolean;
             numbers: boolean;
@@ -15636,7 +16236,7 @@ export interface components {
                 remoteNumber: null | number;
                 /** @description The remote dive was found deleted at the Provider */
                 remoteGone: boolean;
-                failureCode: null | ("sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "two_factor_password_invalid" | "two_factor_code_invalid" | "two_factor_not_enabled" | "too_many_attempts" | "too_many_live_streams" | "live_unavailable" | "client_too_old" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "suggestion_not_found" | "suggestion_not_pending" | "suggestion_dive_not_found" | "suggestion_dive_not_overlapping" | "suggestion_link_conflict" | "joint_offer_not_valid" | "merge_not_possible" | "check_not_found" | "continuation_not_possible" | "recording_is_part" | "device_not_found" | "push_device_not_found" | "equipment_not_found" | "equipment_changed" | "equipment_in_use" | "equipment_use_mismatch" | "schedule_not_found" | "schedule_interval_required" | "record_not_found" | "equipment_item_not_cylinder" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_import_running" | "site_import_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "backup_not_found" | "backup_in_progress" | "backup_running" | "backup_not_ready" | "backup_file_missing" | "backup_passphrase_missing" | "backup_settings_invalid" | "backup_recipient_missing" | "backup_recipient_invalid" | "setup_restore_source_missing" | "setup_restore_archive_missing" | "setup_restore_key_missing" | "setup_restore_decrypt_failed" | "setup_restore_key_required" | "setup_restore_key_unexpected" | "setup_restore_key_differs" | "setup_restore_schema_newer" | "setup_restore_failed" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "fetch_interval_too_short" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "waiting_push_not_found" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "client_diagnostics_disabled" | "client_diagnostics_limited" | "sync_resync_required" | "provider_site_unknown" | "provider_buddy_not_found" | "provider_site_data_not_confirmed");
+                failureCode: null | ("sign_in_required" | "admins_only" | "not_found" | "invalid_input" | "internal_error" | "upload_missing" | "upload_too_large" | "setup_done" | "setup_token_invalid" | "invitation_invalid" | "invitation_not_found" | "email_taken" | "reset_link_invalid" | "two_factor_password_invalid" | "two_factor_code_invalid" | "two_factor_not_enabled" | "too_many_attempts" | "too_many_live_streams" | "live_unavailable" | "client_too_old" | "user_not_found" | "user_disabled" | "last_admin" | "not_yourself" | "confirmation_mismatch" | "session_not_found" | "import_not_found" | "import_not_waiting" | "dive_not_found" | "cylinder_invalid" | "cylinder_series_not_found" | "weighting_feedback_invalid" | "suit_invalid" | "dive_changed" | "dive_values_inconsistent" | "recording_not_on_dive" | "last_recording" | "diver_not_found" | "gas_not_breathable" | "body_weight_not_found" | "certification_not_found" | "certification_changed" | "certification_read_only" | "certification_image_not_found" | "own_diver" | "diver_not_empty" | "diver_in_use" | "diver_not_deletable" | "diver_not_editable" | "diver_external_id_taken" | "diver_external_id_connected" | "participant_invalid" | "suggestion_not_found" | "suggestion_not_pending" | "suggestion_dive_not_found" | "suggestion_dive_not_overlapping" | "suggestion_link_conflict" | "joint_offer_not_valid" | "merge_not_possible" | "check_not_found" | "continuation_not_possible" | "recording_is_part" | "device_not_found" | "push_device_not_found" | "equipment_not_found" | "equipment_changed" | "equipment_in_use" | "equipment_use_mismatch" | "schedule_not_found" | "schedule_interval_required" | "record_not_found" | "equipment_item_not_cylinder" | "candidate_not_found" | "candidate_resolved" | "not_a_candidate" | "recording_not_found" | "site_not_found" | "site_changed" | "site_in_use" | "site_not_deletable" | "external_id_taken" | "site_source_not_typed" | "site_merge_self" | "site_offer_not_found" | "centre_not_found" | "centre_changed" | "centre_not_deletable" | "centre_external_id_taken" | "code_not_recognised" | "code_not_a_person" | "diver_choice_needed" | "diver_has_other_account" | "odbl_not_confirmed" | "ssi_not_confirmed" | "site_source_disabled" | "site_import_running" | "site_import_not_found" | "site_purge_running" | "site_purge_not_found" | "source_unavailable" | "source_rate_limited" | "site_import_interrupted" | "connection_not_found" | "encryption_key_missing" | "provider_already_connected" | "provider_account_taken" | "provider_other_account" | "provider_wrong_credentials" | "provider_not_connected" | "provider_sign_in_needed" | "provider_unavailable" | "provider_refused" | "provider_not_stored" | "provider_requirements_unmet" | "provider_not_sent" | "provider_dive_gone" | "provider_busy" | "backup_not_found" | "backup_in_progress" | "backup_running" | "backup_not_ready" | "backup_file_missing" | "backup_passphrase_missing" | "backup_settings_invalid" | "backup_recipient_missing" | "backup_recipient_invalid" | "setup_restore_source_missing" | "setup_restore_archive_missing" | "setup_restore_key_missing" | "setup_restore_decrypt_failed" | "setup_restore_key_required" | "setup_restore_key_unexpected" | "setup_restore_key_differs" | "setup_restore_schema_newer" | "setup_restore_failed" | "provider_number_taken" | "provider_numbers_off" | "provider_number_nothing_to_set" | "provider_unsupported" | "fetch_interval_too_short" | "push_run_active" | "push_run_nothing_to_send" | "push_run_not_found" | "push_run_not_active" | "push_run_going" | "push_run_not_stopped" | "waiting_push_not_found" | "provider_account_held" | "diver_not_external" | "provider_import_off" | "entitlement_required" | "finding_not_found" | "ai_access_not_found" | "ai_access_off" | "client_diagnostics_disabled" | "client_diagnostics_limited" | "sync_resync_required" | "provider_site_unknown" | "provider_buddy_not_found" | "provider_site_data_not_confirmed");
                 leftOut: null | {
                     diverId: string;
                     name: string;

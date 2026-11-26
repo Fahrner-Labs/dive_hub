@@ -107,6 +107,7 @@ export function createSupportService(deps: SupportServiceDeps) {
       DIVEHUB_BASE_URL: setting('DIVEHUB_BASE_URL') ?? `http://localhost:${port}`,
       DIVEHUB_TRUSTED_PROXIES: setting('DIVEHUB_TRUSTED_PROXIES') ?? null,
       DIVEHUB_DATA_DIR: setting('DIVEHUB_DATA_DIR') ?? deps.dataDir,
+      DIVEHUB_SITE_SOURCES: setting('DIVEHUB_SITE_SOURCES') ?? 'osm,wikidata,ssi',
       DIVEHUB_OVERPASS_URL: setting('DIVEHUB_OVERPASS_URL') ?? null,
       DIVEHUB_WIKIDATA_SPARQL_URL: setting('DIVEHUB_WIKIDATA_SPARQL_URL') ?? null,
       DIVEHUB_SSI_SITES_URL: setting('DIVEHUB_SSI_SITES_URL') ?? null,

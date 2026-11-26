@@ -7,6 +7,8 @@ const SERVER = '^apps/server/src/';
 // The server's domain modules and the other domain modules each may import (ADR 0053). `name:type` allows type
 // imports only. A new import between modules adds its entry here, in the same
 // commit, with the reason in the commit message; no new ADR needed. Removing an entry is always welcome.
+// Shared infrastructure (db, http, auth, storage, secrets, config and mail) is outside this list: any module may
+// import it, so a shared-infrastructure folder must not appear below as a domain module.
 const MODULE_IMPORTS = {
   revisions: [],
   assessment: ['divers', 'imports'],
@@ -15,6 +17,9 @@ const MODULE_IMPORTS = {
   certifications: ['divers', 'dives', 'live', 'revisions'],
   divers: ['revisions'],
   dives: ['centres', 'divers', 'revisions', 'sites'],
+  // Entitlements (hosted-DiveHub plan §4): a leaf that reads its own table and nothing else; providers and users import
+  // down into it, so it sits low.
+  entitlement: [],
   equipment: ['divers', 'revisions'],
   // Narrower than plan D8's ['divers', 'dives', 'revisions'] on purpose: the equipment module needs nothing from dives.
   imports: ['divers', 'dives', 'equipment', 'live', 'revisions', 'sites'],
@@ -25,7 +30,7 @@ const MODULE_IMPORTS = {
   notifications: [],
   // The loadings endpoint reuses DAN's no-fly rule (series-rules.ts) rather than copying it (ADR 0071).
   planning: ['assessment', 'divers', 'dives'],
-  providers: ['certifications', 'divers', 'dives', 'imports', 'live', 'revisions', 'sites'],
+  providers: ['certifications', 'divers', 'dives', 'entitlement', 'imports', 'live', 'revisions', 'sites'],
   sites: ['live', 'revisions'],
   // Buddy suggestions (ADR 0070) read the shared facts, reuse the time-window tolerance of dive matching for an
   // overlapping Dive, use the one place for Diver management and Dive numbering, write the acceptance Revision, and ask

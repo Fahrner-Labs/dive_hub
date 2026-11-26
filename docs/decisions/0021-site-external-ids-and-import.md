@@ -13,6 +13,11 @@ field (SSI first for name and country, OSM for position); references on hand-mad
 an offer any User can take; a typed SSI ID on an imported site provides data once an SSI import finds it.
 Amended by [ADR 0029](0029-push-requirements-and-buddies.md) (2026-10-05): a typed site ID has its own route
 (`PUT /api/dive-sites/{id}/external-ids/{source}`); the site API's `ssiSiteId` is gone.
+Amended by [ADR 0087](0087-hosted-instance-configuration.md) (2026-11-26), for deployment configuration only: the
+operator chooses which Sources the instance constructs and offers (`DIVEHUB_SITE_SOURCES`); there is still no
+per-User toggle.
+Amended by [ADR 0091](0091-source-purge.md) (2026-11-26): an admin can purge one Source's External IDs and the
+import-created sites they leave without data or a Dive; sites a Dive names are reported, and Sites a User made stay.
 
 ## Context
 ADR 0020 built Dive sites without external IDs. The [dive site sources](../research/2026-10-04-dive-site-sources.md)

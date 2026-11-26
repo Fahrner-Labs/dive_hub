@@ -3,7 +3,7 @@
 // can show progress. Every site it creates, updates or links gets a Revision with the Site import as actor.
 import { and, desc, eq, inArray, sql } from 'drizzle-orm';
 import type { Db, Tx } from '../../db/client.js';
-import { diveSite, siteImport, type SiteImportFinding, type SiteImportProgress } from '../../db/schema.js';
+import { diveSite, siteImport, sitePurge, type SiteImportFinding, type SiteImportProgress } from '../../db/schema.js';
 import { emitHint } from '../../live/emit.js';
 import { changeListener, writeRevision, type Actor, type Changes } from '../../revisions/revisions.js';
 import { errorMessage } from '../../errors.js';
@@ -11,13 +11,15 @@ import type { ProblemCode } from '../../http/problems.js';
 import { isUniqueViolation } from '../site-error.js';
 import { allPublicIds, heldIds, insertImportedIds, publishIds, updateImported } from '../site-ids.js';
 import { IMPORT_SOURCES, revisionKey, type ImportSource } from '../sources.js';
+import { SITE_JOB_LOCK } from './site-jobs.js';
 import { planSiteImport, type ExistingSite, type Field, type PlannedCreate, type PlannedUpdate } from './import-plan.js';
 import { IMPORTED_FIELDS, SiteSourceError, type ImportArea, type ImportedValues, type SiteSourceAdapter, type SourceSite } from './site-source.js';
 
 export const IMPORT_DIVE_SITES_TASK = 'import_dive_sites';
 
 export class SiteImportError extends Error {
-  constructor(readonly code: 'odbl_not_confirmed' | 'ssi_not_confirmed' | 'site_import_running' | 'site_import_not_found') {
+  constructor(readonly code:
+    'odbl_not_confirmed' | 'ssi_not_confirmed' | 'site_import_running' | 'site_import_not_found' | 'site_source_disabled') {
     super(code);
   }
 }
@@ -56,11 +58,30 @@ const valuesOf = (s: typeof diveSite.$inferSelect): ImportedValues => ({
 const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
 const idKey = revisionKey;
 
-export function createSiteImportService(deps: { db: Db; sources: Record<ImportSource, SiteSourceAdapter> }) {
+export function createSiteImportService(deps: { db: Db; sources: Partial<Record<ImportSource, SiteSourceAdapter>> }) {
   const { db } = deps;
 
   const setProgress = (id: string, progress: SiteImportProgress) =>
     db.update(siteImport).set({ progress }).where(eq(siteImport.id, id));
+
+  /** Asks every Source of the run once, in its order, recording the progress the admin page shows. */
+  async function fetchSources(row: typeof siteImport.$inferSelect): Promise<SourceSite[]> {
+    const incoming: SourceSite[] = [];
+    for (const source of row.sources) {
+      await setProgress(row.id, { step: source, done: 0, total: 0 });
+      incoming.push(...await deps.sources[source]!.fetch(row.area, row.language));
+    }
+    return incoming;
+  }
+
+  /** Fails a queued run that names a Source this instance no longer offers (DIVEHUB_SITE_SOURCES, ADR 0087). */
+  async function failForDisabledSource(row: typeof siteImport.$inferSelect): Promise<boolean> {
+    if (!row.sources.some((source) => deps.sources[source] === undefined)) return false;
+    await db.update(siteImport).set({ status: 'failed', errorCode: 'site_source_disabled', finishedAt: new Date() })
+      .where(eq(siteImport.id, row.id));
+    await emitHint(db, { kind: 'siteImport', id: row.id, audience: row.startedBy ? [row.startedBy] : [] });
+    return true;
+  }
 
   /** The sites with their public IDs: the plan never sees a private one (ADR 0057). */
   async function loadExisting(): Promise<ExistingSite[]> {
@@ -120,12 +141,23 @@ export function createSiteImportService(deps: { db: Db; sources: Record<ImportSo
   }
 
   return {
+    /** The Sources this instance offers (DIVEHUB_SITE_SOURCES, ADR 0087), in the order a run asks them. */
+    enabledSources(): ImportSource[] {
+      return IMPORT_SOURCES.filter((source) => deps.sources[source] !== undefined);
+    },
+
     /** Queues a Site import (admins only, checked by the route); one at a time. */
     async start(userId: string, request: SiteImportRequest) {
+      if (request.sources.some((source) => deps.sources[source] === undefined)) throw new SiteImportError('site_source_disabled');
       if (request.sources.includes('osm') && !request.confirmOdbl) throw new SiteImportError('odbl_not_confirmed');
       if (request.sources.includes('ssi') && !request.confirmSsi) throw new SiteImportError('ssi_not_confirmed');
       try {
         return await db.transaction(async (tx) => {
+          // A Source purge and a Site import never run beside each other: the same lock serialises both starts.
+          await tx.execute(SITE_JOB_LOCK);
+          const [purging] = await tx.select({ id: sitePurge.id }).from(sitePurge)
+            .where(inArray(sitePurge.status, ['queued', 'running'])).limit(1);
+          if (purging) throw new SiteImportError('site_import_running');
           const [row] = await tx.insert(siteImport).values({
             startedBy: userId,
             sources: IMPORT_SOURCES.filter((s) => request.sources.includes(s)),
@@ -165,11 +197,9 @@ export function createSiteImportService(deps: { db: Db; sources: Record<ImportSo
       await emitHint(db, { kind: 'siteImport', id, audience: row.startedBy ? [row.startedBy] : [] });
       const actor: Actor = { type: 'site_import', id };
       try {
-        const incoming: SourceSite[] = [];
-        for (const source of row.sources) {
-          await setProgress(id, { step: source, done: 0, total: 0 });
-          incoming.push(...await deps.sources[source].fetch(row.area, row.language));
-        }
+        // A run queued before the operator switched its Source off cannot fetch it: fail it with the clear code.
+        if (await failForDisabledSource(row)) return;
+        const incoming = await fetchSources(row);
         // An ID the Source lists publicly is public here too (SSI published a site that was private to an account).
         await db.transaction(async (tx) => {
           for (const source of row.sources) await publishIds(tx, source, incoming.filter((o) => o.source === source).map((o) => o.externalId));

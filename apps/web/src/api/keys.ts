@@ -5,6 +5,8 @@ export const keys = {
   setupRestoreArchives: ['setup', 'restore', 'archives'] as const,
   users: ['users'] as const,
   invitations: ['invitations'] as const,
+  /** Whether this instance mails invitations and self-serve password reset links (hosted plan §6.1). */
+  emailConfig: ['email-config'] as const,
   /** What an invitation or password reset link opens (ADR 0013); not under ['invitations'], the admin's list. */
   invitationLink: (token: string) => ['invitation', token] as const,
   passwordReset: (token: string) => ['password-reset', token] as const,
@@ -48,6 +50,9 @@ export const keys = {
   centres: ['centres'] as const,
   centre: (id: string) => ['centres', id] as const,
   siteImports: ['site-imports'] as const,
+  /** The site sources this instance enables (DIVEHUB_SITE_SOURCES, ADR 0087). */
+  siteSources: ['site-sources'] as const,
+  sitePurges: ['site-purges'] as const,
   /** Admin backups (plan FAH-175): the run list, and the scheduled-backup setting under it. */
   backups: ['backups'] as const,
   backupSettings: ['backups', 'settings'] as const,

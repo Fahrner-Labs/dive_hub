@@ -38,6 +38,13 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   is never stored. Show it as standing text with a checkbox, not as a notice. The API refuses without the flag
   (`ssi_not_confirmed`) ([ADR 0025](../decisions/0025-ssi-site-import-and-site-water-type.md)). *Web:* `SiteImportPage.tsx`.
 - **SSI data shows "From SSI" without a link** (`url` is null, no Attribution): SSI has no page per site.
+- **Must explain and confirm a Source purge before it starts** (`POST /api/admin/site-imports/purge {source}`,
+  FAH-528): it deletes every External ID of that Source and hard-deletes the import-created sites it leaves without
+  another data-providing ID or a Dive. Sites a Dive still names are never deleted: the result's
+  `result.referencedSites` lists them, and the client links each so the admin moves the Dive or merges the site and
+  runs the purge again. Say that it cannot be undone; Sites a User made stay. Offer only `GET /api/admin/site-sources`
+  as the Source, follow the job with `GET /api/admin/site-imports/purges`, and translate `site_purge_running` and
+  `site_import_running` ([ADR 0091](../decisions/0091-source-purge.md)). *Web:* `SiteImportPage.tsx`.
 
 ### Privacy
 - **Must not show who else created, edited or dives at a Dive site.**
@@ -99,7 +106,8 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   - Invitation and reset links an admin creates are shown once, to copy. Don't store them.
   *Web:* `AdminSettings.tsx` (`LinkToPassOn`), `ui/Overlay.tsx` (`CopyField`).
 - **Must not tell whether an e-mail address has an account.** A failed sign-in says "wrong e-mail or password".
-  Only "too many attempts" (429) and "disabled" (`BANNED_USER`) get their own message. *Web:* `SignedOut.tsx` (`SignIn`).
+  The self-serve reset request answers 204 the same for unknown, disabled and existing addresses. Only "too many
+  attempts" (429) and "disabled" (`BANNED_USER`) get their own message. *Web:* `SignedOut.tsx` (`SignIn`).
 - **Must show the "too many attempts" refusal on the token forms.** Setup, invitation and reset link routes count
   attempts per client IP (30 per 15 minutes, [ADR 0061](../decisions/0061-attempt-limit-on-token-routes.md)) and
   answer 429 `too_many_attempts` with `Retry-After` (seconds). Say to try again later; don't retry by itself.
@@ -199,9 +207,10 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   one `text/event-stream` per signed-in User with the session cookie, or (native) the session token as
   `Authorization: Bearer`; the browser's `EventSource` sends the cookie same-origin. The stream carries only
   `event: hint` frames whose `data` is `{ v: 1, kind, id }` — never data
-  or the audience. Kinds: `dive`, `site`, `waitingPush`, `import`, `siteImport`, `pushRun`, `certification`,
-  `connection`, `buddySuggestion` (the Review inbox's suggestions: refetch `['buddy-suggestions']` and each card's
-  preview). On a hint, refetch the matching queries through the normal API (the web client invalidates their
+  or the audience. Kinds: `dive`, `site`, `waitingPush`, `import`, `siteImport`, `sitePurge` (refetch
+  `['site-purges']` and `['sites']`; a purge also emits a wildcard `site` hint per removed site), `pushRun`,
+  `certification`, `connection`, `buddySuggestion` (the Review inbox's suggestions: refetch `['buddy-suggestions']`
+  and each card's preview). On a hint, refetch the matching queries through the normal API (the web client invalidates their
   query keys); a client may batch hints that arrive within ~250 ms into one refetch. **On every connect, the
   first included**, refetch what is on screen (`invalidateQueries` with `refetchType: 'active'` in TanStack Query):
   hints are not replayed, so a gap is covered only that way. Polling remains fully valid: a client that ignores
@@ -228,10 +237,11 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
     or relevant; never render a push payload as content. The server never sends names, sites or counts.
 - **Background work is polled** until it is `done` or `failed`:
   - Imports (`GET /api/imports`), every second while one runs;
-  - Site imports (`GET /api/admin/site-imports`), every two seconds.
+  - Site imports (`GET /api/admin/site-imports`), every two seconds;
+  - Source purges (`GET /api/admin/site-imports/purges`), every two seconds while one runs.
 
-  When one finishes, refresh what it changed (the logbook) and say so, for screen readers too.
-  *Web:* `api.ts` (`importsQuery`, `siteImportsQuery`), `ImportPanel.tsx`, `SiteImportPage.tsx`.
+  When one finishes, refresh what it changed (the logbook, the site lists) and say so, for screen readers too.
+  *Web:* `api.ts` (`importsQuery`, `siteImportsQuery`, `sitePurgesQuery`), `ImportPanel.tsx`, `SiteImportPage.tsx`.
 - **Lists page** with `limit`/`offset` and `total` (`/api/dives` [ADR 0017](../decisions/0017-logbook-list-paging.md),
   `/api/dive-sites` ADR 0022). Keep search, filters, sort and page in the client's navigation state (the web
   client uses the address), so back and reload keep them. A native client that reads the whole list from its store
@@ -434,6 +444,13 @@ online.
   original instance's key). *Web:* `SignedOut.tsx` (`Setup`), `SetupRestore.tsx`.
 - **Invitations and reset links:** look the token up first (`/lookup`), then show for whom it is (the e-mail).
   An invalid, used or expired link says so and to ask the admin for a new one. *Web:* `AcceptInvitation`, `ResetPassword`.
+- **E-mail is optional per instance.** `GET /api/email/config` says whether this instance mails links. When it does,
+  **show a "Forgot password?" request form** on the sign-in page (`POST /api/password-resets/request` with the
+  e-mail); it answers 204 the same for every address, so tell the User only that a link is on its way if the address
+  has an account. When it does not, offer neither the form nor an admin reset link: an admin issues the copy link as
+  ADR 0013 describes. *Web:* `SignedOut.tsx` (`SignIn`), `AdminSettings.tsx` (`Users`).
+- **Invitations are still copy links.** The create answer's `emailSent` is present only when e-mail is configured;
+  `false` means the mail failed, so show that and keep showing the `url` for copying. *Web:* `AdminSettings.tsx` (`Invite`).
 - **Passwords:** 15 to 128 characters, enforced by the server. Say the rule beside the field
   ([ADR 0012](../decisions/0012-invitations-and-admin-bootstrap.md)). *Web:* `NewPasswordField`.
 - **There is no self sign-up.** Say that access comes from an admin's Invitation.
@@ -989,7 +1006,8 @@ repeatedly).
 - **Report what was not sent** from `items` (`state` `skipped` with a `reason`: `exists`, `requirements_unmet`, `up_to_date`,
   `update_not_chosen`, `removes_verification`, `update_unsupported`, `dive_not_found`, `number_taken`; `failed` with a problem
   code), each with the Dive.
-- **One run per Connection at a time:** `push_run_active` carries the `runId` of the one that goes; show it instead of an error.
+- **One run per Connection at a time:** On a hosted instance with billing, the preview and the start answer 402
+  `entitlement_required` with `offer` (`plan`, `features`) without the paid plan; show the upsell from it. `push_run_active` carries the `runId` of the one that goes; show it instead of an error.
   Other codes: `push_run_nothing_to_send`, `push_run_not_found`, `push_run_not_active`, `push_run_not_stopped`,
   `push_run_going` (dismissing a run that goes). The last five runs of a Connection are kept.
 - **Make a run findable from every page, and list the earlier ones** (slice 25d): while a run goes, mark it where the User
@@ -1114,6 +1132,9 @@ dives, all off until the User turns them on. *Web:* `ProviderAutomation.tsx` (se
   `limits.fetchEveryMinutes` is the shortest, already applied). Turning one on queues nothing that changed before. 400
   `provider_unsupported` (the Provider can't) and 400 `fetch_interval_too_short` (below its minimum) are translated; turning
   off is always accepted. The fetch also needs the Connection's import mode "link and fill" or "also create".
+  On a hosted instance with billing, turning a setting **on** without the paid plan answers 402 `entitlement_required`
+  with `offer` (`plan`, and the `features` it unlocks: `automation`, `push_runs`); show the upsell from it. Turning off
+  stays accepted, so a downgraded User can always stop it.
 - **Must show the state of a Dive's Waiting push** (`waiting` on each row of `GET /api/dives`, on `GET /api/dives/{id}/providers`
   and `.../{provider}` as `waiting` (one or null), and on deleted dives): a list row gets a small icon (`aria-hidden`, with a
   text label), the Dive's page the words, next to Send. Texts with `{{provider}}` the Provider's name:
@@ -1427,6 +1448,10 @@ dives, all off until the User turns them on. *Web:* `ProviderAutomation.tsx` (se
 - **Merging:** offer the other sites within 200 m. Explain before confirming, then follow the kept site
   ([Privacy](#privacy), [Data safety](#data-safety)).
 - **Site imports (admins):**
+  - **offer only the sources this instance enables.** `GET /api/admin/site-sources` answers the set
+    (`osm`, `wikidata`, `ssi`) from the operator's `DIVEHUB_SITE_SOURCES`; never keep a client-side copy of the
+    full list ([ADR 0087](../decisions/0087-hosted-instance-configuration.md)). Starting an import that names a
+    disabled source answers `400 site_source_disabled`.
   - sources (OSM, Wikidata, SSI), area (country, box or everywhere), the language of names, and "only fill dive
     sites that are already here" (`createSites: false`);
   - the ODbL explanation and confirmation for OSM, and the SSI explanation and confirmation ([Licenses](#licenses));

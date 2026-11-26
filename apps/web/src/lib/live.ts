@@ -5,7 +5,7 @@
 import { useSyncExternalStore } from 'react';
 import type { QueryClient } from '@tanstack/react-query';
 
-export const HINT_KINDS = ['dive', 'site', 'waitingPush', 'import', 'siteImport', 'pushRun', 'certification', 'connection', 'buddySuggestion', 'jointDiveOffer'] as const;
+export const HINT_KINDS = ['dive', 'site', 'waitingPush', 'import', 'siteImport', 'sitePurge', 'pushRun', 'certification', 'connection', 'buddySuggestion', 'jointDiveOffer'] as const;
 export type HintKind = (typeof HINT_KINDS)[number];
 
 export interface LiveHint {
@@ -64,6 +64,11 @@ async function applyHints(queryClient: QueryClient, hints: LiveHint[]): Promise<
   ]);
   if (kindsSeen.has('import')) await queryClient.invalidateQueries({ queryKey: ['imports'] });
   if (kindsSeen.has('siteImport')) await queryClient.invalidateQueries({ queryKey: ['site-imports'] });
+  // A purge removes sites, so open lists read them again too (FAH-528).
+  if (kindsSeen.has('sitePurge')) await Promise.all([
+    queryClient.invalidateQueries({ queryKey: ['site-purges'] }),
+    queryClient.invalidateQueries({ queryKey: ['sites'] }),
+  ]);
   if (kindsSeen.has('pushRun')) await queryClient.invalidateQueries({ queryKey: ['push-runs'] });
   if (kindsSeen.has('certification')) await Promise.all([
     queryClient.invalidateQueries({ queryKey: ['divers'] }),

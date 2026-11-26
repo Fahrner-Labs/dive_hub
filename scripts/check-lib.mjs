@@ -72,6 +72,8 @@ const AREAS = [
   // Providers in the web client (ADR 0027): the account's Connections and each Dive's panels read them.
   [/^apps\/web\/src\/lib\/providers\.ts$/, ['@dives', '@account']],
   [/^apps\/web\/src\/AdminSettings.tsx$/, ['@admin', '@client-diagnostics']],
+  // Transactional mail (hosted plan §6.1): the sign-in page's reset request and the Admin page's invitation notices.
+  [/^apps\/server\/src\/mail\//, ['@account', '@admin']],
   // The Tools page (ADR 0032): gas numbers and bottom time; its server computation and the MCP tool that answers the same.
   [/^apps\/web\/src\/Tools(Page|Plan|PlanProfile|Lead)\.tsx$|^apps\/web\/src\/ProfilePlot\.tsx$|^apps\/web\/src\/lib\/tools\.ts$|^apps\/server\/src\/planning\/|^apps\/server\/src\/lead\/|^apps\/server\/src\/mcp\/tools-planning(-gas-plan)?.ts$/, ['@tools']],
   // AI accesses to the MCP endpoint (ADR 0035): on the account page, their switch on the admin page.
@@ -97,6 +99,8 @@ const AREAS = [
   [/^apps\/server\/src\/live\/|^apps\/web\/src\/lib\/live(-arrivals)?\.ts$/, ['@dives', '@account', '@live']],
   // Push registrations (ADR 0085): session-scoped device rows and the public Firebase config native clients read.
   [/^apps\/server\/src\/notifications\//, ['@account']],
+  // Entitlements (hosted-DiveHub plan §4): the paywall greys a Connection's automation and a Dive's Push runs.
+  [/^apps\/server\/src\/entitlement\//, ['@account', '@dives']],
   // Divers reach further than their page: a Dive shows its Participants and their codes, the account page imports buddies.
   [/^apps\/server\/src\/divers\//, ['@divers', '@dives', '@account']],
   [/^apps\/server\/src\/(users|auth)\//, ['@account', '@admin']],

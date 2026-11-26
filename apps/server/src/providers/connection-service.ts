@@ -13,6 +13,8 @@ import { externalDiver, mergeExternalDiver, participations } from '../divers/mer
 import { changeListener } from '../revisions/revisions.js';
 import type { SecretBox } from '../secrets/secret-box.js';
 import { realClock, TurnTimeout, type Clock, type LeaseService } from './lease-service.js';
+import type { EntitlementService } from '../entitlement/entitlement.js';
+import { requireEntitlement } from './entitlement-gate.js';
 import { ProviderError, type ActionContext, type ProviderAdapter, type SignInInput } from './provider.js';
 import { asProblem, named, ProviderServiceError, type ProviderRegistry } from './registry.js';
 
@@ -71,8 +73,8 @@ export interface AutomationSettings {
 /** The key's expiry is noticed from this many days before the date. */
 const KEY_NOTICE_DAYS = 7;
 
-export function createConnectionService(deps: { db: Db; registry: ProviderRegistry; secrets: SecretBox; leases: LeaseService; clock?: Clock }) {
-  const { db, registry, secrets, leases } = deps;
+export function createConnectionService(deps: { db: Db; registry: ProviderRegistry; secrets: SecretBox; leases: LeaseService; entitlements: EntitlementService; clock?: Clock }) {
+  const { db, registry, secrets, leases, entitlements } = deps;
   const clock = deps.clock ?? realClock;
   /** When the Provider last answered the Connection: a stopped Waiting push wakes on any later answer (ADR 0056). */
   const usedNow = () => new Date(clock.now());
@@ -141,7 +143,16 @@ export function createConnectionService(deps: { db: Db; registry: ProviderRegist
     if (follow && !adapter.capabilities.data.dives?.export?.numbers) throw new ProviderServiceError('provider_unsupported', named(adapter));
   }
 
-  function checkAutomation(row: { provider: string }, settings: AutomationSettings) {
+  /** Whether these settings turn some automation on; turning one off is always allowed, also for a free User (plan §4.4). */
+  function turnsOn(settings: AutomationSettings): boolean {
+    return settings.sendChanges === true || settings.sendNewDives === true || settings.deleteAtProvider === true
+      || (settings.fetchEveryMinutes !== undefined && settings.fetchEveryMinutes !== null);
+  }
+
+  async function checkAutomation(row: { provider: string; userId: string }, settings: AutomationSettings) {
+    // The paid tier (plan §4.4): turning automation on needs the plan; turning it off never does, so a downgraded User
+    // can still stop what the worker would otherwise skip.
+    if (turnsOn(settings)) await requireEntitlement(entitlements, row.userId);
     const adapter = registry.get(row.provider);
     const offers = automationOffers(adapter);
     for (const key of ['sendChanges', 'sendNewDives', 'deleteAtProvider'] as const) {
@@ -200,7 +211,7 @@ export function createConnectionService(deps: { db: Db; registry: ProviderRegist
      */
     async setAutomation(userId: string, connectionId: string, settings: AutomationSettings) {
       const row = await ownConnection(userId, connectionId);
-      checkAutomation(row, settings);
+      await checkAutomation(row, settings);
       await db.update(connection).set({ ...settings, updatedAt: new Date() }).where(eq(connection.id, row.id));
       await emitHint(db, { kind: 'connection', id: row.id, audience: await audienceOfDiver(db, row.diverId) });
     },
@@ -211,7 +222,7 @@ export function createConnectionService(deps: { db: Db; registry: ProviderRegist
      */
     async checkChanges(userId: string, connectionId: string, parts: { automation?: AutomationSettings | undefined; follow?: boolean | undefined }) {
       const row = await ownConnection(userId, connectionId);
-      if (parts.automation) checkAutomation(row, parts.automation);
+      if (parts.automation) await checkAutomation(row, parts.automation);
       if (parts.follow !== undefined) checkFollowNumbers(row, parts.follow);
     },
 

@@ -5,6 +5,7 @@ import { BACKUP_RUN_TASK, type BackupService } from './backups/backup-service.js
 import { backupTask } from './backups/backup-task.js';
 import { EXPIRE_WAITING_IMPORTS_TASK, PROCESS_IMPORT_TASK, type ImportService } from './imports/import-service.js';
 import { IMPORT_DIVE_SITES_TASK, type SiteImportService } from './sites/import/site-import-service.js';
+import { PURGE_SITE_SOURCE_TASK, type SitePurgeService } from './sites/import/site-purge-service.js';
 import { PUSH_RUN_STEP_TASK, type PushRunService } from './providers/push/push-run-service.js';
 import { WAITING_PUSHES_TASK, waitingPushesKey } from './providers/waiting-push/waiting-push-queue.js';
 import { AUTOMATION_TICK_TASK, type WaitingPushService } from './providers/waiting-push/waiting-push-service.js';
@@ -105,6 +106,7 @@ export interface WorkerDeps {
   backups: BackupService;
   imports: ImportService;
   siteImports: SiteImportService;
+  sitePurges: SitePurgeService;
   aiAccesses: AiAccessService;
   assessments: AssessmentService;
   pushRuns: PushRunService;
@@ -119,11 +121,13 @@ export interface WorkerDeps {
 }
 
 export async function startWorker(pool: pg.Pool, deps: WorkerDeps): Promise<Runner> {
-  const { backups, imports, siteImports, aiAccesses, assessments, pushRuns, waitingPushes, scheduledFetch, certifications, purges, clientDiagnostics, sync, push, log } = deps;
+  const { backups, imports, siteImports, sitePurges, aiAccesses, assessments, pushRuns, waitingPushes, scheduledFetch, certifications, purges, clientDiagnostics, sync, push, log } = deps;
   // A backup still "running" now was cut off when the worker last stopped; its passphrase is gone with the process.
   await backups.reconcileOrphans();
   // An import still "running" now was cut off when the worker last stopped.
   await siteImports.failInterrupted();
+  // A Source purge still "running" now was cut off when the worker last stopped.
+  await sitePurges.failInterrupted();
   // A run that was going when the worker stopped goes on: its next step is queued again (ADR 0047).
   await pushRuns.requeueActive();
   const runner = await run({
@@ -140,6 +144,12 @@ export async function startWorker(pool: pg.Pool, deps: WorkerDeps): Promise<Runn
         log.info({ siteImportId }, 'importing dive sites');
         await siteImports.run(siteImportId);
         log.info({ siteImportId }, 'dive site import finished');
+      },
+      [PURGE_SITE_SOURCE_TASK]: async (payload) => {
+        const sitePurgeId = idOf(payload, 'sitePurgeId');
+        log.info({ sitePurgeId }, 'purging a site source');
+        await sitePurges.run(sitePurgeId);
+        log.info({ sitePurgeId }, 'site source purge finished');
       },
       // One Dive of a Push run; the next step is queued after the Provider's pause, so no job sleeps (ADR 0047).
       [PUSH_RUN_STEP_TASK]: async (payload, helpers) => {
@@ -167,7 +177,9 @@ export async function startWorker(pool: pg.Pool, deps: WorkerDeps): Promise<Runn
       // One Connection's scheduled fetch: an unattended Import, which PROCESS_IMPORT_TASK then runs.
       [SCHEDULED_FETCH_TASK]: async (payload) => {
         const connectionId = idOf(payload, 'connectionId');
-        await scheduledFetch.fetch(connectionId);
+        // A fetch the User started by opening Dive Hub (`fetchDue`) stays free; a scheduled one skips a lost plan.
+        const userInitiated = (payload as { userInitiated?: unknown }).userInitiated === true;
+        await scheduledFetch.fetch(connectionId, { userInitiated });
       },
       // One card's picture (ADR 0050); three attempts, the last one ends as `failed`.
       [CERTIFICATION_IMAGE_TASK]: async (payload, helpers) => {

@@ -50,7 +50,10 @@ export async function start(config: Config) {
     db, auth, blobs: createLocalBlobStore(config.dataDir), secrets: createSecretBox(config.encryptionKey),
     dataDir: config.dataDir, databaseUrl: config.databaseUrl, encryptionKey: config.encryptionKey,
     logBuffer, workerRunning: () => worker !== undefined,
-    siteSources: createSiteSources({ contact: config.contact, overpassUrl: config.overpassUrl, wikidataUrl: config.wikidataSparqlUrl, ssiSitesUrl: config.ssiSitesUrl }),
+    siteSources: createSiteSources({
+      sources: config.siteSources, contact: config.contact, overpassUrl: config.overpassUrl,
+      wikidataUrl: config.wikidataSparqlUrl, ssiSitesUrl: config.ssiSitesUrl,
+    }),
     // The Providers of this instance (ADR 0027): SSI and Garmin. Every call to SSI is logged (no token or password), to
     // tell Dive Hub's use of an account from the owner's own (docs/references/ssi-app-api.md).
     adapters: [createSsiAdapter({ client: createSsiClient({ url: config.ssiUrl }), onCall: (call) => app.log.info({ ssi: call }, 'SSI call') }),
@@ -61,6 +64,11 @@ export async function start(config: Config) {
     live: { connectionString: config.databaseUrl },
     // Push is optional per instance (ADR 0085): no FCM credential means /api/push/config reports not configured.
     fcm: config.fcm,
+    // Transactional mail (hosted plan §6.1): unset DIVEHUB_EMAIL_* keeps the copy-link flows of ADR 0012.
+    email: config.email,
+    baseUrl: config.baseUrl,
+    // Billing is optional per instance (ADR 0087): unset keeps every feature free and the entitlement gates inert.
+    billing: config.billing,
   });
   const startWorkerIfConfigured = async () => {
     if (!config.inProcessWorker || worker) return;

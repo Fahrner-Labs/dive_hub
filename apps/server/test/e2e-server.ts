@@ -121,6 +121,7 @@ const services = createServices({
   // A backup of this server's own database, as the admin page's browser test takes one.
   databaseUrl: database.url,
   siteSources: createSiteSources({
+    sources: ['osm', 'wikidata', 'ssi'],
     fetch: replay, overpassUrl: 'https://overpass.invalid/api/interpreter', wikidataUrl: 'https://wikidata.invalid/sparql',
     ssiSitesUrl: 'https://ssi.invalid/app/APP_CACHE_SITES.zip',
   }),

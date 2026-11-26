@@ -5,7 +5,10 @@
 import { fileURLToPath } from 'node:url';
 import type { Auth } from './auth/auth.js';
 import type { Db } from './db/client.js';
-import type { FcmConfig } from './config.js';
+import type { BillingConfig, EmailConfig, FcmConfig } from './config.js';
+import { createEntitlementService } from './entitlement/entitlement.js';
+import { createMailLinks } from './mail/links.js';
+import { createMailProvider, type MailFetch } from './mail/resend.js';
 import type { FastifyBaseLogger } from 'fastify';
 import { createAssessmentService } from './assessment/assessment-service.js';
 import { createBackupService, type BackupLog } from './backups/backup-service.js';
@@ -40,6 +43,7 @@ import { ssiCentreDisplayName } from './providers/ssi/ssi-centre.js';
 import type { ProviderLog } from './providers/waiting-push/waiting-push-queue.js';
 import type { SecretBox } from './secrets/secret-box.js';
 import { createSiteImportService } from './sites/import/site-import-service.js';
+import { createSitePurgeService } from './sites/import/site-purge-service.js';
 import type { SiteSourceAdapter } from './sites/import/site-source.js';
 import { createSiteService } from './sites/site-service.js';
 import type { ImportSource } from './sites/sources.js';
@@ -72,7 +76,8 @@ export interface ServiceParts {
   encryptionKey?: Buffer | undefined;
   /** The Providers of this instance (ADR 0027): the production SSI, or the fake and test-only ones. */
   adapters: ProviderAdapter[];
-  siteSources: Record<ImportSource, SiteSourceAdapter>;
+  /** The enabled Site Sources (DIVEHUB_SITE_SOURCES, ADR 0087); a missing key is a Source this instance does not offer. */
+  siteSources: Partial<Record<ImportSource, SiteSourceAdapter>>;
   /** The clock of leases and attempt limits (default: real time). */
   clock?: Clock;
   /** Where the provider layer's own faults go (the app's logger). */
@@ -85,12 +90,35 @@ export interface ServiceParts {
   workerRunning?: () => boolean;
   /** FCM push config (ADR 0085); undefined turns push off and native clients keep polling. */
   fcm?: FcmConfig | undefined;
+  /** Transactional mail (hosted plan §6.1); undefined keeps invitations and resets as copy links (ADR 0012). */
+  email?: EmailConfig | undefined;
+  /** Public origin the mailed links point to; required when `email` is set. */
+  baseUrl?: string;
+  /** Where the Resend HTTP goes; tests pass a stand-in, production the global fetch. */
+  mailFetch?: MailFetch;
+  /** Resend's endpoint; only tests point it elsewhere. */
+  mailUrl?: string;
+  /** Billing (hosted-DiveHub plan §4, ADR 0087); undefined makes every feature free and the entitlement gates inert. */
+  billing?: BillingConfig | undefined;
+}
+
+/** Transactional mail for this instance, or nothing when `DIVEHUB_EMAIL_*` is unset (hosted plan §6.1). */
+function createMail(options: {
+  email?: EmailConfig | undefined; baseUrl?: string | undefined; mailFetch?: MailFetch | undefined; mailUrl?: string | undefined;
+}) {
+  if (!options.email) return undefined;
+  if (!options.baseUrl) throw new Error('email is configured but createServices got no baseUrl for its links');
+  const mailer = createMailProvider(options.email, {
+    ...(options.mailFetch && { fetch: options.mailFetch }), ...(options.mailUrl && { url: options.mailUrl }),
+  });
+  return createMailLinks({ mailer, baseUrl: options.baseUrl });
 }
 
 export function createServices({
   db, blobs, auth, secrets, adapters, siteSources, clock, log, live: liveSettings, dataDir, databaseUrl, encryptionKey,
-  logBuffer = createLogRingBuffer({ stdout: { write: () => true } }), workerRunning, fcm,
+  logBuffer = createLogRingBuffer({ stdout: { write: () => true } }), workerRunning, fcm, email, baseUrl, mailFetch, mailUrl, billing,
 }: ServiceParts) {
+  const mail = createMail({ email, baseUrl, mailFetch, mailUrl });
   const assessments = createAssessmentService(db);
   const backupLog: BackupLog = {
     info: () => {},
@@ -109,7 +137,9 @@ export function createServices({
     appVersion: process.env.DIVEHUB_VERSION ?? 'dev', databaseUrl, dataDir, encryptionKey, clientDiagnostics,
     ...(workerRunning && { workerRunning }),
   });
-  const providers = createProviderLayer({ db, blobs, secrets, adapters, ...(clock && { clock }), ...(log && { log }) });
+  // The paywall (hosted-DiveHub plan §4): with no billing configured it answers entitled for everything (ADR 0087).
+  const entitlements = createEntitlementService({ db, enforced: billing !== undefined, ...(clock && { clock }) });
+  const providers = createProviderLayer({ db, blobs, secrets, adapters, entitlements, ...(clock && { clock }), ...(log && { log }) });
   // Push hints queue in the same writing transactions as the SSE hints (ADR 0085); without FCM the dispatcher queues
   // nothing and the job is a no-op.
   const push = createPushDispatcher({ db, fcm });
@@ -128,12 +158,13 @@ export function createServices({
   // Restoring a Dive an append took undoes the append (ADR 0063).
   const dives = createDiveService(db, continuation);
   return {
-    db, blobs, auth, assessments, backups, support, clientDiagnostics, sync, providers, imports, logBuffer,
+    db, blobs, auth, assessments, backups, support, clientDiagnostics, sync, entitlements, providers, imports, logBuffer,
     siteImports: createSiteImportService({ db, sources: siteSources }),
+    sitePurges: createSitePurgeService({ db, sources: siteSources }),
     aiAccesses: createAiAccessService(db, auth),
     setup: createSetupService(db, clock ? () => clock.now() : undefined),
-    invitations: createInvitationService(db),
-    passwordResets: createPasswordResetService(db),
+    invitations: createInvitationService(db, mail),
+    passwordResets: createPasswordResetService(db, mail),
     // One count per client IP across the public token routes (ADR 0061).
     tokenAttempts: createAttemptLimit(TOKEN_ATTEMPTS, clock ? () => clock.now() : undefined),
     profiles: createProfileService(db),
@@ -162,7 +193,7 @@ export type Services = ReturnType<typeof createServices>;
 
 /** What the worker's tasks use, from the services. */
 export const workerDeps = (s: Services, log: FastifyBaseLogger): WorkerDeps => ({
-  backups: s.backups, imports: s.imports, siteImports: s.siteImports, aiAccesses: s.aiAccesses, assessments: s.assessments, pushRuns: s.providers.pushRuns,
+  backups: s.backups, imports: s.imports, siteImports: s.siteImports, sitePurges: s.sitePurges, aiAccesses: s.aiAccesses, assessments: s.assessments, pushRuns: s.providers.pushRuns,
   waitingPushes: s.providers.waitingPushes, scheduledFetch: s.providers.scheduledFetch, certifications: s.providers.certifications,
   purges: s.purge, clientDiagnostics: s.clientDiagnostics, sync: s.sync, push: s.push, log,
 });

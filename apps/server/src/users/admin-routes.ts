@@ -25,7 +25,15 @@ const InvitationView = Type.Object({
   id: Type.String(), email: Type.String(), role: RoleSchema, createdAt: DateTime, expiresAt: DateTime,
   status: Type.Union([Type.Literal('pending'), Type.Literal('accepted'), Type.Literal('revoked'), Type.Literal('expired')]),
 });
-const CreatedInvitationView = Type.Intersect([InvitationView, LinkView]);
+const CreatedInvitationView = Type.Intersect([
+  InvitationView,
+  LinkView,
+  Type.Object({
+    emailSent: Type.Optional(Type.Boolean({
+      description: 'Whether the link was e-mailed; absent when this instance sends no e-mail. The link works either way.',
+    })),
+  }),
+]);
 
 const toInvitationView = (i: InvitationRow): Static<typeof InvitationView> => ({
   id: i.id, email: i.email, role: i.role, createdAt: i.createdAt.toISOString(),
@@ -56,11 +64,17 @@ export const adminRoutes: FastifyPluginAsyncTypebox<AdminRouteDeps> = async (sco
       response: { 201: CreatedInvitationView, 409: Problem },
     },
   }, async (request, reply) => {
-    const { invitation, token } = await invitations.create({
+    const { invitation, token, delivery } = await invitations.create({
       email: request.body.email, role: request.body.role ?? 'user', createdBy: userOf(request).id,
     });
-    // The token travels in the URL fragment, which browsers never send to the server or in Referer.
-    return reply.code(201).send({ ...toInvitationView(invitation), url: `${baseUrl}/#/invite/${token}` });
+    if (delivery && !delivery.sent) {
+      request.log.error({ email: invitation.email, error: delivery.error }, 'invitation e-mail could not be sent');
+    }
+    // The token travels in the URL fragment, which browsers never send to the server or in Referer. It stays in the
+    // answer even when the mail failed, so the admin can always pass the link on.
+    return reply.code(201).send({
+      ...toInvitationView(invitation), url: `${baseUrl}/#/invite/${token}`, ...(delivery && { emailSent: delivery.sent }),
+    });
   });
 
   app.delete('/invitations/:id', {
