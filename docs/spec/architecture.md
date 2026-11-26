@@ -90,6 +90,11 @@ native clients use the bearer plugin ([ADR 0074](../decisions/0074-bearer-tokens
 LLM clients reach the MCP endpoint `/mcp` with the key of an AI access instead of a session ([ADR 0035](../decisions/0035-mcp-connector.md)): off until an admin
 switches it on; behind a reverse proxy, `/mcp` must be forwarded like `/api`.
 
+Transactional e-mail is optional (hosted plan §6.1). With `DIVEHUB_EMAIL_*` unset, invitations and
+password resets stay the copy links of ADR 0012 and ADR 0013. With Resend configured, an invitation
+is also mailed and a User can request a reset link from the sign-in page; the link still travels in
+the URL fragment. A failed send never drops the link.
+
 | Setting | Meaning |
 |---|---|
 | `DIVEHUB_BASE_URL` | Public URL users open (required in production). With https, cookies are `Secure` and use the `__Secure-` prefix. Invitation links point here. |
@@ -100,6 +105,7 @@ switches it on; behind a reverse proxy, `/mcp` must be forwarded like `/api`.
 | `DIVEHUB_SSI_URL` | Only for tests: another endpoint for SSI's app API. |
 | `DIVEHUB_OVERPASS_URL`, `DIVEHUB_WIKIDATA_SPARQL_URL` | Optional: other endpoints for Site imports (default `overpass-api.de`, `query.wikidata.org`). |
 | `DIVEHUB_SSI_SITES_URL` | Optional: another address for SSI's site list (default `api.divessi.com/app/APP_CACHE_SITES.zip`, ADR 0025). |
+| `DIVEHUB_EMAIL_PROVIDER`, `DIVEHUB_EMAIL_API_KEY`, `DIVEHUB_EMAIL_FROM` | Optional transactional mail (hosted plan §6.1): all three set means Resend sends invitation and self-serve reset links; any unset keeps the copy links (ADR 0012, 0013). The API key is a secret. |
 
 ## Dive site imports and licenses
 

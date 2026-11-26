@@ -99,7 +99,8 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   - Invitation and reset links an admin creates are shown once, to copy. Don't store them.
   *Web:* `AdminSettings.tsx` (`LinkToPassOn`), `ui/Overlay.tsx` (`CopyField`).
 - **Must not tell whether an e-mail address has an account.** A failed sign-in says "wrong e-mail or password".
-  Only "too many attempts" (429) and "disabled" (`BANNED_USER`) get their own message. *Web:* `SignedOut.tsx` (`SignIn`).
+  The self-serve reset request answers 204 the same for unknown, disabled and existing addresses. Only "too many
+  attempts" (429) and "disabled" (`BANNED_USER`) get their own message. *Web:* `SignedOut.tsx` (`SignIn`).
 - **Must show the "too many attempts" refusal on the token forms.** Setup, invitation and reset link routes count
   attempts per client IP (30 per 15 minutes, [ADR 0061](../decisions/0061-attempt-limit-on-token-routes.md)) and
   answer 429 `too_many_attempts` with `Retry-After` (seconds). Say to try again later; don't retry by itself.
@@ -434,6 +435,13 @@ online.
   original instance's key). *Web:* `SignedOut.tsx` (`Setup`), `SetupRestore.tsx`.
 - **Invitations and reset links:** look the token up first (`/lookup`), then show for whom it is (the e-mail).
   An invalid, used or expired link says so and to ask the admin for a new one. *Web:* `AcceptInvitation`, `ResetPassword`.
+- **E-mail is optional per instance.** `GET /api/email/config` says whether this instance mails links. When it does,
+  **show a "Forgot password?" request form** on the sign-in page (`POST /api/password-resets/request` with the
+  e-mail); it answers 204 the same for every address, so tell the User only that a link is on its way if the address
+  has an account. When it does not, offer neither the form nor an admin reset link: an admin issues the copy link as
+  ADR 0013 describes. *Web:* `SignedOut.tsx` (`SignIn`), `AdminSettings.tsx` (`Users`).
+- **Invitations are still copy links.** The create answer's `emailSent` is present only when e-mail is configured;
+  `false` means the mail failed, so show that and keep showing the `url` for copying. *Web:* `AdminSettings.tsx` (`Invite`).
 - **Passwords:** 15 to 128 characters, enforced by the server. Say the rule beside the field
   ([ADR 0012](../decisions/0012-invitations-and-admin-bootstrap.md)). *Web:* `NewPasswordField`.
 - **There is no self sign-up.** Say that access comes from an admin's Invitation.

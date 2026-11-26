@@ -24,6 +24,9 @@ export const meQuery = () => queryOptions({
 });
 export const setupQuery = () =>
   queryOptions({ queryKey: keys.setup, queryFn: async () => request(api.GET('/api/setup')) });
+/** Whether this instance mails invitation and reset links; without it both stay copy links (ADR 0012, 0013). */
+export const emailConfigQuery = () =>
+  queryOptions({ queryKey: keys.emailConfig, queryFn: async () => request(api.GET('/api/email/config')), staleTime: 5 * 60_000 });
 /** Backups the operator put in /data/restore/ on the server, offered instead of a browser upload (plan FAH-175). */
 export const setupRestoreArchivesQuery = () =>
   queryOptions({

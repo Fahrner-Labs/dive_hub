@@ -1,6 +1,8 @@
 import { and, desc, eq, gt, isNull, sql } from 'drizzle-orm';
 import type { Db } from '../db/client.js';
 import { invitation, user, userRole } from '../db/schema.js';
+import type { MailLinks } from '../mail/links.js';
+import { attemptDelivery } from '../mail/mail.js';
 import { newToken, sha256 } from './tokens.js';
 
 const INVITATION_TTL_MS = 7 * 24 * 3600_000;
@@ -22,8 +24,11 @@ export class EmailTakenError extends Error {
   constructor() { super('A User with this e-mail already exists'); }
 }
 
-/** Invitations (ADR 0012): single-use, expiring, bound to an e-mail; only the token's hash is stored. */
-export function createInvitationService(db: Db) {
+/**
+ * Invitations (ADR 0012): single-use, expiring, bound to an e-mail; only the token's hash is stored. With mail
+ * configured (hosted plan §6.1) the link also goes out by e-mail; the returned token keeps the copy-link flow working.
+ */
+export function createInvitationService(db: Db, mail?: MailLinks) {
   const pending = (tokenSha256: string) => and(
     eq(invitation.tokenSha256, tokenSha256), isNull(invitation.acceptedAt), isNull(invitation.revokedAt),
     gt(invitation.expiresAt, sql`now()`),
@@ -46,7 +51,11 @@ export function createInvitationService(db: Db) {
         }).returning();
         return created!;
       });
-      return { invitation: row, token };
+      // A failed send must not cost the admin the link: the Invitation exists, the response carries the token either way.
+      const delivery = mail
+        ? await attemptDelivery(() => mail.invitation({ to: email, token, expiresAt: row.expiresAt }))
+        : undefined;
+      return { invitation: row, token, delivery };
     },
 
     list: () => db.select().from(invitation).orderBy(desc(invitation.createdAt)).limit(200),

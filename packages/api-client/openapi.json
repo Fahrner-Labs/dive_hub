@@ -6832,6 +6832,82 @@
         }
       }
     },
+    "/api/email/config": {
+      "get": {
+        "summary": "Whether this instance can send e-mail (invitations and self-serve password resets)",
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "configured"
+                  ],
+                  "properties": {
+                    "configured": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/password-resets/request": {
+      "post": {
+        "summary": "Request a password reset link by e-mail (only when e-mail is configured)",
+        "description": "Answers the same whether or not the address has an account, so it never reveals one. 404 when this instance sends no e-mail (use an admin's reset link instead).",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "email"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "maxLength": 254
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Default Response"
+          },
+          "404": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/password-resets/lookup": {
       "post": {
         "summary": "Whose password a reset link is for",
@@ -7375,6 +7451,15 @@
                         "expiresAt": {
                           "type": "string",
                           "format": "date-time"
+                        }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "emailSent": {
+                          "type": "boolean",
+                          "description": "Whether the link was e-mailed; absent when this instance sends no e-mail. The link works either way."
                         }
                       }
                     }

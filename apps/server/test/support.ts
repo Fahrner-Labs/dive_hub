@@ -9,7 +9,8 @@ import type { LightMyRequestResponse } from 'fastify';
 import { createAuth, type Auth } from '../src/auth/auth.js';
 import { buildApp } from '../src/app.js';
 import { createServices } from '../src/compose.js';
-import type { FcmConfig } from '../src/config.js';
+import type { EmailConfig, FcmConfig } from '../src/config.js';
+import type { MailFetch } from '../src/mail/resend.js';
 import { createDb, type Db } from '../src/db/client.js';
 import { migrateDatabase } from '../src/db/migrate.js';
 import { listenToChanges } from '../src/revisions/revisions.js';
@@ -129,10 +130,16 @@ export async function createTestApp(t: TestDatabase, options: {
   onRestored?: () => void;
   /** FCM push config (ADR 0085); tests that want push configured pass one, otherwise it is off. */
   fcm?: FcmConfig;
+  /** Transactional mail config (hosted plan §6.1); tests pass one with a `mailFetch` stand-in, otherwise it is off. */
+  email?: EmailConfig;
+  /** Where the Resend HTTP goes in tests; production passes nothing and uses the global fetch. */
+  mailFetch?: MailFetch;
+  /** Resend's endpoint in tests, so a captured request names the overridden endpoint. */
+  mailUrl?: string;
 } = {}) {
   const {
     webDir, siteSources, fakeSsi = createFakeSsi(), encryptionKey = TEST_ENCRYPTION_KEY, extraProviders = [], clock = resettableClock(), ssi = (a) => a,
-    maxUploadBytes = 1 << 26, onRestored, fcm, ...authOptions
+    maxUploadBytes = 1 << 26, onRestored, fcm, email, mailFetch, mailUrl, ...authOptions
   } = options;
   // SSI keeps its last logbook read for two minutes (ADR 0027); a test that changes the fake SSI behind Dive Hub's back
   // moves this clock on, as if the change happened a while later. Pauses between actions are skipped and recorded.
@@ -150,7 +157,11 @@ export async function createTestApp(t: TestDatabase, options: {
     ],
     clock,
     live: { connectionString: t.pool.options.connectionString! },
+    baseUrl: BASE_URL,
     ...(fcm && { fcm }),
+    ...(email && { email }),
+    ...(mailFetch && { mailFetch }),
+    ...(mailUrl && { mailUrl }),
   });
   const app = await buildApp({
     ...services, baseUrl: BASE_URL, maxUploadBytes, webDir, ...(onRestored && { onRestored }),

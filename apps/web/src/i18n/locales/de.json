@@ -64,7 +64,13 @@
     "wrongCredentials": "E-Mail oder Passwort ist falsch.",
     "tooManyAttempts": "Zu viele Versuche. Versuch es in ein paar Minuten noch einmal.",
     "disabled": "Dieses Konto ist deaktiviert. Wende dich an die Verwaltung.",
-    "about": "Dive Hub hält die Tauchgänge eines Vereins, einer Familie oder einer Tauchbasis an einem Ort zusammen."
+    "about": "Dive Hub hält die Tauchgänge eines Vereins, einer Familie oder einer Tauchbasis an einem Ort zusammen.",
+    "forgotPassword": "Passwort vergessen?",
+    "forgotTitle": "Passwort zurücksetzen anfordern",
+    "forgotAbout": "Gib deine E-Mail-Adresse ein. Gibt es ein Dive-Hub-Konto dazu, ist ein Link zum Zurücksetzen unterwegs.",
+    "sendResetLink": "Link zusenden",
+    "resetRequested": "Gibt es zu dieser Adresse ein Konto, ist ein Link zum Zurücksetzen unterwegs. Sieh in deinem Postfach nach.",
+    "backToSignIn": "Zurück zur Anmeldung"
   },
   "setup": {
     "title": "Dive Hub einrichten",
@@ -192,7 +198,9 @@
     "disableTitle": "{{name}} deaktivieren?",
     "disableBody": "Die Person kann sich nicht mehr anmelden und wird überall abgemeldet. Ihre Daten bleiben, und du kannst sie wieder aktivieren.",
     "signOutTitle": "{{name}} überall abmelden?",
-    "signOutBody": "Alle Sitzungen enden. Die Person kann sich wieder anmelden."
+    "signOutBody": "Alle Sitzungen enden. Die Person kann sich wieder anmelden.",
+    "invitationEmailed": "Einladung an {{email}} verschickt. Du kannst den Link unten trotzdem weitergeben.",
+    "invitationEmailFailed": "Die Einladungs-E-Mail konnte nicht verschickt werden. Gib den Link unten weiter."
   },
   "backups": {
     "title": "Sicherungen",

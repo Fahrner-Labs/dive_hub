@@ -103,3 +103,30 @@ describe('loadConfig FCM push config', () => {
     })).toThrow('DIVEHUB_FCM_CLIENT_CONFIG');
   });
 });
+
+describe('loadConfig transactional e-mail', () => {
+  const mail = {
+    DIVEHUB_EMAIL_PROVIDER: 'resend', DIVEHUB_EMAIL_API_KEY: 're_test_key', DIVEHUB_EMAIL_FROM: 'Dive Hub <noreply@dives.example.com>',
+  };
+
+  it('is off when no e-mail variable is set, so copy links stay the behaviour', () => {
+    expect(loadConfig(base).email).toBeUndefined();
+    expect(loadConfig({ ...base, DIVEHUB_EMAIL_PROVIDER: '', DIVEHUB_EMAIL_API_KEY: ' ', DIVEHUB_EMAIL_FROM: '' }).email).toBeUndefined();
+  });
+
+  it('reads the Resend provider, key and sender', () => {
+    expect(loadConfig({ ...base, ...mail }).email).toEqual({
+      provider: 'resend', apiKey: 're_test_key', from: 'Dive Hub <noreply@dives.example.com>',
+    });
+  });
+
+  it('refuses a half-configured instance and names what is missing', () => {
+    expect(() => loadConfig({ ...base, DIVEHUB_EMAIL_PROVIDER: 'resend' })).toThrow(/DIVEHUB_EMAIL_API_KEY.*DIVEHUB_EMAIL_FROM/);
+    expect(() => loadConfig({ ...base, DIVEHUB_EMAIL_API_KEY: 're_test_key' })).toThrow('DIVEHUB_EMAIL_PROVIDER');
+    expect(() => loadConfig({ ...base, DIVEHUB_EMAIL_FROM: 'noreply@dives.example.com' })).toThrow('DIVEHUB_EMAIL_PROVIDER');
+  });
+
+  it('refuses a provider it has no implementation for', () => {
+    expect(() => loadConfig({ ...base, ...mail, DIVEHUB_EMAIL_PROVIDER: 'postmark' })).toThrow(/only.*resend/i);
+  });
+});

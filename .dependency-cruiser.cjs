@@ -7,6 +7,8 @@ const SERVER = '^apps/server/src/';
 // The server's domain modules and the other domain modules each may import (ADR 0053). `name:type` allows type
 // imports only. A new import between modules adds its entry here, in the same
 // commit, with the reason in the commit message; no new ADR needed. Removing an entry is always welcome.
+// Shared infrastructure (db, http, auth, storage, secrets, config and mail) is outside this list: any module may
+// import it, so a shared-infrastructure folder must not appear below as a domain module.
 const MODULE_IMPORTS = {
   revisions: [],
   assessment: ['divers', 'imports'],
