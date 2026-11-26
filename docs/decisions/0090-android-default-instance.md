@@ -24,7 +24,7 @@ instance, but it puts the hosted product behind a typing task: a new User of Div
 address before they can sign in.
 
 The hosted track is the same artifact, configured rather than forked (the hosted-instance configuration decision,
-ADR 0087, landing with FAH-527; dual-track invariant). The Android app needs the same property: one codebase whose
+ADR 0087, landed with FAH-527; dual-track invariant). The Android app needs the same property: one codebase whose
 default address is packaging configuration, not a second product. [ADR 0077](0077-android-app-distribution.md)
 distributes the official APK, but the source may also be built by a self-hoster or an F-Droid-style distributor, who
 need their own sensible default.
@@ -52,7 +52,7 @@ Forces:
   default is not shown. "Change instance" still ends the session and wipes the local data as today, then shows the
   form with the default prefilled.
 - Nothing else changes: no fixed host is baked into the session, sync, push or deep-link paths, and the server-side
-  hosted configuration (ADR 0087, landing with FAH-527) is untouched.
+  hosted configuration (ADR 0087, landed with FAH-527) is untouched.
 
 ## Consequences
 - The official app is one tap from sign-in on first start (and when changing instance), while a self-hoster still
