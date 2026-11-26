@@ -2391,6 +2391,7 @@
         "apps/server/src/sites/site-ids.ts",
         "apps/server/src/sites/import/import-plan.ts",
         "apps/server/src/divers/diver-service.ts",
+        "apps/server/src/config.ts",
         "apps/server/src/equipment/equipment-service.ts",
         "apps/server/src/imports/import-service.ts",
         "apps/server/src/imports/parsed-recording.ts",
@@ -8064,6 +8065,23 @@
             "import"
           ],
           "resolved": "apps/server/src/secrets/secret-box.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./vocabulary.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/vocabulary.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -52677,7 +52695,7 @@
     "baselineStale": 0,
     "advisedExitCode": 0,
     "totalCruised": 495,
-    "totalDependenciesCruised": 2631,
+    "totalDependenciesCruised": 2632,
     "optionsUsed": {
       "baseDir": "/home/runner/work/dive_hub/dive_hub",
       "combinedDependencies": false,
@@ -53130,7 +53148,7 @@
       "version": "18.7.0",
       "nodeVersionSupported": "^22||^24||>=26",
       "nodeVersionFound": "v24.22.3",
-      "osVersionFound": "x64 linux@7.0.0-1016-aws",
+      "osVersionFound": "x64 linux@7.0.0-1018-aws",
       "transpilersFound": [
         {
           "name": "javascript",
