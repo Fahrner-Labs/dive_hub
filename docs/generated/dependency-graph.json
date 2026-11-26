@@ -483,6 +483,23 @@
         },
         {
           "dynamic": false,
+          "module": "./notifications/routes.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/notifications/routes.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./planning/routes.js",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -1115,6 +1132,7 @@
         "apps/server/src/imports/routes.ts",
         "apps/server/src/lead/routes.ts",
         "apps/server/src/mcp/access-routes.ts",
+        "apps/server/src/notifications/routes.ts",
         "apps/server/src/planning/routes.ts",
         "apps/server/src/providers/routes.ts",
         "apps/server/src/providers/account-routes.ts",
@@ -1187,6 +1205,8 @@
         "apps/server/src/imports/placement.ts",
         "apps/server/src/lead/lead-service.ts",
         "apps/server/src/mcp/access-service.ts",
+        "apps/server/src/notifications/notification-service.ts",
+        "apps/server/src/notifications/push-dispatcher.ts",
         "apps/server/src/planning/bottom-time-service.ts",
         "apps/server/src/planning/loading-dives.ts",
         "apps/server/src/planning/logbook-inputs.ts",
@@ -1290,6 +1310,7 @@
         "apps/server/src/backups/backup-service.ts",
         "apps/server/src/db/migrate.ts",
         "apps/server/src/storage/blob-store.ts",
+        "apps/server/src/config.ts",
         "apps/server/src/imports/archive.ts",
         "apps/server/src/scripts/write-openapi.ts",
         "apps/server/src/scripts/write-planning-vectors.ts"
@@ -1509,6 +1530,7 @@
         "apps/server/src/mcp/tools-planning-gas-plan.ts",
         "apps/server/src/mcp/tools-planning.ts",
         "apps/server/src/mcp/tools-sites.ts",
+        "apps/server/src/notifications/routes.ts",
         "apps/server/src/planning/routes.ts",
         "apps/server/src/providers/conflicts/conflict-view.ts",
         "apps/server/src/providers/connection-view.ts",
@@ -1779,6 +1801,7 @@
         "apps/server/src/lead/routes.ts",
         "apps/server/src/live/routes.ts",
         "apps/server/src/mcp/access-routes.ts",
+        "apps/server/src/notifications/routes.ts",
         "apps/server/src/planning/routes.ts",
         "apps/server/src/providers/routes.ts",
         "apps/server/src/sites/import/site-import-routes.ts",
@@ -2037,6 +2060,8 @@
         "apps/server/src/lead/lead-service.ts",
         "apps/server/src/live/revision-hints.ts",
         "apps/server/src/mcp/access-service.ts",
+        "apps/server/src/notifications/notification-service.ts",
+        "apps/server/src/notifications/push-dispatcher.ts",
         "apps/server/src/planning/planning-service.ts",
         "apps/server/src/planning/bottom-time-service.ts",
         "apps/server/src/planning/loading-dives.ts",
@@ -2262,6 +2287,8 @@
         "apps/server/src/lead/lead-service.ts",
         "apps/server/src/lead/types.ts",
         "apps/server/src/mcp/access-service.ts",
+        "apps/server/src/notifications/notification-service.ts",
+        "apps/server/src/notifications/push-dispatcher.ts",
         "apps/server/src/planning/bottom-time-service.ts",
         "apps/server/src/planning/loading-dives.ts",
         "apps/server/src/planning/logbook-inputs.ts",
@@ -2370,6 +2397,9 @@
         "apps/server/src/imports/formats/uddf/uddf.ts",
         "apps/server/src/lead/estimate.ts",
         "apps/server/src/lead/types.ts",
+        "apps/server/src/notifications/notification-service.ts",
+        "apps/server/src/notifications/push-dispatcher.ts",
+        "apps/server/src/notifications/push-provider.ts",
         "apps/server/src/providers/provider.ts",
         "apps/server/src/sites/provider-sites.ts",
         "apps/server/src/dives/dive-view.ts",
@@ -2384,6 +2414,7 @@
         "apps/server/src/equipment/read.ts",
         "apps/server/src/mcp/tools-logbook.ts",
         "apps/server/src/mcp/tools-sites.ts",
+        "apps/server/src/notifications/routes.ts",
         "apps/server/src/providers/dive-provider-routes.ts",
         "apps/server/src/sites/routes.ts",
         "apps/server/src/sites/site-view.ts",
@@ -2685,6 +2716,7 @@
         "apps/server/src/lead/routes.ts",
         "apps/server/src/live/routes.ts",
         "apps/server/src/mcp/access-routes.ts",
+        "apps/server/src/notifications/routes.ts",
         "apps/server/src/planning/routes.ts",
         "apps/server/src/providers/routes.ts",
         "apps/server/src/providers/account-routes.ts",
@@ -2820,6 +2852,7 @@
         "apps/server/src/lead/routes.ts",
         "apps/server/src/live/routes.ts",
         "apps/server/src/mcp/access-routes.ts",
+        "apps/server/src/notifications/routes.ts",
         "apps/server/src/planning/routes.ts",
         "apps/server/src/providers/dive-provider-view.ts",
         "apps/server/src/providers/route-parts.ts",
@@ -2941,6 +2974,7 @@
         "apps/server/src/mcp/access-routes.ts",
         "apps/server/src/mcp/tool.ts",
         "apps/server/src/mcp/profile.ts",
+        "apps/server/src/notifications/routes.ts",
         "apps/server/src/planning/routes.ts",
         "apps/server/src/providers/conflicts/conflict-view.ts",
         "apps/server/src/providers/connection-view.ts",
@@ -3936,9 +3970,10 @@
         "apps/server/src/backups/backup-service.ts",
         "apps/server/src/storage/blob-store.ts",
         "apps/server/src/backups/restore-service.ts",
+        "apps/server/src/secrets/secret-box.ts",
         "apps/server/src/dives/continuation/joined-recording.ts",
         "apps/server/src/imports/archive.ts",
-        "apps/server/src/secrets/secret-box.ts",
+        "apps/server/src/notifications/fcm-provider.ts",
         "apps/server/src/providers/connection-service.ts",
         "apps/server/src/providers/lease-service.ts",
         "apps/server/src/support/support-service.ts",
@@ -3967,10 +4002,10 @@
         "apps/server/src/db/migrate.ts",
         "apps/server/src/storage/blob-store.ts",
         "apps/server/src/backups/restore-service.ts",
+        "apps/server/src/config.ts",
         "apps/server/src/imports/archive.ts",
         "apps/server/src/auth/secret.ts",
         "apps/server/src/backups/app-lock.ts",
-        "apps/server/src/config.ts",
         "apps/server/src/providers/garmin/garmin-client.ts"
       ],
       "orphan": false,
@@ -7092,6 +7127,24 @@
         },
         {
           "dynamic": false,
+          "module": "./config.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/config.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./db/client.js",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -7407,6 +7460,40 @@
             "import"
           ],
           "resolved": "apps/server/src/mcp/access-service.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./notifications/notification-service.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/notifications/notification-service.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./notifications/push-dispatcher.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/notifications/push-dispatcher.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -7960,6 +8047,107 @@
         "apps/server/src/start.ts",
         "apps/server/src/scripts/write-openapi.ts",
         "apps/server/src/scripts/write-planning-vectors.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/server/src/config.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./secrets/secret-box.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/secrets/secret-box.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "fs",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "core",
+            "import"
+          ],
+          "protocol": "node:",
+          "resolved": "fs",
+          "coreModule": true,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "path",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "core",
+            "import"
+          ],
+          "protocol": "node:",
+          "resolved": "path",
+          "coreModule": true,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/server/src/compose.ts",
+        "apps/server/src/notifications/notification-service.ts",
+        "apps/server/src/notifications/push-dispatcher.ts",
+        "apps/server/src/notifications/fcm-provider.ts",
+        "apps/server/src/main.ts",
+        "apps/server/src/start.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/server/src/secrets/secret-box.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "crypto",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "core",
+            "import"
+          ],
+          "protocol": "node:",
+          "resolved": "crypto",
+          "coreModule": true,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/server/src/compose.ts",
+        "apps/server/src/config.ts",
+        "apps/server/src/providers/layer.ts",
+        "apps/server/src/providers/connection-service.ts",
+        "apps/server/src/start.ts",
+        "apps/server/src/scripts/write-openapi.ts"
       ],
       "orphan": false,
       "valid": true
@@ -12737,6 +12925,330 @@
       "valid": true
     },
     {
+      "source": "apps/server/src/notifications/notification-service.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../config.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/config.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../db/client.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/db/client.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../db/schema.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/db/schema.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../vocabulary.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/vocabulary.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "drizzle-orm",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "npm",
+            "import"
+          ],
+          "resolved": "apps/server/node_modules/drizzle-orm/index.cjs",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": true,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/server/src/compose.ts",
+        "apps/server/src/notifications/routes.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/server/src/notifications/push-dispatcher.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../config.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/config.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../db/client.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/db/client.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../db/schema.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/db/schema.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../vocabulary.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/vocabulary.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./fcm-provider.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/notifications/fcm-provider.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./push-provider.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/notifications/push-provider.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "drizzle-orm",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "npm",
+            "import"
+          ],
+          "resolved": "apps/server/node_modules/drizzle-orm/index.cjs",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": true,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/server/src/compose.ts",
+        "apps/server/src/worker.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/server/src/notifications/fcm-provider.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../config.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/config.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./push-provider.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/notifications/push-provider.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "crypto",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "core",
+            "import"
+          ],
+          "protocol": "node:",
+          "resolved": "crypto",
+          "coreModule": true,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/server/src/notifications/push-dispatcher.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/server/src/notifications/push-provider.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../vocabulary.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/vocabulary.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/server/src/notifications/push-dispatcher.ts",
+        "apps/server/src/notifications/fcm-provider.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "apps/server/src/planning/planning-service.ts",
       "dependencies": [
         {
@@ -14362,39 +14874,6 @@
       ],
       "dependents": [
         "apps/server/src/compose.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "apps/server/src/secrets/secret-box.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "crypto",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "core",
-            "import"
-          ],
-          "protocol": "node:",
-          "resolved": "crypto",
-          "coreModule": true,
-          "followable": false,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "apps/server/src/compose.ts",
-        "apps/server/src/providers/layer.ts",
-        "apps/server/src/providers/connection-service.ts",
-        "apps/server/src/config.ts",
-        "apps/server/src/start.ts",
-        "apps/server/src/scripts/write-openapi.ts"
       ],
       "orphan": false,
       "valid": true
@@ -20904,6 +21383,23 @@
         },
         {
           "dynamic": false,
+          "module": "./notifications/push-dispatcher.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/notifications/push-dispatcher.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./providers/dive-import/scheduled-fetch.js",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -25718,6 +26214,153 @@
       ],
       "dependents": [
         "apps/server/src/mcp/server.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/server/src/notifications/routes.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../auth/auth.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/auth/auth.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../auth/fastify.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/auth/fastify.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../http/problems.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/http/problems.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../http/schemas.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/http/schemas.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../vocabulary.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/vocabulary.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./notification-service.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/notifications/notification-service.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@fastify/type-provider-typebox",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "npm",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/node_modules/@fastify/type-provider-typebox/dist/cjs/index.js",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": true,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "typebox",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "unknown"
+          ],
+          "resolved": "typebox",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": true,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/server/src/app.ts"
       ],
       "orphan": false,
       "valid": true
@@ -31085,52 +31728,6 @@
       ],
       "dependents": [
         "apps/server/src/main.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "apps/server/src/config.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./secrets/secret-box.js",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "apps/server/src/secrets/secret-box.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "path",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "core",
-            "import"
-          ],
-          "protocol": "node:",
-          "resolved": "path",
-          "coreModule": true,
-          "followable": false,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "apps/server/src/main.ts",
-        "apps/server/src/start.ts"
       ],
       "orphan": false,
       "valid": true
@@ -52079,8 +52676,8 @@
     "baselineSize": 0,
     "baselineStale": 0,
     "advisedExitCode": 0,
-    "totalCruised": 490,
-    "totalDependenciesCruised": 2601,
+    "totalCruised": 495,
+    "totalDependenciesCruised": 2631,
     "optionsUsed": {
       "baseDir": "/home/runner/work/dive_hub/dive_hub",
       "combinedDependencies": false,
@@ -52142,7 +52739,7 @@
             "path": "^apps/server/src/revisions/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|backups|centres|certifications|divers|dives|equipment|imports|lead|mcp|planning|providers|sites|social|support|sync|live|users|version)/"
+            "path": "^apps/server/src/(assessment|backups|centres|certifications|divers|dives|equipment|imports|lead|mcp|notifications|planning|providers|sites|social|support|sync|live|users|version)/"
           },
           "scope": "module"
         },
@@ -52154,7 +52751,7 @@
             "path": "^apps/server/src/assessment/"
           },
           "to": {
-            "path": "^apps/server/src/(revisions|backups|centres|certifications|dives|equipment|lead|mcp|planning|providers|sites|social|support|sync|live|users|version)/"
+            "path": "^apps/server/src/(revisions|backups|centres|certifications|dives|equipment|lead|mcp|notifications|planning|providers|sites|social|support|sync|live|users|version)/"
           },
           "scope": "module"
         },
@@ -52166,7 +52763,7 @@
             "path": "^apps/server/src/backups/"
           },
           "to": {
-            "path": "^apps/server/src/(revisions|assessment|centres|certifications|divers|dives|equipment|imports|lead|mcp|planning|providers|sites|social|support|sync|live|users|version)/"
+            "path": "^apps/server/src/(revisions|assessment|centres|certifications|divers|dives|equipment|imports|lead|mcp|notifications|planning|providers|sites|social|support|sync|live|users|version)/"
           },
           "scope": "module"
         },
@@ -52178,7 +52775,7 @@
             "path": "^apps/server/src/centres/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|backups|certifications|dives|equipment|imports|lead|mcp|planning|providers|social|support|sync|live|users|version)/"
+            "path": "^apps/server/src/(assessment|backups|certifications|dives|equipment|imports|lead|mcp|notifications|planning|providers|social|support|sync|live|users|version)/"
           },
           "scope": "module"
         },
@@ -52190,7 +52787,7 @@
             "path": "^apps/server/src/certifications/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|backups|centres|equipment|imports|lead|mcp|planning|providers|sites|social|support|sync|users|version)/"
+            "path": "^apps/server/src/(assessment|backups|centres|equipment|imports|lead|mcp|notifications|planning|providers|sites|social|support|sync|users|version)/"
           },
           "scope": "module"
         },
@@ -52202,7 +52799,7 @@
             "path": "^apps/server/src/divers/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|backups|centres|certifications|dives|equipment|imports|lead|mcp|planning|providers|sites|social|support|sync|live|users|version)/"
+            "path": "^apps/server/src/(assessment|backups|centres|certifications|dives|equipment|imports|lead|mcp|notifications|planning|providers|sites|social|support|sync|live|users|version)/"
           },
           "scope": "module"
         },
@@ -52214,7 +52811,7 @@
             "path": "^apps/server/src/dives/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|backups|certifications|equipment|imports|lead|mcp|planning|providers|social|support|sync|live|users|version)/"
+            "path": "^apps/server/src/(assessment|backups|certifications|equipment|imports|lead|mcp|notifications|planning|providers|social|support|sync|live|users|version)/"
           },
           "scope": "module"
         },
@@ -52226,7 +52823,7 @@
             "path": "^apps/server/src/equipment/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|backups|centres|certifications|dives|imports|lead|mcp|planning|providers|sites|social|support|sync|live|users|version)/"
+            "path": "^apps/server/src/(assessment|backups|centres|certifications|dives|imports|lead|mcp|notifications|planning|providers|sites|social|support|sync|live|users|version)/"
           },
           "scope": "module"
         },
@@ -52238,7 +52835,7 @@
             "path": "^apps/server/src/imports/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|backups|centres|certifications|lead|mcp|planning|providers|social|support|sync|users|version)/"
+            "path": "^apps/server/src/(assessment|backups|centres|certifications|lead|mcp|notifications|planning|providers|social|support|sync|users|version)/"
           },
           "scope": "module"
         },
@@ -52250,7 +52847,7 @@
             "path": "^apps/server/src/lead/"
           },
           "to": {
-            "path": "^apps/server/src/(revisions|assessment|backups|centres|certifications|equipment|imports|mcp|providers|sites|social|support|sync|live|users|version)/"
+            "path": "^apps/server/src/(revisions|assessment|backups|centres|certifications|equipment|imports|mcp|notifications|providers|sites|social|support|sync|live|users|version)/"
           },
           "scope": "module"
         },
@@ -52277,7 +52874,19 @@
             "path": "^apps/server/src/mcp/"
           },
           "to": {
-            "path": "^apps/server/src/(revisions|backups|centres|certifications|imports|lead|providers|social|support|sync|live|users|version)/"
+            "path": "^apps/server/src/(revisions|backups|centres|certifications|imports|lead|notifications|providers|social|support|sync|live|users|version)/"
+          },
+          "scope": "module"
+        },
+        {
+          "name": "module-imports-notifications",
+          "severity": "error",
+          "comment": "notifications/ may import only these domain modules:  (MODULE_IMPORTS in .dependency-cruiser.cjs, ADR 0053).",
+          "from": {
+            "path": "^apps/server/src/notifications/"
+          },
+          "to": {
+            "path": "^apps/server/src/(revisions|assessment|backups|centres|certifications|divers|dives|equipment|imports|lead|mcp|planning|providers|sites|social|support|sync|live|users|version)/"
           },
           "scope": "module"
         },
@@ -52289,7 +52898,7 @@
             "path": "^apps/server/src/planning/"
           },
           "to": {
-            "path": "^apps/server/src/(revisions|backups|centres|certifications|equipment|imports|lead|mcp|providers|sites|social|support|sync|live|users|version)/"
+            "path": "^apps/server/src/(revisions|backups|centres|certifications|equipment|imports|lead|mcp|notifications|providers|sites|social|support|sync|live|users|version)/"
           },
           "scope": "module"
         },
@@ -52301,7 +52910,7 @@
             "path": "^apps/server/src/providers/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|backups|centres|equipment|lead|mcp|planning|social|support|sync|users|version)/"
+            "path": "^apps/server/src/(assessment|backups|centres|equipment|lead|mcp|notifications|planning|social|support|sync|users|version)/"
           },
           "scope": "module"
         },
@@ -52313,7 +52922,7 @@
             "path": "^apps/server/src/sites/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|backups|centres|certifications|divers|dives|equipment|imports|lead|mcp|planning|providers|social|support|sync|users|version)/"
+            "path": "^apps/server/src/(assessment|backups|centres|certifications|divers|dives|equipment|imports|lead|mcp|notifications|planning|providers|social|support|sync|users|version)/"
           },
           "scope": "module"
         },
@@ -52325,7 +52934,7 @@
             "path": "^apps/server/src/social/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|backups|centres|certifications|equipment|imports|lead|mcp|planning|providers|sites|support|sync|users|version)/"
+            "path": "^apps/server/src/(assessment|backups|centres|certifications|equipment|imports|lead|mcp|notifications|planning|providers|sites|support|sync|users|version)/"
           },
           "scope": "module"
         },
@@ -52337,7 +52946,7 @@
             "path": "^apps/server/src/support/"
           },
           "to": {
-            "path": "^apps/server/src/(revisions|assessment|backups|centres|certifications|divers|dives|equipment|imports|lead|mcp|planning|providers|sites|social|sync|live|users|version)/"
+            "path": "^apps/server/src/(revisions|assessment|backups|centres|certifications|divers|dives|equipment|imports|lead|mcp|notifications|planning|providers|sites|social|sync|live|users|version)/"
           },
           "scope": "module"
         },
@@ -52349,7 +52958,7 @@
             "path": "^apps/server/src/sync/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|backups|centres|certifications|divers|dives|equipment|imports|lead|mcp|planning|providers|sites|social|support|live|users|version)/"
+            "path": "^apps/server/src/(assessment|backups|centres|certifications|divers|dives|equipment|imports|lead|mcp|notifications|planning|providers|sites|social|support|live|users|version)/"
           },
           "scope": "module"
         },
@@ -52361,7 +52970,7 @@
             "path": "^apps/server/src/live/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|backups|centres|certifications|divers|dives|equipment|imports|lead|mcp|planning|providers|sites|social|support|sync|users|version)/"
+            "path": "^apps/server/src/(assessment|backups|centres|certifications|divers|dives|equipment|imports|lead|mcp|notifications|planning|providers|sites|social|support|sync|users|version)/"
           },
           "scope": "module"
         },
@@ -52388,7 +52997,7 @@
             "path": "^apps/server/src/users/"
           },
           "to": {
-            "path": "^apps/server/src/(revisions|assessment|backups|centres|certifications|dives|equipment|imports|lead|mcp|planning|providers|sites|social|support|sync|live|version)/"
+            "path": "^apps/server/src/(revisions|assessment|backups|centres|certifications|dives|equipment|imports|lead|mcp|notifications|planning|providers|sites|social|support|sync|live|version)/"
           },
           "scope": "module"
         },
@@ -52400,7 +53009,7 @@
             "path": "^apps/server/src/version/"
           },
           "to": {
-            "path": "^apps/server/src/(revisions|assessment|backups|centres|certifications|divers|dives|equipment|imports|lead|mcp|planning|providers|sites|social|support|sync|live|users)/"
+            "path": "^apps/server/src/(revisions|assessment|backups|centres|certifications|divers|dives|equipment|imports|lead|mcp|notifications|planning|providers|sites|social|support|sync|live|users)/"
           },
           "scope": "module"
         },
