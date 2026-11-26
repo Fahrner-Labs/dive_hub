@@ -156,6 +156,7 @@ export const PROBLEMS = {
   provider_account_held: 'An external diver here has this account; send claim to make them your diver (they merge into it)',
   diver_not_external: 'Only an external diver (one no User keeps) can be merged into another',
   provider_import_off: 'Importing dives from this account is off; choose what the import may do first',
+  entitlement_required: 'This needs the paid plan; see offer',
   finding_not_found: 'This dive has no such finding (anymore)',
   ai_access_not_found: 'No such AI access',
   ai_access_off: 'AI access is switched off on this instance; an admin can switch it on',
@@ -197,6 +198,10 @@ export const ProblemSchema = Type.Object({
   }, { description: 'With provider_number_taken: the dive at the Provider that has the number (ADR 0048)' })),
   diveId: Type.Optional(Nullable(Type.String({ description: 'With provider_number_taken: the Dive here that dive is, if Dive Hub knows it' }))),
   runId: Type.Optional(Type.String({ description: 'With push_run_active: the run that is going (ADR 0047)' })),
+  offer: Type.Optional(Type.Object({
+    plan: Type.String({ description: 'The plan that unlocks the action (pro)' }),
+    features: Type.Array(Type.String(), { description: 'What it unlocks: automation (scheduled fetches and Waiting pushes) and push_runs' }),
+  }, { description: 'With entitlement_required: the paid plan the client offers, and what it unlocks (hosted-DiveHub plan §4)' })),
 }, { $id: 'Problem', description: 'A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types' });
 
 /** What a route's response names for a refusal: a reference to ProblemSchema. */

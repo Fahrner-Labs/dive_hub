@@ -59,6 +59,21 @@ describe('loadConfig site sources', () => {
   });
 });
 
+describe('loadConfig billing', () => {
+  it('is off when DIVEHUB_BILLING_PROVIDER is unset, the self-hosted default', () => {
+    expect(loadConfig(base).billing).toBeUndefined();
+    expect(loadConfig({ ...base, DIVEHUB_BILLING_PROVIDER: '' }).billing).toBeUndefined();
+  });
+
+  it('turns the entitlement gates on with paddle', () => {
+    expect(loadConfig({ ...base, DIVEHUB_BILLING_PROVIDER: 'paddle' }).billing).toEqual({ provider: 'paddle' });
+  });
+
+  it('stops the boot on a provider it does not know', () => {
+    expect(() => loadConfig({ ...base, DIVEHUB_BILLING_PROVIDER: 'stripe' })).toThrow('DIVEHUB_BILLING_PROVIDER must be paddle');
+  });
+});
+
 describe('loadConfig FCM push config', () => {
   const serviceAccount = { project_id: 'divehub-test', client_email: 'push@divehub-test.iam.gserviceaccount.com', private_key: 'private-key' };
   const clientConfig = { projectId: 'divehub-test', applicationId: 'dev.divehub', apiKey: 'public-api-key', gcmSenderId: '123456789' };

@@ -5,7 +5,8 @@
 import { fileURLToPath } from 'node:url';
 import type { Auth } from './auth/auth.js';
 import type { Db } from './db/client.js';
-import type { EmailConfig, FcmConfig } from './config.js';
+import type { BillingConfig, EmailConfig, FcmConfig } from './config.js';
+import { createEntitlementService } from './entitlement/entitlement.js';
 import { createMailLinks } from './mail/links.js';
 import { createMailProvider, type MailFetch } from './mail/resend.js';
 import type { FastifyBaseLogger } from 'fastify';
@@ -97,6 +98,8 @@ export interface ServiceParts {
   mailFetch?: MailFetch;
   /** Resend's endpoint; only tests point it elsewhere. */
   mailUrl?: string;
+  /** Billing (hosted-DiveHub plan §4, ADR 0087); undefined makes every feature free and the entitlement gates inert. */
+  billing?: BillingConfig | undefined;
 }
 
 /** Transactional mail for this instance, or nothing when `DIVEHUB_EMAIL_*` is unset (hosted plan §6.1). */
@@ -113,7 +116,7 @@ function createMail(options: {
 
 export function createServices({
   db, blobs, auth, secrets, adapters, siteSources, clock, log, live: liveSettings, dataDir, databaseUrl, encryptionKey,
-  logBuffer = createLogRingBuffer({ stdout: { write: () => true } }), workerRunning, fcm, email, baseUrl, mailFetch, mailUrl,
+  logBuffer = createLogRingBuffer({ stdout: { write: () => true } }), workerRunning, fcm, email, baseUrl, mailFetch, mailUrl, billing,
 }: ServiceParts) {
   const mail = createMail({ email, baseUrl, mailFetch, mailUrl });
   const assessments = createAssessmentService(db);
@@ -134,7 +137,9 @@ export function createServices({
     appVersion: process.env.DIVEHUB_VERSION ?? 'dev', databaseUrl, dataDir, encryptionKey, clientDiagnostics,
     ...(workerRunning && { workerRunning }),
   });
-  const providers = createProviderLayer({ db, blobs, secrets, adapters, ...(clock && { clock }), ...(log && { log }) });
+  // The paywall (hosted-DiveHub plan §4): with no billing configured it answers entitled for everything (ADR 0087).
+  const entitlements = createEntitlementService({ db, enforced: billing !== undefined, ...(clock && { clock }) });
+  const providers = createProviderLayer({ db, blobs, secrets, adapters, entitlements, ...(clock && { clock }), ...(log && { log }) });
   // Push hints queue in the same writing transactions as the SSE hints (ADR 0085); without FCM the dispatcher queues
   // nothing and the job is a no-op.
   const push = createPushDispatcher({ db, fcm });
@@ -153,7 +158,7 @@ export function createServices({
   // Restoring a Dive an append took undoes the append (ADR 0063).
   const dives = createDiveService(db, continuation);
   return {
-    db, blobs, auth, assessments, backups, support, clientDiagnostics, sync, providers, imports, logBuffer,
+    db, blobs, auth, assessments, backups, support, clientDiagnostics, sync, entitlements, providers, imports, logBuffer,
     siteImports: createSiteImportService({ db, sources: siteSources }),
     sitePurges: createSitePurgeService({ db, sources: siteSources }),
     aiAccesses: createAiAccessService(db, auth),

@@ -5,6 +5,8 @@ import { Type, type Static } from 'typebox';
 import { userOf } from '../../auth/fastify.js';
 import { Problem, problem, storedProblemCode } from '../../http/problems.js';
 import { DIVE_ONLY_PATTERN } from '../../dives/list-filter.js';
+import type { EntitlementService } from '../../entitlement/entitlement.js';
+import { requireEntitlement } from '../entitlement-gate.js';
 import { MAX_IDS, type PushRunService } from './push-run-service.js';
 import { DateTime, IdParams, Nullable, oneOf } from '../../http/schemas.js';
 import { UnmetView } from '../unmet-view.js';
@@ -100,9 +102,9 @@ const time = (d: Date | null) => d?.toISOString() ?? null;
 const runView = <T extends { stopCode: string | null; createdAt: Date; startedAt: Date | null; finishedAt: Date | null; dismissedAt: Date | null }>(r: T) =>
   ({ ...r, stopCode: storedProblemCode(r.stopCode), createdAt: r.createdAt.toISOString(), startedAt: time(r.startedAt), finishedAt: time(r.finishedAt), dismissedAt: time(r.dismissedAt) });
 
-const errors = { 400: Problem, 404: Problem, 409: Problem };
+const errors = { 400: Problem, 402: Problem, 404: Problem, 409: Problem };
 
-export const pushRunRoutes: FastifyPluginAsyncTypebox<{ pushRuns: PushRunService }> = async (app, { pushRuns }) => {
+export const pushRunRoutes: FastifyPluginAsyncTypebox<{ pushRuns: PushRunService; entitlements: EntitlementService }> = async (app, { pushRuns, entitlements }) => {
   const requestOf = (body: Static<typeof StartBody>) => {
     const { list, ids } = body.dives;
     return {
@@ -122,6 +124,7 @@ export const pushRunRoutes: FastifyPluginAsyncTypebox<{ pushRuns: PushRunService
     },
   }, async (request, reply) => {
     if (!oneOfListAndIds(request.body)) return reply.code(400).send(invalid);
+    await requireEntitlement(entitlements, userOf(request).id);
     return previewViewOf(await pushRuns.preview(userOf(request).id, request.params.id, requestOf(request.body)));
   });
 
@@ -133,6 +136,7 @@ export const pushRunRoutes: FastifyPluginAsyncTypebox<{ pushRuns: PushRunService
     },
   }, async (request, reply) => {
     if (!oneOfListAndIds(request.body)) return reply.code(400).send(invalid);
+    await requireEntitlement(entitlements, userOf(request).id);
     return reply.code(202).send(runView(await pushRuns.start(userOf(request).id, request.params.id, requestOf(request.body))));
   });
 
