@@ -453,7 +453,13 @@ online.
   `false` means the mail failed, so show that and keep showing the `url` for copying. *Web:* `AdminSettings.tsx` (`Invite`).
 - **Passwords:** 15 to 128 characters, enforced by the server. Say the rule beside the field
   ([ADR 0012](../decisions/0012-invitations-and-admin-bootstrap.md)). *Web:* `NewPasswordField`.
-- **There is no self sign-up.** Say that access comes from an admin's Invitation.
+- **Self sign-up is off unless the instance opens it** (`DIVEHUB_REGISTRATION_OPEN=true`,
+  [ADR 0087](../decisions/0087-hosted-instance-configuration.md)). Then offer a sign-up form with name, e-mail,
+  password and an explicit acceptance of the Terms of Service and Privacy Policy: `POST /api/auth/sign-up/email`
+  with `{ name, email, password, consent: { terms: true, privacy: true } }`. Its answer carries no session; the
+  server mails a verification link and the account can sign in only after opening it. Offer
+  `POST /api/auth/send-verification-email` with the e-mail to resend the link. Without the variable, do not offer
+  sign-up: say that access comes from an admin's Invitation.
 
 ### The User's account
 - **Connections** (ADR 0024, 0027, `GET /api/connections`): one per Diver and Provider. Show the account

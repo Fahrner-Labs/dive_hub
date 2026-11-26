@@ -1,4 +1,4 @@
-import { PUBLIC_AUTH_PATHS, type Auth } from './auth.js';
+import { publicAuthPaths, type Auth } from './auth.js';
 
 type OpenApiDoc = {
   paths?: Record<string, Record<string, Record<string, unknown>>>;
@@ -6,16 +6,16 @@ type OpenApiDoc = {
 };
 
 /**
- * Our OpenAPI document plus the Better Auth endpoints we expose (PUBLIC_AUTH_PATHS), so generated
+ * Our OpenAPI document plus the Better Auth endpoints we expose (publicAuthPaths), so generated
  * clients cover sign-in too. Authentication is the session cookie or a bearer session token (ADR 0074),
  * so Better Auth's per-operation bearer/API-key security entries are dropped.
  */
-export async function withAuthEndpoints<T extends object>(ours: T, auth: Auth): Promise<T> {
+export async function withAuthEndpoints<T extends object>(ours: T, auth: Auth, registrationOpen: boolean): Promise<T> {
   const theirs = (await auth.api.generateOpenAPISchema()) as unknown as OpenApiDoc;
   const doc = structuredClone(ours) as T & OpenApiDoc;
   doc.paths ??= {};
   const used = new Set<string>();
-  for (const path of PUBLIC_AUTH_PATHS) {
+  for (const path of publicAuthPaths(registrationOpen)) {
     const operations = theirs.paths?.[path];
     if (!operations) continue;
     doc.paths[`/api/auth${path}`] = Object.fromEntries(Object.entries(operations).map(([method, { security: _, ...op }]) => {

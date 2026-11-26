@@ -1322,13 +1322,13 @@
       "dependents": [
         "apps/server/src/app.ts",
         "apps/server/src/auth/fastify.ts",
+        "apps/server/src/http/attempt-limit.ts",
         "apps/server/src/http/problems.ts",
         "apps/server/src/http/conditional.ts",
         "apps/server/src/http/caller.ts",
         "apps/server/src/centres/routes.ts",
         "apps/server/src/compose.ts",
         "apps/server/src/dives/provider-port.ts",
-        "apps/server/src/http/attempt-limit.ts",
         "apps/server/src/worker.ts",
         "apps/server/src/dives/assessment-refresh.ts",
         "apps/server/src/dives/logbook-routes.ts",
@@ -1663,6 +1663,41 @@
         },
         {
           "dynamic": false,
+          "module": "../mail/mail.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/mail/mail.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../mail/messages.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/mail/messages.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "../revisions/revisions.js",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -1671,6 +1706,23 @@
             "import"
           ],
           "resolved": "apps/server/src/revisions/revisions.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./consent.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/auth/consent.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -2573,6 +2625,49 @@
       "valid": true
     },
     {
+      "source": "apps/server/src/mail/mail.ts",
+      "dependencies": [],
+      "dependents": [
+        "apps/server/src/auth/auth.ts",
+        "apps/server/src/mail/messages.ts",
+        "apps/server/src/mail/links.ts",
+        "apps/server/src/mail/resend.ts",
+        "apps/server/src/users/invitation-service.ts",
+        "apps/server/src/users/password-reset-service.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/server/src/mail/messages.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./mail.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/mail/mail.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/server/src/auth/auth.ts",
+        "apps/server/src/mail/links.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "apps/server/src/revisions/revisions.ts",
       "dependencies": [
         {
@@ -2652,6 +2747,15 @@
       "valid": true
     },
     {
+      "source": "apps/server/src/auth/consent.ts",
+      "dependencies": [],
+      "dependents": [
+        "apps/server/src/auth/auth.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "apps/server/src/auth/password.ts",
       "dependencies": [
         {
@@ -2700,6 +2804,23 @@
     {
       "source": "apps/server/src/auth/fastify.ts",
       "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../http/attempt-limit.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/http/attempt-limit.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
         {
           "dynamic": false,
           "module": "../http/problems.js",
@@ -2827,6 +2948,90 @@
       "valid": true
     },
     {
+      "source": "apps/server/src/http/attempt-limit.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./problems.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/http/problems.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "fastify",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "npm",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/node_modules/fastify/fastify.js",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": true,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "net",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "core",
+            "import"
+          ],
+          "protocol": "node:",
+          "resolved": "net",
+          "coreModule": true,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/server/src/auth/fastify.ts",
+        "apps/server/src/compose.ts",
+        "apps/server/src/users/account-routes.ts",
+        "apps/server/src/users/routes.ts",
+        "apps/server/src/users/setup-restore-routes.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "net",
+      "followable": false,
+      "coreModule": true,
+      "couldNotResolve": false,
+      "matchesDoNotFollow": false,
+      "dependencyTypes": [
+        "core",
+        "import"
+      ],
+      "dependencies": [],
+      "dependents": [
+        "apps/server/src/http/attempt-limit.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "apps/server/src/http/problems.ts",
       "dependencies": [
         {
@@ -2902,6 +3107,7 @@
         "apps/server/src/app.ts",
         "apps/server/src/assessment/routes.ts",
         "apps/server/src/auth/fastify.ts",
+        "apps/server/src/http/attempt-limit.ts",
         "apps/server/src/backups/backup-routes.ts",
         "apps/server/src/backups/backup-service.ts",
         "apps/server/src/billing/routes.ts",
@@ -2909,7 +3115,6 @@
         "apps/server/src/certifications/routes.ts",
         "apps/server/src/certifications/certification-answers.ts",
         "apps/server/src/dives/deletion-view.ts",
-        "apps/server/src/http/attempt-limit.ts",
         "apps/server/src/providers/push/push-run-service.ts",
         "apps/server/src/providers/push/push-run-plan.ts",
         "apps/server/src/sites/import/site-import-service.ts",
@@ -11666,89 +11871,6 @@
       "valid": true
     },
     {
-      "source": "apps/server/src/http/attempt-limit.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./problems.js",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "apps/server/src/http/problems.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "fastify",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "npm",
-            "type-only",
-            "import"
-          ],
-          "resolved": "apps/server/node_modules/fastify/fastify.js",
-          "coreModule": false,
-          "followable": false,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": true,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "net",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "core",
-            "import"
-          ],
-          "protocol": "node:",
-          "resolved": "net",
-          "coreModule": true,
-          "followable": false,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "apps/server/src/compose.ts",
-        "apps/server/src/users/account-routes.ts",
-        "apps/server/src/users/routes.ts",
-        "apps/server/src/users/setup-restore-routes.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "net",
-      "followable": false,
-      "coreModule": true,
-      "couldNotResolve": false,
-      "matchesDoNotFollow": false,
-      "dependencyTypes": [
-        "core",
-        "import"
-      ],
-      "dependencies": [],
-      "dependents": [
-        "apps/server/src/http/attempt-limit.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
       "source": "apps/server/src/imports/import-service.ts",
       "dependencies": [
         {
@@ -13441,47 +13563,6 @@
       "valid": true
     },
     {
-      "source": "apps/server/src/mail/mail.ts",
-      "dependencies": [],
-      "dependents": [
-        "apps/server/src/mail/links.ts",
-        "apps/server/src/mail/messages.ts",
-        "apps/server/src/mail/resend.ts",
-        "apps/server/src/users/invitation-service.ts",
-        "apps/server/src/users/password-reset-service.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "apps/server/src/mail/messages.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./mail.js",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "import"
-          ],
-          "resolved": "apps/server/src/mail/mail.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "apps/server/src/mail/links.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
       "source": "apps/server/src/mail/resend.ts",
       "dependencies": [
         {
@@ -13522,7 +13603,8 @@
         }
       ],
       "dependents": [
-        "apps/server/src/compose.ts"
+        "apps/server/src/compose.ts",
+        "apps/server/src/start.ts"
       ],
       "orphan": false,
       "valid": true
@@ -33826,6 +33908,23 @@
             "import"
           ],
           "resolved": "apps/server/src/db/migrate.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./mail/resend.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/mail/resend.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -54212,8 +54311,8 @@
     "baselineSize": 0,
     "baselineStale": 0,
     "advisedExitCode": 0,
-    "totalCruised": 511,
-    "totalDependenciesCruised": 2707,
+    "totalCruised": 512,
+    "totalDependenciesCruised": 2712,
     "optionsUsed": {
       "baseDir": "/home/runner/work/dive_hub/dive_hub",
       "combinedDependencies": false,

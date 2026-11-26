@@ -182,3 +182,25 @@ describe('loadConfig transactional e-mail', () => {
     expect(() => loadConfig({ ...base, ...mail, DIVEHUB_EMAIL_PROVIDER: 'postmark' })).toThrow(/only.*resend/i);
   });
 });
+
+describe('loadConfig open registration', () => {
+  const mail = {
+    DIVEHUB_EMAIL_PROVIDER: 'resend', DIVEHUB_EMAIL_API_KEY: 're_test_key', DIVEHUB_EMAIL_FROM: 'Dive Hub <noreply@dives.example.com>',
+  };
+
+  it('is off by default, so the image is invite-only without the variable', () => {
+    expect(loadConfig(base).registrationOpen).toBe(false);
+    expect(loadConfig({ ...base, DIVEHUB_REGISTRATION_OPEN: '' }).registrationOpen).toBe(false);
+    expect(loadConfig({ ...base, DIVEHUB_REGISTRATION_OPEN: 'false' }).registrationOpen).toBe(false);
+  });
+
+  it('opens sign-up only with true and transactional e-mail to verify it', () => {
+    expect(loadConfig({ ...base, ...mail, DIVEHUB_REGISTRATION_OPEN: 'true' }).registrationOpen).toBe(true);
+    expect(() => loadConfig({ ...base, DIVEHUB_REGISTRATION_OPEN: 'true' })).toThrow(/DIVEHUB_REGISTRATION_OPEN=true needs transactional e-mail/);
+  });
+
+  it('refuses a value that is neither true nor false', () => {
+    expect(() => loadConfig({ ...base, ...mail, DIVEHUB_REGISTRATION_OPEN: 'yes' }))
+      .toThrow('DIVEHUB_REGISTRATION_OPEN must be "true" or "false", not "yes"');
+  });
+});

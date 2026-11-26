@@ -33,7 +33,7 @@ import { createLive } from './live/service.js';
 import { createNotificationService } from './notifications/notification-service.js';
 import { createPushDispatcher } from './notifications/push-dispatcher.js';
 import { withRevisionHints } from './live/revision-hints.js';
-import { createAttemptLimit, TOKEN_ATTEMPTS } from './http/attempt-limit.js';
+import { createAttemptLimit, SIGNUP_ATTEMPTS, TOKEN_ATTEMPTS } from './http/attempt-limit.js';
 import { createLeadService } from './lead/lead-service.js';
 import { createAiAccessService } from './mcp/access-service.js';
 import { createPlanningService } from './planning/planning-service.js';
@@ -94,6 +94,8 @@ export interface ServiceParts {
   fcm?: FcmConfig | undefined;
   /** Transactional mail (hosted plan §6.1); undefined keeps invitations and resets as copy links (ADR 0012). */
   email?: EmailConfig | undefined;
+  /** DIVEHUB_REGISTRATION_OPEN (hosted plan §6.2); the auth handler exposes sign-up only when true. */
+  registrationOpen?: boolean;
   /** Public origin the mailed links point to; required when `email` is set. */
   baseUrl?: string;
   /** Where the Resend HTTP goes; tests pass a stand-in, production the global fetch. */
@@ -134,9 +136,10 @@ function createBilling(
 
 export function createServices({
   db, blobs, auth, secrets, adapters, siteSources, clock, log, live: liveSettings, dataDir, databaseUrl, encryptionKey,
-  logBuffer = createLogRingBuffer({ stdout: { write: () => true } }), workerRunning, fcm, email, baseUrl, mailFetch, mailUrl, billing,
-  paddleFetch, paddleUrl,
+  logBuffer = createLogRingBuffer({ stdout: { write: () => true } }), workerRunning, fcm, email, registrationOpen = false,
+  baseUrl, mailFetch, mailUrl, billing, paddleFetch, paddleUrl,
 }: ServiceParts) {
+  const now = clock ? () => clock.now() : undefined;
   const mail = createMail({ email, baseUrl, mailFetch, mailUrl });
   const assessments = createAssessmentService(db);
   const backupLog: BackupLog = {
@@ -147,7 +150,7 @@ export function createServices({
   const backups = createBackupService({
     db, blobs, dataDir, databaseUrl,
     migrationsFolder: fileURLToPath(new URL('../drizzle', import.meta.url)), appVersion: process.env.DIVEHUB_VERSION ?? 'dev',
-    encryptionKey, log: backupLog, now: clock ? () => clock.now() : undefined,
+    encryptionKey, log: backupLog, now,
   });
   const clientDiagnostics = createClientDiagnosticsService(db);
   const sync = createSyncService(db);
@@ -180,15 +183,17 @@ export function createServices({
   // Restoring a Dive an append took undoes the append (ADR 0063).
   const dives = createDiveService(db, continuation);
   return {
-    db, blobs, auth, assessments, backups, support, clientDiagnostics, sync, entitlements, billing: billingService, providers, imports, logBuffer,
+    db, blobs, auth, assessments, backups, support, clientDiagnostics, sync, entitlements, billing: billingService, providers, imports, logBuffer, registrationOpen,
     siteImports: createSiteImportService({ db, sources: siteSources }),
     sitePurges: createSitePurgeService({ db, sources: siteSources }),
     aiAccesses: createAiAccessService(db, auth),
-    setup: createSetupService(db, clock ? () => clock.now() : undefined),
+    setup: createSetupService(db, now),
     invitations: createInvitationService(db, mail),
     passwordResets: createPasswordResetService(db, mail),
     // One count per client IP across the public token routes (ADR 0061).
-    tokenAttempts: createAttemptLimit(TOKEN_ATTEMPTS, clock ? () => clock.now() : undefined),
+    tokenAttempts: createAttemptLimit(TOKEN_ATTEMPTS, now),
+    // Its own count, so a signup flood cannot exhaust the token routes' budget (hosted plan §6.2).
+    signupAttempts: createAttemptLimit(SIGNUP_ATTEMPTS, now),
     profiles: createProfileService(db),
     sessions: createSessionService(db),
     userAdmin: createUserAdminService(db, blobs),
