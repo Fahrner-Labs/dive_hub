@@ -149,6 +149,27 @@ export const passwordReset = pgTable(
 
 export const unitSystem = pgEnum('unit_system', ['metric', 'imperial']);
 
+/** The terms a self-registered User accepts (hosted plan §6.2): the Terms of Service and the Privacy Policy. */
+export const consentKind = pgEnum('consent_kind', ['terms', 'privacy']);
+
+/**
+ * What a User accepted and when (hosted plan §6.2): provable consent for GDPR, one row per kind and version. The
+ * server records the versions in force at signup; a later version accepted by the same User is another row.
+ */
+export const userConsent = pgTable(
+  'user_consent',
+  {
+    userId: uuid('user_id').notNull().references(() => user.id, { onDelete: 'cascade' }),
+    kind: consentKind('kind').notNull(),
+    version: text('version').notNull(),
+    acceptedAt: timestamp('accepted_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.userId, t.kind, t.version] }),
+    check('user_consent_version_ck', sql`length(${t.version}) between 1 and 100`),
+  ],
+);
+
 /** A User's display settings (ADR 0014). Null means: follow the browser. */
 export const userPreference = pgTable('user_preference', {
   userId: uuid('user_id').primaryKey().references(() => user.id, { onDelete: 'cascade' }),

@@ -1,8 +1,9 @@
 // Better Auth inside Fastify (ADR 0011): the /api/auth/* handler and a session guard for our routes.
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { fromNodeHeaders } from 'better-auth/node';
+import { clientKey, type AttemptLimit } from '../http/attempt-limit.js';
 import { problem } from '../http/problems.js';
-import { CLIENT_IP_HEADER, PUBLIC_AUTH_PATHS, type Auth, type SessionUser } from './auth.js';
+import { CLIENT_IP_HEADER, publicAuthPaths, type Auth, type SessionUser } from './auth.js';
 
 declare module 'fastify' {
   interface FastifyRequest {
@@ -29,10 +30,12 @@ export function forwardCookies(from: Headers, reply: FastifyReply): void {
   if (cookies.length > 0) reply.header('set-cookie', cookies);
 }
 
-const publicPaths = new Set<string>(PUBLIC_AUTH_PATHS);
-
-/** Mounts the Better Auth endpoints we expose (PUBLIC_AUTH_PATHS) at /api/auth/*; the rest answer 404. */
-export async function authHandler(app: FastifyInstance, { auth }: { auth: Auth }) {
+/** Mounts the Better Auth endpoints we expose (publicAuthPaths) at /api/auth/*; the rest answer 404. */
+export async function authHandler(
+  app: FastifyInstance,
+  { auth, registrationOpen, tokenAttempts }: { auth: Auth; registrationOpen: boolean; tokenAttempts: AttemptLimit },
+) {
+  const publicPaths = new Set<string>(publicAuthPaths(registrationOpen));
   // Hand Better Auth the body exactly as sent; it parses and validates it itself.
   app.removeAllContentTypeParsers();
   app.addContentTypeParser('*', { parseAs: 'string' }, (_request, body, done) => done(null, body));
@@ -43,7 +46,14 @@ export async function authHandler(app: FastifyInstance, { auth }: { auth: Auth }
     schema: { hide: true },
     handler: async (request, reply) => {
       const url = new URL(request.url, auth.options.baseURL);
-      if (!publicPaths.has(url.pathname.slice('/api/auth'.length))) return reply.code(404).send(problem('not_found'));
+      const path = url.pathname.slice('/api/auth'.length);
+      if (!publicPaths.has(path)) return reply.code(404).send(problem('not_found'));
+      // The same count per client IP as the token routes (ADR 0061), so a sign-up flood stops at 30 per 15 minutes.
+      // Signing up repeats no token attempt, but without this limit it would be an unlimited public write route.
+      if (registrationOpen && path === '/sign-up/email') {
+        const wait = tokenAttempts.take(clientKey(request.ip));
+        if (wait !== null) return reply.code(429).header('retry-after', String(wait)).send(problem('too_many_attempts'));
+      }
       const response = await auth.handler(new Request(url, {
         method: request.method,
         headers: authHeaders(request),

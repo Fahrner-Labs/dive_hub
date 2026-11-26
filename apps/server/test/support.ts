@@ -10,7 +10,8 @@ import { createAuth, type Auth } from '../src/auth/auth.js';
 import { buildApp } from '../src/app.js';
 import { createServices } from '../src/compose.js';
 import type { EmailConfig, FcmConfig } from '../src/config.js';
-import type { MailFetch } from '../src/mail/resend.js';
+import type { MailProvider } from '../src/mail/mail.js';
+import { createMailProvider, type MailFetch } from '../src/mail/resend.js';
 import { createDb, type Db } from '../src/db/client.js';
 import { migrateDatabase } from '../src/db/migrate.js';
 import { listenToChanges } from '../src/revisions/revisions.js';
@@ -80,7 +81,10 @@ export async function createTestDatabase(options: { migrationsFolder?: string } 
   };
 }
 
-export function createTestAuth(db: Db, options: { rateLimit?: boolean } = {}): Auth {
+export function createTestAuth(
+  db: Db,
+  options: { rateLimit?: boolean; registrationOpen?: boolean; mail?: MailProvider } = {},
+): Auth {
   return createAuth({ db, baseUrl: BASE_URL, secret: 'test-secret-with-enough-entropy-0123456789abcdef', ...options });
 }
 
@@ -136,16 +140,25 @@ export async function createTestApp(t: TestDatabase, options: {
   mailFetch?: MailFetch;
   /** Resend's endpoint in tests, so a captured request names the overridden endpoint. */
   mailUrl?: string;
+  /** DIVEHUB_REGISTRATION_OPEN (hosted plan §6.2); needs `email` and a mail stand-in for verification. */
+  registrationOpen?: boolean;
 } = {}) {
   const {
     webDir, siteSources, fakeSsi = createFakeSsi(), encryptionKey = TEST_ENCRYPTION_KEY, extraProviders = [], clock = resettableClock(), ssi = (a) => a,
-    maxUploadBytes = 1 << 26, onRestored, fcm, email, mailFetch, mailUrl, ...authOptions
+    maxUploadBytes = 1 << 26, onRestored, fcm, email, mailFetch, mailUrl, registrationOpen, ...authOptions
   } = options;
   // SSI keeps its last logbook read for two minutes (ADR 0027); a test that changes the fake SSI behind Dive Hub's back
   // moves this clock on, as if the change happened a while later. Pauses between actions are skipped and recorded.
   const ssiClock = { now: 0, advance(ms: number) { this.now += ms; } };
+  const mailer = email
+    ? createMailProvider(email, { ...(mailFetch && { fetch: mailFetch }), ...(mailUrl && { url: mailUrl }) })
+    : undefined;
   const services = createServices({
-    db: t.db, auth: createTestAuth(t.db, authOptions), blobs: createLocalBlobStore(t.dataDir), secrets: createSecretBox(encryptionKey ?? undefined),
+    db: t.db,
+    auth: createTestAuth(t.db, {
+      ...authOptions, ...(registrationOpen !== undefined && { registrationOpen }), ...(mailer && { mail: mailer }),
+    }),
+    blobs: createLocalBlobStore(t.dataDir), secrets: createSecretBox(encryptionKey ?? undefined),
     dataDir: t.dataDir, databaseUrl: t.pool.options.connectionString!, encryptionKey: encryptionKey ?? undefined,
     siteSources: siteSources ?? { osm: unreachable('osm'), wikidata: unreachable('wikidata'), ssi: unreachable('ssi') },
     adapters: [
@@ -158,6 +171,7 @@ export async function createTestApp(t: TestDatabase, options: {
     clock,
     live: { connectionString: t.pool.options.connectionString! },
     baseUrl: BASE_URL,
+    registrationOpen: registrationOpen ?? false,
     ...(fcm && { fcm }),
     ...(email && { email }),
     ...(mailFetch && { mailFetch }),
@@ -177,7 +191,11 @@ export const listenToNoChanges = () => listenToChanges({ diveChanged: async () =
 
 /** Creates a User the way an admin would (Better Auth's admin API, server-side). */
 export async function createUser(auth: Auth, email: string, role: 'user' | 'admin' = 'user') {
-  const { user } = await auth.api.createUser({ body: { email, name: email.split('@')[0]!, password: PASSWORD, role } });
+  // The admin vouches for the address, like the setup token and an invitation do, so the User needs no verification
+  // even when open registration requires it (hosted plan §6.2).
+  const { user } = await auth.api.createUser({
+    body: { email, name: email.split('@')[0]!, password: PASSWORD, role, data: { emailVerified: true } },
+  });
   return user;
 }
 

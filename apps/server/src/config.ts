@@ -75,6 +75,8 @@ export interface Config {
   fcm: FcmConfig | undefined;
   /** Transactional mail (hosted plan §6.1); undefined means invitations and resets stay copy links (ADR 0012). */
   email: EmailConfig | undefined;
+  /** Self-serve signup with e-mail verification (DIVEHUB_REGISTRATION_OPEN, hosted plan §6.2, ADR 0087). */
+  registrationOpen: boolean;
 }
 
 /** A JSON object given inline or as the path to a file, with the variable's name in every error (ADR 0085). */
@@ -161,6 +163,18 @@ function readEmailConfig(get: (name: string) => string | undefined): EmailConfig
 }
 
 /**
+ * Self-serve signup with e-mail verification (DIVEHUB_REGISTRATION_OPEN, hosted plan §6.2, ADR 0087). Unset is today's
+ * invite-only world. Anything but `true` or `false` stops the boot, so a typo cannot open registration by accident.
+ */
+function readRegistrationOpen(get: (name: string) => string | undefined): boolean {
+  const value = get('DIVEHUB_REGISTRATION_OPEN');
+  if (value === undefined) return false;
+  if (value === 'true') return true;
+  if (value === 'false') return false;
+  throw new Error(`DIVEHUB_REGISTRATION_OPEN must be "true" or "false", not "${value}"`);
+}
+
+/**
  * The Site sources this instance constructs and offers (DIVEHUB_SITE_SOURCES, ADR 0087). Unset means every Source,
  * the self-hosted behaviour; a comma-separated list narrows it. A name the vocabulary does not know stops the boot,
  * as does a list that names none, so a typo cannot silently switch a Source off (or leave the admin UI empty).
@@ -194,6 +208,11 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   const port = count('DIVEHUB_PORT', 3000);
   const baseUrl = get('DIVEHUB_BASE_URL') ?? (production ? required('DIVEHUB_BASE_URL') : `http://localhost:${port}`);
   const webDir = get('DIVEHUB_WEB_DIR');
+  const email = readEmailConfig(get);
+  const registrationOpen = readRegistrationOpen(get);
+  if (registrationOpen && !email) {
+    throw new Error('DIVEHUB_REGISTRATION_OPEN=true needs transactional e-mail: set DIVEHUB_EMAIL_PROVIDER, DIVEHUB_EMAIL_API_KEY and DIVEHUB_EMAIL_FROM, or leave registration closed');
+  }
   return {
     databaseUrl: required('DATABASE_URL'),
     dataDir: resolve(get('DIVEHUB_DATA_DIR') ?? './data'),
@@ -216,6 +235,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     ssiUrl: get('DIVEHUB_SSI_URL'),
     garminUrl: get('DIVEHUB_GARMIN_URL'),
     fcm: readFcmConfig(get),
-    email: readEmailConfig(get),
+    email,
+    registrationOpen,
   };
 }

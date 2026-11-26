@@ -4,7 +4,7 @@
 > `pnpm check` fails when this map is stale. Symbols are ranked by how widely the code references them;
 > each module shows its most-referenced ones (exported symbols rank higher). Search here before walking the tree.
 
-Files: 439 · symbols: 4024 · shown: 253
+Files: 440 · symbols: 4033 · shown: 254
 
 ### server/(root)
 apps/server/src/vocabulary.ts:13 type SiteWaterType
@@ -12,7 +12,7 @@ apps/server/src/vocabulary.ts:51 type ImportSource
 apps/server/src/errors.ts:2 const errorMessage
 apps/server/src/vocabulary.ts:12 const SITE_WATER_TYPES
 apps/server/src/config.ts:27 iface FcmConfig
-… 58 more symbols in this module
+… 59 more symbols in this module
 
 ### server/assessment
 apps/server/src/assessment/rules.ts:50 const RULES
@@ -23,12 +23,12 @@ apps/server/src/assessment/signals.ts:5 iface Series
 … 82 more symbols in this module
 
 ### server/auth
-apps/server/src/auth/fastify.ts:81 fn userOf
-apps/server/src/auth/fastify.ts:68 fn requireUser
-apps/server/src/auth/auth.ts:151 type Auth
-apps/server/src/auth/fastify.ts:99 fn requireAdmin
-apps/server/src/auth/auth.ts:61 fn createAuth
-… 24 more symbols in this module
+apps/server/src/auth/fastify.ts:91 fn userOf
+apps/server/src/auth/fastify.ts:78 fn requireUser
+apps/server/src/auth/auth.ts:189 type Auth
+apps/server/src/auth/fastify.ts:109 fn requireAdmin
+apps/server/src/auth/auth.ts:71 fn createAuth
+… 28 more symbols in this module
 
 ### server/backups
 apps/server/src/backups/backup-archive.ts:65 class BackupArchiveError
@@ -60,14 +60,15 @@ apps/server/src/certifications/routes.ts:19 const Text
 ### server/db
 apps/server/src/db/client.ts:5 type Db
 apps/server/src/db/client.ts:8 type Queryable
-apps/server/src/db/schema.ts:725 const dive
+apps/server/src/db/schema.ts:746 const dive
 apps/server/src/db/client.ts:6 type Tx
-apps/server/src/db/schema.ts:491 const diveSite
-apps/server/src/db/schema.ts:883 const recording
+apps/server/src/db/schema.ts:512 const diveSite
+apps/server/src/db/schema.ts:904 const recording
+apps/server/src/db/schema.ts:87 const diverManagement
 apps/server/src/db/auth-schema.ts:20 const user
 apps/server/src/db/import-types.ts:12 iface ImportedValues
 apps/server/src/db/import-types.ts:6 type ImportArea
-… 170 more symbols in this module
+… 171 more symbols in this module
 
 ### server/divers
 apps/server/src/divers/management.ts:8 fn managedDiverIds
@@ -142,11 +143,11 @@ apps/server/src/live/listener.ts:7 iface LiveLog
 
 ### server/mail
 apps/server/src/mail/mail.ts:4 iface MailMessage
+apps/server/src/mail/mail.ts:11 iface MailProvider
 apps/server/src/mail/links.ts:6 iface MailLinks
 apps/server/src/mail/mail.ts:19 fn attemptDelivery
-apps/server/src/mail/resend.ts:9 type MailFetch
-apps/server/src/mail/mail.ts:11 iface MailProvider
-… 14 more symbols in this module
+apps/server/src/mail/resend.ts:57 fn createMailProvider
+… 16 more symbols in this module
 
 ### server/mcp
 apps/server/src/mcp/tool.ts:54 const Id

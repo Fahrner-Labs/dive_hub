@@ -91,6 +91,8 @@ export interface ServiceParts {
   fcm?: FcmConfig | undefined;
   /** Transactional mail (hosted plan §6.1); undefined keeps invitations and resets as copy links (ADR 0012). */
   email?: EmailConfig | undefined;
+  /** DIVEHUB_REGISTRATION_OPEN (hosted plan §6.2); the auth handler exposes sign-up only when true. */
+  registrationOpen?: boolean;
   /** Public origin the mailed links point to; required when `email` is set. */
   baseUrl?: string;
   /** Where the Resend HTTP goes; tests pass a stand-in, production the global fetch. */
@@ -113,7 +115,8 @@ function createMail(options: {
 
 export function createServices({
   db, blobs, auth, secrets, adapters, siteSources, clock, log, live: liveSettings, dataDir, databaseUrl, encryptionKey,
-  logBuffer = createLogRingBuffer({ stdout: { write: () => true } }), workerRunning, fcm, email, baseUrl, mailFetch, mailUrl,
+  logBuffer = createLogRingBuffer({ stdout: { write: () => true } }), workerRunning, fcm, email, registrationOpen = false,
+  baseUrl, mailFetch, mailUrl,
 }: ServiceParts) {
   const mail = createMail({ email, baseUrl, mailFetch, mailUrl });
   const assessments = createAssessmentService(db);
@@ -153,7 +156,7 @@ export function createServices({
   // Restoring a Dive an append took undoes the append (ADR 0063).
   const dives = createDiveService(db, continuation);
   return {
-    db, blobs, auth, assessments, backups, support, clientDiagnostics, sync, providers, imports, logBuffer,
+    db, blobs, auth, assessments, backups, support, clientDiagnostics, sync, providers, imports, logBuffer, registrationOpen,
     siteImports: createSiteImportService({ db, sources: siteSources }),
     sitePurges: createSitePurgeService({ db, sources: siteSources }),
     aiAccesses: createAiAccessService(db, auth),

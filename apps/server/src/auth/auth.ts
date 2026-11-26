@@ -1,7 +1,7 @@
 // Better Auth setup (ADR 0011): e-mail + password, invite-only, database sessions, admin plugin.
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
-import { createAuthMiddleware } from 'better-auth/api';
+import { APIError, createAuthMiddleware } from 'better-auth/api';
 import { admin } from 'better-auth/plugins/admin';
 import { adminAc, defaultAc, userAc } from 'better-auth/plugins/admin/access';
 import { openAPI } from 'better-auth/plugins';
@@ -9,22 +9,28 @@ import { bearer } from 'better-auth/plugins/bearer';
 import { twoFactor } from 'better-auth/plugins/two-factor';
 import { apiKey } from '@better-auth/api-key';
 import type { Db } from '../db/client.js';
-import { diver, diverManagement } from '../db/schema.js';
+import { diver, diverManagement, userConsent } from '../db/schema.js';
+import { verificationMail } from '../mail/messages.js';
+import type { MailProvider } from '../mail/mail.js';
 import { userActor, writeRevision } from '../revisions/revisions.js';
+import { consentOf } from './consent.js';
 import { hashPassword, MAX_PASSWORD_LENGTH, MIN_PASSWORD_LENGTH, verifyPassword } from './password.js';
 
 /**
  * The only Better Auth endpoints reachable over HTTP (ADR 0013). Everything else, including the admin
- * plugin's endpoints, sign-up and session listing (which returns session tokens), answers 404; admin
- * actions go through our own routes, which keep at least one admin and clean up stored files.
+ * plugin's endpoints and session listing (which returns session tokens), answers 404; admin actions go through our
+ * own routes, which keep at least one admin and clean up stored files.
  *
- * Enabling and signing in with 2FA use Better Auth's endpoints, which stay off HTTP until the web client can
- * complete the challenge; disabling is our own route (POST /api/me/two-factor/disable), because it also asks for a
- * current second factor.
+ * Self-serve signup (hosted plan §6.2) adds its three endpoints only when registration is open, so the invite-only
+ * default keeps the four-endpoint surface. Enabling and signing in with 2FA use Better Auth's endpoints, which stay
+ * off HTTP until the web client can complete the challenge; disabling is our own route
+ * (POST /api/me/two-factor/disable), because it also asks for a current second factor.
  */
-export const PUBLIC_AUTH_PATHS = [
-  '/sign-in/email', '/sign-out', '/get-session', '/change-password',
-] as const;
+export function publicAuthPaths(registrationOpen: boolean) {
+  return registrationOpen
+    ? ['/sign-in/email', '/sign-out', '/get-session', '/change-password', '/sign-up/email', '/verify-email', '/send-verification-email'] as const
+    : ['/sign-in/email', '/sign-out', '/get-session', '/change-password'] as const;
+}
 
 /** Fastify resolves the client IP (honouring DIVEHUB_TRUSTED_PROXIES) and hands it over in this header. */
 export const CLIENT_IP_HEADER = 'x-divehub-client-ip';
@@ -37,6 +43,10 @@ export interface AuthOptions {
   trustedOrigins?: string[];
   /** On by default in production; tests switch it on explicitly. */
   rateLimit?: boolean;
+  /** DIVEHUB_REGISTRATION_OPEN (hosted plan §6.2); false is today's invite-only world. */
+  registrationOpen?: boolean;
+  /** Where a self-registered User's verification mail goes; required when registration is open. */
+  mail?: MailProvider;
 }
 
 /**
@@ -58,7 +68,8 @@ const adminRole = defaultAc.newRole({
   user: adminAc.statements.user.filter((action) => action !== 'impersonate'),
 });
 
-export function createAuth({ db, baseUrl, secret, trustedOrigins = [], rateLimit }: AuthOptions) {
+export function createAuth({ db, baseUrl, secret, trustedOrigins = [], rateLimit, registrationOpen = false, mail }: AuthOptions) {
+  if (registrationOpen && !mail) throw new Error('registration is open but createAuth got no mail provider to verify addresses with');
   return betterAuth({
     appName: 'Dive Hub',
     baseURL: baseUrl,
@@ -77,12 +88,22 @@ export function createAuth({ db, baseUrl, secret, trustedOrigins = [], rateLimit
     },
     emailAndPassword: {
       enabled: true,
-      disableSignUp: true,
+      // Registration open (hosted plan §6.2) is the only path that creates Users through sign-up; invited and setup
+      // Users are created through the admin API, already verified.
+      disableSignUp: !registrationOpen,
+      requireEmailVerification: registrationOpen,
       minPasswordLength: MIN_PASSWORD_LENGTH,
       maxPasswordLength: MAX_PASSWORD_LENGTH,
       revokeSessionsOnPasswordReset: true,
       password: { hash: hashPassword, verify: verifyPassword },
     },
+    emailVerification: registrationOpen ? {
+      sendOnSignUp: true,
+      autoSignInAfterVerification: true,
+      sendVerificationEmail: async ({ user, url }) => {
+        await mail!.sendMail(verificationMail({ to: user.email, url }));
+      },
+    } : undefined,
     session: {
       expiresIn: 60 * 60 * 24 * 7,
       updateAge: 60 * 60 * 24,
@@ -112,7 +133,7 @@ export function createAuth({ db, baseUrl, secret, trustedOrigins = [], rateLimit
       // Native clients send the database session's token as `Authorization: Bearer` (ADR 0074): the same session as
       // the web client's cookie, so revocation, the session list and password changes apply unchanged.
       bearer(),
-      // Only for describing PUBLIC_AUTH_PATHS in our OpenAPI document; its own pages stay off.
+      // Only for describing publicAuthPaths in our OpenAPI document; its own pages stay off.
       openAPI({ disableDefaultReference: true }),
       apiKey({
         defaultPrefix: AI_ACCESS_PREFIX,
@@ -134,12 +155,29 @@ export function createAuth({ db, baseUrl, secret, trustedOrigins = [], rateLimit
     databaseHooks: {
       user: {
         create: {
-          /** Every User gets their own Diver. */
-          after: async (user) => {
+          /**
+           * Self-serve signup must carry the ToS and Privacy Policy acceptance (hosted plan §6.2). Invited and setup
+           * Users don't: an admin vouched for them, and their payload has no consent.
+           */
+          before: async (_user, context) => {
+            if (!registrationOpen || context?.path !== '/sign-up/email') return;
+            if (!consentOf(context.body)) {
+              throw APIError.from('BAD_REQUEST', {
+                code: 'CONSENT_REQUIRED',
+                message: 'Signing up requires accepting the Terms of Service and the Privacy Policy',
+              });
+            }
+          },
+          /** Every User gets their own Diver; a self-registered one also gets their consent rows. */
+          after: async (user, context) => {
+            const consent = registrationOpen && context?.path === '/sign-up/email' ? consentOf(context.body) : null;
             await db.transaction(async (tx) => {
               const [own] = await tx.insert(diver).values({ name: user.name }).returning({ id: diver.id });
               await tx.insert(diverManagement).values({ userId: user.id, diverId: own!.id, isOwn: true });
               await writeRevision(tx, 'diver', own!.id, userActor(user.id), 'create', { name: { from: null, to: user.name } });
+              if (consent) {
+                await tx.insert(userConsent).values(consent.map((accepted) => ({ userId: user.id, ...accepted })));
+              }
             });
           },
         },

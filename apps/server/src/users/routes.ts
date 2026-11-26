@@ -38,7 +38,9 @@ export const userRoutes: FastifyPluginAsyncTypebox<UserRouteDeps> = async (app, 
     request: FastifyRequest, reply: FastifyReply,
     input: { email: string; name: string; password: string; role: Role },
   ) {
-    const { user: created } = await auth.api.createUser({ body: input });
+    // The setup token and an admin's invitation vouch for the address, so these Users need no verification mail even
+    // when open registration requires it for self-registered ones (hosted plan §6.2).
+    const { user: created } = await auth.api.createUser({ body: { ...input, data: { emailVerified: true } } });
     const { headers } = await auth.api.signInEmail({
       body: { email: input.email, password: input.password }, headers: authHeaders(request), returnHeaders: true,
     });
