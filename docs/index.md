@@ -24,6 +24,8 @@ Durable product knowledge lives here; work state (tasks, plans, discussion) live
   lane with that tag ([ADR 0081](decisions/0081-release-lane-trigger.md)).
 - [self-hosting.md](self-hosting.md): running Dive Hub in production — first start, environment
   variables, TLS reverse proxy, backups and upgrades.
+- [hosted-operations.md](hosted-operations.md): the owner's runbook for hosted Dive Hub on the NAS — Phase 0
+  bring-up, backups, monitoring and drills, and the Phase 1a hosted configuration.
 - [generated/](generated/): CI-built navigation artefacts (repo map, Graphify code graph, dependency-cruiser
   boundaries), excluded from review diffs ([ADR 0067](decisions/0067-code-navigation-for-agents.md)).
 - [skills.md](skills.md): the installed agent skills and the project rules that win over them.
