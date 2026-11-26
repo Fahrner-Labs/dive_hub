@@ -88,3 +88,14 @@ test('a Wikidata-only import needs no confirmation, and says when there is nothi
   await expect(latest).toContainText('done', { timeout: 20_000 });
   await expect(latest).toContainText('The sources have no dive sites there.');
 });
+
+test('the form offers only the sources this instance enables', { tag: ['@sites', '@admin'] }, async ({ page }) => {
+  // DIVEHUB_SITE_SOURCES=wikidata,ssi on the hosted instance (ADR 0087): the server reports the set, the form follows.
+  await page.route('**/api/admin/site-sources', (route) => route.fulfill({ json: ['wikidata', 'ssi'] }));
+  await page.goto('/#/admin/site-imports');
+  await expect(page.getByRole('checkbox', { name: 'Wikidata (CC0, free to use)' })).toBeVisible();
+  await expect(page.getByRole('checkbox', { name: 'SSI (no licence, see below)' })).toBeVisible();
+  await expect(page.getByText('OpenStreetMap (ODbL)', { exact: true })).toHaveCount(0);
+  await expect(page.getByText('OpenStreetMap’s data comes with conditions (Open Database License).')).toHaveCount(0);
+  await expectGoodPage(page, 'Import dive sites');
+});

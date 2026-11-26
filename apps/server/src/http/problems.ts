@@ -100,6 +100,7 @@ export const PROBLEMS = {
   diver_has_other_account: 'This diver has another account at the service; the code is someone else\'s',
   odbl_not_confirmed: 'Importing from OpenStreetMap needs the ODbL explanation confirmed (confirmOdbl)',
   ssi_not_confirmed: 'Importing from SSI needs the explanation about its missing licence confirmed (confirmSsi)',
+  site_source_disabled: 'This site source is switched off on this instance (DIVEHUB_SITE_SOURCES)',
   site_import_running: 'A site import is already running; wait until it is done',
   site_import_not_found: 'Site import not found',
   source_unavailable: 'The source did not answer, or answered with something else than data; try again later',

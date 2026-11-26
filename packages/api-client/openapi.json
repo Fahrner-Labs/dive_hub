@@ -446,6 +446,7 @@
               "diver_has_other_account",
               "odbl_not_confirmed",
               "ssi_not_confirmed",
+              "site_source_disabled",
               "site_import_running",
               "site_import_not_found",
               "source_unavailable",
@@ -3860,6 +3861,7 @@
                   "diver_has_other_account",
                   "odbl_not_confirmed",
                   "ssi_not_confirmed",
+                  "site_source_disabled",
                   "site_import_running",
                   "site_import_not_found",
                   "source_unavailable",
@@ -4090,6 +4092,7 @@
                   "diver_has_other_account",
                   "odbl_not_confirmed",
                   "ssi_not_confirmed",
+                  "site_source_disabled",
                   "site_import_running",
                   "site_import_not_found",
                   "source_unavailable",
@@ -4927,6 +4930,7 @@
                         "diver_has_other_account",
                         "odbl_not_confirmed",
                         "ssi_not_confirmed",
+                        "site_source_disabled",
                         "site_import_running",
                         "site_import_not_found",
                         "source_unavailable",
@@ -24905,6 +24909,41 @@
             }
           },
           "409": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/site-sources": {
+      "get": {
+        "summary": "The site sources this instance offers (admins)",
+        "description": "Driven by DIVEHUB_SITE_SOURCES (ADR 0087), not by the client: the admin UI offers exactly these. A source left out is refused by POST /api/admin/site-imports (400 site_source_disabled).",
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "enum": [
+                      "osm",
+                      "wikidata",
+                      "ssi"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "403": {
             "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
             "content": {
               "application/json": {

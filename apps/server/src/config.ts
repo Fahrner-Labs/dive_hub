@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { parseEncryptionKey } from './secrets/secret-box.js';
+import { IMPORT_SOURCES, type ImportSource } from './vocabulary.js';
 
 /**
  * The public Firebase client config a native client initializes Firebase with (ADR 0085). None of these values is a
@@ -46,6 +47,8 @@ export interface Config {
   authSecret: string | undefined;
   /** Reverse proxies (IPs or CIDR ranges) whose X-Forwarded-For is trusted for the client IP. */
   trustedProxies: string[];
+  /** Site import (ADR 0021): which Sources this instance constructs and offers (DIVEHUB_SITE_SOURCES, ADR 0087). */
+  siteSources: ImportSource[];
   /** Site import (ADR 0021): the operator's contact for the User-Agent, and other service endpoints (e.g. a paid Overpass). */
   contact: string | undefined;
   overpassUrl: string | undefined;
@@ -123,6 +126,23 @@ function readFcmConfig(get: (name: string) => string | undefined): FcmConfig | u
   };
 }
 
+/**
+ * The Site sources this instance constructs and offers (DIVEHUB_SITE_SOURCES, ADR 0087). Unset means every Source,
+ * the self-hosted behaviour; a comma-separated list narrows it. A name the vocabulary does not know stops the boot,
+ * as does a list that names none, so a typo cannot silently switch a Source off (or leave the admin UI empty).
+ */
+function readSiteSources(get: (name: string) => string | undefined): ImportSource[] {
+  const value = get('DIVEHUB_SITE_SOURCES');
+  if (!value) return [...IMPORT_SOURCES];
+  const names = value.split(',').map((name) => name.trim()).filter(Boolean);
+  const unknown = names.filter((name) => !(IMPORT_SOURCES as readonly string[]).includes(name));
+  if (unknown.length > 0) {
+    throw new Error(`DIVEHUB_SITE_SOURCES names unknown source(s): ${unknown.join(', ')}; valid sources are ${IMPORT_SOURCES.join(', ')}`);
+  }
+  if (names.length === 0) throw new Error(`DIVEHUB_SITE_SOURCES must name at least one source: ${IMPORT_SOURCES.join(', ')}`);
+  return IMPORT_SOURCES.filter((source) => names.includes(source));
+}
+
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   // An empty variable counts as unset (Compose's `VAR=` gives one).
   const get = (name: string): string | undefined => env[name]?.trim() || undefined;
@@ -153,6 +173,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     baseUrl: new URL(baseUrl).origin,
     authSecret: get('DIVEHUB_AUTH_SECRET'),
     trustedProxies: (get('DIVEHUB_TRUSTED_PROXIES') ?? '').split(',').map((s) => s.trim()).filter(Boolean),
+    siteSources: readSiteSources(get),
     contact: get('DIVEHUB_CONTACT'),
     overpassUrl: get('DIVEHUB_OVERPASS_URL'),
     wikidataSparqlUrl: get('DIVEHUB_WIKIDATA_SPARQL_URL'),

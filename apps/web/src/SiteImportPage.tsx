@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
-import { api, keys, siteImportsQuery, unwrap, type SiteImportArea, type SiteImportView } from './api.ts';
+import { api, keys, siteImportsQuery, siteSourcesQuery, unwrap, type SiteImportArea, type SiteImportView } from './api.ts';
 import { LANGUAGES, pickLanguage } from './i18n/languages.ts';
 import { announce } from './lib/announce.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
@@ -15,6 +15,11 @@ type AreaKind = SiteImportArea['kind'];
 
 const NO_COUNTRY = 'none';
 const ODBL_URL = 'https://opendatacommons.org/licenses/odbl/1-0/';
+/** Every Source's label, in the order the form shows them; the record forces a new Source to get one. */
+const SOURCE_LABEL = {
+  wikidata: 'siteImport.sourceWikidata', osm: 'siteImport.sourceOsm', ssi: 'siteImport.sourceSsi',
+} as const satisfies Record<Source, string>;
+const SOURCE_ORDER = Object.keys(SOURCE_LABEL) as Source[];
 const running = (i: SiteImportView) => i.status === 'queued' || i.status === 'running';
 /** Findings shown per kind; a worldwide SSI run can report thousands. */
 const FINDINGS_SHOWN = 50;
@@ -42,8 +47,12 @@ function StartImport() {
   const display = useDisplay();
   const queryClient = useQueryClient();
   const imports = useQuery(siteImportsQuery());
+  // Driven by the server (ADR 0087): an instance may construct fewer Sources than the vocabulary names.
+  const enabledSources = useQuery(siteSourcesQuery());
   const busy = imports.data?.some(running) ?? false;
   const [sources, setSources] = useState<Record<Source, boolean>>({ osm: true, wikidata: true, ssi: false });
+  const offered = SOURCE_ORDER.filter((source) => enabledSources.data?.includes(source));
+  const chosen = offered.filter((source) => sources[source]);
   const [kind, setKind] = useState<AreaKind>('country');
   const [country, setCountry] = useState<string | null>(null);
   const [box, setBox] = useState({ south: Number.NaN, west: Number.NaN, north: Number.NaN, east: Number.NaN });
@@ -65,18 +74,17 @@ function StartImport() {
 
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const chosen = (['osm', 'wikidata', 'ssi'] as const).filter((s) => sources[s]);
     const area: SiteImportArea | null = kind === 'world' ? { kind }
       : kind === 'country' ? (country ? { kind, country } : null)
       : Object.values(box).some(Number.isNaN) || box.south >= box.north ? null : { kind, ...box };
     const missing = chosen.length === 0 ? t('siteImport.needSource')
       : !area ? (kind === 'country' ? t('siteImport.needCountry') : t('siteImport.needBox'))
-      : sources.osm && !odbl ? t('siteImport.needOdbl')
-      : sources.ssi && !ssiConfirmed ? t('siteImport.needSsi') : null;
+      : chosen.includes('osm') && !odbl ? t('siteImport.needOdbl')
+      : chosen.includes('ssi') && !ssiConfirmed ? t('siteImport.needSsi') : null;
     setProblem(missing);
     if (missing || !area) return;
     start.mutate({
-      sources: chosen, area, language, confirmOdbl: sources.osm && odbl, confirmSsi: sources.ssi && ssiConfirmed, createSites: !onlyFill,
+      sources: chosen, area, language, confirmOdbl: chosen.includes('osm') && odbl, confirmSsi: chosen.includes('ssi') && ssiConfirmed, createSites: !onlyFill,
     });
   };
 
@@ -85,11 +93,14 @@ function StartImport() {
       <Form className="form" onSubmit={submit}>
         <fieldset className="field-set">
           <legend className="field-label">{t('siteImport.sources')}</legend>
-          <Checkbox isSelected={sources.wikidata} onChange={(v) => setSources((s) => ({ ...s, wikidata: v }))}>{t('siteImport.sourceWikidata')}</Checkbox>
-          <Checkbox isSelected={sources.osm} onChange={(v) => setSources((s) => ({ ...s, osm: v }))}>{t('siteImport.sourceOsm')}</Checkbox>
-          <Checkbox isSelected={sources.ssi} onChange={(v) => setSources((s) => ({ ...s, ssi: v }))}>{t('siteImport.sourceSsi')}</Checkbox>
+          {offered.map((source) => (
+            <Checkbox key={source} isSelected={sources[source]} onChange={(v) => setSources((s) => ({ ...s, [source]: v }))}>
+              {t(SOURCE_LABEL[source])}
+            </Checkbox>
+          ))}
         </fieldset>
-        {sources.osm && (
+        {enabledSources.error && <Notice tone="danger">{errorText(enabledSources.error)}</Notice>}
+        {chosen.includes('osm') && (
           // Standing terms that wait for the admin's confirmation: tinted, not a Notice (which announces itself).
           <div className="terms">
             <p><strong>{t('siteImport.odblTitle')}</strong></p>
@@ -104,7 +115,7 @@ function StartImport() {
             <Checkbox isSelected={odbl} onChange={setOdbl}>{t('siteImport.odblConfirm')}</Checkbox>
           </div>
         )}
-        {sources.ssi && (
+        {chosen.includes('ssi') && (
           // No licence to accept: the admin confirms they understood and take the decision (ADR 0025).
           <div className="terms">
             <p><strong>{t('siteImport.ssiTitle')}</strong></p>
@@ -160,7 +171,7 @@ function StartImport() {
         {start.error && <Notice tone="danger">{errorText(start.error)}</Notice>}
         {busy && <Muted>{t('siteImport.busy')}</Muted>}
         <div className="form-actions">
-          <Button type="submit" variant="primary" icon="siteImport" isPending={start.isPending} isDisabled={busy}>{t('siteImport.start')}</Button>
+          <Button type="submit" variant="primary" icon="siteImport" isPending={start.isPending} isDisabled={busy || !enabledSources.data}>{t('siteImport.start')}</Button>
         </div>
       </Form>
     </Panel>

@@ -114,7 +114,7 @@ export function resettableClock({ stopped = false } = {}) {
 }
 
 export async function createTestApp(t: TestDatabase, options: {
-  rateLimit?: boolean; webDir?: string; siteSources?: Record<ImportSource, SiteSourceAdapter>;
+  rateLimit?: boolean; webDir?: string; siteSources?: Partial<Record<ImportSource, SiteSourceAdapter>>;
   /** SSI as tests see it (default: a fresh fake); `encryptionKey: null` runs without DIVEHUB_ENCRYPTION_KEY. */
   fakeSsi?: FakeSsi; encryptionKey?: Buffer | null;
   /** Providers besides SSI, such as the test-only hand-over adapter (never in production). */

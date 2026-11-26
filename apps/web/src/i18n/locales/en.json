@@ -663,6 +663,7 @@
     "site_source_not_typed": "IDs from this source come only from a site import.",
     "odbl_not_confirmed": "Confirm the conditions of OpenStreetMap’s data first.",
     "ssi_not_confirmed": "Confirm the explanation about SSI’s list of dive sites first.",
+    "site_source_disabled": "This source is switched off on this Dive Hub.",
     "site_import_running": "An import is already running. Start the next one when it’s done.",
     "site_import_not_found": "This import doesn’t exist.",
     "source_unavailable": "The source didn’t answer or sent something unexpected. Try again later.",
