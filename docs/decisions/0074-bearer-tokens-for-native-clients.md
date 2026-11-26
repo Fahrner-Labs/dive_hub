@@ -11,6 +11,8 @@ date: 2026-11-18
 Proposed – 2026-11-18. Discussion: [FAH-255](https://paperclip/FAH/issues/FAH-255). The
 [client contract](../spec/clients.md) reserved this ADR ("A native client will use bearer tokens … its ADR comes
 with the mobile app"); [ADR 0011](0011-better-auth.md) pre-decided the mechanism ("otherwise the bearer plugin").
+Amended by [ADR 0090](0090-android-default-instance.md) (2026-11-26): the app starts on a sign-in form for a
+build-config default instance, and a self-hosted address is a secondary action that reveals the URL field.
 
 ## Context
 The web client authenticates with an `HttpOnly`, `SameSite=Lax` session cookie on the same origin, protected by

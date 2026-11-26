@@ -1728,7 +1728,9 @@ Rules that only the web client kept. Both moved to the server on 2026-10-04, so 
 
 ## For the mobile client
 - Authentication: bearer tokens, decided in [ADR 0074](../decisions/0074-bearer-tokens-for-native-clients.md).
-  Still open: how a phone finds a self-hosted instance beyond typing its URL at first start.
+  The Android app starts on sign-in for a build-config default instance, Dive Hub Cloud in the official build, and
+  offers a self-hosted address as a secondary action ([ADR 0090](../decisions/0090-android-default-instance.md)).
+  Still open: how a phone finds a self-hosted instance without its URL.
 - Offline use: **writeable**. Reads come from the on-device read store ([Offline reads](#offline-reads-native-client)),
   kept current by the change feed ([ADR 0083](../decisions/0083-change-feed-and-incremental-sync.md)); writes go
   through the offline write queue with user-decided Conflicts

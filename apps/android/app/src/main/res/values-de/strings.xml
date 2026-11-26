@@ -5,10 +5,12 @@
     <string name="loading_slogan">Die zentrale Anlaufstelle für dein Tauchleben</string>
 
     <string name="instance_title">Mit deinem Dive Hub verbinden</string>
-    <string name="instance_about">Gib die Adresse deiner selbst betriebenen Dive-Hub-Instanz ein.</string>
+    <string name="instance_about">Gib die Adresse deiner selbst gehosteten Dive-Hub-Instanz ein.</string>
     <string name="instance_label">Adresse der Instanz</string>
     <string name="instance_hint">https://tauchen.beispiel</string>
     <string name="instance_continue">Weiter</string>
+    <string name="instance_self_hosted">Mit einer selbst gehosteten Instanz verbinden</string>
+    <string name="instance_back">Zurück</string>
     <string name="instance_change">Instanz ändern</string>
     <string name="instance_checking">Wird geprüft…</string>
     <string name="instance_reachable">Verbunden</string>

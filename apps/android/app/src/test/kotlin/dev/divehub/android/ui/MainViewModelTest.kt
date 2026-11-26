@@ -18,7 +18,9 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 
@@ -171,16 +173,74 @@ class MainViewModelTest {
         advanceUntilIdle()
 
         viewModel.checkInstance()
-        viewModel.changeInstance()
+        viewModel.connectToSelfHosted()
         answer.complete(InstanceProbeResult.Reachable)
         advanceUntilIdle()
 
-        assertNull(viewModel.state.value.instanceUrl)
+        assertEquals("https://dive.example", viewModel.state.value.instanceUrl)
+        assertTrue(viewModel.state.value.showInstanceForm)
         assertEquals(Reachability.Unknown, viewModel.state.value.reachability)
+    }
+
+    @Test
+    fun `the build default opens sign-in with no address typed`() = runTest(dispatcher) {
+        val viewModel = viewModel(defaultInstanceUrl = "https://cloud.divehub.example") {
+            InstanceProbeResult.Reachable
+        }
+        advanceUntilIdle()
+
+        assertEquals("https://cloud.divehub.example", viewModel.state.value.instanceUrl)
+        assertFalse(viewModel.state.value.showInstanceForm)
+    }
+
+    @Test
+    fun `a stored instance beats the build default`() = runTest(dispatcher) {
+        val instances = FakeInstances("https://dive.example")
+        val viewModel = viewModel(instances, defaultInstanceUrl = "https://cloud.divehub.example") {
+            InstanceProbeResult.Reachable
+        }
+        advanceUntilIdle()
+
+        assertEquals("https://dive.example", viewModel.state.value.instanceUrl)
+    }
+
+    @Test
+    fun `the self-hosted action keeps the default for going back`() = runTest(dispatcher) {
+        val viewModel = viewModel(defaultInstanceUrl = "https://cloud.divehub.example") {
+            InstanceProbeResult.Reachable
+        }
+        advanceUntilIdle()
+
+        viewModel.connectToSelfHosted()
+
+        assertTrue(viewModel.state.value.showInstanceForm)
+        assertEquals("https://cloud.divehub.example", viewModel.state.value.instanceUrl)
+
+        viewModel.cancelInstanceForm()
+
+        assertFalse(viewModel.state.value.showInstanceForm)
+        assertEquals("https://cloud.divehub.example", viewModel.state.value.instanceUrl)
+    }
+
+    @Test
+    fun `a reachable self-hosted address replaces the default and closes the form`() = runTest(dispatcher) {
+        val viewModel = viewModel(defaultInstanceUrl = "https://cloud.divehub.example") {
+            InstanceProbeResult.Reachable
+        }
+        advanceUntilIdle()
+
+        viewModel.connectToSelfHosted()
+        viewModel.useInstance("dive.example")
+        advanceUntilIdle()
+
+        assertEquals("https://dive.example", viewModel.state.value.instanceUrl)
+        assertFalse(viewModel.state.value.showInstanceForm)
+        assertEquals(Reachability.Reachable, viewModel.state.value.reachability)
     }
 
     private fun viewModel(
         instances: FakeInstances = FakeInstances(),
+        defaultInstanceUrl: String? = null,
         probeInstance: suspend (String) -> InstanceProbeResult,
     ): MainViewModel {
         val session = SessionRepository(
@@ -191,6 +251,12 @@ class MainViewModelTest {
             FakeCachedMe(),
             versionName = "0.1.0-dev",
         )
-        return MainViewModel(session, startSync = {}, stopSync = {}, probeInstance = probeInstance)
+        return MainViewModel(
+            session,
+            startSync = {},
+            stopSync = {},
+            probeInstance = probeInstance,
+            defaultInstanceUrl = defaultInstanceUrl,
+        )
     }
 }

@@ -9,12 +9,15 @@
     <string name="instance_label">Instance address</string>
     <string name="instance_hint">https://dive.example</string>
     <string name="instance_continue">Continue</string>
+    <string name="instance_self_hosted">Connect to a self-hosted instance</string>
+    <string name="instance_back">Back</string>
     <string name="instance_change">Change instance</string>
     <string name="instance_checking">Checking…</string>
     <string name="instance_reachable">Connected</string>
     <string name="instance_unreachable">Not reachable</string>
 
     <string name="sign_in_title">Sign in</string>
+    <string name="sign_in_destination" translatable="false">Dive Hub Cloud</string>
     <string name="sign_in_about">Use the e-mail and password of your Dive Hub account.</string>
     <string name="sign_in_submit">Sign in</string>
     <string name="sign_in_no_account">No account? Ask the admin of this Dive Hub for an invitation.</string>
