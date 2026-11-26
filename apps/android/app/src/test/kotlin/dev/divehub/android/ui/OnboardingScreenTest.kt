@@ -7,12 +7,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTextReplacement
+import dev.divehub.android.BuildConfig
 import dev.divehub.shared.ErrorCodes
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -37,11 +39,29 @@ class OnboardingScreenTest {
     }
 
     @Test
+    fun `the instance form starts from the build's default address`() {
+        renderBuildDefault()
+
+        compose.onNode(hasSetTextAction()).assertTextContains(BuildConfig.DEFAULT_INSTANCE_URL)
+        compose.onNodeWithText("Continue").assertIsEnabled()
+    }
+
+    @Test
+    fun `the prefilled default is handed to the check without editing`() {
+        var entered: String? = null
+        renderInstance(checking = false, error = null) { entered = it }
+
+        compose.onNodeWithText("Continue").performClick()
+
+        assertEquals(DEFAULT_INSTANCE, entered)
+    }
+
+    @Test
     fun `an unreachable instance shows the reason beside the address`() {
         renderInstance(checking = false, error = ErrorCodes.NO_ANSWER)
 
         compose.onNodeWithText("No answer from the instance. Check the address and your connection.").assertIsDisplayed()
-        compose.onNode(hasSetTextAction()).performTextInput("dive.example")
+        compose.onNode(hasSetTextAction()).performTextReplacement("dive.example")
         compose.onNodeWithText("Continue").assertIsEnabled()
     }
 
@@ -53,11 +73,11 @@ class OnboardingScreenTest {
     }
 
     @Test
-    fun `the instance form hands the typed address to the check`() {
+    fun `a custom instance replaces the default and is handed to the check`() {
         var entered: String? = null
         renderInstance(checking = false, error = null) { entered = it }
 
-        compose.onNode(hasSetTextAction()).performTextInput("dive.example")
+        compose.onNode(hasSetTextAction()).performTextReplacement("dive.example")
         compose.onNodeWithText("Continue").performClick()
 
         assertEquals("dive.example", entered)
@@ -99,12 +119,28 @@ class OnboardingScreenTest {
     private fun renderInstance(
         checking: Boolean,
         error: String?,
+        defaultAddress: String = DEFAULT_INSTANCE,
         onContinue: (String) -> Unit = {},
     ) {
         compose.setContent {
             DiveHubTheme(darkTheme = false) {
                 Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-                    InstanceForm(checking = checking, error = error, onContinue = onContinue)
+                    InstanceForm(
+                        checking = checking,
+                        error = error,
+                        onContinue = onContinue,
+                        defaultAddress = defaultAddress,
+                    )
+                }
+            }
+        }
+    }
+
+    private fun renderBuildDefault() {
+        compose.setContent {
+            DiveHubTheme(darkTheme = false) {
+                Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+                    InstanceForm(checking = false, error = null, onContinue = {})
                 }
             }
         }
@@ -128,3 +164,5 @@ class OnboardingScreenTest {
         }
     }
 }
+
+private const val DEFAULT_INSTANCE = "https://cloud.divehub.example"

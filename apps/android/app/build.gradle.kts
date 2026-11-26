@@ -19,6 +19,19 @@ val editDiveScalars = providers.gradleProperty("divehub.editDiveScalars").orNull
 // The scanner ships on (FAH-493); `./gradlew assembleDebug -Pdivehub.scannerEnabled=false` opts out.
 val scannerEnabled = providers.gradleProperty("divehub.scannerEnabled").orNull?.toBoolean() ?: true
 
+// The first-start instance form's prefill (FAH-537, ADR 0090). The official build points at Dive Hub Cloud; a
+// self-hoster or F-Droid-style build overrides the whole value with -Pdivehub.defaultInstanceUrl=…, or a single build
+// type with -Pdivehub.defaultInstanceUrl.<buildType>=…. A blank override means no prefill.
+// PLACEHOLDER: replace with the owner-confirmed cloud URL before the hosted app ships.
+val defaultInstanceUrl = providers.gradleProperty("divehub.defaultInstanceUrl").orNull
+    ?: "https://cloud.divehub.example"
+
+fun defaultInstanceUrlFor(buildType: String): String =
+    providers.gradleProperty("divehub.defaultInstanceUrl.$buildType").orNull ?: defaultInstanceUrl
+
+fun buildConfigString(value: String): String =
+    "\"" + value.replace("\\", "\\\\").replace("\"", "\\\"") + "\""
+
 fun envInt(name: String, fallback: Int): Int {
     val raw = providers.environmentVariable(name).orNull ?: return fallback
     return raw.toIntOrNull() ?: throw GradleException("$name must be an integer, got '$raw'")
@@ -36,6 +49,7 @@ android {
         versionName = providers.environmentVariable("ANDROID_VERSION_NAME").orNull ?: "0.1.0-dev"
         buildConfigField("boolean", "SCANNER_ENABLED", scannerEnabled.toString())
         buildConfigField("boolean", "EDIT_DIVE_SCALARS", editDiveScalars.toString())
+        buildConfigField("String", "DEFAULT_INSTANCE_URL", buildConfigString(defaultInstanceUrlFor("default")))
     }
 
     signingConfigs {
@@ -58,11 +72,13 @@ android {
     buildTypes {
         getByName("debug") {
             signingConfig = signingConfigs.getByName("debug")
+            buildConfigField("String", "DEFAULT_INSTANCE_URL", buildConfigString(defaultInstanceUrlFor("debug")))
         }
         getByName("release") {
             if (missingReleaseSigningEnv.isEmpty()) {
                 signingConfig = signingConfigs.getByName("release")
             }
+            buildConfigField("String", "DEFAULT_INSTANCE_URL", buildConfigString(defaultInstanceUrlFor("release")))
         }
     }
 

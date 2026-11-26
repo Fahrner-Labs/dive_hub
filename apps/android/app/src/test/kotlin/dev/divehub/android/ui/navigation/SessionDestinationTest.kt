@@ -1,5 +1,6 @@
 package dev.divehub.android.ui.navigation
 
+import dev.divehub.android.BuildConfig
 import dev.divehub.android.ui.UiState
 import dev.divehub.api.models.UserView
 import org.junit.Assert.assertEquals
@@ -21,6 +22,15 @@ class SessionDestinationTest {
     @Test
     fun `no instance yet opens the instance form`() {
         assertEquals(InstanceRoute, sessionDestination(UiState(loading = false)))
+    }
+
+    @Test
+    fun `the build's default is only a prefill, never a session`() {
+        assertEquals(InstanceRoute, sessionDestination(UiState(loading = false)))
+        assertEquals(
+            SignInRoute,
+            sessionDestination(UiState(loading = false, instanceUrl = BuildConfig.DEFAULT_INSTANCE_URL)),
+        )
     }
 
     @Test

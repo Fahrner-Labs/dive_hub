@@ -441,8 +441,13 @@ fun UpdateRequiredScreen(modifier: Modifier = Modifier) {
 }
 
 @Composable
-internal fun InstanceForm(checking: Boolean, error: String?, onContinue: (String) -> Unit) {
-    var address by remember { mutableStateOf("") }
+internal fun InstanceForm(
+    checking: Boolean,
+    error: String?,
+    onContinue: (String) -> Unit,
+    defaultAddress: String = BuildConfig.DEFAULT_INSTANCE_URL,
+) {
+    var address by remember(defaultAddress) { mutableStateOf(defaultAddress) }
     Column(
         Modifier
             .fillMaxSize()

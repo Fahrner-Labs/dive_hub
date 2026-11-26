@@ -5,7 +5,7 @@
     <string name="loading_slogan">The central hub for your diving life</string>
 
     <string name="instance_title">Connect to your Dive Hub</string>
-    <string name="instance_about">Enter the address of your self-hosted Dive Hub instance.</string>
+    <string name="instance_about">Connect to Dive Hub, or enter the address of your own instance.</string>
     <string name="instance_label">Instance address</string>
     <string name="instance_hint">https://dive.example</string>
     <string name="instance_continue">Continue</string>
