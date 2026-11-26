@@ -14,7 +14,11 @@ async function signUp(page: import('@playwright/test').Page, email: string, cons
   await page.getByLabel('Your name').fill('Self Serve');
   await page.getByLabel('E-mail').fill(email);
   await page.getByRole('textbox', { name: 'Password' }).fill(PASSWORD);
-  if (consent) await page.getByRole('checkbox', { name: /Terms of Service/ }).check();
+  if (consent) {
+    const checkbox = page.getByRole('checkbox', { name: /Terms of Service/ });
+    await checkbox.click({ force: true });
+    await expect(checkbox).toBeChecked();
+  }
   await page.getByRole('button', { name: 'Create account' }).click();
 }
 

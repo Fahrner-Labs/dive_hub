@@ -98,7 +98,7 @@ export function SignIn() {
         </div>
       )}
       {registration.data?.open
-        ? <p className="muted"><a href="#/signup">{t('signIn.createAccount')}</a></p>
+        ? <p className="muted"><a className="btn btn-quiet" href="#/signup">{t('signIn.createAccount')}</a></p>
         : <Muted>{t('signIn.noAccount')}</Muted>}
     </Panel>
   );
