@@ -688,6 +688,40 @@
         },
         {
           "dynamic": false,
+          "module": "./sites/import/site-purge-routes.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/sites/import/site-purge-routes.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./sites/import/site-purge-view.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/sites/import/site-purge-view.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./sites/routes.js",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -1142,6 +1176,7 @@
         "apps/server/src/providers/dive-provider-routes.ts",
         "apps/server/src/providers/push/push-run-routes.ts",
         "apps/server/src/sites/import/site-import-routes.ts",
+        "apps/server/src/sites/import/site-purge-routes.ts",
         "apps/server/src/sites/routes.ts",
         "apps/server/src/social/offer-routes.ts",
         "apps/server/src/social/routes.ts",
@@ -1232,6 +1267,8 @@
         "apps/server/src/providers/site-pick.ts",
         "apps/server/src/providers/waiting-push/waiting-push-service.ts",
         "apps/server/src/sites/import/site-import-service.ts",
+        "apps/server/src/sites/import/site-jobs.ts",
+        "apps/server/src/sites/import/site-purge-service.ts",
         "apps/server/src/social/offer-service.ts",
         "apps/server/src/social/suggestion-changes.ts",
         "apps/server/src/social/suggestion-service.ts",
@@ -1546,6 +1583,8 @@
         "apps/server/src/providers/push/push-run-routes.ts",
         "apps/server/src/sites/import/site-import-routes.ts",
         "apps/server/src/sites/import/site-import-view.ts",
+        "apps/server/src/sites/import/site-purge-routes.ts",
+        "apps/server/src/sites/import/site-purge-view.ts",
         "apps/server/src/sites/routes.ts",
         "apps/server/src/sites/site-view.ts",
         "apps/server/src/social/offer-routes.ts",
@@ -1805,6 +1844,7 @@
         "apps/server/src/planning/routes.ts",
         "apps/server/src/providers/routes.ts",
         "apps/server/src/sites/import/site-import-routes.ts",
+        "apps/server/src/sites/import/site-purge-routes.ts",
         "apps/server/src/sites/routes.ts",
         "apps/server/src/social/offer-routes.ts",
         "apps/server/src/social/routes.ts",
@@ -2090,6 +2130,7 @@
         "apps/server/src/providers/site-pick.ts",
         "apps/server/src/providers/waiting-push/waiting-push-service.ts",
         "apps/server/src/sites/import/site-import-service.ts",
+        "apps/server/src/sites/import/site-purge-service.ts",
         "apps/server/src/social/offer-service.ts",
         "apps/server/src/social/suggestion-changes.ts",
         "apps/server/src/social/suggestion-service.ts",
@@ -2317,6 +2358,7 @@
         "apps/server/src/providers/site-pick.ts",
         "apps/server/src/providers/waiting-push/waiting-push-service.ts",
         "apps/server/src/sites/import/site-import-service.ts",
+        "apps/server/src/sites/import/site-purge-service.ts",
         "apps/server/src/social/offer-service.ts",
         "apps/server/src/social/suggestion-changes.ts",
         "apps/server/src/social/suggestion-service.ts",
@@ -2348,6 +2390,7 @@
         "apps/server/src/providers/connection-routes.ts",
         "apps/server/src/providers/dive-import/dive-import-routes.ts",
         "apps/server/src/sites/import/site-import-view.ts",
+        "apps/server/src/sites/import/site-purge-view.ts",
         "apps/server/src/social/offer-view.ts",
         "apps/server/src/social/suggestion-view.ts",
         "apps/server/src/users/views.ts",
@@ -2499,6 +2542,8 @@
         "apps/server/src/db/schema.ts",
         "apps/server/src/sites/import/site-source.ts",
         "apps/server/src/sites/import/import-plan.ts",
+        "apps/server/src/sites/import/site-purge-service.ts",
+        "apps/server/src/sites/import/site-purge-plan.ts",
         "apps/server/src/sites/import/site-import-view.ts"
       ],
       "orphan": false,
@@ -2727,6 +2772,7 @@
         "apps/server/src/providers/dive-provider-routes.ts",
         "apps/server/src/providers/push/push-run-routes.ts",
         "apps/server/src/sites/import/site-import-routes.ts",
+        "apps/server/src/sites/import/site-purge-routes.ts",
         "apps/server/src/sites/routes.ts",
         "apps/server/src/social/offer-routes.ts",
         "apps/server/src/social/routes.ts",
@@ -2842,6 +2888,7 @@
         "apps/server/src/providers/push/push-run-service.ts",
         "apps/server/src/providers/push/push-run-plan.ts",
         "apps/server/src/sites/import/site-import-service.ts",
+        "apps/server/src/sites/import/site-purge-service.ts",
         "apps/server/src/users/user-admin-service.ts",
         "apps/server/src/divers/routes.ts",
         "apps/server/src/divers/diver-answers.ts",
@@ -2866,6 +2913,8 @@
         "apps/server/src/providers/push/push-run-routes.ts",
         "apps/server/src/sites/import/site-import-routes.ts",
         "apps/server/src/sites/import/site-import-view.ts",
+        "apps/server/src/sites/import/site-purge-routes.ts",
+        "apps/server/src/sites/import/site-purge-view.ts",
         "apps/server/src/sites/routes.ts",
         "apps/server/src/social/offer-routes.ts",
         "apps/server/src/social/routes.ts",
@@ -2991,6 +3040,8 @@
         "apps/server/src/providers/push/push-run-routes.ts",
         "apps/server/src/sites/import/site-import-routes.ts",
         "apps/server/src/sites/import/site-import-view.ts",
+        "apps/server/src/sites/import/site-purge-routes.ts",
+        "apps/server/src/sites/import/site-purge-view.ts",
         "apps/server/src/sites/routes.ts",
         "apps/server/src/sites/site-view.ts",
         "apps/server/src/social/offer-routes.ts",
@@ -4778,6 +4829,7 @@
         "apps/server/src/imports/formats/uddf/uddf.ts",
         "apps/server/src/providers/dive-import/dive-import.ts",
         "apps/server/src/sites/import/site-import-service.ts",
+        "apps/server/src/sites/import/site-purge-service.ts",
         "apps/server/src/backups/restore-cli.ts",
         "apps/server/src/providers/ssi/ssi-sites.ts",
         "apps/server/src/sites/import/polite-http.ts"
@@ -5532,10 +5584,13 @@
         "apps/server/src/providers/push/site-for-send.ts",
         "apps/server/src/providers/site-pick.ts",
         "apps/server/src/sites/import/site-import-service.ts",
+        "apps/server/src/sites/import/site-purge-service.ts",
+        "apps/server/src/sites/import/site-purge-plan.ts",
         "apps/server/src/mcp/tools-sites.ts",
         "apps/server/src/providers/connection-routes.ts",
         "apps/server/src/sites/import/site-import-routes.ts",
         "apps/server/src/sites/import/site-import-view.ts",
+        "apps/server/src/sites/import/site-purge-routes.ts",
         "apps/server/src/sites/routes.ts",
         "apps/server/src/sites/site-view.ts",
         "apps/server/src/providers/ssi/ssi-sites.ts",
@@ -5554,7 +5609,8 @@
         "apps/server/src/sites/site-ids.ts",
         "apps/server/src/providers/push/site-for-send.ts",
         "apps/server/src/providers/site-pick.ts",
-        "apps/server/src/sites/import/site-import-service.ts"
+        "apps/server/src/sites/import/site-import-service.ts",
+        "apps/server/src/sites/import/site-purge-service.ts"
       ],
       "orphan": false,
       "valid": true
@@ -7037,6 +7093,7 @@
         "apps/server/src/providers/push/push-run-service.ts",
         "apps/server/src/providers/waiting-push/waiting-push-service.ts",
         "apps/server/src/sites/import/site-import-service.ts",
+        "apps/server/src/sites/import/site-purge-service.ts",
         "apps/server/src/social/offer-service.ts",
         "apps/server/src/social/suggestion-service.ts"
       ],
@@ -7669,6 +7726,23 @@
             "import"
           ],
           "resolved": "apps/server/src/sites/import/site-import-service.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./sites/import/site-purge-service.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/sites/import/site-purge-service.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -19816,6 +19890,23 @@
         },
         {
           "dynamic": false,
+          "module": "./site-jobs.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/sites/import/site-jobs.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./site-source.js",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -19853,6 +19944,283 @@
         "apps/server/src/compose.ts",
         "apps/server/src/worker.ts",
         "apps/server/src/sites/import/site-import-routes.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/server/src/sites/import/site-jobs.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "drizzle-orm",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "npm",
+            "import"
+          ],
+          "resolved": "apps/server/node_modules/drizzle-orm/index.cjs",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": true,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/server/src/sites/import/site-import-service.ts",
+        "apps/server/src/sites/import/site-purge-service.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/server/src/sites/import/site-purge-service.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../../db/client.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/db/client.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../../db/import-types.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/db/import-types.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../../db/schema.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/db/schema.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../../errors.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/errors.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../../http/problems.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/http/problems.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../../live/emit.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/live/emit.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../site-error.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/sites/site-error.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../sources.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/sites/sources.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./site-jobs.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/sites/import/site-jobs.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./site-purge-plan.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/sites/import/site-purge-plan.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "drizzle-orm",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "npm",
+            "import"
+          ],
+          "resolved": "apps/server/node_modules/drizzle-orm/index.cjs",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": true,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/server/src/compose.ts",
+        "apps/server/src/worker.ts",
+        "apps/server/src/sites/import/site-purge-routes.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/server/src/sites/import/site-purge-plan.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../../db/import-types.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/db/import-types.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../sources.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/sites/sources.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/server/src/sites/import/site-purge-service.ts"
       ],
       "orphan": false,
       "valid": true
@@ -21494,6 +21862,23 @@
             "import"
           ],
           "resolved": "apps/server/src/sites/import/site-import-service.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./sites/import/site-purge-service.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/sites/import/site-purge-service.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -29169,7 +29554,285 @@
       ],
       "dependents": [
         "apps/server/src/app.ts",
-        "apps/server/src/sites/import/site-import-routes.ts"
+        "apps/server/src/sites/import/site-import-routes.ts",
+        "apps/server/src/sites/import/site-purge-view.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/server/src/sites/import/site-purge-routes.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../../auth/auth.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/auth/auth.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../../auth/fastify.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/auth/fastify.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../../http/problems.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/http/problems.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../../http/schemas.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/http/schemas.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../sources.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/sites/sources.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./site-purge-service.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/sites/import/site-purge-service.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./site-purge-view.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/sites/import/site-purge-view.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@fastify/type-provider-typebox",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "npm",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/node_modules/@fastify/type-provider-typebox/dist/cjs/index.js",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": true,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "typebox",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "unknown"
+          ],
+          "resolved": "typebox",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": true,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/server/src/app.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/server/src/sites/import/site-purge-view.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../../db/schema.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/db/schema.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../../db/schema.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/db/schema.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../../http/problems.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/http/problems.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../../http/schemas.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/http/schemas.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./site-import-view.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/sites/import/site-import-view.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "typebox",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "unknown"
+          ],
+          "resolved": "typebox",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": true,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/server/src/app.ts",
+        "apps/server/src/sites/import/site-purge-routes.ts"
       ],
       "orphan": false,
       "valid": true
@@ -52694,8 +53357,8 @@
     "baselineSize": 0,
     "baselineStale": 0,
     "advisedExitCode": 0,
-    "totalCruised": 495,
-    "totalDependenciesCruised": 2632,
+    "totalCruised": 500,
+    "totalDependenciesCruised": 2666,
     "optionsUsed": {
       "baseDir": "/home/runner/work/dive_hub/dive_hub",
       "combinedDependencies": false,
@@ -53148,7 +53811,7 @@
       "version": "18.7.0",
       "nodeVersionSupported": "^22||^24||>=26",
       "nodeVersionFound": "v24.22.3",
-      "osVersionFound": "x64 linux@7.0.0-1018-aws",
+      "osVersionFound": "x64 linux@7.0.0-1020-azure",
       "transpilersFound": [
         {
           "name": "javascript",
