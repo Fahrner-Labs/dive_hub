@@ -1,16 +1,18 @@
 ---
 title: "ADR 0069: Full-instance backup and restore"
 summary: One encrypted `.divehub-backup` archive holds the database and the data directory; manual archives use a passphrase through scrypt, scheduled ones an operator-held X25519 recipient; DIVEHUB_ENCRYPTION_KEY is excluded and only its fingerprint is recorded. Restore is primarily the first-start setup screen, with the operator CLI as the secondary path; maintenance mode is deliberately not built.
-status: proposed
+status: accepted
 date: 2026-11-12
 ---
 
 # ADR 0069: Full-instance backup and restore
 
 ## Status
-Proposed – 2026-11-12. Drafted by the software engineer from the locked plan of the Paperclip issue
+Accepted – 2026-11-26. Drafted by the software engineer from the locked plan of the Paperclip issue
 [FAH-175](https://paperclip.privatenode.de/FAH/issues/FAH-175) (plan v1.1, approved 2026-11-12, including the
-CODEOWNERS touches). The owner accepts it by merging its pull request: `docs/decisions/**` is CODEOWNERS-protected.
+CODEOWNERS touches). The backup/restore code, tests and docs landed; the hosted runbook executes the feature
+([hosted-operations.md](../hosted-operations.md)). The owner accepts it by merging its pull request:
+`docs/decisions/**` is CODEOWNERS-protected.
 
 ## Context
 Dive Hub is self-hosted ([ADR 0004](0004-system-architecture.md)): one application image contains the API, the web
