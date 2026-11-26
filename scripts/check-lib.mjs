@@ -72,6 +72,8 @@ const AREAS = [
   // Providers in the web client (ADR 0027): the account's Connections and each Dive's panels read them.
   [/^apps\/web\/src\/lib\/providers\.ts$/, ['@dives', '@account']],
   [/^apps\/web\/src\/AdminSettings.tsx$/, ['@admin', '@client-diagnostics']],
+  // Transactional mail (hosted plan §6.1): the sign-in page's reset request and the Admin page's invitation notices.
+  [/^apps\/server\/src\/mail\//, ['@account', '@admin']],
   // The Tools page (ADR 0032): gas numbers and bottom time; its server computation and the MCP tool that answers the same.
   [/^apps\/web\/src\/Tools(Page|Plan|PlanProfile|Lead)\.tsx$|^apps\/web\/src\/ProfilePlot\.tsx$|^apps\/web\/src\/lib\/tools\.ts$|^apps\/server\/src\/planning\/|^apps\/server\/src\/lead\/|^apps\/server\/src\/mcp\/tools-planning(-gas-plan)?.ts$/, ['@tools']],
   // AI accesses to the MCP endpoint (ADR 0035): on the account page, their switch on the admin page.

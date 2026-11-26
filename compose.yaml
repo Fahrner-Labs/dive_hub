@@ -31,6 +31,10 @@ services:
       # Optional native push (ADR 0085): both or neither; JSON inline or a path inside the container.
       DIVEHUB_FCM_SERVICE_ACCOUNT: ${DIVEHUB_FCM_SERVICE_ACCOUNT:-}
       DIVEHUB_FCM_CLIENT_CONFIG: ${DIVEHUB_FCM_CLIENT_CONFIG:-}
+      # Optional transactional e-mail (hosted plan §6.1): all three or none. Unset keeps copy links (ADR 0012).
+      DIVEHUB_EMAIL_PROVIDER: ${DIVEHUB_EMAIL_PROVIDER:-}
+      DIVEHUB_EMAIL_API_KEY: ${DIVEHUB_EMAIL_API_KEY:-}
+      DIVEHUB_EMAIL_FROM: ${DIVEHUB_EMAIL_FROM:-}
     ports:
       - "${DIVEHUB_BIND:-127.0.0.1}:${DIVEHUB_PORT:-3000}:3000"
     volumes:

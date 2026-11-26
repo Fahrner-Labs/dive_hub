@@ -64,7 +64,13 @@
     "wrongCredentials": "Wrong e-mail or password.",
     "tooManyAttempts": "Too many attempts. Try again in a few minutes.",
     "disabled": "This account is disabled. Ask an admin.",
-    "about": "Dive Hub keeps the dive logs of a club, a family or a dive center in one place."
+    "about": "Dive Hub keeps the dive logs of a club, a family or a dive center in one place.",
+    "forgotPassword": "Forgot password?",
+    "forgotTitle": "Request a password reset",
+    "forgotAbout": "Enter your e-mail address. If it has a Dive Hub account, a reset link is on its way.",
+    "sendResetLink": "Send reset link",
+    "resetRequested": "If that address has an account, a reset link is on its way. Check your inbox.",
+    "backToSignIn": "Back to sign in"
   },
   "setup": {
     "title": "Set up Dive Hub",
@@ -192,7 +198,9 @@
     "disableTitle": "Disable {{name}}?",
     "disableBody": "They can’t sign in anymore and are signed out everywhere. Their data stays, and you can enable them again.",
     "signOutTitle": "Sign {{name}} out everywhere?",
-    "signOutBody": "All their sessions end. They can sign in again."
+    "signOutBody": "All their sessions end. They can sign in again.",
+    "invitationEmailed": "Invitation e-mailed to {{email}}. You can still pass on the link below.",
+    "invitationEmailFailed": "The invitation e-mail could not be sent. Pass on the link below."
   },
   "backups": {
     "title": "Backups",

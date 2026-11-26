@@ -465,6 +465,106 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/email/config": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Whether this instance can send e-mail (invitations and self-serve password resets) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            configured: boolean;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/password-resets/request": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Request a password reset link by e-mail (only when e-mail is configured)
+         * @description Answers the same whether or not the address has an account, so it never reveals one. 404 when this instance sends no e-mail (use an admin's reset link instead).
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** Format: email */
+                        email: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+                /** @description A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Problem"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/password-resets/lookup": {
         parameters: {
             query?: never;
@@ -858,6 +958,9 @@ export interface paths {
                             url: string;
                             /** Format: date-time */
                             expiresAt: string;
+                        } & {
+                            /** @description Whether the link was e-mailed; absent when this instance sends no e-mail. The link works either way. */
+                            emailSent?: boolean;
                         };
                     };
                 };

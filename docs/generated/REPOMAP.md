@@ -4,7 +4,7 @@
 > `pnpm check` fails when this map is stale. Symbols are ranked by how widely the code references them;
 > each module shows its most-referenced ones (exported symbols rank higher). Search here before walking the tree.
 
-Files: 435 · symbols: 4000 · shown: 248
+Files: 439 · symbols: 4024 · shown: 253
 
 ### server/(root)
 apps/server/src/vocabulary.ts:13 type SiteWaterType
@@ -12,7 +12,7 @@ apps/server/src/vocabulary.ts:51 type ImportSource
 apps/server/src/errors.ts:2 const errorMessage
 apps/server/src/vocabulary.ts:12 const SITE_WATER_TYPES
 apps/server/src/config.ts:27 iface FcmConfig
-… 55 more symbols in this module
+… 58 more symbols in this module
 
 ### server/assessment
 apps/server/src/assessment/rules.ts:50 const RULES
@@ -140,6 +140,14 @@ apps/server/src/live/emit.ts:52 fn audienceOfDive
 apps/server/src/live/listener.ts:7 iface LiveLog
 … 19 more symbols in this module
 
+### server/mail
+apps/server/src/mail/mail.ts:4 iface MailMessage
+apps/server/src/mail/links.ts:6 iface MailLinks
+apps/server/src/mail/mail.ts:19 fn attemptDelivery
+apps/server/src/mail/resend.ts:9 type MailFetch
+apps/server/src/mail/mail.ts:11 iface MailProvider
+… 14 more symbols in this module
+
 ### server/mcp
 apps/server/src/mcp/tool.ts:54 const Id
 apps/server/src/mcp/tool.ts:49 const defineTool
@@ -263,11 +271,11 @@ apps/server/src/sync/routes.ts:13 iface SyncRouteDeps
 
 ### server/users
 apps/server/src/users/views.ts:23 const UserView
-apps/server/src/users/invitation-service.ts:8 type Role
+apps/server/src/users/invitation-service.ts:10 type Role
 apps/server/src/users/views.ts:51 const toUserView
 apps/server/src/users/tokens.ts:5 const sha256
 apps/server/src/users/user-admin-service.ts:10 class UserAdminError
-… 60 more symbols in this module
+… 61 more symbols in this module
 
 ### server/version
 apps/server/src/version/min-client-versions.ts:25 type ClientVersionRegistry
@@ -311,7 +319,7 @@ apps/web/src/api/providers.ts:7 type ProviderView
 apps/web/src/api/dives.ts:16 type RecordingSummary
 apps/web/src/api/sites.ts:16 type SiteSource
 apps/web/src/api/sites.ts:8 type Position
-… 193 more symbols in this module
+… 194 more symbols in this module
 
 ### web/i18n
 apps/web/src/i18n/languages.ts:6 fn pickLanguage

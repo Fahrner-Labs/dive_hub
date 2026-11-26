@@ -67,7 +67,8 @@ room for your dive files and account exports.
    exists; if the log scrolled away, `docker compose restart app` prints a fresh one.
 
 6. Invite the other users from the Admin page ([ADR 0012](decisions/0012-invitations-and-admin-bootstrap.md)).
-   There is no mail relay: invitations are links you pass on yourself.
+   Without e-mail configured, every invitation is a link you pass on yourself. With Resend configured
+   ([below](#transactional-e-mail-optional)) the link also goes out by e-mail; the copy link stays.
 
 The app port is published on `127.0.0.1` by default, so only the reverse proxy on the same host
 can reach it. Put the proxy in front of it before inviting anyone.
@@ -104,6 +105,9 @@ Application settings (optional unless stated):
 | `DIVEHUB_SSI_SITES_URL` | `https://api.divessi.com/app/APP_CACHE_SITES.zip` | Another address for SSI's site list, normally only for tests ([ADR 0025](decisions/0025-ssi-site-import-and-site-water-type.md)). |
 | `DIVEHUB_FCM_SERVICE_ACCOUNT` | unset | Firebase service-account JSON for native push (ADR 0085), inline or a path to a JSON file. **A secret**: the send credential for the whole project; never commit it or put it in an image. Needs `DIVEHUB_FCM_CLIENT_CONFIG` too. |
 | `DIVEHUB_FCM_CLIENT_CONFIG` | unset | The matching public Firebase client config (`projectId`, `applicationId`, `apiKey`, `gcmSenderId`), inline JSON or a path. Served by `GET /api/push/config`; without both FCM values push is off and clients keep polling. |
+| `DIVEHUB_EMAIL_PROVIDER` | unset | Transactional mail: `resend` today. Needs `DIVEHUB_EMAIL_API_KEY` and `DIVEHUB_EMAIL_FROM` too; with any e-mail value unset, invitations and resets stay copy links ([ADR 0012](decisions/0012-invitations-and-admin-bootstrap.md), [ADR 0013](decisions/0013-account-management.md)). |
+| `DIVEHUB_EMAIL_API_KEY` | unset | **A secret**: the Resend API key (`re_…`). Never commit it or put it in an image. |
+| `DIVEHUB_EMAIL_FROM` | unset | The sender, e.g. `Dive Hub <noreply@dives.example.com>`; the domain must be verified at Resend. |
 
 `DIVEHUB_GARMIN_URL`, `DIVEHUB_SSI_URL`, `DIVEHUB_HOST`, `DIVEHUB_WORKER`, `DIVEHUB_WEB_DIR` and
 `DIVEHUB_DATA_DIR` exist for the image and the tests; the example compose file sets what the
@@ -153,6 +157,39 @@ variable, so a half-configured instance never advertises a push it cannot send. 
 service-account JSON out of the repository, images and instance backups; the client values are
 public by design (they ship inside every Firebase app). Unsetting both turns push off again, and
 clients fall back to polling on their next start.
+
+### Transactional e-mail (optional)
+
+Dive Hub can send the two transactional messages itself: an invitation after an admin creates it,
+and a password reset link a User requests from the sign-in page. It uses **Resend**
+(<https://resend.com>), whose free tier covers a small instance. Without the three variables below
+nothing changes: invitations and reset links are links you copy and pass on, exactly as
+[ADR 0012](decisions/0012-invitations-and-admin-bootstrap.md) and
+[ADR 0013](decisions/0013-account-management.md) describe.
+
+1. Create a Resend account and verify the domain you send from.
+2. Create an API key with sending permission.
+3. Set all three values in `.env`:
+
+   ```sh
+   DIVEHUB_EMAIL_PROVIDER=resend
+   DIVEHUB_EMAIL_API_KEY=re_…
+   DIVEHUB_EMAIL_FROM=Dive Hub <noreply@dives.example.com>
+   ```
+
+4. Restart the stack. `curl https://dives.example.com/api/email/config` answers
+   `{"configured":true}`. New invitations go out by e-mail and the Admin page keeps showing the
+   link for copying; the sign-in page offers **Forgot password?**, which mails a reset link.
+
+Set **all three or none**: with only some of them the app refuses to start and names the missing
+variable. A failed send is logged at error level; an invitation still answers its link so the admin
+can pass it on, and a self-serve reset request answers the same whether or not the address has an
+account (it never reveals one). Unsetting the three turns mail off again and the copy-link flows
+return.
+
+The mail module lives in `apps/server/src/mail/` behind a `MailProvider` interface. Postmark is
+the documented fallback if Resend's deliverability disappoints: implementing it is another provider
+behind that interface, not a change at the invitation or reset call sites.
 
 ## TLS reverse proxy
 

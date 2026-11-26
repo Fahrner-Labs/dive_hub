@@ -64,6 +64,9 @@ export async function start(config: Config) {
     live: { connectionString: config.databaseUrl },
     // Push is optional per instance (ADR 0085): no FCM credential means /api/push/config reports not configured.
     fcm: config.fcm,
+    // Transactional mail (hosted plan §6.1): unset DIVEHUB_EMAIL_* keeps the copy-link flows of ADR 0012.
+    email: config.email,
+    baseUrl: config.baseUrl,
   });
   const startWorkerIfConfigured = async () => {
     if (!config.inProcessWorker || worker) return;

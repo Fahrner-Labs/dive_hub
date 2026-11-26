@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRef, useState, type FormEvent } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
-import { api, clientDiagnosticsSettingQuery, invitationsQuery, keys, meQuery, siteDataQuery, unwrap, usersQuery, type SiteDataView, type UserView } from './api.ts';
+import { api, clientDiagnosticsSettingQuery, emailConfigQuery, invitationsQuery, keys, meQuery, siteDataQuery, unwrap, usersQuery, type SiteDataView, type UserView } from './api.ts';
 import { AiAccessSetting } from './AiAccess.tsx';
 import { announce } from './lib/announce.ts';
 import { useProviders, useProviderText } from './lib/providers.ts';
@@ -11,8 +11,9 @@ import { BACKUPS_HREF, SITE_IMPORTS_HREF, SUPPORT_BUNDLE_HREF } from './lib/sett
 import { ActionMenu, Badge, Button, Checkbox, ConfirmButton, ConfirmDialog, CopyField, Dialog, Form, Icon, Notice, Panel, Switch, Table, TextField } from './ui/index.ts';
 
 /**
- * Settings' Administration section: admins invite people (copy the link, there's no mail yet) and manage Users (ADR 0012,
- * 0013). The section's name is the h1.
+ * Settings' Administration section: admins invite people and manage Users (ADR 0012, 0013). The link is always shown
+ * for copying; with transactional e-mail configured it also goes out by mail (hosted plan §6.1). The section's name is
+ * the h1.
  */
 export function AdminSettings() {
   const { t } = useTranslation();
@@ -176,6 +177,12 @@ function Invite() {
         <Button type="submit" variant="primary" icon="link" isPending={invite.isPending}>{t('admin.createInvitation')}</Button>
       </Form>
       {invite.error && <Notice tone="danger">{errorText(invite.error)}</Notice>}
+      {invite.data?.emailSent === true && (
+        <Notice tone="success">{t('admin.invitationEmailed', { email: invite.data.email })}</Notice>
+      )}
+      {invite.data?.emailSent === false && (
+        <Notice tone="danger">{t('admin.invitationEmailFailed')}</Notice>
+      )}
       {invite.data && (
         <LinkToPassOn to={invite.data.email} url={invite.data.url} expiresAt={invite.data.expiresAt} label={t('admin.invitationLink')} />
       )}
@@ -231,6 +238,8 @@ function Users() {
   const errorText = useErrorText();
   const users = useQuery(usersQuery());
   const me = useQuery(meQuery());
+  // With mail configured Users request their own reset link; the admin copy-link fallback is for unconfigured instances.
+  const selfServe = useQuery(emailConfigQuery()).data?.configured === true;
   // The server refuses to remove the last admin; don't offer it.
   const admins = users.data?.filter((u) => u.role === 'admin' && !u.disabled).length ?? 0;
   const panel = useRef<HTMLDivElement>(null);
@@ -242,7 +251,7 @@ function Users() {
       {users.error && <Notice tone="danger">{errorText(users.error)}</Notice>}
       {users.data && (
         <Table cards label={t('admin.users')} head={[t('admin.name'), t('admin.email'), t('admin.role'), t('admin.since'), { label: t('common.actions'), hidden: true }]}>
-          {users.data.map((u) => <UserRow key={u.id} user={u} isMe={u.id === me.data?.user.id} isLastAdmin={u.role === 'admin' && admins <= 1} onRemoved={onRemoved} />)}
+          {users.data.map((u) => <UserRow key={u.id} user={u} isMe={u.id === me.data?.user.id} isLastAdmin={u.role === 'admin' && admins <= 1} selfServe={selfServe} onRemoved={onRemoved} />)}
         </Table>
       )}
       </div>
@@ -251,7 +260,7 @@ function Users() {
 }
 
 /** One User with the admin's actions (ADR 0013). The server refuses what would leave no admin. */
-function UserRow({ user: u, isMe, isLastAdmin, onRemoved }: { user: UserView; isMe: boolean; isLastAdmin: boolean; onRemoved: () => void }) {
+function UserRow({ user: u, isMe, isLastAdmin, selfServe, onRemoved }: { user: UserView; isMe: boolean; isLastAdmin: boolean; selfServe: boolean; onRemoved: () => void }) {
   const { t } = useTranslation();
   const errorText = useErrorText();
   const display = useDisplay();
@@ -293,7 +302,7 @@ function UserRow({ user: u, isMe, isLastAdmin, onRemoved }: { user: UserView; is
   const actions: { id: string; label: string; pendingNow?: boolean | undefined; run: () => void }[] = [
     ...(u.role === 'user' ? [{ id: 'make-admin', label: t('admin.makeAdmin'), run: () => roleAction('make-admin') }] : []),
     ...(u.role === 'admin' && !isLastAdmin ? [{ id: 'make-user', label: t('admin.makeUser'), run: () => roleAction('make-user') }] : []),
-    ...(!u.disabled ? [{ id: 'reset', label: t('admin.createResetLink'), pendingNow: reset.isPending, run: () => reset.mutate() }] : []),
+    ...(!u.disabled && !selfServe ? [{ id: 'reset', label: t('admin.createResetLink'), pendingNow: reset.isPending, run: () => reset.mutate() }] : []),
     ...(!isMe ? [
       { id: 'sign-out', label: t('admin.signOutEverywhere'), run: () => setConfirming('sign-out') },
       u.disabled

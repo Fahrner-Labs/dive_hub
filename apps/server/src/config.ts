@@ -29,6 +29,16 @@ export interface FcmConfig {
   android: FcmClientConfig;
 }
 
+/**
+ * Transactional mail (hosted plan §6.1): Resend today, with the sender behind the mail module's `MailProvider` seam, so a
+ * Postmark implementation would be another provider rather than another config shape. Unset keeps ADR 0012's copy links.
+ */
+export interface EmailConfig {
+  provider: 'resend';
+  apiKey: string;
+  from: string;
+}
+
 export interface Config {
   databaseUrl: string;
   dataDir: string;
@@ -63,6 +73,8 @@ export interface Config {
   garminUrl: string | undefined;
   /** FCM push for native clients (ADR 0085); undefined means push is off and clients keep polling. */
   fcm: FcmConfig | undefined;
+  /** Transactional mail (hosted plan §6.1); undefined means invitations and resets stay copy links (ADR 0012). */
+  email: EmailConfig | undefined;
 }
 
 /** A JSON object given inline or as the path to a file, with the variable's name in every error (ADR 0085). */
@@ -127,6 +139,28 @@ function readFcmConfig(get: (name: string) => string | undefined): FcmConfig | u
 }
 
 /**
+ * Read transactional mail configuration (hosted plan §6.1): all three variables or none. A half-configured instance is an
+ * operator mistake, not "copy links only", so it stops the app and names the missing variables. `resend` is the only
+ * provider; Postmark would be a new implementation behind the same mail interface.
+ */
+function readEmailConfig(get: (name: string) => string | undefined): EmailConfig | undefined {
+  const provider = get('DIVEHUB_EMAIL_PROVIDER');
+  const apiKey = get('DIVEHUB_EMAIL_API_KEY');
+  const from = get('DIVEHUB_EMAIL_FROM');
+  if (!provider && !apiKey && !from) return undefined;
+  const missing = [
+    !provider && 'DIVEHUB_EMAIL_PROVIDER', !apiKey && 'DIVEHUB_EMAIL_API_KEY', !from && 'DIVEHUB_EMAIL_FROM',
+  ].filter(Boolean);
+  if (missing.length > 0) {
+    throw new Error(`Set ${missing.join(' and ')} too, or leave every DIVEHUB_EMAIL_* unset to keep copy links`);
+  }
+  if (provider !== 'resend') {
+    throw new Error(`DIVEHUB_EMAIL_PROVIDER is "${provider}"; the only provider is "resend" (Postmark would be a new implementation behind the mail interface)`);
+  }
+  return { provider: 'resend', apiKey: apiKey!, from: from! };
+}
+
+/**
  * The Site sources this instance constructs and offers (DIVEHUB_SITE_SOURCES, ADR 0087). Unset means every Source,
  * the self-hosted behaviour; a comma-separated list narrows it. A name the vocabulary does not know stops the boot,
  * as does a list that names none, so a typo cannot silently switch a Source off (or leave the admin UI empty).
@@ -182,5 +216,6 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     ssiUrl: get('DIVEHUB_SSI_URL'),
     garminUrl: get('DIVEHUB_GARMIN_URL'),
     fcm: readFcmConfig(get),
+    email: readEmailConfig(get),
   };
 }

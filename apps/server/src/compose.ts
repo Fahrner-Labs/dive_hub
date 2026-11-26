@@ -5,7 +5,9 @@
 import { fileURLToPath } from 'node:url';
 import type { Auth } from './auth/auth.js';
 import type { Db } from './db/client.js';
-import type { FcmConfig } from './config.js';
+import type { EmailConfig, FcmConfig } from './config.js';
+import { createMailLinks } from './mail/links.js';
+import { createMailProvider, type MailFetch } from './mail/resend.js';
 import type { FastifyBaseLogger } from 'fastify';
 import { createAssessmentService } from './assessment/assessment-service.js';
 import { createBackupService, type BackupLog } from './backups/backup-service.js';
@@ -87,12 +89,33 @@ export interface ServiceParts {
   workerRunning?: () => boolean;
   /** FCM push config (ADR 0085); undefined turns push off and native clients keep polling. */
   fcm?: FcmConfig | undefined;
+  /** Transactional mail (hosted plan §6.1); undefined keeps invitations and resets as copy links (ADR 0012). */
+  email?: EmailConfig | undefined;
+  /** Public origin the mailed links point to; required when `email` is set. */
+  baseUrl?: string;
+  /** Where the Resend HTTP goes; tests pass a stand-in, production the global fetch. */
+  mailFetch?: MailFetch;
+  /** Resend's endpoint; only tests point it elsewhere. */
+  mailUrl?: string;
+}
+
+/** Transactional mail for this instance, or nothing when `DIVEHUB_EMAIL_*` is unset (hosted plan §6.1). */
+function createMail(options: {
+  email?: EmailConfig | undefined; baseUrl?: string | undefined; mailFetch?: MailFetch | undefined; mailUrl?: string | undefined;
+}) {
+  if (!options.email) return undefined;
+  if (!options.baseUrl) throw new Error('email is configured but createServices got no baseUrl for its links');
+  const mailer = createMailProvider(options.email, {
+    ...(options.mailFetch && { fetch: options.mailFetch }), ...(options.mailUrl && { url: options.mailUrl }),
+  });
+  return createMailLinks({ mailer, baseUrl: options.baseUrl });
 }
 
 export function createServices({
   db, blobs, auth, secrets, adapters, siteSources, clock, log, live: liveSettings, dataDir, databaseUrl, encryptionKey,
-  logBuffer = createLogRingBuffer({ stdout: { write: () => true } }), workerRunning, fcm,
+  logBuffer = createLogRingBuffer({ stdout: { write: () => true } }), workerRunning, fcm, email, baseUrl, mailFetch, mailUrl,
 }: ServiceParts) {
+  const mail = createMail({ email, baseUrl, mailFetch, mailUrl });
   const assessments = createAssessmentService(db);
   const backupLog: BackupLog = {
     info: () => {},
@@ -135,8 +158,8 @@ export function createServices({
     sitePurges: createSitePurgeService({ db, sources: siteSources }),
     aiAccesses: createAiAccessService(db, auth),
     setup: createSetupService(db, clock ? () => clock.now() : undefined),
-    invitations: createInvitationService(db),
-    passwordResets: createPasswordResetService(db),
+    invitations: createInvitationService(db, mail),
+    passwordResets: createPasswordResetService(db, mail),
     // One count per client IP across the public token routes (ADR 0061).
     tokenAttempts: createAttemptLimit(TOKEN_ATTEMPTS, clock ? () => clock.now() : undefined),
     profiles: createProfileService(db),
