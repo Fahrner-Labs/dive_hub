@@ -1,7 +1,8 @@
 Dive Hub
 Copyright 2026 Tim Fahrner
 
-This product is licensed under the Apache License, Version 2.0 (see LICENSE).
+This product is licensed under the Business Source License 1.1 (see LICENSE). Each version becomes available
+under the Apache License, Version 2.0 four years after its first public distribution.
 
 This product includes time-zone boundary data from geo-tz (https://github.com/evansiroky/node-geo-tz, MIT
 License), built by timezone-boundary-builder (https://github.com/evansiroky/timezone-boundary-builder) from

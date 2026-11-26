@@ -1,0 +1,24 @@
+# The DCO gate for outside contributors (ADR 0086): every commit on the pull request needs a Signed-off-by line
+# certifying the Developer Certificate of Origin (https://developercertificate.org/). The owner's and members'
+# pull requests skip the job, so it is effectively required only for outside collaborators; skipped required checks
+# count as passing.
+name: dco
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  dco-check:
+    if: >-
+      github.event.pull_request.author_association != 'OWNER' &&
+      github.event.pull_request.author_association != 'MEMBER' &&
+      github.event.pull_request.author_association != 'COLLABORATOR'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # The action walks the pull request's commits back to the base branch.
+          fetch-depth: 0
+      - uses: christophebedard/dco-check@0.6.0

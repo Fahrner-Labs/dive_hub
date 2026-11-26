@@ -39,4 +39,7 @@ pnpm --filter @dive-hub/web test:e2e # browser tests (builds the web client)
 While working, `pnpm check` runs the type check, lint and only the tests affected by the changed files. CI runs
 the full suite (`pnpm check:full`) on every pull request. Details: [development guide](docs/development.md).
 
-Licensed under [Apache-2.0](LICENSE).
+Dive Hub is source-available under the [Business Source License 1.1](LICENSE), which becomes Apache-2.0 four
+years after each release. Self-hosting for your own logbook — including dive clubs and centres running it for
+their members — is always allowed; offering DiveHub as a paid hosted service to third parties is not
+([ADR 0086](docs/decisions/0086-busl-1-1-with-apache-2-0-change-license.md)).
