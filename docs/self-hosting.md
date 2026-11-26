@@ -240,6 +240,21 @@ Sandbox round-trip before live keys:
    automation switches unlock. Replaying the event changes nothing.
 4. Open the portal link: invoices and card updates are Paddle's pages.
 
+**Moving an existing instance from sandbox to live.** Paddle customer and subscription IDs belong to one environment
+(`sandbox-api.paddle.com` versus `api.paddle.com`). A restored database still carries the sandbox IDs, so after you
+swap in live keys `GET /api/billing/checkout` reuses a sandbox customer that live Paddle rejects (the route answers
+`billing_unavailable`, 502), `GET /api/billing/portal` fails the same way for those users, and the sandbox `pro` rows
+keep their entitlement because the gate only reads `plan`, `status` and `current_period_end`. At the flip, either
+restore into a fresh database (live users subscribe again) or clear the sandbox plan state before the live image
+starts:
+
+```sh
+docker compose exec -T db psql -U divehub -d divehub -c "delete from user_entitlement"
+```
+
+No row means the free plan, so that one statement drops the sandbox Paddle IDs and the entitlements they granted. Run
+the sandbox round-trip above on the restored instance with real credentials first, then switch the keys.
+
 The webhook endpoint must be reachable at `DIVEHUB_BASE_URL`. If the NAS is behind CGNAT, use a tunnel (or Paddle's CLI
 webhook forwarding during testing) as [hosted-operations.md](hosted-operations.md) describes.
 
