@@ -38,6 +38,13 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   is never stored. Show it as standing text with a checkbox, not as a notice. The API refuses without the flag
   (`ssi_not_confirmed`) ([ADR 0025](../decisions/0025-ssi-site-import-and-site-water-type.md)). *Web:* `SiteImportPage.tsx`.
 - **SSI data shows "From SSI" without a link** (`url` is null, no Attribution): SSI has no page per site.
+- **Must explain and confirm a Source purge before it starts** (`POST /api/admin/site-imports/purge {source}`,
+  FAH-528): it deletes every External ID of that Source and hard-deletes the import-created sites it leaves without
+  another data-providing ID or a Dive. Sites a Dive still names are never deleted: the result's
+  `result.referencedSites` lists them, and the client links each so the admin moves the Dive or merges the site and
+  runs the purge again. Say that it cannot be undone; Sites a User made stay. Offer only `GET /api/admin/site-sources`
+  as the Source, follow the job with `GET /api/admin/site-imports/purges`, and translate `site_purge_running` and
+  `site_import_running` ([ADR 0091](../decisions/0091-source-purge.md)). *Web:* `SiteImportPage.tsx`.
 
 ### Privacy
 - **Must not show who else created, edited or dives at a Dive site.**
@@ -199,9 +206,10 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   one `text/event-stream` per signed-in User with the session cookie, or (native) the session token as
   `Authorization: Bearer`; the browser's `EventSource` sends the cookie same-origin. The stream carries only
   `event: hint` frames whose `data` is `{ v: 1, kind, id }` — never data
-  or the audience. Kinds: `dive`, `site`, `waitingPush`, `import`, `siteImport`, `pushRun`, `certification`,
-  `connection`, `buddySuggestion` (the Review inbox's suggestions: refetch `['buddy-suggestions']` and each card's
-  preview). On a hint, refetch the matching queries through the normal API (the web client invalidates their
+  or the audience. Kinds: `dive`, `site`, `waitingPush`, `import`, `siteImport`, `sitePurge` (refetch
+  `['site-purges']` and `['sites']`; a purge also emits a wildcard `site` hint per removed site), `pushRun`,
+  `certification`, `connection`, `buddySuggestion` (the Review inbox's suggestions: refetch `['buddy-suggestions']`
+  and each card's preview). On a hint, refetch the matching queries through the normal API (the web client invalidates their
   query keys); a client may batch hints that arrive within ~250 ms into one refetch. **On every connect, the
   first included**, refetch what is on screen (`invalidateQueries` with `refetchType: 'active'` in TanStack Query):
   hints are not replayed, so a gap is covered only that way. Polling remains fully valid: a client that ignores
@@ -228,10 +236,11 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
     or relevant; never render a push payload as content. The server never sends names, sites or counts.
 - **Background work is polled** until it is `done` or `failed`:
   - Imports (`GET /api/imports`), every second while one runs;
-  - Site imports (`GET /api/admin/site-imports`), every two seconds.
+  - Site imports (`GET /api/admin/site-imports`), every two seconds;
+  - Source purges (`GET /api/admin/site-imports/purges`), every two seconds while one runs.
 
-  When one finishes, refresh what it changed (the logbook) and say so, for screen readers too.
-  *Web:* `api.ts` (`importsQuery`, `siteImportsQuery`), `ImportPanel.tsx`, `SiteImportPage.tsx`.
+  When one finishes, refresh what it changed (the logbook, the site lists) and say so, for screen readers too.
+  *Web:* `api.ts` (`importsQuery`, `siteImportsQuery`, `sitePurgesQuery`), `ImportPanel.tsx`, `SiteImportPage.tsx`.
 - **Lists page** with `limit`/`offset` and `total` (`/api/dives` [ADR 0017](../decisions/0017-logbook-list-paging.md),
   `/api/dive-sites` ADR 0022). Keep search, filters, sort and page in the client's navigation state (the web
   client uses the address), so back and reload keep them. A native client that reads the whole list from its store

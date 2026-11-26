@@ -304,6 +304,12 @@ Implemented:
   - Wikidata and/or OpenStreetMap, by country, box or everywhere;
   - OSM only after the ODbL explanation is confirmed;
   - one at a time, run by the `import_dive_sites` worker job with progress, counts and findings.
+- **Source purge** for admins (`POST /api/admin/site-imports/purge {source}`, FAH-528,
+  [ADR 0091](../decisions/0091-source-purge.md)):
+  - deletes every External ID of one Source, then hard-deletes import-created sites with no remaining data-providing
+    ID and no Dive;
+  - sites a Dive still names are reported, not deleted; Sites a User made stay without that Source's IDs;
+  - one at a time and never beside a Site import, run by the `purge_site_source` worker job with progress and result.
 - **Planning without the database** (`src/sites/import/import-plan.ts`):
   - matching by own ID, then the link between the Sources, then 100 m plus the same name;
   - a per-field 3-way merge with OSM before Wikidata;

@@ -400,6 +400,11 @@ An admin's run that fetches Dive sites from OpenStreetMap, Wikidata or SSI for a
 _Avoid_: Sync, seed, site Import
 _German_: Tauchplatz-Import
 
+**Source purge**:
+An admin's removal of every External ID of one Source, the pre-agreed remedy if a Source objects to its site data ([ADR 0091](decisions/0091-source-purge.md)). It hard-deletes the import-created Dive sites that no other Source's data and no Dive holds; sites a Dive still names are listed for the admin to resolve first, and Sites a User made stay. Not the purge of deleted Dives.
+_Avoid_: Delete source, wipe source
+_German_: Bereinigung einer Quelle
+
 **Provider**:
 An outside service Dive Hub talks to on a User's behalf, such as SSI and later PADI. It says what it offers: how Users sign in, which kinds of data (dives, Dive sites, buddies) it imports or exports, what it can do with them (create, update, delete, link, find), and whether it gives an ID back. It is a Source for what it imports and a Target for what it exports. Files and open datasets (a FIT file, OpenStreetMap) are Sources, not Providers.
 _Avoid_: Integration, connector, plugin, service (in the code)
