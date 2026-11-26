@@ -4836,9 +4836,7 @@
               "sendChanges",
               "sendNewDives",
               "deleteAtProvider",
-              "fetchEvery",
-              "entitled",
-              "offer"
+              "fetchEvery"
             ],
             "properties": {
               "sendChanges": {
@@ -4859,7 +4857,7 @@
               },
               "entitled": {
                 "type": "boolean",
-                "description": "False when the paid plan is needed and this User lacks it: grey the switches and show the upsell from `offer` (a hosted instance with billing only; always true where billing is off)"
+                "description": "False when the paid plan is needed and this User lacks it: grey the switches and show the upsell from `offer` (a hosted instance with billing only; always true where billing is off; absent on an older server)"
               },
               "offer": {
                 "anyOf": [
@@ -6909,8 +6907,7 @@
                   "required": [
                     "user",
                     "ownDiver",
-                    "preferences",
-                    "billing"
+                    "preferences"
                   ],
                   "properties": {
                     "user": {

@@ -30,7 +30,8 @@ export function SettingsPage({ section: asked, me, params }: { section: string |
   const roomy = useRoomy();
   const admin = me.user.role === 'admin';
   // The Plan section exists only where the server sells the Pro plan: without billing every feature is free (ADR 0087).
-  const plans = me.billing.configured;
+  // An older server omits `billing`; treat that as no billing.
+  const plans = me.billing?.configured ?? false;
   const known = isSettingsSection(asked) ? asked : null;
   // A hidden section's address is no section at all: it goes where an unknown one goes.
   const hidden = (known === 'plan' && !plans);
@@ -76,7 +77,7 @@ function SectionView({ section, admin, billing, params }: {
   switch (section) {
     case 'display': return <DisplaySettings />;
     case 'security': return <SecuritySettings />;
-    case 'plan': return <PlanSettings billing={billing} />;
+    case 'plan': return billing ? <PlanSettings billing={billing} /> : null;
     case 'connections': return <Connections focus={params.get('connection') ?? undefined} />;
     case 'ai-access': return <AiAccess />;
     case 'devices': return <Devices />;

@@ -16,7 +16,7 @@ data class ConnectionViewOffers(
     @SerialName("deleteAtProvider") val deleteAtProvider: Boolean,
     /** The intervals to offer, in minutes; none: the Provider has no scheduled fetch */
     @SerialName("fetchEvery") val fetchEvery: List<Int>,
-    /** False when the paid plan is needed and this User lacks it: grey the switches and show the upsell from `offer` (a hosted instance with billing only; always true where billing is off) */
-    @SerialName("entitled") val entitled: Boolean,
-    @SerialName("offer") val offer: ConnectionViewOffersOffer?
+    /** False when the paid plan is needed and this User lacks it: grey the switches and show the upsell from `offer` (a hosted instance with billing only; always true where billing is off; absent on an older server) */
+    @SerialName("entitled") val entitled: Boolean? = null,
+    @SerialName("offer") val offer: ConnectionViewOffersOffer? = null
 )

@@ -205,7 +205,7 @@ apps/server/src/providers/current-remote.ts:11 fn currentRemote
 apps/server/src/providers/provider.ts:127 class ProviderError
 apps/server/src/providers/lease-service.ts:17 const realClock
 apps/server/src/providers/provider.ts:244 iface ActionContext
-apps/server/src/providers/connection-view.ts:74 const ConnectionView
+apps/server/src/providers/connection-view.ts:76 const ConnectionView
 apps/server/src/providers/provider.ts:361 iface ImportedDive
 apps/server/src/providers/connection-service.ts:348 type ConnectionService
 apps/server/src/providers/connection-routes.ts:52 const ProviderView

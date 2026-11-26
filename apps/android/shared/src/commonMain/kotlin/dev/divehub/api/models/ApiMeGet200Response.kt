@@ -12,5 +12,5 @@ data class ApiMeGet200Response(
     @SerialName("ownDiver") val ownDiver: ApiMeGet200ResponseOwnDiver,
     @SerialName("preferences") val preferences: ApiMeGet200ResponsePreferences,
     /** The User's plan and status (hosted-DiveHub plan §4.4); shown in Settings and used to grey the paywall */
-    @SerialName("billing") val billing: ApiMeGet200ResponseBilling
+    @SerialName("billing") val billing: ApiMeGet200ResponseBilling? = null
 )

@@ -41,7 +41,9 @@ const MeView = Type.Object({
   user: UserView,
   ownDiver: Type.Object({ id: Type.String(), name: Type.String() }),
   preferences: PreferencesView,
-  billing: BillingView,
+  // Optional so a client that talks to an older server (which has no billing) still decodes the answer; this server
+  // always sends it (ADR 0076: the v1 API grows additively).
+  billing: Type.Optional(BillingView),
 });
 
 export const userRoutes: FastifyPluginAsyncTypebox<UserRouteDeps> = async (app, { auth, profiles, setup, invitations, tokenAttempts, entitlements }) => {

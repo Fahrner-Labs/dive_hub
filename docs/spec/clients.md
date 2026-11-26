@@ -485,7 +485,8 @@ online.
 - **The plan** (hosted-DiveHub plan §4.4, ADR 0087, 0089; `billing` on `GET /api/me`): `configured` false means this
   instance sells nothing (self-hosted): every feature is free, and there is **no Plan section at all**. When true, show
   `plan` (`free`|`pro`) and `status` (`none`, `active`, `past_due`, `canceled`), with `currentPeriodEnd` for a canceled
-  plan that is paid until it ends; `entitled` says whether the paid features may be used now. Offer **Upgrade**
+  plan that is paid until it ends; `entitled` says whether the paid features may be used now. An older server omits
+  `billing` (it has no billing): treat it as `configured: false`. Offer **Upgrade**
   (`GET /api/billing/checkout`, open the returned `url`; 409 `billing_already_subscribed` when one already runs) to a
   User with no subscription, and **Manage** (`GET /api/billing/portal`, open the `url`; 409 `billing_not_subscribed`
   without a Paddle customer) to one who has a row. Dive Hub has no money UI and stores no payment data: Paddle hosts
@@ -1149,8 +1150,9 @@ dives, all off until the User turns them on. *Web:* `ProviderAutomation.tsx` (se
   On a hosted instance with billing, `offers.entitled` is false for a User without the paid plan, and `offers.offer`
   carries the `plan` and the `features` it unlocks (`automation`, `push_runs`): show every switch **greyed** (its current
   state still visible) with the upsell built from that offer, linking to the Plan section. Never hardcode the plan or
-  what is paid. A save that still meets the gate answers 402 `entitlement_required` with the same `offer`; show that
-  upsell too. Turning off stays accepted, so a downgraded User can always stop it.
+  what is paid. Both are absent on an older server (no paywall): treat that as entitled. A save that still meets the
+  gate answers 402 `entitlement_required` with the same `offer`; show that upsell too. Turning off stays accepted, so a
+  downgraded User can always stop it.
 - **Must show the state of a Dive's Waiting push** (`waiting` on each row of `GET /api/dives`, on `GET /api/dives/{id}/providers`
   and `.../{provider}` as `waiting` (one or null), and on deleted dives): a list row gets a small icon (`aria-hidden`, with a
   text label), the Dive's page the words, next to Send. Texts with `{{provider}}` the Provider's name:

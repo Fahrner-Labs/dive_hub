@@ -275,7 +275,7 @@ export interface paths {
                                 units: null | "metric" | "imperial";
                             };
                             /** @description The User's plan and status (hosted-DiveHub plan §4.4); shown in Settings and used to grey the paywall */
-                            billing: {
+                            billing?: {
                                 /** @description False on an instance without billing: every feature is free and the client shows no Plan section */
                                 configured: boolean;
                                 /** @enum {unknown} */
@@ -16324,9 +16324,9 @@ export interface components {
                 deleteAtProvider: boolean;
                 /** @description The intervals to offer, in minutes; none: the Provider has no scheduled fetch */
                 fetchEvery: number[];
-                /** @description False when the paid plan is needed and this User lacks it: grey the switches and show the upsell from `offer` (a hosted instance with billing only; always true where billing is off) */
-                entitled: boolean;
-                offer: null | {
+                /** @description False when the paid plan is needed and this User lacks it: grey the switches and show the upsell from `offer` (a hosted instance with billing only; always true where billing is off; absent on an older server) */
+                entitled?: boolean;
+                offer?: null | {
                     /** @description The plan that unlocks automation (pro) */
                     plan: string;
                     /** @description What it unlocks (automation, push_runs) */

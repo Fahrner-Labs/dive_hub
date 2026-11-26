@@ -71,8 +71,9 @@ export function ProviderAutomation({ provider: p, connection: c, several, focuse
   });
   const { offers, lastFetch, unsentDives, waiting } = c;
   // The paywall's state comes from the server (hosted-DiveHub plan §4.4): a free User gets the switches greyed and the
-  // plan it needs from `offer`, never from a copy here. A save that still meets the gate carries the same offer.
-  const locked = !offers.entitled;
+  // plan it needs from `offer`, never from a copy here. A save that still meets the gate carries the same offer. An
+  // older server (no paywall) omits these: treat it as entitled.
+  const locked = offers.entitled === false;
   const gate = offers.offer
     ?? Object.values(failed).find((e): e is ApiError => e instanceof ApiError && e.code === 'entitlement_required')?.details.offer;
   const intervals = offers.fetchEvery.filter(isInterval);
