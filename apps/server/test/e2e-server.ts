@@ -145,9 +145,10 @@ const services = createServices({
   clock: resettableClock(),
   // Open pages hear about background work in the browser tests too (ADR 0066).
   live: { connectionString: database.url },
-  // Self-serve signup for auth.spec.ts (FAH-533); the same stand-in mail keeps the verification link local.
-  registrationOpen: true, email: emailConfig, baseUrl: `http://localhost:${port}`,
-  mailFetch, mailUrl: 'https://resend.invalid/emails',
+  // Self-serve signup for auth.spec.ts (FAH-533). Transactional e-mail stays off for the service layer on purpose:
+  // the admin's copy-link invitation and reset flows must keep behaving as the invite-only tests expect. The auth
+  // instance above has its own stand-in mail, which is all the verification flow needs.
+  registrationOpen: true,
 });
 const { imports } = services;
 const app = await buildApp({ ...services, baseUrl: `http://localhost:${port}`, maxUploadBytes: 1 << 26, webDir: here('../../web/dist') });
