@@ -1,9 +1,25 @@
 // Entitlements (hosted-DiveHub plan §4, ADR 0087): whether a User may use the paid synchronisation features. A self-hosted
 // instance has no billing configured, and then every feature is free: the checks are inert unless DIVEHUB_BILLING_PROVIDER
-// is set. Billing writes the row (a later task); this module only reads it. A User without a row is on the free plan.
-import { eq, inArray } from 'drizzle-orm';
+// is set. This module owns the one `user_entitlement` row per User: the read the paywall asks, and the upsert the billing
+// webhook (ADR 0089) applies. A User without a row is on the free plan.
+import { eq, inArray, lte } from 'drizzle-orm';
 import type { Db } from '../db/client.js';
 import { userEntitlement } from '../db/schema.js';
+
+/** The provider-neutral state a subscription event settles on (plan §4.6). `none` is a row that was deleted. */
+export type EntitlementStatus = 'active' | 'past_due' | 'canceled';
+
+/** One subscription state the billing webhook applies, already mapped from the provider's vocabulary. */
+export interface SubscriptionState {
+  userId: string;
+  paddleCustomerId: string;
+  paddleSubscriptionId: string;
+  status: EntitlementStatus;
+  /** The period that was paid for; `canceled` keeps it so the User stays entitled until it ends. */
+  currentPeriodEnd: Date | null;
+  /** The provider's event time: an older event never overwrites a newer one (out-of-order safe). */
+  occurredAt: Date;
+}
 
 /**
  * Whether a User may use the paid features at `now` (plan §4.6): `pro` and active, or past due (the grace window in which
@@ -43,6 +59,50 @@ export function createEntitlementService(deps: { db: Db; enforced: boolean; cloc
       const found = new Set<string>();
       for (const row of rows) if (isEntitled(row, at)) found.add(row.userId);
       return found;
+    },
+
+    /**
+     * The Paddle IDs kept for a User, so checkout reuses the customer and the portal has one to open; null when the User
+     * has no row (never subscribed).
+     */
+    async paddleAccount(userId: string): Promise<{ customerId: string | null; subscriptionId: string | null } | null> {
+      const [row] = await deps.db.select({
+        customerId: userEntitlement.paddleCustomerId, subscriptionId: userEntitlement.paddleSubscriptionId,
+      }).from(userEntitlement).where(eq(userEntitlement.userId, userId));
+      return row ?? null;
+    },
+
+    /**
+     * The User a stored subscription belongs to, matched on the subscription id alone. A webhook for one of a User's
+     * earlier subscriptions must not be applied to their current one, so the customer id is deliberately not a key here
+     * (ADR 0089).
+     */
+    async userOfSubscription(subscriptionId: string): Promise<string | null> {
+      const [row] = await deps.db.select({ userId: userEntitlement.userId }).from(userEntitlement)
+        .where(eq(userEntitlement.paddleSubscriptionId, subscriptionId));
+      return row?.userId ?? null;
+    },
+
+    /**
+     * Upserts one subscription state (plan §4.6). Keyed by the User, so replaying an event changes nothing; an event older
+     * than the row's last write is ignored, so a late `subscription.updated` cannot roll back a `canceled` or the reverse.
+     * The write is one atomic statement: two concurrent deliveries cannot leave the older one last.
+     */
+    async applySubscription(state: SubscriptionState): Promise<void> {
+      const values = {
+        userId: state.userId,
+        plan: 'pro',
+        status: state.status,
+        paddleCustomerId: state.paddleCustomerId,
+        paddleSubscriptionId: state.paddleSubscriptionId,
+        currentPeriodEnd: state.currentPeriodEnd,
+        updatedAt: state.occurredAt,
+      };
+      await deps.db.insert(userEntitlement).values(values).onConflictDoUpdate({
+        target: userEntitlement.userId,
+        set: values,
+        setWhere: lte(userEntitlement.updatedAt, state.occurredAt),
+      });
     },
   };
 }

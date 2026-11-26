@@ -108,6 +108,10 @@ Application settings (optional unless stated):
 | `DIVEHUB_EMAIL_PROVIDER` | unset | Transactional mail: `resend` today. Needs `DIVEHUB_EMAIL_API_KEY` and `DIVEHUB_EMAIL_FROM` too; with any e-mail value unset, invitations and resets stay copy links ([ADR 0012](decisions/0012-invitations-and-admin-bootstrap.md), [ADR 0013](decisions/0013-account-management.md)). |
 | `DIVEHUB_EMAIL_API_KEY` | unset | **A secret**: the Resend API key (`re_…`). Never commit it or put it in an image. |
 | `DIVEHUB_EMAIL_FROM` | unset | The sender, e.g. `Dive Hub <noreply@dives.example.com>`; the domain must be verified at Resend. |
+| `DIVEHUB_BILLING_PROVIDER` | unset | `paddle` turns on hosted billing and its entitlement gates (provider sync automation and Push runs); it needs the three Paddle values below. Unset keeps every feature free and registers no billing route ([ADR 0089](decisions/0089-entitlements-and-payments.md)). |
+| `DIVEHUB_PADDLE_API_KEY` | unset | **A secret**: the Paddle API key. A sandbox key (contains `_sdbx`) uses Paddle's sandbox; a live key uses production. |
+| `DIVEHUB_PADDLE_WEBHOOK_SECRET` | unset | **A secret**: the notification destination's secret that signs every webhook. |
+| `DIVEHUB_PADDLE_PRICE_IDS` | unset | Comma-separated recurring Paddle price IDs that mean Pro; the first is the one checkout offers. |
 
 `DIVEHUB_GARMIN_URL`, `DIVEHUB_SSI_URL`, `DIVEHUB_HOST`, `DIVEHUB_WORKER`, `DIVEHUB_WEB_DIR` and
 `DIVEHUB_DATA_DIR` exist for the image and the tests; the example compose file sets what the
@@ -190,6 +194,54 @@ return.
 The mail module lives in `apps/server/src/mail/` behind a `MailProvider` interface. Postmark is
 the documented fallback if Resend's deliverability disappoints: implementing it is another provider
 behind that interface, not a change at the invitation or reset call sites.
+
+### Billing with Paddle (optional)
+
+Dive Hub can sell a Pro plan that unlocks provider sync automation and Push runs. **Paddle** is the merchant of record:
+it is the seller, collects the card and VAT, and hosts checkout and the customer portal (invoices, card updates,
+cancellation). Dive Hub stores only the Paddle customer and subscription IDs and the period end; it stores no card,
+address or invoice ([ADR 0089](decisions/0089-entitlements-and-payments.md)). Without the four variables below every
+feature stays free and no billing route exists.
+
+For hosted Dive Hub on the NAS the beta uses **Paddle sandbox only**; live keys land with the VPS move
+([hosted-operations.md](hosted-operations.md)). A sandbox API key contains `_sdbx` and makes the server talk to
+`https://sandbox-api.paddle.com`; a live key talks to `https://api.paddle.com`, so the same image serves both.
+
+1. Create the account you need: a [Paddle sandbox account](https://sandbox-vendors.paddle.com/signup) for testing, or a
+   live account (Paddle approves the business and product first). Create a product with a **recurring** price and copy its
+   price ID (`pri_…`). Set and get approval for a default payment link under **Checkout → Checkout configuration**;
+   Paddle appends the transaction to it.
+2. In **Developer tools → Notifications**, create a notification destination of type **URL** pointing at
+   `https://dives.example.com/api/billing/webhooks`. Subscribe it to `subscription.created`, `subscription.updated` and
+   `subscription.canceled`. Copy the destination's secret (`pdl_ntfset_…`); it signs every delivery.
+3. Create an API key with the transaction and customer-portal permissions (`pdl_sdbx_…` in sandbox, `pdl_live_…` live).
+4. Set all four values in `.env`:
+
+   ```sh
+   DIVEHUB_BILLING_PROVIDER=paddle
+   DIVEHUB_PADDLE_API_KEY=pdl_sdbx_…
+   DIVEHUB_PADDLE_WEBHOOK_SECRET=pdl_ntfset_…
+   DIVEHUB_PADDLE_PRICE_IDS=pri_…
+   ```
+
+5. Restart the stack. A signed-in user's `GET /api/billing/checkout` now answers a Paddle checkout URL carrying their id
+   in the passthrough, and `GET /api/billing/portal` the customer portal (409 `billing_not_subscribed` before the first
+   checkout).
+
+Set **all four or none**: with the provider set and a Paddle value missing the app refuses to start and names the missing
+variable, so an instance never runs the paywall with no way to pay. The webhook is verified against
+`DIVEHUB_PADDLE_WEBHOOK_SECRET` over the raw body before anything is parsed; without a valid signature it answers 401.
+
+Sandbox round-trip before live keys:
+
+1. Sign in on the instance and open the checkout link.
+2. Pay with Paddle's sandbox test card `4242 4242 4242 4242` (or `4000 0038 0000 0446` for 3-D Secure).
+3. The `subscription.created` webhook should arrive; the user's entitlement is now pro and active, so a Connection's
+   automation switches unlock. Replaying the event changes nothing.
+4. Open the portal link: invoices and card updates are Paddle's pages.
+
+The webhook endpoint must be reachable at `DIVEHUB_BASE_URL`. If the NAS is behind CGNAT, use a tunnel (or Paddle's CLI
+webhook forwarding during testing) as [hosted-operations.md](hosted-operations.md) describes.
 
 ## TLS reverse proxy
 

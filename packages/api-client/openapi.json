@@ -503,6 +503,10 @@
               "diver_not_external",
               "provider_import_off",
               "entitlement_required",
+              "billing_not_subscribed",
+              "billing_already_subscribed",
+              "billing_unavailable",
+              "invalid_signature",
               "finding_not_found",
               "ai_access_not_found",
               "ai_access_off",
@@ -3942,6 +3946,10 @@
                   "diver_not_external",
                   "provider_import_off",
                   "entitlement_required",
+                  "billing_not_subscribed",
+                  "billing_already_subscribed",
+                  "billing_unavailable",
+                  "invalid_signature",
                   "finding_not_found",
                   "ai_access_not_found",
                   "ai_access_off",
@@ -4234,6 +4242,10 @@
                   "diver_not_external",
                   "provider_import_off",
                   "entitlement_required",
+                  "billing_not_subscribed",
+                  "billing_already_subscribed",
+                  "billing_unavailable",
+                  "invalid_signature",
                   "finding_not_found",
                   "ai_access_not_found",
                   "ai_access_off",
@@ -4468,6 +4480,10 @@
                   "diver_not_external",
                   "provider_import_off",
                   "entitlement_required",
+                  "billing_not_subscribed",
+                  "billing_already_subscribed",
+                  "billing_unavailable",
+                  "invalid_signature",
                   "finding_not_found",
                   "ai_access_not_found",
                   "ai_access_off",
@@ -5309,6 +5325,10 @@
                         "diver_not_external",
                         "provider_import_off",
                         "entitlement_required",
+                        "billing_not_subscribed",
+                        "billing_already_subscribed",
+                        "billing_unavailable",
+                        "invalid_signature",
                         "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
@@ -9341,6 +9361,124 @@
             }
           },
           "410": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/billing/checkout": {
+      "get": {
+        "summary": "A Paddle checkout link for the Pro plan",
+        "description": "Creates a Paddle transaction whose custom data carries the signed-in User, so the subscription webhook can find them. Open the returned URL; Paddle collects the card and VAT. A User who already has the Pro plan answers 409 `billing_already_subscribed`: manage or cancel in the portal, so no second subscription starts.",
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "url"
+                  ],
+                  "properties": {
+                    "url": {
+                      "type": "string",
+                      "format": "uri",
+                      "description": "An authenticated Paddle URL; open it rather than building one"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/billing/portal": {
+      "get": {
+        "summary": "The Paddle customer portal link (invoices, card updates, cancellation)",
+        "description": "Needs a Paddle customer from an earlier checkout; without one the answer is 409 `billing_not_subscribed`. The portal is Paddle-hosted; Dive Hub stores no payment data.",
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "url"
+                  ],
+                  "properties": {
+                    "url": {
+                      "type": "string",
+                      "format": "uri",
+                      "description": "An authenticated Paddle URL; open it rather than building one"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "502": {
             "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
             "content": {
               "application/json": {

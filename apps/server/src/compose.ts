@@ -6,7 +6,9 @@ import { fileURLToPath } from 'node:url';
 import type { Auth } from './auth/auth.js';
 import type { Db } from './db/client.js';
 import type { BillingConfig, EmailConfig, FcmConfig } from './config.js';
-import { createEntitlementService } from './entitlement/entitlement.js';
+import { createBillingService } from './billing/billing-service.js';
+import type { PaddleFetch } from './billing/paddle.js';
+import { createEntitlementService, type EntitlementService } from './entitlement/entitlement.js';
 import { createMailLinks } from './mail/links.js';
 import { createMailProvider, type MailFetch } from './mail/resend.js';
 import type { FastifyBaseLogger } from 'fastify';
@@ -100,6 +102,10 @@ export interface ServiceParts {
   mailUrl?: string;
   /** Billing (hosted-DiveHub plan §4, ADR 0087); undefined makes every feature free and the entitlement gates inert. */
   billing?: BillingConfig | undefined;
+  /** Where Paddle's HTTP goes; tests pass a stand-in, production the global fetch. */
+  paddleFetch?: PaddleFetch;
+  /** Paddle's API base; only tests point it elsewhere (production derives sandbox/live from the key). */
+  paddleUrl?: string;
 }
 
 /** Transactional mail for this instance, or nothing when `DIVEHUB_EMAIL_*` is unset (hosted plan §6.1). */
@@ -114,9 +120,22 @@ function createMail(options: {
   return createMailLinks({ mailer, baseUrl: options.baseUrl });
 }
 
+/** Billing for this instance, or nothing when `DIVEHUB_BILLING_PROVIDER` is unset (hosted plan §4, ADR 0089). */
+function createBilling(
+  config: BillingConfig | undefined, entitlements: EntitlementService, log: ProviderLog | undefined,
+  fetch: PaddleFetch | undefined, url: string | undefined,
+) {
+  if (!config) return undefined;
+  return createBillingService({
+    config, entitlements,
+    ...(log ? { log } : {}), ...(fetch ? { fetch } : {}), ...(url ? { url } : {}),
+  });
+}
+
 export function createServices({
   db, blobs, auth, secrets, adapters, siteSources, clock, log, live: liveSettings, dataDir, databaseUrl, encryptionKey,
   logBuffer = createLogRingBuffer({ stdout: { write: () => true } }), workerRunning, fcm, email, baseUrl, mailFetch, mailUrl, billing,
+  paddleFetch, paddleUrl,
 }: ServiceParts) {
   const mail = createMail({ email, baseUrl, mailFetch, mailUrl });
   const assessments = createAssessmentService(db);
@@ -139,6 +158,9 @@ export function createServices({
   });
   // The paywall (hosted-DiveHub plan §4): with no billing configured it answers entitled for everything (ADR 0087).
   const entitlements = createEntitlementService({ db, enforced: billing !== undefined, ...(clock && { clock }) });
+  // Paddle's checkout/portal links and signed webhook (hosted-DiveHub plan §4.5, ADR 0089); absent with no billing config,
+  // which also leaves the billing routes unregistered.
+  const billingService = createBilling(billing, entitlements, log, paddleFetch, paddleUrl);
   const providers = createProviderLayer({ db, blobs, secrets, adapters, entitlements, ...(clock && { clock }), ...(log && { log }) });
   // Push hints queue in the same writing transactions as the SSE hints (ADR 0085); without FCM the dispatcher queues
   // nothing and the job is a no-op.
@@ -158,7 +180,7 @@ export function createServices({
   // Restoring a Dive an append took undoes the append (ADR 0063).
   const dives = createDiveService(db, continuation);
   return {
-    db, blobs, auth, assessments, backups, support, clientDiagnostics, sync, entitlements, providers, imports, logBuffer,
+    db, blobs, auth, assessments, backups, support, clientDiagnostics, sync, entitlements, billing: billingService, providers, imports, logBuffer,
     siteImports: createSiteImportService({ db, sources: siteSources }),
     sitePurges: createSitePurgeService({ db, sources: siteSources }),
     aiAccesses: createAiAccessService(db, auth),

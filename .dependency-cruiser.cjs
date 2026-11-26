@@ -17,9 +17,12 @@ const MODULE_IMPORTS = {
   certifications: ['divers', 'dives', 'live', 'revisions'],
   divers: ['revisions'],
   dives: ['centres', 'divers', 'revisions', 'sites'],
-  // Entitlements (hosted-DiveHub plan §4): a leaf that reads its own table and nothing else; providers and users import
-  // down into it, so it sits low.
+  // Entitlements (hosted-DiveHub plan §4): a leaf that reads and writes its own table and nothing else; providers, users
+  // and billing import down into it, so it sits low.
   entitlement: [],
+  // Billing (ADR 0089): Paddle's checkout/portal links and the signed webhook, which writes entitlements through the
+  // entitlement module; it reads no other domain module.
+  billing: ['entitlement'],
   equipment: ['divers', 'revisions'],
   // Narrower than plan D8's ['divers', 'dives', 'revisions'] on purpose: the equipment module needs nothing from dives.
   imports: ['divers', 'dives', 'equipment', 'live', 'revisions', 'sites'],

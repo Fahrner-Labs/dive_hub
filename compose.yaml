@@ -35,6 +35,12 @@ services:
       DIVEHUB_EMAIL_PROVIDER: ${DIVEHUB_EMAIL_PROVIDER:-}
       DIVEHUB_EMAIL_API_KEY: ${DIVEHUB_EMAIL_API_KEY:-}
       DIVEHUB_EMAIL_FROM: ${DIVEHUB_EMAIL_FROM:-}
+      # Optional hosted billing (ADR 0089): `paddle` and all three Paddle values, or none. Unset keeps every feature free.
+      # A sandbox key (contains `_sdbx`) uses Paddle's sandbox; live keys use production.
+      DIVEHUB_BILLING_PROVIDER: ${DIVEHUB_BILLING_PROVIDER:-}
+      DIVEHUB_PADDLE_API_KEY: ${DIVEHUB_PADDLE_API_KEY:-}
+      DIVEHUB_PADDLE_WEBHOOK_SECRET: ${DIVEHUB_PADDLE_WEBHOOK_SECRET:-}
+      DIVEHUB_PADDLE_PRICE_IDS: ${DIVEHUB_PADDLE_PRICE_IDS:-}
     ports:
       - "${DIVEHUB_BIND:-127.0.0.1}:${DIVEHUB_PORT:-3000}:3000"
     volumes:
