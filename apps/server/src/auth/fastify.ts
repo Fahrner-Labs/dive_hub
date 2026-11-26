@@ -33,7 +33,7 @@ export function forwardCookies(from: Headers, reply: FastifyReply): void {
 /** Mounts the Better Auth endpoints we expose (publicAuthPaths) at /api/auth/*; the rest answer 404. */
 export async function authHandler(
   app: FastifyInstance,
-  { auth, registrationOpen, tokenAttempts }: { auth: Auth; registrationOpen: boolean; tokenAttempts: AttemptLimit },
+  { auth, registrationOpen, signupAttempts }: { auth: Auth; registrationOpen: boolean; signupAttempts: AttemptLimit },
 ) {
   const publicPaths = new Set<string>(publicAuthPaths(registrationOpen));
   // Hand Better Auth the body exactly as sent; it parses and validates it itself.
@@ -48,10 +48,10 @@ export async function authHandler(
       const url = new URL(request.url, auth.options.baseURL);
       const path = url.pathname.slice('/api/auth'.length);
       if (!publicPaths.has(path)) return reply.code(404).send(problem('not_found'));
-      // The same count per client IP as the token routes (ADR 0061), so a sign-up flood stops at 30 per 15 minutes.
-      // Signing up repeats no token attempt, but without this limit it would be an unlimited public write route.
+      // The same per-IP budget as the token routes (ADR 0061's limiter), with its own count (hosted plan §6.2), so a
+      // signup flood stops at 30 per 15 minutes without exhausting an invitation or reset budget from the same address.
       if (registrationOpen && path === '/sign-up/email') {
-        const wait = tokenAttempts.take(clientKey(request.ip));
+        const wait = signupAttempts.take(clientKey(request.ip));
         if (wait !== null) return reply.code(429).header('retry-after', String(wait)).send(problem('too_many_attempts'));
       }
       const response = await auth.handler(new Request(url, {

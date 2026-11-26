@@ -122,7 +122,9 @@ export async function buildApp(deps: AppDeps, app: Server = createServer()) {
   });
   app.get('/api/openapi.json', { schema: { hide: true } }, async () => withAuthEndpoints(app.swagger(), deps.auth, deps.registrationOpen));
 
-  await app.register(authHandler, { auth: deps.auth, registrationOpen: deps.registrationOpen, tokenAttempts: deps.tokenAttempts });
+  await app.register(authHandler, {
+    auth: deps.auth, registrationOpen: deps.registrationOpen, signupAttempts: deps.signupAttempts,
+  });
   // A process without a LISTEN connection serves no hints: no route means the client keeps polling (ADR 0066).
   if (deps.live.enabled) await app.register(liveRoutes, { auth: deps.auth, hub: deps.live.hub, ready: deps.live.ready });
   const { db, auth, assessments, baseUrl, passwordResets, tokenAttempts, logbook, divers, centres, dives, merging, checks } = deps;

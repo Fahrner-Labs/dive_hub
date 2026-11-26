@@ -55,7 +55,7 @@ export interface AuthOptions {
  */
 /**
  * AI accesses (ADR 0035) are Better Auth API keys: hashed, named, owned by one User. Their scopes are the key's
- * permissions (`{ logbook: ['read', 'positions'] }`). The plugin's own endpoints stay off HTTP (PUBLIC_AUTH_PATHS);
+ * permissions (`{ logbook: ['read', 'positions'] }`). The plugin's own endpoints stay off HTTP (publicAuthPaths);
  * src/mcp/access-service.ts calls them server-side.
  */
 export const AI_ACCESS_PREFIX = 'dh_';

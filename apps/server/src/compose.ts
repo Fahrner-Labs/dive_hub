@@ -30,7 +30,7 @@ import { createLive } from './live/service.js';
 import { createNotificationService } from './notifications/notification-service.js';
 import { createPushDispatcher } from './notifications/push-dispatcher.js';
 import { withRevisionHints } from './live/revision-hints.js';
-import { createAttemptLimit, TOKEN_ATTEMPTS } from './http/attempt-limit.js';
+import { createAttemptLimit, SIGNUP_ATTEMPTS, TOKEN_ATTEMPTS } from './http/attempt-limit.js';
 import { createLeadService } from './lead/lead-service.js';
 import { createAiAccessService } from './mcp/access-service.js';
 import { createPlanningService } from './planning/planning-service.js';
@@ -165,6 +165,8 @@ export function createServices({
     passwordResets: createPasswordResetService(db, mail),
     // One count per client IP across the public token routes (ADR 0061).
     tokenAttempts: createAttemptLimit(TOKEN_ATTEMPTS, clock ? () => clock.now() : undefined),
+    // Its own count, so a signup flood cannot exhaust the token routes' budget (hosted plan §6.2).
+    signupAttempts: createAttemptLimit(SIGNUP_ATTEMPTS, clock ? () => clock.now() : undefined),
     profiles: createProfileService(db),
     sessions: createSessionService(db),
     userAdmin: createUserAdminService(db, blobs),
