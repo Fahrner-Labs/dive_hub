@@ -1,5 +1,7 @@
 // MCP tools over Divers (ADR 0035): the Divers whose logbooks the User keeps, and who they dived with. Other Divers
-// are seen by name only (ADR 0028), and their names are shared text.
+// are seen by name only (ADR 0028), and their names are shared text. No tool here reads a contact detail (e-mail,
+// leader number, account ID, code), so ADR 0088's `shared` rule needs no further gate; the one predicate lives in
+// divers/diver-visibility.ts for anything that does.
 import { Type } from 'typebox';
 import { PARTICIPANT_ROLES } from '../db/schema.js';
 import { buddiesOf, diversOf } from './read-service.js';

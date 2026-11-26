@@ -71,3 +71,7 @@ export type EquipmentUse = (typeof EQUIPMENT_USES)[number];
 /** The clients that may register for background push (ADR 0085): one platform per push token, iOS and web later. */
 export const PUSH_PLATFORMS = ['android', 'ios', 'web'] as const;
 export type PushPlatform = (typeof PUSH_PLATFORMS)[number];
+
+/** Who may see a Diver's contact details (ADR 0088): every User of the instance, or only those who share a Dive. */
+export const DIVER_VISIBILITIES = ['instance', 'shared'] as const;
+export type DiverVisibility = (typeof DIVER_VISIBILITIES)[number];

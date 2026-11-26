@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import type { Auth } from './auth/auth.js';
 import type { Db } from './db/client.js';
 import type { FcmConfig } from './config.js';
+import type { DiverVisibility } from './vocabulary.js';
 import type { FastifyBaseLogger } from 'fastify';
 import { createAssessmentService } from './assessment/assessment-service.js';
 import { createBackupService, type BackupLog } from './backups/backup-service.js';
@@ -85,11 +86,13 @@ export interface ServiceParts {
   workerRunning?: () => boolean;
   /** FCM push config (ADR 0085); undefined turns push off and native clients keep polling. */
   fcm?: FcmConfig | undefined;
+  /** Who may see a Diver's contact details (ADR 0088); `instance` when not set, today's self-hosted behaviour. */
+  diverVisibility?: DiverVisibility | undefined;
 }
 
 export function createServices({
   db, blobs, auth, secrets, adapters, siteSources, clock, log, live: liveSettings, dataDir, databaseUrl, encryptionKey,
-  logBuffer = createLogRingBuffer({ stdout: { write: () => true } }), workerRunning, fcm,
+  logBuffer = createLogRingBuffer({ stdout: { write: () => true } }), workerRunning, fcm, diverVisibility,
 }: ServiceParts) {
   const assessments = createAssessmentService(db);
   const backupLog: BackupLog = {
@@ -109,7 +112,9 @@ export function createServices({
     appVersion: process.env.DIVEHUB_VERSION ?? 'dev', databaseUrl, dataDir, encryptionKey, clientDiagnostics,
     ...(workerRunning && { workerRunning }),
   });
-  const providers = createProviderLayer({ db, blobs, secrets, adapters, ...(clock && { clock }), ...(log && { log }) });
+  const providers = createProviderLayer({
+    db, blobs, secrets, adapters, ...(clock && { clock }), ...(log && { log }), diverVisibility,
+  });
   // Push hints queue in the same writing transactions as the SSE hints (ADR 0085); without FCM the dispatcher queues
   // nothing and the job is a no-op.
   const push = createPushDispatcher({ db, fcm });
@@ -142,7 +147,7 @@ export function createServices({
     logbook, dives, checks, merging,
     suggestions: createSuggestionService(db),
     offers: createOfferService(db),
-    divers: createDiverService(db),
+    divers: createDiverService(db, { visibility: diverVisibility }),
     equipment: createEquipmentService(db),
     centres: createCentreService(db, { ssi: ssiCentreDisplayName }),
     deletion: createDeletionService({ dives, logbook, pushes, waitingPushes }),

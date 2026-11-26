@@ -5,6 +5,7 @@ import type { FastifyRequest } from 'fastify';
 import { Type, type Static } from 'typebox';
 import type { Auth } from '../auth/auth.js';
 import { requireUser, userOf } from '../auth/fastify.js';
+import { callerOf } from '../http/caller.js';
 import {
   CYLINDER_MATERIALS, PARTICIPANT_ROLES, UTC_OFFSET_SOURCES,
 } from '../db/schema.js';
@@ -260,14 +261,14 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
   const viewOfKept = async (request: FastifyRequest, id: string) => {
     const row = await findDive(request, id);
     if (!row) throw new Error(`Dive ${id} is gone right after its change`);
-    return view(row, userOf(request).id);
+    return view(row, callerOf(request));
   };
   /** The Dive a stale If-Match is about, as the 412 carries it (undefined when it is gone). */
   const currentDive = async (request: FastifyRequest) => {
     const id = (request.params as { id?: string }).id;
     if (!id) return undefined;
     const row = await logbook.findManagedDive(userOf(request).id, id);
-    return row ? { dive: await view(row, userOf(request).id) } : undefined;
+    return row ? { dive: await view(row, callerOf(request)) } : undefined;
   };
 
   app.setErrorHandler(answerErrors(
@@ -283,7 +284,7 @@ export const diveRoutes: FastifyPluginAsyncTypebox<DiveRouteDeps> = async (app, 
   }, async (request, reply) => {
     const row = await findDive(request, request.params.id);
     if (!row) return reply.code(404).send(problem('dive_not_found'));
-    const found = await view(row, userOf(request).id);
+    const found = await view(row, callerOf(request));
     return setETag(reply, found.version).send(found);
   });
 

@@ -61,6 +61,8 @@ export async function start(config: Config) {
     live: { connectionString: config.databaseUrl },
     // Push is optional per instance (ADR 0085): no FCM credential means /api/push/config reports not configured.
     fcm: config.fcm,
+    // Who may see a Diver's contact details (ADR 0088): default `instance`, so a self-hosted image is unchanged.
+    diverVisibility: config.diverVisibility,
   });
   const startWorkerIfConfigured = async () => {
     if (!config.inProcessWorker || worker) return;

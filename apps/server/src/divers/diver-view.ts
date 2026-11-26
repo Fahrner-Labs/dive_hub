@@ -10,7 +10,10 @@ export const DiverDetailsViewSchema = Type.Object({
   external: Type.Boolean({ description: 'No User keeps its logbook' }),
   canEdit: Type.Boolean({ description: 'Whether the signed-in User may change the details: an external Diver, or one whose logbook they keep' }),
   firstName: Nullable(Type.String()), lastName: Nullable(Type.String()),
-  email: Nullable(Type.String({ description: 'Personal data every User of the instance sees (ADR 0043)' })),
+  email: Nullable(Type.String({
+    description: 'Personal data every User of the instance sees under DIVEHUB_DIVER_VISIBILITY=instance (ADR 0043); '
+      + 'null under shared for a User outside the Diver\'s circle (ADR 0088)',
+  })),
   leaderNumber: Nullable(Type.String()),
   accounts: Type.Array(Type.Object({ source: DiverSource, externalId: Type.String({ description: 'e.g. the SSI account, as the code holds it' }) })),
   codes: Type.Array(Type.Object({
@@ -19,17 +22,21 @@ export const DiverDetailsViewSchema = Type.Object({
     }),
     provider: Type.Enum(['ssi']),
     text: Type.String({ description: 'Draw this text, unchanged, as a QR code; never build or parse it (docs/spec/clients.md)' }),
-  }), { description: 'Empty while the account, a name or the e-mail is missing; the professional\'s only with a leader number' }),
+  }), { description: 'Empty while the account, a name or the e-mail is missing; the professional\'s only with a leader number; empty under shared for a User outside the Diver\'s circle (ADR 0088)' }),
 }, {
   $id: 'DiverDetailsView',
-  description: 'What a Diver\'s SSI buddy code says about the person, and the codes built from it. Seen by every User (ADR 0043, amending ADR 0028)',
+  description: 'What a Diver\'s SSI buddy code says about the person, and the codes built from it. Seen by every User under the default '
+    + 'DIVEHUB_DIVER_VISIBILITY=instance (ADR 0043, amending ADR 0028); under shared only by the Diver\'s circle, with the contact details hidden for everyone else (ADR 0088)',
 });
 export const DiverDetailsView = refTo(DiverDetailsViewSchema);
 
 export const ExternalDiverViewSchema = Type.Object({
   id: Type.String(),
   name: Type.String(),
-  accounts: Type.Array(DiverSource, { description: 'Services this person has an account at here (the account itself isn\'t shown)' }),
+  accounts: Type.Array(DiverSource, {
+    description: 'Services this person has an account at here (the account itself isn\'t shown); empty under DIVEHUB_DIVER_VISIBILITY=shared '
+      + 'for a User outside the Diver\'s circle (ADR 0088)',
+  }),
   inUse: Type.Boolean({ description: 'A Dive (of any User) lists this Diver; then it can\'t be deleted' }),
   canDelete: Type.Boolean({ description: 'Whether the signed-in User may delete it: whoever added it, or an admin' }),
 }, { $id: 'ExternalDiverView' });

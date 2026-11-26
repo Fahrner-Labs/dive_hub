@@ -5,6 +5,7 @@ import type { Static } from 'typebox';
 import { dive, type RecordingSummary } from '../db/schema.js';
 import type { CentreService } from '../centres/centre-service.js';
 import type { DiverService } from '../divers/diver-service.js';
+import type { Caller } from '../http/caller.js';
 import { recordingPosition } from '../sites/dive-site-link.js';
 import { sacOfDive } from './calc/sac.js';
 import { waterMismatch } from './calc/water.js';
@@ -27,13 +28,13 @@ const toValues = (v: DiveValues): Static<typeof ValuesSchema> => ({
 
 /** The view of a Dive for a User who manages its Diver; the same reads for the dive page and the list's details mode. */
 export const createDiveView = ({ logbook, centres, divers, certifications }: DiveViewDeps) =>
-  async (row: typeof dive.$inferSelect, userId: string): Promise<Static<typeof DiveView>> => {
+  async (row: typeof dive.$inferSelect, viewer: Caller): Promise<Static<typeof DiveView>> => {
     const { recordings: recs, site } = await logbook.recordingsAndSite(row);
     const primary = recs.find(({ r }) => r.id === row.primaryRecordingId)?.r;
     const { cylinders, lead } = await logbook.partsOf(row.id);
     const { sac, missing: sacMissing } = sacOfDive(row, cylinders);
     const participants = await logbook.participantsOfDive(row.id);
-    const certificationHints = await certifications.hintsFor(userId, participants.map((p) => p.diverId));
+    const certificationHints = await certifications.hintsFor(viewer.userId, participants.map((p) => p.diverId));
     return {
       id: row.id,
       diverId: row.diverId,
@@ -71,7 +72,7 @@ export const createDiveView = ({ logbook, centres, divers, certifications }: Div
       }),
       verificationCodes: [
         ...(await centres.codesOfDive(row.id)).map((c) => ({ kind: 'centre' as const, diver: null, ...c })),
-        ...(await divers.professionalCodesOfDive(row.id)).map((c) => ({ kind: 'professional' as const, centre: null, ...c })),
+        ...(await divers.professionalCodesOfDive(viewer, row.id)).map((c) => ({ kind: 'professional' as const, centre: null, ...c })),
       ],
     };
   };

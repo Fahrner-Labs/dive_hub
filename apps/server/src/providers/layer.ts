@@ -5,6 +5,7 @@ import type { Db, Tx } from '../db/client.js';
 import { createDiverService } from '../divers/diver-service.js';
 import type { SecretBox } from '../secrets/secret-box.js';
 import type { BlobStore } from '../storage/blob-store.js';
+import type { DiverVisibility } from '../vocabulary.js';
 import { createCertificationService } from '../certifications/certification-service.js';
 import type { CertificationProviders } from '../certifications/certification-providers.js';
 import { createBuddyService } from './buddies/buddy-service.js';
@@ -27,6 +28,8 @@ export function createProviderLayer(deps: {
   db: Db; secrets: SecretBox; blobs: BlobStore; adapters: ProviderAdapter[]; clock?: Clock;
   /** Where the worker's own faults go (the app's logger); without one, the console (consoleLog). */
   log?: ProviderLog;
+  /** Who may see a Diver's contact details (ADR 0088); instance when not set. */
+  diverVisibility?: DiverVisibility | undefined;
 }) {
   // Changes to Dives and sites reach the Waiting push queue (ADR 0056) and refresh the stored fingerprints the
   // logbook's chip compares (ADR 0040, amended) through the listener dives/ owns. Every site Revision also announces
@@ -60,7 +63,7 @@ export function createProviderLayer(deps: {
   listenToChanges(noteChanges);
   const pushRuns = createPushRunService({ db: deps.db, registry: providers, pushes, conflicts, log });
   const waitingPushes = createWaitingPushService({ db: deps.db, registry: providers, pushes, ...clock, log });
-  const buddies = createBuddyService({ db: deps.db, registry: providers, connections, divers: createDiverService(deps.db), log });
+  const buddies = createBuddyService({ db: deps.db, registry: providers, connections, divers: createDiverService(deps.db, { visibility: deps.diverVisibility }), log });
   const sitePicks = createSitePickService({ db: deps.db, registry: providers, connections });
   const diveImports = createDiveImportService({ db: deps.db, blobs: deps.blobs, registry: providers, connections, ...clock });
   const scheduledFetch = createScheduledFetch({ db: deps.db, registry: providers, diveImports, ...clock, log });

@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { parseEncryptionKey } from './secrets/secret-box.js';
+import { DIVER_VISIBILITIES, type DiverVisibility } from './vocabulary.js';
 
 /**
  * The public Firebase client config a native client initializes Firebase with (ADR 0085). None of these values is a
@@ -60,6 +61,12 @@ export interface Config {
   garminUrl: string | undefined;
   /** FCM push for native clients (ADR 0085); undefined means push is off and clients keep polling. */
   fcm: FcmConfig | undefined;
+  /**
+   * Who may see a Diver's contact details (ADR 0088): `instance` is every User of the instance (ADR 0043, the default,
+   * self-hosted unchanged); `shared` is the Diver's User, the User who added an external Diver, admins, and Users who
+   * share a Dive with it. Hosted instances set `shared`.
+   */
+  diverVisibility: DiverVisibility;
 }
 
 /** A JSON object given inline or as the path to a file, with the variable's name in every error (ADR 0085). */
@@ -136,6 +143,13 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     if (!Number.isInteger(value) || value < 0) throw new Error(`${name} must be a whole number, not ${env[name]}`);
     return value;
   };
+  const visibility = (): DiverVisibility => {
+    const value = get('DIVEHUB_DIVER_VISIBILITY') ?? 'instance';
+    if (!DIVER_VISIBILITIES.includes(value as DiverVisibility)) {
+      throw new Error(`DIVEHUB_DIVER_VISIBILITY must be ${DIVER_VISIBILITIES.join(' or ')}, not ${value}`);
+    }
+    return value as DiverVisibility;
+  };
   const production = env.NODE_ENV === 'production';
   const port = count('DIVEHUB_PORT', 3000);
   const baseUrl = get('DIVEHUB_BASE_URL') ?? (production ? required('DIVEHUB_BASE_URL') : `http://localhost:${port}`);
@@ -161,5 +175,6 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     ssiUrl: get('DIVEHUB_SSI_URL'),
     garminUrl: get('DIVEHUB_GARMIN_URL'),
     fcm: readFcmConfig(get),
+    diverVisibility: visibility(),
   };
 }
