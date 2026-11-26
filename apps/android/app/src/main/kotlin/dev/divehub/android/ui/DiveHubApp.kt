@@ -212,6 +212,8 @@ private class DiveHubScreens(
             checking = state.reachability is Reachability.Checking,
             error = error,
             onContinue = viewModel::useInstance,
+            // A known default keeps a way back to the cloud sign-in from the self-hosted address form (ADR 0090).
+            onUseDefault = if (state.instanceUrl != null) viewModel::cancelInstanceForm else null,
         )
     }
 
@@ -226,7 +228,7 @@ private class DiveHubScreens(
             busy = state.busy,
             reachability = state.reachability,
             error = state.error,
-            onChangeInstance = viewModel::changeInstance,
+            onChangeInstance = viewModel::connectToSelfHosted,
             onCheckInstance = viewModel::checkInstance,
             onSignIn = viewModel::signIn,
         )
@@ -445,9 +447,9 @@ internal fun InstanceForm(
     checking: Boolean,
     error: String?,
     onContinue: (String) -> Unit,
-    defaultAddress: String = BuildConfig.DEFAULT_INSTANCE_URL,
+    onUseDefault: (() -> Unit)? = null,
 ) {
-    var address by remember(defaultAddress) { mutableStateOf(defaultAddress) }
+    var address by remember { mutableStateOf("") }
     Column(
         Modifier
             .fillMaxSize()
@@ -482,6 +484,9 @@ internal fun InstanceForm(
                 Spacer(Modifier.width(8.dp))
             }
             Text(stringResource(R.string.instance_continue))
+        }
+        if (onUseDefault != null) {
+            TextButton(onClick = onUseDefault) { Text(stringResource(R.string.instance_back)) }
         }
     }
 }
@@ -523,7 +528,7 @@ internal fun SignInForm(
             Spacer(Modifier.width(8.dp))
             InstanceStatus(reachability, onCheckInstance)
         }
-        TextButton(onClick = onChangeInstance) { Text(stringResource(R.string.instance_change)) }
+        TextButton(onClick = onChangeInstance) { Text(stringResource(R.string.instance_self_hosted)) }
         Spacer(Modifier.height(8.dp))
         Text(stringResource(R.string.sign_in_about), style = MaterialTheme.typography.bodyLarge)
         Spacer(Modifier.height(16.dp))

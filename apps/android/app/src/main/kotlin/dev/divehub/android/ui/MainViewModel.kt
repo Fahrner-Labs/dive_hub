@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import dev.divehub.android.AppContainer
+import dev.divehub.android.BuildConfig
 import dev.divehub.api.models.UserView
 import dev.divehub.shared.DiveHubException
 import dev.divehub.shared.ErrorCodes
@@ -39,6 +40,8 @@ data class UiState(
     val loading: Boolean = true,
     val busy: Boolean = false,
     val instanceUrl: String? = null,
+    /** The User asked for a self-hosted address from the sign-in screen (ADR 0090); the URL input is shown. */
+    val showInstanceForm: Boolean = false,
     val user: UserView? = null,
     /** "metric", "imperial" or null: the User's choice, else the device's region. */
     val units: String? = null,
@@ -57,6 +60,11 @@ class MainViewModel(
     private val stopSync: () -> Unit,
     private val drainWrites: suspend () -> Unit = {},
     private val probeInstance: suspend (String) -> InstanceProbeResult = session::probeInstance,
+    /**
+     * The hosted instance the sign-in screen starts from when none is stored (ADR 0090). A blank build config means
+     * the app falls back to asking for an address.
+     */
+    private val defaultInstanceUrl: String? = InstanceUrl.normalize(BuildConfig.DEFAULT_INSTANCE_URL),
 ) : ViewModel() {
     constructor(container: AppContainer) : this(
         container.session,
@@ -86,8 +94,8 @@ class MainViewModel(
                 _state.update {
                     when (state) {
                         is SessionState.SignedIn -> it.copy(loading = false, instanceUrl = state.instanceUrl, user = state.user, units = state.preferences.units, updateRequired = false, pendingWarning = null)
-                        is SessionState.SignedOut -> it.copy(loading = false, instanceUrl = state.instanceUrl, user = null, units = null, updateRequired = false, pendingWarning = null)
-                        is SessionState.UpdateRequired -> it.copy(loading = false, instanceUrl = state.instanceUrl, user = null, units = null, updateRequired = true, pendingWarning = null)
+                        is SessionState.SignedOut -> it.copy(loading = false, instanceUrl = state.instanceUrl ?: defaultInstanceUrl, user = null, units = null, updateRequired = false, pendingWarning = null)
+                        is SessionState.UpdateRequired -> it.copy(loading = false, instanceUrl = state.instanceUrl ?: defaultInstanceUrl, user = null, units = null, updateRequired = true, pendingWarning = null)
                         SessionState.Loading -> it
                     }
                 }
@@ -120,25 +128,36 @@ class MainViewModel(
             val result = probeInstance(url)
             if (generation != probeGeneration) return@launch
             _state.update { current ->
-                // A newer address or "Change instance" won the race; leave its state alone.
-                if (current.instanceUrl != null && current.instanceUrl != url) {
-                    current
-                } else {
-                    when (result) {
-                        is InstanceProbeResult.Reachable ->
-                            current.copy(instanceUrl = url, reachability = Reachability.Reachable)
-                        is InstanceProbeResult.Unreachable ->
-                            current.copy(reachability = Reachability.Unreachable(result.code))
-                    }
+                when (result) {
+                    is InstanceProbeResult.Reachable ->
+                        current.copy(instanceUrl = url, reachability = Reachability.Reachable, showInstanceForm = false)
+                    is InstanceProbeResult.Unreachable ->
+                        current.copy(reachability = Reachability.Unreachable(result.code))
                 }
             }
         }
     }
 
-    /** The sign-in form's "Change instance": asks for a new address; there is no session to end there. */
-    fun changeInstance() {
+    /**
+     * The sign-in screen's secondary action: reveal the self-hosted address form (ADR 0090). The known instance stays,
+     * so [cancelInstanceForm] can return to the cloud sign-in.
+     */
+    fun connectToSelfHosted() {
         cancelProbe()
-        _state.update { it.copy(instanceUrl = null, error = null, reachability = Reachability.Unknown) }
+        _state.update { it.copy(showInstanceForm = true, error = null, reachability = Reachability.Unknown) }
+    }
+
+    /** Back from the self-hosted address form to the default sign-in, without touching the stored instance. */
+    fun cancelInstanceForm() {
+        cancelProbe()
+        _state.update {
+            it.copy(
+                showInstanceForm = false,
+                instanceUrl = it.instanceUrl ?: defaultInstanceUrl,
+                error = null,
+                reachability = Reachability.Unknown,
+            )
+        }
     }
 
     private fun cancelProbe() {
@@ -155,7 +174,8 @@ class MainViewModel(
                 SignOutOutcome.SignedOut -> _state.update {
                     it.copy(
                         busy = false,
-                        instanceUrl = null,
+                        instanceUrl = defaultInstanceUrl,
+                        showInstanceForm = true,
                         user = null,
                         units = null,
                         error = null,
@@ -272,7 +292,8 @@ class MainViewModel(
                 if (warning.changeInstance) {
                     it.copy(
                         busy = false,
-                        instanceUrl = null,
+                        instanceUrl = defaultInstanceUrl,
+                        showInstanceForm = true,
                         user = null,
                         units = null,
                         error = null,

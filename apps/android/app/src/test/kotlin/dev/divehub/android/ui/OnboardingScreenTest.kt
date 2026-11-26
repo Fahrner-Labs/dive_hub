@@ -7,14 +7,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
-import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextReplacement
-import dev.divehub.android.BuildConfig
 import dev.divehub.shared.ErrorCodes
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -39,21 +37,31 @@ class OnboardingScreenTest {
     }
 
     @Test
-    fun `the instance form starts from the build's default address`() {
-        renderBuildDefault()
+    fun `the instance form starts empty and waits for an address`() {
+        renderInstance(checking = false, error = null)
 
-        compose.onNode(hasSetTextAction()).assertTextContains(BuildConfig.DEFAULT_INSTANCE_URL)
-        compose.onNodeWithText("Continue").assertIsEnabled()
+        compose.onNodeWithText("Continue").assertIsNotEnabled()
     }
 
     @Test
-    fun `the prefilled default is handed to the check without editing`() {
+    fun `a typed address is handed to the check without editing`() {
         var entered: String? = null
-        renderInstance(checking = false, error = null) { entered = it }
+        renderInstance(checking = false, error = null, onContinue = { entered = it })
 
+        compose.onNode(hasSetTextAction()).performTextReplacement("dive.example")
         compose.onNodeWithText("Continue").performClick()
 
-        assertEquals(DEFAULT_INSTANCE, entered)
+        assertEquals("dive.example", entered)
+    }
+
+    @Test
+    fun `the back action returns to the default sign-in`() {
+        var backs = 0
+        renderInstance(checking = false, error = null, onUseDefault = { backs += 1 })
+
+        compose.onNodeWithText("Back").performClick()
+
+        assertEquals(1, backs)
     }
 
     @Test
@@ -73,14 +81,14 @@ class OnboardingScreenTest {
     }
 
     @Test
-    fun `a custom instance replaces the default and is handed to the check`() {
-        var entered: String? = null
-        renderInstance(checking = false, error = null) { entered = it }
+    fun `the sign-in form offers the self-hosted address as a secondary action`() {
+        var changes = 0
+        renderSignIn(Reachability.Reachable, onChangeInstance = { changes += 1 })
 
-        compose.onNode(hasSetTextAction()).performTextReplacement("dive.example")
-        compose.onNodeWithText("Continue").performClick()
+        compose.onNodeWithText("Connect to a self-hosted instance").assertIsDisplayed()
+        compose.onNodeWithText("Connect to a self-hosted instance").performClick()
 
-        assertEquals("dive.example", entered)
+        assertEquals(1, changes)
     }
 
     @Test
@@ -109,7 +117,7 @@ class OnboardingScreenTest {
     @Test
     fun `tapping the status checks the instance again`() {
         var checks = 0
-        renderSignIn(Reachability.Unreachable(ErrorCodes.NO_ANSWER)) { checks += 1 }
+        renderSignIn(Reachability.Unreachable(ErrorCodes.NO_ANSWER), onCheck = { checks += 1 })
 
         compose.onNodeWithText("Not reachable").performClick()
 
@@ -119,8 +127,8 @@ class OnboardingScreenTest {
     private fun renderInstance(
         checking: Boolean,
         error: String?,
-        defaultAddress: String = DEFAULT_INSTANCE,
         onContinue: (String) -> Unit = {},
+        onUseDefault: (() -> Unit)? = null,
     ) {
         compose.setContent {
             DiveHubTheme(darkTheme = false) {
@@ -129,24 +137,18 @@ class OnboardingScreenTest {
                         checking = checking,
                         error = error,
                         onContinue = onContinue,
-                        defaultAddress = defaultAddress,
+                        onUseDefault = onUseDefault,
                     )
                 }
             }
         }
     }
 
-    private fun renderBuildDefault() {
-        compose.setContent {
-            DiveHubTheme(darkTheme = false) {
-                Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-                    InstanceForm(checking = false, error = null, onContinue = {})
-                }
-            }
-        }
-    }
-
-    private fun renderSignIn(reachability: Reachability, onCheck: () -> Unit = {}) {
+    private fun renderSignIn(
+        reachability: Reachability,
+        onChangeInstance: () -> Unit = {},
+        onCheck: () -> Unit = {},
+    ) {
         compose.setContent {
             DiveHubTheme(darkTheme = false) {
                 Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
@@ -155,7 +157,7 @@ class OnboardingScreenTest {
                         busy = false,
                         reachability = reachability,
                         error = null,
-                        onChangeInstance = {},
+                        onChangeInstance = onChangeInstance,
                         onCheckInstance = onCheck,
                         onSignIn = { _, _ -> },
                     )
@@ -164,5 +166,3 @@ class OnboardingScreenTest {
         }
     }
 }
-
-private const val DEFAULT_INSTANCE = "https://cloud.divehub.example"

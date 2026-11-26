@@ -1,6 +1,6 @@
 ---
 title: "ADR 0090: Android default instance"
-summary: The Android app prefills the instance address from a build-config default (Dive Hub Cloud in the official build); the field stays editable, so custom instances remain one tap away and other distributions can ship their own default. Amends ADR 0074's "no fixed host".
+summary: The Android app signs in to Dive Hub Cloud by default: the first screen is the sign-in form against a build-config default, and a secondary action reveals the address field for a self-hosted instance. Other distributions can ship their own default. Amends ADR 0074's "no fixed host".
 status: proposed
 date: 2026-11-26
 ---
@@ -31,35 +31,40 @@ need their own sensible default.
 
 Forces:
 
-- A custom instance must stay one edit away; the app still has to reach any Dive Hub (ADR 0074).
-- The address the User types is authoritative. Nothing may quietly connect somewhere else.
+- A custom instance must stay reachable; the app still has to reach any Dive Hub (ADR 0074).
+- The address the User enters is authoritative. Nothing may quietly connect somewhere else.
 - The Android build already carries compile-time switches through `buildConfigField` (`SCANNER_ENABLED`,
   `EDIT_DIVE_SCALARS`), so a default address fits the existing mechanism.
-- A stored instance and a session must keep working exactly as before; the default is only the starting text of the
-  form shown when no instance is stored.
+- A stored instance and a session must keep working exactly as before. The default only decides first start, and
+  asking for an address must not be the first thing a new Dive Hub Cloud User sees.
 
 ## Decision
 - **`DEFAULT_INSTANCE_URL` is a build configuration field.** `apps/android/app/build.gradle.kts` puts it in
   `BuildConfig`; the official build sets it to the Dive Hub Cloud URL. A build can override it as a whole with the
   `divehub.defaultInstanceUrl` Gradle property, or for one build type with `divehub.defaultInstanceUrl.<buildType>`,
   so self-hosters and F-Droid-style builds can ship their own default without a code fork. A blank override means no
-  prefill.
-- **The instance form is prefilled with `BuildConfig.DEFAULT_INSTANCE_URL` whenever no instance is stored.**
-  *Continue* submits the prefilled value unchanged; the field remains editable, so a custom instance is one edit
-  away. The form still probes the address with the existing health check before asking for credentials (ADR 0074),
-  and nothing is stored until the User signs in.
+  default.
+- **The app starts on the sign-in screen for the default.** When no instance is stored, the sign-in form is the first
+  screen, pointed at `DEFAULT_INSTANCE_URL`; its existing health probe runs on show, so a wrong or stale default is
+  reported as "Not reachable" instead of failing as a misleading sign-in error. The User signs in without typing an
+  address.
+- **Self-hosting is a secondary action on the sign-in screen.** "Connect to a self-hosted instance" reveals the
+  address form; only then is the URL field shown. The form probes the address with the existing health check before
+  asking for credentials (ADR 0074), offers Back to the default sign-in while a default exists, and nothing is stored
+  until the User signs in.
+- **A build with no default keeps the old fallback.** With a blank default and nothing stored, the address form is
+  the first screen, exactly as before; there is nothing to sign in to yet.
 - **A stored instance always wins.** Once a User has connected, `InstanceUrlStore` is the source of truth and the
-  default is not shown. "Change instance" still ends the session and wipes the local data as today, then shows the
-  form with the default prefilled.
+  default is not shown. "Change instance" still ends the session and wipes the local data as today, then opens the
+  address form, with the default sign-in one tap back.
 - Nothing else changes: no fixed host is baked into the session, sync, push or deep-link paths, and the server-side
   hosted configuration (ADR 0087, landed with FAH-527) is untouched.
 
 ## Consequences
-- The official app is one tap from sign-in on first start (and when changing instance), while a self-hoster still
-  types their address once.
+- The official app opens on a ready sign-in for Dive Hub Cloud, while a self-hoster opts into the address field.
 - The default is packaging, not behaviour: the same source can build the cloud app, a self-hosted app and an
   F-Droid-style app from one branch.
-- A wrong or stale default is a non-resolving address that the health probe rejects with the existing
-  "not a Dive Hub" answer; it never becomes a silent redirect.
+- A wrong or stale default is a non-resolving address that the sign-in screen's health probe rejects with the
+  existing "not a Dive Hub" answer; it never becomes a silent redirect, and the self-hosted path stays available.
 - The placeholder constant must be replaced with the owner-confirmed cloud URL before the official build ships, and
   a release with the placeholder cannot reach Dive Hub Cloud.

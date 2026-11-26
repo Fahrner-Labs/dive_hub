@@ -387,7 +387,7 @@ fun `without a stored token or instance the sign-in form shows and no request is
 }
 
     @Test
-    fun `the prefilled default is not a stored instance and is saved by sign-in`() = runTest {
+    fun `signing in to the default instance stores it`() = runTest {
         val default = "https://cloud.divehub.example"
         val harness = Harness(tokens = FakeTokens(null), instances = FakeInstances(null)) { request ->
             when (request.url.encodedPath) {
