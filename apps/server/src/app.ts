@@ -6,6 +6,7 @@ import swagger from '@fastify/swagger';
 import type { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import { sql } from 'drizzle-orm';
 import { authHandler } from './auth/fastify.js';
+import { billingRoutes } from './billing/routes.js';
 import { liveRoutes } from './live/routes.js';
 import { notificationRoutes } from './notifications/routes.js';
 import type { Services } from './compose.js';
@@ -138,6 +139,9 @@ export async function buildApp(deps: AppDeps, app: Server = createServer()) {
   await app.register(supportRoutes, { prefix: '/api', auth, support: deps.support });
   await app.register(clientDiagnosticsRoutes, { prefix: '/api', auth, clientDiagnostics: deps.clientDiagnostics });
   await app.register(syncRoutes, { prefix: '/api', auth, sync: deps.sync });
+  // Billing exists only on an instance with DIVEHUB_BILLING_PROVIDER set; the webhook is unauthenticated but signed
+  // (ADR 0089). Without the config there is no route at all, the dual-track invariant.
+  if (deps.billing) await app.register(billingRoutes, { prefix: '/api', auth, billing: deps.billing });
   await app.register(importRoutes, { prefix: '/api', auth, imports: deps.imports, waitingPushes, maxUploadBytes: deps.maxUploadBytes });
   await app.register(logbookRoutes, { prefix: '/api', auth, logbook, pushes, waitingPushes, centres, divers, certifications });
   // dives owns the shapes it needs (dives/provider-port.ts); this is where the real Provider answerer is wired in.

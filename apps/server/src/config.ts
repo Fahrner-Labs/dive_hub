@@ -79,9 +79,19 @@ export interface Config {
   billing: BillingConfig | undefined;
 }
 
-/** Billing (hosted-DiveHub plan §4, ADR 0087): unset means every feature is free and no entitlement gate runs. */
+/**
+ * Billing (hosted-DiveHub plan §4, ADR 0087): unset means every feature is free and no entitlement gate runs. Paddle is
+ * the merchant of record; its API key decides sandbox (`_sdbx`) or live, so the same image runs the NAS beta in
+ * sandbox and the VPS with live keys (ADR 0089).
+ */
 export interface BillingConfig {
   provider: 'paddle';
+  /** Paddle API key (`pdl_sdbx_…` for sandbox, `pdl_live_…` for live). Never reaches a client. */
+  apiKey: string;
+  /** The notification destination's secret (`pdl_ntfset_…`), which signs every webhook. */
+  webhookSecret: string;
+  /** The recurring price IDs that mean "pro"; the first is the one checkout offers. */
+  priceIds: string[];
 }
 
 /** A JSON object given inline or as the path to a file, with the variable's name in every error (ADR 0085). */
@@ -187,12 +197,25 @@ function readSiteSources(get: (name: string) => string | undefined): ImportSourc
 /**
  * The billing provider (DIVEHUB_BILLING_PROVIDER, ADR 0087). Unset is the self-hosted default: every feature is free.
  * Paddle is the only provider so far; an unknown name stops the boot rather than silently leaving the paywall off or on.
+ * Setting it needs the three Paddle values too: a half-configured instance would either fail every checkout or, worse,
+ * run the entitlement gates with no way to pay, so it stops the boot and names what is missing (like FCM and mail).
  */
 function readBillingConfig(get: (name: string) => string | undefined): BillingConfig | undefined {
   const provider = get('DIVEHUB_BILLING_PROVIDER');
   if (!provider) return undefined;
   if (provider !== 'paddle') throw new Error(`DIVEHUB_BILLING_PROVIDER must be paddle, not ${provider}`);
-  return { provider };
+  const apiKey = get('DIVEHUB_PADDLE_API_KEY');
+  const webhookSecret = get('DIVEHUB_PADDLE_WEBHOOK_SECRET');
+  const priceIds = (get('DIVEHUB_PADDLE_PRICE_IDS') ?? '').split(',').map((id) => id.trim()).filter(Boolean);
+  const missing = [
+    !apiKey && 'DIVEHUB_PADDLE_API_KEY',
+    !webhookSecret && 'DIVEHUB_PADDLE_WEBHOOK_SECRET',
+    priceIds.length === 0 && 'DIVEHUB_PADDLE_PRICE_IDS',
+  ].filter(Boolean);
+  if (missing.length > 0) {
+    throw new Error(`Set ${missing.join(' and ')} too, or leave DIVEHUB_BILLING_PROVIDER unset to keep every feature free`);
+  }
+  return { provider, apiKey: apiKey!, webhookSecret: webhookSecret!, priceIds };
 }
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {

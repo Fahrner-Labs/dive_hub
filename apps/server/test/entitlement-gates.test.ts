@@ -39,7 +39,11 @@ describe.skipIf(!(await databaseReachable()))('the entitlement gates', () => {
 
   beforeAll(async () => {
     t = await createTestDatabase();
-    ctx = await createTestApp(t, { extraProviders: [ledger.adapter], billing: { provider: 'paddle' } });
+    ctx = await createTestApp(t, {
+      extraProviders: [ledger.adapter],
+      // Only the paywall is under test; these Paddle values never reach the network because no billing route is called.
+      billing: { provider: 'paddle', apiKey: 'pdl_sdbx_test', webhookSecret: 'pdl_ntfset_test', priceIds: ['pri_test'] },
+    });
     await createUser(ctx.auth, 'ann@example.com');
     ann = await signIn(ctx.app, 'ann@example.com');
     annId = ((await t.db.execute(sql`select id from "user" where email = 'ann@example.com'`)).rows[0] as { id: string }).id;
