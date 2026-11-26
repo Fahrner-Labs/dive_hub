@@ -133,13 +133,13 @@ test('a page runs the typecheck, the web tests related to it and its areas with 
 });
 
 test('documentation runs nothing; shared code of an app runs its tests and every browser test; an unknown path everything', () => {
-  assert.deepEqual(planFor(['docs/index.md', 'README.md', 'SECURITY.md']), { typecheck: false, lint: 'none', scripts: false, server: 'none', web: 'none', android: false, e2e: 'none', areas: new Set(), specs: new Set(), notes: [] });
+  assert.deepEqual(planFor(['docs/index.md', 'README.md', 'SECURITY.md', 'CONTRIBUTING.md']), { typecheck: false, lint: 'none', scripts: false, server: 'none', web: 'none', android: false, e2e: 'none', areas: new Set(), specs: new Set(), notes: [] });
 
   const shared = planFor(['apps/web/src/api.ts']);
   assert.deepEqual([shared.server, shared.web, shared.e2e], ['none', 'all', 'all']);
 
   const unknown = planFor(['pnpm-lock.yaml']);
-  assert.deepEqual([unknown.typecheck, unknown.lint, unknown.server, unknown.web, unknown.android, unknown.e2e], [true, 'all', 'all', 'all', true, 'all']);
+  assert.deepEqual([unknown.typecheck, unknown.lint, unknown.scripts, unknown.server, unknown.web, unknown.android, unknown.e2e], [true, 'all', true, 'all', 'all', true, 'all']);
 });
 
 test('a web unit or component test runs itself, without browser tests', () => {
@@ -466,7 +466,7 @@ test('PR #5 replayed: a change to e2e/support.ts alone plans no browser tests in
 });
 
 test('the check scripts run their own tests only; the lint script also lints everything; one-off scripts and licences are quiet', () => {
-  for (const path of ['scripts/check.mjs', 'scripts/check-lib.mjs', 'scripts/check-lib.test.mjs', 'scripts/check-run.mjs', 'scripts/check-log.mjs', 'scripts/check-tags.mjs', 'scripts/repomap.mjs', 'scripts/repomap.test.mjs', 'scripts/code-graph.mjs', 'scripts/code-graph.test.mjs', 'scripts/release-tag.mjs', 'scripts/release-tag.test.mjs', 'scripts/android-version-code.mjs', 'scripts/android-version-code.test.mjs', 'scripts/generate-android-api.test.mjs']) {
+  for (const path of ['scripts/check.mjs', 'scripts/check-lib.mjs', 'scripts/check-lib.test.mjs', 'scripts/check-run.mjs', 'scripts/check-log.mjs', 'scripts/check-tags.mjs', 'scripts/repomap.mjs', 'scripts/repomap.test.mjs', 'scripts/code-graph.mjs', 'scripts/code-graph.test.mjs', 'scripts/release-tag.mjs', 'scripts/release-tag.test.mjs', 'scripts/android-version-code.mjs', 'scripts/android-version-code.test.mjs', 'scripts/generate-android-api.test.mjs', 'scripts/license-scan.mjs', 'scripts/license-scan.test.mjs']) {
     const plan = planFor([path]);
     assert.deepEqual([plan.scripts, plan.typecheck, plan.lint, plan.server, plan.web, plan.e2e], [true, false, 'none', 'none', 'none', 'none'], path);
   }

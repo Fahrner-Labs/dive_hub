@@ -50,6 +50,8 @@ export const keys = {
   centres: ['centres'] as const,
   centre: (id: string) => ['centres', id] as const,
   siteImports: ['site-imports'] as const,
+  /** The site sources this instance enables (DIVEHUB_SITE_SOURCES, ADR 0087). */
+  siteSources: ['site-sources'] as const,
   /** Admin backups (plan FAH-175): the run list, and the scheduled-backup setting under it. */
   backups: ['backups'] as const,
   backupSettings: ['backups', 'settings'] as const,

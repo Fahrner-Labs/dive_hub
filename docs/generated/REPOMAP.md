@@ -4,15 +4,15 @@
 > `pnpm check` fails when this map is stale. Symbols are ranked by how widely the code references them;
 > each module shows its most-referenced ones (exported symbols rank higher). Search here before walking the tree.
 
-Files: 434 · symbols: 3991 · shown: 251
+Files: 434 · symbols: 3996 · shown: 252
 
 ### server/(root)
 apps/server/src/vocabulary.ts:13 type SiteWaterType
 apps/server/src/errors.ts:2 const errorMessage
-apps/server/src/vocabulary.ts:12 const SITE_WATER_TYPES
 apps/server/src/vocabulary.ts:51 type ImportSource
-apps/server/src/config.ts:26 iface FcmConfig
-… 57 more symbols in this module
+apps/server/src/vocabulary.ts:12 const SITE_WATER_TYPES
+apps/server/src/config.ts:27 iface FcmConfig
+… 58 more symbols in this module
 
 ### server/assessment
 apps/server/src/assessment/rules.ts:50 const RULES
@@ -109,8 +109,8 @@ apps/server/src/equipment/due.ts:86 const round
 apps/server/src/http/schemas.ts:10 const Nullable
 apps/server/src/http/schemas.ts:5 const DateTime
 apps/server/src/http/schemas.ts:4 const IdParams
-apps/server/src/http/problems.ts:200 const Problem
-apps/server/src/http/problems.ts:203 const problem
+apps/server/src/http/problems.ts:201 const Problem
+apps/server/src/http/problems.ts:204 const problem
 … 33 more symbols in this module
 
 ### server/imports
@@ -232,8 +232,8 @@ apps/server/src/sites/site-ids.ts:62 fn idsOf
 apps/server/src/sites/import/site-source.ts:35 iface SiteSourceAdapter
 apps/server/src/sites/site-error.ts:4 class SiteError
 apps/server/src/sites/site-view.ts:53 const SiteView
-apps/server/src/sites/import/site-source.ts:41 class SiteSourceError
 apps/server/src/sites/import/site-source.ts:27 iface SourceSite
+apps/server/src/sites/import/site-source.ts:41 class SiteSourceError
 apps/server/src/sites/sources.ts:10 const SITE_SOURCES
 apps/server/src/sites/sources.ts:33 const SOURCE_INFO
 … 168 more symbols in this module
@@ -304,7 +304,7 @@ apps/web/src/ImportPanel.tsx:39 const ImportContext
 apps/web/src/ReviewRows.tsx:6 iface Fact
 apps/web/src/SignedOut.tsx:20 fn useUserChanged
 apps/web/src/ProfilePlot.tsx:14 fn withAlpha
-… 525 more symbols in this module
+… 527 more symbols in this module
 
 ### web/api
 apps/web/src/api/request.ts:3 const api
@@ -316,8 +316,9 @@ apps/web/src/api/divers.ts:18 const diversQuery
 apps/web/src/api/dives.ts:12 type DiveView
 apps/web/src/api/providers.ts:7 type ProviderView
 apps/web/src/api/dives.ts:16 type RecordingSummary
+apps/web/src/api/sites.ts:16 type SiteSource
 apps/web/src/api/sites.ts:8 type Position
-… 190 more symbols in this module
+… 191 more symbols in this module
 
 ### web/i18n
 apps/web/src/i18n/languages.ts:6 fn pickLanguage

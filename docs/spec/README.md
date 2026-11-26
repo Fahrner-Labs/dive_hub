@@ -59,7 +59,9 @@ vendor or platform.
   plus PostgreSQL, deployed with Docker Compose; built-in accounts, OIDC later
   ([ADR 0004](../decisions/0004-system-architecture.md), [architecture](architecture.md)).
 - **Stack:** TypeScript end-to-end, React web client ([ADR 0005](../decisions/0005-typescript-stack.md)).
-- **License:** Apache-2.0; the published image uses an MIT FIT parser, Garmin's SDK only in tests
+- **License:** source-available under BUSL 1.1, becoming Apache-2.0 four years after each release; self-hosting,
+  including dive clubs and centres running it for their members, is always allowed ([ADR 0086](../decisions/0086-busl-1-1-with-apache-2-0-change-license.md)).
+  The published image uses an MIT FIT parser, Garmin's SDK only in tests
   ([ADR 0006](../decisions/0006-license-apache-2-and-fit-parser.md)).
 
 ## Sources (inbound)

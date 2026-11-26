@@ -74,7 +74,8 @@ export interface ServiceParts {
   encryptionKey?: Buffer | undefined;
   /** The Providers of this instance (ADR 0027): the production SSI, or the fake and test-only ones. */
   adapters: ProviderAdapter[];
-  siteSources: Record<ImportSource, SiteSourceAdapter>;
+  /** The enabled Site Sources (DIVEHUB_SITE_SOURCES, ADR 0087); a missing key is a Source this instance does not offer. */
+  siteSources: Partial<Record<ImportSource, SiteSourceAdapter>>;
   /** The clock of leases and attempt limits (default: real time). */
   clock?: Clock;
   /** Where the provider layer's own faults go (the app's logger). */

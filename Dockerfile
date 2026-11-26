@@ -31,7 +31,7 @@ ENV NODE_ENV=production \
 LABEL org.opencontainers.image.version=$DIVEHUB_VERSION \
       org.opencontainers.image.source=https://github.com/Fahrner-Labs/dive_hub \
       org.opencontainers.image.revision=$DIVEHUB_REVISION \
-      org.opencontainers.image.licenses=Apache-2.0
+      org.opencontainers.image.licenses=BUSL-1.1
 WORKDIR /app
 # Production dependencies only: Garmin's FIT SDK is a dev dependency and must not ship (ADR 0006).
 COPY --from=build /out/node_modules ./node_modules
