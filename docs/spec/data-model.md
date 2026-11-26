@@ -84,7 +84,11 @@ These apply to every entity unless stated otherwise. They close gaps A2, A3, A5 
 ### People and accounts
 
 **User** — sign-in identity, preferences (units, default Visibility), instance role
-(admin or regular; more roles are an open question).
+(admin or regular; more roles are an open question), and whether the e-mail address is verified.
+
+**Consent** — what a self-registered User accepted and when (`user_consent`: User, kind `terms` or `privacy`, the
+version in force, `accepted_at`), one row per kind and version. It records the acceptance as a fact for GDPR.
+Invited and setup Users have none: an admin vouched for them.
 
 **Diver** — personal data (name, birth date, contact details, emergency contact), plus
 merge pointer (`merged into`) for the claim case. A Diver either has a logbook

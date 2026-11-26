@@ -1,7 +1,7 @@
 // The mail module (hosted plan §6.1): the invitation and reset messages a User reads, and the Resend sender behind the
 // MailProvider seam. The sender is tested against a stand-in endpoint, so no real mail leaves the process.
 import { describe, expect, it } from 'vitest';
-import { invitationMail, passwordResetMail } from '../src/mail/messages.js';
+import { invitationMail, passwordResetMail, verificationMail } from '../src/mail/messages.js';
 import { createResendMailProvider, RESEND_URL, type MailFetch } from '../src/mail/resend.js';
 
 const invitation = () => invitationMail({
@@ -27,6 +27,16 @@ describe('invitation and reset messages', () => {
     expect(mail.text).toContain('https://dives.example.com/#/reset/xyz789');
     expect(mail.text).toMatch(/works once/i);
     expect(mail.text).toMatch(/password stays/i);
+  });
+
+  it('carries the verification link for a self-serve signup', () => {
+    const mail = verificationMail({
+      to: 'new@example.com', url: 'https://dives.example.com/api/auth/verify-email?token=abc&callbackURL=%2F',
+    });
+    expect(mail.to).toBe('new@example.com');
+    expect(mail.subject).toMatch(/verify/i);
+    expect(mail.text).toContain('https://dives.example.com/api/auth/verify-email?token=abc&callbackURL=%2F');
+    expect(mail.text).toMatch(/works once/i);
   });
 });
 

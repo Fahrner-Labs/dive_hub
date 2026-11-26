@@ -84,7 +84,11 @@ possible.
 ## Authentication
 
 Built-in accounts (e-mail + password) with Better Auth ([ADR 0011](../decisions/0011-better-auth.md)),
-invite-only, first admin from a setup token ([ADR 0012](../decisions/0012-invitations-and-admin-bootstrap.md)).
+invite-only by default, first admin from a setup token ([ADR 0012](../decisions/0012-invitations-and-admin-bootstrap.md)).
+An instance can open self-serve signup with `DIVEHUB_REGISTRATION_OPEN=true` (hosted plan §6.2,
+[ADR 0087](../decisions/0087-hosted-instance-configuration.md)): a new User accepts the Terms of Service and Privacy
+Policy (recorded per version in `user_consent`) and verifies their address by mail before signing in. Invitations
+stay available on both tracks.
 Sessions are stored in the database. The web client uses an `HttpOnly`, `SameSite=Lax` cookie on the same origin;
 native clients use the bearer plugin ([ADR 0074](../decisions/0074-bearer-tokens-for-native-clients.md)). OIDC (Authentik, Authelia, Keycloak, …) is planned for later.
 LLM clients reach the MCP endpoint `/mcp` with the key of an AI access instead of a session ([ADR 0035](../decisions/0035-mcp-connector.md)): off until an admin
@@ -108,6 +112,7 @@ the URL fragment. A failed send never drops the link.
 | `DIVEHUB_OVERPASS_URL`, `DIVEHUB_WIKIDATA_SPARQL_URL` | Optional: other endpoints for Site imports (default `overpass-api.de`, `query.wikidata.org`). |
 | `DIVEHUB_SSI_SITES_URL` | Optional: another address for SSI's site list (default `api.divessi.com/app/APP_CACHE_SITES.zip`, ADR 0025). |
 | `DIVEHUB_EMAIL_PROVIDER`, `DIVEHUB_EMAIL_API_KEY`, `DIVEHUB_EMAIL_FROM` | Optional transactional mail (hosted plan §6.1): all three set means Resend sends invitation and self-serve reset links; any unset keeps the copy links (ADR 0012, 0013). The API key is a secret. |
+| `DIVEHUB_REGISTRATION_OPEN` | Optional: `true` exposes `sign-up/email`, `verify-email` and `send-verification-email` and requires a verified address before sign-in (hosted plan §6.2, [ADR 0087](../decisions/0087-hosted-instance-configuration.md)). Needs the `DIVEHUB_EMAIL_*` values and stops the server at start without them; unset keeps the four-endpoint, invite-only surface. |
 
 ## Dive site imports and licenses
 
@@ -208,8 +213,9 @@ Implemented:
 - Admins change roles, disable/enable Users, sign Users out everywhere, and delete Users with
   everything only they own, including stored files no one else shares.
 - There is always one enabled admin (row locks against simultaneous demotion).
-- Only `sign-in/email`, `sign-out`, `get-session` and `change-password` of Better Auth are reachable
-  over HTTP; they are described in our OpenAPI document.
+- By default only `sign-in/email`, `sign-out`, `get-session` and `change-password` of Better Auth are
+  reachable over HTTP; they are described in our OpenAPI document. `DIVEHUB_REGISTRATION_OPEN=true` adds
+  `sign-up/email`, `verify-email` and `send-verification-email` (hosted plan §6.2).
 - Web client: account page (password, sessions), reset page, admin actions per User.
 
 Deliberate simplifications, to revisit:
