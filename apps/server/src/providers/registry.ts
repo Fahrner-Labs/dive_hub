@@ -62,7 +62,7 @@ export type ProviderRefusal =
   | 'provider_unsupported' | 'provider_wrong_credentials' | 'provider_already_connected' | 'provider_account_taken' | 'provider_account_held'
   | 'provider_other_account' | 'provider_not_connected' | 'provider_sign_in_needed' | 'provider_requirements_unmet' | 'provider_not_sent'
   | 'provider_dive_gone' | 'provider_busy' | 'provider_number_taken' | 'provider_numbers_off' | 'provider_number_nothing_to_set'
-  | 'provider_site_unknown' | 'provider_buddy_not_found' | 'provider_import_off'
+  | 'provider_site_unknown' | 'provider_buddy_not_found' | 'provider_import_off' | 'entitlement_required'
   | 'provider_unavailable' | 'provider_refused' | 'provider_not_stored'
   | 'push_run_active' | 'push_run_nothing_to_send' | 'push_run_not_found' | 'push_run_not_active' | 'push_run_going' | 'push_run_not_stopped';
 

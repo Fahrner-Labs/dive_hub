@@ -72,6 +72,8 @@ export async function start(config: Config) {
     email: config.email,
     registrationOpen: config.registrationOpen,
     baseUrl: config.baseUrl,
+    // Billing is optional per instance (ADR 0087): unset keeps every feature free and the entitlement gates inert.
+    billing: config.billing,
   });
   const startWorkerIfConfigured = async () => {
     if (!config.inProcessWorker || worker) return;

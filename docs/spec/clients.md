@@ -1012,7 +1012,8 @@ repeatedly).
 - **Report what was not sent** from `items` (`state` `skipped` with a `reason`: `exists`, `requirements_unmet`, `up_to_date`,
   `update_not_chosen`, `removes_verification`, `update_unsupported`, `dive_not_found`, `number_taken`; `failed` with a problem
   code), each with the Dive.
-- **One run per Connection at a time:** `push_run_active` carries the `runId` of the one that goes; show it instead of an error.
+- **One run per Connection at a time:** On a hosted instance with billing, the preview and the start answer 402
+  `entitlement_required` with `offer` (`plan`, `features`) without the paid plan; show the upsell from it. `push_run_active` carries the `runId` of the one that goes; show it instead of an error.
   Other codes: `push_run_nothing_to_send`, `push_run_not_found`, `push_run_not_active`, `push_run_not_stopped`,
   `push_run_going` (dismissing a run that goes). The last five runs of a Connection are kept.
 - **Make a run findable from every page, and list the earlier ones** (slice 25d): while a run goes, mark it where the User
@@ -1137,6 +1138,9 @@ dives, all off until the User turns them on. *Web:* `ProviderAutomation.tsx` (se
   `limits.fetchEveryMinutes` is the shortest, already applied). Turning one on queues nothing that changed before. 400
   `provider_unsupported` (the Provider can't) and 400 `fetch_interval_too_short` (below its minimum) are translated; turning
   off is always accepted. The fetch also needs the Connection's import mode "link and fill" or "also create".
+  On a hosted instance with billing, turning a setting **on** without the paid plan answers 402 `entitlement_required`
+  with `offer` (`plan`, and the `features` it unlocks: `automation`, `push_runs`); show the upsell from it. Turning off
+  stays accepted, so a downgraded User can always stop it.
 - **Must show the state of a Dive's Waiting push** (`waiting` on each row of `GET /api/dives`, on `GET /api/dives/{id}/providers`
   and `.../{provider}` as `waiting` (one or null), and on deleted dives): a list row gets a small icon (`aria-hidden`, with a
   text label), the Dive's page the words, next to Send. Texts with `{{provider}}` the Provider's name:
@@ -1730,7 +1734,9 @@ Rules that only the web client kept. Both moved to the server on 2026-10-04, so 
 
 ## For the mobile client
 - Authentication: bearer tokens, decided in [ADR 0074](../decisions/0074-bearer-tokens-for-native-clients.md).
-  Still open: how a phone finds a self-hosted instance beyond typing its URL at first start.
+  The Android app starts on sign-in for a build-config default instance, Dive Hub Cloud in the official build, and
+  offers a self-hosted address as a secondary action ([ADR 0090](../decisions/0090-android-default-instance.md)).
+  Still open: how a phone finds a self-hosted instance without its URL.
 - Offline use: **writeable**. Reads come from the on-device read store ([Offline reads](#offline-reads-native-client)),
   kept current by the change feed ([ADR 0083](../decisions/0083-change-feed-and-incremental-sync.md)); writes go
   through the offline write queue with user-decided Conflicts

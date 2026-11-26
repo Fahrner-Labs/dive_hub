@@ -4,6 +4,7 @@
 import type { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
 import type { Auth } from '../auth/auth.js';
 import type { AssessmentRefresh } from '../dives/assessment-refresh.js';
+import type { EntitlementService } from '../entitlement/entitlement.js';
 import { requireUser } from '../auth/fastify.js';
 import { answerErrors } from '../http/problems.js';
 import type { CertificationService } from '../certifications/certification-service.js';
@@ -43,14 +44,15 @@ export interface ProviderRouteDeps {
   conflicts: ConflictService;
   certifications: CertificationService;
   assessments: AssessmentRefresh;
+  entitlements: EntitlementService;
 }
 
-export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = async (app, { auth, providers, connections, pushes, pushRuns, buddies, sitePicks, diveImports, goneDives, waitingPushes, scheduledFetch, conflicts, certifications, assessments }) => {
+export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = async (app, { auth, providers, connections, pushes, pushRuns, buddies, sitePicks, diveImports, goneDives, waitingPushes, scheduledFetch, conflicts, certifications, assessments, entitlements }) => {
   app.addHook('onRequest', requireUser(auth));
   // Linking and adding a buddy refuse as the Diver routes do.
   app.setErrorHandler(answerErrors(answerProviderError, replyCertificationError, replyDiverError));
 
-  await app.register(pushRunRoutes, { pushRuns });
+  await app.register(pushRunRoutes, { pushRuns, entitlements });
   await app.register(connectionRoutes, { providers, connections, diveImports, waitingPushes, conflicts, scheduledFetch });
   await app.register(accountRoutes, { buddies, certifications });
   await app.register(diveImportRoutes, { diveImports });

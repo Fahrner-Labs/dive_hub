@@ -179,6 +179,29 @@ export const userPreference = pgTable('user_preference', {
   updatedAt: updatedAt(),
 });
 
+/**
+ * A User's paid plan (hosted-DiveHub plan §4.2, ADR 0087): one row per User, written by the billing webhook. No row
+ * means the free plan. `plan` is 'free' or 'pro'; `status` is 'none', 'active', 'past_due' or 'canceled'. Paid features
+ * are `pro` and active/past due, or canceled until `current_period_end` (see entitlement/entitlement.ts). No column here
+ * anticipates hubs: Phase-2 hub billing gets its own table.
+ */
+export const userEntitlement = pgTable(
+  'user_entitlement',
+  {
+    userId: uuid('user_id').primaryKey().references(() => user.id, { onDelete: 'cascade' }),
+    plan: text('plan').notNull(),
+    status: text('status').notNull(),
+    paddleCustomerId: text('paddle_customer_id'),
+    paddleSubscriptionId: text('paddle_subscription_id'),
+    currentPeriodEnd: timestamp('current_period_end', { withTimezone: true }),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    uniqueIndex('user_entitlement_paddle_customer_uq').on(t.paddleCustomerId),
+    uniqueIndex('user_entitlement_paddle_subscription_uq').on(t.paddleSubscriptionId),
+  ],
+);
+
 export const pushPlatform = pgEnum('push_platform', [...PUSH_PLATFORMS]);
 
 /**

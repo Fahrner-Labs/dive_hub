@@ -5,7 +5,10 @@
 import { fileURLToPath } from 'node:url';
 import type { Auth } from './auth/auth.js';
 import type { Db } from './db/client.js';
-import type { EmailConfig, FcmConfig } from './config.js';
+import type { BillingConfig, EmailConfig, FcmConfig } from './config.js';
+import { createBillingService } from './billing/billing-service.js';
+import type { PaddleFetch } from './billing/paddle.js';
+import { createEntitlementService, type EntitlementService } from './entitlement/entitlement.js';
 import { createMailLinks } from './mail/links.js';
 import { createMailProvider, type MailFetch } from './mail/resend.js';
 import type { FastifyBaseLogger } from 'fastify';
@@ -99,6 +102,12 @@ export interface ServiceParts {
   mailFetch?: MailFetch;
   /** Resend's endpoint; only tests point it elsewhere. */
   mailUrl?: string;
+  /** Billing (hosted-DiveHub plan §4, ADR 0087); undefined makes every feature free and the entitlement gates inert. */
+  billing?: BillingConfig | undefined;
+  /** Where Paddle's HTTP goes; tests pass a stand-in, production the global fetch. */
+  paddleFetch?: PaddleFetch;
+  /** Paddle's API base; only tests point it elsewhere (production derives sandbox/live from the key). */
+  paddleUrl?: string;
 }
 
 /** Transactional mail for this instance, or nothing when `DIVEHUB_EMAIL_*` is unset (hosted plan §6.1). */
@@ -113,11 +122,24 @@ function createMail(options: {
   return createMailLinks({ mailer, baseUrl: options.baseUrl });
 }
 
+/** Billing for this instance, or nothing when `DIVEHUB_BILLING_PROVIDER` is unset (hosted plan §4, ADR 0089). */
+function createBilling(
+  config: BillingConfig | undefined, entitlements: EntitlementService, log: ProviderLog | undefined,
+  fetch: PaddleFetch | undefined, url: string | undefined,
+) {
+  if (!config) return undefined;
+  return createBillingService({
+    config, entitlements,
+    ...(log ? { log } : {}), ...(fetch ? { fetch } : {}), ...(url ? { url } : {}),
+  });
+}
+
 export function createServices({
   db, blobs, auth, secrets, adapters, siteSources, clock, log, live: liveSettings, dataDir, databaseUrl, encryptionKey,
   logBuffer = createLogRingBuffer({ stdout: { write: () => true } }), workerRunning, fcm, email, registrationOpen = false,
-  baseUrl, mailFetch, mailUrl,
+  baseUrl, mailFetch, mailUrl, billing, paddleFetch, paddleUrl,
 }: ServiceParts) {
+  const now = clock ? () => clock.now() : undefined;
   const mail = createMail({ email, baseUrl, mailFetch, mailUrl });
   const assessments = createAssessmentService(db);
   const backupLog: BackupLog = {
@@ -128,7 +150,7 @@ export function createServices({
   const backups = createBackupService({
     db, blobs, dataDir, databaseUrl,
     migrationsFolder: fileURLToPath(new URL('../drizzle', import.meta.url)), appVersion: process.env.DIVEHUB_VERSION ?? 'dev',
-    encryptionKey, log: backupLog, now: clock ? () => clock.now() : undefined,
+    encryptionKey, log: backupLog, now,
   });
   const clientDiagnostics = createClientDiagnosticsService(db);
   const sync = createSyncService(db);
@@ -137,7 +159,12 @@ export function createServices({
     appVersion: process.env.DIVEHUB_VERSION ?? 'dev', databaseUrl, dataDir, encryptionKey, clientDiagnostics,
     ...(workerRunning && { workerRunning }),
   });
-  const providers = createProviderLayer({ db, blobs, secrets, adapters, ...(clock && { clock }), ...(log && { log }) });
+  // The paywall (hosted-DiveHub plan §4): with no billing configured it answers entitled for everything (ADR 0087).
+  const entitlements = createEntitlementService({ db, enforced: billing !== undefined, ...(clock && { clock }) });
+  // Paddle's checkout/portal links and signed webhook (hosted-DiveHub plan §4.5, ADR 0089); absent with no billing config,
+  // which also leaves the billing routes unregistered.
+  const billingService = createBilling(billing, entitlements, log, paddleFetch, paddleUrl);
+  const providers = createProviderLayer({ db, blobs, secrets, adapters, entitlements, ...(clock && { clock }), ...(log && { log }) });
   // Push hints queue in the same writing transactions as the SSE hints (ADR 0085); without FCM the dispatcher queues
   // nothing and the job is a no-op.
   const push = createPushDispatcher({ db, fcm });
@@ -156,17 +183,17 @@ export function createServices({
   // Restoring a Dive an append took undoes the append (ADR 0063).
   const dives = createDiveService(db, continuation);
   return {
-    db, blobs, auth, assessments, backups, support, clientDiagnostics, sync, providers, imports, logBuffer, registrationOpen,
+    db, blobs, auth, assessments, backups, support, clientDiagnostics, sync, entitlements, billing: billingService, providers, imports, logBuffer, registrationOpen,
     siteImports: createSiteImportService({ db, sources: siteSources }),
     sitePurges: createSitePurgeService({ db, sources: siteSources }),
     aiAccesses: createAiAccessService(db, auth),
-    setup: createSetupService(db, clock ? () => clock.now() : undefined),
+    setup: createSetupService(db, now),
     invitations: createInvitationService(db, mail),
     passwordResets: createPasswordResetService(db, mail),
     // One count per client IP across the public token routes (ADR 0061).
-    tokenAttempts: createAttemptLimit(TOKEN_ATTEMPTS, clock ? () => clock.now() : undefined),
+    tokenAttempts: createAttemptLimit(TOKEN_ATTEMPTS, now),
     // Its own count, so a signup flood cannot exhaust the token routes' budget (hosted plan §6.2).
-    signupAttempts: createAttemptLimit(SIGNUP_ATTEMPTS, clock ? () => clock.now() : undefined),
+    signupAttempts: createAttemptLimit(SIGNUP_ATTEMPTS, now),
     profiles: createProfileService(db),
     sessions: createSessionService(db),
     userAdmin: createUserAdminService(db, blobs),

@@ -17,6 +17,12 @@ const MODULE_IMPORTS = {
   certifications: ['divers', 'dives', 'live', 'revisions'],
   divers: ['revisions'],
   dives: ['centres', 'divers', 'revisions', 'sites'],
+  // Entitlements (hosted-DiveHub plan §4): a leaf that reads and writes its own table and nothing else; providers, users
+  // and billing import down into it, so it sits low.
+  entitlement: [],
+  // Billing (ADR 0089): Paddle's checkout/portal links and the signed webhook, which writes entitlements through the
+  // entitlement module; it reads no other domain module.
+  billing: ['entitlement'],
   equipment: ['divers', 'revisions'],
   // Narrower than plan D8's ['divers', 'dives', 'revisions'] on purpose: the equipment module needs nothing from dives.
   imports: ['divers', 'dives', 'equipment', 'live', 'revisions', 'sites'],
@@ -27,7 +33,7 @@ const MODULE_IMPORTS = {
   notifications: [],
   // The loadings endpoint reuses DAN's no-fly rule (series-rules.ts) rather than copying it (ADR 0071).
   planning: ['assessment', 'divers', 'dives'],
-  providers: ['certifications', 'divers', 'dives', 'imports', 'live', 'revisions', 'sites'],
+  providers: ['certifications', 'divers', 'dives', 'entitlement', 'imports', 'live', 'revisions', 'sites'],
   sites: ['live', 'revisions'],
   // Buddy suggestions (ADR 0070) read the shared facts, reuse the time-window tolerance of dive matching for an
   // overlapping Dive, use the one place for Diver management and Dive numbering, write the acceptance Revision, and ask

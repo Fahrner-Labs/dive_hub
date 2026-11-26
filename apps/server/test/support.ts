@@ -9,7 +9,8 @@ import type { LightMyRequestResponse } from 'fastify';
 import { createAuth, type Auth } from '../src/auth/auth.js';
 import { buildApp } from '../src/app.js';
 import { createServices } from '../src/compose.js';
-import type { EmailConfig, FcmConfig } from '../src/config.js';
+import type { BillingConfig, EmailConfig, FcmConfig } from '../src/config.js';
+import type { PaddleFetch } from '../src/billing/paddle.js';
 import type { MailProvider } from '../src/mail/mail.js';
 import { createMailProvider, type MailFetch } from '../src/mail/resend.js';
 import { createDb, type Db } from '../src/db/client.js';
@@ -142,10 +143,16 @@ export async function createTestApp(t: TestDatabase, options: {
   mailUrl?: string;
   /** DIVEHUB_REGISTRATION_OPEN (hosted plan §6.2); needs `email` and a mail stand-in for verification. */
   registrationOpen?: boolean;
+  /** Billing (hosted-DiveHub plan §4); tests that want the paywall on pass a full `BillingConfig`, otherwise every feature is free. */
+  billing?: BillingConfig;
+  /** Where Paddle's HTTP goes in tests; production uses the global fetch and the endpoint the key names. */
+  paddleFetch?: PaddleFetch;
+  /** Paddle's API base in tests, so a captured request names the overridden endpoint. */
+  paddleUrl?: string;
 } = {}) {
   const {
     webDir, siteSources, fakeSsi = createFakeSsi(), encryptionKey = TEST_ENCRYPTION_KEY, extraProviders = [], clock = resettableClock(), ssi = (a) => a,
-    maxUploadBytes = 1 << 26, onRestored, fcm, email, mailFetch, mailUrl, registrationOpen, ...authOptions
+    maxUploadBytes = 1 << 26, onRestored, fcm, email, mailFetch, mailUrl, registrationOpen, billing, paddleFetch, paddleUrl, ...authOptions
   } = options;
   // SSI keeps its last logbook read for two minutes (ADR 0027); a test that changes the fake SSI behind Dive Hub's back
   // moves this clock on, as if the change happened a while later. Pauses between actions are skipped and recorded.
@@ -176,6 +183,9 @@ export async function createTestApp(t: TestDatabase, options: {
     ...(email && { email }),
     ...(mailFetch && { mailFetch }),
     ...(mailUrl && { mailUrl }),
+    ...(billing && { billing }),
+    ...(paddleFetch && { paddleFetch }),
+    ...(paddleUrl && { paddleUrl }),
   });
   const app = await buildApp({
     ...services, baseUrl: BASE_URL, maxUploadBytes, webDir, ...(onRestored && { onRestored }),
