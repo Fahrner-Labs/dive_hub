@@ -469,6 +469,11 @@ One action on one Dive at one Provider (sent, updated, linked to a dive already 
 _Avoid_: Export, sync, share, broadcast
 _German_: Übertragung
 
+**Push notification**:
+The background wake-up a native client gets over FCM: a hint (`{ v, kind, id }`) that something changed, never dive content. The app fetches through the authenticated API and composes the notice on the device itself; the server sends with the instance's own Firebase project, so self-hosters opt in with two values and otherwise keep polling ([ADR 0085](decisions/0085-push-notifications-for-native-clients.md)). Not a **Push**, which sends a Dive to a Provider.
+_Avoid_: Push message, notification (alone)
+_German_: Push-Benachrichtigung
+
 **Push run**:
 One User's request to send many Dives of one Diver to one Provider in one go. It makes an ordinary Push per Dive, one after another, says beforehand which Dives it leaves out and why, and afterwards what became of each. It can be stopped and taken up again ([ADR 0047](decisions/0047-push-runs.md)).
 _Avoid_: Batch, bulk upload, sync, job

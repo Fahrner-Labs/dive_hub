@@ -9,12 +9,16 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
@@ -28,6 +32,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -45,6 +50,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
@@ -53,6 +59,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.divehub.android.R
 import dev.divehub.android.ui.DiveHubTopBar
 import dev.divehub.android.ui.Spacing
+import dev.divehub.android.ui.components.Radius
 import dev.divehub.android.ui.formatSyncTime
 import dev.divehub.android.ui.successColor
 import java.util.Locale
@@ -73,6 +80,7 @@ fun SettingsRoute(
     onOpenDebug: () -> Unit,
     showScan: Boolean = false,
     onOpenScan: () -> Unit = {},
+    onSetPollingInterval: (Int) -> Unit = {},
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     SettingsScreen(
@@ -86,6 +94,7 @@ fun SettingsRoute(
         onOpenDebug = onOpenDebug,
         showScan = showScan,
         onOpenScan = onOpenScan,
+        onSetPollingInterval = onSetPollingInterval,
     )
 }
 
@@ -107,11 +116,13 @@ fun SettingsScreen(
     onOpenDebug: () -> Unit,
     showScan: Boolean = false,
     onOpenScan: () -> Unit = {},
+    onSetPollingInterval: (Int) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     var confirmingChangeInstance by rememberSaveable { mutableStateOf(false) }
     var confirmingSignOut by rememberSaveable { mutableStateOf(false) }
     var showingLicenses by rememberSaveable { mutableStateOf(false) }
+    var choosingPollingInterval by rememberSaveable { mutableStateOf(false) }
     val context = LocalContext.current
     val license = remember {
         // Every bundled library that asks to be named, with its own heading; the font first, as before (FAH-359).
@@ -165,6 +176,22 @@ fun SettingsScreen(
                 },
                 trailingContent = {
                     if (state.syncing) CircularProgressIndicator(Modifier.size(20.dp))
+                },
+            )
+            ListItem(
+                modifier = Modifier
+                    .clickable { choosingPollingInterval = true }
+                    .testTag("settings_polling_interval_row"),
+                headlineContent = { Text(stringResource(R.string.settings_polling_interval)) },
+                supportingContent = {
+                    Text(stringResource(R.string.settings_polling_interval_value, state.pollingIntervalMinutes))
+                },
+                trailingContent = {
+                    Icon(
+                        Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 },
             )
 
@@ -229,6 +256,8 @@ fun SettingsScreen(
     if (confirmingChangeInstance) {
         AlertDialog(
             onDismissRequest = { confirmingChangeInstance = false },
+            shape = RoundedCornerShape(Radius.sheet),
+            containerColor = MaterialTheme.colorScheme.surface,
             title = { Text(stringResource(R.string.settings_change_instance_title)) },
             text = { Text(stringResource(R.string.settings_change_instance_body)) },
             confirmButton = {
@@ -250,6 +279,8 @@ fun SettingsScreen(
     if (confirmingSignOut) {
         AlertDialog(
             onDismissRequest = { confirmingSignOut = false },
+            shape = RoundedCornerShape(Radius.sheet),
+            containerColor = MaterialTheme.colorScheme.surface,
             title = { Text(stringResource(R.string.settings_sign_out_title)) },
             text = { Text(stringResource(R.string.settings_sign_out_body)) },
             confirmButton = {
@@ -271,6 +302,8 @@ fun SettingsScreen(
     if (showingLicenses) {
         AlertDialog(
             onDismissRequest = { showingLicenses = false },
+            shape = RoundedCornerShape(Radius.sheet),
+            containerColor = MaterialTheme.colorScheme.surface,
             title = { Text(stringResource(R.string.settings_licenses_title)) },
             text = {
                 Box(
@@ -288,7 +321,60 @@ fun SettingsScreen(
             },
         )
     }
+
+    if (choosingPollingInterval) {
+        AlertDialog(
+            onDismissRequest = { choosingPollingInterval = false },
+            shape = RoundedCornerShape(Radius.sheet),
+            containerColor = MaterialTheme.colorScheme.surface,
+            title = { Text(stringResource(R.string.settings_polling_interval_title)) },
+            text = {
+                Column(Modifier.verticalScroll(rememberScrollState())) {
+                    Text(stringResource(R.string.settings_polling_interval_body))
+                    Spacer(Modifier.height(Spacing.s2))
+                    Column(Modifier.selectableGroup()) {
+                        POLLING_INTERVALS.forEach { minutes ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .heightIn(min = 48.dp)
+                                    .selectable(
+                                        selected = state.pollingIntervalMinutes == minutes,
+                                        role = Role.RadioButton,
+                                        onClick = {
+                                            choosingPollingInterval = false
+                                            onSetPollingInterval(minutes)
+                                        },
+                                    )
+                                    .semantics(mergeDescendants = true) {}
+                                    .testTag("settings_polling_option_$minutes"),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                RadioButton(
+                                    selected = state.pollingIntervalMinutes == minutes,
+                                    onClick = null,
+                                )
+                                Spacer(Modifier.width(Spacing.s2))
+                                Text(
+                                    stringResource(R.string.settings_polling_interval_option, minutes),
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                )
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { choosingPollingInterval = false }) {
+                    Text(stringResource(R.string.settings_close))
+                }
+            },
+        )
+    }
 }
+
+/** The cadences offered in the dialog; 15 is WorkManager's floor, 60 the low-battery option on FCM-less instances. */
+private val POLLING_INTERVALS = listOf(15, 30, 60)
 
 /**
  * The instance row's permanent connection state (FAH-342, FAH-420): a green dot and "Connected" while the live

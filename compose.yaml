@@ -26,6 +26,9 @@ services:
       DIVEHUB_OVERPASS_URL: ${DIVEHUB_OVERPASS_URL:-}
       DIVEHUB_WIKIDATA_SPARQL_URL: ${DIVEHUB_WIKIDATA_SPARQL_URL:-}
       DIVEHUB_SSI_SITES_URL: ${DIVEHUB_SSI_SITES_URL:-}
+      # Optional native push (ADR 0085): both or neither; JSON inline or a path inside the container.
+      DIVEHUB_FCM_SERVICE_ACCOUNT: ${DIVEHUB_FCM_SERVICE_ACCOUNT:-}
+      DIVEHUB_FCM_CLIENT_CONFIG: ${DIVEHUB_FCM_CLIENT_CONFIG:-}
     ports:
       - "${DIVEHUB_BIND:-127.0.0.1}:${DIVEHUB_PORT:-3000}:3000"
     volumes:

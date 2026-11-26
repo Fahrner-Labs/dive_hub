@@ -67,3 +67,7 @@ export type EquipmentStatus = (typeof EQUIPMENT_STATUSES)[number];
 /** How an exception to an item's mode is recorded on a Dive (ADR 0034): put on it, or taken off it. */
 export const EQUIPMENT_USES = ['put_on', 'taken_off'] as const;
 export type EquipmentUse = (typeof EQUIPMENT_USES)[number];
+
+/** The clients that may register for background push (ADR 0085): one platform per push token, iOS and web later. */
+export const PUSH_PLATFORMS = ['android', 'ios', 'web'] as const;
+export type PushPlatform = (typeof PUSH_PLATFORMS)[number];

@@ -43,3 +43,12 @@ interface CachedMeStore {
 interface PendingWriteQueue {
     suspend fun queuedWriteCount(): Long
 }
+
+/**
+ * The background refresh cadence the User tunes on instances without push (ADR 0085): a client setting, not a secret,
+ * kept with the other app preferences. WorkManager's 15-minute floor still applies on the platform side.
+ */
+interface PollingIntervalStore {
+    suspend fun load(): Int
+    suspend fun save(minutes: Int)
+}

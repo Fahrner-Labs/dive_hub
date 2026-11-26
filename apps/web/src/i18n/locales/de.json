@@ -643,6 +643,7 @@
     "recording_is_part": "Diese Aufzeichnung ist Teil eines angehängten Tauchgangs: Sie lässt sich nicht allein zur primären machen oder abtrennen.",
     "check_not_found": "Diese beiden Tauchgänge liegen nicht mehr zur selben Zeit.",
     "device_not_found": "Dieses Gerät gibt es nicht oder es gehört nicht zu dir.",
+    "push_device_not_found": "Diese Push-Registrierung gibt es nicht oder sie gehört nicht zu dir.",
     "equipment_not_found": "Diesen Ausrüstungsgegenstand gibt es nicht (mehr).",
     "equipment_changed": "Jemand hat diesen Ausrüstungsgegenstand inzwischen geändert. Lade ihn neu und mach deine Änderungen noch einmal.",
     "equipment_in_use": "Dieser Ausrüstungsgegenstand wurde benutzt; lege ihn still, statt ihn zu löschen.",

@@ -4,10 +4,17 @@ import android.content.Context
 import dev.divehub.android.auth.KeystoreTokenStore
 import dev.divehub.android.auth.PreferencesCachedMeStore
 import dev.divehub.android.auth.PreferencesInstanceUrlStore
+import dev.divehub.android.auth.PreferencesPollingIntervalStore
 import dev.divehub.android.auth.UserCacheStore
 import dev.divehub.android.database.AndroidDiveStore
+import dev.divehub.android.notifications.DiveNotifications
+import dev.divehub.android.notifications.FirebaseRuntime
+import dev.divehub.android.notifications.PushController
+import dev.divehub.android.notifications.PushPreferences
+import dev.divehub.android.notifications.pushFoundNewDive
 import dev.divehub.android.sync.WorkManagerPeriodicSync
 import dev.divehub.shared.CachedMeStore
+import dev.divehub.shared.PollingIntervalStore
 import dev.divehub.shared.InstanceUrlStore
 import dev.divehub.shared.PendingWriteQueue
 import dev.divehub.shared.SessionRepository
@@ -20,6 +27,7 @@ import dev.divehub.shared.divers.ApiDiverSearch
 import dev.divehub.shared.divers.DiverSearch
 import dev.divehub.shared.logbook.LogbookRepository
 import dev.divehub.shared.logbook.StoreLogbook
+import dev.divehub.shared.push.PushRegistration
 import dev.divehub.shared.UserScopedStore
 import dev.divehub.shared.diagnostics.DiagnosticLevel
 import dev.divehub.shared.settings.SettingsRepository
@@ -58,6 +66,7 @@ class AppContainer(context: Context) {
 
     private val tokens: TokenStore = KeystoreTokenStore(application)
     private val instances: InstanceUrlStore = PreferencesInstanceUrlStore(application)
+    private val polling: PollingIntervalStore = PreferencesPollingIntervalStore(application)
     private val cachedMe: CachedMeStore = PreferencesCachedMeStore(application)
     private val cache = UserCacheStore(application)
 
@@ -108,6 +117,8 @@ class AppContainer(context: Context) {
             override suspend fun queuedWriteCount(): Long =
                 withContext(Dispatchers.IO) { diveStore.queuedWriteCount() }
         },
+        // Push's row goes with the session (ADR 0085); removing it before the token is cleared keeps it possible.
+        onSessionEnding = { if (this::pushController.isInitialized) pushController.unregister() },
     )
 
     /**
@@ -144,8 +155,36 @@ class AppContainer(context: Context) {
     val writeCapability = WriteCapability(session.client)
     val writeable = writeCapability.writeable
 
-    /** What the settings screen reads: the stored instance address and the sync state the logbook also reads. */
-    val settings: SettingsRepository by lazy { SettingsRepository(instances, diveStore) }
+    /** What the settings screen reads: the stored instance address, the sync state and the polling interval. */
+    val settings: SettingsRepository by lazy { SettingsRepository(instances, diveStore, polling) }
+
+    /** The local notification presenter (ADR 0085); the worker draws a Dive only after the fetch proved it changed. */
+    internal val notifications = DiveNotifications(application)
+
+    private val pushPreferences = PushPreferences(application)
+    private val firebase = FirebaseRuntime(application, pushPreferences)
+    private lateinit var pushController: PushController
+
+    /** The push lifecycle: runtime Firebase config, token registration and the permission request (ADR 0085). */
+    internal val push: PushController get() = pushController
+
+    /** True when the shell should ask for POST_NOTIFICATIONS: after the first successful sync, once. */
+    val notificationPermissionRequest: StateFlow<Boolean> get() = pushController.permissionRequest
+
+    /** A notification tap's Dive, waiting for a signed-in shell to route it; consumed once shown. */
+    private val _pendingDive = MutableStateFlow<String?>(null)
+    val pendingDive: StateFlow<String?> = _pendingDive.asStateFlow()
+
+    init {
+        pushController = PushController(
+            application,
+            session,
+            PushRegistration(session.client),
+            firebase,
+            pushPreferences,
+            notifications,
+        )
+    }
 
     /** The sync engine and its refresh loop; the UI reads the store, never the API, from D4 on. */
     val sync = SyncEngine(session.client, diveStore)
@@ -200,13 +239,16 @@ class AppContainer(context: Context) {
         if (syncing) return
         syncing = true
         refresher.start(syncScope)
-        periodicSync.schedule()
         syncScope.launch {
             // D7: one capability probe per session, so a pre-feed server hides the write UI instead of failing edits.
             val url = session.knownInstance()
             if (url != null) {
                 session.client.baseUrl = url
                 if (session.hasSession()) writeCapability.probe()
+                // Push is optional and configured per instance (ADR 0085): fetch the public config, then poll at the
+                // User's chosen interval. A push-off or older server leaves both paths alone.
+                pushController.configure(url)
+                periodicSync.schedule(settings.pollingIntervalMinutes().toLong())
             }
             val result = sync.sync()
             if (result == SyncResult.SessionEnded) return@launch
@@ -214,6 +256,8 @@ class AppContainer(context: Context) {
             // A resumed same-User session may already hold queued writes (ADR 0084 D8); replay them before the profiles.
             refresher.drainWritesNow()
             refresher.profilesOnce()
+            // Android 13+ asks contextually after a successful first sync, never at first launch.
+            if (result == SyncResult.Complete) pushController.onInitialSyncFinished()
         }
         // A cold start with no answer must not hide writes for the whole session: ask again once the stream answers.
         syncScope.launch {
@@ -229,6 +273,7 @@ class AppContainer(context: Context) {
         writeCapability.reset()
         refresher.stop()
         periodicSync.cancel()
+        pushController.onSignedOut()
         syncScope.coroutineContext.cancelChildren()
     }
 
@@ -296,6 +341,44 @@ class AppContainer(context: Context) {
         refresher.dismissNotices()
     }
 
+    /** The shell knows the instance URL: fetch its push config. Best effort and optional (ADR 0085). */
+    fun onInstanceKnown(url: String) = pushController.onInstanceKnown(url)
+
+    /** The runtime permission result from the shell; a grant registers the token, a refusal leaves polling in place. */
+    fun onNotificationPermissionResult(granted: Boolean) = pushController.onPermissionResult(granted)
+
+    /** A new tone after the first sync: the settings screen's interval, applied to the existing worker too. */
+    suspend fun setPollingInterval(minutes: Int) {
+        settings.setPollingIntervalMinutes(minutes)
+        periodicSync.reschedule(settings.pollingIntervalMinutes().toLong())
+    }
+
+    /** A notification tap opened a Dive: hold it until a signed-in shell can route it. */
+    fun openDiveFromNotification(id: String) {
+        if (id.isNotBlank()) _pendingDive.value = id
+    }
+
+    fun consumePendingDive(id: String) {
+        if (_pendingDive.value == id) _pendingDive.value = null
+    }
+
+    /**
+     * One FCM hint's fetch (ADR 0085): a spoofed or stale hint may cost a request, never a notification. The Dive is
+     * reported new only when it exists now and its version differs from what this device held before the fetch.
+     */
+    suspend fun refreshForPushHint(id: String): Boolean {
+        val url = session.knownInstance() ?: return false
+        session.client.baseUrl = url
+        if (!session.hasSession()) return false
+        return wipeLock.withLock {
+            if (!session.hasSession()) return false
+            val before = withContext(Dispatchers.IO) { diveStore.diveIncludingDeleted(id) }
+            refresher.applyPushHint("dive", id)
+            val after = withContext(Dispatchers.IO) { diveStore.diveIncludingDeleted(id) }
+            pushFoundNewDive(before, after)
+        }
+    }
+
     /**
      * One scheduled run (WorkManager): phase 1, tombstones and pending profiles, only when this device holds a
      * session. [wipeLock] keeps it from writing after a sign-out wipe. [SyncRefresher.refreshOnce] also drains the
@@ -310,6 +393,8 @@ class AppContainer(context: Context) {
             if (!session.hasSession()) return@withLock
             refresher.refreshOnce()
             refresher.profilesOnce()
+            // A first sync that failed offline still gets its contextual permission request when a later run succeeds.
+            pushController.onInitialSyncFinished()
         }
     }
 }

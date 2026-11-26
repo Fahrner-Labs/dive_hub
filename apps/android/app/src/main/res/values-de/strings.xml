@@ -674,7 +674,7 @@
     <string name="settings_section_connection">Verbindung</string>
     <string name="settings_instance">Instanz</string>
     <string name="settings_connection_connected">Verbunden</string>
-    <string name="settings_connection_polling">Polling · %1$s</string>
+    <string name="settings_connection_polling">Abfrage · %1$s</string>
     <string name="settings_connection_offline">Offline · %1$s</string>
     <string name="settings_connection_never">Offline — noch nicht synchronisiert.</string>
     <string name="settings_change_instance_title">Instanz wechseln?</string>
@@ -866,4 +866,20 @@
     <string name="scan_error_camera_blocked">der Kamerazugriff ist gesperrt. Erlaube ihn in den Android-Einstellungen oder wähle ein Bild aus.</string>
     <string name="scan_error_camera_busy">die Kamera wird gerade von einer anderen App benutzt. Schließe sie und versuche es erneut, oder wähle ein Bild aus.</string>
     <string name="scan_error_generic">etwas ist schiefgelaufen. Versuche es später erneut.</string>
+
+    <string name="notification_channel_dives_name">Neue Tauchgänge</string>
+    <string name="notification_channel_dives_description">Meldet, wenn ein neuer Tauchgang auf dieses Gerät synchronisiert wurde.</string>
+    <string name="notification_new_dive_title">Neuer Tauchgang synchronisiert</string>
+    <string name="notification_new_dive_body">Tippen, um den Tauchgang zu öffnen.</string>
+    <plurals name="notification_new_dives">
+        <item quantity="one">%1$d neuer Tauchgang synchronisiert</item>
+        <item quantity="other">%1$d neue Tauchgänge synchronisiert</item>
+    </plurals>
+    <string name="notification_new_dives_body">Tippen, um das Logbuch zu öffnen.</string>
+
+    <string name="settings_polling_interval">Abfrageintervall</string>
+    <string name="settings_polling_interval_value">Alle %1$d Min.</string>
+    <string name="settings_polling_interval_title">Abfrageintervall</string>
+    <string name="settings_polling_interval_body">Wie oft die App im Hintergrund synchronisiert. Kürzere Abstände verbrauchen mehr Akku. Der kürzeste Abstand unter Android beträgt 15 Minuten. Benachrichtigungen kommen separat und bei Push-fähigen Instanzen sofort an.</string>
+    <string name="settings_polling_interval_option">%1$d Min.</string>
 </resources>

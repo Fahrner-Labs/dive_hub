@@ -5,6 +5,7 @@ import androidx.work.Constraints
 import androidx.work.CoroutineWorker
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.NetworkType
+import androidx.work.PeriodicWorkRequest
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
@@ -19,20 +20,26 @@ import java.util.concurrent.TimeUnit
 class WorkManagerPeriodicSync(context: Context) : PeriodicSyncScheduler {
     private val workManager = WorkManager.getInstance(context.applicationContext)
 
-    override fun schedule() {
-        val request = PeriodicWorkRequestBuilder<SyncWorker>(REFRESH_INTERVAL_MINUTES, TimeUnit.MINUTES)
-            .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build())
-            .build()
-        workManager.enqueueUniquePeriodicWork(WORK_NAME, ExistingPeriodicWorkPolicy.KEEP, request)
+    override fun schedule(intervalMinutes: Long) {
+        workManager.enqueueUniquePeriodicWork(WORK_NAME, ExistingPeriodicWorkPolicy.KEEP, request(intervalMinutes))
+    }
+
+    /** The settings screen's interval change replaces the timing of the existing work instead of stacking another run. */
+    override fun reschedule(intervalMinutes: Long) {
+        workManager.enqueueUniquePeriodicWork(WORK_NAME, ExistingPeriodicWorkPolicy.UPDATE, request(intervalMinutes))
     }
 
     override fun cancel() {
         workManager.cancelUniqueWork(WORK_NAME)
     }
 
+    private fun request(intervalMinutes: Long): PeriodicWorkRequest =
+        PeriodicWorkRequestBuilder<SyncWorker>(intervalMinutes.coerceAtLeast(PeriodicSyncScheduler.MIN_INTERVAL_MINUTES), TimeUnit.MINUTES)
+            .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build())
+            .build()
+
     private companion object {
         const val WORK_NAME = "divehub-sync"
-        const val REFRESH_INTERVAL_MINUTES = 15L
     }
 }
 

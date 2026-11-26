@@ -25,10 +25,10 @@ import {
   uuid,
 } from 'drizzle-orm/pg-core';
 import {
-  EQUIPMENT_CATEGORIES, EQUIPMENT_STATUSES, EQUIPMENT_USES,
+  EQUIPMENT_CATEGORIES, EQUIPMENT_STATUSES, EQUIPMENT_USES, PUSH_PLATFORMS,
   WATER_TYPES, type DecoModel, type DiveMode, type GasCircuit, type ImportSource, type SiteWaterType, type WaterType,
 } from '../vocabulary.js';
-import { user } from './auth-schema.js';
+import { session, user } from './auth-schema.js';
 import type { ImportArea, ImportedValues, SiteImportCounts, StoredConflictField } from './import-types.js';
 
 export * from './auth-schema.js';
@@ -157,6 +157,31 @@ export const userPreference = pgTable('user_preference', {
   units: unitSystem('units'),
   updatedAt: updatedAt(),
 });
+
+export const pushPlatform = pgEnum('push_platform', [...PUSH_PLATFORMS]);
+
+/**
+ * A client's registration for background push (ADR 0085): one row per push token, scoped to the User and the session
+ * that registered it. Ending the session (sign-out, "sign out everywhere", a password change) deletes it by cascade,
+ * so a signed-out device gets no more hints. Named `push_device` because "Device" already means the dive computer.
+ */
+export const pushDevice = pgTable(
+  'push_device',
+  {
+    id: id(),
+    userId: uuid('user_id').notNull().references(() => user.id, { onDelete: 'cascade' }),
+    sessionId: uuid('session_id').notNull().references(() => session.id, { onDelete: 'cascade' }),
+    platform: pushPlatform('platform').notNull(),
+    pushToken: text('push_token').notNull(),
+    createdAt: createdAt(),
+    lastSeenAt: timestamp('last_seen_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex('push_device_token_uq').on(t.pushToken),
+    index('push_device_user_idx').on(t.userId),
+    index('push_device_session_idx').on(t.sessionId),
+  ],
+);
 
 export const equipmentCategory = pgEnum('equipment_category', [...EQUIPMENT_CATEGORIES]);
 export const equipmentStatus = pgEnum('equipment_status', [...EQUIPMENT_STATUSES]);

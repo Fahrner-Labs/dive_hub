@@ -69,6 +69,7 @@ export const PROBLEMS = {
   continuation_not_possible: 'Only later dives of the same diver, each with one recording of the same computer and none between, can be appended',
   recording_is_part: 'This recording is a part of a continuation: it can\'t be made primary or split off on its own',
   device_not_found: 'Device not found',
+  push_device_not_found: 'Push registration not found',
   equipment_not_found: 'Equipment item not found',
   equipment_changed: 'The Equipment item was changed meanwhile; reload it and apply your changes again',
   equipment_in_use: 'This Equipment item has been used (on a Dive, as a Device, as a Cylinder or in a service record); retire it instead of deleting it',

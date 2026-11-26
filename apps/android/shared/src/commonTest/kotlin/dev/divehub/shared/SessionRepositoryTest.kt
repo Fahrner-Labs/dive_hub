@@ -90,6 +90,7 @@ private class Harness(
     val cache: FakeCache = FakeCache(),
     val cachedMe: FakeCachedMe = FakeCachedMe(),
     val pendingWrites: FakeQueue = FakeQueue(),
+    val onSessionEnding: suspend () -> Unit = {},
     handler: suspend MockRequestHandleScope.(HttpRequestData) -> HttpResponseData,
 ) {
     private val engine = MockEngine(handler)
@@ -101,6 +102,7 @@ private class Harness(
         cachedMe,
         versionName = "0.1.0-dev",
         pendingWrites = pendingWrites,
+        onSessionEnding = onSessionEnding,
     )
 }
 
@@ -248,6 +250,76 @@ fun `signing out clears the token and the cache but keeps the instance`() = runT
     assertNull(harness.cachedMe.value)
     assertEquals("https://dive.example", harness.instances.value)
     assertIs<SessionState.SignedOut>(harness.session.state.value)
+}
+
+@Test
+fun `signing out unregisters while the old token still works`() = runTest {
+    val tokens = FakeTokens("old-token")
+    val events = mutableListOf<String>()
+    val harness = Harness(
+        tokens = tokens,
+        cachedMe = FakeCachedMe(ME_JSON),
+        onSessionEnding = {
+            events += "unregister"
+            assertEquals("old-token", tokens.value)
+        },
+    ) { _ -> json("""{"success":true}""") }
+
+    harness.session.signOut()
+
+    assertEquals(listOf("unregister"), events)
+    assertNull(tokens.value)
+}
+
+@Test
+fun `a failed unregister never blocks the sign-out`() = runTest {
+    val harness = Harness(
+        tokens = FakeTokens("old-token"),
+        cachedMe = FakeCachedMe(ME_JSON),
+        onSessionEnding = { throw IOException("offline") },
+    ) { _ -> json("""{"success":true}""") }
+
+    harness.session.signOut()
+
+    assertNull(harness.tokens.value)
+    assertIs<SessionState.SignedOut>(harness.session.state.value)
+}
+
+@Test
+fun `signing in again unregisters the previous session's row before clearing its token`() = runTest {
+    val events = mutableListOf<String>()
+    val tokens = object : TokenStore {
+        var value: String? = "old-token"
+        override suspend fun load(): String? = value
+        override suspend fun save(token: String) { value = token }
+        override suspend fun clear() {
+            events += "clear"
+            value = null
+        }
+    }
+    val engine = MockEngine { request ->
+        when (request.url.encodedPath) {
+            SIGN_IN_PATH -> respond("", HttpStatusCode.OK, headersOf(SET_AUTH_TOKEN, "new-token"))
+            "/api/me" -> json(ME_JSON)
+            else -> error("unexpected ${request.url}")
+        }
+    }
+    val session = SessionRepository(
+        engine,
+        tokens,
+        FakeInstances("https://dive.example"),
+        FakeCache(),
+        FakeCachedMe(),
+        versionName = "0.1.0-dev",
+        onSessionEnding = {
+            events += "unregister"
+            assertEquals("old-token", tokens.value)
+        },
+    )
+
+    session.signIn("https://dive.example", "ada@example.com", "correct horse battery")
+
+    assertEquals(listOf("unregister", "clear"), events)
 }
 
 @Test

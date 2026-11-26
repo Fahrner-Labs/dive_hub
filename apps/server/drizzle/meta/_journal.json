@@ -470,6 +470,13 @@
       "when": 1795446323528,
       "tag": "0066_old_catseye",
       "breakpoints": true
+    },
+    {
+      "idx": 67,
+      "version": "7",
+      "when": 1795628179911,
+      "tag": "0067_eager_chat",
+      "breakpoints": true
     }
   ]
 }

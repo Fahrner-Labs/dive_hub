@@ -4,6 +4,8 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.CAMERA" />
+    <!-- Android 13+: requested contextually after the first sync, never at first launch (ADR 0085). -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <!-- The scanner can fall back to the photo picker and pasted text, so a device without a camera still installs.
          CAMERA implies a required back camera and autofocus; both are declared optional to lift that filtering. -->
@@ -51,11 +53,21 @@
         <activity
             android:name=".MainActivity"
             android:exported="true"
+            android:launchMode="singleTop"
             android:theme="@style/Theme.DiveHub.Splash">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- FCM data messages are hints only; this service hands them to PushWorker and returns at once (ADR 0085). -->
+        <service
+            android:name=".notifications.DiveHubMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
     </application>
 </manifest>

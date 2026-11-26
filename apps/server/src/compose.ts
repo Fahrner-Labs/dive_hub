@@ -5,6 +5,7 @@
 import { fileURLToPath } from 'node:url';
 import type { Auth } from './auth/auth.js';
 import type { Db } from './db/client.js';
+import type { FcmConfig } from './config.js';
 import type { FastifyBaseLogger } from 'fastify';
 import { createAssessmentService } from './assessment/assessment-service.js';
 import { createBackupService, type BackupLog } from './backups/backup-service.js';
@@ -24,6 +25,8 @@ import { createEquipmentService } from './equipment/equipment-service.js';
 import { createImportService } from './imports/import-service.js';
 import { listenToChanges } from './revisions/revisions.js';
 import { createLive } from './live/service.js';
+import { createNotificationService } from './notifications/notification-service.js';
+import { createPushDispatcher } from './notifications/push-dispatcher.js';
 import { withRevisionHints } from './live/revision-hints.js';
 import { createAttemptLimit, TOKEN_ATTEMPTS } from './http/attempt-limit.js';
 import { createLeadService } from './lead/lead-service.js';
@@ -80,11 +83,13 @@ export interface ServiceParts {
   logBuffer?: LogRingBuffer;
   /** Whether this process runs the worker, for the support bundle's health section. */
   workerRunning?: () => boolean;
+  /** FCM push config (ADR 0085); undefined turns push off and native clients keep polling. */
+  fcm?: FcmConfig | undefined;
 }
 
 export function createServices({
   db, blobs, auth, secrets, adapters, siteSources, clock, log, live: liveSettings, dataDir, databaseUrl, encryptionKey,
-  logBuffer = createLogRingBuffer({ stdout: { write: () => true } }), workerRunning,
+  logBuffer = createLogRingBuffer({ stdout: { write: () => true } }), workerRunning, fcm,
 }: ServiceParts) {
   const assessments = createAssessmentService(db);
   const backupLog: BackupLog = {
@@ -105,10 +110,14 @@ export function createServices({
     ...(workerRunning && { workerRunning }),
   });
   const providers = createProviderLayer({ db, blobs, secrets, adapters, ...(clock && { clock }), ...(log && { log }) });
+  // Push hints queue in the same writing transactions as the SSE hints (ADR 0085); without FCM the dispatcher queues
+  // nothing and the job is a no-op.
+  const push = createPushDispatcher({ db, fcm });
   // Dive and site Revisions also tell open pages (ADR 0066), through the same listener seam as the Waiting pushes.
   // Buddy suggestions hang off the same seam (ADR 0070): the listener runs inside every Participant write's transaction.
-  listenToChanges(withSuggestionChanges(withRevisionHints(providers.noteChanges)));
+  listenToChanges(withSuggestionChanges(withRevisionHints(providers.noteChanges, (q, hint) => push.enqueue(q, hint))));
   const live = createLive({ ...(liveSettings && { connectionString: liveSettings.connectionString }), ...(log && { log }) });
+  const notifications = createNotificationService(db, fcm);
   // Imports of a Provider's dives run in the worker like uploads (ADR 0030).
   const imports = createImportService({ db, blobs, providerImports: providers.diveImports, afterImport: (userId) => assessments.refreshUser(userId) });
   const { pushes, waitingPushes } = providers;
@@ -145,7 +154,7 @@ export function createServices({
     planning: createPlanningService(db),
     lead: createLeadService(db),
     sites: createSiteService(db),
-    live,
+    live, notifications, push,
   };
 }
 
@@ -155,5 +164,5 @@ export type Services = ReturnType<typeof createServices>;
 export const workerDeps = (s: Services, log: FastifyBaseLogger): WorkerDeps => ({
   backups: s.backups, imports: s.imports, siteImports: s.siteImports, aiAccesses: s.aiAccesses, assessments: s.assessments, pushRuns: s.providers.pushRuns,
   waitingPushes: s.providers.waitingPushes, scheduledFetch: s.providers.scheduledFetch, certifications: s.providers.certifications,
-  purges: s.purge, clientDiagnostics: s.clientDiagnostics, sync: s.sync, log,
+  purges: s.purge, clientDiagnostics: s.clientDiagnostics, sync: s.sync, push: s.push, log,
 });

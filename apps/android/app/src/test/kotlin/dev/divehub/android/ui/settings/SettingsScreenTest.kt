@@ -1,10 +1,16 @@
 package dev.divehub.android.ui.settings
 
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.getBoundsInRoot
+import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasProgressBarRangeInfo
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onLast
@@ -39,6 +45,7 @@ class SettingsScreenTest {
     private var syncs = 0
     private var signOuts = 0
     private var debugs = 0
+    private val pollingIntervals = mutableListOf<Int>()
     private var previousZone: TimeZone = TimeZone.getDefault()
 
     @Before
@@ -59,8 +66,8 @@ class SettingsScreenTest {
         compose.onNodeWithText("https://dive.example").assertIsDisplayed()
         compose.onNodeWithText("Connected").assertIsDisplayed()
         compose.onNodeWithText("elena@example.com").assertIsDisplayed()
-        compose.onNodeWithText("0.1.0 (1001)").assertIsDisplayed()
-        compose.onNodeWithText("Polling", substring = true).assertDoesNotExist()
+        compose.onNodeWithText("0.1.0 (1001)").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Polling ·", substring = true).assertDoesNotExist()
     }
 
     @Test
@@ -149,6 +156,31 @@ class SettingsScreenTest {
     }
 
     @Test
+    fun `tapping a polling cadence applies it and closes the dialog`() {
+        render()
+
+        compose.onNodeWithText("Polling interval").assertIsDisplayed()
+        compose.onNodeWithText("Every 15 min").performClick()
+
+        compose.onNode(hasText("30 min") and hasClickAction())
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.RadioButton))
+        compose.onNodeWithText("30 min").performClick()
+
+        assertEquals(listOf(30), pollingIntervals)
+        compose.onNodeWithText("30 min").assertDoesNotExist()
+    }
+
+    @Test
+    fun `closing the polling interval dialog changes nothing`() {
+        render()
+
+        compose.onNodeWithText("Every 15 min").performClick()
+        compose.onNodeWithText("Close").performClick()
+
+        assertTrue(pollingIntervals.isEmpty())
+    }
+
+    @Test
     fun `sign out is an icon on the account row and asks first`() {
         render()
 
@@ -213,6 +245,7 @@ class SettingsScreenTest {
                     onSyncNow = { syncs += 1 },
                     onSignOut = { signOuts += 1 },
                     onOpenDebug = { debugs += 1 },
+                    onSetPollingInterval = { pollingIntervals += it },
                 )
             }
         }

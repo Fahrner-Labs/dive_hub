@@ -415,6 +415,7 @@
               "continuation_not_possible",
               "recording_is_part",
               "device_not_found",
+              "push_device_not_found",
               "equipment_not_found",
               "equipment_changed",
               "equipment_in_use",
@@ -3828,6 +3829,7 @@
                   "continuation_not_possible",
                   "recording_is_part",
                   "device_not_found",
+                  "push_device_not_found",
                   "equipment_not_found",
                   "equipment_changed",
                   "equipment_in_use",
@@ -4057,6 +4059,7 @@
                   "continuation_not_possible",
                   "recording_is_part",
                   "device_not_found",
+                  "push_device_not_found",
                   "equipment_not_found",
                   "equipment_changed",
                   "equipment_in_use",
@@ -4893,6 +4896,7 @@
                         "continuation_not_possible",
                         "recording_is_part",
                         "device_not_found",
+                        "push_device_not_found",
                         "equipment_not_found",
                         "equipment_changed",
                         "equipment_in_use",
@@ -16411,6 +16415,102 @@
             }
           }
         }
+      },
+      "post": {
+        "summary": "Register or refresh this device's push token for the signed-in User and session",
+        "description": "Upserts by pushToken: the same token registered again moves to the latest User and session and refreshes lastSeenAt. Ending the session deletes the row (ADR 0085).",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "platform",
+                  "pushToken"
+                ],
+                "properties": {
+                  "platform": {
+                    "enum": [
+                      "android",
+                      "ios",
+                      "web"
+                    ],
+                    "description": "The client platform; iOS and web are reserved for their providers, Android is the first (ADR 0085)"
+                  },
+                  "pushToken": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 4096
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The registration to keep for DELETE /api/devices/{id}; the token itself is not echoed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "platform",
+                    "createdAt",
+                    "lastSeenAt"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "platform": {
+                      "enum": [
+                        "android",
+                        "ios",
+                        "web"
+                      ],
+                      "description": "The client platform; iOS and web are reserved for their providers, Android is the first (ADR 0085)"
+                    },
+                    "createdAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "lastSeenAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  },
+                  "additionalProperties": false,
+                  "description": "The registration to keep for DELETE /api/devices/{id}; the token itself is not echoed"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/devices/{id}": {
@@ -16486,6 +16586,102 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Remove one of the signed-in User's push registrations (e.g. on sign-out)",
+        "description": "Owner only; another User's registration answers 404, never 403.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Default Response"
+          },
+          "400": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/push/config": {
+      "get": {
+        "summary": "The public Firebase client config for push (ADR 0085)",
+        "description": "Unauthenticated on purpose: these values are public in every Firebase app. An empty object means this instance has no FCM credential, so native clients keep polling and the foreground SSE stream.",
+        "responses": {
+          "200": {
+            "description": "The Firebase client config for Android; no `android` member means push is off and the client polls",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "android": {
+                      "type": "object",
+                      "required": [
+                        "projectId",
+                        "applicationId",
+                        "apiKey",
+                        "gcmSenderId"
+                      ],
+                      "properties": {
+                        "projectId": {
+                          "type": "string"
+                        },
+                        "applicationId": {
+                          "type": "string"
+                        },
+                        "apiKey": {
+                          "type": "string"
+                        },
+                        "gcmSenderId": {
+                          "type": "string"
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "additionalProperties": false,
+                  "description": "The Firebase client config for Android; no `android` member means push is off and the client polls"
                 }
               }
             }

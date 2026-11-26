@@ -155,6 +155,14 @@ class SyncRefresher(
     /** The app's first sync result: mark a no-answer run and let open screens reread what landed. */
     fun initialFinished(result: SyncResult) = mark(result)
 
+    /**
+     * A push data message's hint (ADR 0085): the same treatment as a live hint, from a background process that has no
+     * open screen. The caller compares the store before and after to decide whether anything new really arrived.
+     */
+    suspend fun applyPushHint(kind: String, id: String) {
+        handle(LiveEvent.Hint(LiveHint(kind, id)))
+    }
+
     /** The opened Dive's detail again, so a change missed while the stream was down is not shown as fresh. */
     suspend fun refreshDiveOnce(id: String) {
         mark(engine.applyDiveHint(id))

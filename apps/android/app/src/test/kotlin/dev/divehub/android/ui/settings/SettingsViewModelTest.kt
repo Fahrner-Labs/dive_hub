@@ -244,6 +244,20 @@ class SettingsViewModelTest {
         assertFalse(viewModel.state.value.diagnostics.shareEmpty)
     }
 
+    @Test
+    fun `choosing a polling interval applies it and updates the row`() = runTest(dispatcher) {
+        val applied = mutableListOf<Int>()
+        val viewModel = viewModel(applyPollingInterval = { applied += it })
+        advanceUntilIdle()
+        assertEquals(15, viewModel.state.value.pollingIntervalMinutes)
+
+        viewModel.setPollingInterval(30)
+        advanceUntilIdle()
+
+        assertEquals(listOf(30), applied)
+        assertEquals(30, viewModel.state.value.pollingIntervalMinutes)
+    }
+
     private fun entries(vararg codes: String): MutableList<DiagnosticEntry> = codes.map { code ->
         DiagnosticEntry(
             occurredAt = "2026-11-20T12:00:00Z",
@@ -262,6 +276,7 @@ class SettingsViewModelTest {
         diagnostics: DiagnosticsAccess = FakeDiagnostics(),
         queueRevision: MutableStateFlow<Long> = MutableStateFlow(0L),
         readSnapshot: () -> WriteQueueSnapshot = { WriteQueueSnapshot() },
+        applyPollingInterval: suspend (Int) -> Unit = {},
     ) = SettingsViewModel(
         settings = SettingsRepository(FakeInstances(), store),
         revision = revision,
@@ -271,6 +286,7 @@ class SettingsViewModelTest {
         diagnostics = diagnostics,
         queueRevision = queueRevision,
         readSnapshot = readSnapshot,
+        applyPollingInterval = applyPollingInterval,
         io = dispatcher,
     )
 }

@@ -6,6 +6,7 @@ import android.security.keystore.KeyProperties
 import android.util.Base64
 import dev.divehub.shared.CachedMeStore
 import dev.divehub.shared.InstanceUrlStore
+import dev.divehub.shared.PollingIntervalStore
 import dev.divehub.shared.TokenStore
 import dev.divehub.shared.UserScopedStore
 import java.security.KeyStore
@@ -34,6 +35,24 @@ class PreferencesInstanceUrlStore(context: Context) : InstanceUrlStore {
 
     private companion object {
         const val KEY_INSTANCE = "instance_url"
+    }
+}
+
+/** The background refresh cadence (ADR 0085): a plain preference, because it is neither secret nor session data. */
+class PreferencesPollingIntervalStore(context: Context) : PollingIntervalStore {
+    private val preferences = context.getSharedPreferences("divehub.settings", Context.MODE_PRIVATE)
+
+    override suspend fun load(): Int = withContext(Dispatchers.IO) {
+        preferences.getInt(KEY_POLLING_INTERVAL, DEFAULT_MINUTES)
+    }
+
+    override suspend fun save(minutes: Int): Unit = withContext(Dispatchers.IO) {
+        preferences.edit().putInt(KEY_POLLING_INTERVAL, minutes).apply()
+    }
+
+    private companion object {
+        const val KEY_POLLING_INTERVAL = "polling_interval_minutes"
+        const val DEFAULT_MINUTES = 15
     }
 }
 
