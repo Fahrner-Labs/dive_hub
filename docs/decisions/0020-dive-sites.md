@@ -8,7 +8,8 @@ date: 2026-10-04
 # ADR 0020: Dive sites shared by all Users, positions without PostGIS, no map yet
 
 ## Status
-Accepted – 2026-10-04
+Accepted – 2026-10-04. Amended by [ADR 0091](0091-source-purge.md) for the admin Source purge only: it
+hard-deletes import-created sites whose Source data is removed, with no Site Revision.
 
 ## Context
 The [data model](../spec/data-model.md) puts Dive sites in the instance tier: shared by every User,

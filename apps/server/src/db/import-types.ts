@@ -42,6 +42,29 @@ export const EMPTY_SITE_IMPORT_COUNTS: Readonly<SiteImportCounts> = Object.freez
   skippedNoName: 0, skippedDeleted: 0, skippedMerged: 0, skippedNew: 0, offered: 0, gone: 0,
 });
 
+/** Where a Source purge is: deleting its External IDs, then the import-created sites they leave empty. */
+export interface SitePurgeProgress {
+  step: 'waiting' | 'ids' | 'sites';
+  done: number;
+  total: number;
+}
+
+/** A site a Source purge would have deleted, but a Dive still names it; the admin resolves it and runs the purge again. */
+export interface PurgeReferencedSite {
+  id: string;
+  name: string;
+  /** The Dives that name it, deleted ones too. */
+  dives: number;
+}
+
+/** What a finished Source purge did, kept for the admin who started it. */
+export interface SitePurgeResult {
+  sourceIdsDeleted: number;
+  sitesDeleted: number;
+  /** Sites left because Dives are there (data integrity beats silent deletion). */
+  referencedSites: PurgeReferencedSite[];
+}
+
 /**
  * One field of a Conflict as stored (src/providers/conflict-service.ts says which fields and values exist): the field and both
  * sides' values as the import preview shows them.

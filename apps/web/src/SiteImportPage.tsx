@@ -1,14 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
-import { api, keys, siteImportsQuery, siteSourcesQuery, unwrap, type SiteImportArea, type SiteImportView } from './api.ts';
+import { api, keys, siteImportsQuery, sitePurgesQuery, siteSourcesQuery, unwrap, type SiteImportArea, type SiteImportView, type SitePurgeView } from './api.ts';
 import { LANGUAGES, pickLanguage } from './i18n/languages.ts';
 import { announce } from './lib/announce.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
 import { countryOptions } from './lib/geo.ts';
 import { usePageTitle } from './lib/page.ts';
 import { settingsHref } from './lib/settings.ts';
-import { Badge, Button, Checkbox, Form, Icon, Muted, Notice, NumberField, PageHeader, Panel, RadioGroup, Select } from './ui/index.ts';
+import { Badge, Button, Checkbox, ConfirmButton, Form, Icon, Muted, Notice, NumberField, PageHeader, Panel, RadioGroup, Select } from './ui/index.ts';
 
 type Source = SiteImportView['sources'][number];
 type AreaKind = SiteImportArea['kind'];
@@ -36,7 +36,9 @@ export function SiteImportPage() {
     <>
       <PageHeader title={t('siteImport.title')} lead={t('siteImport.intro')} back={{ href: settingsHref('admin'), label: t('settings.section.admin') }} />
       <StartImport />
+      <PurgeSource />
       <LatestImports />
+      <LatestPurges />
     </>
   );
 }
@@ -178,6 +180,65 @@ function StartImport() {
   );
 }
 
+/**
+ * The pre-agreed remedy if a Source objects to its site data (FAH-528): remove every External ID of one Source and
+ * the sites it leaves without data or a Dive. Sites a Dive still names stay and are reported; the admin resolves
+ * them and runs it again. The dialog says what cannot be undone.
+ */
+function PurgeSource() {
+  const { t } = useTranslation();
+  const errorText = useErrorText();
+  const queryClient = useQueryClient();
+  // The server drives the offered Sources (DIVEHUB_SITE_SOURCES, ADR 0087): never keep a full list here.
+  const sources = useQuery(siteSourcesQuery());
+  const offered = sources.data ?? [];
+  const [chosen, setChosen] = useState<Source>('ssi');
+  const source = offered.includes(chosen) ? chosen : offered[0];
+  const name = source ? t(`siteImport.sourceName.${source}`) : '';
+  const purge = useMutation({
+    mutationFn: async (remove: Source) => unwrap(await api.POST('/api/admin/site-imports/purge', { body: { source: remove } })),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: keys.sitePurges }),
+        queryClient.invalidateQueries({ queryKey: keys.sites }),
+      ]);
+    },
+  });
+
+  return (
+    <Panel title={t('siteImport.purge.title')}>
+      <p>{t('siteImport.purge.intro')}</p>
+      {sources.error && <Notice tone="danger">{errorText(sources.error)}</Notice>}
+      {sources.data && (
+        <Select
+          label={t('siteImport.purge.source')}
+          description={t('siteImport.purge.sourceHint')}
+          value={source ?? null}
+          onChange={(v) => setChosen((v ?? offered[0] ?? 'ssi') as Source)}
+          options={offered.map((s) => ({ id: s, label: t(`siteImport.sourceName.${s}`) }))}
+        />
+      )}
+      <Muted>{t('siteImport.purge.what')}</Muted>
+      {purge.error && <Notice tone="danger">{errorText(purge.error)}</Notice>}
+      <div className="form-actions">
+        <ConfirmButton
+          variant="danger"
+          icon="delete"
+          title={t('siteImport.purge.confirmTitle', { source: name })}
+          body={t('siteImport.purge.confirmBody', { source: name })}
+          confirmLabel={t('siteImport.purge.confirm')}
+          onConfirm={async () => { if (source) await purge.mutateAsync(source); }}
+          onDone={() => announce(t('siteImport.purge.started'))}
+          isPending={purge.isPending}
+          isDisabled={!source}
+        >
+          {t('siteImport.purge.start')}
+        </ConfirmButton>
+      </div>
+    </Panel>
+  );
+}
+
 function LatestImports() {
   const { t } = useTranslation();
   const errorText = useErrorText();
@@ -259,6 +320,59 @@ function ImportItem({ item: i }: { item: SiteImportView }) {
             ))}
           </ul>
           {offers.length > FINDINGS_SHOWN && <p className="meta">{t('siteImport.moreFindings', { count: offers.length - FINDINGS_SHOWN })}</p>}
+        </>
+      )}
+    </li>
+  );
+}
+
+function LatestPurges() {
+  const { t } = useTranslation();
+  const errorText = useErrorText();
+  const purges = useQuery(sitePurgesQuery());
+  return (
+    <Panel title={t('siteImport.purge.latest')}>
+      {purges.error && <Notice tone="danger">{errorText(purges.error)}</Notice>}
+      {purges.data?.length === 0 && <Muted>{t('siteImport.purge.none')}</Muted>}
+      {purges.data && purges.data.length > 0 && (
+        <ul className="site-imports">{purges.data.map((p) => <PurgeItem key={p.id} item={p} />)}</ul>
+      )}
+    </Panel>
+  );
+}
+
+function PurgeItem({ item: p }: { item: SitePurgeView }) {
+  const { t } = useTranslation();
+  const display = useDisplay();
+  const name = t(`siteImport.sourceName.${p.source}`);
+  const progress = p.status !== 'running' ? null
+    : p.progress.step === 'ids' ? t('siteImport.purge.progressIds', { source: name })
+    : p.progress.step === 'sites' ? t('siteImport.purge.progressSites', { done: p.progress.done, total: p.progress.total })
+    : null;
+  const reported = p.result?.referencedSites ?? [];
+
+  return (
+    <li>
+      <div className="site-import-head">
+        <strong>{t('siteImport.purge.heading', { source: name })}</strong>
+        <Badge tone={STATUS_TONE[p.status]}>{t(`siteImport.status.${p.status}`)}</Badge>
+      </div>
+      <p className="meta">{display.dateTime(p.createdAt)}</p>
+      {progress && <p>{progress}</p>}
+      {p.result && <p>{t('siteImport.purge.result', { ids: p.result.sourceIdsDeleted, sites: p.result.sitesDeleted })}</p>}
+      {p.failureCode && <p className="import-error">{t(`errors.${p.failureCode}`)}</p>}
+      {reported.length > 0 && (
+        <>
+          <p>{t('siteImport.purge.reportedIntro', { count: reported.length })}</p>
+          <ul className="site-import-findings">
+            {reported.slice(0, FINDINGS_SHOWN).map((s) => (
+              <li key={s.id}>
+                <a href={`#/sites/${s.id}`}>{s.name}</a>
+                {' '}{t('siteImport.purge.reportedDives', { count: s.dives })}
+              </li>
+            ))}
+          </ul>
+          {reported.length > FINDINGS_SHOWN && <p className="meta">{t('siteImport.moreFindings', { count: reported.length - FINDINGS_SHOWN })}</p>}
         </>
       )}
     </li>
