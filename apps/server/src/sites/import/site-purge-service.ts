@@ -65,7 +65,11 @@ export function createSitePurgeService({ db, sources }: SitePurgeDeps) {
     if (ids.length === 0) return 0;
     // A site's remaining IDs are references of other Sources only (the Source's are gone); they go with it.
     await tx.delete(diveSiteExternalId).where(inArray(diveSiteExternalId.siteId, ids));
-    return (await tx.delete(diveSite).where(inArray(diveSite.id, ids)).returning({ id: diveSite.id })).length;
+    const gone = await tx.delete(diveSite).where(inArray(diveSite.id, ids)).returning({ id: diveSite.id });
+    // No Site Revision for a purged site (ADR 0091), so announce each removal here: the normal wildcard site hint
+    // refetches every open site list, as a user's site delete does through its Revision.
+    for (const site of gone) await emitHint(tx, { kind: 'site', id: site.id, audience: '*' });
+    return gone.length;
   }
 
   return {

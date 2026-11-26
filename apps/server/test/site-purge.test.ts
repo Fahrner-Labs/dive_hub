@@ -83,6 +83,30 @@ describe.skipIf(!(await databaseReachable()))('Source purge', () => {
     return json<SitePurge>('GET', `/api/admin/site-imports/purges/${started.json().id}`);
   }
 
+  /** The raw live hints on this database: what an open page would hear (ADR 0066). */
+  async function listenHints() {
+    const listener = await t.pool.connect();
+    const seen: { kind: string; id: string; audience: unknown }[] = [];
+    listener.on('notification', (message) => {
+      if (message.channel === 'divehub_hints' && message.payload) seen.push(JSON.parse(message.payload) as never);
+    });
+    await listener.query('listen divehub_hints');
+    return {
+      async waitFor(predicate: (hint: { kind: string; id: string }) => boolean) {
+        for (let i = 0; i < 200; i++) {
+          const found = seen.find(predicate);
+          if (found) return found;
+          await new Promise((resolve) => setTimeout(resolve, 10));
+        }
+        throw new Error(`no matching hint; got ${JSON.stringify(seen)}`);
+      },
+      async close() {
+        await listener.query('unlisten divehub_hints');
+        listener.release();
+      },
+    };
+  }
+
   beforeAll(async () => {
     t = await createTestDatabase();
     ctx = await createTestApp(t, { siteSources: { osm: osm.adapter, wikidata: wikidata.adapter, ssi: ssi.adapter } });
@@ -168,11 +192,17 @@ describe.skipIf(!(await databaseReachable()))('Source purge', () => {
     const dive = await json<Dive>('GET', `/api/dives/${diveId}`, tim);
     expect((await call('PATCH', `/api/dives/${diveId}`, tim, { version: dive.version, siteId: used.id })).statusCode).toBe(200);
 
+    const hints = await listenHints();
     const purge = await runPurge();
     expect(purge.status).toBe('done');
     expect(purge.result!.sourceIdsDeleted).toBe(4);
     expect(purge.result!.sitesDeleted).toBe(1);
     expect(purge.result!.referencedSites).toEqual([{ id: used.id, name: 'Used Reef', dives: 1 }]);
+
+    // Removing a site is shared data: the wildcard site hint reaches every open list, like a User's site delete.
+    const gone = await hints.waitFor((hint) => hint.kind === 'site' && hint.id === unused.id);
+    expect(gone.audience).toBe('*');
+    await hints.close();
 
     // The unused import site and every SSI ID are gone; the Site a User made stays without the ID.
     expect((await call('GET', `/api/dive-sites/${unused.id}`)).statusCode).toBe(404);
