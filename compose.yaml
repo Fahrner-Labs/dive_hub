@@ -22,6 +22,8 @@ services:
       DIVEHUB_TRUSTED_PROXIES: ${DIVEHUB_TRUSTED_PROXIES:-}
       # Importing dive sites (docs/spec/architecture.md#dive-site-imports-and-licenses): your e-mail or URL for
       # the services' User-Agent, and other endpoints (e.g. your own or a paid Overpass server).
+      # Which sources exist and are offered; the default is every source (ADR 0087).
+      DIVEHUB_SITE_SOURCES: ${DIVEHUB_SITE_SOURCES:-osm,wikidata,ssi}
       DIVEHUB_CONTACT: ${DIVEHUB_CONTACT:-}
       DIVEHUB_OVERPASS_URL: ${DIVEHUB_OVERPASS_URL:-}
       DIVEHUB_WIKIDATA_SPARQL_URL: ${DIVEHUB_WIKIDATA_SPARQL_URL:-}

@@ -1427,6 +1427,10 @@ dives, all off until the User turns them on. *Web:* `ProviderAutomation.tsx` (se
 - **Merging:** offer the other sites within 200 m. Explain before confirming, then follow the kept site
   ([Privacy](#privacy), [Data safety](#data-safety)).
 - **Site imports (admins):**
+  - **offer only the sources this instance enables.** `GET /api/admin/site-sources` answers the set
+    (`osm`, `wikidata`, `ssi`) from the operator's `DIVEHUB_SITE_SOURCES`; never keep a client-side copy of the
+    full list ([ADR 0087](../decisions/0087-hosted-instance-configuration.md)). Starting an import that names a
+    disabled source answers `400 site_source_disabled`.
   - sources (OSM, Wikidata, SSI), area (country, box or everywhere), the language of names, and "only fill dive
     sites that are already here" (`createSites: false`);
   - the ODbL explanation and confirmation for OSM, and the SSI explanation and confirmation ([Licenses](#licenses));

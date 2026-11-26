@@ -663,6 +663,7 @@
     "site_source_not_typed": "IDs dieser Quelle kommen nur aus einem Tauchplatz-Import.",
     "odbl_not_confirmed": "Bestätige zuerst die Bedingungen der Daten von OpenStreetMap.",
     "ssi_not_confirmed": "Bestätige zuerst die Erklärung zur Liste der Tauchplätze von SSI.",
+    "site_source_disabled": "Diese Quelle ist auf diesem Dive Hub abgeschaltet.",
     "site_import_running": "Ein Import läuft schon. Starte den nächsten, wenn er fertig ist.",
     "site_import_not_found": "Diesen Import gibt es nicht.",
     "source_unavailable": "Die Quelle hat nicht oder unerwartet geantwortet. Versuch es später noch einmal.",

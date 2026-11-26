@@ -20,7 +20,7 @@ describe('loadConfig', () => {
   it('takes an empty variable as unset', () => {
     const config = loadConfig({
       ...base, DIVEHUB_PORT: '', DIVEHUB_MAX_UPLOAD_MB: '', DIVEHUB_HOST: '', DIVEHUB_LOG_LEVEL: '', DIVEHUB_WORKER: '',
-      DIVEHUB_BASE_URL: '', DIVEHUB_DATA_DIR: '', DIVEHUB_AUTH_SECRET: '', DIVEHUB_CONTACT: ' ',
+      DIVEHUB_BASE_URL: '', DIVEHUB_DATA_DIR: '', DIVEHUB_AUTH_SECRET: '', DIVEHUB_CONTACT: ' ', DIVEHUB_SITE_SOURCES: ' ',
     });
     expect(config).toEqual(loadConfig(base));
   });
@@ -39,6 +39,23 @@ describe('loadConfig', () => {
     expect(() => loadConfig({ DATABASE_URL: '' })).toThrow('DATABASE_URL');
     expect(() => loadConfig({ ...base, NODE_ENV: 'production' })).toThrow('DIVEHUB_BASE_URL');
     expect(loadConfig({ ...base, NODE_ENV: 'production', DIVEHUB_BASE_URL: 'https://dives.example.com' }).baseUrl).toBe('https://dives.example.com');
+  });
+});
+
+describe('loadConfig site sources', () => {
+  it('offers every source when the variable is unset, the self-hosted default', () => {
+    expect(loadConfig(base).siteSources).toEqual(['osm', 'wikidata', 'ssi']);
+  });
+
+  it('takes a subset in the vocabulary order', () => {
+    expect(loadConfig({ ...base, DIVEHUB_SITE_SOURCES: 'ssi,wikidata' }).siteSources).toEqual(['wikidata', 'ssi']);
+    expect(loadConfig({ ...base, DIVEHUB_SITE_SOURCES: ' wikidata ' }).siteSources).toEqual(['wikidata']);
+  });
+
+  it('names the unknown source and the valid ones at boot', () => {
+    expect(() => loadConfig({ ...base, DIVEHUB_SITE_SOURCES: 'wikidata,openstreetmap' }))
+      .toThrow('DIVEHUB_SITE_SOURCES names unknown source(s): openstreetmap; valid sources are osm, wikidata, ssi');
+    expect(() => loadConfig({ ...base, DIVEHUB_SITE_SOURCES: ',' })).toThrow('DIVEHUB_SITE_SOURCES must name at least one source');
   });
 });
 

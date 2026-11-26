@@ -1,5 +1,6 @@
 // The Sources of Dive site data (ADR 0021): how an External ID links to its Source, and what it requires.
 import { describe, expect, it } from 'vitest';
+import { createSiteSources } from '../src/site-sources.js';
 import { SOURCE_INFO } from '../src/sites/sources.js';
 
 describe('Sources of site data', () => {
@@ -25,5 +26,24 @@ describe('Sources of site data', () => {
     expect(SOURCE_INFO.wikidata.idPattern.test('Q42')).toBe(true);
     expect(SOURCE_INFO.ssi.idPattern.test('3314')).toBe(true);
     expect(SOURCE_INFO.ssi.idPattern.test('site:3314')).toBe(false);
+  });
+});
+
+describe('Site sources of an instance', () => {
+  it('constructs only the sources DIVEHUB_SITE_SOURCES enables', () => {
+    const sources = createSiteSources({ sources: ['wikidata', 'ssi'], fetch: () => { throw new Error('no network in this test'); } });
+    expect(Object.keys(sources).sort()).toEqual(['ssi', 'wikidata']);
+    expect(sources.osm).toBeUndefined();
+    expect(sources.wikidata?.source).toBe('wikidata');
+    expect(sources.ssi?.source).toBe('ssi');
+  });
+
+  it('constructs every source by default', () => {
+    const sources = createSiteSources({ sources: ['osm', 'wikidata', 'ssi'], fetch: () => { throw new Error('no network in this test'); } });
+    expect(Object.keys(sources).sort()).toEqual(['osm', 'ssi', 'wikidata']);
+  });
+
+  it('refuses an instance with every source switched off', () => {
+    expect(() => createSiteSources({ sources: [] })).toThrow('At least one site source');
   });
 });
