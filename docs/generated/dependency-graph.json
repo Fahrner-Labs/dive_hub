@@ -73,6 +73,23 @@
         },
         {
           "dynamic": false,
+          "module": "./billing/routes.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/billing/routes.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./centres/centre-view.js",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -1156,6 +1173,7 @@
         "apps/server/src/app.ts",
         "apps/server/src/assessment/routes.ts",
         "apps/server/src/backups/backup-routes.ts",
+        "apps/server/src/billing/routes.ts",
         "apps/server/src/centres/routes.ts",
         "apps/server/src/certifications/routes.ts",
         "apps/server/src/divers/routes.ts",
@@ -1210,6 +1228,7 @@
         "apps/server/src/divers/management.ts",
         "apps/server/src/backups/backup-service.ts",
         "apps/server/src/db/migrate.ts",
+        "apps/server/src/entitlement/entitlement.ts",
         "apps/server/src/centres/centre-service.ts",
         "apps/server/src/sites/site-service.ts",
         "apps/server/src/sites/site-ids.ts",
@@ -1234,7 +1253,6 @@
         "apps/server/src/dives/merging-service.ts",
         "apps/server/src/dives/continuation/joined-recording.ts",
         "apps/server/src/dives/purge-service.ts",
-        "apps/server/src/entitlement/entitlement.ts",
         "apps/server/src/equipment/equipment-service.ts",
         "apps/server/src/equipment/usage.ts",
         "apps/server/src/imports/import-service.ts",
@@ -1536,6 +1554,7 @@
         "apps/server/src/http/conditional.ts",
         "apps/server/src/http/schemas.ts",
         "apps/server/src/backups/backup-routes.ts",
+        "apps/server/src/billing/routes.ts",
         "apps/server/src/centres/centre-view.ts",
         "apps/server/src/centres/verification-code-view.ts",
         "apps/server/src/centres/routes.ts",
@@ -1828,6 +1847,7 @@
         "apps/server/src/auth/fastify.ts",
         "apps/server/src/auth/openapi.ts",
         "apps/server/src/backups/backup-routes.ts",
+        "apps/server/src/billing/routes.ts",
         "apps/server/src/centres/routes.ts",
         "apps/server/src/certifications/routes.ts",
         "apps/server/src/compose.ts",
@@ -2071,6 +2091,7 @@
         "apps/server/src/divers/management.ts",
         "apps/server/src/backups/backup-service.ts",
         "apps/server/src/db/migrate.ts",
+        "apps/server/src/entitlement/entitlement.ts",
         "apps/server/src/centres/centre-service.ts",
         "apps/server/src/sites/site-service.ts",
         "apps/server/src/sites/site-ids.ts",
@@ -2094,7 +2115,6 @@
         "apps/server/src/dives/merging-service.ts",
         "apps/server/src/dives/continuation/joined-recording.ts",
         "apps/server/src/dives/purge-service.ts",
-        "apps/server/src/entitlement/entitlement.ts",
         "apps/server/src/equipment/equipment-service.ts",
         "apps/server/src/equipment/usage.ts",
         "apps/server/src/imports/import-service.ts",
@@ -2292,6 +2312,7 @@
         "apps/server/src/assessment/assessment-service.ts",
         "apps/server/src/divers/management.ts",
         "apps/server/src/backups/backup-service.ts",
+        "apps/server/src/entitlement/entitlement.ts",
         "apps/server/src/centres/centre-service.ts",
         "apps/server/src/sites/site-service.ts",
         "apps/server/src/sites/sources.ts",
@@ -2320,7 +2341,6 @@
         "apps/server/src/dives/continuation/join-parts.ts",
         "apps/server/src/dives/dive-summary-view.ts",
         "apps/server/src/dives/purge-service.ts",
-        "apps/server/src/entitlement/entitlement.ts",
         "apps/server/src/equipment/equipment-service.ts",
         "apps/server/src/imports/import-service.ts",
         "apps/server/src/imports/formats/fit/fit-adapter.ts",
@@ -2431,13 +2451,13 @@
         "apps/server/src/imports/computer-events.ts",
         "apps/server/src/imports/formats/fit/fit-vocabulary.ts",
         "apps/server/src/imports/formats/suunto/suunto-vocabulary.ts",
+        "apps/server/src/config.ts",
         "apps/server/src/sites/site-service.ts",
         "apps/server/src/sites/import/site-source.ts",
         "apps/server/src/sites/sources.ts",
         "apps/server/src/sites/site-ids.ts",
         "apps/server/src/sites/import/import-plan.ts",
         "apps/server/src/divers/diver-service.ts",
-        "apps/server/src/config.ts",
         "apps/server/src/equipment/equipment-service.ts",
         "apps/server/src/imports/import-service.ts",
         "apps/server/src/imports/parsed-recording.ts",
@@ -2753,6 +2773,7 @@
         "apps/server/src/app.ts",
         "apps/server/src/assessment/routes.ts",
         "apps/server/src/backups/backup-routes.ts",
+        "apps/server/src/billing/routes.ts",
         "apps/server/src/http/caller.ts",
         "apps/server/src/centres/routes.ts",
         "apps/server/src/certifications/routes.ts",
@@ -2883,6 +2904,7 @@
         "apps/server/src/auth/fastify.ts",
         "apps/server/src/backups/backup-routes.ts",
         "apps/server/src/backups/backup-service.ts",
+        "apps/server/src/billing/routes.ts",
         "apps/server/src/centres/routes.ts",
         "apps/server/src/certifications/routes.ts",
         "apps/server/src/certifications/certification-answers.ts",
@@ -4026,6 +4048,7 @@
         "apps/server/src/storage/blob-store.ts",
         "apps/server/src/backups/restore-service.ts",
         "apps/server/src/secrets/secret-box.ts",
+        "apps/server/src/billing/paddle-signature.ts",
         "apps/server/src/dives/continuation/joined-recording.ts",
         "apps/server/src/imports/archive.ts",
         "apps/server/src/notifications/fcm-provider.ts",
@@ -4988,6 +5011,474 @@
       "dependents": [
         "apps/server/src/backups/backup-service.ts",
         "apps/server/src/backups/restore-cli.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/server/src/billing/routes.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../auth/auth.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/auth/auth.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../auth/fastify.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/auth/fastify.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../http/problems.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/http/problems.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./billing-service.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/billing/billing-service.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@fastify/type-provider-typebox",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "npm",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/node_modules/@fastify/type-provider-typebox/dist/cjs/index.js",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": true,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "typebox",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "unknown"
+          ],
+          "resolved": "typebox",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": true,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/server/src/app.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/server/src/billing/billing-service.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../config.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/config.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../entitlement/entitlement.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/entitlement/entitlement.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./paddle-events.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/billing/paddle-events.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./paddle-signature.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/billing/paddle-signature.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./paddle.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/billing/paddle.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/server/src/billing/routes.ts",
+        "apps/server/src/compose.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/server/src/config.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./secrets/secret-box.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/secrets/secret-box.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./vocabulary.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/vocabulary.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "fs",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "core",
+            "import"
+          ],
+          "protocol": "node:",
+          "resolved": "fs",
+          "coreModule": true,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "path",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "core",
+            "import"
+          ],
+          "protocol": "node:",
+          "resolved": "path",
+          "coreModule": true,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/server/src/billing/billing-service.ts",
+        "apps/server/src/compose.ts",
+        "apps/server/src/mail/resend.ts",
+        "apps/server/src/notifications/notification-service.ts",
+        "apps/server/src/notifications/push-dispatcher.ts",
+        "apps/server/src/notifications/fcm-provider.ts",
+        "apps/server/src/main.ts",
+        "apps/server/src/start.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/server/src/secrets/secret-box.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "crypto",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "core",
+            "import"
+          ],
+          "protocol": "node:",
+          "resolved": "crypto",
+          "coreModule": true,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/server/src/config.ts",
+        "apps/server/src/compose.ts",
+        "apps/server/src/providers/layer.ts",
+        "apps/server/src/providers/connection-service.ts",
+        "apps/server/src/start.ts",
+        "apps/server/src/scripts/write-openapi.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/server/src/entitlement/entitlement.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../db/client.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/db/client.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../db/schema.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/db/schema.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "drizzle-orm",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "npm",
+            "import"
+          ],
+          "resolved": "apps/server/node_modules/drizzle-orm/index.cjs",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": true,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/server/src/billing/billing-service.ts",
+        "apps/server/src/billing/paddle-events.ts",
+        "apps/server/src/compose.ts",
+        "apps/server/src/providers/layer.ts",
+        "apps/server/src/providers/connection-service.ts",
+        "apps/server/src/providers/entitlement-gate.ts",
+        "apps/server/src/providers/dive-import/scheduled-fetch.ts",
+        "apps/server/src/providers/waiting-push/waiting-push-service.ts",
+        "apps/server/src/providers/routes.ts",
+        "apps/server/src/providers/push/push-run-routes.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/server/src/billing/paddle-events.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../entitlement/entitlement.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/entitlement/entitlement.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/server/src/billing/billing-service.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/server/src/billing/paddle-signature.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "crypto",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "core",
+            "import"
+          ],
+          "protocol": "node:",
+          "resolved": "crypto",
+          "coreModule": true,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/server/src/billing/billing-service.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/server/src/billing/paddle.ts",
+      "dependencies": [],
+      "dependents": [
+        "apps/server/src/billing/billing-service.ts",
+        "apps/server/src/compose.ts"
       ],
       "orphan": false,
       "valid": true
@@ -7171,6 +7662,41 @@
         },
         {
           "dynamic": false,
+          "module": "./billing/billing-service.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/billing/billing-service.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./billing/paddle.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/billing/paddle.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./centres/centre-service.js",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -8176,125 +8702,6 @@
         "apps/server/src/start.ts",
         "apps/server/src/scripts/write-openapi.ts",
         "apps/server/src/scripts/write-planning-vectors.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "apps/server/src/config.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./secrets/secret-box.js",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "apps/server/src/secrets/secret-box.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./vocabulary.js",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "apps/server/src/vocabulary.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "fs",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "core",
-            "import"
-          ],
-          "protocol": "node:",
-          "resolved": "fs",
-          "coreModule": true,
-          "followable": false,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "path",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "core",
-            "import"
-          ],
-          "protocol": "node:",
-          "resolved": "path",
-          "coreModule": true,
-          "followable": false,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "apps/server/src/compose.ts",
-        "apps/server/src/mail/resend.ts",
-        "apps/server/src/notifications/notification-service.ts",
-        "apps/server/src/notifications/push-dispatcher.ts",
-        "apps/server/src/notifications/fcm-provider.ts",
-        "apps/server/src/main.ts",
-        "apps/server/src/start.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "apps/server/src/secrets/secret-box.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "crypto",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "core",
-            "import"
-          ],
-          "protocol": "node:",
-          "resolved": "crypto",
-          "coreModule": true,
-          "followable": false,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "apps/server/src/compose.ts",
-        "apps/server/src/config.ts",
-        "apps/server/src/providers/layer.ts",
-        "apps/server/src/providers/connection-service.ts",
-        "apps/server/src/start.ts",
-        "apps/server/src/scripts/write-openapi.ts"
       ],
       "orphan": false,
       "valid": true
@@ -11019,75 +11426,6 @@
       "dependents": [
         "apps/server/src/compose.ts",
         "apps/server/src/worker.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "apps/server/src/entitlement/entitlement.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../db/client.js",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "import"
-          ],
-          "resolved": "apps/server/src/db/client.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../db/schema.js",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "apps/server/src/db/schema.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "drizzle-orm",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "npm",
-            "import"
-          ],
-          "resolved": "apps/server/node_modules/drizzle-orm/index.cjs",
-          "coreModule": false,
-          "followable": false,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": true,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "apps/server/src/compose.ts",
-        "apps/server/src/providers/layer.ts",
-        "apps/server/src/providers/connection-service.ts",
-        "apps/server/src/providers/entitlement-gate.ts",
-        "apps/server/src/providers/dive-import/scheduled-fetch.ts",
-        "apps/server/src/providers/waiting-push/waiting-push-service.ts",
-        "apps/server/src/providers/routes.ts",
-        "apps/server/src/providers/push/push-run-routes.ts"
       ],
       "orphan": false,
       "valid": true
@@ -53874,8 +54212,8 @@
     "baselineSize": 0,
     "baselineStale": 0,
     "advisedExitCode": 0,
-    "totalCruised": 506,
-    "totalDependenciesCruised": 2691,
+    "totalCruised": 511,
+    "totalDependenciesCruised": 2707,
     "optionsUsed": {
       "baseDir": "/home/runner/work/dive_hub/dive_hub",
       "combinedDependencies": false,
@@ -53937,7 +54275,7 @@
             "path": "^apps/server/src/revisions/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|backups|centres|certifications|divers|dives|entitlement|equipment|imports|lead|mcp|notifications|planning|providers|sites|social|support|sync|live|users|version)/"
+            "path": "^apps/server/src/(assessment|backups|centres|certifications|divers|dives|entitlement|billing|equipment|imports|lead|mcp|notifications|planning|providers|sites|social|support|sync|live|users|version)/"
           },
           "scope": "module"
         },
@@ -53949,7 +54287,7 @@
             "path": "^apps/server/src/assessment/"
           },
           "to": {
-            "path": "^apps/server/src/(revisions|backups|centres|certifications|dives|entitlement|equipment|lead|mcp|notifications|planning|providers|sites|social|support|sync|live|users|version)/"
+            "path": "^apps/server/src/(revisions|backups|centres|certifications|dives|entitlement|billing|equipment|lead|mcp|notifications|planning|providers|sites|social|support|sync|live|users|version)/"
           },
           "scope": "module"
         },
@@ -53961,7 +54299,7 @@
             "path": "^apps/server/src/backups/"
           },
           "to": {
-            "path": "^apps/server/src/(revisions|assessment|centres|certifications|divers|dives|entitlement|equipment|imports|lead|mcp|notifications|planning|providers|sites|social|support|sync|live|users|version)/"
+            "path": "^apps/server/src/(revisions|assessment|centres|certifications|divers|dives|entitlement|billing|equipment|imports|lead|mcp|notifications|planning|providers|sites|social|support|sync|live|users|version)/"
           },
           "scope": "module"
         },
@@ -53973,7 +54311,7 @@
             "path": "^apps/server/src/centres/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|backups|certifications|dives|entitlement|equipment|imports|lead|mcp|notifications|planning|providers|social|support|sync|live|users|version)/"
+            "path": "^apps/server/src/(assessment|backups|certifications|dives|entitlement|billing|equipment|imports|lead|mcp|notifications|planning|providers|social|support|sync|live|users|version)/"
           },
           "scope": "module"
         },
@@ -53985,7 +54323,7 @@
             "path": "^apps/server/src/certifications/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|backups|centres|entitlement|equipment|imports|lead|mcp|notifications|planning|providers|sites|social|support|sync|users|version)/"
+            "path": "^apps/server/src/(assessment|backups|centres|entitlement|billing|equipment|imports|lead|mcp|notifications|planning|providers|sites|social|support|sync|users|version)/"
           },
           "scope": "module"
         },
@@ -53997,7 +54335,7 @@
             "path": "^apps/server/src/divers/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|backups|centres|certifications|dives|entitlement|equipment|imports|lead|mcp|notifications|planning|providers|sites|social|support|sync|live|users|version)/"
+            "path": "^apps/server/src/(assessment|backups|centres|certifications|dives|entitlement|billing|equipment|imports|lead|mcp|notifications|planning|providers|sites|social|support|sync|live|users|version)/"
           },
           "scope": "module"
         },
@@ -54009,7 +54347,7 @@
             "path": "^apps/server/src/dives/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|backups|certifications|entitlement|equipment|imports|lead|mcp|notifications|planning|providers|social|support|sync|live|users|version)/"
+            "path": "^apps/server/src/(assessment|backups|certifications|entitlement|billing|equipment|imports|lead|mcp|notifications|planning|providers|social|support|sync|live|users|version)/"
           },
           "scope": "module"
         },
@@ -54019,6 +54357,18 @@
           "comment": "entitlement/ may import only these domain modules:  (MODULE_IMPORTS in .dependency-cruiser.cjs, ADR 0053).",
           "from": {
             "path": "^apps/server/src/entitlement/"
+          },
+          "to": {
+            "path": "^apps/server/src/(revisions|assessment|backups|centres|certifications|divers|dives|billing|equipment|imports|lead|mcp|notifications|planning|providers|sites|social|support|sync|live|users|version)/"
+          },
+          "scope": "module"
+        },
+        {
+          "name": "module-imports-billing",
+          "severity": "error",
+          "comment": "billing/ may import only these domain modules: entitlement (MODULE_IMPORTS in .dependency-cruiser.cjs, ADR 0053).",
+          "from": {
+            "path": "^apps/server/src/billing/"
           },
           "to": {
             "path": "^apps/server/src/(revisions|assessment|backups|centres|certifications|divers|dives|equipment|imports|lead|mcp|notifications|planning|providers|sites|social|support|sync|live|users|version)/"
@@ -54033,7 +54383,7 @@
             "path": "^apps/server/src/equipment/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|backups|centres|certifications|dives|entitlement|imports|lead|mcp|notifications|planning|providers|sites|social|support|sync|live|users|version)/"
+            "path": "^apps/server/src/(assessment|backups|centres|certifications|dives|entitlement|billing|imports|lead|mcp|notifications|planning|providers|sites|social|support|sync|live|users|version)/"
           },
           "scope": "module"
         },
@@ -54045,7 +54395,7 @@
             "path": "^apps/server/src/imports/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|backups|centres|certifications|entitlement|lead|mcp|notifications|planning|providers|social|support|sync|users|version)/"
+            "path": "^apps/server/src/(assessment|backups|centres|certifications|entitlement|billing|lead|mcp|notifications|planning|providers|social|support|sync|users|version)/"
           },
           "scope": "module"
         },
@@ -54057,7 +54407,7 @@
             "path": "^apps/server/src/lead/"
           },
           "to": {
-            "path": "^apps/server/src/(revisions|assessment|backups|centres|certifications|entitlement|equipment|imports|mcp|notifications|providers|sites|social|support|sync|live|users|version)/"
+            "path": "^apps/server/src/(revisions|assessment|backups|centres|certifications|entitlement|billing|equipment|imports|mcp|notifications|providers|sites|social|support|sync|live|users|version)/"
           },
           "scope": "module"
         },
@@ -54084,7 +54434,7 @@
             "path": "^apps/server/src/mcp/"
           },
           "to": {
-            "path": "^apps/server/src/(revisions|backups|centres|certifications|entitlement|imports|lead|notifications|providers|social|support|sync|live|users|version)/"
+            "path": "^apps/server/src/(revisions|backups|centres|certifications|entitlement|billing|imports|lead|notifications|providers|social|support|sync|live|users|version)/"
           },
           "scope": "module"
         },
@@ -54096,7 +54446,7 @@
             "path": "^apps/server/src/notifications/"
           },
           "to": {
-            "path": "^apps/server/src/(revisions|assessment|backups|centres|certifications|divers|dives|entitlement|equipment|imports|lead|mcp|planning|providers|sites|social|support|sync|live|users|version)/"
+            "path": "^apps/server/src/(revisions|assessment|backups|centres|certifications|divers|dives|entitlement|billing|equipment|imports|lead|mcp|planning|providers|sites|social|support|sync|live|users|version)/"
           },
           "scope": "module"
         },
@@ -54108,7 +54458,7 @@
             "path": "^apps/server/src/planning/"
           },
           "to": {
-            "path": "^apps/server/src/(revisions|backups|centres|certifications|entitlement|equipment|imports|lead|mcp|notifications|providers|sites|social|support|sync|live|users|version)/"
+            "path": "^apps/server/src/(revisions|backups|centres|certifications|entitlement|billing|equipment|imports|lead|mcp|notifications|providers|sites|social|support|sync|live|users|version)/"
           },
           "scope": "module"
         },
@@ -54120,7 +54470,7 @@
             "path": "^apps/server/src/providers/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|backups|centres|equipment|lead|mcp|notifications|planning|social|support|sync|users|version)/"
+            "path": "^apps/server/src/(assessment|backups|centres|billing|equipment|lead|mcp|notifications|planning|social|support|sync|users|version)/"
           },
           "scope": "module"
         },
@@ -54132,7 +54482,7 @@
             "path": "^apps/server/src/sites/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|backups|centres|certifications|divers|dives|entitlement|equipment|imports|lead|mcp|notifications|planning|providers|social|support|sync|users|version)/"
+            "path": "^apps/server/src/(assessment|backups|centres|certifications|divers|dives|entitlement|billing|equipment|imports|lead|mcp|notifications|planning|providers|social|support|sync|users|version)/"
           },
           "scope": "module"
         },
@@ -54144,7 +54494,7 @@
             "path": "^apps/server/src/social/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|backups|centres|certifications|entitlement|equipment|imports|lead|mcp|notifications|planning|providers|sites|support|sync|users|version)/"
+            "path": "^apps/server/src/(assessment|backups|centres|certifications|entitlement|billing|equipment|imports|lead|mcp|notifications|planning|providers|sites|support|sync|users|version)/"
           },
           "scope": "module"
         },
@@ -54156,7 +54506,7 @@
             "path": "^apps/server/src/support/"
           },
           "to": {
-            "path": "^apps/server/src/(revisions|assessment|backups|centres|certifications|divers|dives|entitlement|equipment|imports|lead|mcp|notifications|planning|providers|sites|social|sync|live|users|version)/"
+            "path": "^apps/server/src/(revisions|assessment|backups|centres|certifications|divers|dives|entitlement|billing|equipment|imports|lead|mcp|notifications|planning|providers|sites|social|sync|live|users|version)/"
           },
           "scope": "module"
         },
@@ -54168,7 +54518,7 @@
             "path": "^apps/server/src/sync/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|backups|centres|certifications|divers|dives|entitlement|equipment|imports|lead|mcp|notifications|planning|providers|sites|social|support|live|users|version)/"
+            "path": "^apps/server/src/(assessment|backups|centres|certifications|divers|dives|entitlement|billing|equipment|imports|lead|mcp|notifications|planning|providers|sites|social|support|live|users|version)/"
           },
           "scope": "module"
         },
@@ -54180,7 +54530,7 @@
             "path": "^apps/server/src/live/"
           },
           "to": {
-            "path": "^apps/server/src/(assessment|backups|centres|certifications|divers|dives|entitlement|equipment|imports|lead|mcp|notifications|planning|providers|sites|social|support|sync|users|version)/"
+            "path": "^apps/server/src/(assessment|backups|centres|certifications|divers|dives|entitlement|billing|equipment|imports|lead|mcp|notifications|planning|providers|sites|social|support|sync|users|version)/"
           },
           "scope": "module"
         },
@@ -54207,7 +54557,7 @@
             "path": "^apps/server/src/users/"
           },
           "to": {
-            "path": "^apps/server/src/(revisions|assessment|backups|centres|certifications|dives|entitlement|equipment|imports|lead|mcp|notifications|planning|providers|sites|social|support|sync|live|version)/"
+            "path": "^apps/server/src/(revisions|assessment|backups|centres|certifications|dives|entitlement|billing|equipment|imports|lead|mcp|notifications|planning|providers|sites|social|support|sync|live|version)/"
           },
           "scope": "module"
         },
@@ -54219,7 +54569,7 @@
             "path": "^apps/server/src/version/"
           },
           "to": {
-            "path": "^apps/server/src/(revisions|assessment|backups|centres|certifications|divers|dives|entitlement|equipment|imports|lead|mcp|notifications|planning|providers|sites|social|support|sync|live|users)/"
+            "path": "^apps/server/src/(revisions|assessment|backups|centres|certifications|divers|dives|entitlement|billing|equipment|imports|lead|mcp|notifications|planning|providers|sites|social|support|sync|live|users)/"
           },
           "scope": "module"
         },
