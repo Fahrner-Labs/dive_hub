@@ -67,11 +67,15 @@ export function createEntitlementService(deps: { db: Db; enforced: boolean; cloc
     async summary(userId: string): Promise<PlanSummary> {
       if (!deps.enforced) return { plan: 'free', status: 'none', currentPeriodEnd: null, entitled: true };
       const [row] = await deps.db.select(columns).from(userEntitlement).where(eq(userEntitlement.userId, userId));
+      const entitled = isEntitled(row ?? null, now());
+      // A canceled subscription whose paid period has ended is back to no plan (ADR 0089: canceled → none), even though
+      // its row stays for the Paddle customer. Otherwise Settings would still call it Pro and hide the Upgrade action.
+      if (row?.status === 'canceled' && !entitled) return { plan: 'free', status: 'none', currentPeriodEnd: null, entitled: false };
       return {
         plan: row?.plan === 'pro' ? 'pro' : 'free',
         status: (row?.status as EntitlementStatus | undefined) ?? 'none',
         currentPeriodEnd: row?.currentPeriodEnd ?? null,
-        entitled: isEntitled(row ?? null, now()),
+        entitled,
       };
     },
 

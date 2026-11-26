@@ -1148,11 +1148,12 @@ dives, all off until the User turns them on. *Web:* `ProviderAutomation.tsx` (se
   `provider_unsupported` (the Provider can't) and 400 `fetch_interval_too_short` (below its minimum) are translated; turning
   off is always accepted. The fetch also needs the Connection's import mode "link and fill" or "also create".
   On a hosted instance with billing, `offers.entitled` is false for a User without the paid plan, and `offers.offer`
-  carries the `plan` and the `features` it unlocks (`automation`, `push_runs`): show every switch **greyed** (its current
-  state still visible) with the upsell built from that offer, linking to the Plan section. Never hardcode the plan or
-  what is paid. Both are absent on an older server (no paywall): treat that as entitled. A save that still meets the
-  gate answers 402 `entitlement_required` with the same `offer`; show that upsell too. Turning off stays accepted, so a
-  downgraded User can always stop it.
+  carries the `plan` and the `features` it unlocks (`automation`, `push_runs`): show the switches **greyed** so the
+  paid feature cannot be turned on (its current state still visible) with the upsell built from that offer, linking to
+  the Plan section. Never hardcode the plan or what is paid. Both are absent on an older server (no paywall): treat
+  that as entitled. A save that still meets the gate answers 402 `entitlement_required` with the same `offer`; show
+  that upsell too. Turning off stays accepted, so a switch that is already on must stay switchable off: a downgraded
+  User can always stop it.
 - **Must show the state of a Dive's Waiting push** (`waiting` on each row of `GET /api/dives`, on `GET /api/dives/{id}/providers`
   and `.../{provider}` as `waiting` (one or null), and on deleted dives): a list row gets a small icon (`aria-hidden`, with a
   text label), the Dive's page the words, next to Send. Texts with `{{provider}}` the Provider's name:

@@ -104,7 +104,7 @@ apps/server/src/dives/checks/logbook-check-rules.ts:201 fn probablyNoDive
 … 318 more symbols in this module
 
 ### server/entitlement
-apps/server/src/entitlement/entitlement.ts:136 type EntitlementService
+apps/server/src/entitlement/entitlement.ts:140 type EntitlementService
 apps/server/src/entitlement/entitlement.ts:45 fn createEntitlementService
 apps/server/src/entitlement/entitlement.ts:10 type EntitlementStatus
 apps/server/src/entitlement/entitlement.ts:13 const PRO_OFFER

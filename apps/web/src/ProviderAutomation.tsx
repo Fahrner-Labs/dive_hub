@@ -72,7 +72,8 @@ export function ProviderAutomation({ provider: p, connection: c, several, focuse
   const { offers, lastFetch, unsentDives, waiting } = c;
   // The paywall's state comes from the server (hosted-DiveHub plan §4.4): a free User gets the switches greyed and the
   // plan it needs from `offer`, never from a copy here. A save that still meets the gate carries the same offer. An
-  // older server (no paywall) omits these: treat it as entitled.
+  // older server (no paywall) omits these: treat it as entitled. A setting that is already on stays switchable off (the
+  // server accepts that), so a downgraded User can always stop it.
   const locked = offers.entitled === false;
   const gate = offers.offer
     ?? Object.values(failed).find((e): e is ApiError => e instanceof ApiError && e.code === 'entitlement_required')?.details.offer;
@@ -124,19 +125,19 @@ export function ProviderAutomation({ provider: p, connection: c, several, focuse
             </Notice>
           )}
           {offers.sendChanges && (
-            <Switch isSelected={c.sendChanges} isPending={pending.has('sendChanges')} isDisabled={locked} onChange={(sendChanges) => save.mutate({ sendChanges })}>
+            <Switch isSelected={c.sendChanges} isPending={pending.has('sendChanges')} isDisabled={locked && !c.sendChanges} onChange={(sendChanges) => save.mutate({ sendChanges })}>
               {pt('automation.sendChanges')}
             </Switch>
           )}
           {offers.sendNewDives && (
-            <Switch isSelected={c.sendNewDives} isPending={pending.has('sendNewDives')} isDisabled={locked} onChange={(sendNewDives) => save.mutate({ sendNewDives })}>
+            <Switch isSelected={c.sendNewDives} isPending={pending.has('sendNewDives')} isDisabled={locked && !c.sendNewDives} onChange={(sendNewDives) => save.mutate({ sendNewDives })}>
               {pt('automation.sendNewDives')}
             </Switch>
           )}
           {offers.deleteAtProvider && (
             <>
               <Switch
-                isSelected={c.deleteAtProvider} isPending={pending.has('deleteAtProvider')} isDisabled={locked} aria-describedby={deleteHelpId}
+                isSelected={c.deleteAtProvider} isPending={pending.has('deleteAtProvider')} isDisabled={locked && !c.deleteAtProvider} aria-describedby={deleteHelpId}
                 onChange={(deleteAtProvider) => save.mutate({ deleteAtProvider })}
               >
                 {pt('automation.deleteAtProvider')}
@@ -147,7 +148,7 @@ export function ProviderAutomation({ provider: p, connection: c, several, focuse
           {intervals.length > 0 && (
             <>
               <Switch
-                isSelected={c.fetchEveryMinutes !== null} isPending={pending.has('fetchEveryMinutes')} isDisabled={locked}
+                isSelected={c.fetchEveryMinutes !== null} isPending={pending.has('fetchEveryMinutes')} isDisabled={locked && c.fetchEveryMinutes === null}
                 {...(importOff ? { 'aria-describedby': fetchHelpId } : {})}
                 onChange={(on) => save.mutate({ fetchEveryMinutes: on ? (intervals.includes(PRESELECTED) ? PRESELECTED : intervals[0]!) : null })}
               >

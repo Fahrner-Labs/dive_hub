@@ -84,12 +84,28 @@ test('an entitled User’s automation switches work, and the Plan section offers
     const label = settings.getByText('Send changes automatically', { exact: true });
     await label.click();
     await expect(changes).toBeChecked();
-    await label.click();
-    await expect(changes).not.toBeChecked();
 
     await page.goto('/#/settings/plan');
     await expect(page.getByText('Pro — active')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Manage subscription' })).toBeVisible();
+
+    // Downgraded while the switch is on: the server still accepts turning it off, so it must stay usable for that (the
+    // paid feature cannot be turned on). A free User's off switch is greyed; an on one is not.
+    await page.goto('/#/settings/connections');
+    const downgrade = await billingApi();
+    try {
+      await setEntitlement(downgrade, { clear: true });
+    } finally {
+      await downgrade.dispose();
+    }
+    await page.reload();
+    const downgraded = automatic(page);
+    const stillOn = downgraded.getByRole('switch', { name: 'Send changes automatically' });
+    await expect(stillOn).toBeChecked();
+    await expect(stillOn).toBeEnabled();
+    await expect(downgraded.getByText('Automation is part of the pro plan.')).toBeVisible();
+    await downgraded.getByText('Send changes automatically', { exact: true }).click();
+    await expect(stillOn).not.toBeChecked();
   } finally {
     await context.close();
   }

@@ -143,5 +143,17 @@ describe.skipIf(!(await databaseReachable()))('the entitlement gates', () => {
     const pro = await json<Me>('GET', '/api/me');
     expect(pro.billing).toMatchObject({ configured: true, plan: 'pro', status: 'active', entitled: true });
     expect((await json<Conn[]>('GET', '/api/connections'))[0]!.offers).toMatchObject({ entitled: true, offer: null });
+
+    // Canceled but still inside the paid period: still Pro, entitled, managed in the portal.
+    await grant('pro', 'canceled', new Date(ctx.clock.now() + 86_400_000));
+    const canceled = await json<Me>('GET', '/api/me');
+    expect(canceled.billing).toMatchObject({ plan: 'pro', status: 'canceled', entitled: true });
+
+    // Canceled past the paid period is back to no plan (ADR 0089: canceled → none), so Settings offers Upgrade again
+    // instead of a stale Pro — canceled and only a portal button.
+    await grant('pro', 'canceled', new Date(ctx.clock.now() - 86_400_000));
+    const lapsed = await json<Me>('GET', '/api/me');
+    expect(lapsed.billing).toEqual({ configured: true, plan: 'free', status: 'none', currentPeriodEnd: null, entitled: false });
+    expect((await json<Conn[]>('GET', '/api/connections'))[0]!.offers).toMatchObject({ entitled: false });
   });
 });
