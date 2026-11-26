@@ -346,7 +346,8 @@ internal fun NavHostController.clearSavedTabStates() {
 internal fun sessionDestination(state: UiState): Any? = when {
     state.loading || state.updateRequired -> null
     state.user != null -> MainRoute
-    state.instanceUrl == null -> InstanceRoute
+    // A build default makes sign-in the first screen (ADR 0090); the address form is the explicit self-hosted path.
+    state.showInstanceForm || state.instanceUrl == null -> InstanceRoute
     else -> SignInRoute
 }
 

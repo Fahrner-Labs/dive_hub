@@ -40,6 +40,11 @@ The state of a User who can't sign in. Their data stays, and an admin can enable
 _Avoid_: Banned, suspended, deactivated
 _German_: deaktiviert
 
+**Entitlement**:
+What a User's paid plan lets them do on a hosted instance: a row in `user_entitlement` says `plan` (`free` or `pro`) and `status` (`none`, `active`, `past_due`, `canceled`). Only `pro` — active, past due in the grace window, or canceled until the paid period ends — unlocks provider sync automation and Push runs. A self-hosted instance has no billing and every feature is free ([ADR 0087](decisions/0087-hosted-instance-configuration.md)).
+_Avoid_: Subscription (that is Paddle's), license, tier
+_German_: Anspruch (proposal)
+
 **Diver**:
 A person who dives and whose dives, certifications and equipment can be recorded.
 A Diver may be managed by a User (their own Diver, or someone they log for, such as a child) or exist without one.
@@ -399,6 +404,11 @@ _German_: Daten übernehmen (the action)
 An admin's run that fetches Dive sites from OpenStreetMap, Wikidata or SSI for a country, an area or everywhere, and creates, updates or links sites, or only fills sites already here. Hand-made sites are never changed; they get an Offer. SSI's list has no licence, so the admin confirms an explanation first. It shows in the history of every site it changed. Not an Import, which is a User's dive data.
 _Avoid_: Sync, seed, site Import
 _German_: Tauchplatz-Import
+
+**Source purge**:
+An admin's removal of every External ID of one Source, the pre-agreed remedy if a Source objects to its site data ([ADR 0091](decisions/0091-source-purge.md)). It hard-deletes the import-created Dive sites that no other Source's data and no Dive holds; sites a Dive still names are listed for the admin to resolve first, and Sites a User made stay. Not the purge of deleted Dives.
+_Avoid_: Delete source, wipe source
+_German_: Bereinigung einer Quelle
 
 **Provider**:
 An outside service Dive Hub talks to on a User's behalf, such as SSI and later PADI. It says what it offers: how Users sign in, which kinds of data (dives, Dive sites, buddies) it imports or exports, what it can do with them (create, update, delete, link, find), and whether it gives an ID back. It is a Source for what it imports and a Target for what it exports. Files and open datasets (a FIT file, OpenStreetMap) are Sources, not Providers.

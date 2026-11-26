@@ -17,7 +17,7 @@ Every entity belongs to exactly one tier. This answers "who can see/change it" a
 
 | Tier | Entities |
 |---|---|
-| **Instance** (shared by all Users) | User, Dive site (→ External IDs), Site import, Operator, Agency catalog |
+| **Instance** (shared by all Users) | User, Dive site (→ External IDs), Site import, Site purge, Operator, Agency catalog |
 | **User** | Connection (→ Diver mappings), Import, Original, external Divers they created, AI accesses and their log |
 | **Diver** (via the Users who manage it) | External IDs, Body weights, Equipment items with service schedules and records, Dive (→ Recordings, Cylinders, Lead, Participants, Media, Signatures, Pushes), Trip, Certification, Membership, Insurance, Medical exam, Equipment (incl. Devices), Site note |
 
@@ -84,7 +84,11 @@ These apply to every entity unless stated otherwise. They close gaps A2, A3, A5 
 ### People and accounts
 
 **User** — sign-in identity, preferences (units, default Visibility), instance role
-(admin or regular; more roles are an open question).
+(admin or regular; more roles are an open question), and whether the e-mail address is verified.
+
+**Consent** — what a self-registered User accepted and when (`user_consent`: User, kind `terms` or `privacy`, the
+version in force, `accepted_at`), one row per kind and version. It records the acceptance as a fact for GDPR.
+Invited and setup Users have none: an admin vouched for them.
 
 **Diver** — personal data (name, birth date, contact details, emergency contact), plus
 merge pointer (`merged into`) for the claim case. A Diver either has a logbook
@@ -122,6 +126,13 @@ ends (sign-out, sign-out everywhere, a password change), so a signed-out device 
 `android | ios | web` from day one; Android is the first provider. Hints only: a push carries `{ v, kind, id }`, never
 content. The dispatcher queues one hint per manager of a changed Dive; the Android client fetches it before showing
 anything, and iOS/web wait for their providers.
+
+**Entitlement (hosted billing, ADR 0087)** — one row per User in `user_entitlement` (`user_id` is the primary key and
+cascades with the User); no row means the free plan. `plan` is `free | pro`; `status` is `none | active | past_due |
+canceled`; `current_period_end` and the Paddle customer/subscription IDs are written by the billing webhook, and
+`updated_at` stores the provider event time of the last applied write, so an out-of-order webhook cannot roll the row back
+([ADR 0089](../decisions/0089-entitlements-and-payments.md)). The paid features need `pro` and active or past due (the
+grace window), or canceled until `current_period_end`; entitlements stay per User — Phase-2 hub billing gets its own table.
 
 **Certification** (built, ADR 0050) — Diver, agency and level as free text (suggestions from the Diver's other cards;
 the Agency catalog stays planned), number, issue and expiry date, dives at issue, instructor and dive centre as text
@@ -387,6 +398,12 @@ Revisions it writes on sites have the actor `site_import` (ADR 0021).
 *Merging (ADR 0022):* any User merges a site into another. The kept site wins and its gaps are filled; Dives move
 (Revision by the system, cause `site-merge`); External IDs move where the kept site has none from that Source;
 `merged into` points to the kept site, and imports follow it.
+
+**Site purge** — instance-wide, started by an admin ([ADR 0091](../decisions/0091-source-purge.md), FAH-528): the
+Source, who started it, status (`queued`, `running`, `done`, `failed`), progress (the Source's IDs, then the sites)
+and the result (IDs deleted, sites deleted, and the sites a Dive still names with their Dive count). At most one
+runs at a time. It hard-deletes the Source's External IDs and the import-created sites no data-providing ID and no
+Dive holds; it writes no Site Revision, so the purge row is the audit.
 
 **Site note** — a Diver's private notes and rating for a Dive site.
 

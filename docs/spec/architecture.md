@@ -84,11 +84,20 @@ possible.
 ## Authentication
 
 Built-in accounts (e-mail + password) with Better Auth ([ADR 0011](../decisions/0011-better-auth.md)),
-invite-only, first admin from a setup token ([ADR 0012](../decisions/0012-invitations-and-admin-bootstrap.md)).
+invite-only by default, first admin from a setup token ([ADR 0012](../decisions/0012-invitations-and-admin-bootstrap.md)).
+An instance can open self-serve signup with `DIVEHUB_REGISTRATION_OPEN=true` (hosted plan §6.2,
+[ADR 0087](../decisions/0087-hosted-instance-configuration.md)): a new User accepts the Terms of Service and Privacy
+Policy (recorded per version in `user_consent`) and verifies their address by mail before signing in. Invitations
+stay available on both tracks.
 Sessions are stored in the database. The web client uses an `HttpOnly`, `SameSite=Lax` cookie on the same origin;
 native clients use the bearer plugin ([ADR 0074](../decisions/0074-bearer-tokens-for-native-clients.md)). OIDC (Authentik, Authelia, Keycloak, …) is planned for later.
 LLM clients reach the MCP endpoint `/mcp` with the key of an AI access instead of a session ([ADR 0035](../decisions/0035-mcp-connector.md)): off until an admin
 switches it on; behind a reverse proxy, `/mcp` must be forwarded like `/api`.
+
+Transactional e-mail is optional (hosted plan §6.1). With `DIVEHUB_EMAIL_*` unset, invitations and
+password resets stay the copy links of ADR 0012 and ADR 0013. With Resend configured, an invitation
+is also mailed and a User can request a reset link from the sign-in page; the link still travels in
+the URL fragment. A failed send never drops the link.
 
 | Setting | Meaning |
 |---|---|
@@ -98,8 +107,12 @@ switches it on; behind a reverse proxy, `/mcp` must be forwarded like `/api`.
 | `DIVEHUB_CONTACT` | Optional: the operator's e-mail address or URL, added to the User-Agent of Site imports ([below](#dive-site-imports-and-licenses)). Not sent to SSI: calls there carry the SSI app's User-Agent ([ADR 0049](../decisions/0049-ssi-app-user-agent.md)). |
 | `DIVEHUB_ENCRYPTION_KEY` | Optional: 32 bytes as base64 (`openssl rand -base64 32`). Encrypts what Dive Hub keeps for Targets (SSI tokens and passwords, [ADR 0024](../decisions/0024-ssi-target-via-app-api.md)). Without it, Users can't choose "Keep me signed in" for SSI, and tokens are stored as they are. A `.divehub-backup` archive stores only its fingerprint, never the key ([ADR 0069](../decisions/0069-full-instance-backup-and-restore.md)); losing it means every User signs in to SSI again. A wrong length stops the server at start. |
 | `DIVEHUB_SSI_URL` | Only for tests: another endpoint for SSI's app API. |
+| `DIVEHUB_SITE_SOURCES` | Optional: comma-separated Site sources this instance constructs and offers (`osm`, `wikidata`, `ssi`; default all). An unknown name stops the server at start ([ADR 0087](../decisions/0087-hosted-instance-configuration.md)). |
+| `DIVEHUB_BILLING_PROVIDER`, `DIVEHUB_PADDLE_API_KEY`, `DIVEHUB_PADDLE_WEBHOOK_SECRET`, `DIVEHUB_PADDLE_PRICE_IDS` | Optional: `paddle` turns on hosted billing and its entitlement gates (provider sync automation and Push runs); unset keeps every feature free and registers no billing route. All four values or none; an unknown provider or a missing Paddle value stops the server at start. The API key's `_sdbx` selects Paddle's sandbox, its absence production ([ADR 0087](../decisions/0087-hosted-instance-configuration.md), [ADR 0089](../decisions/0089-entitlements-and-payments.md)). |
 | `DIVEHUB_OVERPASS_URL`, `DIVEHUB_WIKIDATA_SPARQL_URL` | Optional: other endpoints for Site imports (default `overpass-api.de`, `query.wikidata.org`). |
 | `DIVEHUB_SSI_SITES_URL` | Optional: another address for SSI's site list (default `api.divessi.com/app/APP_CACHE_SITES.zip`, ADR 0025). |
+| `DIVEHUB_EMAIL_PROVIDER`, `DIVEHUB_EMAIL_API_KEY`, `DIVEHUB_EMAIL_FROM` | Optional transactional mail (hosted plan §6.1): all three set means Resend sends invitation and self-serve reset links; any unset keeps the copy links (ADR 0012, 0013). The API key is a secret. |
+| `DIVEHUB_REGISTRATION_OPEN` | Optional: `true` exposes `sign-up/email`, `verify-email` and `send-verification-email` and requires a verified address before sign-in (hosted plan §6.2, [ADR 0087](../decisions/0087-hosted-instance-configuration.md)). Needs the `DIVEHUB_EMAIL_*` values and stops the server at start without them; unset keeps the four-endpoint, invite-only surface. |
 
 ## Dive site imports and licenses
 
@@ -200,8 +213,9 @@ Implemented:
 - Admins change roles, disable/enable Users, sign Users out everywhere, and delete Users with
   everything only they own, including stored files no one else shares.
 - There is always one enabled admin (row locks against simultaneous demotion).
-- Only `sign-in/email`, `sign-out`, `get-session` and `change-password` of Better Auth are reachable
-  over HTTP; they are described in our OpenAPI document.
+- By default only `sign-in/email`, `sign-out`, `get-session` and `change-password` of Better Auth are
+  reachable over HTTP; they are described in our OpenAPI document. `DIVEHUB_REGISTRATION_OPEN=true` adds
+  `sign-up/email`, `verify-email` and `send-verification-email` (hosted plan §6.2).
 - Web client: account page (password, sessions), reset page, admin actions per User.
 
 Deliberate simplifications, to revisit:
@@ -297,10 +311,18 @@ Implemented:
   - an SSI site ID in the site form (digits, or SSI's "site:3314");
   - `externalIds` with links and Attribution in the API;
   - the site's history (`GET /api/dive-sites/:id/revisions`), naming only the signed-in User.
-- **Site import** for admins (`/api/admin/site-imports`, page `#/admin/site-imports`):
+- **Site import** for admins (`/api/admin/site-imports`, page `#/admin/site-imports`; `GET /api/admin/site-sources`
+  reports the enabled set, [ADR 0087](../decisions/0087-hosted-instance-configuration.md)):
+  - the sources this instance enables (`DIVEHUB_SITE_SOURCES`; a disabled source answers `400 site_source_disabled`);
   - Wikidata and/or OpenStreetMap, by country, box or everywhere;
   - OSM only after the ODbL explanation is confirmed;
   - one at a time, run by the `import_dive_sites` worker job with progress, counts and findings.
+- **Source purge** for admins (`POST /api/admin/site-imports/purge {source}`, FAH-528,
+  [ADR 0091](../decisions/0091-source-purge.md)):
+  - deletes every External ID of one Source, then hard-deletes import-created sites with no remaining data-providing
+    ID and no Dive;
+  - sites a Dive still names are reported, not deleted; Sites a User made stay without that Source's IDs;
+  - one at a time and never beside a Site import, run by the `purge_site_source` worker job with progress and result.
 - **Planning without the database** (`src/sites/import/import-plan.ts`):
   - matching by own ID, then the link between the Sources, then 100 m plus the same name;
   - a per-field 3-way merge with OSM before Wikidata;

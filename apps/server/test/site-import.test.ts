@@ -442,3 +442,69 @@ describe.skipIf(!(await databaseReachable()))('Site import and external site IDs
     });
   });
 });
+
+// DIVEHUB_SITE_SOURCES (ADR 0087): an instance constructs and offers only the Sources it is configured with. The
+// default (every Source) is the existing suite above; here the instance has OSM switched off, as the hosted one will.
+describe.skipIf(!(await databaseReachable()))('Site source deployment config', () => {
+  let t: TestDatabase;
+  let ctx: Awaited<ReturnType<typeof createTestApp>>;
+  const wikidata = standIn('wikidata');
+  const ssi = standIn('ssi');
+  let admin: string;
+  const call = (method: 'GET' | 'POST', url: string, payload?: object) =>
+    ctx.app.inject({ method, url, headers: { cookie: admin, origin: BASE_URL }, ...(payload && { payload }) });
+
+  beforeAll(async () => {
+    t = await createTestDatabase();
+    ctx = await createTestApp(t, { siteSources: { wikidata: wikidata.adapter, ssi: ssi.adapter } });
+    await createUser(ctx.auth, 'admin@example.com', 'admin');
+    admin = await signIn(ctx.app, 'admin@example.com');
+  });
+  afterAll(async () => {
+    await ctx?.app.close();
+    await t?.drop();
+  });
+
+  it('reports only the enabled sources, so the admin UI can offer exactly those', async () => {
+    const answer = await call('GET', '/api/admin/site-sources');
+    expect(answer.statusCode).toBe(200);
+    expect(answer.json()).toEqual(['wikidata', 'ssi']);
+  });
+
+  it('refuses a disabled source with 400 site_source_disabled', async () => {
+    const refused = await call('POST', '/api/admin/site-imports', {
+      sources: ['osm'], area: { kind: 'world' }, language: 'en', confirmOdbl: true,
+    });
+    expect(refused.statusCode).toBe(400);
+    expect(refused.json().code).toBe('site_source_disabled');
+    // All-or-nothing: an enabled Source in the same run does not sneak past the disabled one.
+    const mixed = await call('POST', '/api/admin/site-imports', {
+      sources: ['wikidata', 'osm'], area: { kind: 'world' }, language: 'en', confirmOdbl: true,
+    });
+    expect(mixed.statusCode).toBe(400);
+    expect(mixed.json().code).toBe('site_source_disabled');
+  });
+
+  it('fails a queued run whose source was switched off after it was queued', async () => {
+    // As if it was queued before the operator changed DIVEHUB_SITE_SOURCES and the server restarted.
+    const { rows } = await t.pool.query<{ id: string }>(
+      `insert into site_import (sources, area, language, status, progress)
+       values ('["osm"]'::jsonb, '{"kind":"world"}'::jsonb, 'en', 'queued', '{"step":"waiting","done":0,"total":0}'::jsonb)
+       returning id`,
+    );
+    await ctx.siteImports.run(rows[0]!.id);
+    const failed = await call('GET', `/api/admin/site-imports/${rows[0]!.id}`);
+    expect(failed.json()).toMatchObject({ status: 'failed', failureCode: 'site_source_disabled' });
+  });
+
+  it('constructs and runs an enabled source', async () => {
+    wikidata.answers([{ id: 'Q401', v: { name: 'Enabled source reef', position: HOUSE_REEF } }]);
+    const started = await call('POST', '/api/admin/site-imports', {
+      sources: ['wikidata'], area: { kind: 'world' }, language: 'en',
+    });
+    expect(started.statusCode).toBe(202);
+    await ctx.siteImports.run(started.json().id);
+    const done = await call('GET', `/api/admin/site-imports/${started.json().id}`);
+    expect(done.json()).toMatchObject({ status: 'done', counts: { created: 1 } });
+  });
+});

@@ -2,6 +2,7 @@
 // of people (ADR 0029), importing its dives (ADR 0030), also on a schedule, and the Waiting pushes the worker sends (ADR 0056), built from
 // the adapters this instance has. main.ts passes the production adapters; tests pass the fake SSI and a test-only adapter.
 import type { Db, Tx } from '../db/client.js';
+import type { EntitlementService } from '../entitlement/entitlement.js';
 import { createDiverService } from '../divers/diver-service.js';
 import type { SecretBox } from '../secrets/secret-box.js';
 import type { BlobStore } from '../storage/blob-store.js';
@@ -25,7 +26,7 @@ import { consoleLog, noteDiveChange, noteSiteChange } from './waiting-push/waiti
 import { listenToChanges, type Actor, type RevisionCause } from '../revisions/revisions.js';
 
 export function createProviderLayer(deps: {
-  db: Db; secrets: SecretBox; blobs: BlobStore; adapters: ProviderAdapter[]; clock?: Clock;
+  db: Db; secrets: SecretBox; blobs: BlobStore; adapters: ProviderAdapter[]; entitlements: EntitlementService; clock?: Clock;
   /** Where the worker's own faults go (the app's logger); without one, the console (consoleLog). */
   log?: ProviderLog;
   /** Who may see a Diver's contact details (ADR 0088); instance when not set. */
@@ -39,7 +40,8 @@ export function createProviderLayer(deps: {
   // One fallback for the whole layer: every service that logs is handed the same logger.
   const log = deps.log ?? consoleLog;
   const leases = createLeaseService({ db: deps.db, ...clock, log });
-  const connections = createConnectionService({ db: deps.db, registry: providers, secrets: deps.secrets, leases, ...clock });
+  const { entitlements } = deps;
+  const connections = createConnectionService({ db: deps.db, registry: providers, secrets: deps.secrets, leases, entitlements, ...clock });
   const conflicts = createConflictService({ db: deps.db, connections, registry: providers, blobs: deps.blobs });
   const pushes = createPushService({ db: deps.db, blobs: deps.blobs, registry: providers, connections, leases, conflicts, ...clock, log });
   // A Dive's Revision queues what goes to Providers by itself (ADR 0056) and refreshes the stored fingerprint the
@@ -62,11 +64,11 @@ export function createProviderLayer(deps: {
   };
   listenToChanges(noteChanges);
   const pushRuns = createPushRunService({ db: deps.db, registry: providers, pushes, conflicts, log });
-  const waitingPushes = createWaitingPushService({ db: deps.db, registry: providers, pushes, ...clock, log });
+  const waitingPushes = createWaitingPushService({ db: deps.db, registry: providers, pushes, entitlements, ...clock, log });
   const buddies = createBuddyService({ db: deps.db, registry: providers, connections, divers: createDiverService(deps.db, { visibility: deps.diverVisibility }), log });
   const sitePicks = createSitePickService({ db: deps.db, registry: providers, connections });
   const diveImports = createDiveImportService({ db: deps.db, blobs: deps.blobs, registry: providers, connections, ...clock });
-  const scheduledFetch = createScheduledFetch({ db: deps.db, registry: providers, diveImports, ...clock, log });
+  const scheduledFetch = createScheduledFetch({ db: deps.db, registry: providers, diveImports, entitlements, ...clock, log });
   const goneDives = createGoneDiveService({ db: deps.db, registry: providers, connections, leases });
   // certifications owns the port it needs (ADR 0053's seam for certifications and providers); this layer wires the
   // real registry and Connections to it.

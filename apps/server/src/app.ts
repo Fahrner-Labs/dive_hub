@@ -6,6 +6,7 @@ import swagger from '@fastify/swagger';
 import type { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import { sql } from 'drizzle-orm';
 import { authHandler } from './auth/fastify.js';
+import { billingRoutes } from './billing/routes.js';
 import { liveRoutes } from './live/routes.js';
 import { notificationRoutes } from './notifications/routes.js';
 import type { Services } from './compose.js';
@@ -23,6 +24,7 @@ import { DiverDetailsViewSchema, DiverViewSchema, ExternalDiverViewSchema } from
 import { SiteViewSchema } from './sites/site-view.js';
 import { CentreViewSchema } from './centres/centre-view.js';
 import { SiteImportViewSchema } from './sites/import/site-import-view.js';
+import { SitePurgeViewSchema } from './sites/import/site-purge-view.js';
 import { ConnectionViewSchema } from './providers/connection-view.js';
 import { DiveProviderStatusSchema } from './providers/dive-provider-view.js';
 import { PushRunViewSchema } from './providers/push/push-run-view.js';
@@ -43,6 +45,7 @@ import { planningRoutes } from './planning/routes.js';
 import { siteRoutes } from './sites/routes.js';
 import { centreRoutes } from './centres/routes.js';
 import { siteImportRoutes } from './sites/import/site-import-routes.js';
+import { sitePurgeRoutes } from './sites/import/site-purge-routes.js';
 import { suggestionRoutes } from './social/routes.js';
 import { offerRoutes } from './social/offer-routes.js';
 import { providerAnswers, ProviderProblemSchema } from './providers/route-parts.js';
@@ -106,7 +109,7 @@ export async function buildApp(deps: AppDeps, app: Server = createServer()) {
     UnmetViewSchema, ConflictFieldViewSchema, WaitingPushViewSchema,
     ProblemSchema, ProviderProblemSchema, DeleteProblemSchema,
     UserViewSchema, ImportViewSchema, DiveViewSchema, DiveProfileViewSchema, DiveListViewSchema, DiveDetailsListViewSchema, DiverViewSchema, DiverDetailsViewSchema, ExternalDiverViewSchema, CertificationViewSchema,
-    SiteViewSchema, CentreViewSchema, SiteImportViewSchema, PushRunViewSchema, ConnectionViewSchema, DiveProviderStatusSchema,
+    SiteViewSchema, CentreViewSchema, SiteImportViewSchema, SitePurgeViewSchema, PushRunViewSchema, ConnectionViewSchema, DiveProviderStatusSchema,
     ServiceScheduleViewSchema, ServiceRecordViewSchema, DiveGearItemViewSchema, EquipmentItemViewSchema, EquipmentDetailViewSchema,
     EquipmentDueViewSchema, DiveGearViewSchema,
   ]) app.addSchema(schema);
@@ -118,9 +121,11 @@ export async function buildApp(deps: AppDeps, app: Server = createServer()) {
     await deps.db.execute(sql`select 1`);
     return { status: 'ok' };
   });
-  app.get('/api/openapi.json', { schema: { hide: true } }, async () => withAuthEndpoints(app.swagger(), deps.auth));
+  app.get('/api/openapi.json', { schema: { hide: true } }, async () => withAuthEndpoints(app.swagger(), deps.auth, deps.registrationOpen));
 
-  await app.register(authHandler, { auth: deps.auth });
+  await app.register(authHandler, {
+    auth: deps.auth, registrationOpen: deps.registrationOpen, signupAttempts: deps.signupAttempts,
+  });
   // A process without a LISTEN connection serves no hints: no route means the client keeps polling (ADR 0066).
   if (deps.live.enabled) await app.register(liveRoutes, { auth: deps.auth, hub: deps.live.hub, ready: deps.live.ready });
   const { db, auth, assessments, baseUrl, passwordResets, tokenAttempts, logbook, divers, centres, dives, merging, checks } = deps;
@@ -136,6 +141,9 @@ export async function buildApp(deps: AppDeps, app: Server = createServer()) {
   await app.register(supportRoutes, { prefix: '/api', auth, support: deps.support });
   await app.register(clientDiagnosticsRoutes, { prefix: '/api', auth, clientDiagnostics: deps.clientDiagnostics });
   await app.register(syncRoutes, { prefix: '/api', auth, sync: deps.sync });
+  // Billing exists only on an instance with DIVEHUB_BILLING_PROVIDER set; the webhook is unauthenticated but signed
+  // (ADR 0089). Without the config there is no route at all, the dual-track invariant.
+  if (deps.billing) await app.register(billingRoutes, { prefix: '/api', auth, billing: deps.billing });
   await app.register(importRoutes, { prefix: '/api', auth, imports: deps.imports, waitingPushes, maxUploadBytes: deps.maxUploadBytes });
   await app.register(logbookRoutes, { prefix: '/api', auth, logbook, pushes, waitingPushes, centres, divers, certifications });
   // dives owns the shapes it needs (dives/provider-port.ts); this is where the real Provider answerer is wired in.
@@ -163,7 +171,8 @@ export async function buildApp(deps: AppDeps, app: Server = createServer()) {
   await app.register(suggestionRoutes, { prefix: '/api', auth, suggestions: deps.suggestions });
   await app.register(offerRoutes, { prefix: '/api', auth, offers: deps.offers });
   await app.register(siteImportRoutes, { prefix: '/api', auth, siteImports: deps.siteImports });
-  await app.register(providerRoutes, { prefix: '/api', auth, ...deps.providers, assessments });
+  await app.register(sitePurgeRoutes, { prefix: '/api', auth, sitePurges: deps.sitePurges });
+  await app.register(providerRoutes, { prefix: '/api', auth, ...deps.providers, assessments, entitlements: deps.entitlements });
   await app.register(aiAccessRoutes, { prefix: '/api', auth, accesses: deps.aiAccesses, baseUrl });
   // The MCP endpoint (ADR 0035): not under /api, authenticated by an AI access's key instead of a session.
   await app.register(mcpEndpoint, { db, accesses: deps.aiAccesses, baseUrl });

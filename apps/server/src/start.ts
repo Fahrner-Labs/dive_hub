@@ -11,6 +11,7 @@ import { buildApp, createServer } from './app.js';
 import { createServices, workerDeps } from './compose.js';
 import { createSiteSources } from './site-sources.js';
 import { createSecretBox } from './secrets/secret-box.js';
+import { createMailProvider } from './mail/resend.js';
 import { createGarminAdapter } from './providers/garmin/garmin-adapter.js';
 import { createGarminClient, DEFAULT_GARMIN_URL } from './providers/garmin/garmin-client.js';
 import { createSsiAdapter } from './providers/ssi/ssi-adapter.js';
@@ -38,8 +39,11 @@ export async function start(config: Config) {
     // Reverse proxies whose X-Forwarded-For is believed; none unless configured.
     ...(config.trustedProxies.length > 0 && { trustProxy: config.trustedProxies }),
   });
+  const mailer = config.email ? createMailProvider(config.email) : undefined;
   const auth = createAuth({
     db, baseUrl: config.baseUrl, secret: await loadAuthSecret(config.authSecret, config.dataDir),
+    registrationOpen: config.registrationOpen,
+    ...(mailer && { mail: mailer }),
     // The Vite dev server proxies /api from its own origin.
     trustedOrigins: config.production ? [] : ['http://localhost:5173'],
   });
@@ -50,7 +54,10 @@ export async function start(config: Config) {
     db, auth, blobs: createLocalBlobStore(config.dataDir), secrets: createSecretBox(config.encryptionKey),
     dataDir: config.dataDir, databaseUrl: config.databaseUrl, encryptionKey: config.encryptionKey,
     logBuffer, workerRunning: () => worker !== undefined,
-    siteSources: createSiteSources({ contact: config.contact, overpassUrl: config.overpassUrl, wikidataUrl: config.wikidataSparqlUrl, ssiSitesUrl: config.ssiSitesUrl }),
+    siteSources: createSiteSources({
+      sources: config.siteSources, contact: config.contact, overpassUrl: config.overpassUrl,
+      wikidataUrl: config.wikidataSparqlUrl, ssiSitesUrl: config.ssiSitesUrl,
+    }),
     // The Providers of this instance (ADR 0027): SSI and Garmin. Every call to SSI is logged (no token or password), to
     // tell Dive Hub's use of an account from the owner's own (docs/references/ssi-app-api.md).
     adapters: [createSsiAdapter({ client: createSsiClient({ url: config.ssiUrl }), onCall: (call) => app.log.info({ ssi: call }, 'SSI call') }),
@@ -61,6 +68,12 @@ export async function start(config: Config) {
     live: { connectionString: config.databaseUrl },
     // Push is optional per instance (ADR 0085): no FCM credential means /api/push/config reports not configured.
     fcm: config.fcm,
+    // Transactional mail (hosted plan §6.1): unset DIVEHUB_EMAIL_* keeps the copy-link flows of ADR 0012.
+    email: config.email,
+    registrationOpen: config.registrationOpen,
+    baseUrl: config.baseUrl,
+    // Billing is optional per instance (ADR 0087): unset keeps every feature free and the entitlement gates inert.
+    billing: config.billing,
     // Who may see a Diver's contact details (ADR 0088): default `instance`, so a self-hosted image is unchanged.
     diverVisibility: config.diverVisibility,
   });

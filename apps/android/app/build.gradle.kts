@@ -19,6 +19,19 @@ val editDiveScalars = providers.gradleProperty("divehub.editDiveScalars").orNull
 // The scanner ships on (FAH-493); `./gradlew assembleDebug -Pdivehub.scannerEnabled=false` opts out.
 val scannerEnabled = providers.gradleProperty("divehub.scannerEnabled").orNull?.toBoolean() ?: true
 
+// The first-start sign-in default (FAH-537, ADR 0090). The official build points at Dive Hub Cloud; a self-hoster or
+// F-Droid-style build overrides the whole value with -Pdivehub.defaultInstanceUrl=…, or a single build type with
+// -Pdivehub.defaultInstanceUrl.<buildType>=…. A blank override means no default, so the address form shows first.
+// PLACEHOLDER: replace with the owner-confirmed cloud URL before the hosted app ships.
+val defaultInstanceUrl = providers.gradleProperty("divehub.defaultInstanceUrl").orNull
+    ?: "https://cloud.divehub.example"
+
+fun defaultInstanceUrlFor(buildType: String): String =
+    providers.gradleProperty("divehub.defaultInstanceUrl.$buildType").orNull ?: defaultInstanceUrl
+
+fun buildConfigString(value: String): String =
+    "\"" + value.replace("\\", "\\\\").replace("\"", "\\\"") + "\""
+
 fun envInt(name: String, fallback: Int): Int {
     val raw = providers.environmentVariable(name).orNull ?: return fallback
     return raw.toIntOrNull() ?: throw GradleException("$name must be an integer, got '$raw'")
@@ -56,6 +69,10 @@ android {
     }
 
     buildTypes {
+        // Every build type gets its own default, so a future one is overridable without another declaration.
+        all {
+            buildConfigField("String", "DEFAULT_INSTANCE_URL", buildConfigString(defaultInstanceUrlFor(name)))
+        }
         getByName("debug") {
             signingConfig = signingConfigs.getByName("debug")
         }

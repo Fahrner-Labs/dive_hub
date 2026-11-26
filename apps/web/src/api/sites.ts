@@ -12,6 +12,9 @@ export type VerificationCodeView = NonNullable<CentreView['verificationCode']>;
 export type SiteRevisionView = Ok<'/api/dive-sites/{id}/revisions'>[number];
 export type SiteImportView = Ok<'/api/admin/site-imports/{id}'>;
 export type SiteImportArea = SiteImportView['area'];
+/** A Source of Dive site data: OpenStreetMap, Wikidata or SSI (ADR 0021). */
+export type SiteSource = SiteImportView['sources'][number];
+export type SitePurgeView = Ok<'/api/admin/site-imports/purges/{id}'>;
 
 /** Dive sites (ADR 0020): searched by words, or the ones near a position, nearest first. */
 export const sitesQuery = (p: SitesParams & { near?: Position | undefined; within?: number | undefined } = {}) => queryOptions({
@@ -50,4 +53,18 @@ export const siteImportsQuery = () => queryOptions({
   queryKey: keys.siteImports,
   queryFn: async () => request(api.GET('/api/admin/site-imports')),
   refetchInterval: (query) => (liveHealthy() ? false : (query.state.data?.some(running) ? 2000 : false)),
+});
+
+/** The site sources this instance enables (DIVEHUB_SITE_SOURCES, ADR 0087): the admin UI offers exactly these. */
+export const siteSourcesQuery = () => queryOptions({
+  queryKey: keys.siteSources,
+  queryFn: async () => request(api.GET('/api/admin/site-sources')),
+});
+
+const purgeRunning = (p: SitePurgeView) => p.status === 'queued' || p.status === 'running';
+/** The latest Source purges (admins, FAH-528); asked again every two seconds while one runs. */
+export const sitePurgesQuery = () => queryOptions({
+  queryKey: keys.sitePurges,
+  queryFn: async () => request(api.GET('/api/admin/site-imports/purges')),
+  refetchInterval: (query) => (liveHealthy() ? false : (query.state.data?.some(purgeRunning) ? 2000 : false)),
 });

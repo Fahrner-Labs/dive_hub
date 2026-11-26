@@ -25,12 +25,22 @@ const StartBody = Type.Object({
   createSites: Type.Optional(Type.Boolean({ default: true, description: 'false: only match and fill sites already in the hub, create none' })),
 }, { additionalProperties: false });
 
-const STATUS: Record<SiteImportError['code'], number> = { odbl_not_confirmed: 400, ssi_not_confirmed: 400, site_import_running: 409, site_import_not_found: 404 };
+const STATUS: Record<SiteImportError['code'], number> = {
+  odbl_not_confirmed: 400, ssi_not_confirmed: 400, site_source_disabled: 400, site_import_running: 409, site_import_not_found: 404,
+};
 
 export const siteImportRoutes: FastifyPluginAsyncTypebox<SiteImportRouteDeps> = async (app, { auth, siteImports }) => {
   app.addHook('onRequest', requireUser(auth));
   app.addHook('onRequest', requireAdmin);
   app.setErrorHandler(answerErrors(answers(SiteImportError, STATUS)));
+
+  app.get('/admin/site-sources', {
+    schema: {
+      summary: 'The site sources this instance offers (admins)',
+      description: 'Driven by DIVEHUB_SITE_SOURCES (ADR 0087), not by the client: the admin UI offers exactly these. A source left out is refused by POST /api/admin/site-imports (400 site_source_disabled).',
+      response: { 200: Type.Array(Source), 403: Problem },
+    },
+  }, async () => siteImports.enabledSources());
 
   app.post('/admin/site-imports', {
     schema: {

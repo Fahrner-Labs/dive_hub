@@ -5,6 +5,7 @@
 // The minute tick wakes what a sign-in or the Provider's return cleared, and Retry is the User's.
 import { and, arrayOverlaps, asc, count, desc, eq, inArray, isNotNull, isNull, lte, sql } from 'drizzle-orm';
 import type { Db, Tx } from '../../db/client.js';
+import type { EntitlementService } from '../../entitlement/entitlement.js';
 import { connection, dive, importJob, providerConflict, push, pushRun, waitingPush, type WaitingPushOptions, type ConnectionRow } from '../../db/schema.js';
 import { audienceOfConnection, audienceOfDive, emitHint } from '../../live/emit.js';
 import { managedDiverIds } from '../../divers/management.js';
@@ -35,8 +36,8 @@ export const OFFER_ABOVE = 20;
 
 type Entry = typeof waitingPush.$inferSelect;
 
-export function createWaitingPushService(deps: { db: Db; registry: ProviderRegistry; pushes: PushService; clock?: Clock; log: ProviderLog }) {
-  const { db, registry, pushes } = deps;
+export function createWaitingPushService(deps: { db: Db; registry: ProviderRegistry; pushes: PushService; entitlements: EntitlementService; clock?: Clock; log: ProviderLog }) {
+  const { db, registry, pushes, entitlements } = deps;
   const { log } = deps;
   const clock = deps.clock ?? realClock;
   const now = () => new Date(clock.now());
@@ -303,6 +304,9 @@ export function createWaitingPushService(deps: { db: Db; registry: ProviderRegis
       const [conn] = await db.select().from(connection).where(eq(connection.id, connectionId));
       // Gone, or at a Provider this instance no longer has: nothing to send through it.
       if (!conn || registry.list().every((a) => a.id !== conn.provider)) return null;
+      // The worker backstop (plan §4.4): a Connection whose User lost the plan sends nothing until it is back. The tick
+      // picks the due entries up again once the User is entitled, so nothing is lost.
+      if (!(await entitlements.entitled(conn.userId))) return null;
       if (conn.state === 'needs_sign_in' && !conn.keepSignedIn) {
         await holdForSignIn(conn.id);
         return null;
@@ -338,9 +342,13 @@ export function createWaitingPushService(deps: { db: Db; registry: ProviderRegis
       await db.update(waitingPush).set({ state: 'waiting', reason: null, dueAt: at, attempts: 0, firstFailedAt: null, stoppedAt: null })
         .where(and(eq(waitingPush.state, 'stopped'), eq(waitingPush.reason, 'provider_unavailable'), isNotNull(waitingPush.stoppedAt), answered));
       // Only at the Providers this instance has: an entry of a removed one would only be dropped by its step.
-      const due = await db.selectDistinct({ id: waitingPush.connectionId }).from(waitingPush)
+      const due = await db.selectDistinct({ id: waitingPush.connectionId, userId: connection.userId }).from(waitingPush)
+        .innerJoin(connection, eq(connection.id, waitingPush.connectionId))
         .where(and(eq(waitingPush.state, 'waiting'), lte(waitingPush.dueAt, at), inArray(waitingPush.provider, registry.list().map((a) => a.id))));
-      for (const { id } of due) await scheduleConnection(db, id, { keepTime: true });
+      // The worker backstop (plan §4.4), in one query: do not wake a Connection whose User lost the plan. Its step skips
+      // too; the tick schedules it again once the User is entitled.
+      const allowed = await entitlements.entitledSet(due.map((d) => d.userId));
+      for (const { id, userId } of due) if (allowed.has(userId)) await scheduleConnection(db, id, { keepTime: true });
     },
 
     /**

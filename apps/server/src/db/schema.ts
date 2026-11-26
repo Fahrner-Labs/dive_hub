@@ -29,7 +29,7 @@ import {
   WATER_TYPES, type DecoModel, type DiveMode, type GasCircuit, type ImportSource, type SiteWaterType, type WaterType,
 } from '../vocabulary.js';
 import { session, user } from './auth-schema.js';
-import type { ImportArea, ImportedValues, SiteImportCounts, StoredConflictField } from './import-types.js';
+import type { ImportArea, ImportedValues, SiteImportCounts, SitePurgeProgress, SitePurgeResult, StoredConflictField } from './import-types.js';
 
 export * from './auth-schema.js';
 
@@ -149,6 +149,27 @@ export const passwordReset = pgTable(
 
 export const unitSystem = pgEnum('unit_system', ['metric', 'imperial']);
 
+/** The terms a self-registered User accepts (hosted plan §6.2): the Terms of Service and the Privacy Policy. */
+export const consentKind = pgEnum('consent_kind', ['terms', 'privacy']);
+
+/**
+ * What a User accepted and when (hosted plan §6.2): provable consent for GDPR, one row per kind and version. The
+ * server records the versions in force at signup; a later version accepted by the same User is another row.
+ */
+export const userConsent = pgTable(
+  'user_consent',
+  {
+    userId: uuid('user_id').notNull().references(() => user.id, { onDelete: 'cascade' }),
+    kind: consentKind('kind').notNull(),
+    version: text('version').notNull(),
+    acceptedAt: timestamp('accepted_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.userId, t.kind, t.version] }),
+    check('user_consent_version_ck', sql`length(${t.version}) between 1 and 100`),
+  ],
+);
+
 /** A User's display settings (ADR 0014). Null means: follow the browser. */
 export const userPreference = pgTable('user_preference', {
   userId: uuid('user_id').primaryKey().references(() => user.id, { onDelete: 'cascade' }),
@@ -157,6 +178,29 @@ export const userPreference = pgTable('user_preference', {
   units: unitSystem('units'),
   updatedAt: updatedAt(),
 });
+
+/**
+ * A User's paid plan (hosted-DiveHub plan §4.2, ADR 0087): one row per User, written by the billing webhook. No row
+ * means the free plan. `plan` is 'free' or 'pro'; `status` is 'none', 'active', 'past_due' or 'canceled'. Paid features
+ * are `pro` and active/past due, or canceled until `current_period_end` (see entitlement/entitlement.ts). No column here
+ * anticipates hubs: Phase-2 hub billing gets its own table.
+ */
+export const userEntitlement = pgTable(
+  'user_entitlement',
+  {
+    userId: uuid('user_id').primaryKey().references(() => user.id, { onDelete: 'cascade' }),
+    plan: text('plan').notNull(),
+    status: text('status').notNull(),
+    paddleCustomerId: text('paddle_customer_id'),
+    paddleSubscriptionId: text('paddle_subscription_id'),
+    currentPeriodEnd: timestamp('current_period_end', { withTimezone: true }),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    uniqueIndex('user_entitlement_paddle_customer_uq').on(t.paddleCustomerId),
+    uniqueIndex('user_entitlement_paddle_subscription_uq').on(t.paddleSubscriptionId),
+  ],
+);
 
 export const pushPlatform = pgEnum('push_platform', [...PUSH_PLATFORMS]);
 
@@ -657,6 +701,33 @@ export const siteImport = pgTable(
   (t) => [
     uniqueIndex('site_import_one_active_uq').on(sql`(true)`).where(sql`${t.status} in ('queued', 'running')`),
     index('site_import_created_idx').on(t.createdAt),
+  ],
+);
+
+/**
+ * An admin removing every External ID of one Source, the pre-agreed remedy if a Source objects to its site data
+ * (FAH-528). It is a worker job like a Site import: delete the Source's IDs, then import-created sites that no
+ * remaining data-providing ID and no Dive holds. Sites with Dives are reported, never deleted. Only one runs at a
+ * time, and never beside a Site import (the service takes a lock for both).
+ */
+export const sitePurge = pgTable(
+  'site_purge',
+  {
+    id: id(),
+    startedBy: uuid('started_by').references(() => user.id, { onDelete: 'set null' }),
+    source: siteSource('source').notNull(),
+    status: siteImportStatus('status').notNull().default('queued'),
+    progress: jsonb('progress').$type<SitePurgeProgress>().notNull().default({ step: 'waiting', done: 0, total: 0 }),
+    /** Null until done; then what it deleted and the sites it had to leave for the admin. */
+    result: jsonb('result').$type<SitePurgeResult>(),
+    errorCode: text('error_code'),
+    errorDetail: text('error_detail'),
+    createdAt: createdAt(),
+    finishedAt: timestamp('finished_at', { withTimezone: true }),
+  },
+  (t) => [
+    uniqueIndex('site_purge_one_active_uq').on(sql`(true)`).where(sql`${t.status} in ('queued', 'running')`),
+    index('site_purge_created_idx').on(t.createdAt),
   ],
 );
 

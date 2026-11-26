@@ -18,6 +18,9 @@ const services = createServices({
   db: {} as Db, blobs: {} as BlobStore, auth, secrets: createSecretBox(undefined), dataDir: '/tmp', databaseUrl: 'postgres://unused', siteSources: {} as Record<ImportSource, SiteSourceAdapter>,
   // The production Providers: their ids become the routes' enum.
   adapters: [createSsiAdapter({ client: {} as SsiClient })],
+  // Describe the billing routes too: no billing call is made while the routes are described, and clients need the
+  // checkout/portal paths even on an instance that has billing off (they answer 404 there, like every missing route).
+  billing: { provider: 'paddle', apiKey: 'pdl_sdbx_placeholder', webhookSecret: 'placeholder', priceIds: ['pri_placeholder'] },
 });
 const app = await buildApp({ ...services, baseUrl: 'http://localhost', maxUploadBytes: 1 });
 const response = await app.inject({ method: 'GET', url: '/api/openapi.json' });

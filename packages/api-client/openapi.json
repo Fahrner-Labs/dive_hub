@@ -446,8 +446,11 @@
               "diver_has_other_account",
               "odbl_not_confirmed",
               "ssi_not_confirmed",
+              "site_source_disabled",
               "site_import_running",
               "site_import_not_found",
+              "site_purge_running",
+              "site_purge_not_found",
               "source_unavailable",
               "source_rate_limited",
               "site_import_interrupted",
@@ -499,6 +502,11 @@
               "provider_account_held",
               "diver_not_external",
               "provider_import_off",
+              "entitlement_required",
+              "billing_not_subscribed",
+              "billing_already_subscribed",
+              "billing_unavailable",
+              "invalid_signature",
               "finding_not_found",
               "ai_access_not_found",
               "ai_access_off",
@@ -629,6 +637,27 @@
           "runId": {
             "type": "string",
             "description": "With push_run_active: the run that is going (ADR 0047)"
+          },
+          "offer": {
+            "type": "object",
+            "required": [
+              "plan",
+              "features"
+            ],
+            "properties": {
+              "plan": {
+                "type": "string",
+                "description": "The plan that unlocks the action (pro)"
+              },
+              "features": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "What it unlocks: automation (scheduled fetches and Waiting pushes) and push_runs"
+              }
+            },
+            "description": "With entitlement_required: the paid plan the client offers, and what it unlocks (hosted-DiveHub plan §4)"
           }
         },
         "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types"
@@ -3860,8 +3889,11 @@
                   "diver_has_other_account",
                   "odbl_not_confirmed",
                   "ssi_not_confirmed",
+                  "site_source_disabled",
                   "site_import_running",
                   "site_import_not_found",
+                  "site_purge_running",
+                  "site_purge_not_found",
                   "source_unavailable",
                   "source_rate_limited",
                   "site_import_interrupted",
@@ -3913,6 +3945,307 @@
                   "provider_account_held",
                   "diver_not_external",
                   "provider_import_off",
+                  "entitlement_required",
+                  "billing_not_subscribed",
+                  "billing_already_subscribed",
+                  "billing_unavailable",
+                  "invalid_signature",
+                  "finding_not_found",
+                  "ai_access_not_found",
+                  "ai_access_off",
+                  "client_diagnostics_disabled",
+                  "client_diagnostics_limited",
+                  "sync_resync_required",
+                  "provider_site_unknown",
+                  "provider_buddy_not_found",
+                  "provider_site_data_not_confirmed"
+                ]
+              }
+            ],
+            "description": "Why it failed (a problem code)"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "finishedAt": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string",
+                "format": "date-time"
+              }
+            ]
+          }
+        }
+      },
+      "SitePurgeView": {
+        "type": "object",
+        "required": [
+          "id",
+          "status",
+          "source",
+          "progress",
+          "result",
+          "failureCode",
+          "createdAt",
+          "finishedAt"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "queued",
+              "running",
+              "done",
+              "failed"
+            ]
+          },
+          "source": {
+            "enum": [
+              "osm",
+              "wikidata",
+              "ssi"
+            ]
+          },
+          "progress": {
+            "type": "object",
+            "required": [
+              "step",
+              "done",
+              "total"
+            ],
+            "properties": {
+              "step": {
+                "enum": [
+                  "waiting",
+                  "ids",
+                  "sites"
+                ]
+              },
+              "done": {
+                "type": "integer"
+              },
+              "total": {
+                "type": "integer"
+              }
+            }
+          },
+          "result": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "object",
+                "required": [
+                  "sourceIdsDeleted",
+                  "sitesDeleted",
+                  "referencedSites"
+                ],
+                "properties": {
+                  "sourceIdsDeleted": {
+                    "type": "integer",
+                    "description": "External IDs of the Source that were removed"
+                  },
+                  "sitesDeleted": {
+                    "type": "integer",
+                    "description": "Import-created sites no data-providing ID and no Dive held"
+                  },
+                  "referencedSites": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "id",
+                        "name",
+                        "dives"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "dives": {
+                          "type": "integer",
+                          "description": "Dives that still name the site"
+                        }
+                      }
+                    },
+                    "description": "Sites a Dive still names: left in place for the admin to resolve, then run the purge again"
+                  }
+                }
+              }
+            ]
+          },
+          "failureCode": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "enum": [
+                  "sign_in_required",
+                  "admins_only",
+                  "not_found",
+                  "invalid_input",
+                  "internal_error",
+                  "upload_missing",
+                  "upload_too_large",
+                  "setup_done",
+                  "setup_token_invalid",
+                  "invitation_invalid",
+                  "invitation_not_found",
+                  "email_taken",
+                  "reset_link_invalid",
+                  "two_factor_password_invalid",
+                  "two_factor_code_invalid",
+                  "two_factor_not_enabled",
+                  "too_many_attempts",
+                  "too_many_live_streams",
+                  "live_unavailable",
+                  "client_too_old",
+                  "user_not_found",
+                  "user_disabled",
+                  "last_admin",
+                  "not_yourself",
+                  "confirmation_mismatch",
+                  "session_not_found",
+                  "import_not_found",
+                  "import_not_waiting",
+                  "dive_not_found",
+                  "cylinder_invalid",
+                  "cylinder_series_not_found",
+                  "weighting_feedback_invalid",
+                  "suit_invalid",
+                  "dive_changed",
+                  "dive_values_inconsistent",
+                  "recording_not_on_dive",
+                  "last_recording",
+                  "diver_not_found",
+                  "gas_not_breathable",
+                  "body_weight_not_found",
+                  "certification_not_found",
+                  "certification_changed",
+                  "certification_read_only",
+                  "certification_image_not_found",
+                  "own_diver",
+                  "diver_not_empty",
+                  "diver_in_use",
+                  "diver_not_deletable",
+                  "diver_not_editable",
+                  "diver_external_id_taken",
+                  "diver_external_id_connected",
+                  "participant_invalid",
+                  "suggestion_not_found",
+                  "suggestion_not_pending",
+                  "suggestion_dive_not_found",
+                  "suggestion_dive_not_overlapping",
+                  "suggestion_link_conflict",
+                  "joint_offer_not_valid",
+                  "merge_not_possible",
+                  "check_not_found",
+                  "continuation_not_possible",
+                  "recording_is_part",
+                  "device_not_found",
+                  "push_device_not_found",
+                  "equipment_not_found",
+                  "equipment_changed",
+                  "equipment_in_use",
+                  "equipment_use_mismatch",
+                  "schedule_not_found",
+                  "schedule_interval_required",
+                  "record_not_found",
+                  "equipment_item_not_cylinder",
+                  "candidate_not_found",
+                  "candidate_resolved",
+                  "not_a_candidate",
+                  "recording_not_found",
+                  "site_not_found",
+                  "site_changed",
+                  "site_in_use",
+                  "site_not_deletable",
+                  "external_id_taken",
+                  "site_source_not_typed",
+                  "site_merge_self",
+                  "site_offer_not_found",
+                  "centre_not_found",
+                  "centre_changed",
+                  "centre_not_deletable",
+                  "centre_external_id_taken",
+                  "code_not_recognised",
+                  "code_not_a_person",
+                  "diver_choice_needed",
+                  "diver_has_other_account",
+                  "odbl_not_confirmed",
+                  "ssi_not_confirmed",
+                  "site_source_disabled",
+                  "site_import_running",
+                  "site_import_not_found",
+                  "site_purge_running",
+                  "site_purge_not_found",
+                  "source_unavailable",
+                  "source_rate_limited",
+                  "site_import_interrupted",
+                  "connection_not_found",
+                  "encryption_key_missing",
+                  "provider_already_connected",
+                  "provider_account_taken",
+                  "provider_other_account",
+                  "provider_wrong_credentials",
+                  "provider_not_connected",
+                  "provider_sign_in_needed",
+                  "provider_unavailable",
+                  "provider_refused",
+                  "provider_not_stored",
+                  "provider_requirements_unmet",
+                  "provider_not_sent",
+                  "provider_dive_gone",
+                  "provider_busy",
+                  "backup_not_found",
+                  "backup_in_progress",
+                  "backup_running",
+                  "backup_not_ready",
+                  "backup_file_missing",
+                  "backup_passphrase_missing",
+                  "backup_settings_invalid",
+                  "backup_recipient_missing",
+                  "backup_recipient_invalid",
+                  "setup_restore_source_missing",
+                  "setup_restore_archive_missing",
+                  "setup_restore_key_missing",
+                  "setup_restore_decrypt_failed",
+                  "setup_restore_key_required",
+                  "setup_restore_key_unexpected",
+                  "setup_restore_key_differs",
+                  "setup_restore_schema_newer",
+                  "setup_restore_failed",
+                  "provider_number_taken",
+                  "provider_numbers_off",
+                  "provider_number_nothing_to_set",
+                  "provider_unsupported",
+                  "fetch_interval_too_short",
+                  "push_run_active",
+                  "push_run_nothing_to_send",
+                  "push_run_not_found",
+                  "push_run_not_active",
+                  "push_run_going",
+                  "push_run_not_stopped",
+                  "waiting_push_not_found",
+                  "provider_account_held",
+                  "diver_not_external",
+                  "provider_import_off",
+                  "entitlement_required",
+                  "billing_not_subscribed",
+                  "billing_already_subscribed",
+                  "billing_unavailable",
+                  "invalid_signature",
                   "finding_not_found",
                   "ai_access_not_found",
                   "ai_access_off",
@@ -4090,8 +4423,11 @@
                   "diver_has_other_account",
                   "odbl_not_confirmed",
                   "ssi_not_confirmed",
+                  "site_source_disabled",
                   "site_import_running",
                   "site_import_not_found",
+                  "site_purge_running",
+                  "site_purge_not_found",
                   "source_unavailable",
                   "source_rate_limited",
                   "site_import_interrupted",
@@ -4143,6 +4479,11 @@
                   "provider_account_held",
                   "diver_not_external",
                   "provider_import_off",
+                  "entitlement_required",
+                  "billing_not_subscribed",
+                  "billing_already_subscribed",
+                  "billing_unavailable",
+                  "invalid_signature",
                   "finding_not_found",
                   "ai_access_not_found",
                   "ai_access_off",
@@ -4927,8 +5268,11 @@
                         "diver_has_other_account",
                         "odbl_not_confirmed",
                         "ssi_not_confirmed",
+                        "site_source_disabled",
                         "site_import_running",
                         "site_import_not_found",
+                        "site_purge_running",
+                        "site_purge_not_found",
                         "source_unavailable",
                         "source_rate_limited",
                         "site_import_interrupted",
@@ -4980,6 +5324,11 @@
                         "provider_account_held",
                         "diver_not_external",
                         "provider_import_off",
+                        "entitlement_required",
+                        "billing_not_subscribed",
+                        "billing_already_subscribed",
+                        "billing_unavailable",
+                        "invalid_signature",
                         "finding_not_found",
                         "ai_access_not_found",
                         "ai_access_off",
@@ -6832,6 +7181,82 @@
         }
       }
     },
+    "/api/email/config": {
+      "get": {
+        "summary": "Whether this instance can send e-mail (invitations and self-serve password resets)",
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "configured"
+                  ],
+                  "properties": {
+                    "configured": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/password-resets/request": {
+      "post": {
+        "summary": "Request a password reset link by e-mail (only when e-mail is configured)",
+        "description": "Answers the same whether or not the address has an account, so it never reveals one. 404 when this instance sends no e-mail (use an admin's reset link instead).",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "email"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "maxLength": 254
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Default Response"
+          },
+          "404": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/password-resets/lookup": {
       "post": {
         "summary": "Whose password a reset link is for",
@@ -7375,6 +7800,15 @@
                         "expiresAt": {
                           "type": "string",
                           "format": "date-time"
+                        }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "emailSent": {
+                          "type": "boolean",
+                          "description": "Whether the link was e-mailed; absent when this instance sends no e-mail. The link works either way."
                         }
                       }
                     }
@@ -8927,6 +9361,124 @@
             }
           },
           "410": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/billing/checkout": {
+      "get": {
+        "summary": "A Paddle checkout link for the Pro plan",
+        "description": "Creates a Paddle transaction whose custom data carries the signed-in User, so the subscription webhook can find them. Open the returned URL; Paddle collects the card and VAT. A User who already has the Pro plan answers 409 `billing_already_subscribed`: manage or cancel in the portal, so no second subscription starts.",
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "url"
+                  ],
+                  "properties": {
+                    "url": {
+                      "type": "string",
+                      "format": "uri",
+                      "description": "An authenticated Paddle URL; open it rather than building one"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/billing/portal": {
+      "get": {
+        "summary": "The Paddle customer portal link (invoices, card updates, cancellation)",
+        "description": "Needs a Paddle customer from an earlier checkout; without one the answer is 409 `billing_not_subscribed`. The portal is Paddle-hosted; Dive Hub stores no payment data.",
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "url"
+                  ],
+                  "properties": {
+                    "url": {
+                      "type": "string",
+                      "format": "uri",
+                      "description": "An authenticated Paddle URL; open it rather than building one"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "502": {
             "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
             "content": {
               "application/json": {
@@ -24917,6 +25469,41 @@
         }
       }
     },
+    "/api/admin/site-sources": {
+      "get": {
+        "summary": "The site sources this instance offers (admins)",
+        "description": "Driven by DIVEHUB_SITE_SOURCES (ADR 0087), not by the client: the admin UI offers exactly these. A source left out is refused by POST /api/admin/site-imports (400 site_source_disabled).",
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "enum": [
+                      "osm",
+                      "wikidata",
+                      "ssi"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/admin/site-imports": {
       "post": {
         "summary": "Start importing Dive sites from OpenStreetMap, Wikidata and/or SSI (admins)",
@@ -25144,6 +25731,156 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SiteImportView"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/site-imports/purge": {
+      "post": {
+        "summary": "Remove every External ID of one Source and the sites it leaves empty (admins)",
+        "description": "Runs in the background; follow it with GET. Deletes the Source's External IDs, then import-created sites with no remaining data-providing ID and no Dive; sites a Dive still names are reported, not deleted. One Site import or purge at a time (409).",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "source"
+                ],
+                "properties": {
+                  "source": {
+                    "enum": [
+                      "osm",
+                      "wikidata",
+                      "ssi"
+                    ],
+                    "description": "The Source whose External IDs and now-empty sites go"
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SitePurgeView"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/site-imports/purges": {
+      "get": {
+        "summary": "The latest Source purges, newest first (admins)",
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SitePurgeView"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/site-imports/purges/{id}": {
+      "get": {
+        "summary": "One Source purge with its progress and result (admins)",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SitePurgeView"
                 }
               }
             }
@@ -25736,6 +26473,16 @@
               }
             }
           },
+          "402": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
           "404": {
             "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
             "content": {
@@ -25860,6 +26607,16 @@
             }
           },
           "400": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "402": {
             "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
             "content": {
               "application/json": {
@@ -26100,6 +26857,16 @@
               }
             }
           },
+          "402": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
           "404": {
             "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
             "content": {
@@ -26149,6 +26916,16 @@
             }
           },
           "400": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "402": {
             "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
             "content": {
               "application/json": {
@@ -26217,6 +26994,16 @@
               }
             }
           },
+          "402": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
           "404": {
             "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
             "content": {
@@ -26266,6 +27053,16 @@
             }
           },
           "400": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "402": {
             "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
             "content": {
               "application/json": {
@@ -27013,6 +27810,16 @@
               }
             }
           },
+          "402": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
           "404": {
             "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
             "content": {
@@ -27117,6 +27924,16 @@
             }
           },
           "400": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "402": {
             "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
             "content": {
               "application/json": {
@@ -27342,6 +28159,16 @@
             }
           },
           "400": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "402": {
             "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
             "content": {
               "application/json": {
@@ -27595,6 +28422,16 @@
               }
             }
           },
+          "402": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
           "404": {
             "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
             "content": {
@@ -27699,6 +28536,16 @@
             }
           },
           "400": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "402": {
             "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
             "content": {
               "application/json": {
@@ -27875,6 +28722,16 @@
             }
           },
           "400": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "402": {
             "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
             "content": {
               "application/json": {
@@ -28081,6 +28938,16 @@
               }
             }
           },
+          "402": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
           "404": {
             "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
             "content": {
@@ -28205,6 +29072,16 @@
             }
           },
           "400": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "402": {
             "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
             "content": {
               "application/json": {
@@ -28367,6 +29244,16 @@
             }
           },
           "400": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "402": {
             "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
             "content": {
               "application/json": {
@@ -29105,6 +29992,16 @@
               }
             }
           },
+          "402": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
           "404": {
             "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
             "content": {
@@ -29279,6 +30176,16 @@
             }
           },
           "400": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "402": {
             "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
             "content": {
               "application/json": {
@@ -29684,6 +30591,16 @@
               }
             }
           },
+          "402": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
           "404": {
             "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
             "content": {
@@ -29927,6 +30844,16 @@
               }
             }
           },
+          "402": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
           "404": {
             "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
             "content": {
@@ -30022,6 +30949,16 @@
             }
           },
           "400": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "402": {
             "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
             "content": {
               "application/json": {
@@ -30158,6 +31095,16 @@
             }
           },
           "400": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "402": {
             "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
             "content": {
               "application/json": {
@@ -30833,6 +31780,16 @@
               }
             }
           },
+          "402": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
           "404": {
             "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
             "content": {
@@ -30910,6 +31867,16 @@
             }
           },
           "400": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "402": {
             "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
             "content": {
               "application/json": {
@@ -31094,6 +32061,16 @@
               }
             }
           },
+          "402": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
           "404": {
             "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
             "content": {
@@ -31232,6 +32209,16 @@
               }
             }
           },
+          "402": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
           "404": {
             "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
             "content": {
@@ -31312,6 +32299,16 @@
             }
           },
           "400": {
+            "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "402": {
             "description": "A refusal. Besides code and error, it carries the extras its code names; a module adds only extras of its own types",
             "content": {
               "application/json": {

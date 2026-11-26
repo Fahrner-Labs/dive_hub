@@ -9,7 +9,10 @@ import type { LightMyRequestResponse } from 'fastify';
 import { createAuth, type Auth } from '../src/auth/auth.js';
 import { buildApp } from '../src/app.js';
 import { createServices } from '../src/compose.js';
-import type { FcmConfig } from '../src/config.js';
+import type { BillingConfig, EmailConfig, FcmConfig } from '../src/config.js';
+import type { PaddleFetch } from '../src/billing/paddle.js';
+import type { MailProvider } from '../src/mail/mail.js';
+import { createMailProvider, type MailFetch } from '../src/mail/resend.js';
 import type { DiverVisibility } from '../src/vocabulary.js';
 import { createDb, type Db } from '../src/db/client.js';
 import { migrateDatabase } from '../src/db/migrate.js';
@@ -80,7 +83,10 @@ export async function createTestDatabase(options: { migrationsFolder?: string } 
   };
 }
 
-export function createTestAuth(db: Db, options: { rateLimit?: boolean } = {}): Auth {
+export function createTestAuth(
+  db: Db,
+  options: { rateLimit?: boolean; registrationOpen?: boolean; mail?: MailProvider } = {},
+): Auth {
   return createAuth({ db, baseUrl: BASE_URL, secret: 'test-secret-with-enough-entropy-0123456789abcdef', ...options });
 }
 
@@ -115,7 +121,7 @@ export function resettableClock({ stopped = false } = {}) {
 }
 
 export async function createTestApp(t: TestDatabase, options: {
-  rateLimit?: boolean; webDir?: string; siteSources?: Record<ImportSource, SiteSourceAdapter>;
+  rateLimit?: boolean; webDir?: string; siteSources?: Partial<Record<ImportSource, SiteSourceAdapter>>;
   /** SSI as tests see it (default: a fresh fake); `encryptionKey: null` runs without DIVEHUB_ENCRYPTION_KEY. */
   fakeSsi?: FakeSsi; encryptionKey?: Buffer | null;
   /** Providers besides SSI, such as the test-only hand-over adapter (never in production). */
@@ -130,18 +136,39 @@ export async function createTestApp(t: TestDatabase, options: {
   onRestored?: () => void;
   /** FCM push config (ADR 0085); tests that want push configured pass one, otherwise it is off. */
   fcm?: FcmConfig;
+  /** Transactional mail config (hosted plan §6.1); tests pass one with a `mailFetch` stand-in, otherwise it is off. */
+  email?: EmailConfig;
+  /** Where the Resend HTTP goes in tests; production passes nothing and uses the global fetch. */
+  mailFetch?: MailFetch;
+  /** Resend's endpoint in tests, so a captured request names the overridden endpoint. */
+  mailUrl?: string;
+  /** DIVEHUB_REGISTRATION_OPEN (hosted plan §6.2); needs `email` and a mail stand-in for verification. */
+  registrationOpen?: boolean;
+  /** Billing (hosted-DiveHub plan §4); tests that want the paywall on pass a full `BillingConfig`, otherwise every feature is free. */
+  billing?: BillingConfig;
+  /** Where Paddle's HTTP goes in tests; production uses the global fetch and the endpoint the key names. */
+  paddleFetch?: PaddleFetch;
+  /** Paddle's API base in tests, so a captured request names the overridden endpoint. */
+  paddleUrl?: string;
   /** Who may see a Diver's contact details (ADR 0088); instance when not set. */
   diverVisibility?: DiverVisibility;
 } = {}) {
   const {
     webDir, siteSources, fakeSsi = createFakeSsi(), encryptionKey = TEST_ENCRYPTION_KEY, extraProviders = [], clock = resettableClock(), ssi = (a) => a,
-    maxUploadBytes = 1 << 26, onRestored, fcm, diverVisibility, ...authOptions
+    maxUploadBytes = 1 << 26, onRestored, fcm, email, mailFetch, mailUrl, registrationOpen, billing, paddleFetch, paddleUrl, diverVisibility, ...authOptions
   } = options;
   // SSI keeps its last logbook read for two minutes (ADR 0027); a test that changes the fake SSI behind Dive Hub's back
   // moves this clock on, as if the change happened a while later. Pauses between actions are skipped and recorded.
   const ssiClock = { now: 0, advance(ms: number) { this.now += ms; } };
+  const mailer = email
+    ? createMailProvider(email, { ...(mailFetch && { fetch: mailFetch }), ...(mailUrl && { url: mailUrl }) })
+    : undefined;
   const services = createServices({
-    db: t.db, auth: createTestAuth(t.db, authOptions), blobs: createLocalBlobStore(t.dataDir), secrets: createSecretBox(encryptionKey ?? undefined),
+    db: t.db,
+    auth: createTestAuth(t.db, {
+      ...authOptions, ...(registrationOpen !== undefined && { registrationOpen }), ...(mailer && { mail: mailer }),
+    }),
+    blobs: createLocalBlobStore(t.dataDir), secrets: createSecretBox(encryptionKey ?? undefined),
     dataDir: t.dataDir, databaseUrl: t.pool.options.connectionString!, encryptionKey: encryptionKey ?? undefined,
     siteSources: siteSources ?? { osm: unreachable('osm'), wikidata: unreachable('wikidata'), ssi: unreachable('ssi') },
     adapters: [
@@ -153,7 +180,15 @@ export async function createTestApp(t: TestDatabase, options: {
     ],
     clock,
     live: { connectionString: t.pool.options.connectionString! },
+    baseUrl: BASE_URL,
+    registrationOpen: registrationOpen ?? false,
     ...(fcm && { fcm }),
+    ...(email && { email }),
+    ...(mailFetch && { mailFetch }),
+    ...(mailUrl && { mailUrl }),
+    ...(billing && { billing }),
+    ...(paddleFetch && { paddleFetch }),
+    ...(paddleUrl && { paddleUrl }),
     ...(diverVisibility && { diverVisibility }),
   });
   const app = await buildApp({
@@ -170,7 +205,11 @@ export const listenToNoChanges = () => listenToChanges({ diveChanged: async () =
 
 /** Creates a User the way an admin would (Better Auth's admin API, server-side). */
 export async function createUser(auth: Auth, email: string, role: 'user' | 'admin' = 'user') {
-  const { user } = await auth.api.createUser({ body: { email, name: email.split('@')[0]!, password: PASSWORD, role } });
+  // The admin vouches for the address, like the setup token and an invitation do, so the User needs no verification
+  // even when open registration requires it (hosted plan §6.2).
+  const { user } = await auth.api.createUser({
+    body: { email, name: email.split('@')[0]!, password: PASSWORD, role, data: { emailVerified: true } },
+  });
   return user;
 }
 

@@ -21,6 +21,7 @@ describe('loadConfig', () => {
     const config = loadConfig({
       ...base, DIVEHUB_PORT: '', DIVEHUB_MAX_UPLOAD_MB: '', DIVEHUB_HOST: '', DIVEHUB_LOG_LEVEL: '', DIVEHUB_WORKER: '',
       DIVEHUB_BASE_URL: '', DIVEHUB_DATA_DIR: '', DIVEHUB_AUTH_SECRET: '', DIVEHUB_CONTACT: ' ', DIVEHUB_DIVER_VISIBILITY: '',
+      DIVEHUB_SITE_SOURCES: ' ',
     });
     expect(config).toEqual(loadConfig(base));
   });
@@ -45,6 +46,58 @@ describe('loadConfig', () => {
     expect(() => loadConfig({ DATABASE_URL: '' })).toThrow('DATABASE_URL');
     expect(() => loadConfig({ ...base, NODE_ENV: 'production' })).toThrow('DIVEHUB_BASE_URL');
     expect(loadConfig({ ...base, NODE_ENV: 'production', DIVEHUB_BASE_URL: 'https://dives.example.com' }).baseUrl).toBe('https://dives.example.com');
+  });
+});
+
+describe('loadConfig site sources', () => {
+  it('offers every source when the variable is unset, the self-hosted default', () => {
+    expect(loadConfig(base).siteSources).toEqual(['osm', 'wikidata', 'ssi']);
+  });
+
+  it('takes a subset in the vocabulary order', () => {
+    expect(loadConfig({ ...base, DIVEHUB_SITE_SOURCES: 'ssi,wikidata' }).siteSources).toEqual(['wikidata', 'ssi']);
+    expect(loadConfig({ ...base, DIVEHUB_SITE_SOURCES: ' wikidata ' }).siteSources).toEqual(['wikidata']);
+  });
+
+  it('names the unknown source and the valid ones at boot', () => {
+    expect(() => loadConfig({ ...base, DIVEHUB_SITE_SOURCES: 'wikidata,openstreetmap' }))
+      .toThrow('DIVEHUB_SITE_SOURCES names unknown source(s): openstreetmap; valid sources are osm, wikidata, ssi');
+    expect(() => loadConfig({ ...base, DIVEHUB_SITE_SOURCES: ',' })).toThrow('DIVEHUB_SITE_SOURCES must name at least one source');
+  });
+});
+
+describe('loadConfig billing', () => {
+  const paddle = {
+    DIVEHUB_PADDLE_API_KEY: 'pdl_sdbx_apikey_test',
+    DIVEHUB_PADDLE_WEBHOOK_SECRET: 'pdl_ntfset_test',
+    DIVEHUB_PADDLE_PRICE_IDS: ' pri_monthly , pri_yearly ',
+  };
+
+  it('is off when DIVEHUB_BILLING_PROVIDER is unset, the self-hosted default', () => {
+    expect(loadConfig(base).billing).toBeUndefined();
+    expect(loadConfig({ ...base, DIVEHUB_BILLING_PROVIDER: '' }).billing).toBeUndefined();
+  });
+
+  it('turns the entitlement gates on with paddle and its three values', () => {
+    expect(loadConfig({ ...base, DIVEHUB_BILLING_PROVIDER: 'paddle', ...paddle }).billing).toEqual({
+      provider: 'paddle',
+      apiKey: 'pdl_sdbx_apikey_test',
+      webhookSecret: 'pdl_ntfset_test',
+      priceIds: ['pri_monthly', 'pri_yearly'],
+    });
+  });
+
+  it('stops the boot on a provider it does not know', () => {
+    expect(() => loadConfig({ ...base, DIVEHUB_BILLING_PROVIDER: 'stripe' })).toThrow('DIVEHUB_BILLING_PROVIDER must be paddle');
+  });
+
+  it('names the missing Paddle values rather than run gates with no way to pay', () => {
+    expect(() => loadConfig({ ...base, DIVEHUB_BILLING_PROVIDER: 'paddle' }))
+      .toThrow(/DIVEHUB_PADDLE_API_KEY.*DIVEHUB_PADDLE_WEBHOOK_SECRET.*DIVEHUB_PADDLE_PRICE_IDS/);
+    expect(() => loadConfig({ ...base, DIVEHUB_BILLING_PROVIDER: 'paddle', DIVEHUB_PADDLE_API_KEY: 'pdl_sdbx_apikey_test' }))
+      .toThrow(/DIVEHUB_PADDLE_WEBHOOK_SECRET.*DIVEHUB_PADDLE_PRICE_IDS/);
+    expect(() => loadConfig({ ...base, DIVEHUB_BILLING_PROVIDER: 'paddle', ...paddle, DIVEHUB_PADDLE_PRICE_IDS: ' , ' }))
+      .toThrow('DIVEHUB_PADDLE_PRICE_IDS');
   });
 });
 
@@ -107,5 +160,54 @@ describe('loadConfig FCM push config', () => {
     expect(() => loadConfig({
       ...base, DIVEHUB_FCM_SERVICE_ACCOUNT: JSON.stringify(serviceAccount), DIVEHUB_FCM_CLIENT_CONFIG: '{}',
     })).toThrow('DIVEHUB_FCM_CLIENT_CONFIG');
+  });
+});
+
+describe('loadConfig transactional e-mail', () => {
+  const mail = {
+    DIVEHUB_EMAIL_PROVIDER: 'resend', DIVEHUB_EMAIL_API_KEY: 're_test_key', DIVEHUB_EMAIL_FROM: 'Dive Hub <noreply@dives.example.com>',
+  };
+
+  it('is off when no e-mail variable is set, so copy links stay the behaviour', () => {
+    expect(loadConfig(base).email).toBeUndefined();
+    expect(loadConfig({ ...base, DIVEHUB_EMAIL_PROVIDER: '', DIVEHUB_EMAIL_API_KEY: ' ', DIVEHUB_EMAIL_FROM: '' }).email).toBeUndefined();
+  });
+
+  it('reads the Resend provider, key and sender', () => {
+    expect(loadConfig({ ...base, ...mail }).email).toEqual({
+      provider: 'resend', apiKey: 're_test_key', from: 'Dive Hub <noreply@dives.example.com>',
+    });
+  });
+
+  it('refuses a half-configured instance and names what is missing', () => {
+    expect(() => loadConfig({ ...base, DIVEHUB_EMAIL_PROVIDER: 'resend' })).toThrow(/DIVEHUB_EMAIL_API_KEY.*DIVEHUB_EMAIL_FROM/);
+    expect(() => loadConfig({ ...base, DIVEHUB_EMAIL_API_KEY: 're_test_key' })).toThrow('DIVEHUB_EMAIL_PROVIDER');
+    expect(() => loadConfig({ ...base, DIVEHUB_EMAIL_FROM: 'noreply@dives.example.com' })).toThrow('DIVEHUB_EMAIL_PROVIDER');
+  });
+
+  it('refuses a provider it has no implementation for', () => {
+    expect(() => loadConfig({ ...base, ...mail, DIVEHUB_EMAIL_PROVIDER: 'postmark' })).toThrow(/only.*resend/i);
+  });
+});
+
+describe('loadConfig open registration', () => {
+  const mail = {
+    DIVEHUB_EMAIL_PROVIDER: 'resend', DIVEHUB_EMAIL_API_KEY: 're_test_key', DIVEHUB_EMAIL_FROM: 'Dive Hub <noreply@dives.example.com>',
+  };
+
+  it('is off by default, so the image is invite-only without the variable', () => {
+    expect(loadConfig(base).registrationOpen).toBe(false);
+    expect(loadConfig({ ...base, DIVEHUB_REGISTRATION_OPEN: '' }).registrationOpen).toBe(false);
+    expect(loadConfig({ ...base, DIVEHUB_REGISTRATION_OPEN: 'false' }).registrationOpen).toBe(false);
+  });
+
+  it('opens sign-up only with true and transactional e-mail to verify it', () => {
+    expect(loadConfig({ ...base, ...mail, DIVEHUB_REGISTRATION_OPEN: 'true' }).registrationOpen).toBe(true);
+    expect(() => loadConfig({ ...base, DIVEHUB_REGISTRATION_OPEN: 'true' })).toThrow(/DIVEHUB_REGISTRATION_OPEN=true needs transactional e-mail/);
+  });
+
+  it('refuses a value that is neither true nor false', () => {
+    expect(() => loadConfig({ ...base, ...mail, DIVEHUB_REGISTRATION_OPEN: 'yes' }))
+      .toThrow('DIVEHUB_REGISTRATION_OPEN must be "true" or "false", not "yes"');
   });
 });

@@ -386,6 +386,26 @@ fun `without a stored token or instance the sign-in form shows and no request is
     assertEquals(0, calls)
 }
 
+    @Test
+    fun `signing in to the default instance stores it`() = runTest {
+        val default = "https://cloud.divehub.example"
+        val harness = Harness(tokens = FakeTokens(null), instances = FakeInstances(null)) { request ->
+            when (request.url.encodedPath) {
+                SIGN_IN_PATH -> respond("", HttpStatusCode.OK, headersOf(SET_AUTH_TOKEN, "token"))
+                "/api/me" -> json(ME_JSON)
+                else -> error("unexpected ${request.method} ${request.url}")
+            }
+        }
+
+        assertNull(harness.session.knownInstance())
+        assertFalse(harness.session.hasSession())
+
+        harness.session.signIn(default, "ada@example.com", "correct horse battery")
+
+        assertEquals(default, harness.session.knownInstance())
+        assertEquals(default, harness.instances.value)
+    }
+
 @Test
 fun `a 5xx is retried once`() = runTest {
     var calls = 0

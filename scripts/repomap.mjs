@@ -170,7 +170,7 @@ export function rankSymbols(root) {
  * How many symbols a module shows: small modules keep their few, large ones get a deeper slice. The per-module
  * allowance shrinks as the repo grows, so the whole map stays inside ADR 0067's ~4k-token budget.
  */
-export const perModuleLimit = (count) => Math.max(5, Math.min(19, Math.ceil(count / 20)));
+export const perModuleLimit = (count) => Math.max(5, Math.min(18, Math.ceil(count / 20)));
 
 /**
  * The module's top symbols. The first pass keeps any file to about a third of the places (at least three), so a large
@@ -227,11 +227,32 @@ export function renderRepoMap(symbols, { files, perModule = perModuleLimit } = {
   return `${lines.join('\n').replace(/\n+$/, '')}\n`;
 }
 
+/**
+ * ADR 0067 asks for a map of about 4k tokens, roughly four characters each. Generated text (not just the committed
+ * file) must stay inside it as the repo grows, so the per-module allowance is capped to fit rather than raised.
+ */
+export const MAP_BUDGET_CHARS = 16_000;
+
+/**
+ * The map, with the per-module allowance capped down until it fits `MAP_BUDGET_CHARS`. Starting at the deepest
+ * allowance and lowering it keeps as many symbols as the budget allows; an explicit `perModule` skips this.
+ */
+function renderWithinBudget(symbols, files) {
+  for (let cap = 19; cap >= 1; cap--) {
+    const text = renderRepoMap(symbols, { files, perModule: (count) => Math.min(cap, perModuleLimit(count)) });
+    if (text.length <= MAP_BUDGET_CHARS) return text;
+  }
+  return renderRepoMap(symbols, { files, perModule: 1 });
+}
+
 /** The map and the numbers it was built from; no files are written. */
 export function generateRepoMap(root = process.cwd(), options = {}) {
   const files = sourceFiles(root);
   const symbols = rankSymbols(root);
-  return { text: renderRepoMap(symbols, { files: files.length, ...options }), files: files.length, symbols };
+  const text = options.perModule === undefined
+    ? renderWithinBudget(symbols, files.length)
+    : renderRepoMap(symbols, { files: files.length, ...options });
+  return { text, files: files.length, symbols };
 }
 
 /** Whether the committed map is present and identical to a fresh generation. */

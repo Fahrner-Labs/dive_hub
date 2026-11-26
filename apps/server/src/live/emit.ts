@@ -10,7 +10,7 @@ export const HINT_CHANNEL = 'divehub_hints';
 
 /** What changed; each maps to a query-key root in apps/web/src/api.ts. */
 export const HINT_KINDS = [
-  'dive', 'site', 'waitingPush', 'import', 'siteImport', 'pushRun', 'certification', 'connection', 'buddySuggestion',
+  'dive', 'site', 'waitingPush', 'import', 'siteImport', 'sitePurge', 'pushRun', 'certification', 'connection', 'buddySuggestion',
   'jointDiveOffer',
 ] as const;
 export type HintKind = (typeof HINT_KINDS)[number];

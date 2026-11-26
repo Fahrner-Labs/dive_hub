@@ -1,20 +1,25 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
-import { api, keys, siteImportsQuery, unwrap, type SiteImportArea, type SiteImportView } from './api.ts';
+import { api, keys, siteImportsQuery, sitePurgesQuery, siteSourcesQuery, unwrap, type SiteImportArea, type SiteImportView, type SitePurgeView } from './api.ts';
 import { LANGUAGES, pickLanguage } from './i18n/languages.ts';
 import { announce } from './lib/announce.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
 import { countryOptions } from './lib/geo.ts';
 import { usePageTitle } from './lib/page.ts';
 import { settingsHref } from './lib/settings.ts';
-import { Badge, Button, Checkbox, Form, Icon, Muted, Notice, NumberField, PageHeader, Panel, RadioGroup, Select } from './ui/index.ts';
+import { Badge, Button, Checkbox, ConfirmButton, Form, Icon, Muted, Notice, NumberField, PageHeader, Panel, RadioGroup, Select } from './ui/index.ts';
 
 type Source = SiteImportView['sources'][number];
 type AreaKind = SiteImportArea['kind'];
 
 const NO_COUNTRY = 'none';
 const ODBL_URL = 'https://opendatacommons.org/licenses/odbl/1-0/';
+/** Every Source's label, in the order the form shows them; the record forces a new Source to get one. */
+const SOURCE_LABEL = {
+  wikidata: 'siteImport.sourceWikidata', osm: 'siteImport.sourceOsm', ssi: 'siteImport.sourceSsi',
+} as const satisfies Record<Source, string>;
+const SOURCE_ORDER = Object.keys(SOURCE_LABEL) as Source[];
 const running = (i: SiteImportView) => i.status === 'queued' || i.status === 'running';
 /** Findings shown per kind; a worldwide SSI run can report thousands. */
 const FINDINGS_SHOWN = 50;
@@ -31,7 +36,9 @@ export function SiteImportPage() {
     <>
       <PageHeader title={t('siteImport.title')} lead={t('siteImport.intro')} back={{ href: settingsHref('admin'), label: t('settings.section.admin') }} />
       <StartImport />
+      <PurgeSource />
       <LatestImports />
+      <LatestPurges />
     </>
   );
 }
@@ -42,8 +49,12 @@ function StartImport() {
   const display = useDisplay();
   const queryClient = useQueryClient();
   const imports = useQuery(siteImportsQuery());
+  // Driven by the server (ADR 0087): an instance may construct fewer Sources than the vocabulary names.
+  const enabledSources = useQuery(siteSourcesQuery());
   const busy = imports.data?.some(running) ?? false;
   const [sources, setSources] = useState<Record<Source, boolean>>({ osm: true, wikidata: true, ssi: false });
+  const offered = SOURCE_ORDER.filter((source) => enabledSources.data?.includes(source));
+  const chosen = offered.filter((source) => sources[source]);
   const [kind, setKind] = useState<AreaKind>('country');
   const [country, setCountry] = useState<string | null>(null);
   const [box, setBox] = useState({ south: Number.NaN, west: Number.NaN, north: Number.NaN, east: Number.NaN });
@@ -65,18 +76,17 @@ function StartImport() {
 
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const chosen = (['osm', 'wikidata', 'ssi'] as const).filter((s) => sources[s]);
     const area: SiteImportArea | null = kind === 'world' ? { kind }
       : kind === 'country' ? (country ? { kind, country } : null)
       : Object.values(box).some(Number.isNaN) || box.south >= box.north ? null : { kind, ...box };
     const missing = chosen.length === 0 ? t('siteImport.needSource')
       : !area ? (kind === 'country' ? t('siteImport.needCountry') : t('siteImport.needBox'))
-      : sources.osm && !odbl ? t('siteImport.needOdbl')
-      : sources.ssi && !ssiConfirmed ? t('siteImport.needSsi') : null;
+      : chosen.includes('osm') && !odbl ? t('siteImport.needOdbl')
+      : chosen.includes('ssi') && !ssiConfirmed ? t('siteImport.needSsi') : null;
     setProblem(missing);
     if (missing || !area) return;
     start.mutate({
-      sources: chosen, area, language, confirmOdbl: sources.osm && odbl, confirmSsi: sources.ssi && ssiConfirmed, createSites: !onlyFill,
+      sources: chosen, area, language, confirmOdbl: chosen.includes('osm') && odbl, confirmSsi: chosen.includes('ssi') && ssiConfirmed, createSites: !onlyFill,
     });
   };
 
@@ -85,11 +95,14 @@ function StartImport() {
       <Form className="form" onSubmit={submit}>
         <fieldset className="field-set">
           <legend className="field-label">{t('siteImport.sources')}</legend>
-          <Checkbox isSelected={sources.wikidata} onChange={(v) => setSources((s) => ({ ...s, wikidata: v }))}>{t('siteImport.sourceWikidata')}</Checkbox>
-          <Checkbox isSelected={sources.osm} onChange={(v) => setSources((s) => ({ ...s, osm: v }))}>{t('siteImport.sourceOsm')}</Checkbox>
-          <Checkbox isSelected={sources.ssi} onChange={(v) => setSources((s) => ({ ...s, ssi: v }))}>{t('siteImport.sourceSsi')}</Checkbox>
+          {offered.map((source) => (
+            <Checkbox key={source} isSelected={sources[source]} onChange={(v) => setSources((s) => ({ ...s, [source]: v }))}>
+              {t(SOURCE_LABEL[source])}
+            </Checkbox>
+          ))}
         </fieldset>
-        {sources.osm && (
+        {enabledSources.error && <Notice tone="danger">{errorText(enabledSources.error)}</Notice>}
+        {chosen.includes('osm') && (
           // Standing terms that wait for the admin's confirmation: tinted, not a Notice (which announces itself).
           <div className="terms">
             <p><strong>{t('siteImport.odblTitle')}</strong></p>
@@ -104,7 +117,7 @@ function StartImport() {
             <Checkbox isSelected={odbl} onChange={setOdbl}>{t('siteImport.odblConfirm')}</Checkbox>
           </div>
         )}
-        {sources.ssi && (
+        {chosen.includes('ssi') && (
           // No licence to accept: the admin confirms they understood and take the decision (ADR 0025).
           <div className="terms">
             <p><strong>{t('siteImport.ssiTitle')}</strong></p>
@@ -160,9 +173,68 @@ function StartImport() {
         {start.error && <Notice tone="danger">{errorText(start.error)}</Notice>}
         {busy && <Muted>{t('siteImport.busy')}</Muted>}
         <div className="form-actions">
-          <Button type="submit" variant="primary" icon="siteImport" isPending={start.isPending} isDisabled={busy}>{t('siteImport.start')}</Button>
+          <Button type="submit" variant="primary" icon="siteImport" isPending={start.isPending} isDisabled={busy || !enabledSources.data}>{t('siteImport.start')}</Button>
         </div>
       </Form>
+    </Panel>
+  );
+}
+
+/**
+ * The pre-agreed remedy if a Source objects to its site data (FAH-528): remove every External ID of one Source and
+ * the sites it leaves without data or a Dive. Sites a Dive still names stay and are reported; the admin resolves
+ * them and runs it again. The dialog says what cannot be undone.
+ */
+function PurgeSource() {
+  const { t } = useTranslation();
+  const errorText = useErrorText();
+  const queryClient = useQueryClient();
+  // The server drives the offered Sources (DIVEHUB_SITE_SOURCES, ADR 0087): never keep a full list here.
+  const sources = useQuery(siteSourcesQuery());
+  const offered = sources.data ?? [];
+  const [chosen, setChosen] = useState<Source>('ssi');
+  const source = offered.includes(chosen) ? chosen : offered[0];
+  const name = source ? t(`siteImport.sourceName.${source}`) : '';
+  const purge = useMutation({
+    mutationFn: async (remove: Source) => unwrap(await api.POST('/api/admin/site-imports/purge', { body: { source: remove } })),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: keys.sitePurges }),
+        queryClient.invalidateQueries({ queryKey: keys.sites }),
+      ]);
+    },
+  });
+
+  return (
+    <Panel title={t('siteImport.purge.title')}>
+      <p>{t('siteImport.purge.intro')}</p>
+      {sources.error && <Notice tone="danger">{errorText(sources.error)}</Notice>}
+      {sources.data && (
+        <Select
+          label={t('siteImport.purge.source')}
+          description={t('siteImport.purge.sourceHint')}
+          value={source ?? null}
+          onChange={(v) => setChosen((v ?? offered[0] ?? 'ssi') as Source)}
+          options={offered.map((s) => ({ id: s, label: t(`siteImport.sourceName.${s}`) }))}
+        />
+      )}
+      <Muted>{t('siteImport.purge.what')}</Muted>
+      {purge.error && <Notice tone="danger">{errorText(purge.error)}</Notice>}
+      <div className="form-actions">
+        <ConfirmButton
+          variant="danger"
+          icon="delete"
+          title={t('siteImport.purge.confirmTitle', { source: name })}
+          body={t('siteImport.purge.confirmBody', { source: name })}
+          confirmLabel={t('siteImport.purge.confirm')}
+          onConfirm={async () => { if (source) await purge.mutateAsync(source); }}
+          onDone={() => announce(t('siteImport.purge.started'))}
+          isPending={purge.isPending}
+          isDisabled={!source}
+        >
+          {t('siteImport.purge.start')}
+        </ConfirmButton>
+      </div>
     </Panel>
   );
 }
@@ -248,6 +320,59 @@ function ImportItem({ item: i }: { item: SiteImportView }) {
             ))}
           </ul>
           {offers.length > FINDINGS_SHOWN && <p className="meta">{t('siteImport.moreFindings', { count: offers.length - FINDINGS_SHOWN })}</p>}
+        </>
+      )}
+    </li>
+  );
+}
+
+function LatestPurges() {
+  const { t } = useTranslation();
+  const errorText = useErrorText();
+  const purges = useQuery(sitePurgesQuery());
+  return (
+    <Panel title={t('siteImport.purge.latest')}>
+      {purges.error && <Notice tone="danger">{errorText(purges.error)}</Notice>}
+      {purges.data?.length === 0 && <Muted>{t('siteImport.purge.none')}</Muted>}
+      {purges.data && purges.data.length > 0 && (
+        <ul className="site-imports">{purges.data.map((p) => <PurgeItem key={p.id} item={p} />)}</ul>
+      )}
+    </Panel>
+  );
+}
+
+function PurgeItem({ item: p }: { item: SitePurgeView }) {
+  const { t } = useTranslation();
+  const display = useDisplay();
+  const name = t(`siteImport.sourceName.${p.source}`);
+  const progress = p.status !== 'running' ? null
+    : p.progress.step === 'ids' ? t('siteImport.purge.progressIds', { source: name })
+    : p.progress.step === 'sites' ? t('siteImport.purge.progressSites', { done: p.progress.done, total: p.progress.total })
+    : null;
+  const reported = p.result?.referencedSites ?? [];
+
+  return (
+    <li>
+      <div className="site-import-head">
+        <strong>{t('siteImport.purge.heading', { source: name })}</strong>
+        <Badge tone={STATUS_TONE[p.status]}>{t(`siteImport.status.${p.status}`)}</Badge>
+      </div>
+      <p className="meta">{display.dateTime(p.createdAt)}</p>
+      {progress && <p>{progress}</p>}
+      {p.result && <p>{t('siteImport.purge.result', { ids: p.result.sourceIdsDeleted, sites: p.result.sitesDeleted })}</p>}
+      {p.failureCode && <p className="import-error">{t(`errors.${p.failureCode}`)}</p>}
+      {reported.length > 0 && (
+        <>
+          <p>{t('siteImport.purge.reportedIntro', { count: reported.length })}</p>
+          <ul className="site-import-findings">
+            {reported.slice(0, FINDINGS_SHOWN).map((s) => (
+              <li key={s.id}>
+                <a href={`#/sites/${s.id}`}>{s.name}</a>
+                {' '}{t('siteImport.purge.reportedDives', { count: s.dives })}
+              </li>
+            ))}
+          </ul>
+          {reported.length > FINDINGS_SHOWN && <p className="meta">{t('siteImport.moreFindings', { count: reported.length - FINDINGS_SHOWN })}</p>}
         </>
       )}
     </li>

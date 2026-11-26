@@ -8,6 +8,7 @@ import { writeRevision } from '../src/revisions/revisions.js';
 import { record } from '../src/providers/conflicts/conflict-service.js';
 import { clearIfUnchanged, QUIET_MS, stampOf, WAITING_PUSHES_TASK, waitingPushesKey } from '../src/providers/waiting-push/waiting-push-queue.js';
 import { ProviderError } from '../src/providers/provider.js';
+import { createEntitlementService } from '../src/entitlement/entitlement.js';
 import { createWaitingPushService, GIVE_UP_MS, RETRY_AFTER_MS } from '../src/providers/waiting-push/waiting-push-service.js';
 import type { ImportedValues, SiteSourceAdapter, SourceSite } from '../src/sites/import/site-source.js';
 import { createFakeLedger } from './fake-ledger-provider.js';
@@ -964,7 +965,8 @@ describe.skipIf(!(await databaseReachable()))('the queue of Waiting pushes', () 
       // The worker as main.ts builds it, with a logger: the fault itself is for the operator, Users see the code.
       const logged: { detail: object; message: string }[] = [];
       const logging = createWaitingPushService({
-        db: t.db, registry: ctx.providers.providers, pushes: ctx.providers.pushes, clock: ctx.clock,
+        db: t.db, registry: ctx.providers.providers, pushes: ctx.providers.pushes,
+        entitlements: createEntitlementService({ db: t.db, enforced: false }), clock: ctx.clock,
         log: { error: (detail, message) => logged.push({ detail, message }), warn: () => {} },
       });
       const delays = await failUntilStopped(() => logging.step(connectionId));

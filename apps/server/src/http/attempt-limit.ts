@@ -7,6 +7,12 @@ import { problem } from './problems.js';
 /** About 30 attempts per 15 minutes per client IP: plenty for a person, nothing for guessing a token. */
 export const TOKEN_ATTEMPTS = { max: 30, windowMs: 15 * 60_000 };
 
+/**
+ * Self-serve signup (hosted plan §6.2): the same budget as the token routes, but its own count. A signup flood must
+ * not use up an invitation or reset budget from the same address, or the other way round.
+ */
+export const SIGNUP_ATTEMPTS = { max: 30, windowMs: 15 * 60_000 };
+
 export interface AttemptLimit {
   /** Counts an attempt from `key`; the whole seconds until it may try again when it is over the limit, otherwise null. */
   take(key: string): number | null;

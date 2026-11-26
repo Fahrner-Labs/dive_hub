@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Trans, useTranslation } from 'react-i18next';
-import { api, authClient, invitationLinkQuery, passwordResetQuery, unwrap } from './api.ts';
+import { api, authClient, emailConfigQuery, invitationLinkQuery, passwordResetQuery, unwrap } from './api.ts';
 import { resetDeletion } from './lib/deletion.ts';
 import { useErrorText } from './lib/display.ts';
 import { formValues } from './lib/form.ts';
@@ -41,7 +41,10 @@ export function NewPasswordField({ label }: { label: string }) {
 export function SignIn() {
   const { t } = useTranslation();
   usePageTitle(t('signIn.title'));
+  const errorText = useErrorText();
   const signedIn = useUserChanged();
+  const emailConfig = useQuery(emailConfigQuery());
+  const [forgot, setForgot] = useState(false);
   const signIn = useMutation({
     mutationFn: async ({ email, password }: Record<string, string>) => {
       const { error } = await authClient.signIn.email({ email: email!, password: password! });
@@ -52,6 +55,31 @@ export function SignIn() {
     },
     onSuccess: signedIn,
   });
+  // With mail configured the User requests the reset link themselves (hosted plan §6.1); otherwise an admin issues it.
+  const requestReset = useMutation({
+    mutationFn: async ({ email }: Record<string, string>) =>
+      unwrap(await api.POST('/api/password-resets/request', { body: { email: email! } })),
+  });
+
+  if (forgot) {
+    return (
+      <Panel title={t('signIn.forgotTitle')} narrow level={1}>
+        <p className="muted">{t('signIn.forgotAbout')}</p>
+        {requestReset.isSuccess ? (
+          <Notice tone="info">{t('signIn.resetRequested')}</Notice>
+        ) : (
+          <Form className="form" onSubmit={(e) => requestReset.mutate(formValues(e))}>
+            <TextField label={t('form.email')} name="email" type="email" autoComplete="username" spellCheck="false" isRequired />
+            {requestReset.error && <Notice tone="danger">{errorText(requestReset.error)}</Notice>}
+            <div className="form-actions">
+              <Button type="submit" variant="primary" isPending={requestReset.isPending}>{t('signIn.sendResetLink')}</Button>
+              <Button type="button" variant="quiet" onPress={() => setForgot(false)}>{t('signIn.backToSignIn')}</Button>
+            </div>
+          </Form>
+        )}
+      </Panel>
+    );
+  }
 
   return (
     <Panel title={t('signIn.title')} narrow level={1}>
@@ -62,6 +90,11 @@ export function SignIn() {
         {signIn.error && <Notice tone="danger">{signIn.error.message}</Notice>}
         <div className="form-actions"><Button type="submit" variant="primary" isPending={signIn.isPending}>{t('signIn.submit')}</Button></div>
       </Form>
+      {emailConfig.data?.configured && (
+        <div className="form-actions">
+          <Button type="button" variant="quiet" onPress={() => setForgot(true)}>{t('signIn.forgotPassword')}</Button>
+        </div>
+      )}
       <Muted>{t('signIn.noAccount')}</Muted>
     </Panel>
   );
