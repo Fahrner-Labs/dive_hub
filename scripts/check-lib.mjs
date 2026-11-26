@@ -106,7 +106,7 @@ const AREAS = [
   [/^apps\/server\/test\/zip\.ts$/, ['@admin', '@sites']],
 ];
 /** Paths that change no behaviour: no tests. */
-export const QUIET = /^(docs\/|samples\/|\.claude\/|\.github\/|\.githooks\/|AGENTS\.md$|CLAUDE\.md$|README\.md$|SECURITY\.md$|LICENSE$|NOTICE$|skills-lock\.json$|\.gitignore$|\.gitattributes$|\.dockerignore$|\.env\.example$|compose(\.dev)?\.yaml$|Dockerfile$|apps\/server\/test\/fixtures\/site-sources\/record\.ts$|apps\/server\/test\/fixtures\/ssi\/round-trip\.ts$|apps\/server\/test\/fixtures\/write-assessment-fixture\.ts$|apps\/server\/test\/fixtures\/write-suunto-fixture\.ts$|apps\/server\/test\/fixtures\/write-merge-fixture\.ts$|apps\/server\/test\/fixtures\/write-account-export-fixture\.ts$|apps\/server\/test\/fixtures\/write-live-fixtures\.ts$|apps\/server\/test\/fixtures\/write-joint-offer-fixtures\.ts$|scripts\/token-report\.mjs$|scripts\/fit-compressibility\.mjs$)/;
+export const QUIET = /^(docs\/|samples\/|\.claude\/|\.github\/|\.githooks\/|AGENTS\.md$|CLAUDE\.md$|README\.md$|SECURITY\.md$|CONTRIBUTING\.md$|LICENSE$|NOTICE$|skills-lock\.json$|\.gitignore$|\.gitattributes$|\.dockerignore$|\.env\.example$|compose(\.dev)?\.yaml$|Dockerfile$|apps\/server\/test\/fixtures\/site-sources\/record\.ts$|apps\/server\/test\/fixtures\/ssi\/round-trip\.ts$|apps\/server\/test\/fixtures\/write-assessment-fixture\.ts$|apps\/server\/test\/fixtures\/write-suunto-fixture\.ts$|apps\/server\/test\/fixtures\/write-merge-fixture\.ts$|apps\/server\/test\/fixtures\/write-account-export-fixture\.ts$|apps\/server\/test\/fixtures\/write-live-fixtures\.ts$|apps\/server\/test\/fixtures\/write-joint-offer-fixtures\.ts$|scripts\/token-report\.mjs$|scripts\/fit-compressibility\.mjs$)/;
 
 /** The area tags a browser test can have; a test with none of them would run only in the full check. */
 export const TAGS = ['@dives', '@divers', '@equipment', '@sites', '@account', '@admin', '@layout', '@tools', '@live', '@support-bundle', '@client-diagnostics'];
@@ -186,7 +186,7 @@ export function planFor(changed, { e2eServerLoads: loads } = {}) {
     }
     // The drift report, the repo map, the code graph, the release tag parsers and the Android API model generator
     // have tests of their own, and nothing else reads them.
-    if (/^scripts\/(drift|repomap|code-graph|release-tag|android-version-code|generate-android-api)/.test(path)) {
+    if (/^scripts\/(drift|repomap|code-graph|release-tag|android-version-code|generate-android-api|license-scan)/.test(path)) {
       plan.scripts = true;
       if (path === 'scripts/generate-android-api.mjs') plan.android = true;
       continue;
@@ -260,8 +260,9 @@ export function planFor(changed, { e2eServerLoads: loads } = {}) {
       plan.notes.push({ text: `${path} is shared ${app} code, so all ${app} tests and all browser tests run`, steps: [app, 'e2e'] });
       continue;
     }
-    Object.assign(plan, { lint: 'all', server: 'all', web: 'all', android: true, e2e: 'all' });
-    plan.notes.push({ text: `${path} is shared or unknown, so everything runs`, steps: ['lint', 'server', 'web', 'android', 'e2e'] });
+    // A dependency manifest or the lockfile also changes the production licenses the scan checks.
+    Object.assign(plan, { lint: 'all', scripts: true, server: 'all', web: 'all', android: true, e2e: 'all' });
+    plan.notes.push({ text: `${path} is shared or unknown, so everything runs`, steps: ['lint', 'scripts', 'server', 'web', 'android', 'e2e'] });
   }
   return plan;
 }
