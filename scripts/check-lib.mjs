@@ -59,7 +59,7 @@ const AREAS = [
   [/^apps\/web\/src\/(AccountSettings|ReportProblem)\.tsx$|^apps\/web\/src\/(lib\/diagnostics|api\/diagnostics)\.ts$/, ['@client-diagnostics', '@account']],
   // Lazy pages recover from a stale deploy once (FAH-447): every page that loads on demand, which the layout checks open.
   [/^apps\/web\/src\/lib\/lazy-reload\.ts$/, ['@layout']],
-  [/^apps\/web\/src\/(SignedOut|SetupRestore|Connections|ProviderBuddies)\.tsx$|^apps\/web\/src\/lib\/form\.ts$/, ['@account']],
+  [/^apps\/web\/src\/(SignedOut|SetupRestore|Connections|ProviderBuddies|Legal)\.tsx$|^apps\/web\/src\/lib\/form\.ts$/, ['@account']],
   [/^apps\/web\/src\/SettingsPage\.tsx$/, ['@account', '@admin']],
   // The Settings addresses: also the links to a Connection's settings from a Dive's panels, an Import and a push run.
   [/^apps\/web\/src\/lib\/settings\.ts$/, ['@account', '@admin', '@dives']],
