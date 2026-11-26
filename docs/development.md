@@ -179,4 +179,10 @@ harness the test builds from them. jsdom, not happy-dom: React Aria, which our c
 - **pnpm supply-chain defaults stay on**: packages with install scripts must be approved in
   `allowBuilds` (`pnpm-workspace.yaml`); new releases are installable after one day.
 - `@garmin/fitsdk` is a dev dependency only and must never reach the image (ADR 0006); the image
-  build installs production dependencies only (`pnpm deploy --prod`).
+  build installs production dependencies only (`pnpm deploy --prod`). The license scan below fails if it ever
+  becomes a production dependency.
+- **License scan:** Dive Hub is source-available under BUSL 1.1, and production dependencies must stay permissively
+  licensed ([ADR 0086](decisions/0086-busl-1-1-with-apache-2-0-change-license.md)). `pnpm check` runs
+  `scripts/license-scan.mjs` over `pnpm -r licenses list --prod --json`; a new non-permissive dependency fails the
+  check, and extending the allowlist there is a deliberate decision. Contributions need a DCO sign-off:
+  `git commit -s` ([CONTRIBUTING.md](../CONTRIBUTING.md)).

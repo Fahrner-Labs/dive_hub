@@ -1,14 +1,15 @@
 ---
 title: "ADR 0006: Apache-2.0 license; MIT FIT parser in the image, official Garmin SDK only in tests"
 summary: Dive Hub is open source under Apache-2.0. Because Garmin's FIT SDK license forbids redistribution, published images use an MIT-licensed parser; the official SDK is a test-only cross-check.
-status: accepted
+status: superseded in part by 0086
 date: 2026-10-02
 ---
 
 # ADR 0006: Apache-2.0 license; MIT FIT parser in the image, official Garmin SDK only in tests
 
 ## Status
-Accepted – 2026-10-02
+Accepted – 2026-10-02. The license decision is superseded in part by [ADR 0086](0086-busl-1-1-with-apache-2-0-change-license.md)
+(2026-11-26); the FIT-parser decision stands.
 
 ## Context
 Dive Hub will be open source. Common choices for self-hosted apps are AGPL-3.0 (Immich, Mealie)
