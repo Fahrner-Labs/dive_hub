@@ -243,7 +243,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** The signed-in User and their own Diver */
+        /**
+         * The signed-in User, their own Diver, and their plan
+         * @description Billing reports whether this instance sells the Pro plan at all; without it every feature is free and the client shows no Plan section (the dual-track invariant, ADR 0087).
+         */
         get: {
             parameters: {
                 query?: never;
@@ -270,6 +273,22 @@ export interface paths {
                                 language: null | string;
                                 /** @description Null: follow the region of the browser */
                                 units: null | "metric" | "imperial";
+                            };
+                            /** @description The User's plan and status (hosted-DiveHub plan §4.4); shown in Settings and used to grey the paywall */
+                            billing: {
+                                /** @description False on an instance without billing: every feature is free and the client shows no Plan section */
+                                configured: boolean;
+                                /** @enum {unknown} */
+                                plan: "free" | "pro";
+                                /**
+                                 * @description none: never subscribed
+                                 * @enum {unknown}
+                                 */
+                                status: "none" | "active" | "past_due" | "canceled";
+                                /** @description The period that was paid for; canceled keeps it until it ends */
+                                currentPeriodEnd: null | string;
+                                /** @description Whether the paid features (automation, Push runs) may be used now */
+                                entitled: boolean;
                             };
                         };
                     };
@@ -16298,13 +16317,21 @@ export interface components {
             /** @description Delete the Dive's copy at the Provider by itself, 5 minutes after the Dive is deleted here (Undo cancels it) */
             deleteAtProvider: boolean;
             fetchEveryMinutes: null | (60 | 360 | 1440);
-            /** @description Which settings to show: only what the Provider can */
+            /** @description Which settings to show, and whether this User may use them */
             offers: {
                 sendChanges: boolean;
                 sendNewDives: boolean;
                 deleteAtProvider: boolean;
                 /** @description The intervals to offer, in minutes; none: the Provider has no scheduled fetch */
                 fetchEvery: number[];
+                /** @description False when the paid plan is needed and this User lacks it: grey the switches and show the upsell from `offer` (a hosted instance with billing only; always true where billing is off) */
+                entitled: boolean;
+                offer: null | {
+                    /** @description The plan that unlocks automation (pro) */
+                    plan: string;
+                    /** @description What it unlocks (automation, push_runs) */
+                    features: string[];
+                };
             };
             /** @description How many Waiting pushes of the Connection are in each state */
             waiting: {

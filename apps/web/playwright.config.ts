@@ -3,7 +3,7 @@
 // Uses an installed browser (Edge by default; PLAYWRIGHT_CHANNEL=chrome for Chrome), so no download.
 import { randomUUID } from 'node:crypto';
 import { defineConfig } from '@playwright/test';
-import { E2E_BASE_URL, E2E_FIRST_PORT, E2E_SERVERS, E2E_SESSION, serverUrl } from './e2e/support.ts';
+import { E2E_BASE_URL, E2E_BILLING_PORT, E2E_FIRST_PORT, E2E_SERVERS, E2E_SESSION, serverUrl } from './e2e/support.ts';
 
 /** One id for all the e2e servers, so the migrated template runs its migrations once for this run. */
 const E2E_RUN_ID = process.env.E2E_RUN_ID ?? randomUUID();
@@ -37,12 +37,23 @@ export default defineConfig({
     // Review material (e2e/review-material.capture.ts); only with --project=review.
     { name: 'review', testMatch: '**/*.capture.ts' },
   ],
-  webServer: Array.from({ length: E2E_SERVERS }, (_, slot) => ({
-    command: 'npx tsx test/e2e-server.ts',
-    cwd: '../server',
-    url: `${serverUrl(slot)}/api/health/ready`,
-    env: { E2E_PORT: String(E2E_FIRST_PORT + slot), E2E_DB: `divehub_e2e_${slot}`, E2E_RUN_ID },
-    reuseExistingServer: false,
-    timeout: 120_000,
-  })),
+  webServer: [
+    ...Array.from({ length: E2E_SERVERS }, (_, slot) => ({
+      command: 'npx tsx test/e2e-server.ts',
+      cwd: '../server',
+      url: `${serverUrl(slot)}/api/health/ready`,
+      env: { E2E_PORT: String(E2E_FIRST_PORT + slot), E2E_DB: `divehub_e2e_${slot}`, E2E_RUN_ID },
+      reuseExistingServer: false,
+      timeout: 120_000,
+    })),
+    // One server with billing on (hosted-DiveHub plan §4.4), for the paywall's browser tests; the others stay without it.
+    {
+      command: 'npx tsx test/e2e-server.ts',
+      cwd: '../server',
+      url: `http://localhost:${E2E_BILLING_PORT}/api/health/ready`,
+      env: { E2E_PORT: String(E2E_BILLING_PORT), E2E_DB: 'divehub_e2e_billing', E2E_RUN_ID, E2E_BILLING: '1' },
+      reuseExistingServer: false,
+      timeout: 120_000,
+    },
+  ],
 });

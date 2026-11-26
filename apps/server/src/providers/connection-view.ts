@@ -40,7 +40,15 @@ export const ConnectionViewSchema = Type.Object({
   offers: Type.Object({
     sendChanges: Type.Boolean(), sendNewDives: Type.Boolean(), deleteAtProvider: Type.Boolean(),
     fetchEvery: Type.Array(Type.Integer(), { description: 'The intervals to offer, in minutes; none: the Provider has no scheduled fetch' }),
-  }, { description: 'Which settings to show: only what the Provider can' }),
+    entitled: Type.Boolean({
+      description: 'False when the paid plan is needed and this User lacks it: grey the switches and show the upsell from `offer` '
+        + '(a hosted instance with billing only; always true where billing is off)',
+    }),
+    offer: Nullable(Type.Object({
+      plan: Type.String({ description: 'The plan that unlocks automation (pro)' }),
+      features: Type.Array(Type.String(), { description: 'What it unlocks (automation, push_runs)' }),
+    }, { description: 'With entitled false: the paid plan the upsell names, and what it unlocks (hosted-DiveHub plan §4.4)' })),
+  }, { description: 'Which settings to show, and whether this User may use them' }),
   waiting: Type.Object({ waiting: Type.Integer(), held: Type.Integer(), stopped: Type.Integer() }, {
     description: 'How many Waiting pushes of the Connection are in each state',
   }),

@@ -476,6 +476,14 @@ online.
   *Web:* `AccountSettings.tsx`, `main.tsx` (`I18nProvider`), `App.tsx` (`useLanguage`).
 - **Sessions:** list them with device, IP address, sign-in and last activity, and mark the current one. Ending
   another session is immediate; ending the current one is signing out. *Web:* `AccountSettings.tsx` (`Sessions`).
+- **The plan** (hosted-DiveHub plan §4.4, ADR 0087, 0089; `billing` on `GET /api/me`): `configured` false means this
+  instance sells nothing (self-hosted): every feature is free, and there is **no Plan section at all**. When true, show
+  `plan` (`free`|`pro`) and `status` (`none`, `active`, `past_due`, `canceled`), with `currentPeriodEnd` for a canceled
+  plan that is paid until it ends; `entitled` says whether the paid features may be used now. Offer **Upgrade**
+  (`GET /api/billing/checkout`, open the returned `url`; 409 `billing_already_subscribed` when one already runs) to a
+  User with no subscription, and **Manage** (`GET /api/billing/portal`, open the `url`; 409 `billing_not_subscribed`
+  without a Paddle customer) to one who has a row. Dive Hub has no money UI and stores no payment data: Paddle hosts
+  checkout and the portal. *Web:* `PlanSettings.tsx`.
 
 - **AI access** (ADR 0035, `GET /api/me/ai-access`): a User lets an LLM client read their logbook through the
   [MCP endpoint](#the-mcp-endpoint).
@@ -1132,9 +1140,11 @@ dives, all off until the User turns them on. *Web:* `ProviderAutomation.tsx` (se
   `limits.fetchEveryMinutes` is the shortest, already applied). Turning one on queues nothing that changed before. 400
   `provider_unsupported` (the Provider can't) and 400 `fetch_interval_too_short` (below its minimum) are translated; turning
   off is always accepted. The fetch also needs the Connection's import mode "link and fill" or "also create".
-  On a hosted instance with billing, turning a setting **on** without the paid plan answers 402 `entitlement_required`
-  with `offer` (`plan`, and the `features` it unlocks: `automation`, `push_runs`); show the upsell from it. Turning off
-  stays accepted, so a downgraded User can always stop it.
+  On a hosted instance with billing, `offers.entitled` is false for a User without the paid plan, and `offers.offer`
+  carries the `plan` and the `features` it unlocks (`automation`, `push_runs`): show every switch **greyed** (its current
+  state still visible) with the upsell built from that offer, linking to the Plan section. Never hardcode the plan or
+  what is paid. A save that still meets the gate answers 402 `entitlement_required` with the same `offer`; show that
+  upsell too. Turning off stays accepted, so a downgraded User can always stop it.
 - **Must show the state of a Dive's Waiting push** (`waiting` on each row of `GET /api/dives`, on `GET /api/dives/{id}/providers`
   and `.../{provider}` as `waiting` (one or null), and on deleted dives): a list row gets a small icon (`aria-hidden`, with a
   text label), the Dive's page the words, next to Send. Texts with `{{provider}}` the Provider's name:

@@ -4,7 +4,7 @@
 > `pnpm check` fails when this map is stale. Symbols are ranked by how widely the code references them;
 > each module shows its most-referenced ones (exported symbols rank higher). Search here before walking the tree.
 
-Files: 446 · symbols: 4065 · shown: 245
+Files: 447 · symbols: 4071 · shown: 245
 
 ### server/(root)
 apps/server/src/vocabulary.ts:13 type SiteWaterType
@@ -103,11 +103,12 @@ apps/server/src/dives/checks/logbook-check-rules.ts:201 fn probablyNoDive
 … 318 more symbols in this module
 
 ### server/entitlement
-apps/server/src/entitlement/entitlement.ts:110 type EntitlementService
-apps/server/src/entitlement/entitlement.ts:34 fn createEntitlementService
+apps/server/src/entitlement/entitlement.ts:136 type EntitlementService
+apps/server/src/entitlement/entitlement.ts:45 fn createEntitlementService
 apps/server/src/entitlement/entitlement.ts:10 type EntitlementStatus
-apps/server/src/entitlement/entitlement.ts:28 fn isEntitled
-apps/server/src/entitlement/entitlement.ts:13 iface SubscriptionState
+apps/server/src/entitlement/entitlement.ts:13 const PRO_OFFER
+apps/server/src/entitlement/entitlement.ts:39 fn isEntitled
+… 2 more symbols in this module
 
 ### server/equipment
 apps/server/src/equipment/usage.ts:37 fn usageMap
@@ -203,12 +204,12 @@ apps/server/src/providers/current-remote.ts:11 fn currentRemote
 apps/server/src/providers/provider.ts:127 class ProviderError
 apps/server/src/providers/lease-service.ts:17 const realClock
 apps/server/src/providers/provider.ts:244 iface ActionContext
-apps/server/src/providers/connection-view.ts:66 const ConnectionView
+apps/server/src/providers/connection-view.ts:74 const ConnectionView
 apps/server/src/providers/provider.ts:361 iface ImportedDive
 apps/server/src/providers/connection-service.ts:348 type ConnectionService
-apps/server/src/providers/connection-routes.ts:51 const ProviderView
+apps/server/src/providers/connection-routes.ts:52 const ProviderView
 apps/server/src/providers/registry.ts:93 const named
-… 504 more symbols in this module
+… 503 more symbols in this module
 
 ### server/revisions
 apps/server/src/revisions/revisions.ts:94 fn writeRevision
@@ -282,7 +283,7 @@ apps/server/src/users/invitation-service.ts:10 type Role
 apps/server/src/users/views.ts:51 const toUserView
 apps/server/src/users/tokens.ts:5 const sha256
 apps/server/src/users/user-admin-service.ts:10 class UserAdminError
-… 61 more symbols in this module
+… 62 more symbols in this module
 
 ### server/version
 apps/server/src/version/min-client-versions.ts:25 type ClientVersionRegistry
@@ -307,7 +308,7 @@ apps/web/src/Cylinders.tsx:18 fn useCylinderText
 apps/web/src/DeleteDive.tsx:21 fn DeleteDiveDialog
 apps/web/src/ProfileSketch.tsx:12 fn ProfileSketch
 apps/web/src/ProviderConflicts.tsx:14 fn useConflictValueText
-… 535 more symbols in this module
+… 536 more symbols in this module
 
 ### web/api
 apps/web/src/api/request.ts:3 const api
@@ -321,7 +322,7 @@ apps/web/src/api/providers.ts:7 type ProviderView
 apps/web/src/api/dives.ts:16 type RecordingSummary
 apps/web/src/api/sites.ts:16 type SiteSource
 apps/web/src/api/sites.ts:8 type Position
-… 194 more symbols in this module
+… 197 more symbols in this module
 
 ### web/i18n
 apps/web/src/i18n/languages.ts:6 fn pickLanguage
@@ -337,9 +338,9 @@ apps/web/src/lib/announce.ts:9 fn announce
 apps/web/src/lib/providers.ts:70 fn useProviderText
 apps/web/src/lib/providers.ts:47 fn useProviders
 apps/web/src/lib/page.ts:8 fn usePageTitle
+apps/web/src/lib/settings.ts:15 fn settingsHref
 apps/web/src/lib/providers.ts:87 fn useJoinNames
 apps/web/src/lib/focus.ts:28 fn refocusAfterRemoval
-apps/web/src/lib/settings.ts:13 fn settingsHref
 apps/web/src/lib/geo.ts:4 iface Position
 apps/web/src/lib/focus.ts:16 fn focusHeading
 apps/web/src/lib/units.ts:20 const depthIn

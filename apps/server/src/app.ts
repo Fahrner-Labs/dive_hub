@@ -128,7 +128,7 @@ export async function buildApp(deps: AppDeps, app: Server = createServer()) {
   if (deps.live.enabled) await app.register(liveRoutes, { auth: deps.auth, hub: deps.live.hub, ready: deps.live.ready });
   const { db, auth, assessments, baseUrl, passwordResets, tokenAttempts, logbook, divers, centres, dives, merging, checks } = deps;
   const { pushes, waitingPushes, certifications } = deps.providers;
-  await app.register(userRoutes, { prefix: '/api', auth, profiles: deps.profiles, setup: deps.setup, invitations: deps.invitations, tokenAttempts });
+  await app.register(userRoutes, { prefix: '/api', auth, profiles: deps.profiles, setup: deps.setup, invitations: deps.invitations, tokenAttempts, entitlements: deps.entitlements });
   await app.register(setupRestoreRoutes, {
     prefix: '/api', setup: deps.setup, setupRestore: deps.backups, blobs: deps.blobs, tokenAttempts,
     ...(deps.onRestored && { onRestored: deps.onRestored }),

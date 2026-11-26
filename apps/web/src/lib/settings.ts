@@ -2,7 +2,9 @@
  * Settings is one area with a view per section, "#/settings/<section>", the section's name its h1 (UI overhaul, "The
  * shell"). Administration is a section only admins see listed.
  */
-export const SETTINGS_SECTIONS = ['display', 'security', 'connections', 'ai-access', 'devices', 'report-problem', 'admin'] as const;
+// `plan` is listed only when the server says this instance sells the Pro plan (hosted-DiveHub plan §4.4, ADR 0087);
+// `admin` only for admins. `SettingsPage` hides each where it does not apply.
+export const SETTINGS_SECTIONS = ['display', 'security', 'plan', 'connections', 'ai-access', 'devices', 'report-problem', 'admin'] as const;
 export type SettingsSection = (typeof SETTINGS_SECTIONS)[number];
 
 export function isSettingsSection(value: string | undefined): value is SettingsSection {

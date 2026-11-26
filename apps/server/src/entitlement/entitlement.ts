@@ -9,6 +9,17 @@ import { userEntitlement } from '../db/schema.js';
 /** The provider-neutral state a subscription event settles on (plan §4.6). `none` is a row that was deleted. */
 export type EntitlementStatus = 'active' | 'past_due' | 'canceled';
 
+/** The paid plan on offer: what a client shows when a not-entitled User meets a gate (plan §4.5, ADR 0089). */
+export const PRO_OFFER = { plan: 'pro', features: ['automation', 'push_runs'] } as const;
+
+/** The plan and status a client shows in Settings; a User without a row is on the free plan (hosted-DiveHub plan §4.4). */
+export interface PlanSummary {
+  plan: 'free' | 'pro';
+  status: EntitlementStatus | 'none';
+  currentPeriodEnd: Date | null;
+  entitled: boolean;
+}
+
 /** One subscription state the billing webhook applies, already mapped from the provider's vocabulary. */
 export interface SubscriptionState {
   userId: string;
@@ -47,6 +58,21 @@ export function createEntitlementService(deps: { db: Db; enforced: boolean; cloc
       if (!deps.enforced) return true;
       const [row] = await deps.db.select(columns).from(userEntitlement).where(eq(userEntitlement.userId, userId));
       return isEntitled(row ?? null, now());
+    },
+
+    /**
+     * The plan and status the Settings' Plan section shows, with whether the paid features are usable now. No row is the
+     * free plan; where billing is off everything is free and the section is hidden.
+     */
+    async summary(userId: string): Promise<PlanSummary> {
+      if (!deps.enforced) return { plan: 'free', status: 'none', currentPeriodEnd: null, entitled: true };
+      const [row] = await deps.db.select(columns).from(userEntitlement).where(eq(userEntitlement.userId, userId));
+      return {
+        plan: row?.plan === 'pro' ? 'pro' : 'free',
+        status: (row?.status as EntitlementStatus | undefined) ?? 'none',
+        currentPeriodEnd: row?.currentPeriodEnd ?? null,
+        entitled: isEntitled(row ?? null, now()),
+      };
     },
 
     /** The entitled ones among these Users, in one query: the worker's tick asks about every Connection at once. */
