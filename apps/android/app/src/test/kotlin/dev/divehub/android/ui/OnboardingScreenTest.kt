@@ -100,6 +100,20 @@ class OnboardingScreenTest {
     }
 
     @Test
+    fun `the build default names Dive Hub Cloud before the address`() {
+        renderSignIn(Reachability.Reachable, isDefaultInstance = true)
+
+        compose.onNodeWithText("Dive Hub Cloud").assertIsDisplayed()
+    }
+
+    @Test
+    fun `a stored self-hosted instance is not labelled as the cloud`() {
+        renderSignIn(Reachability.Reachable, isDefaultInstance = false)
+
+        compose.onNodeWithText("Dive Hub Cloud").assertDoesNotExist()
+    }
+
+    @Test
     fun `the sign-in form says it is checking again`() {
         renderSignIn(Reachability.Checking)
 
@@ -146,6 +160,7 @@ class OnboardingScreenTest {
 
     private fun renderSignIn(
         reachability: Reachability,
+        isDefaultInstance: Boolean = false,
         onChangeInstance: () -> Unit = {},
         onCheck: () -> Unit = {},
     ) {
@@ -154,6 +169,7 @@ class OnboardingScreenTest {
                 Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
                     SignInForm(
                         instanceUrl = "https://dive.example",
+                        isDefaultInstance = isDefaultInstance,
                         busy = false,
                         reachability = reachability,
                         error = null,

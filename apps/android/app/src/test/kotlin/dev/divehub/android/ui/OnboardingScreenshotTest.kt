@@ -10,6 +10,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import com.github.takahirom.roborazzi.captureRoboImage
 import dev.divehub.android.BuildConfig
+import dev.divehub.shared.ErrorCodes
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -57,6 +58,14 @@ class OnboardingScreenshotTest {
     }
 
     @Test
+    fun `sign-in with an unreachable cloud default`() {
+        renderSignIn(darkTheme = false, reachability = Reachability.Unreachable(ErrorCodes.NO_ANSWER))
+
+        compose.onNodeWithText("Not reachable").assertIsDisplayed()
+        capture("onboarding_signin_unreachable_en_light.png")
+    }
+
+    @Test
     fun `the self-hosted address form in English and light`() {
         renderInstance(darkTheme = false)
 
@@ -84,14 +93,15 @@ class OnboardingScreenshotTest {
         capture("onboarding_instance_de_light.png")
     }
 
-    private fun renderSignIn(darkTheme: Boolean) {
+    private fun renderSignIn(darkTheme: Boolean, reachability: Reachability = Reachability.Reachable) {
         compose.setContent {
             DiveHubTheme(darkTheme = darkTheme) {
                 Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
                     SignInForm(
                         instanceUrl = BuildConfig.DEFAULT_INSTANCE_URL,
+                        isDefaultInstance = true,
                         busy = false,
-                        reachability = Reachability.Reachable,
+                        reachability = reachability,
                         error = null,
                         onChangeInstance = {},
                         onCheckInstance = {},

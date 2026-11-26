@@ -17,6 +17,7 @@
     <string name="instance_unreachable">Not reachable</string>
 
     <string name="sign_in_title">Sign in</string>
+    <string name="sign_in_destination" translatable="false">Dive Hub Cloud</string>
     <string name="sign_in_about">Use the e-mail and password of your Dive Hub account.</string>
     <string name="sign_in_submit">Sign in</string>
     <string name="sign_in_no_account">No account? Ask the admin of this Dive Hub for an invitation.</string>

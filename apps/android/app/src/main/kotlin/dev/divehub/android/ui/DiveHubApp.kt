@@ -6,9 +6,9 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -92,6 +92,7 @@ import dev.divehub.android.ui.writes.LocalWrites
 import dev.divehub.android.ui.writes.LocalWritesActions
 import dev.divehub.android.ui.writes.WritesActions
 import dev.divehub.android.ui.writes.WritesViewModel
+import dev.divehub.shared.InstanceUrl
 import dev.divehub.shared.ErrorCodes
 
 @Composable
@@ -221,10 +222,12 @@ private class DiveHubScreens(
     override fun signIn() {
         val state by viewModel.state.collectAsStateWithLifecycle()
         val instanceUrl = state.instanceUrl ?: return
+        val cloudDefault = remember { InstanceUrl.normalize(BuildConfig.DEFAULT_INSTANCE_URL) }
         // The instance line is re-checked whenever this screen is shown, not only when the address was first entered.
         LaunchedEffect(instanceUrl) { viewModel.checkInstance() }
         SignInForm(
             instanceUrl = instanceUrl,
+            isDefaultInstance = instanceUrl == cloudDefault,
             busy = state.busy,
             reachability = state.reachability,
             error = state.error,
@@ -486,7 +489,10 @@ internal fun InstanceForm(
             Text(stringResource(R.string.instance_continue))
         }
         if (onUseDefault != null) {
-            TextButton(onClick = onUseDefault) { Text(stringResource(R.string.instance_back)) }
+            TextButton(
+                onClick = onUseDefault,
+                contentPadding = PaddingValues(horizontal = 0.dp),
+            ) { Text(stringResource(R.string.instance_back)) }
         }
     }
 }
@@ -494,6 +500,7 @@ internal fun InstanceForm(
 @Composable
 internal fun SignInForm(
     instanceUrl: String,
+    isDefaultInstance: Boolean,
     busy: Boolean,
     reachability: Reachability,
     error: String?,
@@ -518,17 +525,29 @@ internal fun SignInForm(
             style = MaterialTheme.typography.headlineMedium,
         )
         Spacer(Modifier.height(4.dp))
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                instanceUrl,
-                modifier = Modifier.weight(1f),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Spacer(Modifier.width(8.dp))
-            InstanceStatus(reachability, onCheckInstance)
+        // Named for the hosted product; a stored self-hosted address has no product name and shows as the address.
+        val destinationName = if (isDefaultInstance) stringResource(R.string.sign_in_destination) else null
+        if (destinationName != null) {
+            Text(destinationName, style = MaterialTheme.typography.titleMedium)
+            Spacer(Modifier.height(2.dp))
         }
-        TextButton(onClick = onChangeInstance) { Text(stringResource(R.string.instance_self_hosted)) }
+        // The address takes the full column width so it never breaks mid-URL beside the status chip (FAH-541).
+        Text(
+            instanceUrl,
+            style = if (destinationName != null) {
+                MaterialTheme.typography.bodySmall
+            } else {
+                MaterialTheme.typography.bodyMedium
+            },
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(Modifier.height(8.dp))
+        InstanceStatus(reachability, onCheckInstance)
+        TextButton(
+            onClick = onChangeInstance,
+            colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.onSurfaceVariant),
+            contentPadding = PaddingValues(horizontal = 0.dp),
+        ) { Text(stringResource(R.string.instance_self_hosted)) }
         Spacer(Modifier.height(8.dp))
         Text(stringResource(R.string.sign_in_about), style = MaterialTheme.typography.bodyLarge)
         Spacer(Modifier.height(16.dp))
