@@ -40,6 +40,7 @@ import { ssiCentreDisplayName } from './providers/ssi/ssi-centre.js';
 import type { ProviderLog } from './providers/waiting-push/waiting-push-queue.js';
 import type { SecretBox } from './secrets/secret-box.js';
 import { createSiteImportService } from './sites/import/site-import-service.js';
+import { createSitePurgeService } from './sites/import/site-purge-service.js';
 import type { SiteSourceAdapter } from './sites/import/site-source.js';
 import { createSiteService } from './sites/site-service.js';
 import type { ImportSource } from './sites/sources.js';
@@ -131,6 +132,7 @@ export function createServices({
   return {
     db, blobs, auth, assessments, backups, support, clientDiagnostics, sync, providers, imports, logBuffer,
     siteImports: createSiteImportService({ db, sources: siteSources }),
+    sitePurges: createSitePurgeService({ db, sources: siteSources }),
     aiAccesses: createAiAccessService(db, auth),
     setup: createSetupService(db, clock ? () => clock.now() : undefined),
     invitations: createInvitationService(db),
@@ -163,7 +165,7 @@ export type Services = ReturnType<typeof createServices>;
 
 /** What the worker's tasks use, from the services. */
 export const workerDeps = (s: Services, log: FastifyBaseLogger): WorkerDeps => ({
-  backups: s.backups, imports: s.imports, siteImports: s.siteImports, aiAccesses: s.aiAccesses, assessments: s.assessments, pushRuns: s.providers.pushRuns,
+  backups: s.backups, imports: s.imports, siteImports: s.siteImports, sitePurges: s.sitePurges, aiAccesses: s.aiAccesses, assessments: s.assessments, pushRuns: s.providers.pushRuns,
   waitingPushes: s.providers.waitingPushes, scheduledFetch: s.providers.scheduledFetch, certifications: s.providers.certifications,
   purges: s.purge, clientDiagnostics: s.clientDiagnostics, sync: s.sync, push: s.push, log,
 });

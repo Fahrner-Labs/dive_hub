@@ -3,7 +3,7 @@
 // can show progress. Every site it creates, updates or links gets a Revision with the Site import as actor.
 import { and, desc, eq, inArray, sql } from 'drizzle-orm';
 import type { Db, Tx } from '../../db/client.js';
-import { diveSite, siteImport, type SiteImportFinding, type SiteImportProgress } from '../../db/schema.js';
+import { diveSite, siteImport, sitePurge, type SiteImportFinding, type SiteImportProgress } from '../../db/schema.js';
 import { emitHint } from '../../live/emit.js';
 import { changeListener, writeRevision, type Actor, type Changes } from '../../revisions/revisions.js';
 import { errorMessage } from '../../errors.js';
@@ -11,6 +11,7 @@ import type { ProblemCode } from '../../http/problems.js';
 import { isUniqueViolation } from '../site-error.js';
 import { allPublicIds, heldIds, insertImportedIds, publishIds, updateImported } from '../site-ids.js';
 import { IMPORT_SOURCES, revisionKey, type ImportSource } from '../sources.js';
+import { SITE_JOB_LOCK } from './site-jobs.js';
 import { planSiteImport, type ExistingSite, type Field, type PlannedCreate, type PlannedUpdate } from './import-plan.js';
 import { IMPORTED_FIELDS, SiteSourceError, type ImportArea, type ImportedValues, type SiteSourceAdapter, type SourceSite } from './site-source.js';
 
@@ -152,6 +153,11 @@ export function createSiteImportService(deps: { db: Db; sources: Partial<Record<
       if (request.sources.includes('ssi') && !request.confirmSsi) throw new SiteImportError('ssi_not_confirmed');
       try {
         return await db.transaction(async (tx) => {
+          // A Source purge and a Site import never run beside each other: the same lock serialises both starts.
+          await tx.execute(SITE_JOB_LOCK);
+          const [purging] = await tx.select({ id: sitePurge.id }).from(sitePurge)
+            .where(inArray(sitePurge.status, ['queued', 'running'])).limit(1);
+          if (purging) throw new SiteImportError('site_import_running');
           const [row] = await tx.insert(siteImport).values({
             startedBy: userId,
             sources: IMPORT_SOURCES.filter((s) => request.sources.includes(s)),

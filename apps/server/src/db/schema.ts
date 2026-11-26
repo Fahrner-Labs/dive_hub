@@ -29,7 +29,7 @@ import {
   WATER_TYPES, type DecoModel, type DiveMode, type GasCircuit, type ImportSource, type SiteWaterType, type WaterType,
 } from '../vocabulary.js';
 import { session, user } from './auth-schema.js';
-import type { ImportArea, ImportedValues, SiteImportCounts, StoredConflictField } from './import-types.js';
+import type { ImportArea, ImportedValues, SiteImportCounts, SitePurgeProgress, SitePurgeResult, StoredConflictField } from './import-types.js';
 
 export * from './auth-schema.js';
 
@@ -657,6 +657,33 @@ export const siteImport = pgTable(
   (t) => [
     uniqueIndex('site_import_one_active_uq').on(sql`(true)`).where(sql`${t.status} in ('queued', 'running')`),
     index('site_import_created_idx').on(t.createdAt),
+  ],
+);
+
+/**
+ * An admin removing every External ID of one Source, the pre-agreed remedy if a Source objects to its site data
+ * (FAH-528). It is a worker job like a Site import: delete the Source's IDs, then import-created sites that no
+ * remaining data-providing ID and no Dive holds. Sites with Dives are reported, never deleted. Only one runs at a
+ * time, and never beside a Site import (the service takes a lock for both).
+ */
+export const sitePurge = pgTable(
+  'site_purge',
+  {
+    id: id(),
+    startedBy: uuid('started_by').references(() => user.id, { onDelete: 'set null' }),
+    source: siteSource('source').notNull(),
+    status: siteImportStatus('status').notNull().default('queued'),
+    progress: jsonb('progress').$type<SitePurgeProgress>().notNull().default({ step: 'waiting', done: 0, total: 0 }),
+    /** Null until done; then what it deleted and the sites it had to leave for the admin. */
+    result: jsonb('result').$type<SitePurgeResult>(),
+    errorCode: text('error_code'),
+    errorDetail: text('error_detail'),
+    createdAt: createdAt(),
+    finishedAt: timestamp('finished_at', { withTimezone: true }),
+  },
+  (t) => [
+    uniqueIndex('site_purge_one_active_uq').on(sql`(true)`).where(sql`${t.status} in ('queued', 'running')`),
+    index('site_purge_created_idx').on(t.createdAt),
   ],
 );
 

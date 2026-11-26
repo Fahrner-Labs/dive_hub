@@ -38,6 +38,13 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
   is never stored. Show it as standing text with a checkbox, not as a notice. The API refuses without the flag
   (`ssi_not_confirmed`) ([ADR 0025](../decisions/0025-ssi-site-import-and-site-water-type.md)). *Web:* `SiteImportPage.tsx`.
 - **SSI data shows "From SSI" without a link** (`url` is null, no Attribution): SSI has no page per site.
+- **Must explain and confirm a Source purge before it starts** (`POST /api/admin/site-imports/purge {source}`,
+  FAH-528): it deletes every External ID of that Source and hard-deletes the import-created sites it leaves without
+  another data-providing ID or a Dive. Sites a Dive still names are never deleted: the result's
+  `result.referencedSites` lists them, and the client links each so the admin moves the Dive or merges the site and
+  runs the purge again. Say that it cannot be undone; Sites a User made stay. Offer only `GET /api/admin/site-sources`
+  as the Source, follow the job with `GET /api/admin/site-imports/purges`, and translate `site_purge_running` and
+  `site_import_running` ([ADR 0091](../decisions/0091-source-purge.md)). *Web:* `SiteImportPage.tsx`.
 
 ### Privacy
 - **Must not show who else created, edited or dives at a Dive site.**
