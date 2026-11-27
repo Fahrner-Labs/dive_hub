@@ -2668,6 +2668,10 @@
             "type": "boolean",
             "description": "Whether the signed-in User may change the details: an external Diver, or one whose logbook they keep"
           },
+          "detailsVisible": {
+            "type": "boolean",
+            "description": "Whether the contact details and codes below are the Diver's own (true), or withheld from the signed-in User (false, ADR 0088): the name parts and `canEdit` are still answered. Absent means visible, as on an instance built before ADR 0088."
+          },
           "firstName": {
             "anyOf": [
               {
@@ -2799,6 +2803,10 @@
           "canDelete": {
             "type": "boolean",
             "description": "Whether the signed-in User may delete it: whoever added it, or an admin"
+          },
+          "detailsVisible": {
+            "type": "boolean",
+            "description": "Whether `accounts` is the Diver's own (true), or withheld from the signed-in User (false, ADR 0088). Absent means visible, as on an instance built before ADR 0088."
           }
         }
       },

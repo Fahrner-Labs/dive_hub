@@ -77,7 +77,7 @@ describe.skipIf(!(await databaseReachable()))('Divers and Participants', () => {
   describe('external Divers', () => {
     it('are created and renamed by any User, with a Revision', async () => {
       const carla = await external('Carla', tim);
-      expect(carla).toEqual({ id: expect.any(String), name: 'Carla', accounts: [], inUse: false, canDelete: true });
+      expect(carla).toEqual({ id: expect.any(String), name: 'Carla', accounts: [], inUse: false, canDelete: true, detailsVisible: true });
       const renamed = await json<External>('PATCH', `/api/external-divers/${carla.id}`, anna, { name: 'Carla Diaz' });
       expect(renamed).toMatchObject({ name: 'Carla Diaz', canDelete: false });
       const list = await json<{ divers: External[]; total: number }>('GET', '/api/external-divers?q=carla', anna);

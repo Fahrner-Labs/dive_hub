@@ -23,8 +23,10 @@ function useRefreshDivers() {
 
 /**
  * A Diver's SSI codes and the details they are built from (ADR 0043): the buddy code, and with a leader number the
- * professional's. Every User sees them; whoever may change the Diver edits the details here. The text of a code comes
- * from the API and is drawn as it is.
+ * professional's. Under the default instance visibility every User sees them; under `shared` the API withholds the
+ * contact details from a User outside the Diver's circle (ADR 0088), and the dialog says "not shared with you" rather
+ * than "not set". Whoever may change a Diver whose details they can see edits them here; the text of a code comes from
+ * the API and is drawn as it is.
  */
 export function DiverCodesDialog({ diverId, name, onClose }: { diverId: string; name: string; onClose: () => void }) {
   const { t } = useTranslation();
@@ -32,6 +34,9 @@ export function DiverCodesDialog({ diverId, name, onClose }: { diverId: string; 
   const details = useQuery(diverDetailsQuery(diverId));
   const [editing, setEditing] = useState(false);
   const d = details.data;
+  // The API withholds the contact details under `shared` for a User outside the Diver's circle (ADR 0088). Absent means
+  // visible, as on an older instance.
+  const hidden = d?.detailsVisible === false;
   return (
     <Dialog title={t('diverCodes.title', { name })} isOpen onOpenChange={(open) => !open && onClose()}>
       <div className="diver-codes">
@@ -39,22 +44,23 @@ export function DiverCodesDialog({ diverId, name, onClose }: { diverId: string; 
         {details.error && <Notice tone="danger">{errorText(details.error)}</Notice>}
         {d && !editing && (
           <>
-            {d.codes.length === 0 && <Muted>{t('diverCodes.noCode')}</Muted>}
-            {d.codes.map((code) => (
+            {hidden && <Notice tone="info">{t('diverCodes.notSharedHint', { name: d.name })}</Notice>}
+            {!hidden && d.codes.length === 0 && <Muted>{t('diverCodes.noCode')}</Muted>}
+            {!hidden && d.codes.map((code) => (
               <CodeFigure key={code.kind} name={d.name} text={code.text} caption={t(`diverCodes.caption.${code.kind}`)}>
                 <span>{t(`diverCodes.use.${code.kind}`, { name: d.name })}</span>
               </CodeFigure>
             ))}
             <dl className="facts">
-              <div><dt>{t('diverCodes.ssiAccount')}</dt><dd translate="no">{d.accounts.find((a) => a.source === 'ssi')?.externalId ?? t('diverCodes.notSet')}</dd></div>
+              <div><dt>{t('diverCodes.ssiAccount')}</dt><dd translate="no">{hidden ? t('diverCodes.notSharedValue') : d.accounts.find((a) => a.source === 'ssi')?.externalId ?? t('diverCodes.notSet')}</dd></div>
               {FIELDS.map((field) => (
-                <div key={field}><dt>{t(`diverCodes.field.${field}`)}</dt><dd translate="no">{d[field] ?? t('diverCodes.notSet')}</dd></div>
+                <div key={field}><dt>{t(`diverCodes.field.${field}`)}</dt><dd translate="no">{hidden && (field === 'email' || field === 'leaderNumber') ? t('diverCodes.notSharedValue') : d[field] ?? t('diverCodes.notSet')}</dd></div>
               ))}
             </dl>
-            <Muted>{t('diverCodes.seenByAll')}</Muted>
+            {!hidden && <Muted>{t('diverCodes.seenByAll', { name: d.name })}</Muted>}
             {!d.canEdit && <Muted>{t('diverCodes.readOnly', { name: d.name })}</Muted>}
             <div className="form-actions">
-              {d.canEdit && <Button icon="edit" onPress={() => setEditing(true)}>{t('diverCodes.edit')}</Button>}
+              {d.canEdit && !hidden && <Button icon="edit" onPress={() => setEditing(true)}>{t('diverCodes.edit')}</Button>}
               <Button onPress={onClose}>{t('diverCodes.done')}</Button>
             </div>
           </>
@@ -158,7 +164,7 @@ export function TakeCodeDialog({ onClose, onTaken }: { onClose: () => void; onTa
                   ))}
                 </ul>
                 {person.existing.canEdit
-                  ? <Muted>{t('diverCodes.seenByAllShort')}</Muted>
+                  ? <Muted>{t('diverCodes.seenByAllShort', { name: person.existing.name })}</Muted>
                   : <Notice tone="info">{t('diverCodes.notYours', { name: person.existing.name })}</Notice>}
               </>
             )}
@@ -174,7 +180,7 @@ export function TakeCodeDialog({ onClose, onTaken }: { onClose: () => void; onTa
                 { value: 'new', label: t('diverCodes.newDiver', { name: said }) },
               ]}
             />
-            <Muted>{t('diverCodes.seenByAllShort')}</Muted>
+            <Muted>{t('diverCodes.seenByAllShort', { name: said })}</Muted>
           </section>
         )}
         {take.error && <Notice tone="danger">{errorText(take.error)}</Notice>}

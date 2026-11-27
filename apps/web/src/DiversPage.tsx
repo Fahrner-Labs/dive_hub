@@ -224,7 +224,9 @@ function OtherDiverRow({ diver: d, list, index, count }: { diver: ExternalDiverV
           <DiverAvatar inline name={d.name} diverId={d.id} />
           <span className="diver-name">{d.name}</span>
           <span className="meta">{[
-            ...d.accounts.map((source) => t('divers.hasAccount', { name: t(`divers.service.${source}`) })),
+            ...(d.detailsVisible === false
+              ? [t('divers.detailsNotShared')]
+              : d.accounts.map((source) => t('divers.hasAccount', { name: t(`divers.service.${source}`) }))),
             d.inUse ? t('divers.onDives') : t('divers.onNoDive'),
           ].join(' · ')}</span>
           <span className="actions" ref={actionsBox}>

@@ -3,7 +3,7 @@
 import { mkdirSync } from 'node:fs';
 import { request } from '@playwright/test';
 import { prepareServer } from './prepare.ts';
-import { E2E_REVIEW, E2E_SERVERS, E2E_USER, serverUrl, sessionFile } from './support.ts';
+import { E2E_REVIEW, E2E_SERVERS, E2E_SHARED_BASE_URL, E2E_SHARED_SESSION, E2E_USER, serverUrl, sessionFile } from './support.ts';
 
 export default async function globalSetup() {
   mkdirSync('e2e/.state', { recursive: true });
@@ -16,4 +16,18 @@ export default async function globalSetup() {
     await api.dispose();
     if (!E2E_REVIEW) await prepareServer(baseURL, sessionFile(slot), slot);
   }));
+  if (!E2E_REVIEW) await signInShared();
+}
+
+/** The shared-visibility server's session (ADR 0088), signed in as the same seeded User as the per-worker servers. */
+async function signInShared() {
+  const baseURL = E2E_SHARED_BASE_URL;
+  const api = await request.newContext({ baseURL, extraHTTPHeaders: { origin: baseURL } });
+  try {
+    const response = await api.post('/api/auth/sign-in/email', { data: { email: E2E_USER.email, password: E2E_USER.password } });
+    if (!response.ok()) throw new Error(`sign-in on ${baseURL} failed: ${response.status()} ${await response.text()}`);
+    await api.storageState({ path: E2E_SHARED_SESSION });
+  } finally {
+    await api.dispose();
+  }
 }

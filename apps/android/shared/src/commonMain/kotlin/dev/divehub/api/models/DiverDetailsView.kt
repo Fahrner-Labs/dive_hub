@@ -17,6 +17,8 @@ data class DiverDetailsView(
     @SerialName("external") val external: Boolean,
     /** Whether the signed-in User may change the details: an external Diver, or one whose logbook they keep */
     @SerialName("canEdit") val canEdit: Boolean,
+    /** Whether the contact details and codes below are the Diver's own (true), or withheld from the signed-in User (false, ADR 0088): the name parts and `canEdit` are still answered. Absent means visible, as on an instance built before ADR 0088. */
+    @SerialName("detailsVisible") val detailsVisible: Boolean? = null,
     @SerialName("firstName") val firstName: String?,
     @SerialName("lastName") val lastName: String?,
     @SerialName("email") val email: String?,

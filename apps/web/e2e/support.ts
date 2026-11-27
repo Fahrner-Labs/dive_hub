@@ -14,6 +14,10 @@ export const E2E_FIRST_PORT = 3300;
 export const serverUrl = (slot: number) => `http://localhost:${E2E_FIRST_PORT + slot}`;
 /** The signed-in session for one server (written by global-setup.ts). */
 export const sessionFile = (slot: number) => `e2e/.state/user-${slot}.json`;
+/** The one server built with `DIVEHUB_DIVER_VISIBILITY=shared` (ADR 0088), for the redacted-state browser tests. */
+export const E2E_SHARED_PORT = E2E_FIRST_PORT + 10;
+export const E2E_SHARED_BASE_URL = `http://localhost:${E2E_SHARED_PORT}`;
+export const E2E_SHARED_SESSION = 'e2e/.state/user-shared.json';
 const slot = Number(process.env.TEST_PARALLEL_INDEX ?? 0) % E2E_SERVERS;
 /** This worker's server. */
 export const E2E_PORT = E2E_FIRST_PORT + slot;

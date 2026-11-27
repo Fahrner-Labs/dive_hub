@@ -120,6 +120,9 @@ const services = createServices({
   db, auth, blobs: createLocalBlobStore(dataDir), secrets: createSecretBox(Buffer.alloc(32, 9)), dataDir,
   // A backup of this server's own database, as the admin page's browser test takes one.
   databaseUrl: database.url,
+  // The dedicated shared-visibility server (`diver-visibility.spec.ts`) sets E2E_VISIBILITY=shared; every other e2e
+  // server keeps the default instance visibility (ADR 0088).
+  diverVisibility: process.env.E2E_VISIBILITY === 'shared' ? 'shared' : 'instance',
   siteSources: createSiteSources({
     sources: ['osm', 'wikidata', 'ssi'],
     fetch: replay, overpassUrl: 'https://overpass.invalid/api/interpreter', wikidataUrl: 'https://wikidata.invalid/sparql',
