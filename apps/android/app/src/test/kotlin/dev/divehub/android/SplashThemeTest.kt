@@ -28,7 +28,7 @@ class SplashThemeTest {
         val splash = splashTheme()
 
         assertEquals(Color.parseColor("#EEF3F6"), splash.background)
-        assertEquals("dev.divehub.android:drawable/ic_splash_mark", splash.iconName)
+        assertEquals("app.divehub.android:drawable/ic_splash_mark", splash.iconName)
         assertChannelNear(Color.parseColor("#C8102E"), splash.markPixel)
     }
 
@@ -38,7 +38,7 @@ class SplashThemeTest {
         val splash = splashTheme()
 
         assertEquals(Color.parseColor("#0E1A23"), splash.background)
-        assertEquals("dev.divehub.android:drawable/ic_splash_mark", splash.iconName)
+        assertEquals("app.divehub.android:drawable/ic_splash_mark", splash.iconName)
         val pixel = splash.markPixel
         assertTrue("the night mark must be white, was #${Integer.toHexString(pixel)}", Color.red(pixel) > 240 && Color.green(pixel) > 240 && Color.blue(pixel) > 240)
     }

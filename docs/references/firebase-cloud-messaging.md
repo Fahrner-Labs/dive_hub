@@ -33,5 +33,5 @@ on the device.
   ([ADR 0085](../decisions/0085-push-notifications-for-native-clients.md)).
 - **`applicationId` is the Google App ID, not the Android package name.** `FirebaseOptions.setApplicationId` takes
   the Firebase Android app's ID from `google-services.json` (`client_info.mobilesdk_app_id`, shaped
-  `1:1234567890:android:…`). The package name (`dev.divehub.android`) is only what the operator registers in the
+  `1:1234567890:android:…`). The package name (`app.divehub.android`) is only what the operator registers in the
   console; passing it to `FirebaseOptions` would point the token at an app that does not exist.

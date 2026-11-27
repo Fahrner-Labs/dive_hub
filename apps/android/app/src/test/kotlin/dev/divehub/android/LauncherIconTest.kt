@@ -28,7 +28,7 @@ class LauncherIconTest {
     @Test
     fun `the manifest names the adaptive icon and the round icon exists`() {
         val info = context.packageManager.getApplicationInfo(context.packageName, 0)
-        assertEquals("dev.divehub.android:mipmap/ic_launcher", context.resources.getResourceName(info.icon))
+        assertEquals("app.divehub.android:mipmap/ic_launcher", context.resources.getResourceName(info.icon))
         requireNotNull(context.getDrawable(R.mipmap.ic_launcher_round))
     }
 

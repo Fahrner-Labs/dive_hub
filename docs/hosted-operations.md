@@ -196,6 +196,33 @@ Also configure, with credentials from the owner's password manager:
 **No fixed VPS date.** The move is trigger-based (owner's direction, 2026-11-26). Until it happens, hosted beta is
 the NAS deployment above, invite-only.
 
+## Changing the public origin
+
+Hosted runs on `https://divehub.privatenode.de` for now; `https://divehub.app` is planned. Moving the public origin
+needs no data migration: `DIVEHUB_BASE_URL` is read from the environment at boot and is not stored in the database or
+in either client. The work is the outside accounts that point here and the clients that remember the old name.
+
+1. **DNS and TLS.** Point the new name at the NAS tunnel or proxy and let it obtain a certificate
+   ([self-hosting.md](self-hosting.md#tls-reverse-proxy)). Keep the old name resolving until the last mailed link and
+   the last installed app have moved.
+2. **`.env` and restart.** Set `DIVEHUB_BASE_URL=https://divehub.app` and run `docker compose up -d`. Links are
+   rendered from this value when the mail is sent ([`mail/links.ts`](../apps/server/src/mail/links.ts)), and the copy
+   links in **Admin → Users** are built from it per request, so links created after the restart carry the new origin.
+3. **Paddle notification destination.** Under **Developer tools → Notifications**, change the URL destination to
+   `https://divehub.app/api/billing/webhooks`. Paddle delivers to the dashboard's URL, not one the app derives, so it
+   keeps posting to the old origin until this is changed.
+4. **Resend sending domain.** Verify the new domain (or its sending subdomain) at Resend, change
+   `DIVEHUB_EMAIL_FROM` and restart. Keep the old domain verified during the overlap so mail in flight still sends.
+5. **Old e-mail links.** A link mailed before the move points at the old origin and works while that name resolves.
+   Invitations live 7 days and password resets 24 hours, so the old origin can go once no link issued before the move
+   is still open — at most seven days.
+6. **Android clients.** The instance URL is stored per device at sign-in (`instance_url` in `divehub.settings`), so an
+   installed app keeps using the old origin; a build's `divehub.defaultInstanceUrl` only decides first start. A user
+   moves with **Settings → Change instance**, which signs out and wipes the local data (warning first if writes are
+   queued) and then asks for the address; signing in again restores the logbook from the server, so nothing beyond
+   the credentials is needed. New installs of a release whose default names the new origin start there; the default
+   is compile-time, so it needs a new app release, not a server restart.
+
 ## Related
 
 - [self-hosting.md](self-hosting.md): variables, TLS proxy details, backup and restore reference.

@@ -388,7 +388,7 @@ fun `without a stored token or instance the sign-in form shows and no request is
 
     @Test
     fun `signing in to the default instance stores it`() = runTest {
-        val default = "https://cloud.divehub.example"
+        val default = "https://divehub.privatenode.de"
         val harness = Harness(tokens = FakeTokens(null), instances = FakeInstances(null)) { request ->
             when (request.url.encodedPath) {
                 SIGN_IN_PATH -> respond("", HttpStatusCode.OK, headersOf(SET_AUTH_TOKEN, "token"))
