@@ -41,12 +41,12 @@ services:
       # Optional self-serve signup (hosted plan §6.2, ADR 0087): needs all three e-mail values above. Unset keeps
       # today's invite-only world.
       DIVEHUB_REGISTRATION_OPEN: ${DIVEHUB_REGISTRATION_OPEN:-}
-      # Optional hosted billing (ADR 0089): `paddle` and all three Paddle values, or none. Unset keeps every feature free.
-      # A sandbox key (contains `_sdbx`) uses Paddle's sandbox; live keys use production.
+      # Optional hosted billing (ADR 0092): `stripe` and all three Stripe values, or none. Unset keeps every feature free.
+      # A test-mode secret key (`sk_test_…`) charges no money; live keys (`sk_live_…`) use production.
       DIVEHUB_BILLING_PROVIDER: ${DIVEHUB_BILLING_PROVIDER:-}
-      DIVEHUB_PADDLE_API_KEY: ${DIVEHUB_PADDLE_API_KEY:-}
-      DIVEHUB_PADDLE_WEBHOOK_SECRET: ${DIVEHUB_PADDLE_WEBHOOK_SECRET:-}
-      DIVEHUB_PADDLE_PRICE_IDS: ${DIVEHUB_PADDLE_PRICE_IDS:-}
+      DIVEHUB_STRIPE_SECRET_KEY: ${DIVEHUB_STRIPE_SECRET_KEY:-}
+      DIVEHUB_STRIPE_WEBHOOK_SECRET: ${DIVEHUB_STRIPE_WEBHOOK_SECRET:-}
+      DIVEHUB_STRIPE_PRICE_ID: ${DIVEHUB_STRIPE_PRICE_ID:-}
     ports:
       - "${DIVEHUB_BIND:-127.0.0.1}:${DIVEHUB_PORT:-3000}:3000"
     volumes:

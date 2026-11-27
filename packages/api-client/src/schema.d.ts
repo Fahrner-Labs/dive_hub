@@ -2240,8 +2240,8 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * A Paddle checkout link for the Pro plan
-         * @description Creates a Paddle transaction whose custom data carries the signed-in User, so the subscription webhook can find them. Open the returned URL; Paddle collects the card and VAT. A User who already has the Pro plan answers 409 `billing_already_subscribed`: manage or cancel in the portal, so no second subscription starts.
+         * A Stripe Checkout link for the Pro plan
+         * @description Creates a Stripe Checkout Session whose subscription metadata carries the signed-in User, so the webhook can find them. Open the returned URL; Stripe collects the card and automatic tax is on. A User who already has the Pro plan answers 409 `billing_already_subscribed`: manage or cancel in the portal, so no second subscription starts.
          */
         get: {
             parameters: {
@@ -2261,7 +2261,7 @@ export interface paths {
                         "application/json": {
                             /**
                              * Format: uri
-                             * @description An authenticated Paddle URL; open it rather than building one
+                             * @description An authenticated Stripe URL; open it rather than building one
                              */
                             url: string;
                         };
@@ -2312,8 +2312,8 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * The Paddle customer portal link (invoices, card updates, cancellation)
-         * @description Needs a Paddle customer from an earlier checkout; without one the answer is 409 `billing_not_subscribed`. The portal is Paddle-hosted; Dive Hub stores no payment data.
+         * The Stripe Customer Portal link (invoices, card updates, cancellation)
+         * @description Needs a Stripe customer from an earlier checkout; without one the answer is 409 `billing_not_subscribed`. The portal is Stripe-hosted; Dive Hub stores no payment data.
          */
         get: {
             parameters: {
@@ -2333,7 +2333,7 @@ export interface paths {
                         "application/json": {
                             /**
                              * Format: uri
-                             * @description An authenticated Paddle URL; open it rather than building one
+                             * @description An authenticated Stripe URL; open it rather than building one
                              */
                             url: string;
                         };

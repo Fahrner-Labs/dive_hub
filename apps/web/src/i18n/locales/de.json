@@ -135,7 +135,7 @@
       },
       "processors": {
         "hosting": "<strong>Hetzner</strong> — Hosting von Server, Datenbank und Backups in [Ort].",
-        "payments": "<strong>Paddle</strong> — Zahlungsabwicklung und Abrechnung kostenpflichtiger Tarife.",
+        "payments": "<strong>Stripe</strong> — Zahlungsabwicklung und Abrechnung kostenpflichtiger Tarife.",
         "email": "<strong>Resend</strong> — Zustellung von Transaktions-E-Mails wie Einladungen und Bestätigungslinks."
       }
     },
@@ -272,12 +272,12 @@
       "canceled": "gekündigt",
       "canceledUntil": "gekündigt; bezahlt bis {{date}}"
     },
-    "renews": "Bezahlt bis {{date}}; Paddle verlängert automatisch.",
-    "upgradeHint": "Automatik und Push-Läufe gehören zu Pro. Paddle übernimmt Karte, Rechnung und Umsatzsteuer.",
-    "manageHint": "Karte ändern, Rechnungen ansehen oder im Paddle-Portal kündigen. Dive Hub speichert keine Zahlungsdaten.",
+    "renews": "Bezahlt bis {{date}}; Stripe verlängert automatisch.",
+    "upgradeHint": "Automatik und Push-Läufe gehören zu Pro. Stripe übernimmt Karte und Rechnung; die Steuer wird beim Bezahlen berechnet.",
+    "manageHint": "Karte ändern, Rechnungen ansehen oder im Stripe-Kundenportal kündigen. Dive Hub speichert keine Zahlungsdaten.",
     "upgrade": "Auf Pro wechseln",
     "manage": "Abo verwalten",
-    "paddle": "Zahlungen, Rechnungen und Umsatzsteuer liegen bei Paddle; Dive Hub speichert nichts davon."
+    "stripe": "Zahlungen und Rechnungen liegen bei Stripe; Dive Hub speichert nichts davon."
   },
   "admin": {
     "inviteTitle": "Jemanden einladen",
@@ -839,8 +839,8 @@
     "waiting_push_not_found": "Dieser Tauchgang wartet nicht mehr darauf, an den Dienst zu gehen; es gibt nichts zu wiederholen.",
     "provider_import_off": "Der Import von Tauchgängen aus {{name}} ist aus. Wähle zuerst, was der Import darf.",
     "entitlement_required": "Dafür brauchst du den Pro-Tarif. Automatisierung und Push-Läufe gehören dazu.",
-    "billing_not_subscribed": "Starte zuerst eine Zahlung; es gibt noch keinen Paddle-Kunden zu verwalten.",
-    "billing_already_subscribed": "Du hast den Pro-Tarif schon. Verwalte oder kündige ihn im Paddle-Portal.",
+    "billing_not_subscribed": "Starte zuerst eine Zahlung; es gibt noch keinen Stripe-Kunden zu verwalten.",
+    "billing_already_subscribed": "Du hast den Pro-Tarif schon. Verwalte oder kündige ihn im Stripe-Kundenportal.",
     "billing_unavailable": "Die Abrechnung ist gerade nicht erreichbar. Versuche es später noch einmal.",
     "invalid_signature": "Diese Webhook-Signatur passt nicht zum Inhalt.",
     "provider_site_data_not_confirmed": "Bestätige zuerst die Erklärung zur fehlenden Lizenz von {{name}}.",

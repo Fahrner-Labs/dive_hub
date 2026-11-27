@@ -5,8 +5,8 @@ import { useDisplay, useErrorText } from './lib/display.ts';
 import { Button, Muted, Notice, Panel } from './ui/index.ts';
 
 /**
- * Settings' Plan section (hosted-DiveHub plan §4.4, ADR 0089): the User's plan and status, with Paddle's checkout to
- * upgrade and its customer portal to manage or cancel. Dive Hub holds no payment data: both are Paddle-hosted pages the
+ * Settings' Plan section (hosted-DiveHub plan §4.4, ADR 0092): the User's plan and status, with Stripe's checkout to
+ * upgrade and its Customer Portal to manage or cancel. Dive Hub holds no payment data: both are Stripe-hosted pages the
  * server links to. The section is shown only where the server sells the plan (ADR 0087).
  */
 export function PlanSettings({ billing }: { billing: BillingView }) {
@@ -48,7 +48,7 @@ export function PlanSettings({ billing }: { billing: BillingView }) {
           : <Button isPending={busy === 'portal'} onPress={() => open('portal')}>{t('plan.manage')}</Button>}
       </div>
       {error ? <Notice tone="danger">{errorText(error)}</Notice> : null}
-      <Muted>{t('plan.paddle')}</Muted>
+      <Muted>{t('plan.stripe')}</Muted>
     </Panel>
   );
 }

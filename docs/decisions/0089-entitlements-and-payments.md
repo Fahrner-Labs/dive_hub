@@ -1,14 +1,17 @@
 ---
 title: "ADR 0089: Entitlements and payments: Paddle as merchant of record, a signed webhook outside Better Auth"
 summary: Paddle sells the Pro plan as merchant of record; one HMAC-signed webhook writes the per-User entitlement; checkout and the customer portal are Paddle-hosted links, and we store no payment data.
-status: proposed
+status: superseded by 0092
 date: 2026-11-26
 ---
 
 # ADR 0089: Entitlements and payments: Paddle as merchant of record, a signed webhook outside Better Auth
 
 ## Status
-Proposed – 2026-11-26. The design is fixed by the accepted hosted-DiveHub execution plan
+Superseded by [ADR 0092](0092-stripe-billing.md) on 2026-11-27: the owner moved billing from Paddle
+(merchant of record) to Stripe (payment processor, Stripe Tax) in [FAH-554](/FAH/issues/FAH-554). Kept for the record.
+
+The original proposal was not accepted. The design was fixed by the accepted hosted-DiveHub execution plan
 ([FAH-524](/FAH/issues/FAH-524), revision `ff67973a`, §4.1, §4.5 and §4.6); this ADR records the decision and its
 consequences for the code. Owner review is required (`docs/decisions/**` in [CODEOWNERS](../../.github/CODEOWNERS)) and
 happens on the pull request that adds the Paddle integration ([FAH-535](/FAH/issues/FAH-535)).

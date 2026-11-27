@@ -110,10 +110,10 @@ Application settings (optional unless stated):
 | `DIVEHUB_EMAIL_API_KEY` | unset | **A secret**: the Resend API key (`re_…`). Never commit it or put it in an image. |
 | `DIVEHUB_EMAIL_FROM` | unset | The sender, e.g. `Dive Hub <noreply@dives.example.com>`; the domain must be verified at Resend. |
 | `DIVEHUB_REGISTRATION_OPEN` | `false` | `true` opens self-serve signup (hosted plan §6.2, [ADR 0087](decisions/0087-hosted-instance-configuration.md)): the sign-up, e-mail verification and verification-resend endpoints become reachable. A new account accepts the Terms of Service and Privacy Policy (recorded per version in `user_consent`) and must verify its address before it can sign in. Needs all `DIVEHUB_EMAIL_*` values and stops the boot without them. The invitation flow stays available; unset keeps today's invite-only world. |
-| `DIVEHUB_BILLING_PROVIDER` | unset | `paddle` turns on hosted billing and its entitlement gates (provider sync automation and Push runs); it needs the three Paddle values below. Unset keeps every feature free and registers no billing route ([ADR 0089](decisions/0089-entitlements-and-payments.md)). |
-| `DIVEHUB_PADDLE_API_KEY` | unset | **A secret**: the Paddle API key. A sandbox key (contains `_sdbx`) uses Paddle's sandbox; a live key uses production. |
-| `DIVEHUB_PADDLE_WEBHOOK_SECRET` | unset | **A secret**: the notification destination's secret that signs every webhook. |
-| `DIVEHUB_PADDLE_PRICE_IDS` | unset | Comma-separated recurring Paddle price IDs that mean Pro; the first is the one checkout offers. |
+| `DIVEHUB_BILLING_PROVIDER` | unset | `stripe` turns on hosted billing and its entitlement gates (provider sync automation and Push runs); it needs the three Stripe values below. Unset keeps every feature free and registers no billing route ([ADR 0092](decisions/0092-stripe-billing.md)). |
+| `DIVEHUB_STRIPE_SECRET_KEY` | unset | **A secret**: the Stripe secret key. `sk_test_…` is test mode (no charges); `sk_live_…` is production. |
+| `DIVEHUB_STRIPE_WEBHOOK_SECRET` | unset | **A secret**: the webhook endpoint's signing secret (`whsec_…`), which signs every delivery. |
+| `DIVEHUB_STRIPE_PRICE_ID` | unset | The recurring Stripe price ID that means Pro. |
 
 `DIVEHUB_GARMIN_URL`, `DIVEHUB_SSI_URL`, `DIVEHUB_HOST`, `DIVEHUB_WORKER`, `DIVEHUB_WEB_DIR` and
 `DIVEHUB_DATA_DIR` exist for the image and the tests; the example compose file sets what the
@@ -197,68 +197,69 @@ The mail module lives in `apps/server/src/mail/` behind a `MailProvider` interfa
 the documented fallback if Resend's deliverability disappoints: implementing it is another provider
 behind that interface, not a change at the invitation or reset call sites.
 
-### Billing with Paddle (optional)
+### Billing with Stripe (optional)
 
-Dive Hub can sell a Pro plan that unlocks provider sync automation and Push runs. **Paddle** is the merchant of record:
-it is the seller, collects the card and VAT, and hosts checkout and the customer portal (invoices, card updates,
-cancellation). Dive Hub stores only the Paddle customer and subscription IDs and the period end; it stores no card,
-address or invoice ([ADR 0089](decisions/0089-entitlements-and-payments.md)). Without the four variables below every
-feature stays free and no billing route exists.
+Dive Hub can sell a Pro plan that unlocks provider sync automation and Push runs. **Stripe** is the payment processor:
+Checkout collects the card, the invoice lives in Stripe, and the Customer Portal handles card updates and cancellation.
+Dive Hub stores only the Stripe customer and subscription IDs and the period end; it stores no card, address or invoice
+([ADR 0092](decisions/0092-stripe-billing.md)). Without the four variables below every feature stays free and no billing
+route exists.
 
-For hosted Dive Hub on the NAS the beta uses **Paddle sandbox only**; live keys land with the VPS move
-([hosted-operations.md](hosted-operations.md)). A sandbox API key contains `_sdbx` and makes the server talk to
-`https://sandbox-api.paddle.com`; a live key talks to `https://api.paddle.com`, so the same image serves both.
+Dive Hub is the seller, so VAT/OSS registration and filings remain the operator's. Checkout enables **Stripe Tax**
+(`automatic_tax.enabled`) and collects a billing address, which gives the Stripe dashboard clean threshold monitoring for
+the EU OSS and US nexus rules. Do not add tax logic to Dive Hub. Asia (VN/TH) is outside Stripe Tax's coverage and is
+accepted as low risk at the current scale.
 
-1. Create the account you need: a [Paddle sandbox account](https://sandbox-vendors.paddle.com/signup) for testing, or a
-   live account (Paddle approves the business and product first). Create a product with a **recurring** price and copy its
-   price ID (`pri_…`). Set and get approval for a default payment link under **Checkout → Checkout configuration**;
-   Paddle appends the transaction to it.
-2. In **Developer tools → Notifications**, create a notification destination of type **URL** pointing at
-   `https://dives.example.com/api/billing/webhooks`. Subscribe it to `subscription.created`, `subscription.updated` and
-   `subscription.canceled`. Copy the destination's secret (`pdl_ntfset_…`); it signs every delivery.
-3. Create an API key with the transaction and customer-portal permissions (`pdl_sdbx_…` in sandbox, `pdl_live_…` live).
+Start in **test mode**. A test-mode secret key (`sk_test_…`) charges no money; live keys (`sk_live_…`) land later.
+
+1. In the Stripe dashboard (test mode first), create a product with a **recurring** price and copy its price ID
+   (`price_…`). Make sure **Stripe Tax** is enabled for the account.
+2. Under **Developers → Webhooks**, add an endpoint pointing at `https://dives.example.com/api/billing/webhooks` and
+   subscribe it to `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`
+   and `invoice.payment_failed`. Copy the endpoint's signing secret (`whsec_…`).
+3. Copy the secret key (`sk_test_…` in test mode).
 4. Set all four values in `.env`:
 
    ```sh
-   DIVEHUB_BILLING_PROVIDER=paddle
-   DIVEHUB_PADDLE_API_KEY=pdl_sdbx_…
-   DIVEHUB_PADDLE_WEBHOOK_SECRET=pdl_ntfset_…
-   DIVEHUB_PADDLE_PRICE_IDS=pri_…
+   DIVEHUB_BILLING_PROVIDER=stripe
+   DIVEHUB_STRIPE_SECRET_KEY=sk_test_…
+   DIVEHUB_STRIPE_WEBHOOK_SECRET=whsec_…
+   DIVEHUB_STRIPE_PRICE_ID=price_…
    ```
 
-5. Restart the stack. A signed-in user's `GET /api/billing/checkout` now answers a Paddle checkout URL carrying their id
-   in the passthrough, and `GET /api/billing/portal` the customer portal (409 `billing_not_subscribed` before the first
-   checkout).
+5. Restart the stack. A signed-in user's `GET /api/billing/checkout` now answers a Stripe Checkout URL carrying their id
+   in the subscription metadata, and `GET /api/billing/portal` the Customer Portal (409 `billing_not_subscribed` before
+   the first checkout).
 
-Set **all four or none**: with the provider set and a Paddle value missing the app refuses to start and names the missing
+Set **all four or none**: with the provider set and a Stripe value missing the app refuses to start and names the missing
 variable, so an instance never runs the paywall with no way to pay. The webhook is verified against
-`DIVEHUB_PADDLE_WEBHOOK_SECRET` over the raw body before anything is parsed; without a valid signature it answers 401.
+`DIVEHUB_STRIPE_WEBHOOK_SECRET` over the raw body before anything is parsed; without a valid signature it answers 401.
 
-Sandbox round-trip before live keys:
+Test-mode round-trip before live keys:
 
 1. Sign in on the instance and open the checkout link.
-2. Pay with Paddle's sandbox test card `4242 4242 4242 4242` (or `4000 0038 0000 0446` for 3-D Secure).
-3. The `subscription.created` webhook should arrive; the user's entitlement is now pro and active, so a Connection's
-   automation switches unlock. Replaying the event changes nothing.
-4. Open the portal link: invoices and card updates are Paddle's pages.
+2. Pay with Stripe's test card `4242 4242 4242 4242`, any future expiry and any CVC.
+3. The `customer.subscription.created` webhook should arrive; the user's entitlement is now pro and active, so a
+   Connection's automation switches unlock. Replaying the event changes nothing, and `invoice.payment_failed` moves it
+   to the past-due grace state.
+4. Open the portal link: invoices and card updates are Stripe's pages.
 
-**Moving an existing instance from sandbox to live.** Paddle customer and subscription IDs belong to one environment
-(`sandbox-api.paddle.com` versus `api.paddle.com`). A restored database still carries the sandbox IDs, so after you
-swap in live keys `GET /api/billing/checkout` reuses a sandbox customer that live Paddle rejects (the route answers
-`billing_unavailable`, 502), `GET /api/billing/portal` fails the same way for those users, and the sandbox `pro` rows
-keep their entitlement because the gate only reads `plan`, `status` and `current_period_end`. At the flip, either
-restore into a fresh database (live users subscribe again) or clear the sandbox plan state before the live image
-starts:
+**Moving an existing instance from test mode to live.** Stripe customer and subscription IDs belong to one mode. A
+restored database still carries the test-mode IDs, so after you swap in live keys `GET /api/billing/checkout` reuses a
+test customer that live Stripe rejects (the route answers `billing_unavailable`, 502), `GET /api/billing/portal` fails
+the same way for those users, and the test `pro` rows keep their entitlement because the gate only reads `plan`, `status`
+and `current_period_end`. At the flip, either restore into a fresh database (live users subscribe again) or clear the
+test-mode plan state before the live image starts:
 
 ```sh
 docker compose exec -T db psql -U divehub -d divehub -c "delete from user_entitlement"
 ```
 
-No row means the free plan, so that one statement drops the sandbox Paddle IDs and the entitlements they granted. Run
-the sandbox round-trip above on the restored instance with real credentials first, then switch the keys.
+No row means the free plan, so that one statement drops the test-mode IDs and the entitlements they granted. Run the
+round-trip above on the restored instance with live credentials first, then switch the keys.
 
-The webhook endpoint must be reachable at `DIVEHUB_BASE_URL`. If the NAS is behind CGNAT, use a tunnel (or Paddle's CLI
-webhook forwarding during testing) as [hosted-operations.md](hosted-operations.md) describes.
+The webhook endpoint must be reachable at `DIVEHUB_BASE_URL`. If the NAS is behind CGNAT, use a tunnel (or the Stripe CLI
+with `stripe listen --forward-to` during testing) as [hosted-operations.md](hosted-operations.md) describes.
 
 ## TLS reverse proxy
 

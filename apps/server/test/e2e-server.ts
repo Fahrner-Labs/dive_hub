@@ -153,10 +153,10 @@ const services = createServices({
   // instance above has its own stand-in mail, which is all the verification flow needs.
   registrationOpen: true,
   // One extra server (Playwright's webServer array) runs with billing on, for the Plan section and the paywall's
-  // browser tests; the default servers stay without it, which is the dual-track invariant (ADR 0087). No Paddle call
+  // browser tests; the default servers stay without it, which is the dual-track invariant (ADR 0087). No Stripe call
   // is made: the tests only look at the plan state and the greyed switches.
   ...(process.env.E2E_BILLING && {
-    billing: { provider: 'paddle', apiKey: 'pdl_sdbx_e2e', webhookSecret: 'pdl_ntfset_e2e', priceIds: ['pri_e2e'] },
+    billing: { provider: 'stripe', secretKey: 'sk_test_e2e', webhookSecret: 'whsec_e2e', priceId: 'price_e2e' },
   }),
 });
 const { imports } = services;
@@ -331,7 +331,7 @@ app.post('/e2e/connection/needs-sign-in', { schema: { hide: true } }, async (req
   return { ok: true };
 });
 
-// Test-only: Erika's entitlement row, as Paddle's webhook would settle it (ADR 0089). The billing server's tests set it
+// Test-only: Erika's entitlement row, as Stripe's webhook would settle it (ADR 0092). The billing server's tests set it
 // for the entitled case and clear it for the free case; a server without billing ignores the row (dual-track).
 app.post('/e2e/billing/entitlement', { schema: { hide: true } }, async (request) => {
   const { clear = false, status = 'active' } = (request.body ?? {}) as { clear?: boolean; status?: 'active' | 'past_due' | 'canceled' };
@@ -340,7 +340,7 @@ app.post('/e2e/billing/entitlement', { schema: { hide: true } }, async (request)
     return { ok: true };
   }
   await services.entitlements.applySubscription({
-    userId: user.id, paddleCustomerId: 'ctm_e2e', paddleSubscriptionId: 'sub_e2e', status,
+    userId: user.id, billingCustomerId: 'cus_e2e', billingSubscriptionId: 'sub_e2e', status,
     currentPeriodEnd: status === 'canceled' ? new Date(Date.now() + 86_400_000) : null, occurredAt: new Date(),
   });
   return { ok: true };

@@ -67,10 +67,10 @@ describe('loadConfig site sources', () => {
 });
 
 describe('loadConfig billing', () => {
-  const paddle = {
-    DIVEHUB_PADDLE_API_KEY: 'pdl_sdbx_apikey_test',
-    DIVEHUB_PADDLE_WEBHOOK_SECRET: 'pdl_ntfset_test',
-    DIVEHUB_PADDLE_PRICE_IDS: ' pri_monthly , pri_yearly ',
+  const stripe = {
+    DIVEHUB_STRIPE_SECRET_KEY: 'sk_test_apikey_test',
+    DIVEHUB_STRIPE_WEBHOOK_SECRET: 'whsec_test',
+    DIVEHUB_STRIPE_PRICE_ID: ' price_monthly ',
   };
 
   it('is off when DIVEHUB_BILLING_PROVIDER is unset, the self-hosted default', () => {
@@ -78,26 +78,26 @@ describe('loadConfig billing', () => {
     expect(loadConfig({ ...base, DIVEHUB_BILLING_PROVIDER: '' }).billing).toBeUndefined();
   });
 
-  it('turns the entitlement gates on with paddle and its three values', () => {
-    expect(loadConfig({ ...base, DIVEHUB_BILLING_PROVIDER: 'paddle', ...paddle }).billing).toEqual({
-      provider: 'paddle',
-      apiKey: 'pdl_sdbx_apikey_test',
-      webhookSecret: 'pdl_ntfset_test',
-      priceIds: ['pri_monthly', 'pri_yearly'],
+  it('turns the entitlement gates on with stripe and its three values', () => {
+    expect(loadConfig({ ...base, DIVEHUB_BILLING_PROVIDER: 'stripe', ...stripe }).billing).toEqual({
+      provider: 'stripe',
+      secretKey: 'sk_test_apikey_test',
+      webhookSecret: 'whsec_test',
+      priceId: 'price_monthly',
     });
   });
 
   it('stops the boot on a provider it does not know', () => {
-    expect(() => loadConfig({ ...base, DIVEHUB_BILLING_PROVIDER: 'stripe' })).toThrow('DIVEHUB_BILLING_PROVIDER must be paddle');
+    expect(() => loadConfig({ ...base, DIVEHUB_BILLING_PROVIDER: 'paddle' })).toThrow('DIVEHUB_BILLING_PROVIDER must be stripe');
   });
 
-  it('names the missing Paddle values rather than run gates with no way to pay', () => {
-    expect(() => loadConfig({ ...base, DIVEHUB_BILLING_PROVIDER: 'paddle' }))
-      .toThrow(/DIVEHUB_PADDLE_API_KEY.*DIVEHUB_PADDLE_WEBHOOK_SECRET.*DIVEHUB_PADDLE_PRICE_IDS/);
-    expect(() => loadConfig({ ...base, DIVEHUB_BILLING_PROVIDER: 'paddle', DIVEHUB_PADDLE_API_KEY: 'pdl_sdbx_apikey_test' }))
-      .toThrow(/DIVEHUB_PADDLE_WEBHOOK_SECRET.*DIVEHUB_PADDLE_PRICE_IDS/);
-    expect(() => loadConfig({ ...base, DIVEHUB_BILLING_PROVIDER: 'paddle', ...paddle, DIVEHUB_PADDLE_PRICE_IDS: ' , ' }))
-      .toThrow('DIVEHUB_PADDLE_PRICE_IDS');
+  it('names the missing Stripe values rather than run gates with no way to pay', () => {
+    expect(() => loadConfig({ ...base, DIVEHUB_BILLING_PROVIDER: 'stripe' }))
+      .toThrow(/DIVEHUB_STRIPE_SECRET_KEY.*DIVEHUB_STRIPE_WEBHOOK_SECRET.*DIVEHUB_STRIPE_PRICE_ID/);
+    expect(() => loadConfig({ ...base, DIVEHUB_BILLING_PROVIDER: 'stripe', DIVEHUB_STRIPE_SECRET_KEY: 'sk_test_apikey_test' }))
+      .toThrow(/DIVEHUB_STRIPE_WEBHOOK_SECRET.*DIVEHUB_STRIPE_PRICE_ID/);
+    expect(() => loadConfig({ ...base, DIVEHUB_BILLING_PROVIDER: 'stripe', ...stripe, DIVEHUB_STRIPE_PRICE_ID: '  ' }))
+      .toThrow('DIVEHUB_STRIPE_PRICE_ID');
   });
 });
 

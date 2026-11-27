@@ -1,4 +1,4 @@
-// The entitlement state machine (hosted-DiveHub plan §4.6): pro and active or past due (the grace Paddle retries in),
+// The entitlement state machine (hosted-DiveHub plan §4.6): pro and active or past due (the grace Stripe retries in),
 // or canceled but still inside the period that was paid for. Everything else, and a User without a row, is free.
 import { describe, expect, it } from 'vitest';
 import { createEntitlementService, isEntitled } from '../src/entitlement/entitlement.js';

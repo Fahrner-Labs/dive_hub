@@ -135,7 +135,7 @@
       },
       "processors": {
         "hosting": "<strong>Hetzner</strong> — hosting of the server, database and backups in [location].",
-        "payments": "<strong>Paddle</strong> — payment processing and billing for paid plans.",
+        "payments": "<strong>Stripe</strong> — payment processing and billing for paid plans.",
         "email": "<strong>Resend</strong> — delivery of transactional e-mail such as invitations and confirmation links."
       }
     },
@@ -272,12 +272,12 @@
       "canceled": "canceled",
       "canceledUntil": "canceled; paid until {{date}}"
     },
-    "renews": "Paid until {{date}}; Paddle renews it automatically.",
-    "upgradeHint": "Automation and Push runs are part of Pro. Paddle handles the card, the invoice and VAT.",
-    "manageHint": "Change the card, see invoices or cancel in the Paddle portal. Dive Hub never holds your payment details.",
+    "renews": "Paid until {{date}}; Stripe renews it automatically.",
+    "upgradeHint": "Automation and Push runs are part of Pro. Stripe handles the card and the invoice; tax is calculated at checkout.",
+    "manageHint": "Change the card, see invoices or cancel in the Stripe Customer Portal. Dive Hub never holds your payment details.",
     "upgrade": "Upgrade to Pro",
     "manage": "Manage subscription",
-    "paddle": "Payments, invoices and VAT are Paddle’s; Dive Hub stores none of them."
+    "stripe": "Payments and invoices are Stripe’s; Dive Hub stores none of them."
   },
   "admin": {
     "inviteTitle": "Invite someone",
@@ -839,8 +839,8 @@
     "waiting_push_not_found": "This dive isn’t waiting to go to the service any more, so there is nothing to retry.",
     "provider_import_off": "Importing dives from {{name}} is off. Choose what the import may do first.",
     "entitlement_required": "This needs the Pro plan. Automation and push runs are part of it.",
-    "billing_not_subscribed": "Start a checkout first; there is no Paddle customer to manage yet.",
-    "billing_already_subscribed": "You already have the Pro plan. Manage or cancel it in the Paddle portal.",
+    "billing_not_subscribed": "Start a checkout first; there is no Stripe customer to manage yet.",
+    "billing_already_subscribed": "You already have the Pro plan. Manage or cancel it in the Stripe Customer Portal.",
     "billing_unavailable": "Billing isn’t reachable right now. Try again later.",
     "invalid_signature": "That webhook signature doesn’t match the body.",
     "provider_site_data_not_confirmed": "Confirm the explanation about {{name}}’s missing licence first.",

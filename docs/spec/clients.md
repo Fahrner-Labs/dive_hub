@@ -466,7 +466,7 @@ online.
   first login; a failed or expired one lands there signed out and offers a new link.
   The legal pages are part of the contract: the sign-up form and the signed-out footer link
   `#/terms` and `#/privacy`. The web serves shells with the required structure (including the processors Hetzner,
-  Paddle and Resend); the operator supplies the final legal text. *Web:* `SignedOut.tsx` (`SignUp`, `VerifyEmail`),
+  Stripe and Resend); the operator supplies the final legal text. *Web:* `SignedOut.tsx` (`SignUp`, `VerifyEmail`),
   `Legal.tsx`, `App.tsx`, `ui/Shell.tsx`.
 
 ### The User's account
@@ -490,15 +490,15 @@ online.
   *Web:* `AccountSettings.tsx`, `main.tsx` (`I18nProvider`), `App.tsx` (`useLanguage`).
 - **Sessions:** list them with device, IP address, sign-in and last activity, and mark the current one. Ending
   another session is immediate; ending the current one is signing out. *Web:* `AccountSettings.tsx` (`Sessions`).
-- **The plan** (hosted-DiveHub plan §4.4, ADR 0087, 0089; `billing` on `GET /api/me`): `configured` false means this
+- **The plan** (hosted-DiveHub plan §4.4, ADR 0087, 0092; `billing` on `GET /api/me`): `configured` false means this
   instance sells nothing (self-hosted): every feature is free, and there is **no Plan section at all**. When true, show
   `plan` (`free`|`pro`) and `status` (`none`, `active`, `past_due`, `canceled`), with `currentPeriodEnd` for a canceled
   plan that is paid until it ends; `entitled` says whether the paid features may be used now. An older server omits
   `billing` (it has no billing): treat it as `configured: false`. Offer **Upgrade**
   (`GET /api/billing/checkout`, open the returned `url`; 409 `billing_already_subscribed` when one already runs) to a
   User with no subscription, and **Manage** (`GET /api/billing/portal`, open the `url`; 409 `billing_not_subscribed`
-  without a Paddle customer) to one who has a row. Dive Hub has no money UI and stores no payment data: Paddle hosts
-  checkout and the portal. *Web:* `PlanSettings.tsx`.
+  without a Stripe customer) to one who has a row. Dive Hub has no money UI and stores no payment data: Stripe hosts
+  Checkout and the Customer Portal. *Web:* `PlanSettings.tsx`.
 
 - **AI access** (ADR 0035, `GET /api/me/ai-access`): a User lets an LLM client read their logbook through the
   [MCP endpoint](#the-mcp-endpoint).

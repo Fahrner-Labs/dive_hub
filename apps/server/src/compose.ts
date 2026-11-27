@@ -7,7 +7,7 @@ import type { Auth } from './auth/auth.js';
 import type { Db } from './db/client.js';
 import type { BillingConfig, EmailConfig, FcmConfig } from './config.js';
 import { createBillingService } from './billing/billing-service.js';
-import type { PaddleFetch } from './billing/paddle.js';
+import type { StripeFetch } from './billing/stripe.js';
 import { createEntitlementService, type EntitlementService } from './entitlement/entitlement.js';
 import { createMailLinks } from './mail/links.js';
 import { createMailProvider, type MailFetch } from './mail/resend.js';
@@ -105,10 +105,10 @@ export interface ServiceParts {
   mailUrl?: string;
   /** Billing (hosted-DiveHub plan §4, ADR 0087); undefined makes every feature free and the entitlement gates inert. */
   billing?: BillingConfig | undefined;
-  /** Where Paddle's HTTP goes; tests pass a stand-in, production the global fetch. */
-  paddleFetch?: PaddleFetch;
-  /** Paddle's API base; only tests point it elsewhere (production derives sandbox/live from the key). */
-  paddleUrl?: string;
+  /** Where Stripe's HTTP goes; tests pass a stand-in, production the global fetch. */
+  stripeFetch?: StripeFetch;
+  /** Stripe's API base; only tests point it elsewhere (test and live keys share one endpoint). */
+  stripeUrl?: string;
   /** Who may see a Diver's contact details (ADR 0088); `instance` when not set, today's self-hosted behaviour. */
   diverVisibility?: DiverVisibility | undefined;
 }
@@ -125,14 +125,15 @@ function createMail(options: {
   return createMailLinks({ mailer, baseUrl: options.baseUrl });
 }
 
-/** Billing for this instance, or nothing when `DIVEHUB_BILLING_PROVIDER` is unset (hosted plan §4, ADR 0089). */
+/** Billing for this instance, or nothing when `DIVEHUB_BILLING_PROVIDER` is unset (hosted plan §4, ADR 0092). */
 function createBilling(
   config: BillingConfig | undefined, entitlements: EntitlementService, log: ProviderLog | undefined,
-  fetch: PaddleFetch | undefined, url: string | undefined,
+  fetch: StripeFetch | undefined, url: string | undefined, baseUrl: string | undefined,
 ) {
   if (!config) return undefined;
+  if (!baseUrl) throw new Error('billing is configured but createServices got no baseUrl for its return links');
   return createBillingService({
-    config, entitlements,
+    config, entitlements, baseUrl,
     ...(log ? { log } : {}), ...(fetch ? { fetch } : {}), ...(url ? { url } : {}),
   });
 }
@@ -140,7 +141,7 @@ function createBilling(
 export function createServices({
   db, blobs, auth, secrets, adapters, siteSources, clock, log, live: liveSettings, dataDir, databaseUrl, encryptionKey,
   logBuffer = createLogRingBuffer({ stdout: { write: () => true } }), workerRunning, fcm, email, registrationOpen = false,
-  baseUrl, mailFetch, mailUrl, billing, paddleFetch, paddleUrl, diverVisibility,
+  baseUrl, mailFetch, mailUrl, billing, stripeFetch, stripeUrl, diverVisibility,
 }: ServiceParts) {
   const now = clock ? () => clock.now() : undefined;
   const mail = createMail({ email, baseUrl, mailFetch, mailUrl });
@@ -164,9 +165,9 @@ export function createServices({
   });
   // The paywall (hosted-DiveHub plan §4): with no billing configured it answers entitled for everything (ADR 0087).
   const entitlements = createEntitlementService({ db, enforced: billing !== undefined, ...(clock && { clock }) });
-  // Paddle's checkout/portal links and signed webhook (hosted-DiveHub plan §4.5, ADR 0089); absent with no billing config,
+  // Stripe's checkout/portal links and signed webhook (hosted-DiveHub plan §4.5, ADR 0092); absent with no billing config,
   // which also leaves the billing routes unregistered.
-  const billingService = createBilling(billing, entitlements, log, paddleFetch, paddleUrl);
+  const billingService = createBilling(billing, entitlements, log, stripeFetch, stripeUrl, baseUrl);
   const providers = createProviderLayer({
     db, blobs, secrets, adapters, entitlements, ...(clock && { clock }), ...(log && { log }), diverVisibility,
   });

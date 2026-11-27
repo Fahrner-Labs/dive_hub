@@ -4,7 +4,7 @@
 > `pnpm check` fails when this map is stale. Symbols are ranked by how widely the code references them;
 > each module shows its most-referenced ones (exported symbols rank higher). Search here before walking the tree.
 
-Files: 450 · symbols: 4094 · shown: 246
+Files: 450 · symbols: 4102 · shown: 246
 
 ### server/(root)
 apps/server/src/vocabulary.ts:13 type SiteWaterType
@@ -42,12 +42,12 @@ apps/server/src/backups/backup-archive.ts:145 const encryptionKeyFingerprint
 … 150 more symbols in this module
 
 ### server/billing
-apps/server/src/billing/paddle.ts:16 type PaddleFetch
+apps/server/src/billing/stripe.ts:10 type StripeFetch
 apps/server/src/billing/billing-service.ts:11 class BillingError
-apps/server/src/billing/paddle-events.ts:7 const STATUS
+apps/server/src/billing/stripe-events.ts:10 const STATUS
 apps/server/src/billing/billing-service.ts:32 fn createBillingService
-apps/server/src/billing/paddle-events.ts:34 iface ParsedSubscription
-… 25 more symbols in this module
+apps/server/src/billing/stripe-events.ts:87 iface ParsedSubscription
+… 32 more symbols in this module
 
 ### server/centres
 apps/server/src/centres/centre-view.ts:24 const CentreView
@@ -68,10 +68,10 @@ apps/server/src/certifications/routes.ts:19 const Text
 ### server/db
 apps/server/src/db/client.ts:5 type Db
 apps/server/src/db/client.ts:8 type Queryable
-apps/server/src/db/schema.ts:769 const dive
+apps/server/src/db/schema.ts:770 const dive
 apps/server/src/db/client.ts:6 type Tx
-apps/server/src/db/schema.ts:535 const diveSite
-apps/server/src/db/schema.ts:927 const recording
+apps/server/src/db/schema.ts:536 const diveSite
+apps/server/src/db/schema.ts:928 const recording
 apps/server/src/db/schema.ts:87 const diverManagement
 apps/server/src/db/auth-schema.ts:20 const user
 apps/server/src/db/import-types.ts:12 iface ImportedValues
@@ -222,10 +222,11 @@ apps/server/src/revisions/revisions.ts:8 const userActor
 
 ### server/scripts
 apps/server/src/scripts/write-planning-vectors.ts:9 const write
-apps/server/src/scripts/write-openapi.ts:27 const out
-apps/server/src/scripts/write-openapi.ts:25 const app
+apps/server/src/scripts/write-openapi.ts:29 const out
+apps/server/src/scripts/write-openapi.ts:27 const app
 apps/server/src/scripts/write-openapi.ts:17 const services
-apps/server/src/scripts/write-openapi.ts:26 const response
+apps/server/src/scripts/write-openapi.ts:26 const baseUrl
+… 1 more symbols in this module
 
 ### server/secrets
 apps/server/src/secrets/secret-box.ts:12 iface SecretBox
