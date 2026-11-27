@@ -36416,6 +36416,7 @@
         "apps/web/src/EquipmentDue.tsx",
         "apps/web/src/EquipmentPage.tsx",
         "apps/web/src/ImportPanel.tsx",
+        "apps/web/src/Legal.tsx",
         "apps/web/src/ReviewPage.tsx",
         "apps/web/src/BuddySuggestions.tsx",
         "apps/web/src/DecisionTimeline.tsx",
@@ -38741,6 +38742,7 @@
         "apps/web/src/EquipmentDue.tsx",
         "apps/web/src/EquipmentPage.tsx",
         "apps/web/src/ImportPanel.tsx",
+        "apps/web/src/Legal.tsx",
         "apps/web/src/ReviewPage.tsx",
         "apps/web/src/BuddySuggestions.tsx",
         "apps/web/src/Decisions.tsx",
@@ -40149,6 +40151,7 @@
         "apps/web/src/DiverPage.tsx",
         "apps/web/src/DiversPage.tsx",
         "apps/web/src/EquipmentPage.tsx",
+        "apps/web/src/Legal.tsx",
         "apps/web/src/ReviewPage.tsx",
         "apps/web/src/SettingsPage.tsx",
         "apps/web/src/SiteImportPage.tsx",
@@ -41055,6 +41058,23 @@
             "import"
           ],
           "resolved": "apps/web/src/ImportPanel.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./Legal.tsx",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/web/src/Legal.tsx",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -49403,6 +49423,67 @@
       "valid": true
     },
     {
+      "source": "apps/web/src/Legal.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./lib/page.ts",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/web/src/lib/page.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./ui/index.ts",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/web/src/ui/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "react-i18next",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "npm",
+            "import"
+          ],
+          "resolved": "apps/web/node_modules/react-i18next/dist/commonjs/index.js",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": true,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/web/src/App.tsx"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "apps/web/src/lib/lazy-reload.ts",
       "dependencies": [
         {
@@ -54676,8 +54757,8 @@
     "baselineSize": 0,
     "baselineStale": 0,
     "advisedExitCode": 0,
-    "totalCruised": 514,
-    "totalDependenciesCruised": 2731,
+    "totalCruised": 515,
+    "totalDependenciesCruised": 2735,
     "optionsUsed": {
       "baseDir": "/home/runner/work/dive_hub/dive_hub",
       "combinedDependencies": false,
@@ -55169,7 +55250,7 @@
       "version": "18.7.0",
       "nodeVersionSupported": "^22||^24||>=26",
       "nodeVersionFound": "v24.22.3",
-      "osVersionFound": "x64 linux@7.0.0-1018-aws",
+      "osVersionFound": "x64 linux@7.0.0-1020-azure",
       "transpilersFound": [
         {
           "name": "javascript",
