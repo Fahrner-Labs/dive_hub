@@ -184,19 +184,19 @@ class MainViewModelTest {
 
     @Test
     fun `the build default opens sign-in with no address typed`() = runTest(dispatcher) {
-        val viewModel = viewModel(defaultInstanceUrl = "https://cloud.divehub.example") {
+        val viewModel = viewModel(defaultInstanceUrl = "https://divehub.privatenode.de") {
             InstanceProbeResult.Reachable
         }
         advanceUntilIdle()
 
-        assertEquals("https://cloud.divehub.example", viewModel.state.value.instanceUrl)
+        assertEquals("https://divehub.privatenode.de", viewModel.state.value.instanceUrl)
         assertFalse(viewModel.state.value.showInstanceForm)
     }
 
     @Test
     fun `a stored instance beats the build default`() = runTest(dispatcher) {
         val instances = FakeInstances("https://dive.example")
-        val viewModel = viewModel(instances, defaultInstanceUrl = "https://cloud.divehub.example") {
+        val viewModel = viewModel(instances, defaultInstanceUrl = "https://divehub.privatenode.de") {
             InstanceProbeResult.Reachable
         }
         advanceUntilIdle()
@@ -206,7 +206,7 @@ class MainViewModelTest {
 
     @Test
     fun `the self-hosted action keeps the default for going back`() = runTest(dispatcher) {
-        val viewModel = viewModel(defaultInstanceUrl = "https://cloud.divehub.example") {
+        val viewModel = viewModel(defaultInstanceUrl = "https://divehub.privatenode.de") {
             InstanceProbeResult.Reachable
         }
         advanceUntilIdle()
@@ -214,17 +214,17 @@ class MainViewModelTest {
         viewModel.connectToSelfHosted()
 
         assertTrue(viewModel.state.value.showInstanceForm)
-        assertEquals("https://cloud.divehub.example", viewModel.state.value.instanceUrl)
+        assertEquals("https://divehub.privatenode.de", viewModel.state.value.instanceUrl)
 
         viewModel.cancelInstanceForm()
 
         assertFalse(viewModel.state.value.showInstanceForm)
-        assertEquals("https://cloud.divehub.example", viewModel.state.value.instanceUrl)
+        assertEquals("https://divehub.privatenode.de", viewModel.state.value.instanceUrl)
     }
 
     @Test
     fun `a reachable self-hosted address replaces the default and closes the form`() = runTest(dispatcher) {
-        val viewModel = viewModel(defaultInstanceUrl = "https://cloud.divehub.example") {
+        val viewModel = viewModel(defaultInstanceUrl = "https://divehub.privatenode.de") {
             InstanceProbeResult.Reachable
         }
         advanceUntilIdle()

@@ -22,9 +22,10 @@ val scannerEnabled = providers.gradleProperty("divehub.scannerEnabled").orNull?.
 // The first-start sign-in default (FAH-537, ADR 0090). The official build points at Dive Hub Cloud; a self-hoster or
 // F-Droid-style build overrides the whole value with -Pdivehub.defaultInstanceUrl=…, or a single build type with
 // -Pdivehub.defaultInstanceUrl.<buildType>=…. A blank override means no default, so the address form shows first.
-// PLACEHOLDER: replace with the owner-confirmed cloud URL before the hosted app ships.
+// The owner-confirmed cloud URL (FAH-543); it flips to https://divehub.app in a one-line change plus release once that
+// domain is bought. Only first start sees it: a stored instance URL wins (ADR 0090).
 val defaultInstanceUrl = providers.gradleProperty("divehub.defaultInstanceUrl").orNull
-    ?: "https://cloud.divehub.example"
+    ?: "https://divehub.privatenode.de"
 
 fun defaultInstanceUrlFor(buildType: String): String =
     providers.gradleProperty("divehub.defaultInstanceUrl.$buildType").orNull ?: defaultInstanceUrl
@@ -42,7 +43,7 @@ android {
     compileSdk = 37
 
     defaultConfig {
-        applicationId = "dev.divehub.android"
+        applicationId = "app.divehub.android"
         minSdk = 26
         targetSdk = 37
         versionCode = envInt("ANDROID_VERSION_CODE", 1)

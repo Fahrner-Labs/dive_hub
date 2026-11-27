@@ -131,7 +131,7 @@ The official app binary is the same for every instance and bundles no Firebase p
 push, bring your own free Firebase project and set its two halves on the server:
 
 1. Create a project at <https://console.firebase.google.com/> (the free Spark plan is enough) and
-   add an **Android** app with the package name `dev.divehub.android`, the official app's
+   add an **Android** app with the package name `app.divehub.android`, the official app's
    application ID. If you build the app yourself, use your build's application ID instead.
 2. Download the generated `google-services.json`. You only copy values out of it; never commit it
    and never put it in the app or the repository.
