@@ -3,7 +3,10 @@
 import { mkdirSync } from 'node:fs';
 import { request } from '@playwright/test';
 import { prepareServer } from './prepare.ts';
-import { billingSessionFile, E2E_BILLING_URL, E2E_REVIEW, E2E_SERVERS, E2E_USER, serverUrl, sessionFile } from './support.ts';
+import {
+  billingSessionFile, E2E_BILLING_URL, E2E_REVIEW, E2E_SERVERS, E2E_SHARED_BASE_URL, E2E_SHARED_SESSION, E2E_USER, serverUrl,
+  sessionFile,
+} from './support.ts';
 
 export default async function globalSetup() {
   mkdirSync('e2e/.state', { recursive: true });
@@ -17,9 +20,15 @@ export default async function globalSetup() {
     if (!E2E_REVIEW) await prepareServer(baseURL, sessionFile(slot), slot);
   }));
   // The billing server's session, for the paywall tests only; it needs no prepared crowd.
-  const api = await request.newContext({ baseURL: E2E_BILLING_URL, extraHTTPHeaders: { origin: E2E_BILLING_URL } });
-  const response = await api.post('/api/auth/sign-in/email', { data: { email: E2E_USER.email, password: E2E_USER.password } });
-  if (!response.ok()) throw new Error(`sign-in on the billing server failed: ${response.status()} ${await response.text()}`);
-  await api.storageState({ path: billingSessionFile });
-  await api.dispose();
+  const billing = await request.newContext({ baseURL: E2E_BILLING_URL, extraHTTPHeaders: { origin: E2E_BILLING_URL } });
+  const billingResponse = await billing.post('/api/auth/sign-in/email', { data: { email: E2E_USER.email, password: E2E_USER.password } });
+  if (!billingResponse.ok()) throw new Error(`sign-in on the billing server failed: ${billingResponse.status()} ${await billingResponse.text()}`);
+  await billing.storageState({ path: billingSessionFile });
+  await billing.dispose();
+  // The shared-visibility server's session (ADR 0088), as the same seeded User; it needs no prepared crowd either.
+  const shared = await request.newContext({ baseURL: E2E_SHARED_BASE_URL, extraHTTPHeaders: { origin: E2E_SHARED_BASE_URL } });
+  const sharedResponse = await shared.post('/api/auth/sign-in/email', { data: { email: E2E_USER.email, password: E2E_USER.password } });
+  if (!sharedResponse.ok()) throw new Error(`sign-in on the shared server failed: ${sharedResponse.status()} ${await sharedResponse.text()}`);
+  await shared.storageState({ path: E2E_SHARED_SESSION });
+  await shared.dispose();
 }

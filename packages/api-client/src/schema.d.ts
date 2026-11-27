@@ -16002,6 +16002,8 @@ export interface components {
             external: boolean;
             /** @description Whether the signed-in User may change the details: an external Diver, or one whose logbook they keep */
             canEdit: boolean;
+            /** @description Whether the contact details and codes below are the Diver's own (true), or withheld from the signed-in User (false, ADR 0088): the name parts and `canEdit` are still answered. Absent means visible, as on an instance built before ADR 0088. */
+            detailsVisible?: boolean;
             firstName: null | string;
             lastName: null | string;
             email: null | string;
@@ -16037,6 +16039,8 @@ export interface components {
             inUse: boolean;
             /** @description Whether the signed-in User may delete it: whoever added it, or an admin */
             canDelete: boolean;
+            /** @description Whether `accounts` is the Diver's own (true), or withheld from the signed-in User (false, ADR 0088). Absent means visible, as on an instance built before ADR 0088. */
+            detailsVisible?: boolean;
         };
         /** @description A certification card of a Diver (ADR 0050) */
         CertificationView: {

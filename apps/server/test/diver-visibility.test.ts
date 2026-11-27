@@ -12,12 +12,12 @@ import {
 } from './support.js';
 
 type Details = {
-  id: string; name: string; external: boolean; canEdit: boolean;
+  id: string; name: string; external: boolean; canEdit: boolean; detailsVisible: boolean;
   firstName: string | null; lastName: string | null; email: string | null; leaderNumber: string | null;
   accounts: { source: string; externalId: string }[];
   codes: { kind: string; provider: string; text: string }[];
 };
-type ExternalPage = { divers: { id: string; name: string; accounts: string[] }[]; total: number };
+type ExternalPage = { divers: { id: string; name: string; accounts: string[]; detailsVisible: boolean }[]; total: number };
 type DiveView = { version: number; verificationCodes: { kind: string; diver: { id: string; name: string } | null; text: string }[] };
 
 const TIM_ACCOUNT = '4000100';
@@ -139,16 +139,16 @@ describe.skipIf(!(await databaseReachable()))('Diver detail visibility (ADR 0088
   describe('under shared', () => {
     it('redacts a stranger to the name parts, with no account, code, e-mail or leader number', async () => {
       expect(await details(ctx.app, timDiver, noor)).toMatchObject({
-        firstName: 'Tim', lastName: 'Tester',
+        firstName: 'Tim', lastName: 'Tester', detailsVisible: false,
         email: null, leaderNumber: null, accounts: [], codes: [],
       });
-      expect(await details(ctx.app, annaDiver, noor)).toMatchObject({ email: null, accounts: [], codes: [] });
-      expect(await details(ctx.app, externDiver, noor)).toMatchObject({ email: null, accounts: [], codes: [] });
+      expect(await details(ctx.app, annaDiver, noor)).toMatchObject({ detailsVisible: false, email: null, accounts: [], codes: [] });
+      expect(await details(ctx.app, externDiver, noor)).toMatchObject({ detailsVisible: false, email: null, accounts: [], codes: [] });
     });
 
     it('shows the details to the Diver\'s User, a Dive partner and an admin', async () => {
       expect(await details(ctx.app, timDiver, tim)).toMatchObject({
-        email: 'tim@example.com', leaderNumber: '111',
+        detailsVisible: true, email: 'tim@example.com', leaderNumber: '111',
         accounts: [{ source: 'ssi', externalId: TIM_ACCOUNT }],
         codes: [{ kind: 'buddy', text: TIM_BUDDY }, { kind: 'professional', text: TIM_PRO }],
       });
@@ -170,9 +170,9 @@ describe.skipIf(!(await databaseReachable()))('Diver detail visibility (ADR 0088
 
     it('drops the account sources from the external-Diver list for a stranger only', async () => {
       const forStranger = await json<ExternalPage>(ctx.app, 'GET', `/api/external-divers?q=Extern`, noor);
-      expect(forStranger.divers).toEqual([{ id: externDiver, name: 'Extern Example', accounts: [], inUse: false, canDelete: false }]);
+      expect(forStranger.divers).toEqual([{ id: externDiver, name: 'Extern Example', accounts: [], inUse: false, canDelete: false, detailsVisible: false }]);
       const forOwner = await json<ExternalPage>(ctx.app, 'GET', `/api/external-divers?q=Extern`, tim);
-      expect(forOwner.divers[0]).toMatchObject({ id: externDiver, accounts: ['ssi'] });
+      expect(forOwner.divers[0]).toMatchObject({ id: externDiver, accounts: ['ssi'], detailsVisible: true });
     });
 
     it('still shows a Dive partner\'s professional code on the Dive itself', async () => {
@@ -198,7 +198,7 @@ describe.skipIf(!(await databaseReachable()))('Diver detail visibility (ADR 0088
     it('shows every User what ADR 0043 showed, unchanged', async () => {
       for (const cookie of [noor, anna, admin]) {
         expect(await details(instanceCtx.app, timDiver, cookie)).toMatchObject({
-          email: 'tim@example.com', leaderNumber: '111',
+          detailsVisible: true, email: 'tim@example.com', leaderNumber: '111',
           accounts: [{ source: 'ssi', externalId: TIM_ACCOUNT }],
           codes: [{ kind: 'buddy', text: TIM_BUDDY }, { kind: 'professional', text: TIM_PRO }],
         });

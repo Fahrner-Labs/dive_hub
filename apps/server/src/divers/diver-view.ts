@@ -9,6 +9,10 @@ export const DiverDetailsViewSchema = Type.Object({
   name: Type.String(),
   external: Type.Boolean({ description: 'No User keeps its logbook' }),
   canEdit: Type.Boolean({ description: 'Whether the signed-in User may change the details: an external Diver, or one whose logbook they keep' }),
+  detailsVisible: Type.Optional(Type.Boolean({
+    description: 'Whether the contact details and codes below are the Diver\'s own (true), or withheld from the signed-in User (false, ADR 0088): '
+      + 'the name parts and `canEdit` are still answered. Absent means visible, as on an instance built before ADR 0088.',
+  })),
   firstName: Nullable(Type.String()), lastName: Nullable(Type.String()),
   email: Nullable(Type.String({
     description: 'Personal data every User of the instance sees under DIVEHUB_DIVER_VISIBILITY=instance (ADR 0043); '
@@ -39,6 +43,10 @@ export const ExternalDiverViewSchema = Type.Object({
   }),
   inUse: Type.Boolean({ description: 'A Dive (of any User) lists this Diver; then it can\'t be deleted' }),
   canDelete: Type.Boolean({ description: 'Whether the signed-in User may delete it: whoever added it, or an admin' }),
+  detailsVisible: Type.Optional(Type.Boolean({
+    description: 'Whether `accounts` is the Diver\'s own (true), or withheld from the signed-in User (false, ADR 0088). '
+      + 'Absent means visible, as on an instance built before ADR 0088.',
+  })),
 }, { $id: 'ExternalDiverView' });
 export const ExternalDiverView = refTo(ExternalDiverViewSchema);
 

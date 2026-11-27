@@ -91,7 +91,7 @@ export function createDiverService(db: Db, options: { visibility?: DiverVisibili
   /**
    * External Divers with what a User may see of them: their name, which services they have accounts at, use. Under
    * `shared`, the accounts are the Diver's contact details too (ADR 0088) and are dropped for a User outside its
-   * circle; `detailsVisible` is dropped again before the answer.
+   * circle; `detailsVisible` says why the array is empty, so a client can tell a withheld account from none.
    */
   const externalColumns = (actor: Caller) => ({
     id: diver.id,
@@ -102,9 +102,9 @@ export function createDiverService(db: Db, options: { visibility?: DiverVisibili
     detailsVisible: sql<boolean>`${seesDetailsSql(actor, diverId, visibility)}`,
   });
 
-  /** An External Diver view without the internal visibility flag; its accounts only for a User who may see the details. */
+  /** An External Diver view; its accounts only for a User who may see the details, and `detailsVisible` says which. */
   const externalView = <T extends { detailsVisible: boolean; accounts: DiverSource[] }>({ detailsVisible, ...row }: T) =>
-    ({ ...row, accounts: detailsVisible ? row.accounts : [] });
+    ({ ...row, accounts: detailsVisible ? row.accounts : [], detailsVisible });
 
   /** Who keeps the Diver's logbook; none for an external Diver. The actor may change it when it is external or theirs. */
   async function editable(tx: Queryable, actor: Caller, id: string) {
@@ -131,6 +131,7 @@ export function createDiverService(db: Db, options: { visibility?: DiverVisibili
       ...row,
       ...(visible ? {} : { email: null, leaderNumber: null }),
       ...(await editable(tx, actor, id)),
+      detailsVisible: visible,
       accounts,
       codes: visible ? personCodes({ ...row, accountId: accounts.find((a) => a.source === 'ssi')?.externalId ?? null }) : [],
     };

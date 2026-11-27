@@ -68,7 +68,7 @@ describe.skipIf(!(await databaseReachable()))('buddy and professional codes', ()
     it('start empty, without a code', async () => {
       const bob = await external('Bob Miller');
       expect(await details(bob)).toEqual({
-        id: bob, name: 'Bob Miller', external: true, canEdit: true,
+        id: bob, name: 'Bob Miller', external: true, canEdit: true, detailsVisible: true,
         firstName: null, lastName: null, email: null, leaderNumber: null, accounts: [], codes: [],
       });
     });

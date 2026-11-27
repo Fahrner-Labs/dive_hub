@@ -1347,7 +1347,9 @@ dives, all off until the User turns them on. *Web:* `ProviderAutomation.tsx` (se
 - **Other divers** (external, ADR 0028; `GET /api/external-divers`): anyone renames them; offer deleting only with
   `canDelete` and not `inUse` (`diver_not_deletable`, `diver_in_use`). Say which services an account is known at
   (`accounts`); the account itself shows only with the Diver's details
-  ([Buddy and professional codes](#buddy-and-professional-codes)). *Web:* `DiversPage.tsx` (`OtherDivers`).
+  ([Buddy and professional codes](#buddy-and-professional-codes)). When `detailsVisible` is `false` (ADR 0088) the
+  list withholds `accounts`: say "not shared with you" there, never that the person has no account. *Web:*
+  `DiversPage.tsx` (`OtherDivers`).
 - **Admins merge an external Diver into another** (`POST /api/admin/divers/{id}/merge` with `into`), the same person, e.g.
   a buddy without an account who became a User: pick the other Diver by name, say it can't be undone. `diver_not_external`
   for a Diver a User keeps; `diver_external_id_taken` when both have different accounts at one service. *Web:*
@@ -1533,11 +1535,18 @@ name, last name, e-mail, SSI leader number) and the codes built from them.
   above, with the Diver's name and what the `kind` is for (`buddy`: another diver scans it to add them to their SSI
   buddy list; `professional`: scanned on a logbook entry, it verifies that dive). With no code, say what one needs:
   SSI account, first name, last name and e-mail.
-- **Must say that everyone on the instance sees the details**: where they are shown, and before anything saves them
-  (the form, and taking a code). The e-mail is a person's, often of someone who never signed up.
+- **Must say the details are someone's own**, wherever they are shown and before anything saves them (the form, and
+  taking a code): the e-mail is a person's, often of someone who never signed up. On the default instance every User
+  sees them (ADR 0043); a hosted instance can share them only with the Diver's circle (ADR 0088), so word it for both.
+- **Must tell a withheld field from an unset one** (ADR 0088): `detailsVisible: false` on
+  `GET /api/divers/{id}/details` means the e-mail, leader number, accounts and codes are withheld from the signed-in
+  User, not missing. Draw each of those as "not shared with you", not "not set", and do not say "no code yet"; the
+  name parts stay. Offer editing only while the details are visible and `canEdit`: the form would otherwise clear
+  fields the User cannot see. Absent `detailsVisible` means visible, as on an instance built before ADR 0088.
 - **Editing** (`PATCH /api/divers/{id}/details`, only the fields sent; `null` or an empty text clears one) is offered
-  when `canEdit`; otherwise say who can (`diver_not_editable`). Keep first and last name as SSI spells them. A part
-  with a semicolon or a line break is `invalid_input`.
+  when `canEdit` and the details are visible (`detailsVisible` not `false`); otherwise say who can
+  (`diver_not_editable`). Keep first and last name as SSI spells them. A part with a semicolon or a line break is
+  `invalid_input`.
 - **Should offer taking a code**, scanned or pasted as for centres. Send its text to
   `POST /api/verification-codes/read` first and act on the answer:
   - `existing`: the Diver that has the code's SSI account. **Must show `changes` before taking it** (each with its

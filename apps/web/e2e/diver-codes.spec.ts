@@ -42,7 +42,7 @@ test('a diver is added from the text of a professional’s code, and shows both 
   await expect(scan.getByText(`The professional’s code of ${NAME}. No diver here has this SSI account yet.`)).toBeVisible();
   await expect(scan.getByRole('radio', { name: `A new diver: ${NAME}` })).toBeChecked();
   // Said before anything is saved: everyone here will see the e-mail.
-  await expect(scan.getByText('Everyone on this Dive Hub then sees these details.')).toBeVisible();
+  await expect(scan.getByText('These details are personal to Pia Probe.')).toBeVisible();
   await scan.getByRole('button', { name: 'Add as a new diver' }).click();
 
   const codes = page.getByRole('dialog', { name: `${NAME}: codes and details` });
