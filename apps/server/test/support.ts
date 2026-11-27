@@ -13,6 +13,7 @@ import type { BillingConfig, EmailConfig, FcmConfig } from '../src/config.js';
 import type { PaddleFetch } from '../src/billing/paddle.js';
 import type { MailProvider } from '../src/mail/mail.js';
 import { createMailProvider, type MailFetch } from '../src/mail/resend.js';
+import type { DiverVisibility } from '../src/vocabulary.js';
 import { createDb, type Db } from '../src/db/client.js';
 import { migrateDatabase } from '../src/db/migrate.js';
 import { listenToChanges } from '../src/revisions/revisions.js';
@@ -149,10 +150,12 @@ export async function createTestApp(t: TestDatabase, options: {
   paddleFetch?: PaddleFetch;
   /** Paddle's API base in tests, so a captured request names the overridden endpoint. */
   paddleUrl?: string;
+  /** Who may see a Diver's contact details (ADR 0088); instance when not set. */
+  diverVisibility?: DiverVisibility;
 } = {}) {
   const {
     webDir, siteSources, fakeSsi = createFakeSsi(), encryptionKey = TEST_ENCRYPTION_KEY, extraProviders = [], clock = resettableClock(), ssi = (a) => a,
-    maxUploadBytes = 1 << 26, onRestored, fcm, email, mailFetch, mailUrl, registrationOpen, billing, paddleFetch, paddleUrl, ...authOptions
+    maxUploadBytes = 1 << 26, onRestored, fcm, email, mailFetch, mailUrl, registrationOpen, billing, paddleFetch, paddleUrl, diverVisibility, ...authOptions
   } = options;
   // SSI keeps its last logbook read for two minutes (ADR 0027); a test that changes the fake SSI behind Dive Hub's back
   // moves this clock on, as if the change happened a while later. Pauses between actions are skipped and recorded.
@@ -186,6 +189,7 @@ export async function createTestApp(t: TestDatabase, options: {
     ...(billing && { billing }),
     ...(paddleFetch && { paddleFetch }),
     ...(paddleUrl && { paddleUrl }),
+    ...(diverVisibility && { diverVisibility }),
   });
   const app = await buildApp({
     ...services, baseUrl: BASE_URL, maxUploadBytes, webDir, ...(onRestored && { onRestored }),

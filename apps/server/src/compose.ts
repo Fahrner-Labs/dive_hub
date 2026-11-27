@@ -11,6 +11,7 @@ import type { PaddleFetch } from './billing/paddle.js';
 import { createEntitlementService, type EntitlementService } from './entitlement/entitlement.js';
 import { createMailLinks } from './mail/links.js';
 import { createMailProvider, type MailFetch } from './mail/resend.js';
+import type { DiverVisibility } from './vocabulary.js';
 import type { FastifyBaseLogger } from 'fastify';
 import { createAssessmentService } from './assessment/assessment-service.js';
 import { createBackupService, type BackupLog } from './backups/backup-service.js';
@@ -108,6 +109,8 @@ export interface ServiceParts {
   paddleFetch?: PaddleFetch;
   /** Paddle's API base; only tests point it elsewhere (production derives sandbox/live from the key). */
   paddleUrl?: string;
+  /** Who may see a Diver's contact details (ADR 0088); `instance` when not set, today's self-hosted behaviour. */
+  diverVisibility?: DiverVisibility | undefined;
 }
 
 /** Transactional mail for this instance, or nothing when `DIVEHUB_EMAIL_*` is unset (hosted plan §6.1). */
@@ -137,7 +140,7 @@ function createBilling(
 export function createServices({
   db, blobs, auth, secrets, adapters, siteSources, clock, log, live: liveSettings, dataDir, databaseUrl, encryptionKey,
   logBuffer = createLogRingBuffer({ stdout: { write: () => true } }), workerRunning, fcm, email, registrationOpen = false,
-  baseUrl, mailFetch, mailUrl, billing, paddleFetch, paddleUrl,
+  baseUrl, mailFetch, mailUrl, billing, paddleFetch, paddleUrl, diverVisibility,
 }: ServiceParts) {
   const now = clock ? () => clock.now() : undefined;
   const mail = createMail({ email, baseUrl, mailFetch, mailUrl });
@@ -164,7 +167,9 @@ export function createServices({
   // Paddle's checkout/portal links and signed webhook (hosted-DiveHub plan §4.5, ADR 0089); absent with no billing config,
   // which also leaves the billing routes unregistered.
   const billingService = createBilling(billing, entitlements, log, paddleFetch, paddleUrl);
-  const providers = createProviderLayer({ db, blobs, secrets, adapters, entitlements, ...(clock && { clock }), ...(log && { log }) });
+  const providers = createProviderLayer({
+    db, blobs, secrets, adapters, entitlements, ...(clock && { clock }), ...(log && { log }), diverVisibility,
+  });
   // Push hints queue in the same writing transactions as the SSE hints (ADR 0085); without FCM the dispatcher queues
   // nothing and the job is a no-op.
   const push = createPushDispatcher({ db, fcm });
@@ -200,7 +205,7 @@ export function createServices({
     logbook, dives, checks, merging,
     suggestions: createSuggestionService(db),
     offers: createOfferService(db),
-    divers: createDiverService(db),
+    divers: createDiverService(db, { visibility: diverVisibility }),
     equipment: createEquipmentService(db),
     centres: createCentreService(db, { ssi: ssiCentreDisplayName }),
     deletion: createDeletionService({ dives, logbook, pushes, waitingPushes }),

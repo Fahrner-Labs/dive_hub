@@ -74,6 +74,8 @@ export async function start(config: Config) {
     baseUrl: config.baseUrl,
     // Billing is optional per instance (ADR 0087): unset keeps every feature free and the entitlement gates inert.
     billing: config.billing,
+    // Who may see a Diver's contact details (ADR 0088): default `instance`, so a self-hosted image is unchanged.
+    diverVisibility: config.diverVisibility,
   });
   const startWorkerIfConfigured = async () => {
     if (!config.inProcessWorker || worker) return;

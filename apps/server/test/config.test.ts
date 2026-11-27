@@ -20,7 +20,8 @@ describe('loadConfig', () => {
   it('takes an empty variable as unset', () => {
     const config = loadConfig({
       ...base, DIVEHUB_PORT: '', DIVEHUB_MAX_UPLOAD_MB: '', DIVEHUB_HOST: '', DIVEHUB_LOG_LEVEL: '', DIVEHUB_WORKER: '',
-      DIVEHUB_BASE_URL: '', DIVEHUB_DATA_DIR: '', DIVEHUB_AUTH_SECRET: '', DIVEHUB_CONTACT: ' ', DIVEHUB_SITE_SOURCES: ' ',
+      DIVEHUB_BASE_URL: '', DIVEHUB_DATA_DIR: '', DIVEHUB_AUTH_SECRET: '', DIVEHUB_CONTACT: ' ', DIVEHUB_DIVER_VISIBILITY: '',
+      DIVEHUB_SITE_SOURCES: ' ',
     });
     expect(config).toEqual(loadConfig(base));
   });
@@ -33,6 +34,12 @@ describe('loadConfig', () => {
   it('refuses a number that is none', () => {
     expect(() => loadConfig({ ...base, DIVEHUB_PORT: 'eighty' })).toThrow('DIVEHUB_PORT');
     expect(() => loadConfig({ ...base, DIVEHUB_MAX_UPLOAD_MB: '-1' })).toThrow('DIVEHUB_MAX_UPLOAD_MB');
+  });
+
+  it('defaults Diver visibility to instance and reads shared (ADR 0088)', () => {
+    expect(loadConfig(base).diverVisibility).toBe('instance');
+    expect(loadConfig({ ...base, DIVEHUB_DIVER_VISIBILITY: 'shared' }).diverVisibility).toBe('shared');
+    expect(() => loadConfig({ ...base, DIVEHUB_DIVER_VISIBILITY: 'public' })).toThrow('DIVEHUB_DIVER_VISIBILITY');
   });
 
   it('requires the database and, in production, the public URL, from the environment it is given', () => {

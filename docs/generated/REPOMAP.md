@@ -4,7 +4,7 @@
 > `pnpm check` fails when this map is stale. Symbols are ranked by how widely the code references them;
 > each module shows its most-referenced ones (exported symbols rank higher). Search here before walking the tree.
 
-Files: 448 · symbols: 4081 · shown: 246
+Files: 449 · symbols: 4086 · shown: 246
 
 ### server/(root)
 apps/server/src/vocabulary.ts:13 type SiteWaterType
@@ -12,7 +12,7 @@ apps/server/src/vocabulary.ts:51 type ImportSource
 apps/server/src/errors.ts:2 const errorMessage
 apps/server/src/vocabulary.ts:12 const SITE_WATER_TYPES
 apps/server/src/config.ts:27 iface FcmConfig
-… 62 more symbols in this module
+… 64 more symbols in this module
 
 ### server/assessment
 apps/server/src/assessment/rules.ts:50 const RULES
@@ -84,7 +84,7 @@ apps/server/src/divers/dive-numbers.ts:34 fn renumber
 apps/server/src/divers/diver-view.ts:5 const DiverSource
 apps/server/src/divers/diver-error.ts:3 class DiverError
 apps/server/src/divers/management.ts:25 const managesDiveDiver
-… 52 more symbols in this module
+… 55 more symbols in this module
 
 ### server/dives
 apps/server/src/dives/dive-view.ts:215 const DiveView
