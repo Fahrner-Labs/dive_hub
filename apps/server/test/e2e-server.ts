@@ -157,6 +157,7 @@ const services = createServices({
   // is made: the tests only look at the plan state and the greyed switches.
   ...(process.env.E2E_BILLING && {
     billing: { provider: 'stripe', secretKey: 'sk_test_e2e', webhookSecret: 'whsec_e2e', priceId: 'price_e2e' },
+    baseUrl: `http://localhost:${port}`,
   }),
 });
 const { imports } = services;
