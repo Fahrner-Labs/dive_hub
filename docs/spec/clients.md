@@ -172,8 +172,9 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
     device (Android Keystore). The sign-in response carries it in the `set-auth-token` header; keep no cookie.
     A native sign-in is an ordinary session: it shows in the session list and ends
     with "sign out everywhere" or a password change.
-  - Only four Better Auth endpoints exist: sign-in, sign-out, get-session, change-password (ADR 0013). AI access
-    keys work only at `/mcp`, never for `/api`.
+  - Only four Better Auth endpoints exist by default: sign-in, sign-out, get-session, change-password (ADR 0013).
+    An instance with `DIVEHUB_REGISTRATION_OPEN=true` adds sign-up, verify-email and send-verification-email (below).
+    AI access keys work only at `/mcp`, never for `/api`.
 - **On 401 anywhere, the session has ended:** show sign-in. Retry only network failures and 5xx, once; a 4xx
   stays the same. *Web:* `main.tsx`, `api.ts` (`shouldRetry`, `isUnauthorized`).
 - **Must show errors by their `code`,** translated (`errors.<code>`), never the English `error` text, which is
@@ -454,12 +455,19 @@ online.
 - **Passwords:** 15 to 128 characters, enforced by the server. Say the rule beside the field
   ([ADR 0012](../decisions/0012-invitations-and-admin-bootstrap.md)). *Web:* `NewPasswordField`.
 - **Self sign-up is off unless the instance opens it** (`DIVEHUB_REGISTRATION_OPEN=true`,
-  [ADR 0087](../decisions/0087-hosted-instance-configuration.md)). Then offer a sign-up form with name, e-mail,
-  password and an explicit acceptance of the Terms of Service and Privacy Policy: `POST /api/auth/sign-up/email`
+  [ADR 0087](../decisions/0087-hosted-instance-configuration.md)). Read `GET /api/registration` (`{ open }`) and
+  offer a sign-up link and form only when it answers `true`; with `false`, say that access comes from an admin's
+  Invitation and render the sign-in page as on an invite-only instance. The form takes name, e-mail, password and an
+  explicit acceptance of the Terms of Service and Privacy Policy: `POST /api/auth/sign-up/email`
   with `{ name, email, password, consent: { terms: true, privacy: true } }`. Its answer carries no session; the
-  server mails a verification link and the account can sign in only after opening it. Offer
-  `POST /api/auth/send-verification-email` with the e-mail to resend the link. Without the variable, do not offer
-  sign-up: say that access comes from an admin's Invitation.
+  server mails a verification link and the account can sign in only after opening it. Send
+  `callbackURL: '/#/verify-email'` with the sign-up and with `POST /api/auth/send-verification-email` (the e-mail to
+  resend the link): a successful verification then redirects signed in to the landing, which sends the User on to the
+  first login; a failed or expired one lands there signed out and offers a new link.
+  The legal pages are part of the contract: the sign-up form and the signed-out footer link
+  `#/terms` and `#/privacy`. The web serves shells with the required structure (including the processors Hetzner,
+  Paddle and Resend); the operator supplies the final legal text. *Web:* `SignedOut.tsx` (`SignUp`, `VerifyEmail`),
+  `Legal.tsx`, `App.tsx`, `ui/Shell.tsx`.
 
 ### The User's account
 - **Connections** (ADR 0024, 0027, `GET /api/connections`): one per Diver and Provider. Show the account
@@ -482,6 +490,15 @@ online.
   *Web:* `AccountSettings.tsx`, `main.tsx` (`I18nProvider`), `App.tsx` (`useLanguage`).
 - **Sessions:** list them with device, IP address, sign-in and last activity, and mark the current one. Ending
   another session is immediate; ending the current one is signing out. *Web:* `AccountSettings.tsx` (`Sessions`).
+- **The plan** (hosted-DiveHub plan §4.4, ADR 0087, 0089; `billing` on `GET /api/me`): `configured` false means this
+  instance sells nothing (self-hosted): every feature is free, and there is **no Plan section at all**. When true, show
+  `plan` (`free`|`pro`) and `status` (`none`, `active`, `past_due`, `canceled`), with `currentPeriodEnd` for a canceled
+  plan that is paid until it ends; `entitled` says whether the paid features may be used now. An older server omits
+  `billing` (it has no billing): treat it as `configured: false`. Offer **Upgrade**
+  (`GET /api/billing/checkout`, open the returned `url`; 409 `billing_already_subscribed` when one already runs) to a
+  User with no subscription, and **Manage** (`GET /api/billing/portal`, open the `url`; 409 `billing_not_subscribed`
+  without a Paddle customer) to one who has a row. Dive Hub has no money UI and stores no payment data: Paddle hosts
+  checkout and the portal. *Web:* `PlanSettings.tsx`.
 
 - **AI access** (ADR 0035, `GET /api/me/ai-access`): a User lets an LLM client read their logbook through the
   [MCP endpoint](#the-mcp-endpoint).
@@ -1138,9 +1155,13 @@ dives, all off until the User turns them on. *Web:* `ProviderAutomation.tsx` (se
   `limits.fetchEveryMinutes` is the shortest, already applied). Turning one on queues nothing that changed before. 400
   `provider_unsupported` (the Provider can't) and 400 `fetch_interval_too_short` (below its minimum) are translated; turning
   off is always accepted. The fetch also needs the Connection's import mode "link and fill" or "also create".
-  On a hosted instance with billing, turning a setting **on** without the paid plan answers 402 `entitlement_required`
-  with `offer` (`plan`, and the `features` it unlocks: `automation`, `push_runs`); show the upsell from it. Turning off
-  stays accepted, so a downgraded User can always stop it.
+  On a hosted instance with billing, `offers.entitled` is false for a User without the paid plan, and `offers.offer`
+  carries the `plan` and the `features` it unlocks (`automation`, `push_runs`): show the switches **greyed** so the
+  paid feature cannot be turned on (its current state still visible) with the upsell built from that offer, linking to
+  the Plan section. Never hardcode the plan or what is paid. Both are absent on an older server (no paywall): treat
+  that as entitled. A save that still meets the gate answers 402 `entitlement_required` with the same `offer`; show
+  that upsell too. Turning off stays accepted, so a switch that is already on must stay switchable off: a downgraded
+  User can always stop it.
 - **Must show the state of a Dive's Waiting push** (`waiting` on each row of `GET /api/dives`, on `GET /api/dives/{id}/providers`
   and `.../{provider}` as `waiting` (one or null), and on deleted dives): a list row gets a small icon (`aria-hidden`, with a
   text label), the Dive's page the words, next to Send. Texts with `{{provider}}` the Provider's name:

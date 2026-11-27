@@ -7,7 +7,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
 
 /**
- * Which settings to show: only what the Provider can
+ * Which settings to show, and whether this User may use them
  */
 @Serializable
 data class ConnectionViewOffers(
@@ -15,5 +15,8 @@ data class ConnectionViewOffers(
     @SerialName("sendNewDives") val sendNewDives: Boolean,
     @SerialName("deleteAtProvider") val deleteAtProvider: Boolean,
     /** The intervals to offer, in minutes; none: the Provider has no scheduled fetch */
-    @SerialName("fetchEvery") val fetchEvery: List<Int>
+    @SerialName("fetchEvery") val fetchEvery: List<Int>,
+    /** False when the paid plan is needed and this User lacks it: grey the switches and show the upsell from `offer` (a hosted instance with billing only; always true where billing is off; absent on an older server) */
+    @SerialName("entitled") val entitled: Boolean? = null,
+    @SerialName("offer") val offer: ConnectionViewOffersOffer? = null
 )

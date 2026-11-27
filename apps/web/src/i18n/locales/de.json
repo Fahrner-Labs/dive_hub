@@ -61,6 +61,7 @@
     "title": "Anmelden",
     "submit": "Anmelden",
     "noAccount": "Noch kein Konto? Bitte die Verwaltung dieses Dive Hub um eine Einladung.",
+    "createAccount": "Neu bei Dive Hub? Konto erstellen.",
     "wrongCredentials": "E-Mail oder Passwort ist falsch.",
     "tooManyAttempts": "Zu viele Versuche. Versuch es in ein paar Minuten noch einmal.",
     "disabled": "Dieses Konto ist deaktiviert. Wende dich an die Verwaltung.",
@@ -71,6 +72,115 @@
     "sendResetLink": "Link zusenden",
     "resetRequested": "Gibt es zu dieser Adresse ein Konto, ist ein Link zum Zurücksetzen unterwegs. Sieh in deinem Postfach nach.",
     "backToSignIn": "Zurück zur Anmeldung"
+  },
+  "signup": {
+    "title": "Konto erstellen",
+    "about": "Erstelle ein Dive-Hub-Konto für dein Tauchlogbuch. Wir schicken dir einen Link zur Bestätigung deiner E-Mail-Adresse.",
+    "submit": "Konto erstellen",
+    "consent": "Ich akzeptiere die <terms>Nutzungsbedingungen</terms> und die <privacy>Datenschutzerklärung</privacy>.",
+    "consentHint": "Beides ist zum Erstellen eines Kontos nötig.",
+    "consentRequired": "Akzeptiere die Nutzungsbedingungen und die Datenschutzerklärung, um ein Konto zu erstellen.",
+    "sentTitle": "Sieh in deinem Postfach nach",
+    "sent": "Wir haben einen Bestätigungslink an <strong>{{email}}</strong> geschickt. Öffne ihn, um dein Konto fertig einzurichten.",
+    "sentHint": "Der Link gilt einmal und läuft in einer Stunde ab. Sieh im Spam-Ordner nach, falls er nicht ankommt.",
+    "failed": "Das Konto konnte nicht erstellt werden. Falls du schon eines hast, melde dich an oder setze dein Passwort zurück."
+  },
+  "verifyEmail": {
+    "title": "E-Mail bestätigen",
+    "failed": "Dieser Bestätigungslink ist ungültig oder abgelaufen.",
+    "about": "Gib deine E-Mail-Adresse ein, dann schicken wir einen neuen Bestätigungslink.",
+    "resend": "Neuen Link senden",
+    "resent": "Ein neuer Bestätigungslink ist unterwegs. Sieh in deinem Postfach nach.",
+    "resendFailed": "Der Link konnte nicht gesendet werden. Versuch es in ein paar Minuten noch einmal.",
+    "backToSignIn": "Zurück zur Anmeldung"
+  },
+  "legal": {
+    "draft": "Diese Seite ist eine Vorlage. Den endgültigen Text stellt die Betreuung dieser Dive-Hub-Instanz bereit.",
+    "privacy": {
+      "title": "Datenschutzerklärung",
+      "updated": "Zuletzt aktualisiert: [Datum]",
+      "sections": {
+        "controller": {
+          "title": "Wer verantwortlich ist",
+          "body": "[Name, Anschrift und Kontakt der verantwortlichen Stelle für Datenschutzfragen.]"
+        },
+        "data": {
+          "title": "Was wir speichern",
+          "body": "Dive Hub speichert die Konto- und Tauchlogbuchdaten, die du eingibst, die unten beschriebenen Einwilligungen und technische Daten, die zum Betrieb nötig sind. [Datenkategorien und ihre Quellen auflisten.]"
+        },
+        "purposes": {
+          "title": "Wofür wir sie nutzen",
+          "body": "Wir nutzen die Daten für dein Konto und Logbuch, für Transaktions-E-Mails und für Zahlungen bei kostenpflichtigen Tarifen. [Rechtsgrundlagen je Zweck nennen.]"
+        },
+        "processors": {
+          "title": "Dienstleister",
+          "body": "Diese Anbieter verarbeiten Daten in unserem Auftrag und nur für die genannte Aufgabe:"
+        },
+        "retention": {
+          "title": "Wie lange wir sie behalten",
+          "body": "Konto- und Logbuchdaten bleiben, bis du sie löschst oder die Verwaltung dein Konto löscht. [Aufbewahrung von Backups und Protokollen beschreiben.]"
+        },
+        "rights": {
+          "title": "Deine Rechte",
+          "body": "Du kannst deine Daten einsehen, berichtigen, exportieren und löschen lassen und der Verarbeitung widersprechen. [Kontakt und Aufsichtsbehörde nennen.]"
+        },
+        "cookies": {
+          "title": "Cookies",
+          "body": "Dive Hub nutzt ein Sitzungs-Cookie, damit du angemeldet bleibst. [Weitere Cookie- oder Speichernutzung ergänzen.]"
+        },
+        "changes": {
+          "title": "Änderungen dieser Erklärung",
+          "body": "Änderungen kündigen wir vor ihrem Inkrafttreten auf dieser Seite an. [Frist beschreiben.]"
+        }
+      },
+      "processors": {
+        "hosting": "<strong>Hetzner</strong> — Hosting von Server, Datenbank und Backups in [Ort].",
+        "payments": "<strong>Paddle</strong> — Zahlungsabwicklung und Abrechnung kostenpflichtiger Tarife.",
+        "email": "<strong>Resend</strong> — Zustellung von Transaktions-E-Mails wie Einladungen und Bestätigungslinks."
+      }
+    },
+    "terms": {
+      "title": "Nutzungsbedingungen",
+      "updated": "Zuletzt aktualisiert: [Datum]",
+      "sections": {
+        "scope": {
+          "title": "Geltungsbereich",
+          "body": "Diese Bedingungen gelten für die Nutzung dieser Dive-Hub-Instanz. [Betreiber und Dienst nennen.]"
+        },
+        "account": {
+          "title": "Dein Konto",
+          "body": "Behalte dein Passwort für dich und sag uns, wenn du glaubst, dass jemand anderes dein Konto nutzen kann. Du bist für die Vorgänge über dein Konto verantwortlich. [Kontoregeln und Altersgrenzen beschreiben.]"
+        },
+        "acceptableUse": {
+          "title": "Zulässige Nutzung",
+          "body": "Nutze Dive Hub nicht rechtswidrig, nicht zur Belästigung, nicht zum Hochladen schädlichen Codes, nicht zum Ausspähen oder Aushebeln der Sicherheit und nicht zum massenhaften Auslesen oder Überlasten des Dienstes. [Weitere unzulässige Nutzungen ergänzen.]"
+        },
+        "content": {
+          "title": "Deine Inhalte",
+          "body": "Deine Tauchlogbücher und anderen Inhalte bleiben deine. Du räumst uns das begrenzte Recht ein, sie zu speichern, zu sichern und anzuzeigen, damit der Dienst funktioniert. [Export und Löschung von Inhalten beschreiben.]"
+        },
+        "paid": {
+          "title": "Kostenpflichtige Tarife",
+          "body": "Kostenpflichtige Tarife, Preise und Kündigung werden beim Bezahlvorgang angezeigt. [Abrechnung, Verlängerung und Erstattungen beschreiben, soweit sie gelten.]"
+        },
+        "availability": {
+          "title": "Verfügbarkeit",
+          "body": "Wir bemühen uns um eine verfügbare Dive-Hub-Instanz, können aber keinen unterbrechungsfreien Betrieb versprechen. [Wartung und Support beschreiben.]"
+        },
+        "liability": {
+          "title": "Haftung",
+          "body": "[Beschreibe die Haftungsbeschränkung für diese Instanz.]"
+        },
+        "changes": {
+          "title": "Änderungen dieser Bedingungen",
+          "body": "Änderungen kündigen wir vor ihrem Inkrafttreten auf dieser Seite an. [Frist beschreiben.]"
+        },
+        "contact": {
+          "title": "Kontakt",
+          "body": "[Name, Anschrift und Kontakt der Betreuung für Fragen zu diesen Bedingungen.]"
+        }
+      }
+    }
   },
   "setup": {
     "title": "Dive Hub einrichten",
@@ -143,12 +253,31 @@
     "section": {
       "display": "Anzeige",
       "security": "Anmeldung und Sicherheit",
+      "plan": "Tarif",
       "connections": "Verbindungen",
       "ai-access": "KI-Zugang",
       "devices": "Geräte",
       "report-problem": "Problem melden",
       "admin": "Verwaltung"
     }
+  },
+  "plan": {
+    "current": "Dein Tarif",
+    "free": "Kostenlos",
+    "pro": "Pro",
+    "status": {
+      "none": "kein kostenpflichtiger Tarif",
+      "active": "aktiv",
+      "pastDue": "Zahlung überfällig",
+      "canceled": "gekündigt",
+      "canceledUntil": "gekündigt; bezahlt bis {{date}}"
+    },
+    "renews": "Bezahlt bis {{date}}; Paddle verlängert automatisch.",
+    "upgradeHint": "Automatik und Push-Läufe gehören zu Pro. Paddle übernimmt Karte, Rechnung und Umsatzsteuer.",
+    "manageHint": "Karte ändern, Rechnungen ansehen oder im Paddle-Portal kündigen. Dive Hub speichert keine Zahlungsdaten.",
+    "upgrade": "Auf Pro wechseln",
+    "manage": "Abo verwalten",
+    "paddle": "Zahlungen, Rechnungen und Umsatzsteuer liegen bei Paddle; Dive Hub speichert nichts davon."
   },
   "admin": {
     "inviteTitle": "Jemanden einladen",
@@ -2152,6 +2281,8 @@
       "title": "Automatisch",
       "titleDiver": "Automatisch: {{diver}}",
       "saved": "Gespeichert.",
+      "upsell": "Die Automatik gehört zum Tarif {{plan}}.",
+      "upsellLink": "Tarif ansehen",
       "sendChanges": "Änderungen automatisch senden",
       "sendNewDives": "Neue Tauchgänge automatisch senden",
       "deleteAtProvider": "In {{name}} löschen, wenn ich hier lösche",

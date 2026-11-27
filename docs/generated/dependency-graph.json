@@ -1234,6 +1234,7 @@
         "apps/server/src/sites/site-ids.ts",
         "apps/server/src/divers/diver-service.ts",
         "apps/server/src/divers/dive-numbers.ts",
+        "apps/server/src/divers/diver-visibility.ts",
         "apps/server/src/divers/merge.ts",
         "apps/server/src/certifications/certification-service.ts",
         "apps/server/src/live/emit.ts",
@@ -2149,6 +2150,7 @@
         "apps/server/src/sites/site-ids.ts",
         "apps/server/src/divers/diver-service.ts",
         "apps/server/src/divers/dive-numbers.ts",
+        "apps/server/src/divers/diver-visibility.ts",
         "apps/server/src/divers/merge.ts",
         "apps/server/src/certifications/certification-service.ts",
         "apps/server/src/live/emit.ts",
@@ -2370,6 +2372,7 @@
         "apps/server/src/sites/sources.ts",
         "apps/server/src/sites/site-ids.ts",
         "apps/server/src/divers/diver-service.ts",
+        "apps/server/src/divers/diver-visibility.ts",
         "apps/server/src/divers/merge.ts",
         "apps/server/src/certifications/certification-view.ts",
         "apps/server/src/certifications/certification-service.ts",
@@ -2510,6 +2513,8 @@
         "apps/server/src/sites/site-ids.ts",
         "apps/server/src/sites/import/import-plan.ts",
         "apps/server/src/divers/diver-service.ts",
+        "apps/server/src/divers/diver-visibility.ts",
+        "apps/server/src/compose.ts",
         "apps/server/src/equipment/equipment-service.ts",
         "apps/server/src/imports/import-service.ts",
         "apps/server/src/imports/parsed-recording.ts",
@@ -2519,6 +2524,7 @@
         "apps/server/src/notifications/notification-service.ts",
         "apps/server/src/notifications/push-dispatcher.ts",
         "apps/server/src/notifications/push-provider.ts",
+        "apps/server/src/providers/layer.ts",
         "apps/server/src/providers/provider.ts",
         "apps/server/src/sites/provider-sites.ts",
         "apps/server/src/dives/dive-view.ts",
@@ -5617,7 +5623,9 @@
         "apps/server/src/providers/dive-import/scheduled-fetch.ts",
         "apps/server/src/providers/waiting-push/waiting-push-service.ts",
         "apps/server/src/providers/routes.ts",
-        "apps/server/src/providers/push/push-run-routes.ts"
+        "apps/server/src/providers/connection-routes.ts",
+        "apps/server/src/providers/push/push-run-routes.ts",
+        "apps/server/src/users/routes.ts"
       ],
       "orphan": false,
       "valid": true
@@ -5959,6 +5967,9 @@
         "apps/server/src/divers/diver-service.ts",
         "apps/server/src/providers/buddies/buddy-service.ts",
         "apps/server/src/divers/routes.ts",
+        "apps/server/src/dives/logbook-routes.ts",
+        "apps/server/src/dives/dive-view-of.ts",
+        "apps/server/src/dives/routes.ts",
         "apps/server/src/providers/account-routes.ts",
         "apps/server/src/sites/routes.ts"
       ],
@@ -6973,6 +6984,23 @@
         },
         {
           "dynamic": false,
+          "module": "./diver-visibility.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/divers/diver-visibility.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./management.js",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -7124,6 +7152,86 @@
       "dependents": [
         "apps/server/src/divers/diver-service.ts",
         "apps/server/src/providers/buddies/buddy-service.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/server/src/divers/diver-visibility.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../db/client.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/db/client.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../db/schema.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/db/schema.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../vocabulary.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/vocabulary.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "drizzle-orm",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "npm",
+            "import"
+          ],
+          "resolved": "apps/server/node_modules/drizzle-orm/index.cjs",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": true,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/server/src/divers/diver-service.ts"
       ],
       "orphan": false,
       "valid": true
@@ -8820,6 +8928,24 @@
             "import"
           ],
           "resolved": "apps/server/src/users/user-admin-service.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./vocabulary.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/vocabulary.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -15423,6 +15549,24 @@
         },
         {
           "dynamic": false,
+          "module": "../vocabulary.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/vocabulary.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./buddies/buddy-service.js",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -16192,7 +16336,6 @@
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
-            "type-only",
             "import"
           ],
           "resolved": "apps/server/src/entitlement/entitlement.ts",
@@ -23649,6 +23792,23 @@
         },
         {
           "dynamic": false,
+          "module": "../http/caller.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/http/caller.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "../http/problems.js",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -23981,6 +24141,24 @@
         },
         {
           "dynamic": false,
+          "module": "../http/caller.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/http/caller.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "../sites/dive-site-link.js",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -24270,6 +24448,23 @@
             "import"
           ],
           "resolved": "apps/server/src/divers/diver-service.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../http/caller.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/http/caller.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -29326,6 +29521,23 @@
         },
         {
           "dynamic": false,
+          "module": "../entitlement/entitlement.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/server/src/entitlement/entitlement.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "../http/problems.js",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -32521,6 +32733,24 @@
             "import"
           ],
           "resolved": "apps/server/src/auth/fastify.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../entitlement/entitlement.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/server/src/entitlement/entitlement.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -36101,6 +36331,7 @@
         "apps/web/src/ProviderAutomation.tsx",
         "apps/web/src/ProviderBuddies.tsx",
         "apps/web/src/ProviderDiveImport.tsx",
+        "apps/web/src/PlanSettings.tsx",
         "apps/web/src/SiteImportPage.tsx",
         "apps/web/src/SitesPage.tsx",
         "apps/web/src/SiteCentres.tsx",
@@ -36185,6 +36416,7 @@
         "apps/web/src/EquipmentDue.tsx",
         "apps/web/src/EquipmentPage.tsx",
         "apps/web/src/ImportPanel.tsx",
+        "apps/web/src/Legal.tsx",
         "apps/web/src/ReviewPage.tsx",
         "apps/web/src/BuddySuggestions.tsx",
         "apps/web/src/DecisionTimeline.tsx",
@@ -36199,6 +36431,7 @@
         "apps/web/src/ProviderBuddies.tsx",
         "apps/web/src/ProviderDiveImport.tsx",
         "apps/web/src/Devices.tsx",
+        "apps/web/src/PlanSettings.tsx",
         "apps/web/src/SiteImportPage.tsx",
         "apps/web/src/SitesPage.tsx",
         "apps/web/src/SiteCentres.tsx",
@@ -36508,6 +36741,7 @@
         "apps/web/src/ProviderDiveImport.tsx",
         "apps/web/src/ProviderDiveNumbers.tsx",
         "apps/web/src/Devices.tsx",
+        "apps/web/src/PlanSettings.tsx",
         "apps/web/src/SiteImportPage.tsx",
         "apps/web/src/SitesPage.tsx",
         "apps/web/src/lib/site-origin.ts",
@@ -37904,6 +38138,7 @@
         "apps/web/src/ProviderDiveImport.tsx",
         "apps/web/src/ProviderDiveNumbers.tsx",
         "apps/web/src/Devices.tsx",
+        "apps/web/src/PlanSettings.tsx",
         "apps/web/src/SiteImportPage.tsx",
         "apps/web/src/SitesPage.tsx",
         "apps/web/src/SiteCentres.tsx",
@@ -38507,6 +38742,7 @@
         "apps/web/src/EquipmentDue.tsx",
         "apps/web/src/EquipmentPage.tsx",
         "apps/web/src/ImportPanel.tsx",
+        "apps/web/src/Legal.tsx",
         "apps/web/src/ReviewPage.tsx",
         "apps/web/src/BuddySuggestions.tsx",
         "apps/web/src/Decisions.tsx",
@@ -38521,6 +38757,7 @@
         "apps/web/src/ProviderDiveImport.tsx",
         "apps/web/src/ProviderDiveNumbers.tsx",
         "apps/web/src/Devices.tsx",
+        "apps/web/src/PlanSettings.tsx",
         "apps/web/src/SiteImportPage.tsx",
         "apps/web/src/SitesPage.tsx",
         "apps/web/src/SiteCentres.tsx",
@@ -39914,6 +40151,7 @@
         "apps/web/src/DiverPage.tsx",
         "apps/web/src/DiversPage.tsx",
         "apps/web/src/EquipmentPage.tsx",
+        "apps/web/src/Legal.tsx",
         "apps/web/src/ReviewPage.tsx",
         "apps/web/src/SettingsPage.tsx",
         "apps/web/src/SiteImportPage.tsx",
@@ -40487,6 +40725,7 @@
         "apps/web/src/ProviderPanel.tsx",
         "apps/web/src/ImportPanel.tsx",
         "apps/web/src/SettingsPage.tsx",
+        "apps/web/src/ProviderAutomation.tsx",
         "apps/web/src/SiteImportPage.tsx",
         "apps/web/src/SitesPage.tsx",
         "apps/web/src/SupportBundlePage.tsx"
@@ -40819,6 +41058,23 @@
             "import"
           ],
           "resolved": "apps/web/src/ImportPanel.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./Legal.tsx",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/web/src/Legal.tsx",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -49167,6 +49423,67 @@
       "valid": true
     },
     {
+      "source": "apps/web/src/Legal.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./lib/page.ts",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/web/src/lib/page.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./ui/index.ts",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/web/src/ui/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "react-i18next",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "npm",
+            "import"
+          ],
+          "resolved": "apps/web/node_modules/react-i18next/dist/commonjs/index.js",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": true,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/web/src/App.tsx"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "apps/web/src/lib/lazy-reload.ts",
       "dependencies": [
         {
@@ -50793,6 +51110,23 @@
         },
         {
           "dynamic": false,
+          "module": "./PlanSettings.tsx",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/web/src/PlanSettings.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./ui/index.ts",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -51161,6 +51495,23 @@
             "import"
           ],
           "resolved": "apps/web/src/lib/review.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./lib/settings.ts",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/web/src/lib/settings.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -51830,6 +52181,101 @@
             "import"
           ],
           "resolved": "apps/web/node_modules/@tanstack/react-query/build/legacy/index.cjs",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": true,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "react-i18next",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "npm",
+            "import"
+          ],
+          "resolved": "apps/web/node_modules/react-i18next/dist/commonjs/index.js",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": true,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/web/src/SettingsPage.tsx"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/web/src/PlanSettings.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./api.ts",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/web/src/api.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./lib/display.ts",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/web/src/lib/display.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./ui/index.ts",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/web/src/ui/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "react",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "npm",
+            "import"
+          ],
+          "resolved": "apps/web/node_modules/react/index.js",
           "coreModule": false,
           "followable": false,
           "couldNotResolve": false,
@@ -54311,8 +54757,8 @@
     "baselineSize": 0,
     "baselineStale": 0,
     "advisedExitCode": 0,
-    "totalCruised": 512,
-    "totalDependenciesCruised": 2712,
+    "totalCruised": 515,
+    "totalDependenciesCruised": 2735,
     "optionsUsed": {
       "baseDir": "/home/runner/work/dive_hub/dive_hub",
       "combinedDependencies": false,
@@ -54651,12 +55097,27 @@
         {
           "name": "module-imports-users",
           "severity": "error",
-          "comment": "users/ may import only these domain modules: divers (MODULE_IMPORTS in .dependency-cruiser.cjs, ADR 0053).",
+          "comment": "users/ may import only these domain modules: divers, entitlement:type (MODULE_IMPORTS in .dependency-cruiser.cjs, ADR 0053).",
           "from": {
             "path": "^apps/server/src/users/"
           },
           "to": {
-            "path": "^apps/server/src/(revisions|assessment|backups|centres|certifications|dives|entitlement|billing|equipment|imports|lead|mcp|notifications|planning|providers|sites|social|support|sync|live|version)/"
+            "path": "^apps/server/src/(revisions|assessment|backups|centres|certifications|dives|billing|equipment|imports|lead|mcp|notifications|planning|providers|sites|social|support|sync|live|version)/"
+          },
+          "scope": "module"
+        },
+        {
+          "name": "module-imports-users-types-only",
+          "severity": "error",
+          "comment": "users/ may import only types from entitlement (ADR 0053).",
+          "from": {
+            "path": "^apps/server/src/users/"
+          },
+          "to": {
+            "path": "^apps/server/src/(entitlement)/",
+            "dependencyTypesNot": [
+              "type-only"
+            ]
           },
           "scope": "module"
         },

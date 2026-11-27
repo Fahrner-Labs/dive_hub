@@ -61,6 +61,7 @@
     "title": "Sign in",
     "submit": "Sign in",
     "noAccount": "No account? Ask the admin of this Dive Hub for an invitation.",
+    "createAccount": "New to Dive Hub? Create an account.",
     "wrongCredentials": "Wrong e-mail or password.",
     "tooManyAttempts": "Too many attempts. Try again in a few minutes.",
     "disabled": "This account is disabled. Ask an admin.",
@@ -71,6 +72,115 @@
     "sendResetLink": "Send reset link",
     "resetRequested": "If that address has an account, a reset link is on its way. Check your inbox.",
     "backToSignIn": "Back to sign in"
+  },
+  "signup": {
+    "title": "Create your account",
+    "about": "Create a Dive Hub account to keep your dive log. We’ll e-mail you a link to confirm your address.",
+    "submit": "Create account",
+    "consent": "I accept the <terms>Terms of Service</terms> and the <privacy>Privacy Policy</privacy>.",
+    "consentHint": "Both are required to create an account.",
+    "consentRequired": "Accept the Terms of Service and the Privacy Policy to create an account.",
+    "sentTitle": "Check your e-mail",
+    "sent": "We sent a confirmation link to <strong>{{email}}</strong>. Open it to finish creating your account.",
+    "sentHint": "The link works once and expires in an hour. Check your spam folder if it doesn’t arrive.",
+    "failed": "The account could not be created. If you already have one, sign in or reset your password."
+  },
+  "verifyEmail": {
+    "title": "Confirm your e-mail",
+    "failed": "This confirmation link is invalid or has expired.",
+    "about": "Enter your e-mail address and we’ll send a new confirmation link.",
+    "resend": "Send a new link",
+    "resent": "A new confirmation link is on its way. Check your inbox.",
+    "resendFailed": "The link could not be sent. Try again in a few minutes.",
+    "backToSignIn": "Back to sign in"
+  },
+  "legal": {
+    "draft": "This page is a template. Its final wording is supplied by the operator of this Dive Hub.",
+    "privacy": {
+      "title": "Privacy Policy",
+      "updated": "Last updated: [date]",
+      "sections": {
+        "controller": {
+          "title": "Who is responsible",
+          "body": "[Operator name, address and contact for privacy questions.]"
+        },
+        "data": {
+          "title": "What we store",
+          "body": "Dive Hub stores the account and dive log data you enter, the consent records described below, and technical data needed to run the service. [List the data categories and their sources.]"
+        },
+        "purposes": {
+          "title": "Why we use it",
+          "body": "We use the data to provide your account and logbook, to send transactional e-mail, and to process payments for paid plans. [State the legal bases for each purpose.]"
+        },
+        "processors": {
+          "title": "Service providers",
+          "body": "These providers process data on our behalf and only for the task named:"
+        },
+        "retention": {
+          "title": "How long we keep it",
+          "body": "Account and logbook data stay until you delete them or an admin deletes your account. [Describe backup and log retention.]"
+        },
+        "rights": {
+          "title": "Your rights",
+          "body": "You can access, correct, export and delete your data, and object to its processing. [Name the contact and the supervisory authority.]"
+        },
+        "cookies": {
+          "title": "Cookies",
+          "body": "Dive Hub uses a session cookie to keep you signed in. [Add any other cookie or storage use here.]"
+        },
+        "changes": {
+          "title": "Changes to this policy",
+          "body": "We will announce changes on this page before they take effect. [Describe the notice period.]"
+        }
+      },
+      "processors": {
+        "hosting": "<strong>Hetzner</strong> — hosting of the server, database and backups in [location].",
+        "payments": "<strong>Paddle</strong> — payment processing and billing for paid plans.",
+        "email": "<strong>Resend</strong> — delivery of transactional e-mail such as invitations and confirmation links."
+      }
+    },
+    "terms": {
+      "title": "Terms of Service",
+      "updated": "Last updated: [date]",
+      "sections": {
+        "scope": {
+          "title": "Scope",
+          "body": "These terms govern the use of this Dive Hub instance. [Name the operator and the service.]"
+        },
+        "account": {
+          "title": "Your account",
+          "body": "Keep your password to yourself and tell us if you think someone else can use your account. You are responsible for what happens through it. [Describe account rules and age limits.]"
+        },
+        "acceptableUse": {
+          "title": "Acceptable use",
+          "body": "Do not use Dive Hub unlawfully, to harass anyone, to upload malicious code, to probe or break its security, or to scrape or overload the service. [Add other prohibited uses.]"
+        },
+        "content": {
+          "title": "Your content",
+          "body": "Your dive logs and other content stay yours. You grant us the limited right to store, back up and display them so the service works. [Describe exported and deleted content.]"
+        },
+        "paid": {
+          "title": "Paid plans",
+          "body": "Paid plans, prices and cancellation are shown at checkout. [Describe billing, renewal and refunds where they apply.]"
+        },
+        "availability": {
+          "title": "Availability",
+          "body": "We work to keep Dive Hub available but cannot promise uninterrupted service. [State maintenance and support expectations.]"
+        },
+        "liability": {
+          "title": "Liability",
+          "body": "[Describe the limitation of liability that applies to this instance.]"
+        },
+        "changes": {
+          "title": "Changes to these terms",
+          "body": "We will announce changes on this page before they take effect. [Describe the notice period.]"
+        },
+        "contact": {
+          "title": "Contact",
+          "body": "[Operator name, address and contact for questions about these terms.]"
+        }
+      }
+    }
   },
   "setup": {
     "title": "Set up Dive Hub",
@@ -143,12 +253,31 @@
     "section": {
       "display": "Display",
       "security": "Sign-in and security",
+      "plan": "Plan",
       "connections": "Connections",
       "ai-access": "AI access",
       "devices": "Devices",
       "report-problem": "Report a problem",
       "admin": "Administration"
     }
+  },
+  "plan": {
+    "current": "Your plan",
+    "free": "Free",
+    "pro": "Pro",
+    "status": {
+      "none": "no paid plan",
+      "active": "active",
+      "pastDue": "payment overdue",
+      "canceled": "canceled",
+      "canceledUntil": "canceled; paid until {{date}}"
+    },
+    "renews": "Paid until {{date}}; Paddle renews it automatically.",
+    "upgradeHint": "Automation and Push runs are part of Pro. Paddle handles the card, the invoice and VAT.",
+    "manageHint": "Change the card, see invoices or cancel in the Paddle portal. Dive Hub never holds your payment details.",
+    "upgrade": "Upgrade to Pro",
+    "manage": "Manage subscription",
+    "paddle": "Payments, invoices and VAT are Paddle’s; Dive Hub stores none of them."
   },
   "admin": {
     "inviteTitle": "Invite someone",
@@ -2152,6 +2281,8 @@
       "title": "Automatic",
       "titleDiver": "Automatic: {{diver}}",
       "saved": "Saved.",
+      "upsell": "Automation is part of the {{plan}} plan.",
+      "upsellLink": "See the plan",
       "sendChanges": "Send changes automatically",
       "sendNewDives": "Send new dives automatically",
       "deleteAtProvider": "Delete at {{name}} when I delete here",

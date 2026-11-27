@@ -59,12 +59,14 @@ const AREAS = [
   [/^apps\/web\/src\/(AccountSettings|ReportProblem)\.tsx$|^apps\/web\/src\/(lib\/diagnostics|api\/diagnostics)\.ts$/, ['@client-diagnostics', '@account']],
   // Lazy pages recover from a stale deploy once (FAH-447): every page that loads on demand, which the layout checks open.
   [/^apps\/web\/src\/lib\/lazy-reload\.ts$/, ['@layout']],
-  [/^apps\/web\/src\/(SignedOut|SetupRestore|Connections|ProviderBuddies)\.tsx$|^apps\/web\/src\/lib\/form\.ts$/, ['@account']],
+  [/^apps\/web\/src\/(SignedOut|SetupRestore|Connections|ProviderBuddies|Legal)\.tsx$|^apps\/web\/src\/lib\/form\.ts$/, ['@account']],
   [/^apps\/web\/src\/SettingsPage\.tsx$/, ['@account', '@admin']],
   // The Settings addresses: also the links to a Connection's settings from a Dive's panels, an Import and a push run.
   [/^apps\/web\/src\/lib\/settings\.ts$/, ['@account', '@admin', '@dives']],
   // Importing a Provider's dives (ADR 0030): on the Connection, and the dives it makes.
   [/^apps\/web\/src\/(ProviderDiveImport|GoneDives|ProviderAutomation)\.tsx$/, ['@account', '@dives']],
+  // The account's plan and the Paddle links it opens (hosted-DiveHub plan §4.4): its Settings section, the paywall's upsell.
+  [/^apps\/web\/src\/PlanSettings\.tsx$/, ['@account', '@dives']],
   // A Dive at a Provider, and a Conflict with it asked on the Dive's page and waiting on the Review page (ADR 0056).
   [/^apps\/web\/src\/(ProviderPanel|LinkOrAdd|ProviderConflicts|ProviderConflictsSection|WaitingPush)\.tsx$/, ['@dives']],
   // A Dive's numbers at its Providers (ADR 0048): on the Dive's Provider panel, a push run and the account's Connections.

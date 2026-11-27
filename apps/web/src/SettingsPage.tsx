@@ -5,6 +5,7 @@ import { DisplaySettings, ReportProblemSettings, SecuritySettings } from './Acco
 import { AiAccess } from './AiAccess.tsx';
 import { Connections } from './Connections.tsx';
 import { Devices } from './Devices.tsx';
+import { PlanSettings } from './PlanSettings.tsx';
 import { lazyWithReload } from './lib/lazy-reload.ts';
 import { useRoomy, useWide } from './lib/narrow.ts';
 import { usePageTitle } from './lib/page.ts';
@@ -28,8 +29,14 @@ export function SettingsPage({ section: asked, me, params }: { section: string |
   const wide = useWide();
   const roomy = useRoomy();
   const admin = me.user.role === 'admin';
-  const unknown = asked !== undefined && !isSettingsSection(asked);
-  const section = isSettingsSection(asked) ? asked : null;
+  // The Plan section exists only where the server sells the Pro plan: without billing every feature is free (ADR 0087).
+  // An older server omits `billing`; treat that as no billing.
+  const plans = me.billing?.configured ?? false;
+  const known = isSettingsSection(asked) ? asked : null;
+  // A hidden section's address is no section at all: it goes where an unknown one goes.
+  const hidden = (known === 'plan' && !plans);
+  const unknown = (asked !== undefined && known === null) || hidden;
+  const section = known !== null && !hidden ? known : null;
   const shown = section ?? (wide ? 'display' : null);
   const name = (s: SettingsSection) => t(`settings.section.${s}`);
   usePageTitle(shown ? name(shown) : t('settings.title'));
@@ -42,7 +49,7 @@ export function SettingsPage({ section: asked, me, params }: { section: string |
   const list = (
     <nav className={`settings-nav ${layout}`} aria-label={t('settings.title')}>
       <ul>
-        {SETTINGS_SECTIONS.filter((s) => s !== 'admin' || admin).map((s) => (
+        {SETTINGS_SECTIONS.filter((s) => (s !== 'plan' || plans) && (s !== 'admin' || admin)).map((s) => (
           <li key={s}>
             <a href={settingsHref(s)} {...(s === shown && { 'aria-current': 'page' as const })}>
               {name(s)}{!wide && <Icon name="next" />}
@@ -56,18 +63,21 @@ export function SettingsPage({ section: asked, me, params }: { section: string |
   const view = (
     <div className="settings-view">
       <PageHeader title={name(shown)} {...(!wide && { back: { href: '#/settings', label: t('settings.title') } })} />
-      <SectionView section={shown} admin={admin} params={params} />
+      <SectionView section={shown} admin={admin} billing={me.billing} params={params} />
     </div>
   );
   if (!wide) return view;
   return <div className={roomy ? 'settings-beside' : 'settings-above'}>{list}{view}</div>;
 }
 
-function SectionView({ section, admin, params }: { section: SettingsSection; admin: boolean; params: URLSearchParams }) {
+function SectionView({ section, admin, billing, params }: {
+  section: SettingsSection; admin: boolean; billing: Me['billing']; params: URLSearchParams;
+}) {
   const { t } = useTranslation();
   switch (section) {
     case 'display': return <DisplaySettings />;
     case 'security': return <SecuritySettings />;
+    case 'plan': return billing ? <PlanSettings billing={billing} /> : null;
     case 'connections': return <Connections focus={params.get('connection') ?? undefined} />;
     case 'ai-access': return <AiAccess />;
     case 'devices': return <Devices />;

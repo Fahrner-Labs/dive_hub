@@ -15,7 +15,7 @@ export const serverUrl = (slot: number) => `http://localhost:${E2E_FIRST_PORT + 
 /** The signed-in session for one server (written by global-setup.ts). */
 export const sessionFile = (slot: number) => `e2e/.state/user-${slot}.json`;
 /** The one server built with `DIVEHUB_DIVER_VISIBILITY=shared` (ADR 0088), for the redacted-state browser tests. */
-export const E2E_SHARED_PORT = E2E_FIRST_PORT + E2E_SERVERS;
+export const E2E_SHARED_PORT = E2E_FIRST_PORT + E2E_SERVERS + 1;
 export const E2E_SHARED_BASE_URL = `http://localhost:${E2E_SHARED_PORT}`;
 export const E2E_SHARED_SESSION = 'e2e/.state/user-shared.json';
 const slot = Number(process.env.TEST_PARALLEL_INDEX ?? 0) % E2E_SERVERS;
@@ -23,6 +23,13 @@ const slot = Number(process.env.TEST_PARALLEL_INDEX ?? 0) % E2E_SERVERS;
 export const E2E_PORT = E2E_FIRST_PORT + slot;
 export const E2E_BASE_URL = serverUrl(slot);
 export const E2E_SESSION = sessionFile(slot);
+/**
+ * One extra server with billing configured (hosted-DiveHub plan §4.4), for the Plan section and the paywall's browser
+ * tests; every other server stays without it, the dual-track invariant (ADR 0087). It runs beside the workers' servers.
+ */
+export const E2E_BILLING_PORT = E2E_FIRST_PORT + E2E_SERVERS;
+export const E2E_BILLING_URL = `http://localhost:${E2E_BILLING_PORT}`;
+export const billingSessionFile = 'e2e/.state/user-billing.json';
 
 /** Mirrors the User seeded by apps/server/test/e2e-server.ts. */
 export const E2E_USER = { email: 'erika@example.com', name: 'Erika', password: 'correct horse battery staple' };

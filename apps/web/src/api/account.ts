@@ -7,6 +7,12 @@ import { api, request, unwrap, type Ok } from './request.ts';
 export const authClient = createAuthClient();
 
 export type Me = Ok<'/api/me'>;
+/** The User's plan and status, on `GET /api/me` (hosted-DiveHub plan §4.4); shown in Settings' Plan section. */
+export type BillingView = NonNullable<Me['billing']>;
+/** A Paddle-hosted checkout link for the Pro plan; a User who already has it answers 409 `billing_already_subscribed`. */
+export const billingCheckout = () => request(api.GET('/api/billing/checkout'));
+/** A Paddle customer-portal link (invoices, card, cancellation); without a Paddle customer it answers 409 `billing_not_subscribed`. */
+export const billingPortal = () => request(api.GET('/api/billing/portal'));
 export type InvitationView = Ok<'/api/invitations'>[number];
 export type UserView = Ok<'/api/users'>[number];
 export type SessionView = Ok<'/api/me/sessions'>[number];
@@ -27,6 +33,9 @@ export const setupQuery = () =>
 /** Whether this instance mails invitation and reset links; without it both stay copy links (ADR 0012, 0013). */
 export const emailConfigQuery = () =>
   queryOptions({ queryKey: keys.emailConfig, queryFn: async () => request(api.GET('/api/email/config')), staleTime: 5 * 60_000 });
+/** Whether this instance offers self-serve sign-up (hosted plan §6.2); closed keeps the invite-only surface. */
+export const registrationOpenQuery = () =>
+  queryOptions({ queryKey: keys.registration, queryFn: async () => request(api.GET('/api/registration')), staleTime: 5 * 60_000 });
 /** Backups the operator put in /data/restore/ on the server, offered instead of a browser upload (plan FAH-175). */
 export const setupRestoreArchivesQuery = () =>
   queryOptions({

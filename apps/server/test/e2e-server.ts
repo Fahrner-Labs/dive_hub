@@ -7,6 +7,7 @@ import { join } from 'node:path';
 import { Readable } from 'node:stream';
 import { fileURLToPath } from 'node:url';
 import { createAuth } from '../src/auth/auth.js';
+import { createMailProvider, type MailFetch } from '../src/mail/resend.js';
 import { buildApp } from '../src/app.js';
 import { createServices, workerDeps } from '../src/compose.js';
 import { createDb } from '../src/db/client.js';
@@ -30,7 +31,7 @@ import { createLogbookCheckService } from '../src/dives/checks/logbook-check-ser
 import { currentRemote } from '../src/providers/remote-state.js';
 import { deletingItself } from '../src/providers/waiting-push/waiting-push-queue.js';
 import { createDiverService } from '../src/divers/diver-service.js';
-import { connection, dive, importJob, pushRun, waitingPush } from '../src/db/schema.js';
+import { connection, dive, importJob, pushRun, userEntitlement, waitingPush } from '../src/db/schema.js';
 import { eq } from 'drizzle-orm';
 import { startWorker } from '../src/worker.js';
 
@@ -114,7 +115,19 @@ fakeGarmin.addAccount({
 const quick = <A extends { capabilities: { limits: { pauseMs: number; run: unknown } } }>(adapter: A): A => ({
   ...adapter, capabilities: { ...adapter.capabilities, limits: { ...adapter.capabilities.limits, pauseMs: 0, run: { pauseMs: 150, maxDives: 100 } } },
 });
-const auth = createAuth({ db, baseUrl: `http://localhost:${port}`, secret: 'e2e-secret-with-enough-entropy-0123456789abcdef' });
+// Open registration for the auth browser tests (FAH-533). The mail provider is a stand-in that keeps every message,
+// so a test can read the verification link the server would have sent; nothing leaves the machine.
+const sentMail: { to: string; subject: string; text: string }[] = [];
+const mailFetch: MailFetch = async (_url, init) => {
+  const message = JSON.parse(init.body) as { to: string[]; subject: string; text: string };
+  sentMail.push({ to: message.to[0]!, subject: message.subject, text: message.text });
+  return { status: 200, text: async () => '{"id":"e2e-mail"}' };
+};
+const emailConfig = { provider: 'resend' as const, apiKey: 're_e2e_key', from: 'Dive Hub <noreply@e2e.invalid>' };
+const auth = createAuth({
+  db, baseUrl: `http://localhost:${port}`, secret: 'e2e-secret-with-enough-entropy-0123456789abcdef',
+  registrationOpen: true, mail: createMailProvider(emailConfig, { fetch: mailFetch, url: 'https://resend.invalid/emails' }),
+});
 const dataDir = await mkdtemp(join(tmpdir(), 'divehub-e2e-'));
 const services = createServices({
   db, auth, blobs: createLocalBlobStore(dataDir), secrets: createSecretBox(Buffer.alloc(32, 9)), dataDir,
@@ -135,14 +148,32 @@ const services = createServices({
   clock: resettableClock(),
   // Open pages hear about background work in the browser tests too (ADR 0066).
   live: { connectionString: database.url },
+  // Self-serve signup for auth.spec.ts (FAH-533). Transactional e-mail stays off for the service layer on purpose:
+  // the admin's copy-link invitation and reset flows must keep behaving as the invite-only tests expect. The auth
+  // instance above has its own stand-in mail, which is all the verification flow needs.
+  registrationOpen: true,
+  // One extra server (Playwright's webServer array) runs with billing on, for the Plan section and the paywall's
+  // browser tests; the default servers stay without it, which is the dual-track invariant (ADR 0087). No Paddle call
+  // is made: the tests only look at the plan state and the greyed switches.
+  ...(process.env.E2E_BILLING && {
+    billing: { provider: 'paddle', apiKey: 'pdl_sdbx_e2e', webhookSecret: 'pdl_ntfset_e2e', priceIds: ['pri_e2e'] },
+  }),
 });
 const { imports } = services;
 const app = await buildApp({ ...services, baseUrl: `http://localhost:${port}`, maxUploadBytes: 1 << 26, webDir: here('../../web/dist') });
 // Open pages hear about background work in the browser tests too (ADR 0066).
 services.live.start();
 
+// Test-only: the last mail the stand-in provider saw, so auth.spec.ts can open the verification link (FAH-533).
+app.get('/e2e/mail', { schema: { hide: true } }, async (request) => {
+  const { to, subject } = request.query as { to?: string; subject?: string };
+  const matches = sentMail.filter((mail) =>
+    (!to || mail.to === to) && (!subject || mail.subject.toLowerCase().includes(subject.toLowerCase())));
+  return matches.at(-1) ?? null;
+});
+
 // Seed: one User, one Dive from a main computer and a backup that auto-attaches to it.
-const { user } = await auth.api.createUser({ body: { ...E2E_USER, role: 'admin' } });
+const { user } = await auth.api.createUser({ body: { ...E2E_USER, role: 'admin', data: { emailVerified: true } } });
 for (const file of ['main-computer.fit', 'backup-computer.fit']) {
   const data = readFileSync(here(`../../web/e2e/fixtures/${file}`));
   const created = await imports.createImport(user.id, file, Readable.from([data]), 1 << 26);
@@ -297,6 +328,21 @@ app.post('/e2e/connection/fetch-state', { schema: { hide: true } }, async (reque
 app.post('/e2e/connection/needs-sign-in', { schema: { hide: true } }, async (request) => {
   const { id } = request.body as { id: string };
   await db.update(connection).set({ state: 'needs_sign_in', keepSignedIn: false }).where(eq(connection.id, id));
+  return { ok: true };
+});
+
+// Test-only: Erika's entitlement row, as Paddle's webhook would settle it (ADR 0089). The billing server's tests set it
+// for the entitled case and clear it for the free case; a server without billing ignores the row (dual-track).
+app.post('/e2e/billing/entitlement', { schema: { hide: true } }, async (request) => {
+  const { clear = false, status = 'active' } = (request.body ?? {}) as { clear?: boolean; status?: 'active' | 'past_due' | 'canceled' };
+  if (clear) {
+    await db.delete(userEntitlement).where(eq(userEntitlement.userId, user.id));
+    return { ok: true };
+  }
+  await services.entitlements.applySubscription({
+    userId: user.id, paddleCustomerId: 'ctm_e2e', paddleSubscriptionId: 'sub_e2e', status,
+    currentPeriodEnd: status === 'canceled' ? new Date(Date.now() + 86_400_000) : null, occurredAt: new Date(),
+  });
   return { ok: true };
 });
 

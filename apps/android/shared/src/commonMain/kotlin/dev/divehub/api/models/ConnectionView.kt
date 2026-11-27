@@ -37,7 +37,7 @@ data class ConnectionView(
     /** Delete the Dive's copy at the Provider by itself, 5 minutes after the Dive is deleted here (Undo cancels it) */
     @SerialName("deleteAtProvider") val deleteAtProvider: Boolean,
     @SerialName("fetchEveryMinutes") val fetchEveryMinutes: Int?,
-    /** Which settings to show: only what the Provider can */
+    /** Which settings to show, and whether this User may use them */
     @SerialName("offers") val offers: ConnectionViewOffers,
     /** How many Waiting pushes of the Connection are in each state */
     @SerialName("waiting") val waiting: ConnectionViewWaiting,

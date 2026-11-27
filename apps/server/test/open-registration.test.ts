@@ -91,6 +91,12 @@ describe.skipIf(!(await databaseReachable()))('open registration', () => {
 
   beforeEach(() => { box.mails.length = 0; });
 
+  it('reports whether this instance accepts self-serve sign-ups', async () => {
+    const of = async (app: App) => (await app.inject({ method: 'GET', url: '/api/registration' })).json();
+    expect(await of(open.app)).toEqual({ open: true });
+    expect(await of(closed.app)).toEqual({ open: false });
+  });
+
   it('keeps sign-up unreachable with DIVEHUB_REGISTRATION_OPEN unset', async () => {
     const response = await signUp(closed.app, {
       email: 'closed@example.com', name: 'Closed', password: PASSWORD, consent: accepted,

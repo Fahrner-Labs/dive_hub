@@ -53,7 +53,7 @@ export const providerRoutes: FastifyPluginAsyncTypebox<ProviderRouteDeps> = asyn
   app.setErrorHandler(answerErrors(answerProviderError, replyCertificationError, replyDiverError));
 
   await app.register(pushRunRoutes, { pushRuns, entitlements });
-  await app.register(connectionRoutes, { providers, connections, diveImports, waitingPushes, conflicts, scheduledFetch });
+  await app.register(connectionRoutes, { providers, connections, diveImports, waitingPushes, conflicts, scheduledFetch, entitlements });
   await app.register(accountRoutes, { buddies, certifications });
   await app.register(diveImportRoutes, { diveImports });
   await app.register(decisionRoutes, { providers, goneDives, conflicts, waitingPushes });

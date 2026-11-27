@@ -1,11 +1,12 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useId, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { api, keys, unwrap, type ConnectionView, type ProviderView } from './api.ts';
+import { api, ApiError, keys, unwrap, type ConnectionView, type ProviderView } from './api.ts';
 import { announce } from './lib/announce.ts';
 import { useDisplay, useErrorText } from './lib/display.ts';
 import { useProviderText } from './lib/providers.ts';
 import { reviewHref } from './lib/review.ts';
+import { settingsHref } from './lib/settings.ts';
 import { SendDivesDialog } from './PushRun.tsx';
 import { Button, Notice, RadioGroup, Switch } from './ui/index.ts';
 
@@ -69,6 +70,13 @@ export function ProviderAutomation({ provider: p, connection: c, several, focuse
     },
   });
   const { offers, lastFetch, unsentDives, waiting } = c;
+  // The paywall's state comes from the server (hosted-DiveHub plan §4.4): a free User gets the switches greyed and the
+  // plan it needs from `offer`, never from a copy here. A save that still meets the gate carries the same offer. An
+  // older server (no paywall) omits these: treat it as entitled. A setting that is already on stays switchable off (the
+  // server accepts that), so a downgraded User can always stop it.
+  const locked = offers.entitled === false;
+  const gate = offers.offer
+    ?? Object.values(failed).find((e): e is ApiError => e instanceof ApiError && e.code === 'entitlement_required')?.details.offer;
   const intervals = offers.fetchEvery.filter(isInterval);
   // A stored interval the Provider no longer offers is still listed, as the selected one (backlog 0010, point 13).
   const stored = c.fetchEveryMinutes;
@@ -110,20 +118,26 @@ export function ProviderAutomation({ provider: p, connection: c, several, focuse
       )}
       {hasSettings && (
         <div className="provider-settings">
+          {gate && (
+            <Notice tone="info">
+              <p>{pt('automation.upsell', { plan: gate.plan })}</p>
+              <a href={settingsHref('plan')}>{pt('automation.upsellLink')}</a>
+            </Notice>
+          )}
           {offers.sendChanges && (
-            <Switch isSelected={c.sendChanges} isPending={pending.has('sendChanges')} onChange={(sendChanges) => save.mutate({ sendChanges })}>
+            <Switch isSelected={c.sendChanges} isPending={pending.has('sendChanges')} isDisabled={locked && !c.sendChanges} onChange={(sendChanges) => save.mutate({ sendChanges })}>
               {pt('automation.sendChanges')}
             </Switch>
           )}
           {offers.sendNewDives && (
-            <Switch isSelected={c.sendNewDives} isPending={pending.has('sendNewDives')} onChange={(sendNewDives) => save.mutate({ sendNewDives })}>
+            <Switch isSelected={c.sendNewDives} isPending={pending.has('sendNewDives')} isDisabled={locked && !c.sendNewDives} onChange={(sendNewDives) => save.mutate({ sendNewDives })}>
               {pt('automation.sendNewDives')}
             </Switch>
           )}
           {offers.deleteAtProvider && (
             <>
               <Switch
-                isSelected={c.deleteAtProvider} isPending={pending.has('deleteAtProvider')} aria-describedby={deleteHelpId}
+                isSelected={c.deleteAtProvider} isPending={pending.has('deleteAtProvider')} isDisabled={locked && !c.deleteAtProvider} aria-describedby={deleteHelpId}
                 onChange={(deleteAtProvider) => save.mutate({ deleteAtProvider })}
               >
                 {pt('automation.deleteAtProvider')}
@@ -134,7 +148,7 @@ export function ProviderAutomation({ provider: p, connection: c, several, focuse
           {intervals.length > 0 && (
             <>
               <Switch
-                isSelected={c.fetchEveryMinutes !== null} isPending={pending.has('fetchEveryMinutes')}
+                isSelected={c.fetchEveryMinutes !== null} isPending={pending.has('fetchEveryMinutes')} isDisabled={locked && c.fetchEveryMinutes === null}
                 {...(importOff ? { 'aria-describedby': fetchHelpId } : {})}
                 onChange={(on) => save.mutate({ fetchEveryMinutes: on ? (intervals.includes(PRESELECTED) ? PRESELECTED : intervals[0]!) : null })}
               >
@@ -145,6 +159,7 @@ export function ProviderAutomation({ provider: p, connection: c, several, focuse
               {c.fetchEveryMinutes !== null && (
                 <RadioGroup
                   label={pt('automation.fetchEvery')} value={String(c.fetchEveryMinutes)} isReadOnly={pending.has('fetchEveryMinutes')}
+                  isDisabled={locked}
                   onChange={(value) => save.mutate({ fetchEveryMinutes: Number(value) as Interval })}
                   options={choices.map((m) => ({ value: String(m), label: pt(`automation.${INTERVAL_TEXT[m]}`) }))}
                 />

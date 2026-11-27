@@ -4,7 +4,7 @@
 import { randomUUID } from 'node:crypto';
 import { defineConfig } from '@playwright/test';
 import {
-  E2E_BASE_URL, E2E_FIRST_PORT, E2E_REVIEW, E2E_SERVERS, E2E_SESSION, E2E_SHARED_BASE_URL, E2E_SHARED_PORT, serverUrl,
+  E2E_BASE_URL, E2E_BILLING_PORT, E2E_FIRST_PORT, E2E_SERVERS, E2E_SESSION, E2E_SHARED_BASE_URL, E2E_SHARED_PORT, serverUrl,
 } from './e2e/support.ts';
 
 /** One id for all the e2e servers, so the migrated template runs its migrations once for this run. */
@@ -48,15 +48,23 @@ export default defineConfig({
       reuseExistingServer: false,
       timeout: 120_000,
     })),
-    // One server with DIVEHUB_DIVER_VISIBILITY=shared (ADR 0088), for diver-visibility.spec.ts. The review capture runs
-    // no specs, so it starts none of these extra ones.
-    ...(E2E_REVIEW ? [] : [{
+    // One server with billing on (hosted-DiveHub plan §4.4), for the paywall's browser tests; the others stay without it.
+    {
+      command: 'npx tsx test/e2e-server.ts',
+      cwd: '../server',
+      url: `http://localhost:${E2E_BILLING_PORT}/api/health/ready`,
+      env: { E2E_PORT: String(E2E_BILLING_PORT), E2E_DB: 'divehub_e2e_billing', E2E_RUN_ID, E2E_BILLING: '1' },
+      reuseExistingServer: false,
+      timeout: 120_000,
+    },
+    // One server with DIVEHUB_DIVER_VISIBILITY=shared (ADR 0088), for diver-visibility.spec.ts.
+    {
       command: 'npx tsx test/e2e-server.ts',
       cwd: '../server',
       url: `${E2E_SHARED_BASE_URL}/api/health/ready`,
       env: { E2E_PORT: String(E2E_SHARED_PORT), E2E_DB: 'divehub_e2e_shared', E2E_RUN_ID, E2E_VISIBILITY: 'shared' },
       reuseExistingServer: false,
       timeout: 120_000,
-    }]),
+    },
   ],
 });

@@ -90,6 +90,10 @@ export function PlainShell({ children }: { children: ReactNode }) {
         <a href="#/" className="brand" translate="no"><BrandMark />{t('common.appName')}</a>
       </header>
       <main id="main" className="app-main" tabIndex={-1}>{children}</main>
+      <footer className="shell-footer">
+        <a href="#/privacy">{t('legal.privacy.title')}</a>
+        <a href="#/terms">{t('legal.terms.title')}</a>
+      </footer>
     </div>
   );
 }
