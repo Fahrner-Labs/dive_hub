@@ -18,6 +18,9 @@ services:
       # Needed to restore a backup made with one, and by `docker compose run app restore-backup` (docs/self-hosting.md).
       DIVEHUB_ENCRYPTION_KEY: ${DIVEHUB_ENCRYPTION_KEY:-}
       DIVEHUB_LOG_LEVEL: ${DIVEHUB_LOG_LEVEL:-}
+      # Who sees a Diver's contact details (ADR 0088): `instance` (default) is every User; `shared` is only the
+      # Diver's Users, the User who added an external Diver, admins, and Users who share a Dive with it.
+      DIVEHUB_DIVER_VISIBILITY: ${DIVEHUB_DIVER_VISIBILITY:-}
       # IPs/CIDRs of your reverse proxy, so rate limiting sees real client IPs (comma-separated).
       DIVEHUB_TRUSTED_PROXIES: ${DIVEHUB_TRUSTED_PROXIES:-}
       # Importing dive sites (docs/spec/architecture.md#dive-site-imports-and-licenses): your e-mail or URL for

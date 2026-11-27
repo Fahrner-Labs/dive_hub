@@ -14,7 +14,8 @@ import { changeListener, userActor, writeRevision, type Changes } from '../revis
 import { DiverError } from './diver-error.js';
 import { mergeExternalDiver } from './merge.js';
 import { tidyName } from './diver-name.js';
-import type { DiverSource } from '../vocabulary.js';
+import { seesDetailsSql, seesDiverDetails } from './diver-visibility.js';
+import type { DiverSource, DiverVisibility } from '../vocabulary.js';
 
 /** What an account at each service looks like (ADR 0024): SSI's user master ID; PADI's isn't known yet. */
 const ACCOUNT_PATTERN: Record<DiverSource, RegExp> = { ssi: /^[1-9]\d{0,9}$/, padi: /^[A-Za-z0-9-]{1,40}$/ };
@@ -71,7 +72,9 @@ const diverId = sql.raw('"diver"."id"');
 /** No User manages it: an external Diver (ADR 0028). */
 const unmanaged = sql`not exists (select 1 from ${diverManagement} m where m.diver_id = ${diverId})`;
 
-export function createDiverService(db: Db) {
+export function createDiverService(db: Db, options: { visibility?: DiverVisibility | undefined } = {}) {
+  const visibility = options.visibility ?? 'instance';
+
   async function requireManagedDiver(userId: string, diverId: string) {
     const row = await managementOf(db, userId, diverId);
     if (!row) throw new DiverError('diver_not_found');
@@ -85,14 +88,23 @@ export function createDiverService(db: Db) {
     return row;
   }
 
-  /** External Divers with what a User may see of them: their name, which services they have accounts at, use. */
+  /**
+   * External Divers with what a User may see of them: their name, which services they have accounts at, use. Under
+   * `shared`, the accounts are the Diver's contact details too (ADR 0088) and are dropped for a User outside its
+   * circle; `detailsVisible` is dropped again before the answer.
+   */
   const externalColumns = (actor: Caller) => ({
     id: diver.id,
     name: diver.name,
     accounts: sql<DiverSource[]>`coalesce((select array_agg(e.source::text order by e.source) from ${diverExternalId} e where e.diver_id = ${diverId}), '{}')`,
     inUse: sql<boolean>`exists (select 1 from ${participant} p where p.diver_id = ${diverId})`,
     canDelete: sql<boolean>`(${actor.isAdmin}::boolean or coalesce(${diver.createdBy} = ${actor.userId}, false))`,
+    detailsVisible: sql<boolean>`${seesDetailsSql(actor, diverId, visibility)}`,
   });
+
+  /** An External Diver view without the internal visibility flag; its accounts only for a User who may see the details. */
+  const externalView = <T extends { detailsVisible: boolean; accounts: DiverSource[] }>({ detailsVisible, ...row }: T) =>
+    ({ ...row, accounts: detailsVisible ? row.accounts : [] });
 
   /** Who keeps the Diver's logbook; none for an external Diver. The actor may change it when it is external or theirs. */
   async function editable(tx: Queryable, actor: Caller, id: string) {
@@ -100,17 +112,27 @@ export function createDiverService(db: Db) {
     return { external: managers.length === 0, canEdit: managers.length === 0 || managers.some((m) => m.userId === actor.userId) };
   }
 
-  /** A Diver as every User sees it since ADR 0043: its name, its details, its accounts and the codes built from them. */
+  /**
+   * A Diver as the actor sees it since ADR 0043: its name, its details, its accounts and the codes built from them.
+   * Under `shared` a User outside the Diver's circle (ADR 0088) gets the name parts only: no e-mail, leader number,
+   * account IDs or codes, because every one of them carries a contact detail.
+   */
   async function detailsOf(tx: Queryable, actor: Caller, id: string) {
     const [row] = await tx.select({
       id: diver.id, name: diver.name, firstName: diver.firstName, lastName: diver.lastName, email: diver.email, leaderNumber: diver.leaderNumber,
     }).from(diver).where(and(eq(diver.id, id), live));
     if (!row) throw new DiverError('diver_not_found');
-    const accounts = await tx.select({ source: diverExternalId.source, externalId: diverExternalId.externalId }).from(diverExternalId)
-      .where(eq(diverExternalId.diverId, id)).orderBy(diverExternalId.source);
+    const visible = await seesDiverDetails(tx, actor, id, visibility);
+    const accounts = visible
+      ? await tx.select({ source: diverExternalId.source, externalId: diverExternalId.externalId }).from(diverExternalId)
+        .where(eq(diverExternalId.diverId, id)).orderBy(diverExternalId.source)
+      : [];
     return {
-      ...row, ...(await editable(tx, actor, id)), accounts,
-      codes: personCodes({ ...row, accountId: accounts.find((a) => a.source === 'ssi')?.externalId ?? null }),
+      ...row,
+      ...(visible ? {} : { email: null, leaderNumber: null }),
+      ...(await editable(tx, actor, id)),
+      accounts,
+      codes: visible ? personCodes({ ...row, accountId: accounts.find((a) => a.source === 'ssi')?.externalId ?? null }) : [],
     };
   }
 
@@ -186,7 +208,7 @@ export function createDiverService(db: Db) {
   }
 
   return {
-    /** A Diver's details, accounts and codes, as every User sees them (ADR 0043, amending ADR 0028). */
+    /** A Diver's details, accounts and codes as the actor sees them (ADR 0043; redacted outside the circle under shared, ADR 0088). */
     async details(actor: Caller, id: string) {
       return detailsOf(db, actor, id);
     },
@@ -259,14 +281,19 @@ export function createDiverService(db: Db) {
      * The professionals' codes a Dive shows (ADR 0043): one per Participant with a leader number and a whole code,
      * whatever their role, by name. The Dive's own Diver is no Participant, so never their own.
      */
-    async professionalCodesOfDive(diveId: string) {
+    async professionalCodesOfDive(actor: Caller, diveId: string) {
       const rows = await db.select({
         id: diver.id, name: diver.name, firstName: diver.firstName, lastName: diver.lastName, email: diver.email,
         leaderNumber: diver.leaderNumber, accountId: diverExternalId.externalId,
       }).from(participant)
         .innerJoin(diver, eq(diver.id, participant.diverId))
         .innerJoin(diverExternalId, and(eq(diverExternalId.diverId, diver.id), eq(diverExternalId.source, 'ssi')))
-        .where(and(eq(participant.diveId, diveId), sql`${diver.leaderNumber} is not null`))
+        .where(and(
+          eq(participant.diveId, diveId), sql`${diver.leaderNumber} is not null`,
+          // Under `shared`, a code is a contact detail like any other (ADR 0088). The caller of a Dive view manages the
+          // Dive's own Diver, so they share it with every Participant; a future caller that does not gets no codes.
+          seesDetailsSql(actor, sql`${diver.id}`, visibility),
+        ))
         .orderBy(sql`lower(${diver.name})`, diver.id);
       return rows.flatMap((r) => personCodes(r).filter((c) => c.kind === 'professional')
         .map((c) => ({ diver: { id: r.id, name: r.name }, provider: c.provider, text: c.text })));
@@ -406,13 +433,13 @@ export function createDiverService(db: Db) {
           .orderBy(sql`lower(${diver.name})`, diver.id).limit(options.limit).offset(options.offset),
         db.select({ total: sql<number>`count(*)::int`.mapWith(Number) }).from(diver).where(where),
       ]);
-      return { divers: rows, total: count?.total ?? 0 };
+      return { divers: rows.map(externalView), total: count?.total ?? 0 };
     },
 
     async external(actor: Caller, id: string) {
       const [row] = await db.select(externalColumns(actor)).from(diver).where(and(eq(diver.id, id), live, unmanaged));
       if (!row) throw new DiverError('diver_not_found');
-      return row;
+      return externalView(row);
     },
 
     /** Someone a User dived with, not managed by anyone (ADR 0028); any User may. */

@@ -42,7 +42,7 @@ const CodePart = (description: string, maxLength: number) => Nullable(Type.Strin
 const DetailsBody = Type.Object({
   firstName: Type.Optional(CodePart('As SSI spells it; one line without a semicolon', 100)),
   lastName: Type.Optional(CodePart('As SSI spells it; one line without a semicolon', 100)),
-  email: Type.Optional(CodePart('The address the person\'s SSI account has. Every User sees it, inside the code', 254)),
+  email: Type.Optional(CodePart('The address the person\'s SSI account has. Users in the Diver\'s circle see it, inside the code (ADR 0088)', 254)),
   leaderNumber: Type.Optional(CodePart('The person\'s SSI leader number: what makes them a professional whose code verifies a dive', 20)),
 }, { additionalProperties: false, description: 'Only the fields sent change; null or an empty text clears one' });
 
@@ -156,8 +156,9 @@ export const diverRoutes: FastifyPluginAsyncTypebox<DiverRouteDeps> = async (app
 
   app.get('/divers/:id/details', {
     schema: {
-      summary: 'A Diver\'s details (first and last name, e-mail, leader number), accounts and the codes built from them, as every User sees them',
-      description: 'ADR 0043: any Diver of the instance, also one whose logbook another User keeps. Nothing else of that Diver is shown.',
+      summary: 'A Diver\'s details (first and last name, e-mail, leader number), accounts and the codes built from them, as the signed-in User sees them',
+      description: 'ADR 0043: any Diver of the instance, also one whose logbook another User keeps. Nothing else of that Diver is shown. '
+        + 'Under DIVEHUB_DIVER_VISIBILITY=shared a User outside the Diver\'s circle gets the name parts only: e-mail, leader number, accounts and codes are empty (ADR 0088).',
       params: IdParams, response: { 200: DiverDetailsView, ...errors },
     },
   }, async (request) => divers.details(callerOf(request), request.params.id));

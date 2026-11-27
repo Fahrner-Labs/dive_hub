@@ -5699,8 +5699,8 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * A Diver's details (first and last name, e-mail, leader number), accounts and the codes built from them, as every User sees them
-         * @description ADR 0043: any Diver of the instance, also one whose logbook another User keeps. Nothing else of that Diver is shown.
+         * A Diver's details (first and last name, e-mail, leader number), accounts and the codes built from them, as the signed-in User sees them
+         * @description ADR 0043: any Diver of the instance, also one whose logbook another User keeps. Nothing else of that Diver is shown. Under DIVEHUB_DIVER_VISIBILITY=shared a User outside the Diver's circle gets the name parts only: e-mail, leader number, accounts and codes are empty (ADR 0088).
          */
         get: {
             parameters: {
@@ -5713,7 +5713,7 @@ export interface paths {
             };
             requestBody?: never;
             responses: {
-                /** @description What a Diver's SSI buddy code says about the person, and the codes built from it. Seen by every User (ADR 0043, amending ADR 0028) */
+                /** @description What a Diver's SSI buddy code says about the person, and the codes built from it. Seen by every User under the default DIVEHUB_DIVER_VISIBILITY=instance (ADR 0043, amending ADR 0028); under shared only by the Diver's circle, with the contact details hidden for everyone else (ADR 0088) */
                 200: {
                     headers: {
                         [name: string]: unknown;
@@ -5790,7 +5790,7 @@ export interface paths {
                 };
             };
             responses: {
-                /** @description What a Diver's SSI buddy code says about the person, and the codes built from it. Seen by every User (ADR 0043, amending ADR 0028) */
+                /** @description What a Diver's SSI buddy code says about the person, and the codes built from it. Seen by every User under the default DIVEHUB_DIVER_VISIBILITY=instance (ADR 0043, amending ADR 0028); under shared only by the Diver's circle, with the contact details hidden for everyone else (ADR 0088) */
                 200: {
                     headers: {
                         [name: string]: unknown;
@@ -5875,7 +5875,7 @@ export interface paths {
                 };
             };
             responses: {
-                /** @description What a Diver's SSI buddy code says about the person, and the codes built from it. Seen by every User (ADR 0043, amending ADR 0028) */
+                /** @description What a Diver's SSI buddy code says about the person, and the codes built from it. Seen by every User under the default DIVEHUB_DIVER_VISIBILITY=instance (ADR 0043, amending ADR 0028); under shared only by the Diver's circle, with the contact details hidden for everyone else (ADR 0088) */
                 200: {
                     headers: {
                         [name: string]: unknown;
@@ -5884,7 +5884,7 @@ export interface paths {
                         "application/json": components["schemas"]["DiverDetailsView"];
                     };
                 };
-                /** @description What a Diver's SSI buddy code says about the person, and the codes built from it. Seen by every User (ADR 0043, amending ADR 0028) */
+                /** @description What a Diver's SSI buddy code says about the person, and the codes built from it. Seen by every User under the default DIVEHUB_DIVER_VISIBILITY=instance (ADR 0043, amending ADR 0028); under shared only by the Diver's circle, with the contact details hidden for everyone else (ADR 0088) */
                 201: {
                     headers: {
                         [name: string]: unknown;
@@ -15937,7 +15937,7 @@ export interface components {
                 expiringSoon: number;
             };
         };
-        /** @description What a Diver's SSI buddy code says about the person, and the codes built from it. Seen by every User (ADR 0043, amending ADR 0028) */
+        /** @description What a Diver's SSI buddy code says about the person, and the codes built from it. Seen by every User under the default DIVEHUB_DIVER_VISIBILITY=instance (ADR 0043, amending ADR 0028); under shared only by the Diver's circle, with the contact details hidden for everyone else (ADR 0088) */
         DiverDetailsView: {
             id: string;
             name: string;
@@ -15958,7 +15958,7 @@ export interface components {
                 /** @description e.g. the SSI account, as the code holds it */
                 externalId: string;
             }[];
-            /** @description Empty while the account, a name or the e-mail is missing; the professional's only with a leader number */
+            /** @description Empty while the account, a name or the e-mail is missing; the professional's only with a leader number; empty under shared for a User outside the Diver's circle (ADR 0088) */
             codes: {
                 /**
                  * @description buddy: another diver scans it in the Provider's app to add the person to their buddy list. professional: a diver scans it on a logbook entry to verify the dive
@@ -15974,7 +15974,7 @@ export interface components {
         ExternalDiverView: {
             id: string;
             name: string;
-            /** @description Services this person has an account at here (the account itself isn't shown) */
+            /** @description Services this person has an account at here (the account itself isn't shown); empty under DIVEHUB_DIVER_VISIBILITY=shared for a User outside the Diver's circle (ADR 0088) */
             accounts: ("ssi" | "padi")[];
             /** @description A Dive (of any User) lists this Diver; then it can't be deleted */
             inUse: boolean;
