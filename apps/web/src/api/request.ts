@@ -18,8 +18,8 @@ export type UnmetView = Ok<'/api/dives/{id}/providers/{provider}'>['unmet'][numb
  * What else a refusal says besides its code: the Problem schema's extras, and the Provider routes'
  * own `unmet` with provider_requirements_unmet (ADR 0029).
  */
-export type ProblemDetails = Pick<Problem, 'diver' | 'centre' | 'existing' | 'diveId' | 'runId'> & { unmet?: UnmetView[] };
-const DETAILS = ['unmet', 'diver', 'centre', 'existing', 'diveId', 'runId'] as const satisfies readonly (keyof ProblemDetails)[];
+export type ProblemDetails = Pick<Problem, 'diver' | 'centre' | 'existing' | 'diveId' | 'runId' | 'offer'> & { unmet?: UnmetView[] };
+const DETAILS = ['unmet', 'diver', 'centre', 'existing', 'diveId', 'runId', 'offer'] as const satisfies readonly (keyof ProblemDetails)[];
 
 /**
  * An API error with its HTTP status (a 401 anywhere sends the user back to sign-in) and the

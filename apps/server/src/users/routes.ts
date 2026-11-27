@@ -11,7 +11,8 @@ import type { SetupService } from './setup-service.js';
 import { limitAttempts, type AttemptLimit } from '../http/attempt-limit.js';
 import { problem } from '../http/problems.js';
 import { Email, Password, PreferencesView, Problem, Token, UserView, toUserView } from './views.js';
-import { DateTime } from '../http/schemas.js';
+import { DateTime, Nullable } from '../http/schemas.js';
+import type { EntitlementService } from '../entitlement/entitlement.js';
 
 export interface UserRouteDeps {
   auth: Auth;
@@ -22,17 +23,32 @@ export interface UserRouteDeps {
   tokenAttempts: AttemptLimit;
   /** DIVEHUB_REGISTRATION_OPEN (hosted plan §6.2): whether this instance offers self-serve sign-up. */
   registrationOpen: boolean;
+  /** The User's plan for the Settings' Plan section; with billing off it answers free and entitled (ADR 0087, 0089). */
+  entitlements: EntitlementService;
 }
 
 const Name = Type.String({ minLength: 1, maxLength: 100, pattern: '\\S' });
+
+const BillingView = Type.Object({
+  configured: Type.Boolean({
+    description: 'False on an instance without billing: every feature is free and the client shows no Plan section',
+  }),
+  plan: Type.Enum(['free', 'pro']),
+  status: Type.Enum(['none', 'active', 'past_due', 'canceled'], { description: 'none: never subscribed' }),
+  currentPeriodEnd: Nullable(DateTime, { description: 'The period that was paid for; canceled keeps it until it ends' }),
+  entitled: Type.Boolean({ description: 'Whether the paid features (automation, Push runs) may be used now' }),
+}, { description: 'The User\'s plan and status (hosted-DiveHub plan §4.4); shown in Settings and used to grey the paywall' });
 
 const MeView = Type.Object({
   user: UserView,
   ownDiver: Type.Object({ id: Type.String(), name: Type.String() }),
   preferences: PreferencesView,
+  // Optional so a client that talks to an older server (which has no billing) still decodes the answer; this server
+  // always sends it (ADR 0076: the v1 API grows additively).
+  billing: Type.Optional(BillingView),
 });
 
-export const userRoutes: FastifyPluginAsyncTypebox<UserRouteDeps> = async (app, { auth, profiles, setup, invitations, tokenAttempts, registrationOpen }) => {
+export const userRoutes: FastifyPluginAsyncTypebox<UserRouteDeps> = async (app, { auth, profiles, setup, invitations, tokenAttempts, registrationOpen, entitlements }) => {
   const limited = limitAttempts(tokenAttempts);
 
   /** Creates the User through Better Auth (which hashes the password), then signs them in. */
@@ -139,10 +155,19 @@ export const userRoutes: FastifyPluginAsyncTypebox<UserRouteDeps> = async (app, 
     signedIn.addHook('onRequest', requireUser(auth));
 
     signedIn.get('/me', {
-      schema: { summary: 'The signed-in User and their own Diver', response: { 200: MeView } },
+      schema: {
+        summary: 'The signed-in User, their own Diver, and their plan',
+        description: 'Billing reports whether this instance sells the Pro plan at all; without it every feature is free and '
+          + 'the client shows no Plan section (the dual-track invariant, ADR 0087).',
+        response: { 200: MeView },
+      },
     }, async (request) => {
       const me = userOf(request);
-      return { user: toUserView(me), ...(await profiles.read(me.id)) };
+      const plan = await entitlements.summary(me.id);
+      return {
+        user: toUserView(me), ...(await profiles.read(me.id)),
+        billing: { configured: entitlements.enforced, ...plan, currentPeriodEnd: plan.currentPeriodEnd?.toISOString() ?? null },
+      };
     });
 
     signedIn.patch('/me/preferences', {

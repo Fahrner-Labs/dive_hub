@@ -276,6 +276,11 @@ describe.skipIf(!(await databaseReachable()))('an instance without billing', () 
         method: 'POST', url: '/api/billing/webhooks', payload: '{}', headers: { 'content-type': 'application/json' },
       })).statusCode).toBe(404);
       expect(await ctx.entitlements.entitled('any-user')).toBe(true);
+      // The client hides the Plan section from the server's answer, not from a build flag (ADR 0087).
+      await createUser(ctx.auth, 'solo@example.com');
+      const cookie = await signIn(ctx.app, 'solo@example.com');
+      const me = await ctx.app.inject({ method: 'GET', url: '/api/me', headers: { cookie, origin: BASE_URL } });
+      expect(me.json().billing).toMatchObject({ configured: false, plan: 'free', status: 'none', entitled: true });
     } finally {
       await ctx.app.close();
       await t.drop();

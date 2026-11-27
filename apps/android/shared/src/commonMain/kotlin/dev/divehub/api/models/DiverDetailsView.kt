@@ -7,7 +7,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
 
 /**
- * What a Diver's SSI buddy code says about the person, and the codes built from it. Seen by every User (ADR 0043, amending ADR 0028)
+ * What a Diver's SSI buddy code says about the person, and the codes built from it. Seen by every User under the default DIVEHUB_DIVER_VISIBILITY=instance (ADR 0043, amending ADR 0028); under shared only by the Diver's circle, with the contact details hidden for everyone else (ADR 0088)
  */
 @Serializable
 data class DiverDetailsView(
@@ -22,6 +22,6 @@ data class DiverDetailsView(
     @SerialName("email") val email: String?,
     @SerialName("leaderNumber") val leaderNumber: String?,
     @SerialName("accounts") val accounts: List<DiverDetailsViewAccountsItem>,
-    /** Empty while the account, a name or the e-mail is missing; the professional's only with a leader number */
+    /** Empty while the account, a name or the e-mail is missing; the professional's only with a leader number; empty under shared for a User outside the Diver's circle (ADR 0088) */
     @SerialName("codes") val codes: List<DiverDetailsViewCodesItem>
 )

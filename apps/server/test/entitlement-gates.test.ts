@@ -130,4 +130,30 @@ describe.skipIf(!(await databaseReachable()))('the entitlement gates', () => {
     await ctx.providers.scheduledFetch.fetch(connectionId, { userInitiated: true });
     expect(await importsOf()).toBe(1);
   });
+
+  it('reports the plan on /api/me and the paywall state on the Connection, so the client can grey the switches', async () => {
+    type Me = { billing: { configured: boolean; plan: string; status: string; currentPeriodEnd: string | null; entitled: boolean } };
+    type Conn = { offers: { entitled: boolean; offer: { plan: string; features: string[] } | null } };
+    const free = await json<Me>('GET', '/api/me');
+    expect(free.billing).toEqual({ configured: true, plan: 'free', status: 'none', currentPeriodEnd: null, entitled: false });
+    expect((await json<Conn[]>('GET', '/api/connections'))[0]!.offers)
+      .toMatchObject({ entitled: false, offer: { plan: 'pro', features: expect.arrayContaining(['automation']) } });
+
+    await grant('pro', 'active');
+    const pro = await json<Me>('GET', '/api/me');
+    expect(pro.billing).toMatchObject({ configured: true, plan: 'pro', status: 'active', entitled: true });
+    expect((await json<Conn[]>('GET', '/api/connections'))[0]!.offers).toMatchObject({ entitled: true, offer: null });
+
+    // Canceled but still inside the paid period: still Pro, entitled, managed in the portal.
+    await grant('pro', 'canceled', new Date(ctx.clock.now() + 86_400_000));
+    const canceled = await json<Me>('GET', '/api/me');
+    expect(canceled.billing).toMatchObject({ plan: 'pro', status: 'canceled', entitled: true });
+
+    // Canceled past the paid period is back to no plan (ADR 0089: canceled → none), so Settings offers Upgrade again
+    // instead of a stale Pro — canceled and only a portal button.
+    await grant('pro', 'canceled', new Date(ctx.clock.now() - 86_400_000));
+    const lapsed = await json<Me>('GET', '/api/me');
+    expect(lapsed.billing).toEqual({ configured: true, plan: 'free', status: 'none', currentPeriodEnd: null, entitled: false });
+    expect((await json<Conn[]>('GET', '/api/connections'))[0]!.offers).toMatchObject({ entitled: false });
+  });
 });

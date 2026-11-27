@@ -4,6 +4,7 @@ import type { FastifyRequest } from 'fastify';
 import { Type, type Static } from 'typebox';
 import type { Auth } from '../auth/auth.js';
 import { requireUser, userOf } from '../auth/fastify.js';
+import { callerOf } from '../http/caller.js';
 import { PARTICIPANT_ROLES, UTC_OFFSET_SOURCES, dive } from '../db/schema.js';
 import { Problem, problem } from '../http/problems.js';
 import { DateTime, IdParams, Nullable, refTo } from '../http/schemas.js';
@@ -189,7 +190,7 @@ export const logbookRoutes: FastifyPluginAsyncTypebox<LogbookRouteDeps> = async 
     const { rows, total, counts, totals, months } = await logbook.listDives(scope, { limit, offset });
     const meta = { total, counts, totals: { ...totals, lastDiveAt: totals.lastDiveAt?.toISOString() ?? null }, months };
     if (include === 'details') {
-      return { dives: await Promise.all(rows.map((r) => diveView(r.d, scope.userId))), ...meta };
+      return { dives: await Promise.all(rows.map((r) => diveView(r.d, callerOf(request)))), ...meta };
     }
     const waiting = await deps.waitingPushes.waitingOf(rows.map((r) => r.d.id));
     return {

@@ -132,7 +132,7 @@ export async function buildApp(deps: AppDeps, app: Server = createServer()) {
   const { pushes, waitingPushes, certifications } = deps.providers;
   await app.register(userRoutes, {
     prefix: '/api', auth, profiles: deps.profiles, setup: deps.setup, invitations: deps.invitations, tokenAttempts,
-    registrationOpen: deps.registrationOpen,
+    registrationOpen: deps.registrationOpen, entitlements: deps.entitlements,
   });
   await app.register(setupRestoreRoutes, {
     prefix: '/api', setup: deps.setup, setupRestore: deps.backups, blobs: deps.blobs, tokenAttempts,

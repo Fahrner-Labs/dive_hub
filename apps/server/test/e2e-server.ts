@@ -31,7 +31,7 @@ import { createLogbookCheckService } from '../src/dives/checks/logbook-check-ser
 import { currentRemote } from '../src/providers/remote-state.js';
 import { deletingItself } from '../src/providers/waiting-push/waiting-push-queue.js';
 import { createDiverService } from '../src/divers/diver-service.js';
-import { connection, dive, importJob, pushRun, waitingPush } from '../src/db/schema.js';
+import { connection, dive, importJob, pushRun, userEntitlement, waitingPush } from '../src/db/schema.js';
 import { eq } from 'drizzle-orm';
 import { startWorker } from '../src/worker.js';
 
@@ -149,6 +149,12 @@ const services = createServices({
   // the admin's copy-link invitation and reset flows must keep behaving as the invite-only tests expect. The auth
   // instance above has its own stand-in mail, which is all the verification flow needs.
   registrationOpen: true,
+  // One extra server (Playwright's webServer array) runs with billing on, for the Plan section and the paywall's
+  // browser tests; the default servers stay without it, which is the dual-track invariant (ADR 0087). No Paddle call
+  // is made: the tests only look at the plan state and the greyed switches.
+  ...(process.env.E2E_BILLING && {
+    billing: { provider: 'paddle', apiKey: 'pdl_sdbx_e2e', webhookSecret: 'pdl_ntfset_e2e', priceIds: ['pri_e2e'] },
+  }),
 });
 const { imports } = services;
 const app = await buildApp({ ...services, baseUrl: `http://localhost:${port}`, maxUploadBytes: 1 << 26, webDir: here('../../web/dist') });
@@ -319,6 +325,21 @@ app.post('/e2e/connection/fetch-state', { schema: { hide: true } }, async (reque
 app.post('/e2e/connection/needs-sign-in', { schema: { hide: true } }, async (request) => {
   const { id } = request.body as { id: string };
   await db.update(connection).set({ state: 'needs_sign_in', keepSignedIn: false }).where(eq(connection.id, id));
+  return { ok: true };
+});
+
+// Test-only: Erika's entitlement row, as Paddle's webhook would settle it (ADR 0089). The billing server's tests set it
+// for the entitled case and clear it for the free case; a server without billing ignores the row (dual-track).
+app.post('/e2e/billing/entitlement', { schema: { hide: true } }, async (request) => {
+  const { clear = false, status = 'active' } = (request.body ?? {}) as { clear?: boolean; status?: 'active' | 'past_due' | 'canceled' };
+  if (clear) {
+    await db.delete(userEntitlement).where(eq(userEntitlement.userId, user.id));
+    return { ok: true };
+  }
+  await services.entitlements.applySubscription({
+    userId: user.id, paddleCustomerId: 'ctm_e2e', paddleSubscriptionId: 'sub_e2e', status,
+    currentPeriodEnd: status === 'canceled' ? new Date(Date.now() + 86_400_000) : null, occurredAt: new Date(),
+  });
   return { ok: true };
 });
 

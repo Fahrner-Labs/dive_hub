@@ -2695,7 +2695,7 @@
               },
               {
                 "type": "string",
-                "description": "Personal data every User of the instance sees (ADR 0043)"
+                "description": "Personal data every User of the instance sees under DIVEHUB_DIVER_VISIBILITY=instance (ADR 0043); null under shared for a User outside the Diver's circle (ADR 0088)"
               }
             ]
           },
@@ -2760,10 +2760,10 @@
                 }
               }
             },
-            "description": "Empty while the account, a name or the e-mail is missing; the professional's only with a leader number"
+            "description": "Empty while the account, a name or the e-mail is missing; the professional's only with a leader number; empty under shared for a User outside the Diver's circle (ADR 0088)"
           }
         },
-        "description": "What a Diver's SSI buddy code says about the person, and the codes built from it. Seen by every User (ADR 0043, amending ADR 0028)"
+        "description": "What a Diver's SSI buddy code says about the person, and the codes built from it. Seen by every User under the default DIVEHUB_DIVER_VISIBILITY=instance (ADR 0043, amending ADR 0028); under shared only by the Diver's circle, with the contact details hidden for everyone else (ADR 0088)"
       },
       "ExternalDiverView": {
         "type": "object",
@@ -2790,7 +2790,7 @@
               ],
               "description": "A service a person has an account at"
             },
-            "description": "Services this person has an account at here (the account itself isn't shown)"
+            "description": "Services this person has an account at here (the account itself isn't shown); empty under DIVEHUB_DIVER_VISIBILITY=shared for a User outside the Diver's circle (ADR 0088)"
           },
           "inUse": {
             "type": "boolean",
@@ -4854,9 +4854,41 @@
                   "type": "integer"
                 },
                 "description": "The intervals to offer, in minutes; none: the Provider has no scheduled fetch"
+              },
+              "entitled": {
+                "type": "boolean",
+                "description": "False when the paid plan is needed and this User lacks it: grey the switches and show the upsell from `offer` (a hosted instance with billing only; always true where billing is off; absent on an older server)"
+              },
+              "offer": {
+                "anyOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "type": "object",
+                    "required": [
+                      "plan",
+                      "features"
+                    ],
+                    "properties": {
+                      "plan": {
+                        "type": "string",
+                        "description": "The plan that unlocks automation (pro)"
+                      },
+                      "features": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        },
+                        "description": "What it unlocks (automation, push_runs)"
+                      }
+                    },
+                    "description": "With entitled false: the paid plan the upsell names, and what it unlocks (hosted-DiveHub plan §4.4)"
+                  }
+                ]
               }
             },
-            "description": "Which settings to show: only what the Provider can"
+            "description": "Which settings to show, and whether this User may use them"
           },
           "waiting": {
             "type": "object",
@@ -6888,7 +6920,8 @@
     },
     "/api/me": {
       "get": {
-        "summary": "The signed-in User and their own Diver",
+        "summary": "The signed-in User, their own Diver, and their plan",
+        "description": "Billing reports whether this instance sells the Pro plan at all; without it every feature is free and the client shows no Plan section (the dual-track invariant, ADR 0087).",
         "responses": {
           "200": {
             "description": "Default Response",
@@ -6961,6 +6994,54 @@
                           "description": "Null: follow the region of the browser"
                         }
                       }
+                    },
+                    "billing": {
+                      "type": "object",
+                      "required": [
+                        "configured",
+                        "plan",
+                        "status",
+                        "currentPeriodEnd",
+                        "entitled"
+                      ],
+                      "properties": {
+                        "configured": {
+                          "type": "boolean",
+                          "description": "False on an instance without billing: every feature is free and the client shows no Plan section"
+                        },
+                        "plan": {
+                          "enum": [
+                            "free",
+                            "pro"
+                          ]
+                        },
+                        "status": {
+                          "enum": [
+                            "none",
+                            "active",
+                            "past_due",
+                            "canceled"
+                          ],
+                          "description": "none: never subscribed"
+                        },
+                        "currentPeriodEnd": {
+                          "anyOf": [
+                            {
+                              "type": "null"
+                            },
+                            {
+                              "type": "string",
+                              "format": "date-time"
+                            }
+                          ],
+                          "description": "The period that was paid for; canceled keeps it until it ends"
+                        },
+                        "entitled": {
+                          "type": "boolean",
+                          "description": "Whether the paid features (automation, Push runs) may be used now"
+                        }
+                      },
+                      "description": "The User's plan and status (hosted-DiveHub plan §4.4); shown in Settings and used to grey the paywall"
                     }
                   }
                 }
@@ -16227,8 +16308,8 @@
     },
     "/api/divers/{id}/details": {
       "get": {
-        "summary": "A Diver's details (first and last name, e-mail, leader number), accounts and the codes built from them, as every User sees them",
-        "description": "ADR 0043: any Diver of the instance, also one whose logbook another User keeps. Nothing else of that Diver is shown.",
+        "summary": "A Diver's details (first and last name, e-mail, leader number), accounts and the codes built from them, as the signed-in User sees them",
+        "description": "ADR 0043: any Diver of the instance, also one whose logbook another User keeps. Nothing else of that Diver is shown. Under DIVEHUB_DIVER_VISIBILITY=shared a User outside the Diver's circle gets the name parts only: e-mail, leader number, accounts and codes are empty (ADR 0088).",
         "parameters": [
           {
             "schema": {
@@ -16242,7 +16323,7 @@
         ],
         "responses": {
           "200": {
-            "description": "What a Diver's SSI buddy code says about the person, and the codes built from it. Seen by every User (ADR 0043, amending ADR 0028)",
+            "description": "What a Diver's SSI buddy code says about the person, and the codes built from it. Seen by every User under the default DIVEHUB_DIVER_VISIBILITY=instance (ADR 0043, amending ADR 0028); under shared only by the Diver's circle, with the contact details hidden for everyone else (ADR 0088)",
             "content": {
               "application/json": {
                 "schema": {
@@ -16335,7 +16416,7 @@
                       {
                         "type": "string",
                         "maxLength": 254,
-                        "description": "The address the person's SSI account has. Every User sees it, inside the code"
+                        "description": "The address the person's SSI account has. Users in the Diver's circle see it, inside the code (ADR 0088)"
                       }
                     ]
                   },
@@ -16372,7 +16453,7 @@
         ],
         "responses": {
           "200": {
-            "description": "What a Diver's SSI buddy code says about the person, and the codes built from it. Seen by every User (ADR 0043, amending ADR 0028)",
+            "description": "What a Diver's SSI buddy code says about the person, and the codes built from it. Seen by every User under the default DIVEHUB_DIVER_VISIBILITY=instance (ADR 0043, amending ADR 0028); under shared only by the Diver's circle, with the contact details hidden for everyone else (ADR 0088)",
             "content": {
               "application/json": {
                 "schema": {
@@ -16461,7 +16542,7 @@
         },
         "responses": {
           "200": {
-            "description": "What a Diver's SSI buddy code says about the person, and the codes built from it. Seen by every User (ADR 0043, amending ADR 0028)",
+            "description": "What a Diver's SSI buddy code says about the person, and the codes built from it. Seen by every User under the default DIVEHUB_DIVER_VISIBILITY=instance (ADR 0043, amending ADR 0028); under shared only by the Diver's circle, with the contact details hidden for everyone else (ADR 0088)",
             "content": {
               "application/json": {
                 "schema": {
@@ -16471,7 +16552,7 @@
             }
           },
           "201": {
-            "description": "What a Diver's SSI buddy code says about the person, and the codes built from it. Seen by every User (ADR 0043, amending ADR 0028)",
+            "description": "What a Diver's SSI buddy code says about the person, and the codes built from it. Seen by every User under the default DIVEHUB_DIVER_VISIBILITY=instance (ADR 0043, amending ADR 0028); under shared only by the Diver's circle, with the contact details hidden for everyone else (ADR 0088)",
             "content": {
               "application/json": {
                 "schema": {

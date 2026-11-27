@@ -46,7 +46,7 @@ const MODULE_IMPORTS = {
   sync: ['revisions'],
   // Live hints (ADR 0066) read Dive and site Revisions only through revisions/revisions.ts's type.
   live: ['revisions:type'],
-  users: ['divers'],
+  users: ['divers', 'entitlement:type'],
   // The client version gate (ADR 0076) works from the request's User-Agent and answers a problem; it reads no domain.
   version: [],
 };
