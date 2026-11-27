@@ -4,7 +4,7 @@
 > `pnpm check` fails when this map is stale. Symbols are ranked by how widely the code references them;
 > each module shows its most-referenced ones (exported symbols rank higher). Search here before walking the tree.
 
-Files: 449 · symbols: 4086 · shown: 246
+Files: 450 · symbols: 4094 · shown: 246
 
 ### server/(root)
 apps/server/src/vocabulary.ts:13 type SiteWaterType
@@ -309,7 +309,7 @@ apps/web/src/Cylinders.tsx:18 fn useCylinderText
 apps/web/src/DeleteDive.tsx:21 fn DeleteDiveDialog
 apps/web/src/ProfileSketch.tsx:12 fn ProfileSketch
 apps/web/src/ProviderConflicts.tsx:14 fn useConflictValueText
-… 536 more symbols in this module
+… 543 more symbols in this module
 
 ### web/api
 apps/web/src/api/request.ts:3 const api
@@ -323,7 +323,7 @@ apps/web/src/api/providers.ts:7 type ProviderView
 apps/web/src/api/dives.ts:16 type RecordingSummary
 apps/web/src/api/sites.ts:16 type SiteSource
 apps/web/src/api/sites.ts:8 type Position
-… 197 more symbols in this module
+… 198 more symbols in this module
 
 ### web/i18n
 apps/web/src/i18n/languages.ts:6 fn pickLanguage
@@ -337,8 +337,8 @@ apps/web/src/lib/display.ts:65 fn useErrorText
 apps/web/src/lib/display.ts:10 fn useDisplay
 apps/web/src/lib/announce.ts:9 fn announce
 apps/web/src/lib/providers.ts:70 fn useProviderText
-apps/web/src/lib/providers.ts:47 fn useProviders
 apps/web/src/lib/page.ts:8 fn usePageTitle
+apps/web/src/lib/providers.ts:47 fn useProviders
 apps/web/src/lib/settings.ts:15 fn settingsHref
 apps/web/src/lib/providers.ts:87 fn useJoinNames
 apps/web/src/lib/focus.ts:28 fn refocusAfterRemoval

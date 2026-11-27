@@ -88,7 +88,8 @@ invite-only by default, first admin from a setup token ([ADR 0012](../decisions/
 An instance can open self-serve signup with `DIVEHUB_REGISTRATION_OPEN=true` (hosted plan §6.2,
 [ADR 0087](../decisions/0087-hosted-instance-configuration.md)): a new User accepts the Terms of Service and Privacy
 Policy (recorded per version in `user_consent`) and verifies their address by mail before signing in. Invitations
-stay available on both tracks.
+stay available on both tracks. `GET /api/registration` answers `{ open }` so clients decide whether to offer sign-up
+at all; the sign-up endpoints themselves are absent while it is closed.
 Sessions are stored in the database. The web client uses an `HttpOnly`, `SameSite=Lax` cookie on the same origin;
 native clients use the bearer plugin ([ADR 0074](../decisions/0074-bearer-tokens-for-native-clients.md)). OIDC (Authentik, Authelia, Keycloak, …) is planned for later.
 LLM clients reach the MCP endpoint `/mcp` with the key of an AI access instead of a session ([ADR 0035](../decisions/0035-mcp-connector.md)): off until an admin
@@ -215,7 +216,8 @@ Implemented:
 - There is always one enabled admin (row locks against simultaneous demotion).
 - By default only `sign-in/email`, `sign-out`, `get-session` and `change-password` of Better Auth are
   reachable over HTTP; they are described in our OpenAPI document. `DIVEHUB_REGISTRATION_OPEN=true` adds
-  `sign-up/email`, `verify-email` and `send-verification-email` (hosted plan §6.2).
+  `sign-up/email`, `verify-email` and `send-verification-email` (hosted plan §6.2), and `GET /api/registration`
+  reports whether clients should offer sign-up.
 - Web client: account page (password, sessions), reset page, admin actions per User.
 
 Deliberate simplifications, to revisit:

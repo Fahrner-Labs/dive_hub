@@ -6742,6 +6742,31 @@
         }
       }
     },
+    "/api/registration": {
+      "get": {
+        "summary": "Whether this instance accepts self-serve sign-ups",
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "open"
+                  ],
+                  "properties": {
+                    "open": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/invitations/lookup": {
       "post": {
         "summary": "The open invitation behind an invitation token",

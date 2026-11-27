@@ -1,7 +1,8 @@
 import { useQuery, useQueryClient, type UseQueryResult } from '@tanstack/react-query';
 import { Suspense, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { AcceptInvitation, ResetPassword, Setup, SignIn, useSignOut } from './SignedOut.tsx';
+import { AcceptInvitation, ResetPassword, Setup, SignIn, SignUp, VerifyEmail, useSignOut } from './SignedOut.tsx';
+import { Legal, type LegalPage } from './Legal.tsx';
 import { api, divesQuery, meQuery, setupQuery, type Me } from './api.ts';
 import { DiveList, LogbookHeader } from './DiveList.tsx';
 import { listOfDiveAddress, logbookParams, type LogbookParams } from './lib/logbook.ts';
@@ -136,6 +137,9 @@ function SignedIn({ route, me }: { route: string; me: Me }) {
   const { t } = useTranslation();
   const [path, query = ''] = route.split('?');
   const params = new URLSearchParams(query);
+  // The verification link's redirect lands here once its session exists; sign-up while signed in goes to the logbook too.
+  if (path === '/verify-email' || path === '/signup') return <FirstLogin />;
+  if (path === '/privacy' || path === '/terms') return <Legal page={path.slice(1) as LegalPage} />;
   const diveId = /^\/dives\/([\w-]+)$/.exec(path!)?.[1];
   if (diveId) return <DivePage key={diveId} id={diveId} recordingId={params.get('recording') ?? undefined} list={listOfDiveAddress(params)} />;
   if (path === '/divers') return <DiversPage open={params.get('certifications') ?? undefined} />;
@@ -199,6 +203,17 @@ function SignedOut({ route }: { route: string }) {
   if (inviteToken) return <AcceptInvitation token={inviteToken} />;
   const resetToken = /^\/reset\/([\w-]+)$/.exec(route)?.[1];
   if (resetToken) return <ResetPassword token={resetToken} />;
+  if (route === '/privacy' || route === '/terms') return <Legal page={route.slice(1) as LegalPage} />;
   if (route === '/setup' || setup.data?.needed) return <Setup />;
+  if (route === '/signup') return <SignUp />;
+  if (route === '/verify-email') return <VerifyEmail />;
   return <SignIn />;
+}
+
+/** The page a successful verification lands on: the session exists, so go straight to the first login's logbook. */
+function FirstLogin() {
+  useEffect(() => {
+    location.replace(`${location.pathname}#/`);
+  }, []);
+  return <RowsSkeleton rows={2} />;
 }

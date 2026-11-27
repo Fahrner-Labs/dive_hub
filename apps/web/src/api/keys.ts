@@ -7,6 +7,8 @@ export const keys = {
   invitations: ['invitations'] as const,
   /** Whether this instance mails invitations and self-serve password reset links (hosted plan §6.1). */
   emailConfig: ['email-config'] as const,
+  /** Whether this instance accepts self-serve sign-ups (hosted plan §6.2). */
+  registration: ['registration'] as const,
   /** What an invitation or password reset link opens (ADR 0013); not under ['invitations'], the admin's list. */
   invitationLink: (token: string) => ['invitation', token] as const,
   passwordReset: (token: string) => ['password-reset', token] as const,

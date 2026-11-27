@@ -21,6 +21,8 @@ export interface UserRouteDeps {
   invitations: InvitationService;
   /** Counts attempts at the token routes per client IP (ADR 0061); shared with accountRoutes. */
   tokenAttempts: AttemptLimit;
+  /** DIVEHUB_REGISTRATION_OPEN (hosted plan §6.2): whether this instance offers self-serve sign-up. */
+  registrationOpen: boolean;
   /** The User's plan for the Settings' Plan section; with billing off it answers free and entitled (ADR 0087, 0089). */
   entitlements: EntitlementService;
 }
@@ -46,7 +48,7 @@ const MeView = Type.Object({
   billing: Type.Optional(BillingView),
 });
 
-export const userRoutes: FastifyPluginAsyncTypebox<UserRouteDeps> = async (app, { auth, profiles, setup, invitations, tokenAttempts, entitlements }) => {
+export const userRoutes: FastifyPluginAsyncTypebox<UserRouteDeps> = async (app, { auth, profiles, setup, invitations, tokenAttempts, registrationOpen, entitlements }) => {
   const limited = limitAttempts(tokenAttempts);
 
   /** Creates the User through Better Auth (which hashes the password), then signs them in. */
@@ -72,6 +74,15 @@ export const userRoutes: FastifyPluginAsyncTypebox<UserRouteDeps> = async (app, 
   app.get('/setup', {
     schema: { summary: 'Whether this instance still needs its first admin', response: { 200: Type.Object({ needed: Type.Boolean() }) } },
   }, async () => ({ needed: await setup.isNeeded() }));
+
+  // What clients read to decide whether to offer self-serve sign-up at all (hosted plan §6.2): the sign-up endpoints
+  // themselves are absent while registration is closed, so a client cannot discover this from a failed call.
+  app.get('/registration', {
+    schema: {
+      summary: 'Whether this instance accepts self-serve sign-ups',
+      response: { 200: Type.Object({ open: Type.Boolean() }) },
+    },
+  }, async () => ({ open: registrationOpen }));
 
   app.post('/setup', {
     onRequest: limited,
