@@ -7,6 +7,12 @@ import { api, request, unwrap, type Ok } from './request.ts';
 export const authClient = createAuthClient();
 
 export type Me = Ok<'/api/me'>;
+/** The User's plan and status, on `GET /api/me` (hosted-DiveHub plan §4.4); shown in Settings' Plan section. */
+export type BillingView = NonNullable<Me['billing']>;
+/** A Paddle-hosted checkout link for the Pro plan; a User who already has it answers 409 `billing_already_subscribed`. */
+export const billingCheckout = () => request(api.GET('/api/billing/checkout'));
+/** A Paddle customer-portal link (invoices, card, cancellation); without a Paddle customer it answers 409 `billing_not_subscribed`. */
+export const billingPortal = () => request(api.GET('/api/billing/portal'));
 export type InvitationView = Ok<'/api/invitations'>[number];
 export type UserView = Ok<'/api/users'>[number];
 export type SessionView = Ok<'/api/me/sessions'>[number];

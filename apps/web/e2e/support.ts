@@ -19,6 +19,13 @@ const slot = Number(process.env.TEST_PARALLEL_INDEX ?? 0) % E2E_SERVERS;
 export const E2E_PORT = E2E_FIRST_PORT + slot;
 export const E2E_BASE_URL = serverUrl(slot);
 export const E2E_SESSION = sessionFile(slot);
+/**
+ * One extra server with billing configured (hosted-DiveHub plan §4.4), for the Plan section and the paywall's browser
+ * tests; every other server stays without it, the dual-track invariant (ADR 0087). It runs beside the workers' servers.
+ */
+export const E2E_BILLING_PORT = E2E_FIRST_PORT + E2E_SERVERS;
+export const E2E_BILLING_URL = `http://localhost:${E2E_BILLING_PORT}`;
+export const billingSessionFile = 'e2e/.state/user-billing.json';
 
 /** Mirrors the User seeded by apps/server/test/e2e-server.ts. */
 export const E2E_USER = { email: 'erika@example.com', name: 'Erika', password: 'correct horse battery staple' };

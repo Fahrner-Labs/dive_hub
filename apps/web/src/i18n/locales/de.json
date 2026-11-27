@@ -143,12 +143,31 @@
     "section": {
       "display": "Anzeige",
       "security": "Anmeldung und Sicherheit",
+      "plan": "Tarif",
       "connections": "Verbindungen",
       "ai-access": "KI-Zugang",
       "devices": "Geräte",
       "report-problem": "Problem melden",
       "admin": "Verwaltung"
     }
+  },
+  "plan": {
+    "current": "Dein Tarif",
+    "free": "Kostenlos",
+    "pro": "Pro",
+    "status": {
+      "none": "kein kostenpflichtiger Tarif",
+      "active": "aktiv",
+      "pastDue": "Zahlung überfällig",
+      "canceled": "gekündigt",
+      "canceledUntil": "gekündigt; bezahlt bis {{date}}"
+    },
+    "renews": "Bezahlt bis {{date}}; Paddle verlängert automatisch.",
+    "upgradeHint": "Automatik und Push-Läufe gehören zu Pro. Paddle übernimmt Karte, Rechnung und Umsatzsteuer.",
+    "manageHint": "Karte ändern, Rechnungen ansehen oder im Paddle-Portal kündigen. Dive Hub speichert keine Zahlungsdaten.",
+    "upgrade": "Auf Pro wechseln",
+    "manage": "Abo verwalten",
+    "paddle": "Zahlungen, Rechnungen und Umsatzsteuer liegen bei Paddle; Dive Hub speichert nichts davon."
   },
   "admin": {
     "inviteTitle": "Jemanden einladen",
@@ -2151,6 +2170,8 @@
       "title": "Automatisch",
       "titleDiver": "Automatisch: {{diver}}",
       "saved": "Gespeichert.",
+      "upsell": "Die Automatik gehört zum Tarif {{plan}}.",
+      "upsellLink": "Tarif ansehen",
       "sendChanges": "Änderungen automatisch senden",
       "sendNewDives": "Neue Tauchgänge automatisch senden",
       "deleteAtProvider": "In {{name}} löschen, wenn ich hier lösche",

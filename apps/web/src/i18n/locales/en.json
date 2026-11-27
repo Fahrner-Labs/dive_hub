@@ -143,12 +143,31 @@
     "section": {
       "display": "Display",
       "security": "Sign-in and security",
+      "plan": "Plan",
       "connections": "Connections",
       "ai-access": "AI access",
       "devices": "Devices",
       "report-problem": "Report a problem",
       "admin": "Administration"
     }
+  },
+  "plan": {
+    "current": "Your plan",
+    "free": "Free",
+    "pro": "Pro",
+    "status": {
+      "none": "no paid plan",
+      "active": "active",
+      "pastDue": "payment overdue",
+      "canceled": "canceled",
+      "canceledUntil": "canceled; paid until {{date}}"
+    },
+    "renews": "Paid until {{date}}; Paddle renews it automatically.",
+    "upgradeHint": "Automation and Push runs are part of Pro. Paddle handles the card, the invoice and VAT.",
+    "manageHint": "Change the card, see invoices or cancel in the Paddle portal. Dive Hub never holds your payment details.",
+    "upgrade": "Upgrade to Pro",
+    "manage": "Manage subscription",
+    "paddle": "Payments, invoices and VAT are Paddle’s; Dive Hub stores none of them."
   },
   "admin": {
     "inviteTitle": "Invite someone",
@@ -2151,6 +2170,8 @@
       "title": "Automatic",
       "titleDiver": "Automatic: {{diver}}",
       "saved": "Saved.",
+      "upsell": "Automation is part of the {{plan}} plan.",
+      "upsellLink": "See the plan",
       "sendChanges": "Send changes automatically",
       "sendNewDives": "Send new dives automatically",
       "deleteAtProvider": "Delete at {{name}} when I delete here",

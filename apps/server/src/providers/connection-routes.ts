@@ -4,6 +4,7 @@
 import type { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
 import { Type, type Static } from 'typebox';
 import { userOf } from '../auth/fastify.js';
+import { PRO_OFFER, type EntitlementService } from '../entitlement/entitlement.js';
 import { Problem } from '../http/problems.js';
 import { DIVE_IMPORT_MODES, DIVE_KINDS, MATCHING_WINDOWS, PARTICIPANT_ROLES } from '../db/schema.js';
 import { SOURCE_INFO } from '../sites/sources.js';
@@ -149,9 +150,10 @@ export interface ConnectionRouteDeps {
   waitingPushes: WaitingPushService;
   conflicts: ConflictService;
   scheduledFetch: ScheduledFetch;
+  entitlements: EntitlementService;
 }
 
-export const connectionRoutes: FastifyPluginAsyncTypebox<ConnectionRouteDeps> = async (app, { providers, connections, diveImports, waitingPushes, conflicts, scheduledFetch }) => {
+export const connectionRoutes: FastifyPluginAsyncTypebox<ConnectionRouteDeps> = async (app, { providers, connections, diveImports, waitingPushes, conflicts, scheduledFetch, entitlements }) => {
   const importsDives = (provider: string) => !!providers.list().find((a) => a.id === provider)?.capabilities.data.dives?.import?.operations.includes('list');
   const hasNumbers = (provider: string) => !!providers.list().find((a) => a.id === provider)?.capabilities.data.dives?.export?.numbers;
   type ListedConnection = Awaited<ReturnType<ConnectionService['list']>>[number];
@@ -160,6 +162,8 @@ export const connectionRoutes: FastifyPluginAsyncTypebox<ConnectionRouteDeps> = 
     const shown = await waitingPushes.overview(rows);
     // Conflicts that wait for the User, whenever they were found: apart from what a manual import asks about.
     const clashes = new Map((await conflicts.waiting(userId)).map((c) => [c.connectionId, c.entries.filter((e) => e.kind === 'conflict').length]));
+    // The paywall's state for this User, read once for every Connection here (billing off answers entitled with no query).
+    const entitled = await entitlements.entitled(userId);
     return rows.map((c) => {
       const { importMode, importWindowMinutes, followNumbers, lastFetchImportId: _, ...rest } = c;
       const { waiting, lastFetch, unsentDives } = shown.get(c.id)!;
@@ -169,7 +173,7 @@ export const connectionRoutes: FastifyPluginAsyncTypebox<ConnectionRouteDeps> = 
         ...rest, keyExpiresSoon: connections.keyExpiresSoon(c.keyExpiresOn), fetchEveryMinutes: c.fetchEveryMinutes as 60 | 360 | 1440 | null, lastUsedAt: c.lastUsedAt?.toISOString() ?? null, createdAt: c.createdAt.toISOString(),
         diveNumbers: hasNumbers(c.provider) ? { follow: followNumbers } : null,
         diveImport: importsDives(c.provider) ? { mode: importMode, windowMinutes: importWindowMinutes } : null,
-        offers, waiting, unsentDives,
+        offers: { ...offers, entitled, offer: entitled ? null : { plan: PRO_OFFER.plan, features: [...PRO_OFFER.features] } }, waiting, unsentDives,
         lastFetch: lastFetch && {
           at: lastFetch.at.toISOString(), created: lastFetch.created, updated: lastFetch.updated,
           waitingForYou: lastFetch.skipped, conflicts: clashes.get(c.id) ?? 0,
