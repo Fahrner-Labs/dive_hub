@@ -13,7 +13,10 @@ import dev.divehub.android.notifications.PushStatus
 import dev.divehub.android.ui.DiveHubTheme
 import dev.divehub.shared.ErrorCodes
 import dev.divehub.shared.diagnostics.ReportProblemResult
+import java.util.TimeZone
+import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -29,6 +32,19 @@ import org.robolectric.annotation.Config
 class SettingsDebugScreenTest {
     @get:Rule
     val compose = createComposeRule()
+
+    private var previousZone: TimeZone = TimeZone.getDefault()
+
+    @Before
+    fun pinZone() {
+        previousZone = TimeZone.getDefault()
+        TimeZone.setDefault(TimeZone.getTimeZone("Europe/Berlin"))
+    }
+
+    @After
+    fun restoreZone() {
+        TimeZone.setDefault(previousZone)
+    }
 
     private var reports = 0
     private var shares = 0
@@ -83,7 +99,7 @@ class SettingsDebugScreenTest {
         )
 
         compose.onNodeWithText("Push").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText("Registered (device device-1, last seen 2026-11-28T10:00:00Z)")
+        compose.onNodeWithText("Registered (device device-1, last seen 28 Nov 2026, 11:00)")
             .performScrollTo()
             .assertIsDisplayed()
     }
@@ -93,6 +109,24 @@ class SettingsDebugScreenTest {
         render(push = PushStatus(PushState.RegisterFailed, reason = "http_500"))
 
         compose.onNodeWithText("Not registered — registration failed: http_500")
+            .performScrollTo()
+            .assertIsDisplayed()
+    }
+
+    @Test
+    fun `a failed step without a reason still reads as a sentence`() {
+        render(push = PushStatus(PushState.RegisterFailed))
+
+        compose.onNodeWithText("Not registered — registration failed: unknown error")
+            .performScrollTo()
+            .assertIsDisplayed()
+    }
+
+    @Test
+    fun `the push row names push switched off on the instance`() {
+        render(push = PushStatus(PushState.Off))
+
+        compose.onNodeWithText("Not registered — push is switched off on this Dive Hub")
             .performScrollTo()
             .assertIsDisplayed()
     }

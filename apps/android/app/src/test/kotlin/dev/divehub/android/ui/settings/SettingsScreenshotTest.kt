@@ -221,6 +221,35 @@ class SettingsScreenshotTest {
     }
 
     @Test
+    fun `the debug push row names a failed configuration step in English and light`() {
+        renderDebug(
+            darkTheme = false,
+            enabled = true,
+            push = PushStatus(PushState.ConfigFailed, reason = "http_500"),
+        )
+
+        compose.onNodeWithText("Not registered — push configuration request failed: http_500")
+            .performScrollTo()
+            .assertIsDisplayed()
+        capture("settings_debug_push_failed_en_light.png")
+    }
+
+    @Test
+    @Config(qualifiers = "de-rDE-w320dp-h891dp-xxhdpi", fontScale = 2f)
+    fun `the debug push failure wraps in German at 320 dp and 200 percent`() {
+        renderDebug(
+            darkTheme = false,
+            enabled = true,
+            push = PushStatus(PushState.RegisterFailed, reason = "FirebaseMessagingException"),
+        )
+
+        compose.onNodeWithText("Nicht registriert – Registrierung fehlgeschlagen: FirebaseMessagingException")
+            .performScrollTo()
+            .assertIsDisplayed()
+        capture("settings_debug_push_failed_de_2x.png")
+    }
+
+    @Test
     @Config(qualifiers = "de-rDE-w320dp-h891dp-xxhdpi", fontScale = 2f)
     fun `the debug queue counts break between groups in German at 320 dp and 200 percent`() {
         renderDebug(darkTheme = false, enabled = true)
@@ -295,7 +324,7 @@ class SettingsScreenshotTest {
         previews: Int = 2,
         push: PushStatus = PushStatus(
             PushState.Registered,
-            deviceId = "device-1",
+            deviceId = "3f2b9c1e-6a4d-4e8b-9c7a-1d2e3f4a5b6c",
             lastSeenAt = "2026-11-28T10:00:00Z",
         ),
     ) {
