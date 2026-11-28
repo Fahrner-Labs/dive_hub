@@ -10,9 +10,9 @@ date: 2026-10-03
 ## Status
 Accepted – 2026-10-03. Amended by [ADR 0061](0061-attempt-limit-on-token-routes.md) (2026-10-30): the reset link
 routes count attempts per client IP (30 per 15 minutes) and answer 429 `too_many_attempts` over it. Amended by
-[ADR 0089](0089-entitlements-and-payments.md) (2026-11-26): the "only four Better Auth endpoints" rule is about Better
-Auth; the Paddle billing webhook is an unauthenticated-but-HMAC-signed route outside Better Auth, authenticated by its
-signature instead of a session.
+[ADR 0092](0092-stripe-billing.md) (2026-11-27, superseding [ADR 0089](0089-entitlements-and-payments.md)): the
+"only four Better Auth endpoints" rule is about Better Auth; the Stripe billing webhook is an unauthenticated-but-signed
+route outside Better Auth, authenticated by its signature instead of a session.
 
 ## Context
 After slice 2 ([ADR 0011](0011-better-auth.md), [ADR 0012](0012-invitations-and-admin-bootstrap.md)),

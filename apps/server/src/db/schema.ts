@@ -182,7 +182,8 @@ export const userPreference = pgTable('user_preference', {
 /**
  * A User's paid plan (hosted-DiveHub plan §4.2, ADR 0087): one row per User, written by the billing webhook. No row
  * means the free plan. `plan` is 'free' or 'pro'; `status` is 'none', 'active', 'past_due' or 'canceled'. Paid features
- * are `pro` and active/past due, or canceled until `current_period_end` (see entitlement/entitlement.ts). No column here
+ * are `pro` and active/past due, or canceled until `current_period_end` (see entitlement/entitlement.ts). The customer
+ * and subscription columns are provider-neutral so a future processor swap does not rename them. No column here
  * anticipates hubs: Phase-2 hub billing gets its own table.
  */
 export const userEntitlement = pgTable(
@@ -191,14 +192,14 @@ export const userEntitlement = pgTable(
     userId: uuid('user_id').primaryKey().references(() => user.id, { onDelete: 'cascade' }),
     plan: text('plan').notNull(),
     status: text('status').notNull(),
-    paddleCustomerId: text('paddle_customer_id'),
-    paddleSubscriptionId: text('paddle_subscription_id'),
+    billingCustomerId: text('billing_customer_id'),
+    billingSubscriptionId: text('billing_subscription_id'),
     currentPeriodEnd: timestamp('current_period_end', { withTimezone: true }),
     updatedAt: updatedAt(),
   },
   (t) => [
-    uniqueIndex('user_entitlement_paddle_customer_uq').on(t.paddleCustomerId),
-    uniqueIndex('user_entitlement_paddle_subscription_uq').on(t.paddleSubscriptionId),
+    uniqueIndex('user_entitlement_billing_customer_uq').on(t.billingCustomerId),
+    uniqueIndex('user_entitlement_billing_subscription_uq').on(t.billingSubscriptionId),
   ],
 );
 

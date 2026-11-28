@@ -129,10 +129,11 @@ anything, and iOS/web wait for their providers.
 
 **Entitlement (hosted billing, ADR 0087)** — one row per User in `user_entitlement` (`user_id` is the primary key and
 cascades with the User); no row means the free plan. `plan` is `free | pro`; `status` is `none | active | past_due |
-canceled`; `current_period_end` and the Paddle customer/subscription IDs are written by the billing webhook, and
-`updated_at` stores the provider event time of the last applied write, so an out-of-order webhook cannot roll the row back
-([ADR 0089](../decisions/0089-entitlements-and-payments.md)). The paid features need `pro` and active or past due (the
-grace window), or canceled until `current_period_end`; entitlements stay per User — Phase-2 hub billing gets its own table.
+canceled`; `current_period_end` and the provider-neutral Stripe customer/subscription IDs (`billing_customer_id`,
+`billing_subscription_id`) are written by the billing webhook, and `updated_at` stores the provider event time of the last
+applied write, so an out-of-order webhook cannot roll the row back
+([ADR 0092](../decisions/0092-stripe-billing.md)). The paid features need `pro` and active or past due (the grace
+window), or canceled until `current_period_end`; entitlements stay per User — Phase-2 hub billing gets its own table.
 
 **Certification** (built, ADR 0050) — Diver, agency and level as free text (suggestions from the Diver's other cards;
 the Agency catalog stays planned), number, issue and expiry date, dives at issue, instructor and dive centre as text

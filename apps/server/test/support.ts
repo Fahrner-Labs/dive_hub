@@ -10,7 +10,7 @@ import { createAuth, type Auth } from '../src/auth/auth.js';
 import { buildApp } from '../src/app.js';
 import { createServices } from '../src/compose.js';
 import type { BillingConfig, EmailConfig, FcmConfig } from '../src/config.js';
-import type { PaddleFetch } from '../src/billing/paddle.js';
+import type { StripeFetch } from '../src/billing/stripe.js';
 import type { MailProvider } from '../src/mail/mail.js';
 import { createMailProvider, type MailFetch } from '../src/mail/resend.js';
 import type { DiverVisibility } from '../src/vocabulary.js';
@@ -146,16 +146,16 @@ export async function createTestApp(t: TestDatabase, options: {
   registrationOpen?: boolean;
   /** Billing (hosted-DiveHub plan §4); tests that want the paywall on pass a full `BillingConfig`, otherwise every feature is free. */
   billing?: BillingConfig;
-  /** Where Paddle's HTTP goes in tests; production uses the global fetch and the endpoint the key names. */
-  paddleFetch?: PaddleFetch;
-  /** Paddle's API base in tests, so a captured request names the overridden endpoint. */
-  paddleUrl?: string;
+  /** Where Stripe's HTTP goes in tests; production uses the global fetch. */
+  stripeFetch?: StripeFetch;
+  /** Stripe's API base in tests, so a captured request names the overridden endpoint. */
+  stripeUrl?: string;
   /** Who may see a Diver's contact details (ADR 0088); instance when not set. */
   diverVisibility?: DiverVisibility;
 } = {}) {
   const {
     webDir, siteSources, fakeSsi = createFakeSsi(), encryptionKey = TEST_ENCRYPTION_KEY, extraProviders = [], clock = resettableClock(), ssi = (a) => a,
-    maxUploadBytes = 1 << 26, onRestored, fcm, email, mailFetch, mailUrl, registrationOpen, billing, paddleFetch, paddleUrl, diverVisibility, ...authOptions
+    maxUploadBytes = 1 << 26, onRestored, fcm, email, mailFetch, mailUrl, registrationOpen, billing, stripeFetch, stripeUrl, diverVisibility, ...authOptions
   } = options;
   // SSI keeps its last logbook read for two minutes (ADR 0027); a test that changes the fake SSI behind Dive Hub's back
   // moves this clock on, as if the change happened a while later. Pauses between actions are skipped and recorded.
@@ -187,8 +187,8 @@ export async function createTestApp(t: TestDatabase, options: {
     ...(mailFetch && { mailFetch }),
     ...(mailUrl && { mailUrl }),
     ...(billing && { billing }),
-    ...(paddleFetch && { paddleFetch }),
-    ...(paddleUrl && { paddleUrl }),
+    ...(stripeFetch && { stripeFetch }),
+    ...(stripeUrl && { stripeUrl }),
     ...(diverVisibility && { diverVisibility }),
   });
   const app = await buildApp({

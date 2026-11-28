@@ -20,9 +20,11 @@ const services = createServices({
   adapters: [createSsiAdapter({ client: {} as SsiClient })],
   // Describe the billing routes too: no billing call is made while the routes are described, and clients need the
   // checkout/portal paths even on an instance that has billing off (they answer 404 there, like every missing route).
-  billing: { provider: 'paddle', apiKey: 'pdl_sdbx_placeholder', webhookSecret: 'placeholder', priceIds: ['pri_placeholder'] },
+  billing: { provider: 'stripe', secretKey: 'sk_test_placeholder', webhookSecret: 'whsec_placeholder', priceId: 'price_placeholder' },
+  baseUrl: 'http://localhost',
 });
-const app = await buildApp({ ...services, baseUrl: 'http://localhost', maxUploadBytes: 1 });
+const baseUrl = 'http://localhost';
+const app = await buildApp({ ...services, baseUrl, maxUploadBytes: 1 });
 const response = await app.inject({ method: 'GET', url: '/api/openapi.json' });
 const out = fileURLToPath(new URL('../../../../packages/api-client/openapi.json', import.meta.url));
 writeFileSync(out, `${JSON.stringify(response.json(), null, 2)}\n`);

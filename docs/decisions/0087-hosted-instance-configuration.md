@@ -34,7 +34,7 @@ defaults reproduce today's self-hosted behaviour exactly; the hosted configurati
 | `DIVEHUB_SITE_SOURCES` | `osm,wikidata,ssi` | `wikidata,ssi` | Which site sources `createSiteSources` constructs and the admin UI offers. Unknown names stop the boot. OSM off means no ODbL derivative-database obligation on the hosted instance. |
 | `DIVEHUB_REGISTRATION_OPEN` | `false` | `true` | Opens self-registration and email verification. The invitation flow stays available on both tracks. |
 | `DIVEHUB_EMAIL_PROVIDER` / `DIVEHUB_EMAIL_API_KEY` / `DIVEHUB_EMAIL_FROM` | unset | `resend` and the key | Unset keeps today's copy-link invitations and admin-issued password resets ([ADR 0012](0012-invitations.md)). |
-| `DIVEHUB_BILLING_PROVIDER` / `DIVEHUB_PADDLE_API_KEY` / `DIVEHUB_PADDLE_WEBHOOK_SECRET` / `DIVEHUB_PADDLE_PRICE_IDS` | unset | `paddle` and the keys | Unset means every feature is free, no entitlement gate and no billing UI. |
+| `DIVEHUB_BILLING_PROVIDER` / `DIVEHUB_STRIPE_SECRET_KEY` / `DIVEHUB_STRIPE_WEBHOOK_SECRET` / `DIVEHUB_STRIPE_PRICE_ID` | unset | `stripe` and the keys | Unset means every feature is free, no entitlement gate and no billing UI. |
 | `DIVEHUB_DIVER_VISIBILITY` | `instance` | `shared` | `instance` keeps today's rule (every User sees every Diver, [ADR 0043](0043-dive-centres-and-ssi-verification-codes.md)); `shared` limits contact details to the Diver's owners, Users who share a Dive and admins. |
 
 **Dual-track invariant.** With none of these variables set, the image behaves exactly as it does today: invite-only,

@@ -183,14 +183,14 @@ DIVEHUB_REGISTRATION_OPEN=false       # keep registration closed; invitations st
 Also configure, with credentials from the owner's password manager:
 
 - **Resend live** — transactional mail for verification links and invitations.
-- **Paddle sandbox** — billing in sandbox only; no live charges.
+- **Stripe test mode** — billing in test mode only; no live charges.
 
 ### NAS caveats
 
-- **Inbound reachability at the public URL.** Verification links and Paddle sandbox webhooks must reach
+- **Inbound reachability at the public URL.** Verification links and Stripe test-mode webhooks must reach
   `DIVEHUB_BASE_URL`. If CGNAT blocks inbound connections, put a Cloudflare Tunnel (or equivalent) in front so the
   public origin reaches the NAS; do not open the app to the LAN with `DIVEHUB_BIND=0.0.0.0` as a workaround.
-- **No charging on residential hardware.** Paddle stays in sandbox while hosted runs on the NAS. Live billing
+- **No charging on residential hardware.** Stripe stays in test mode while hosted runs on the NAS. Live billing
   waits for the trigger-based VPS move.
 
 **No fixed VPS date.** The move is trigger-based (owner's direction, 2026-11-26). Until it happens, hosted beta is
@@ -208,8 +208,8 @@ in either client. The work is the outside accounts that point here and the clien
 2. **`.env` and restart.** Set `DIVEHUB_BASE_URL=https://divehub.app` and run `docker compose up -d`. Links are
    rendered from this value when the mail is sent ([`mail/links.ts`](../apps/server/src/mail/links.ts)), and the copy
    links in **Admin → Users** are built from it per request, so links created after the restart carry the new origin.
-3. **Paddle notification destination.** Under **Developer tools → Notifications**, change the URL destination to
-   `https://divehub.app/api/billing/webhooks`. Paddle delivers to the dashboard's URL, not one the app derives, so it
+3. **Stripe webhook endpoint.** Under **Developers → Webhooks**, change the endpoint URL to
+   `https://divehub.app/api/billing/webhooks`. Stripe delivers to the dashboard's URL, not one the app derives, so it
    keeps posting to the old origin until this is changed.
 4. **Resend sending domain.** Verify the new domain (or its sending subdomain) at Resend, change
    `DIVEHUB_EMAIL_FROM` and restart. Keep the old domain verified during the overlap so mail in flight still sends.

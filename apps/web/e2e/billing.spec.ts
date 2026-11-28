@@ -1,4 +1,4 @@
-// Billing and the paywall (hosted-DiveHub plan §4.4, ADR 0087, 0089): the Plan section with Paddle's links, and the
+// Billing and the paywall (hosted-DiveHub plan §4.4, ADR 0087, 0092): the Plan section with Stripe's links, and the
 // automation switches greyed for a free User with the offer's upsell, usable for an entitled one. One extra server runs
 // with billing on; the workers' servers stay without it, which is the dual-track invariant (no billing, every feature free).
 import { expect, request, test, type APIRequestContext, type Page } from '@playwright/test';

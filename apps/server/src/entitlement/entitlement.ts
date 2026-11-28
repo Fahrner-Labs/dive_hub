@@ -1,7 +1,7 @@
 // Entitlements (hosted-DiveHub plan §4, ADR 0087): whether a User may use the paid synchronisation features. A self-hosted
 // instance has no billing configured, and then every feature is free: the checks are inert unless DIVEHUB_BILLING_PROVIDER
 // is set. This module owns the one `user_entitlement` row per User: the read the paywall asks, and the upsert the billing
-// webhook (ADR 0089) applies. A User without a row is on the free plan.
+// webhook (ADR 0092) applies. A User without a row is on the free plan.
 import { eq, inArray, lte } from 'drizzle-orm';
 import type { Db } from '../db/client.js';
 import { userEntitlement } from '../db/schema.js';
@@ -23,8 +23,8 @@ export interface PlanSummary {
 /** One subscription state the billing webhook applies, already mapped from the provider's vocabulary. */
 export interface SubscriptionState {
   userId: string;
-  paddleCustomerId: string;
-  paddleSubscriptionId: string;
+  billingCustomerId: string;
+  billingSubscriptionId: string;
   status: EntitlementStatus;
   /** The period that was paid for; `canceled` keeps it so the User stays entitled until it ends. */
   currentPeriodEnd: Date | null;
@@ -34,7 +34,7 @@ export interface SubscriptionState {
 
 /**
  * Whether a User may use the paid features at `now` (plan §4.6): `pro` and active, or past due (the grace window in which
- * Paddle retries the card), or canceled but still inside the period that was paid for. Free, none, unknown: not entitled.
+ * Stripe retries the card), or canceled but still inside the period that was paid for. Free, none, unknown: not entitled.
  */
 export function isEntitled(state: { plan: string; status: string; currentPeriodEnd: Date | null } | null, now: Date): boolean {
   if (!state || state.plan !== 'pro') return false;
@@ -68,8 +68,8 @@ export function createEntitlementService(deps: { db: Db; enforced: boolean; cloc
       if (!deps.enforced) return { plan: 'free', status: 'none', currentPeriodEnd: null, entitled: true };
       const [row] = await deps.db.select(columns).from(userEntitlement).where(eq(userEntitlement.userId, userId));
       const entitled = isEntitled(row ?? null, now());
-      // A canceled subscription whose paid period has ended is back to no plan (ADR 0089: canceled → none), even though
-      // its row stays for the Paddle customer. Otherwise Settings would still call it Pro and hide the Upgrade action.
+      // A canceled subscription whose paid period has ended is back to no plan (ADR 0092: canceled → none), even though
+      // its row stays for the Stripe customer. Otherwise Settings would still call it Pro and hide the Upgrade action.
       if (row?.status === 'canceled' && !entitled) return { plan: 'free', status: 'none', currentPeriodEnd: null, entitled: false };
       return {
         plan: row?.plan === 'pro' ? 'pro' : 'free',
@@ -92,12 +92,12 @@ export function createEntitlementService(deps: { db: Db; enforced: boolean; cloc
     },
 
     /**
-     * The Paddle IDs kept for a User, so checkout reuses the customer and the portal has one to open; null when the User
+     * The Stripe IDs kept for a User, so checkout reuses the customer and the portal has one to open; null when the User
      * has no row (never subscribed).
      */
-    async paddleAccount(userId: string): Promise<{ customerId: string | null; subscriptionId: string | null } | null> {
+    async billingAccount(userId: string): Promise<{ customerId: string | null; subscriptionId: string | null } | null> {
       const [row] = await deps.db.select({
-        customerId: userEntitlement.paddleCustomerId, subscriptionId: userEntitlement.paddleSubscriptionId,
+        customerId: userEntitlement.billingCustomerId, subscriptionId: userEntitlement.billingSubscriptionId,
       }).from(userEntitlement).where(eq(userEntitlement.userId, userId));
       return row ?? null;
     },
@@ -109,7 +109,7 @@ export function createEntitlementService(deps: { db: Db; enforced: boolean; cloc
      */
     async userOfSubscription(subscriptionId: string): Promise<string | null> {
       const [row] = await deps.db.select({ userId: userEntitlement.userId }).from(userEntitlement)
-        .where(eq(userEntitlement.paddleSubscriptionId, subscriptionId));
+        .where(eq(userEntitlement.billingSubscriptionId, subscriptionId));
       return row?.userId ?? null;
     },
 
@@ -123,8 +123,8 @@ export function createEntitlementService(deps: { db: Db; enforced: boolean; cloc
         userId: state.userId,
         plan: 'pro',
         status: state.status,
-        paddleCustomerId: state.paddleCustomerId,
-        paddleSubscriptionId: state.paddleSubscriptionId,
+        billingCustomerId: state.billingCustomerId,
+        billingSubscriptionId: state.billingSubscriptionId,
         currentPeriodEnd: state.currentPeriodEnd,
         updatedAt: state.occurredAt,
       };

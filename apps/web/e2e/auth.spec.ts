@@ -54,7 +54,7 @@ test('reaches both legal pages from signup and from the footer', { tag: ['@accou
   await page.getByRole('contentinfo').getByRole('link', { name: 'Privacy Policy' }).click();
   await expect(page.getByRole('heading', { name: 'Privacy Policy', level: 1 })).toBeVisible();
   await expect(page.getByText('Hetzner')).toBeVisible();
-  await expect(page.getByText('Paddle')).toBeVisible();
+  await expect(page.getByText('Stripe')).toBeVisible();
   await expect(page.getByText('Resend')).toBeVisible();
 });
 

@@ -505,6 +505,13 @@
       "when": 1795711954106,
       "tag": "0071_backfill_email_verified",
       "breakpoints": true
+    },
+    {
+      "idx": 72,
+      "version": "7",
+      "when": 1795791935410,
+      "tag": "0072_billing_provider_ids",
+      "breakpoints": true
     }
   ]
 }

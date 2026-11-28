@@ -42,7 +42,7 @@ _German_: deaktiviert
 
 **Entitlement**:
 What a User's paid plan lets them do on a hosted instance: a row in `user_entitlement` says `plan` (`free` or `pro`) and `status` (`none`, `active`, `past_due`, `canceled`). Only `pro` — active, past due in the grace window, or canceled until the paid period ends — unlocks provider sync automation and Push runs. A self-hosted instance has no billing and every feature is free ([ADR 0087](decisions/0087-hosted-instance-configuration.md)).
-_Avoid_: Subscription (that is Paddle's), license, tier
+_Avoid_: Subscription (that is Stripe's), license, tier
 _German_: Anspruch (proposal)
 
 **Diver**:
