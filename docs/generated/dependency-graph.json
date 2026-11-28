@@ -4259,7 +4259,7 @@
         "apps/server/src/storage/blob-store.ts",
         "apps/server/src/backups/restore-service.ts",
         "apps/server/src/secrets/secret-box.ts",
-        "apps/server/src/billing/paddle-signature.ts",
+        "apps/server/src/billing/stripe-signature.ts",
         "apps/server/src/dives/continuation/joined-recording.ts",
         "apps/server/src/imports/archive.ts",
         "apps/server/src/notifications/fcm-provider.ts",
@@ -5380,14 +5380,14 @@
         },
         {
           "dynamic": false,
-          "module": "./paddle-events.js",
+          "module": "./stripe-events.js",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "import"
           ],
-          "resolved": "apps/server/src/billing/paddle-events.ts",
+          "resolved": "apps/server/src/billing/stripe-events.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -5397,14 +5397,14 @@
         },
         {
           "dynamic": false,
-          "module": "./paddle-signature.js",
+          "module": "./stripe-signature.js",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "import"
           ],
-          "resolved": "apps/server/src/billing/paddle-signature.ts",
+          "resolved": "apps/server/src/billing/stripe-signature.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -5414,14 +5414,14 @@
         },
         {
           "dynamic": false,
-          "module": "./paddle.js",
+          "module": "./stripe.js",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "import"
           ],
-          "resolved": "apps/server/src/billing/paddle.ts",
+          "resolved": "apps/server/src/billing/stripe.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -5615,7 +5615,7 @@
       ],
       "dependents": [
         "apps/server/src/billing/billing-service.ts",
-        "apps/server/src/billing/paddle-events.ts",
+        "apps/server/src/billing/stripe-events.ts",
         "apps/server/src/compose.ts",
         "apps/server/src/providers/layer.ts",
         "apps/server/src/providers/connection-service.ts",
@@ -5631,7 +5631,7 @@
       "valid": true
     },
     {
-      "source": "apps/server/src/billing/paddle-events.ts",
+      "source": "apps/server/src/billing/stripe-events.ts",
       "dependencies": [
         {
           "dynamic": false,
@@ -5659,7 +5659,7 @@
       "valid": true
     },
     {
-      "source": "apps/server/src/billing/paddle-signature.ts",
+      "source": "apps/server/src/billing/stripe-signature.ts",
       "dependencies": [
         {
           "dynamic": false,
@@ -5687,7 +5687,7 @@
       "valid": true
     },
     {
-      "source": "apps/server/src/billing/paddle.ts",
+      "source": "apps/server/src/billing/stripe.ts",
       "dependencies": [],
       "dependents": [
         "apps/server/src/billing/billing-service.ts",
@@ -7992,7 +7992,7 @@
         },
         {
           "dynamic": false,
-          "module": "./billing/paddle.js",
+          "module": "./billing/stripe.js",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
@@ -8000,7 +8000,7 @@
             "type-only",
             "import"
           ],
-          "resolved": "apps/server/src/billing/paddle.ts",
+          "resolved": "apps/server/src/billing/stripe.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
