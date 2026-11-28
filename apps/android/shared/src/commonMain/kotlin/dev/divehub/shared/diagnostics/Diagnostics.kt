@@ -35,7 +35,16 @@ class Diagnostics(
         encodeDefaults = false
     },
     private val clock: () -> Instant = { Clock.System.now() },
-) : DiagnosticsAccess {
+) : DiagnosticsAccess, DiagnosticCapture {
+    override fun record(
+        level: DiagnosticLevel,
+        code: String?,
+        message: String?,
+        context: Map<String, String>,
+    ) {
+        capture(level, code, message, stack = null, context = context)
+    }
+
     /** Record one entry locally. Best effort: a full or broken store must never break the app. */
     fun capture(
         level: DiagnosticLevel,

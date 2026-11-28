@@ -33,6 +33,13 @@ internal class PushPreferences(context: Context) {
             preferences.edit().putString(KEY_LAST_TOKEN, value).apply()
         }
 
+    /** The server's `lastSeenAt` for the stored row: the Debug status row shows it without another request. */
+    var lastSeenAt: String?
+        get() = preferences.getString(KEY_LAST_SEEN_AT, null)
+        private set(value) {
+            preferences.edit().putString(KEY_LAST_SEEN_AT, value).apply()
+        }
+
     var permissionAsked: Boolean
         get() = preferences.getBoolean(KEY_PERMISSION_ASKED, false)
         private set(value) {
@@ -58,15 +65,18 @@ internal class PushPreferences(context: Context) {
     /** Push is off on the instance: forget the Firebase config so no stale project is initialized. */
     fun clearConfig() {
         preferences.edit().remove(KEY_CONFIG).remove(KEY_INSTANCE).apply()
-        deviceId = null
+        clearDeviceId()
     }
 
-    fun saveDeviceId(id: String) {
+    /** Keep the row the server returned: its id and when it was last refreshed. */
+    fun saveDevice(id: String, lastSeenAt: String) {
         deviceId = id
+        this.lastSeenAt = lastSeenAt
     }
 
     fun clearDeviceId() {
         deviceId = null
+        lastSeenAt = null
     }
 
     fun saveToken(token: String) {
@@ -79,7 +89,7 @@ internal class PushPreferences(context: Context) {
 
     /** A new instance URL starts clean: another server's row, token and config must not be reused. */
     fun clearRegistration() {
-        preferences.edit().remove(KEY_DEVICE_ID).remove(KEY_LAST_TOKEN).apply()
+        preferences.edit().remove(KEY_DEVICE_ID).remove(KEY_LAST_TOKEN).remove(KEY_LAST_SEEN_AT).apply()
     }
 
     private companion object {
@@ -87,6 +97,7 @@ internal class PushPreferences(context: Context) {
         const val KEY_CONFIG = "firebase_client_config"
         const val KEY_DEVICE_ID = "push_device_id"
         const val KEY_LAST_TOKEN = "last_token"
+        const val KEY_LAST_SEEN_AT = "last_seen_at"
         const val KEY_PERMISSION_ASKED = "permission_asked"
     }
 }

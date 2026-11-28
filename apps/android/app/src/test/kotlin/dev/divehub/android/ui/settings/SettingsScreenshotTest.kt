@@ -12,6 +12,8 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipe
 import com.github.takahirom.roborazzi.captureRoboImage
+import dev.divehub.android.notifications.PushState
+import dev.divehub.android.notifications.PushStatus
 import dev.divehub.android.ui.DiveHubTheme
 import dev.divehub.android.ui.Spacing
 import dev.divehub.shared.diagnostics.DiagnosticEntry
@@ -219,6 +221,35 @@ class SettingsScreenshotTest {
     }
 
     @Test
+    fun `the debug push row names a failed configuration step in English and light`() {
+        renderDebug(
+            darkTheme = false,
+            enabled = true,
+            push = PushStatus(PushState.ConfigFailed, reason = "http_500"),
+        )
+
+        compose.onNodeWithText("Not registered — push configuration request failed: http_500")
+            .performScrollTo()
+            .assertIsDisplayed()
+        capture("settings_debug_push_failed_en_light.png")
+    }
+
+    @Test
+    @Config(qualifiers = "de-rDE-w320dp-h891dp-xxhdpi", fontScale = 2f)
+    fun `the debug push failure wraps in German at 320 dp and 200 percent`() {
+        renderDebug(
+            darkTheme = false,
+            enabled = true,
+            push = PushStatus(PushState.RegisterFailed, reason = "FirebaseMessagingException"),
+        )
+
+        compose.onNodeWithText("Nicht registriert – Registrierung fehlgeschlagen: FirebaseMessagingException")
+            .performScrollTo()
+            .assertIsDisplayed()
+        capture("settings_debug_push_failed_de_2x.png")
+    }
+
+    @Test
     @Config(qualifiers = "de-rDE-w320dp-h891dp-xxhdpi", fontScale = 2f)
     fun `the debug queue counts break between groups in German at 320 dp and 200 percent`() {
         renderDebug(darkTheme = false, enabled = true)
@@ -287,7 +318,16 @@ class SettingsScreenshotTest {
         }
     }
 
-    private fun renderDebug(darkTheme: Boolean, enabled: Boolean, previews: Int = 2) {
+    private fun renderDebug(
+        darkTheme: Boolean,
+        enabled: Boolean,
+        previews: Int = 2,
+        push: PushStatus = PushStatus(
+            PushState.Registered,
+            deviceId = "3f2b9c1e-6a4d-4e8b-9c7a-1d2e3f4a5b6c",
+            lastSeenAt = "2026-11-28T10:00:00Z",
+        ),
+    ) {
         val diagnostics = SettingsDiagnosticsState(
             enabled = enabled,
             count = previews,
@@ -305,6 +345,7 @@ class SettingsScreenshotTest {
             DiveHubTheme(darkTheme = darkTheme) {
                 SettingsDebugScreen(
                     diagnostics = diagnostics,
+                    push = push,
                     queue = SettingsQueueState(pending = 2, failed = 1, conflicted = 1),
                     onBack = {},
                     onReportProblem = {},

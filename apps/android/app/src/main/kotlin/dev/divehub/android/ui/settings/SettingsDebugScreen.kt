@@ -1,11 +1,17 @@
 package dev.divehub.android.ui.settings
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
@@ -19,19 +25,30 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.divehub.android.R
+import dev.divehub.android.notifications.PushState
+import dev.divehub.android.notifications.PushStatus
 import dev.divehub.android.ui.DiveHubTopBar
 import dev.divehub.android.ui.Spacing
+import dev.divehub.android.ui.formatSyncTime
+import dev.divehub.android.ui.successColor
 import dev.divehub.shared.ErrorCodes
 import dev.divehub.shared.diagnostics.DiagnosticEntry
 import dev.divehub.shared.diagnostics.ReportProblemResult
+import java.util.Locale
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -53,6 +70,7 @@ fun SettingsDebugRoute(
     LaunchedEffect(Unit) { viewModel.refreshDiagnostics() }
     SettingsDebugScreen(
         diagnostics = state.diagnostics,
+        push = state.push,
         queue = state.queue,
         onBack = onBack,
         onReportProblem = viewModel::reportProblem,
@@ -70,10 +88,10 @@ fun SettingsDebugRoute(
 }
 
 /**
- * The diagnostics detail screen (FAH-318, ADR 0080 D1): a read-only status line, *Report a problem* for an instance that
- * allows uploads, *Share local logs*, which stays available whatever the instance setting says, and the *Sync queue*
- * row with live queue counts (FAH-500). It only draws [diagnostics] and [queue]; the capture layer and the upload
- * live in `:shared` (FAH-321).
+ * The diagnostics detail screen (FAH-318, ADR 0080 D1): a read-only status line, a *Push* row with the registered
+ * device or the failing step (FAH-557), *Report a problem* for an instance that allows uploads, *Share local logs*,
+ * which stays available whatever the instance setting says, and the *Sync queue* row with live queue counts (FAH-500).
+ * It only draws [diagnostics], [push] and [queue]; the capture layer and the upload live in `:shared` (FAH-321).
  */
 @Composable
 fun SettingsDebugScreen(
@@ -83,6 +101,7 @@ fun SettingsDebugScreen(
     onReportProblem: () -> Unit,
     onOpenQueue: () -> Unit,
     onShareLogs: () -> Unit,
+    push: PushStatus = PushStatus(),
     modifier: Modifier = Modifier,
 ) {
     val canReport = diagnostics.enabled == true && diagnostics.count > 0 && !diagnostics.reporting
@@ -136,6 +155,12 @@ fun SettingsDebugScreen(
                     overflow = TextOverflow.Ellipsis,
                 )
             }
+
+            ListItem(
+                modifier = Modifier.testTag("settings_push_row"),
+                headlineContent = { Text(stringResource(R.string.settings_debug_push)) },
+                supportingContent = { PushStatusText(push) },
+            )
 
             ListItem(
                 modifier = Modifier
@@ -225,6 +250,85 @@ fun SettingsDebugScreen(
         }
     }
 }
+
+/**
+ * The push row's supporting line: a green dot while registered and the outline dot otherwise, so a broken registration
+ * never reads like a healthy one (FAH-558 N1, mirroring [ConnectionStatus]).
+ */
+@Composable
+private fun PushStatusText(push: PushStatus) {
+    val registered = push.state == PushState.Registered
+    val dot = if (registered) successColor() else MaterialTheme.colorScheme.outline
+    // Top-aligned and optically centred on the first line: a wrapped failure must not leave the dot between lines.
+    val lineHeight = with(LocalDensity.current) { MaterialTheme.typography.bodyMedium.lineHeight.toDp() }
+    val dotOffset = ((lineHeight - 8.dp) / 2f).coerceAtLeast(0.dp)
+    Row(
+        modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+        verticalAlignment = Alignment.Top,
+    ) {
+        Box(
+            Modifier
+                .padding(top = dotOffset)
+                .size(8.dp)
+                .clip(CircleShape)
+                .background(dot),
+        )
+        Spacer(Modifier.width(6.dp))
+        Text(
+            pushText(push),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+/** The push row's sentence: a registered device, or the step that stopped registration (FAH-557). */
+@Composable
+private fun pushText(push: PushStatus): String {
+    val context = LocalContext.current
+    val locale = context.resources.configuration.locales[0] ?: Locale.getDefault()
+    val pattern = stringResource(R.string.sync_date_pattern)
+    return when (push.state) {
+        PushState.Registered -> {
+            val lastSeen = push.lastSeenAt
+            if (lastSeen.isNullOrBlank()) {
+                stringResource(R.string.settings_debug_push_registered_no_seen, push.deviceId.orEmpty())
+            } else {
+                stringResource(
+                    R.string.settings_debug_push_registered,
+                    push.deviceId.orEmpty(),
+                    // The server's ISO instant in the reader's own zone and date format (FAH-558 B1).
+                    formatSyncTime(lastSeen, locale, pattern),
+                )
+            }
+        }
+        PushState.Off -> notRegistered(stringResource(R.string.settings_debug_push_off))
+        PushState.ConfigFailed -> notRegistered(
+            stringResource(R.string.settings_debug_push_config_failed, reasonText(push.reason)),
+        )
+        PushState.NoPlayServices -> notRegistered(stringResource(R.string.settings_debug_push_no_play_services))
+        PushState.InitFailed -> notRegistered(
+            stringResource(R.string.settings_debug_push_init_failed, reasonText(push.reason)),
+        )
+        PushState.PermissionMissing -> notRegistered(stringResource(R.string.settings_debug_push_permission))
+        PushState.NotSignedIn -> notRegistered(stringResource(R.string.settings_debug_push_not_signed_in))
+        PushState.TokenFailed -> notRegistered(
+            stringResource(R.string.settings_debug_push_token_failed, reasonText(push.reason)),
+        )
+        PushState.RegisterFailed -> notRegistered(
+            stringResource(R.string.settings_debug_push_register_failed, reasonText(push.reason)),
+        )
+        PushState.Unknown -> notRegistered(stringResource(R.string.settings_debug_push_unknown))
+    }
+}
+
+/** A failure's code or exception class; a blank one still reads as a sentence instead of a dangling colon (N4). */
+@Composable
+private fun reasonText(reason: String?): String =
+    reason?.takeIf { it.isNotBlank() } ?: stringResource(R.string.settings_debug_push_reason_unknown)
+
+@Composable
+private fun notRegistered(reason: String): String = stringResource(R.string.settings_debug_push_not_registered, reason)
 
 /** One preview line: what the person could report, without the timestamps that add nothing at this size. */
 private fun DiagnosticEntry.label(): String = message?.takeIf { it.isNotBlank() } ?: code ?: level.wire

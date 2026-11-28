@@ -236,6 +236,12 @@ keeps clients consistent. Paths in *Web:* are under `apps/web/src`.
     when the user denies notifications or the device has no Play services: polling covers it.
   - Show a notification only after fetching the hinted entity through the authenticated API and confirming it is new
     or relevant; never render a push payload as content. The server never sends names, sites or counts.
+  - **Make every push step debuggable from the device.** Record the config fetch (or its HTTP status), the Firebase
+    init result, token acquisition (or error class/message), the registration POST (device id or error) and token
+    refreshes in the local diagnostics buffer; show a permanent *Push* row in the Debug screen with the registered
+    device and `lastSeenAt`, or the step and reason that stopped registration (no config, missing permission, no Play
+    services, or the last error). Never log or show a token, credential or config secret. *Android:*
+    `notifications/PushController.kt`, `ui/settings/SettingsDebugScreen.kt`.
 - **Background work is polled** until it is `done` or `failed`:
   - Imports (`GET /api/imports`), every second while one runs;
   - Site imports (`GET /api/admin/site-imports`), every two seconds;

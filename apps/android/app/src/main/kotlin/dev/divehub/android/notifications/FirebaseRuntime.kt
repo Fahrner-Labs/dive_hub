@@ -7,7 +7,30 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
 import com.google.firebase.messaging.FirebaseMessaging
 import kotlin.coroutines.resume
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.suspendCancellableCoroutine
+
+/** Why runtime Firebase is (not) ready; the push path records it in diagnostics and shows it in Settings → Debug. */
+internal sealed interface FirebaseStart {
+    data object Ready : FirebaseStart
+    data object NoPlayServices : FirebaseStart
+    data object NoConfig : FirebaseStart
+    data class Failed(val errorClass: String, val message: String?) : FirebaseStart
+}
+
+/** The FCM token result: the value is kept for registration, never logged or shown. */
+internal sealed interface TokenResult {
+    data class Acquired(val token: String) : TokenResult
+    data object NotReady : TokenResult
+    data class Failed(val errorClass: String, val message: String?) : TokenResult
+}
+
+/** What [PushController] needs from Firebase; an interface keeps the push lifecycle testable without FCM. */
+internal interface PushFirebase {
+    fun initialize(): FirebaseStart
+    suspend fun token(): TokenResult
+    fun reset()
+}
 
 /**
  * Firebase is configured at runtime from the instance's public config, never from a bundled `google-services.json`
@@ -18,12 +41,12 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 internal class FirebaseRuntime(
     private val context: Context,
     private val preferences: PushPreferences,
-) {
-    /** The initialized app for the stored instance, or null when push is off or Play services is missing. */
-    fun initialize(): FirebaseApp? {
-        if (!hasPlayServices(context)) return null
-        val instanceUrl = preferences.instanceUrl ?: return null
-        val config = preferences.config() ?: return null
+) : PushFirebase {
+    /** The initialized app for the stored instance, or why push cannot work here (ADR 0085). */
+    override fun initialize(): FirebaseStart {
+        if (!hasPlayServices(context)) return FirebaseStart.NoPlayServices
+        val instanceUrl = preferences.instanceUrl ?: return FirebaseStart.NoConfig
+        val config = preferences.config() ?: return FirebaseStart.NoConfig
         val options = FirebaseOptions.Builder()
             .setProjectId(config.projectId)
             .setApplicationId(config.applicationId)
@@ -36,27 +59,38 @@ internal class FirebaseRuntime(
             val same = current.applicationId == options.applicationId &&
                 current.projectId == options.projectId &&
                 current.gcmSenderId == options.gcmSenderId
-            if (same) return existing
+            if (same) return FirebaseStart.Ready
             // Another instance's project: delete first, or initializeApp would keep the stale default app.
             runCatching { existing.delete() }
         }
         // The stored instance URL keys the config; a change was cleared and reset before this runs.
-        return runCatching { FirebaseApp.initializeApp(context, options) }.getOrNull()
+        return try {
+            FirebaseApp.initializeApp(context, options)
+            FirebaseStart.Ready
+        } catch (error: Exception) {
+            FirebaseStart.Failed(error.javaClass.simpleName, error.message)
+        }
     }
 
-    /** The current FCM token through the stored instance's app; null when registration cannot work here. */
-    suspend fun token(): String? {
-        if (initialize() == null) return null
-        return suspendCancellableCoroutine { continuation ->
-            FirebaseMessaging.getInstance().token
-                .addOnCompleteListener { task ->
-                    if (continuation.isActive) continuation.resume(task.resultOrNull())
-                }
+    /** The current FCM token through the stored instance's app, or why it could not be obtained. */
+    override suspend fun token(): TokenResult {
+        if (initialize() != FirebaseStart.Ready) return TokenResult.NotReady
+        return try {
+            suspendCancellableCoroutine { continuation ->
+                FirebaseMessaging.getInstance().token
+                    .addOnCompleteListener { task ->
+                        if (continuation.isActive) continuation.resume(task.asTokenResult())
+                    }
+            }
+        } catch (error: CancellationException) {
+            throw error
+        } catch (error: Exception) {
+            TokenResult.Failed(error.javaClass.simpleName, error.message)
         }
     }
 
     /** Forget the runtime-initialized app: another instance or a push-off server must not keep the old project. */
-    fun reset() {
+    override fun reset() {
         FirebaseApp.getApps(context)
             .filter { it.name == FirebaseApp.DEFAULT_APP_NAME || it.name.startsWith(LEGACY_NAME_PREFIX) }
             .forEach { runCatching { it.delete() } }
@@ -76,7 +110,17 @@ internal fun hasPlayServices(context: Context): Boolean = try {
     false
 }
 
-/** A Task's value, or null when it failed: reading `result` on a failed Task throws. */
-internal fun <T> Task<T>.resultOrNull(): T? = if (isSuccessful) result else null
+/** A Task's FCM token or its failure; reading `result` on a failed Task throws, so it is never the token on failure. */
+internal fun Task<String>.asTokenResult(): TokenResult = if (isSuccessful) {
+    val value = result
+    if (value.isNullOrBlank()) {
+        TokenResult.Failed("FirebaseMessaging", "empty token")
+    } else {
+        TokenResult.Acquired(value)
+    }
+} else {
+    val error = exception
+    TokenResult.Failed(error?.javaClass?.simpleName ?: "FirebaseMessaging", error?.message)
+}
 
 private const val PLAY_SERVICES_PACKAGE = "com.google.android.gms"
