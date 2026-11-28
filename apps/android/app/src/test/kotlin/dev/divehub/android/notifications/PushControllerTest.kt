@@ -106,6 +106,20 @@ class PushControllerTest {
     }
 
     @Test
+    fun `a register attempt without a config keeps the config failure`() = runTest {
+        val controller = controller(RecordingDiagnostics()) { request ->
+            respond("", HttpStatusCode.InternalServerError)
+        }
+
+        controller.configure(INSTANCE)
+        assertEquals(PushState.ConfigFailed, controller.status.value.state)
+
+        controller.registerNow(TOKEN_VALUE)
+
+        assertEquals(PushState.ConfigFailed, controller.status.value.state)
+    }
+
+    @Test
     fun `a token failure names the error class and message without a token`() = runTest {
         val diagnostics = RecordingDiagnostics()
         val controller = controller(

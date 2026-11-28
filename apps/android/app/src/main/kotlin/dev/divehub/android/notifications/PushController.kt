@@ -154,10 +154,7 @@ internal class PushController(
     /** The worker's suspend form; the same checks as [registerIfPossible] without the background scope. */
     suspend fun registerNow(token: String? = null) {
         mutex.withLock {
-            if (preferences.config() == null) {
-                _status.value = PushStatus(PushState.Off)
-                return@withLock
-            }
+            if (preferences.config() == null) return@withLock
             if (!notificationsAllowed(context)) {
                 _status.value = PushStatus(PushState.PermissionMissing)
                 return@withLock
