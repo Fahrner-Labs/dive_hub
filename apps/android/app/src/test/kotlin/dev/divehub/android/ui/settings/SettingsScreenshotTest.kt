@@ -12,6 +12,8 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipe
 import com.github.takahirom.roborazzi.captureRoboImage
+import dev.divehub.android.notifications.PushState
+import dev.divehub.android.notifications.PushStatus
 import dev.divehub.android.ui.DiveHubTheme
 import dev.divehub.android.ui.Spacing
 import dev.divehub.shared.diagnostics.DiagnosticEntry
@@ -287,7 +289,16 @@ class SettingsScreenshotTest {
         }
     }
 
-    private fun renderDebug(darkTheme: Boolean, enabled: Boolean, previews: Int = 2) {
+    private fun renderDebug(
+        darkTheme: Boolean,
+        enabled: Boolean,
+        previews: Int = 2,
+        push: PushStatus = PushStatus(
+            PushState.Registered,
+            deviceId = "device-1",
+            lastSeenAt = "2026-11-28T10:00:00Z",
+        ),
+    ) {
         val diagnostics = SettingsDiagnosticsState(
             enabled = enabled,
             count = previews,
@@ -305,6 +316,7 @@ class SettingsScreenshotTest {
             DiveHubTheme(darkTheme = darkTheme) {
                 SettingsDebugScreen(
                     diagnostics = diagnostics,
+                    push = push,
                     queue = SettingsQueueState(pending = 2, failed = 1, conflicted = 1),
                     onBack = {},
                     onReportProblem = {},

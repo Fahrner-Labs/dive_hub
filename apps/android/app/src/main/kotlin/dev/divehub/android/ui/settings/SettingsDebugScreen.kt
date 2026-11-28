@@ -27,6 +27,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.divehub.android.R
+import dev.divehub.android.notifications.PushState
+import dev.divehub.android.notifications.PushStatus
 import dev.divehub.android.ui.DiveHubTopBar
 import dev.divehub.android.ui.Spacing
 import dev.divehub.shared.ErrorCodes
@@ -53,6 +55,7 @@ fun SettingsDebugRoute(
     LaunchedEffect(Unit) { viewModel.refreshDiagnostics() }
     SettingsDebugScreen(
         diagnostics = state.diagnostics,
+        push = state.push,
         queue = state.queue,
         onBack = onBack,
         onReportProblem = viewModel::reportProblem,
@@ -70,10 +73,10 @@ fun SettingsDebugRoute(
 }
 
 /**
- * The diagnostics detail screen (FAH-318, ADR 0080 D1): a read-only status line, *Report a problem* for an instance that
- * allows uploads, *Share local logs*, which stays available whatever the instance setting says, and the *Sync queue*
- * row with live queue counts (FAH-500). It only draws [diagnostics] and [queue]; the capture layer and the upload
- * live in `:shared` (FAH-321).
+ * The diagnostics detail screen (FAH-318, ADR 0080 D1): a read-only status line, a *Push* row with the registered
+ * device or the failing step (FAH-557), *Report a problem* for an instance that allows uploads, *Share local logs*,
+ * which stays available whatever the instance setting says, and the *Sync queue* row with live queue counts (FAH-500).
+ * It only draws [diagnostics], [push] and [queue]; the capture layer and the upload live in `:shared` (FAH-321).
  */
 @Composable
 fun SettingsDebugScreen(
@@ -83,6 +86,7 @@ fun SettingsDebugScreen(
     onReportProblem: () -> Unit,
     onOpenQueue: () -> Unit,
     onShareLogs: () -> Unit,
+    push: PushStatus = PushStatus(),
     modifier: Modifier = Modifier,
 ) {
     val canReport = diagnostics.enabled == true && diagnostics.count > 0 && !diagnostics.reporting
@@ -136,6 +140,17 @@ fun SettingsDebugScreen(
                     overflow = TextOverflow.Ellipsis,
                 )
             }
+
+            ListItem(
+                modifier = Modifier.testTag("settings_push_row"),
+                headlineContent = { Text(stringResource(R.string.settings_debug_push)) },
+                supportingContent = {
+                    Text(
+                        pushText(push),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                },
+            )
 
             ListItem(
                 modifier = Modifier
@@ -225,6 +240,36 @@ fun SettingsDebugScreen(
         }
     }
 }
+
+/** The push row's sentence: a registered device, or the step that stopped registration (FAH-557). */
+@Composable
+private fun pushText(push: PushStatus): String = when (push.state) {
+    PushState.Registered -> if (push.lastSeenAt.isNullOrBlank()) {
+        stringResource(R.string.settings_debug_push_registered_no_seen, push.deviceId.orEmpty())
+    } else {
+        stringResource(R.string.settings_debug_push_registered, push.deviceId.orEmpty(), push.lastSeenAt)
+    }
+    PushState.Off -> notRegistered(stringResource(R.string.settings_debug_push_off))
+    PushState.ConfigFailed -> notRegistered(
+        stringResource(R.string.settings_debug_push_config_failed, push.reason.orEmpty()),
+    )
+    PushState.NoPlayServices -> notRegistered(stringResource(R.string.settings_debug_push_no_play_services))
+    PushState.InitFailed -> notRegistered(
+        stringResource(R.string.settings_debug_push_init_failed, push.reason.orEmpty()),
+    )
+    PushState.PermissionMissing -> notRegistered(stringResource(R.string.settings_debug_push_permission))
+    PushState.NotSignedIn -> notRegistered(stringResource(R.string.settings_debug_push_not_signed_in))
+    PushState.TokenFailed -> notRegistered(
+        stringResource(R.string.settings_debug_push_token_failed, push.reason.orEmpty()),
+    )
+    PushState.RegisterFailed -> notRegistered(
+        stringResource(R.string.settings_debug_push_register_failed, push.reason.orEmpty()),
+    )
+    PushState.Unknown -> notRegistered(stringResource(R.string.settings_debug_push_unknown))
+}
+
+@Composable
+private fun notRegistered(reason: String): String = stringResource(R.string.settings_debug_push_not_registered, reason)
 
 /** One preview line: what the person could report, without the timestamps that add nothing at this size. */
 private fun DiagnosticEntry.label(): String = message?.takeIf { it.isNotBlank() } ?: code ?: level.wire

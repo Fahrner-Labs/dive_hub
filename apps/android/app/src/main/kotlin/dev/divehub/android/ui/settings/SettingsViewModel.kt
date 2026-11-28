@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import dev.divehub.android.AppContainer
+import dev.divehub.android.notifications.PushStatus
 import dev.divehub.android.ui.followStoreWrites
 import dev.divehub.shared.ErrorCodes
 import dev.divehub.shared.diagnostics.DiagnosticEntry
@@ -37,6 +38,8 @@ data class SettingsUiState(
     val diagnostics: SettingsDiagnosticsState = SettingsDiagnosticsState(),
     /** The Debug subscreen's permanent sync-queue row: what the write queue holds right now (FAH-500). */
     val queue: SettingsQueueState = SettingsQueueState(),
+    /** The Debug subscreen's push row: registered device or why registration is not possible (FAH-557). */
+    val push: PushStatus = PushStatus(),
     /** How often the background worker polls for changes; 15 is Android WorkManager's floor (ADR 0085). */
     val pollingIntervalMinutes: Int = SettingsRepository.DEFAULT_POLLING_INTERVAL_MINUTES,
 )
@@ -74,6 +77,7 @@ class SettingsViewModel(
     private val offlineState: StateFlow<Boolean>,
     private val refreshSync: suspend () -> Unit,
     private val diagnostics: DiagnosticsAccess,
+    private val pushStatus: StateFlow<PushStatus>,
     private val queueRevision: StateFlow<Long>,
     private val readSnapshot: () -> WriteQueueSnapshot,
     private val applyPollingInterval: suspend (Int) -> Unit = {},
@@ -101,6 +105,10 @@ class SettingsViewModel(
         }
         viewModelScope.launch {
             offlineState.collect { offline -> _state.update { it.copy(offline = offline) } }
+        }
+        // Push registration state changes from the sync, permission and token paths; the Debug row follows it live.
+        viewModelScope.launch {
+            pushStatus.collect { push -> _state.update { it.copy(push = push) } }
         }
         // An edit lands in the queue before any sync runs; the queue's own revision keeps the Debug row live (FAH-500).
         viewModelScope.launch { queueRevision.collect { readQueue() } }
@@ -231,6 +239,7 @@ class SettingsViewModel(
                     offlineState = container.syncOffline,
                     refreshSync = container::refreshNow,
                     diagnostics = container.diagnostics,
+                    pushStatus = container.pushStatus,
                     queueRevision = container.queueRevision,
                     readSnapshot = container.writeReplayer::snapshot,
                     applyPollingInterval = container::setPollingInterval,

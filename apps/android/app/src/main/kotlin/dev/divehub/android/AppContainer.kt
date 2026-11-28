@@ -11,6 +11,7 @@ import dev.divehub.android.notifications.DiveNotifications
 import dev.divehub.android.notifications.FirebaseRuntime
 import dev.divehub.android.notifications.PushController
 import dev.divehub.android.notifications.PushPreferences
+import dev.divehub.android.notifications.PushStatus
 import dev.divehub.android.notifications.pushFoundNewDive
 import dev.divehub.android.sync.WorkManagerPeriodicSync
 import dev.divehub.shared.CachedMeStore
@@ -20,6 +21,7 @@ import dev.divehub.shared.PendingWriteQueue
 import dev.divehub.shared.SessionRepository
 import dev.divehub.shared.store.DiveStore
 import dev.divehub.shared.TokenStore
+import dev.divehub.shared.diagnostics.DiagnosticCapture
 import dev.divehub.shared.diagnostics.Diagnostics
 import dev.divehub.shared.diagnostics.DiagnosticsBuffer
 import dev.divehub.shared.dive.DiveRepository
@@ -168,6 +170,9 @@ class AppContainer(context: Context) {
     /** The push lifecycle: runtime Firebase config, token registration and the permission request (ADR 0085). */
     internal val push: PushController get() = pushController
 
+    /** The Debug screen's push status row: registered device or the reason it is not registered (FAH-557). */
+    val pushStatus: StateFlow<PushStatus> get() = pushController.status
+
     /** True when the shell should ask for POST_NOTIFICATIONS: after the first successful sync, once. */
     val notificationPermissionRequest: StateFlow<Boolean> get() = pushController.permissionRequest
 
@@ -176,6 +181,15 @@ class AppContainer(context: Context) {
     val pendingDive: StateFlow<String?> = _pendingDive.asStateFlow()
 
     init {
+        // The capture wrapper defers opening the store until the first push entry: push stays optional at startup.
+        val pushDiagnostics = object : DiagnosticCapture {
+            override fun record(
+                level: DiagnosticLevel,
+                code: String?,
+                message: String?,
+                context: Map<String, String>,
+            ) = diagnostics.record(level, code, message, context)
+        }
         pushController = PushController(
             application,
             session,
@@ -183,6 +197,7 @@ class AppContainer(context: Context) {
             firebase,
             pushPreferences,
             notifications,
+            pushDiagnostics,
         )
     }
 

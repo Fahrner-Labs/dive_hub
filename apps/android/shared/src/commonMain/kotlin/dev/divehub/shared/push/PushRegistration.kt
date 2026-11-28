@@ -37,11 +37,11 @@ class PushRegistration(
     }
 
     /** Register or refresh this install's FCM token for the signed-in User and session; returns the row to remove. */
-    suspend fun register(pushToken: String): String {
+    suspend fun register(pushToken: String): ApiDevicesPost200Response {
         val body = json.encodeToString(ApiDevicesPostRequest(platform = PLATFORM, pushToken = pushToken))
         val response = api.post(DEVICES_PATH, body)
         if (!response.status.isSuccess()) throw api.failure(response)
-        return api.decode<ApiDevicesPost200Response>(response).id
+        return api.decode<ApiDevicesPost200Response>(response)
     }
 
     /** Remove this install's registration on sign-out. A row already gone answers 404, which is the same outcome. */

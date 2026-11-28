@@ -6,6 +6,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.junit4.createComposeRule
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
+import dev.divehub.android.notifications.PushStatus
 import dev.divehub.android.ui.DiveHubTheme
 import dev.divehub.shared.diagnostics.DiagnosticEntry
 import dev.divehub.shared.diagnostics.DiagnosticLevel
@@ -63,6 +64,7 @@ class SettingsRouteTest {
             offlineState = MutableStateFlow(false),
             refreshSync = {},
             diagnostics = diagnostics,
+            pushStatus = MutableStateFlow(PushStatus()),
             queueRevision = MutableStateFlow(0L),
             readSnapshot = { WriteQueueSnapshot() },
             io = Dispatchers.Unconfined,

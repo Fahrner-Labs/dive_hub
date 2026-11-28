@@ -69,9 +69,10 @@ class PushRegistrationTest {
             )
         }
 
-        val id = registration.register("fcm-token")
+        val device = registration.register("fcm-token")
 
-        assertEquals("device-1", id)
+        assertEquals("device-1", device.id)
+        assertEquals("2026-11-25T10:00:00Z", device.lastSeenAt)
         assertEquals(HttpMethod.Post, method)
         assertEquals("""{"platform":"android","pushToken":"fcm-token"}""", body)
     }

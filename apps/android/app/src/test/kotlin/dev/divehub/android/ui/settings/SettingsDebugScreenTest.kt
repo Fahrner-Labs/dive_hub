@@ -8,6 +8,8 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import dev.divehub.android.notifications.PushState
+import dev.divehub.android.notifications.PushStatus
 import dev.divehub.android.ui.DiveHubTheme
 import dev.divehub.shared.ErrorCodes
 import dev.divehub.shared.diagnostics.ReportProblemResult
@@ -68,6 +70,40 @@ class SettingsDebugScreenTest {
         compose.onNodeWithText("Share local logs").performScrollTo().performClick()
 
         assertEquals(1, shares)
+    }
+
+    @Test
+    fun `the push row shows the registered device`() {
+        render(
+            push = PushStatus(
+                PushState.Registered,
+                deviceId = "device-1",
+                lastSeenAt = "2026-11-28T10:00:00Z",
+            ),
+        )
+
+        compose.onNodeWithText("Push").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Registered (device device-1, last seen 2026-11-28T10:00:00Z)")
+            .performScrollTo()
+            .assertIsDisplayed()
+    }
+
+    @Test
+    fun `the push row names a failed registration step`() {
+        render(push = PushStatus(PushState.RegisterFailed, reason = "http_500"))
+
+        compose.onNodeWithText("Not registered — registration failed: http_500")
+            .performScrollTo()
+            .assertIsDisplayed()
+    }
+
+    @Test
+    fun `the push row names missing notifications permission`() {
+        render(push = PushStatus(PushState.PermissionMissing))
+
+        compose.onNodeWithText("Not registered — notifications are not allowed for this app")
+            .performScrollTo()
+            .assertIsDisplayed()
     }
 
     @Test
@@ -176,12 +212,14 @@ class SettingsDebugScreenTest {
 
     private fun render(
         diagnostics: SettingsDiagnosticsState = SettingsDiagnosticsState(),
+        push: PushStatus = PushStatus(),
         queue: SettingsQueueState = SettingsQueueState(),
     ) {
         compose.setContent {
             DiveHubTheme(darkTheme = false) {
                 SettingsDebugScreen(
                     diagnostics = diagnostics,
+                    push = push,
                     queue = queue,
                     onBack = { backs += 1 },
                     onReportProblem = { reports += 1 },

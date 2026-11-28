@@ -1,6 +1,8 @@
 package dev.divehub.android.ui.settings
 
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
+import dev.divehub.android.notifications.PushState
+import dev.divehub.android.notifications.PushStatus
 import dev.divehub.shared.ErrorCodes
 import dev.divehub.shared.diagnostics.DiagnosticEntry
 import dev.divehub.shared.diagnostics.DiagnosticLevel
@@ -94,6 +96,21 @@ class SettingsViewModelTest {
         assertEquals(true, debug.enabled)
         assertEquals(2, debug.count)
         assertEquals(listOf("e1", "e0"), debug.preview.map(DiagnosticEntry::code))
+    }
+
+    @Test
+    fun `the push row follows the lifecycle status`() = runTest(dispatcher) {
+        val push = MutableStateFlow(PushStatus())
+        val viewModel = viewModel(pushStatus = push)
+        advanceUntilIdle()
+        assertEquals(PushState.Unknown, viewModel.state.value.push.state)
+
+        push.value = PushStatus(PushState.Registered, deviceId = "device-1", lastSeenAt = "2026-11-28T10:00:00Z")
+        advanceUntilIdle()
+
+        assertEquals(PushState.Registered, viewModel.state.value.push.state)
+        assertEquals("device-1", viewModel.state.value.push.deviceId)
+        assertEquals("2026-11-28T10:00:00Z", viewModel.state.value.push.lastSeenAt)
     }
 
     @Test
@@ -274,6 +291,7 @@ class SettingsViewModelTest {
         offline: MutableStateFlow<Boolean> = MutableStateFlow(false),
         refreshSync: suspend () -> Unit = {},
         diagnostics: DiagnosticsAccess = FakeDiagnostics(),
+        pushStatus: MutableStateFlow<PushStatus> = MutableStateFlow(PushStatus()),
         queueRevision: MutableStateFlow<Long> = MutableStateFlow(0L),
         readSnapshot: () -> WriteQueueSnapshot = { WriteQueueSnapshot() },
         applyPollingInterval: suspend (Int) -> Unit = {},
@@ -284,6 +302,7 @@ class SettingsViewModelTest {
         offlineState = offline,
         refreshSync = refreshSync,
         diagnostics = diagnostics,
+        pushStatus = pushStatus,
         queueRevision = queueRevision,
         readSnapshot = readSnapshot,
         applyPollingInterval = applyPollingInterval,

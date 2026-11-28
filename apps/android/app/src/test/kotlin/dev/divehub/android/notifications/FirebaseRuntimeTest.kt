@@ -8,8 +8,6 @@ import dev.divehub.api.models.ApiPushConfigGet200ResponseAndroid
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotNull
-import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -51,7 +49,7 @@ class FirebaseRuntimeTest {
         val runtime = FirebaseRuntime(context, preferences)
 
         assertFalse(hasPlayServices(context))
-        assertNull(runtime.initialize())
+        assertEquals(FirebaseStart.NoPlayServices, runtime.initialize())
         assertTrue(FirebaseApp.getApps(context).isEmpty())
     }
 
@@ -60,10 +58,10 @@ class FirebaseRuntimeTest {
         installPlayServices()
         preferences.saveConfig(INSTANCE, config())
 
-        val app = FirebaseRuntime(context, preferences).initialize()
+        assertEquals(FirebaseStart.Ready, FirebaseRuntime(context, preferences).initialize())
 
-        assertNotNull(app)
-        assertEquals(FirebaseApp.DEFAULT_APP_NAME, app!!.name)
+        val app = FirebaseApp.getApps(context).single()
+        assertEquals(FirebaseApp.DEFAULT_APP_NAME, app.name)
         assertEquals("dive-hub-test", app.options.projectId)
         assertEquals("1:2:android:abc", app.options.applicationId)
         assertEquals("public-key", app.options.apiKey)
@@ -75,15 +73,14 @@ class FirebaseRuntimeTest {
         installPlayServices()
         preferences.saveConfig(INSTANCE, config())
         val runtime = FirebaseRuntime(context, preferences)
-        assertNotNull(runtime.initialize())
+        assertEquals(FirebaseStart.Ready, runtime.initialize())
 
         preferences.saveConfig(INSTANCE, config(projectId = "other-project", applicationId = "1:3:android:def"))
-        val rebuilt = runtime.initialize()
+        assertEquals(FirebaseStart.Ready, runtime.initialize())
 
-        assertNotNull(rebuilt)
-        assertEquals("other-project", rebuilt!!.options.projectId)
+        val rebuilt = FirebaseApp.getApps(context).single()
+        assertEquals("other-project", rebuilt.options.projectId)
         assertEquals("1:3:android:def", rebuilt.options.applicationId)
-        assertEquals(1, FirebaseApp.getApps(context).size)
     }
 
     @Test
@@ -91,7 +88,7 @@ class FirebaseRuntimeTest {
         installPlayServices()
         preferences.saveConfig(INSTANCE, config())
         val runtime = FirebaseRuntime(context, preferences)
-        assertNotNull(runtime.initialize())
+        assertEquals(FirebaseStart.Ready, runtime.initialize())
 
         runtime.reset()
 
@@ -99,9 +96,28 @@ class FirebaseRuntimeTest {
     }
 
     @Test
-    fun `a failed token task is null instead of throwing out of the listener`() {
-        assertNull(Tasks.forException<String>(IllegalStateException("FCM unavailable")).resultOrNull())
-        assertEquals("token-1", Tasks.forResult("token-1").resultOrNull())
+    fun `a failed token task reports its class and message instead of throwing`() {
+        val failed = Tasks.forException<String>(IllegalStateException("FCM unavailable")).asTokenResult()
+
+        assertTrue(failed is TokenResult.Failed)
+        assertEquals("IllegalStateException", (failed as TokenResult.Failed).errorClass)
+        assertEquals("FCM unavailable", failed.message)
+        assertEquals(TokenResult.Acquired("token-1"), Tasks.forResult("token-1").asTokenResult())
+    }
+
+    @Test
+    fun `an empty token is a failure, not an empty registration`() {
+        val result = Tasks.forResult("").asTokenResult()
+
+        assertTrue(result is TokenResult.Failed)
+        assertEquals("FirebaseMessaging", (result as TokenResult.Failed).errorClass)
+    }
+
+    @Test
+    fun `stored config is required before Firebase can start`() {
+        installPlayServices()
+
+        assertEquals(FirebaseStart.NoConfig, FirebaseRuntime(context, preferences).initialize())
     }
 
     private fun installPlayServices() {
